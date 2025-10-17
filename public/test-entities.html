@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Data Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .step {
+            margin: 20px 0;
+            padding: 15px;
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            border-radius: 4px;
+        }
+        .credentials {
+            background: #f3e5f5;
+            border-left: 4px solid #9c27b0;
+        }
+        .url {
+            background: #e8f5e8;
+            border-left: 4px solid #4caf50;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #2196f3;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 5px;
+        }
+        .button:hover {
+            background: #1976d2;
+        }
+        .success {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .info {
+            color: #2196f3;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Customer Data Test Page</h1>
+        <p>This page helps you access the customer data that has been seeded in the database.</p>
+        
+        <div class="step">
+            <h2>📊 Data Status</h2>
+            <p class="success">✅ 5 Customer Records Created</p>
+            <p class="success">✅ 23 Attributes Per Record</p>
+            <p class="success">✅ Test User Created</p>
+            <p class="info">Model ID: 3bf5084c-14a6-4e8d-a41b-625f136dbd2d</p>
+        </div>
+        
+        <div class="step credentials">
+            <h2>🔐 Step 1: Login</h2>
+            <p>First, you need to login to access the data:</p>
+            <a href="http://localhost:3000/auth/signin" class="button" target="_blank">Go to Login Page</a>
+            <p><strong>Credentials:</strong></p>
+            <ul>
+                <li><strong>Email:</strong> test@example.com</li>
+                <li><strong>Password:</strong> test123</li>
+            </ul>
+        </div>
+        
+        <div class="step url">
+            <h2>📋 Step 2: View Customer Data</h2>
+            <p>After logging in, click the button below to view the customer records:</p>
+            <a href="http://localhost:3000/data/entities?model=3bf5084c-14a6-4e8d-a41b-625f136dbd2d" class="button" target="_blank">View Customer Records</a>
+            <p><strong>Direct URL:</strong><br>
+            <code>http://localhost:3000/data/entities?model=3bf5084c-14a6-4e8d-a41b-625f136dbd2d</code></p>
+        </div>
+        
+        <div class="step">
+            <h2>👥 Expected Customer Records</h2>
+            <ul>
+                <li><strong>John Smith</strong> (CUST_000001) - VIP customer from California</li>
+                <li><strong>Sarah Johnson</strong> (CUST_000002) - Regular customer from New York</li>
+                <li><strong>Michael Williams</strong> (CUST_000003) - Staff member from Texas (inactive)</li>
+                <li><strong>Emily Brown</strong> (CUST_000004) - VIP customer from California</li>
+                <li><strong>David Jones</strong> (CUST_000005) - Regular customer from New York</li>
+            </ul>
+        </div>
+        
+        <div class="step">
+            <h2>🔧 Troubleshooting</h2>
+            <p>If you don't see the records:</p>
+            <ol>
+                <li>Make sure you're logged in with the test credentials</li>
+                <li>Check that the development server is running on port 3000</li>
+                <li>Verify the URL includes the correct model ID</li>
+                <li>Try refreshing the page after login</li>
+            </ol>
+        </div>
+    </div>
+</body>
+</html>

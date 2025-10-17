@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Filters</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-item { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+    </style>
+</head>
+<body>
+    <h1>Filter Types Test</h1>
+    <p>This page tests if the new filter components are working.</p>
+    
+    <div class="test-item">
+        <h3>Test 1: Entity Page Access</h3>
+        <p><a href="/data/entities?model=3bf5084c-14a6-4e8d-a41b-625f136dbd2d" target="_blank">Open Entity Page</a></p>
+        <p>Check if the page loads and shows the new filter types.</p>
+    </div>
+    
+    <div class="test-item">
+        <h3>Test 2: Filter Icons</h3>
+        <p>Look for filter icons (🔍) next to column headers.</p>
+        <p>Click on them to see the new filter popovers.</p>
+    </div>
+    
+    <div class="test-item">
+        <h3>Test 3: Filter Types</h3>
+        <ul>
+            <li><strong>Text fields:</strong> Should show "Text Search" with simple input</li>
+            <li><strong>Number fields:</strong> Should show "Number Range" with Min/Max inputs</li>
+            <li><strong>Select fields:</strong> Should show "Select Values" with checkboxes</li>
+            <li><strong>Boolean fields:</strong> Should show "Boolean Filter" with Yes/No dropdown</li>
+            <li><strong>Date fields:</strong> Should show "Date Range" with date pickers</li>
+        </ul>
+    </div>
+    
+    <div class="test-item">
+        <h3>Debugging Steps</h3>
+        <ol>
+            <li>Open browser developer tools (F12)</li>
+            <li>Go to Console tab</li>
+            <li>Look for any JavaScript errors</li>
+            <li>Check if the page is loading the updated components</li>
+        </ol>
+    </div>
+    
+    <script>
+        console.log('🔍 Filter Types Test Page Loaded');
+        console.log('🔍 Check the entity page for new filter components');
+        
+        // Test if we can access the entity page
+        fetch('/data/entities?model=3bf5084c-14a6-4e8d-a41b-625f136dbd2d')
+            .then(response => {
+                console.log('📡 Entity page status:', response.status);
+                if (response.ok) {
+                    console.log('✅ Entity page is accessible');
+                } else {
+                    console.log('❌ Entity page error:', response.status);
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error accessing entity page:', error);
+            });
+    </script>
+</body>
+</html>

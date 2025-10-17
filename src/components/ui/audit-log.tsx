@@ -1,0 +1,425 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './card'
+import { Button } from './button'
+import { Input } from './input'
+import { Label } from './label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select'
+import { Badge } from './badge'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './table'
+import { 
+  Search, 
+  Filter, 
+  Download, 
+  Eye, 
+  ChevronLeft, 
+  ChevronRight,
+  Calendar,
+  User,
+  Activity,
+  Database,
+  Settings,
+  Users,
+  FileText
+} from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './dialog'
+
+interface AuditLog {
+  id: string
+  action: string
+  entity_type: string
+  entity_id: string
+  old_value: any
+  new_value: any
+  ip_address: string
+  user_agent: string
+  created_at: string
+  user_name: string
+  user_email: string
+}
+
+interface AuditLogsResponse {
+  data: AuditLog[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
+
+interface AuditLogsProps {
+  className?: string
+}
+
+export function AuditLogs({ className }: AuditLogsProps) {
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 50,
+    total: 0,
+    totalPages: 0
+  })
+
+  // Filters
+  const [filters, setFilters] = useState({
+    entityType: '',
+    action: '',
+    userId: '',
+    startDate: '',
+    endDate: '',
+    search: ''
+  })
+
+  const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null)
+  const [showDetails, setShowDetails] = useState(false)
+
+  const fetchAuditLogs = async () => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      const params = new URLSearchParams({
+        page: pagination.page.toString(),
+        limit: pagination.limit.toString()
+      })
+
+      if (filters.entityType) params.append('entityType', filters.entityType)
+      if (filters.action) params.append('action', filters.action)
+      if (filters.userId) params.append('userId', filters.userId)
+      if (filters.startDate) params.append('startDate', filters.startDate)
+      if (filters.endDate) params.append('endDate', filters.endDate)
+
+      const response = await fetch(`/api/audit-logs?${params}`)
+      if (!response.ok) throw new Error('Failed to fetch audit logs')
+
+      const data: AuditLogsResponse = await response.json()
+      setAuditLogs(data.data)
+      setPagination(data.pagination)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchAuditLogs()
+  }, [pagination.page, filters])
+
+  const handleFilterChange = (key: string, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }))
+    setPagination(prev => ({ ...prev, page: 1 }))
+  }
+
+  const handlePageChange = (newPage: number) => {
+    setPagination(prev => ({ ...prev, page: newPage }))
+  }
+
+  const getActionIcon = (action: string) => {
+    switch (action) {
+      case 'CREATE': return <Activity className="h-4 w-4 text-green-600" />
+      case 'UPDATE': return <Settings className="h-4 w-4 text-blue-600" />
+      case 'DELETE': return <Database className="h-4 w-4 text-red-600" />
+      case 'LOGIN': return <User className="h-4 w-4 text-purple-600" />
+      default: return <FileText className="h-4 w-4 text-gray-600" />
+    }
+  }
+
+  const getActionColor = (action: string) => {
+    switch (action) {
+      case 'CREATE': return 'bg-green-100 text-green-800'
+      case 'UPDATE': return 'bg-blue-100 text-blue-800'
+      case 'DELETE': return 'bg-red-100 text-red-800'
+      case 'LOGIN': return 'bg-purple-100 text-purple-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString()
+  }
+
+  const exportLogs = async () => {
+    try {
+      const params = new URLSearchParams()
+      if (filters.entityType) params.append('entityType', filters.entityType)
+      if (filters.action) params.append('action', filters.action)
+      if (filters.userId) params.append('userId', filters.userId)
+      if (filters.startDate) params.append('startDate', filters.startDate)
+      if (filters.endDate) params.append('endDate', filters.endDate)
+
+      const response = await fetch(`/api/audit-logs/export?${params}`)
+      if (!response.ok) throw new Error('Failed to export audit logs')
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to export audit logs')
+    }
+  }
+
+  return (
+    <div className={className}>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Audit Logs
+              </CardTitle>
+              <CardDescription>
+                Track all system changes and user activities
+              </CardDescription>
+            </div>
+            <Button onClick={exportLogs} variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Filters */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div>
+              <Label htmlFor="entityType">Entity Type</Label>
+              <Select value={filters.entityType} onValueChange={(value) => handleFilterChange('entityType', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All entities" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All entities</SelectItem>
+                  <SelectItem value="SystemSettings">System Settings</SelectItem>
+                  <SelectItem value="User">User</SelectItem>
+                  <SelectItem value="Customer">Customer</SelectItem>
+                  <SelectItem value="DataModel">Data Model</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="action">Action</Label>
+              <Select value={filters.action} onValueChange={(value) => handleFilterChange('action', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All actions" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All actions</SelectItem>
+                  <SelectItem value="CREATE">Create</SelectItem>
+                  <SelectItem value="UPDATE">Update</SelectItem>
+                  <SelectItem value="DELETE">Delete</SelectItem>
+                  <SelectItem value="LOGIN">Login</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="startDate">Start Date</Label>
+              <Input
+                type="date"
+                value={filters.startDate}
+                onChange={(e) => handleFilterChange('startDate', e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="endDate">End Date</Label>
+              <Input
+                type="date"
+                value={filters.endDate}
+                onChange={(e) => handleFilterChange('endDate', e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Audit Logs Table */}
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-8 text-red-600">
+              {error}
+            </div>
+          ) : (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Action</TableHead>
+                    <TableHead>Entity</TableHead>
+                    <TableHead>User</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>IP Address</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {auditLogs.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {getActionIcon(log.action)}
+                          <Badge className={getActionColor(log.action)}>
+                            {log.action}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{log.entity_type}</div>
+                          <div className="text-sm text-muted-foreground">ID: {log.entity_id}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{log.user_name || 'Unknown'}</div>
+                          <div className="text-sm text-muted-foreground">{log.user_email}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          {formatDate(log.created_at)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm font-mono">
+                          {log.ip_address || 'Unknown'}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedLog(log)
+                            setShowDetails(true)
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {/* Pagination */}
+              <div className="flex items-center justify-between mt-4">
+                <div className="text-sm text-muted-foreground">
+                  Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} entries
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={pagination.page <= 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  <span className="text-sm">
+                    Page {pagination.page} of {pagination.totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={pagination.page >= pagination.totalPages}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Details Dialog */}
+      <Dialog open={showDetails} onOpenChange={setShowDetails}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Audit Log Details</DialogTitle>
+          </DialogHeader>
+          {selectedLog && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Action</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    {getActionIcon(selectedLog.action)}
+                    <Badge className={getActionColor(selectedLog.action)}>
+                      {selectedLog.action}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Entity Type</Label>
+                  <div className="mt-1">{selectedLog.entity_type}</div>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Entity ID</Label>
+                  <div className="mt-1 font-mono text-sm">{selectedLog.entity_id}</div>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">User</Label>
+                  <div className="mt-1">
+                    <div>{selectedLog.user_name || 'Unknown'}</div>
+                    <div className="text-sm text-muted-foreground">{selectedLog.user_email}</div>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Date</Label>
+                  <div className="mt-1">{formatDate(selectedLog.created_at)}</div>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">IP Address</Label>
+                  <div className="mt-1 font-mono text-sm">{selectedLog.ip_address || 'Unknown'}</div>
+                </div>
+              </div>
+
+              {selectedLog.old_value && (
+                <div>
+                  <Label className="text-sm font-medium">Previous Value</Label>
+                  <pre className="mt-1 p-3 bg-muted rounded-md text-sm overflow-x-auto">
+                    {JSON.stringify(selectedLog.old_value, null, 2)}
+                  </pre>
+                </div>
+              )}
+
+              {selectedLog.new_value && (
+                <div>
+                  <Label className="text-sm font-medium">New Value</Label>
+                  <pre className="mt-1 p-3 bg-muted rounded-md text-sm overflow-x-auto">
+                    {JSON.stringify(selectedLog.new_value, null, 2)}
+                  </pre>
+                </div>
+              )}
+
+              {selectedLog.user_agent && (
+                <div>
+                  <Label className="text-sm font-medium">User Agent</Label>
+                  <div className="mt-1 text-sm font-mono break-all">{selectedLog.user_agent}</div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
