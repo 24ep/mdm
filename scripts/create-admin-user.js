@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const { Pool } = require('pg');
+const { v4: uuidv4 } = require('uuid');
 
 // Database connection
 const pool = new Pool({
@@ -22,11 +23,12 @@ async function createAdminUser() {
     const hashedPassword = await bcrypt.hash('admin123', 12);
     
     // Create admin user
+    const userId = uuidv4();
     const result = await pool.query(
-      `INSERT INTO public.users (email, name, password, role, is_active) 
-       VALUES ($1, $2, $3, $4, $5) 
+      `INSERT INTO public.users (id, email, name, password, role, is_active) 
+       VALUES ($1, $2, $3, $4, $5, $6) 
        RETURNING id, email, name, role`,
-      ['admin@example.com', 'Admin User', hashedPassword, 'ADMIN', true]
+      [userId, 'admin@example.com', 'Admin User', hashedPassword, 'ADMIN', true]
     );
     
     console.log('Admin user created successfully:', result.rows[0]);

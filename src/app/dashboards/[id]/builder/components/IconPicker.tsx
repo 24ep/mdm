@@ -1,5 +1,5 @@
 import React from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -79,6 +79,9 @@ export function IconPicker({ open, onOpenChange, value, color = '#1f2937', onSel
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Select Icon</DialogTitle>
+          <DialogDescription>
+            Choose an icon for your dashboard element from the available options.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div className="flex items-center gap-2">

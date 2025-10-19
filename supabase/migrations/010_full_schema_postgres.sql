@@ -35,6 +35,9 @@ BEGIN
     IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'email') THEN
         CREATE INDEX IF NOT EXISTS idx_users_email ON public.users (email);
     END IF;
+EXCEPTION WHEN OTHERS THEN
+    -- Ignore errors if column doesn't exist
+    NULL;
 END $$;
 CREATE INDEX IF NOT EXISTS idx_users_role ON public.users (role);
 CREATE INDEX IF NOT EXISTS idx_users_active ON public.users (is_active);

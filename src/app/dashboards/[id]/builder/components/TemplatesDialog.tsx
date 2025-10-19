@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -120,6 +120,9 @@ export function TemplatesDialog({ open, onOpenChange, onSelectTemplate, onCreate
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Dashboard Templates</DialogTitle>
+          <DialogDescription>
+            Choose from pre-built dashboard templates or create a blank dashboard to get started.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-6">

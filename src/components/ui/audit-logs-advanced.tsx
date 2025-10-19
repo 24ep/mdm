@@ -467,6 +467,9 @@ export function AuditLogsAdvanced({ className }: AuditLogsAdvancedProps) {
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Audit Log Details</DialogTitle>
+            <DialogDescription>
+              View detailed information about this audit log entry including all changes and metadata.
+            </DialogDescription>
           </DialogHeader>
           {selectedLog && (
             <div className="space-y-4">

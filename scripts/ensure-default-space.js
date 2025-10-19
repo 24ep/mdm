@@ -41,10 +41,10 @@ async function ensureDefaultSpace() {
 
     // Create the default space
     const spaceResult = await client.query(
-      `INSERT INTO spaces (name, description, is_default, is_active, created_by)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO spaces (name, description, is_default, is_active, created_by, slug)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      ['Default Space', 'The default workspace for organizing your data', true, true, adminUser.id]
+      ['Default Space', 'The default workspace for organizing your data', true, true, adminUser.id, 'default-space']
     )
 
     const newSpace = spaceResult.rows[0]

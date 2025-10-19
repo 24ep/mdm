@@ -219,6 +219,9 @@ export function DashboardTemplates({ onSelectTemplate, onCreateBlank }: Dashboar
                       <DialogContent className="max-w-4xl">
                         <DialogHeader>
                           <DialogTitle>{template.name}</DialogTitle>
+                          <DialogDescription>
+                            Preview this dashboard template and its components before applying it to your dashboard.
+                          </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4">
                           <p className="text-muted-foreground">{template.description}</p>

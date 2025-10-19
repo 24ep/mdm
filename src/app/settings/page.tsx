@@ -63,6 +63,7 @@ import { Z_INDEX } from '@/lib/z-index'
 import * as LucideIcons from 'lucide-react'
 // ERDInlineView no longer used in Settings; shown on Data Models page instead
 import { AuditLogsAdvanced } from '@/components/ui/audit-logs-advanced'
+import { ScrollableTable } from '@/components/ui/scrollable-table'
 import { FaviconUpload } from '@/components/ui/favicon-upload'
 import { AvatarUpload } from '@/components/ui/avatar-upload'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -1966,19 +1967,18 @@ export default function SettingsPage() {
                         </Select>
                       </div>
           </div>
-                    <div className="p-4">
-                      <table className="w-full text-sm">
-                        <thead className="bg-muted/50">
-                          <tr>
-                            <th className="text-left p-3">Display Name</th>
-                            <th className="text-left p-3">Key</th>
-                            <th className="text-left p-3">Type</th>
-                            <th className="text-left p-3">Required</th>
-                            <th className="text-left p-3">Unique</th>
-                            <th className="text-right p-3">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
+                    <ScrollableTable maxHeight="MEDIUM">
+                      <thead className="bg-muted/50">
+                        <tr>
+                          <th className="text-left p-3">Display Name</th>
+                          <th className="text-left p-3">Key</th>
+                          <th className="text-left p-3">Type</th>
+                          <th className="text-left p-3">Required</th>
+                          <th className="text-left p-3">Unique</th>
+                          <th className="text-right p-3">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
                           {attributesLoading ? (
                             <tr><td className="p-3" colSpan={6}>Loading...</td></tr>
                           ) : attributesError ? (
@@ -2033,8 +2033,7 @@ export default function SettingsPage() {
                             </tr>
                           ))}
                         </tbody>
-                      </table>
-                    </div>
+                    </ScrollableTable>
                   </div>
                 </TabsContent>
                 <TabsContent value="history" className="flex-1 overflow-auto p-4">

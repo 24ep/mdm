@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollableContainer } from '@/components/ui/scrollable-container';
 import { Separator } from '@/components/ui/separator';
 import { useNotifications } from '@/contexts/notification-context';
 import { Notification, NotificationFilters } from '@/types/notifications';
@@ -157,7 +158,7 @@ export function NotificationList({
           <p>No notifications found</p>
         </div>
       ) : (
-        <div className={`overflow-y-auto ${maxHeight}`}>
+        <ScrollableContainer maxHeight={maxHeight}>
           {filteredNotifications.map((notification, index) => (
             <div key={notification.id}>
               <Card className={`transition-colors hover:shadow-md ${
@@ -236,7 +237,7 @@ export function NotificationList({
               {index < filteredNotifications.length - 1 && <Separator className="my-2" />}
             </div>
           ))}
-        </div>
+        </ScrollableContainer>
       )}
     </div>
   );

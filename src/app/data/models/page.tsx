@@ -9,6 +9,7 @@ import { MultiSelect } from '@/components/ui/multi-select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { ScrollableList } from '@/components/ui/scrollable-list'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
@@ -438,7 +439,7 @@ export default function DataModelsPage() {
                   {attributesLoading ? (
                     <div className="text-center py-4">Loading attributes...</div>
                   ) : attributes.length > 0 ? (
-                    <div className="space-y-2">
+                    <ScrollableList maxHeight="MEDIUM">
                       {attributes.map((attr) => (
                         <div key={attr.id} className="flex items-center justify-between p-3 border rounded-lg">
                           <div className="flex-1">
@@ -457,7 +458,7 @@ export default function DataModelsPage() {
                           </div>
                         </div>
                       ))}
-                    </div>
+                    </ScrollableList>
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
                       No attributes found for this model.

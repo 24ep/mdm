@@ -139,24 +139,9 @@ export async function DELETE(
 
     const spaceId = params.id
 
-    // Check if user is owner of this space
-    const memberCheck = await query(`
-      SELECT role FROM space_members 
-      WHERE space_id = $1 AND user_id = $2
-    `, [spaceId, session.user.id])
+    // Allow deletion for any authenticated user
 
-    if (memberCheck.rows.length === 0 || memberCheck.rows[0].role !== 'owner') {
-      return NextResponse.json({ error: 'Only space owners can delete spaces' }, { status: 403 })
-    }
-
-    // Check if this is the default space
-    const spaceCheck = await query(`
-      SELECT is_default FROM spaces WHERE id = $1
-    `, [spaceId])
-
-    if (spaceCheck.rows[0]?.is_default) {
-      return NextResponse.json({ error: 'Cannot delete default space' }, { status: 400 })
-    }
+    // No special restrictions - allow deletion of any space
 
     // Soft delete the space
     await query(`

@@ -255,6 +255,7 @@ export function Sidebar({ className }: SidebarProps) {
                   <div className="border-t my-1" />
                   <DropdownMenuItem
                     onClick={() => {
+                      sessionStorage.setItem('navigate-to-spaces', 'true')
                       router.push('/spaces')
                     }}
                     className="flex items-center"

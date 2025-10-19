@@ -252,6 +252,9 @@ export function PagesManagement({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create New Page</DialogTitle>
+            <DialogDescription>
+              Create a new page for your application with a unique name and optional description.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -298,6 +301,9 @@ export function PagesManagement({
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>Create Page from Template</DialogTitle>
+            <DialogDescription>
+              Choose from available templates to quickly create a new page with pre-configured content and layout.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">

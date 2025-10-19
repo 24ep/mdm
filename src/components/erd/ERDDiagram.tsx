@@ -372,6 +372,9 @@ export default function ERDDiagram({
             <DialogTitle>
               {selectedAttribute ? 'Edit Attribute' : 'Add Attribute'}
             </DialogTitle>
+            <DialogDescription>
+              {selectedAttribute ? 'Modify the attribute properties and settings.' : 'Add a new attribute to the data model with its properties and constraints.'}
+            </DialogDescription>
           </DialogHeader>
           <AttributeForm
             model={selectedModel}
@@ -394,6 +397,9 @@ export default function ERDDiagram({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Configure Relationship</DialogTitle>
+            <DialogDescription>
+              Define the relationship between data models including cardinality and constraints.
+            </DialogDescription>
           </DialogHeader>
           <RelationshipForm
             relationship={selectedRelationship}

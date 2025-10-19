@@ -12,18 +12,19 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Building2, Layout, Database, History, Users as UsersIcon, UserCog, UserPlus, Plus, Edit, Trash2, Search, Type } from 'lucide-react'
+import { Building2, Layout, Database, History, Users as UsersIcon, UserCog, UserPlus, Plus, Edit, Trash2, Search, Type, AlertTriangle, FolderPlus, Share2, Folder, FolderOpen, Move } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useSpace } from '@/contexts/space-context'
 import { SpaceStudioLauncher } from '@/components/space-studio-launcher'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import IconPickerPopover from '@/components/ui/icon-picker-popover'
 import { ColorPicker } from '@/components/ui/color-swatch'
 
 export default function SpaceSettingsPage() {
   const params = useParams() as { space: string }
   const searchParams = useSearchParams()
-  const allowedTabs = new Set(['details','members','studio','data-model','restore'])
+  const allowedTabs = new Set(['details','members','studio','data-model','attachments','restore','danger'])
   const initialTabRaw = (searchParams.get('tab') as string) || 'details'
   const initialTab = allowedTabs.has(initialTabRaw) ? initialTabRaw : 'details'
   const { spaces, currentSpace, refreshSpaces } = useSpace()
@@ -54,7 +55,20 @@ export default function SpaceSettingsPage() {
   const [activeModelTab, setActiveModelTab] = useState<'details' | 'attributes' | 'activity'>('details')
   const [attributes, setAttributes] = useState<any[]>([])
   const [attributesLoading, setAttributesLoading] = useState(false)
-  const [attrForm, setAttrForm] = useState({ name: '', display_name: '', data_type: 'text', is_required: false, is_unique: false, default_value: '' })
+  
+  // For data model entities reference
+  const [availableModels, setAvailableModels] = useState<any[]>([])
+  const [referenceModelAttributes, setReferenceModelAttributes] = useState<any[]>([])
+  const [loadingReferenceAttributes, setLoadingReferenceAttributes] = useState(false)
+  
+  // Folder management
+  const [folders, setFolders] = useState<any[]>([])
+  const [showCreateFolderDialog, setShowCreateFolderDialog] = useState(false)
+  const [showShareModelDialog, setShowShareModelDialog] = useState(false)
+  const [selectedModelForSharing, setSelectedModelForSharing] = useState<any | null>(null)
+  const [availableSpaces, setAvailableSpaces] = useState<any[]>([])
+  const [folderForm, setFolderForm] = useState({ name: '', parent_id: '' })
+  const [shareForm, setShareForm] = useState({ space_ids: [] as string[] })
   const [spaceDetails, setSpaceDetails] = useState<any | null>(null)
   const [savingLoginImage, setSavingLoginImage] = useState(false)
 
@@ -65,6 +79,82 @@ export default function SpaceSettingsPage() {
   const [newTag, setNewTag] = useState<string>('')
   const [modelGroupFolder, setModelGroupFolder] = useState<string>('')
   const [modelOwnerName, setModelOwnerName] = useState<string>('')
+
+  // Attachment storage configuration
+  const [attachmentStorage, setAttachmentStorage] = useState({
+    provider: 'minio',
+    config: {
+      // MinIO configuration
+      minio: {
+        endpoint: '',
+        access_key: '',
+        secret_key: '',
+        bucket: '',
+        region: 'us-east-1',
+        use_ssl: true
+      },
+      // AWS S3 configuration
+      s3: {
+        access_key_id: '',
+        secret_access_key: '',
+        bucket: '',
+        region: 'us-east-1'
+      },
+      // SFTP configuration
+      sftp: {
+        host: '',
+        port: 22,
+        username: '',
+        password: '',
+        path: '/uploads'
+      },
+      // FTP configuration
+      ftp: {
+        host: '',
+        port: 21,
+        username: '',
+        password: '',
+        path: '/uploads',
+        passive: true
+      }
+    }
+  })
+  const [storageTestResult, setStorageTestResult] = useState<any>(null)
+  const [testingStorage, setTestingStorage] = useState(false)
+
+  // Attribute creation state
+  const [showCreateAttributeDrawer, setShowCreateAttributeDrawer] = useState(false)
+  const [createAttributeForm, setCreateAttributeForm] = useState({
+    name: '',
+    display_name: '',
+    type: 'text',
+    default_value: '',
+    is_required: false,
+    is_unique: false,
+    options: [] as string[],
+    // For data model entities type
+    reference_model_id: '',
+    reference_attribute_code: '',
+    reference_attribute_label: '',
+    // For currency type
+    currency_code: 'USD',
+    decimal_places: '2',
+    // For rating type
+    rating_scale: '5',
+    rating_display: 'stars',
+    // For address type
+    default_country: '',
+    address_format: 'standard',
+    require_country: false,
+    enable_geocoding: false,
+    // For duration type
+    duration_format: 'hh:mm:ss',
+    max_duration: '',
+    // For tags type
+    allow_custom_tags: true,
+    require_tags: false,
+    max_tags: ''
+  })
 
   useEffect(() => {
     const loadSpaceDetails = async () => {
@@ -80,25 +170,7 @@ export default function SpaceSettingsPage() {
     loadSpaceDetails()
   }, [selectedSpace?.id])
 
-  // Attribute Drawer state
-  const [showAttributeDrawer, setShowAttributeDrawer] = useState(false)
-  const [activeAttributeTab, setActiveAttributeTab] = useState<'config' | 'options' | 'activity'>('config')
-  const [selectedAttribute, setSelectedAttribute] = useState<any | null>(null)
-  const [attributeEditForm, setAttributeEditForm] = useState<any>({
-    name: '',
-    display_name: '',
-    type: 'text',
-    is_required: false,
-    is_unique: false,
-    default_value: '',
-    options: [] as any[]
-  })
 
-  // Activity logs
-  const [modelActivity, setModelActivity] = useState<any[]>([])
-  const [modelActivityLoading, setModelActivityLoading] = useState(false)
-  const [attrActivity, setAttrActivity] = useState<any[]>([])
-  const [attrActivityLoading, setAttrActivityLoading] = useState(false)
 
   useEffect(() => {
     if (tab === 'members' && selectedSpace?.id) {
@@ -106,8 +178,18 @@ export default function SpaceSettingsPage() {
     }
     if (tab === 'data-model' && selectedSpace?.id) {
       loadModels()
+      loadFolders()
+    }
+    if (tab === 'attachments' && selectedSpace?.id) {
+      loadAttachmentStorageConfig()
     }
   }, [tab, selectedSpace?.id])
+
+  useEffect(() => {
+    if (activeModelTab === 'attributes' && editingModel?.id) {
+      loadAttributes(editingModel.id)
+    }
+  }, [activeModelTab, editingModel?.id])
 
   const loadMembers = async (spaceId: string) => {
     try {
@@ -140,58 +222,86 @@ export default function SpaceSettingsPage() {
     }
   }
 
+  const loadFolders = async () => {
+    if (!selectedSpace?.id) return
+    try {
+      const res = await fetch(`/api/folders?space_id=${selectedSpace.id}&type=data_model`)
+      if (res.status === 503) {
+        // Folders feature not available yet
+        setFolders([])
+        return
+      }
+      const json = await res.json().catch(() => ({}))
+      setFolders(json.folders || [])
+    } catch (e) {
+      setFolders([])
+    }
+  }
+
+  const loadAvailableSpaces = async () => {
+    try {
+      const res = await fetch('/api/spaces?page=1&limit=200')
+      const json = await res.json().catch(() => ({}))
+      setAvailableSpaces((json.spaces || []).filter((s: any) => s.id !== selectedSpace?.id))
+    } catch (e) {
+      setAvailableSpaces([])
+    }
+  }
+
   const openCreateModel = () => {
     setEditingModel(null)
     setModelForm({ name: '', display_name: '', description: '', slug: '' })
+    setModelIcon('')
+    setModelPrimaryColor('#1e40af')
+    setModelTags([])
+    setModelGroupFolder('')
+    setModelOwnerName('')
     setShowModelDrawer(true)
   }
 
-  const openEditModel = (m: any) => {
-    setEditingModel(m)
-    setModelForm({ name: m.name || '', display_name: m.display_name || '', description: m.description || '', slug: (m.slug || '') })
-    setActiveModelTab('details')
+  const openEditModel = (model: any) => {
+    setEditingModel(model)
+    setModelForm({ 
+      name: model.name || '', 
+      display_name: model.display_name || '', 
+      description: model.description || '', 
+      slug: model.slug || '' 
+    })
+    setModelIcon(model.icon || '')
+    setModelPrimaryColor(model.primary_color || '#1e40af')
+    setModelTags(model.tags || [])
+    setModelGroupFolder(model.group_folder || '')
+    setModelOwnerName(model.owner_name || '')
     setShowModelDrawer(true)
-    loadAttributes(m.id)
-    // seed extra model fields if present
-    setModelIcon(m.icon || '')
-    setModelPrimaryColor((m.primary_color as string) || '#1e40af')
-    setModelTags(Array.isArray(m.tags) ? m.tags : [])
-    setModelGroupFolder((m.group_folder as string) || '')
-    setModelOwnerName((m.owner_name as string) || '')
   }
+
 
   const saveModel = async () => {
     try {
-      const method = editingModel ? 'PUT' : 'POST'
-      const url = editingModel ? `/api/data-models/${editingModel.id}` : '/api/data-models'
-      const body = editingModel 
-        ? { 
-            ...modelForm,
-            icon: modelIcon,
-            primary_color: modelPrimaryColor,
-            tags: modelTags,
-            group_folder: modelGroupFolder,
-            owner_name: modelOwnerName
-          }
-        : { 
-            ...modelForm,
-            icon: modelIcon,
-            space_ids: [selectedSpace!.id],
-            primary_color: modelPrimaryColor,
-            tags: modelTags,
-            group_folder: modelGroupFolder,
-            owner_name: modelOwnerName
-          }
-      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-      if (!res.ok) throw new Error('Failed to save model')
-      if (editingModel) {
-        await fetch(`/api/data-models/${editingModel.id}/spaces`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ space_ids: [selectedSpace!.id] }) })
+      const body = { 
+        ...modelForm,
+        icon: modelIcon,
+        space_ids: [selectedSpace!.id],
+        primary_color: modelPrimaryColor,
+        tags: modelTags,
+        group_folder: modelGroupFolder,
+        owner_name: modelOwnerName
       }
+      
+      const url = editingModel ? `/api/data-models/${editingModel.id}` : '/api/data-models'
+      const method = editingModel ? 'PUT' : 'POST'
+      
+      const res = await fetch(url, { 
+        method, 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify(body) 
+      })
+      if (!res.ok) throw new Error(editingModel ? 'Failed to update model' : 'Failed to create model')
       setShowModelDrawer(false)
       await loadModels()
-      toast.success('Model saved')
+      toast.success(editingModel ? 'Model updated' : 'Model created')
     } catch (e) {
-      toast.error('Failed to save model')
+      toast.error(editingModel ? 'Failed to update model' : 'Failed to create model')
     }
   }
 
@@ -218,108 +328,221 @@ export default function SpaceSettingsPage() {
     }
   }
 
-  const createAttribute = async () => {
-    if (!editingModel) return
+  const loadAvailableModels = async () => {
+    if (!selectedSpace?.id) return
     try {
-      const res = await fetch(`/api/data-models/${editingModel.id}/attributes`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(attrForm) })
-      if (!res.ok) throw new Error('Failed')
-      setAttrForm({ name: '', display_name: '', data_type: 'text', is_required: false, is_unique: false, default_value: '' })
+      const res = await fetch(`/api/data-models?page=1&limit=200&space_id=${selectedSpace.id}`)
+      const json = await res.json().catch(() => ({}))
+      setAvailableModels(json.dataModels || [])
+    } catch (e) {
+      setAvailableModels([])
+    }
+  }
+
+  const loadReferenceModelAttributes = async (modelId: string) => {
+    if (!modelId) {
+      setReferenceModelAttributes([])
+      return
+    }
+    
+    setLoadingReferenceAttributes(true)
+    try {
+      const res = await fetch(`/api/data-models/${modelId}/attributes`)
+      const json = await res.json().catch(() => ({}))
+      setReferenceModelAttributes(json.attributes || [])
+    } catch (e) {
+      setReferenceModelAttributes([])
+    } finally {
+      setLoadingReferenceAttributes(false)
+    }
+  }
+
+  const openCreateAttribute = () => {
+    setCreateAttributeForm({
+      name: '',
+      display_name: '',
+      type: 'text',
+      default_value: '',
+      is_required: false,
+      is_unique: false,
+      options: [],
+      reference_model_id: '',
+      reference_attribute_code: '',
+      reference_attribute_label: '',
+      currency_code: 'USD',
+      decimal_places: '2',
+      rating_scale: '5',
+      rating_display: 'stars',
+      default_country: '',
+      address_format: 'standard',
+      require_country: false,
+      enable_geocoding: false,
+      duration_format: 'hh:mm:ss',
+      max_duration: '',
+      allow_custom_tags: true,
+      require_tags: false,
+      max_tags: ''
+    })
+    setShowCreateAttributeDrawer(true)
+    loadAvailableModels()
+  }
+
+  const createAttribute = async () => {
+    if (!editingModel?.id) return
+    
+    try {
+      const res = await fetch(`/api/data-models/${editingModel.id}/attributes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(createAttributeForm)
+      })
+      
+      if (!res.ok) throw new Error('Failed to create attribute')
+      
+      setShowCreateAttributeDrawer(false)
       await loadAttributes(editingModel.id)
       toast.success('Attribute created')
-    } catch {
+    } catch (e) {
       toast.error('Failed to create attribute')
     }
   }
 
-  const deleteAttribute = async (attr: any) => {
-    if (!editingModel) return
-    if (!confirm(`Delete attribute "${attr.display_name || attr.name}"?`)) return
+  const createFolder = async () => {
+    if (!folderForm.name.trim()) return
+    
     try {
-      const res = await fetch(`/api/data-models/${editingModel.id}/attributes/${attr.id}`, { method:'DELETE' })
-      if (!res.ok) throw new Error('Failed')
-      await loadAttributes(editingModel.id)
-      toast.success('Attribute deleted')
-    } catch {
-      toast.error('Failed to delete attribute')
-    }
-  }
-
-  const openAttributeDrawer = (attr: any) => {
-    setSelectedAttribute(attr)
-    setActiveAttributeTab('config')
-    setAttributeEditForm({
-      name: attr.name || '',
-      display_name: attr.display_name || '',
-      type: (attr.type || 'text').toLowerCase(),
-      is_required: !!attr.is_required,
-      is_unique: !!attr.is_unique,
-      default_value: attr.default_value || '',
-      options: (() => {
-        if (Array.isArray(attr.options)) return attr.options
-        if (typeof attr.options === 'string') {
-          try {
-            const parsed = JSON.parse(attr.options)
-            return Array.isArray(parsed) ? parsed : []
-          } catch { return [] }
-        }
-        return attr.options && Array.isArray(attr.options) ? attr.options : []
-      })()
-    })
-    setShowAttributeDrawer(true)
-  }
-
-  const saveAttributeConfig = async () => {
-    if (!editingModel || !selectedAttribute) return
-    try {
-      const res = await fetch(`/api/data-models/${editingModel.id}/attributes/${selectedAttribute.id}`, {
-        method: 'PUT',
+      const res = await fetch('/api/folders', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: attributeEditForm.name,
-          display_name: attributeEditForm.display_name,
-          type: attributeEditForm.type,
-          is_required: attributeEditForm.is_required,
-          is_unique: attributeEditForm.is_unique,
-          default_value: attributeEditForm.default_value,
-          options: attributeEditForm.options
+          name: folderForm.name,
+          type: 'data_model',
+          space_id: selectedSpace?.id,
+          parent_id: folderForm.parent_id || null
         })
       })
-      if (!res.ok) throw new Error('Failed')
-      await loadAttributes(editingModel.id)
-      toast.success('Attribute updated')
-      setShowAttributeDrawer(false)
+      
+      if (res.status === 503) {
+        toast.error('Folders feature not yet available. Please run database migrations.')
+        return
+      }
+      
+      if (!res.ok) throw new Error('Failed to create folder')
+      
+      setShowCreateFolderDialog(false)
+      setFolderForm({ name: '', parent_id: '' })
+      await loadFolders()
+      toast.success('Folder created')
     } catch (e) {
-      toast.error('Failed to update attribute')
+      toast.error('Failed to create folder')
     }
   }
 
-  const loadModelActivity = async (modelId?: string) => {
-    const id = modelId || editingModel?.id
-    if (!id) return
-    setModelActivityLoading(true)
+  const loadAttachmentStorageConfig = async () => {
+    if (!selectedSpace?.id) return
     try {
-      const qs = new URLSearchParams({ entityType: 'DataModel', entityId: id, page: '1', limit: '20' })
-      const res = await fetch(`/api/audit-logs?${qs.toString()}`)
+      const res = await fetch(`/api/spaces/${selectedSpace.id}/attachment-storage`)
       const json = await res.json().catch(() => ({}))
-      setModelActivity(json.data || [])
-    } finally {
-      setModelActivityLoading(false)
+      if (json.storage) {
+        setAttachmentStorage(json.storage)
+      }
+    } catch (e) {
+      console.error('Failed to load attachment storage config:', e)
     }
   }
 
-  const loadAttributeActivity = async (attrId?: string) => {
-    const id = attrId || selectedAttribute?.id
-    if (!id) return
-    setAttrActivityLoading(true)
+  const saveAttachmentStorageConfig = async () => {
+    if (!selectedSpace?.id) return
     try {
-      const qs = new URLSearchParams({ entityType: 'DataModelAttribute', entityId: id, page: '1', limit: '20' })
-      const res = await fetch(`/api/audit-logs?${qs.toString()}`)
-      const json = await res.json().catch(() => ({}))
-      setAttrActivity(json.data || [])
-    } finally {
-      setAttrActivityLoading(false)
+      const res = await fetch(`/api/spaces/${selectedSpace.id}/attachment-storage`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(attachmentStorage)
+      })
+      
+      if (!res.ok) throw new Error('Failed to save storage configuration')
+      
+      toast.success('Attachment storage configuration saved')
+    } catch (e) {
+      toast.error('Failed to save storage configuration')
     }
   }
+
+  const testStorageConnection = async () => {
+    if (!selectedSpace?.id) return
+    setTestingStorage(true)
+    try {
+      const res = await fetch(`/api/spaces/${selectedSpace.id}/attachment-storage/test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(attachmentStorage)
+      })
+      
+      const json = await res.json()
+      setStorageTestResult(json)
+      
+      if (json.success) {
+        toast.success('Storage connection test successful')
+      } else {
+        toast.error('Storage connection test failed')
+      }
+    } catch (e) {
+      setStorageTestResult({ success: false, error: 'Test failed' })
+      toast.error('Storage connection test failed')
+    } finally {
+      setTestingStorage(false)
+    }
+  }
+
+  const openShareModel = (model: any) => {
+    setSelectedModelForSharing(model)
+    setShareForm({ space_ids: model.shared_spaces || [] })
+    setShowShareModelDialog(true)
+    loadAvailableSpaces()
+  }
+
+  const shareModel = async () => {
+    if (!selectedModelForSharing?.id) return
+    
+    try {
+      const res = await fetch(`/api/data-models/${selectedModelForSharing.id}/share`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ space_ids: shareForm.space_ids })
+      })
+      
+      if (!res.ok) throw new Error('Failed to share model')
+      
+      setShowShareModelDialog(false)
+      await loadModels()
+      toast.success('Model sharing updated')
+    } catch (e) {
+      toast.error('Failed to share model')
+    }
+  }
+
+  const moveModelToFolder = async (modelId: string, folderId: string | null) => {
+    try {
+      const res = await fetch(`/api/data-models/${modelId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folder_id: folderId })
+      })
+      
+      if (!res.ok) throw new Error('Failed to move model')
+      
+      await loadModels()
+      toast.success('Model moved')
+    } catch (e) {
+      toast.error('Failed to move model')
+    }
+  }
+
+
+
+
+
+
 
   if (!selectedSpace) {
     return (
@@ -352,7 +575,9 @@ export default function SpaceSettingsPage() {
               <TabsTrigger className="justify-start w-full" value="members">Space member</TabsTrigger>
               <TabsTrigger className="justify-start w-full" value="studio">Space Studio</TabsTrigger>
               <TabsTrigger className="justify-start w-full" value="data-model">Data Model</TabsTrigger>
+              <TabsTrigger className="justify-start w-full" value="attachments">Attachments</TabsTrigger>
               <TabsTrigger className="justify-start w-full" value="restore">Restore</TabsTrigger>
+              <TabsTrigger className="justify-start w-full text-red-600 hover:text-red-700" value="danger">Danger Zone</TabsTrigger>
             </TabsList>
           </nav>
         </div>
@@ -573,33 +798,135 @@ export default function SpaceSettingsPage() {
                           className="pl-10"
                         />
                       </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" onClick={() => setShowCreateFolderDialog(true)}>
+                          <FolderPlus className="mr-2 h-4 w-4" /> New Folder
+                        </Button>
                       <Button onClick={openCreateModel}>
                         <Plus className="mr-2 h-4 w-4" /> New Model
                       </Button>
                     </div>
-                    <div className="border rounded-md divide-y">
+                    </div>
+                    <div className="border rounded-md">
                       {modelsLoading ? (
                         <div className="p-4 text-center text-muted-foreground">Loading...</div>
                       ) : (
-                        (models.filter((m)=>{
+                        <div className="divide-y">
+                          {/* Root level models (no folder) */}
+                          {(() => {
+                            const filteredModels = models.filter((m) => {
                           const q = modelSearch.toLowerCase()
                           return !q || (m.name||'').toLowerCase().includes(q) || (m.display_name||'').toLowerCase().includes(q) || (m.description||'').toLowerCase().includes(q)
-                        })).map((m:any)=> (
+                            })
+                            
+                            const rootModels = filteredModels.filter(m => !m.folder_id)
+                            const folderModels = filteredModels.filter(m => m.folder_id)
+                            
+                            return (
+                              <>
+                                {/* Root level models */}
+                                {rootModels.map((m: any) => (
                           <div key={m.id} className="p-3 flex items-center justify-between gap-3">
-                            <div className="min-w-0">
+                                    <div className="min-w-0 flex items-center gap-3">
+                                      <Database className="h-4 w-4 text-muted-foreground" />
+                                      <div>
                               <div className="font-medium truncate">{m.display_name || m.name}</div>
                               <div className="text-xs text-muted-foreground truncate">{m.description || '—'}</div>
+                                        {m.shared_spaces && m.shared_spaces.length > 0 && (
+                                          <div className="text-xs text-blue-600 mt-1">
+                                            Shared with {m.shared_spaces.length} space(s)
+                                          </div>
+                                        )}
+                                      </div>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Button size="sm" variant="outline" onClick={()=>openEditModel(m)}>
-                                <Edit className="h-4 w-4 mr-1" /> Edit
-                              </Button>
+                                      <Button size="sm" variant="outline" onClick={() => openShareModel(m)}>
+                                        <Share2 className="h-4 w-4" />
+                                      </Button>
+                                      <Select onValueChange={(folderId) => moveModelToFolder(m.id, folderId === 'root' ? null : folderId)}>
+                                        <SelectTrigger className="w-32">
+                                          <Move className="h-4 w-4" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="root">Root</SelectItem>
+                                          {folders.map((folder: any) => (
+                                            <SelectItem key={folder.id} value={folder.id}>
+                                              {folder.name}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                      <Button size="sm" variant="outline" onClick={()=>openEditModel(m)}>
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
                               <Button size="sm" variant="destructive" onClick={()=>deleteModel(m)}>
-                                <Trash2 className="h-4 w-4 mr-1" /> Delete
+                                        <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
                           </div>
-                        ))
+                                ))}
+                                
+                                {/* Folder-organized models */}
+                                {folders.map((folder: any) => {
+                                  const folderModelsList = folderModels.filter(m => m.folder_id === folder.id)
+                                  if (folderModelsList.length === 0) return null
+                                  
+                                  return (
+                                    <div key={folder.id} className="border-l-2 border-blue-200">
+                                      <div className="p-3 bg-blue-50 flex items-center gap-2">
+                                        <FolderOpen className="h-4 w-4 text-blue-600" />
+                                        <span className="font-medium text-blue-900">{folder.name}</span>
+                                        <Badge variant="outline" className="text-xs">
+                                          {folderModelsList.length} model(s)
+                                        </Badge>
+                                      </div>
+                                      {folderModelsList.map((m: any) => (
+                                        <div key={m.id} className="p-3 pl-8 flex items-center justify-between gap-3">
+                                          <div className="min-w-0 flex items-center gap-3">
+                                            <Database className="h-4 w-4 text-muted-foreground" />
+                                            <div>
+                                              <div className="font-medium truncate">{m.display_name || m.name}</div>
+                                              <div className="text-xs text-muted-foreground truncate">{m.description || '—'}</div>
+                                              {m.shared_spaces && m.shared_spaces.length > 0 && (
+                                                <div className="text-xs text-blue-600 mt-1">
+                                                  Shared with {m.shared_spaces.length} space(s)
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                          <div className="flex items-center gap-2">
+                                            <Button size="sm" variant="outline" onClick={() => openShareModel(m)}>
+                                              <Share2 className="h-4 w-4" />
+                                            </Button>
+                                            <Select onValueChange={(folderId) => moveModelToFolder(m.id, folderId === 'root' ? null : folderId)}>
+                                              <SelectTrigger className="w-32">
+                                                <Move className="h-4 w-4" />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                <SelectItem value="root">Root</SelectItem>
+                                                {folders.map((f: any) => (
+                                                  <SelectItem key={f.id} value={f.id}>
+                                                    {f.name}
+                                                  </SelectItem>
+                                                ))}
+                                              </SelectContent>
+                                            </Select>
+                                            <Button size="sm" variant="outline" onClick={()=>openEditModel(m)}>
+                                              <Edit className="h-4 w-4" />
+                                            </Button>
+                                            <Button size="sm" variant="destructive" onClick={()=>deleteModel(m)}>
+                                              <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )
+                                })}
+                              </>
+                            )
+                          })()}
+                        </div>
                       )}
                       {!modelsLoading && models.length === 0 && (
                         <div className="p-4 text-center text-muted-foreground">No models yet</div>
@@ -616,20 +943,40 @@ export default function SpaceSettingsPage() {
                     </DrawerHeader>
                     <div className="p-6 space-y-4">
                       <div className="border-b">
-                        <div className="flex gap-2">
-                          <Button variant={activeModelTab==='details'?'default':'ghost'} size="sm" onClick={()=>setActiveModelTab('details')} className="flex items-center gap-1">
-                            <Database className="h-4 w-4" /> Details
-                          </Button>
-                          {editingModel && (
-                            <Button variant={activeModelTab==='attributes'?'default':'ghost'} size="sm" onClick={()=>setActiveModelTab('attributes')} className="flex items-center gap-1">
-                              <Type className="h-4 w-4" /> Attributes
-                            </Button>
-                          )}
-                          {editingModel && (
-                            <Button variant={activeModelTab==='activity'?'default':'ghost'} size="sm" onClick={()=>{ setActiveModelTab('activity'); loadModelActivity(editingModel.id) }} className="flex items-center gap-1">
-                              <History className="h-4 w-4" /> Activity
-                            </Button>
-                          )}
+                        <div className="flex space-x-8">
+                          <button
+                            onClick={() => setActiveModelTab('details')}
+                            className={`flex items-center gap-2 px-1 py-4 text-sm font-medium border-b-2 transition-colors ${
+                              activeModelTab === 'details'
+                                ? 'border-blue-500 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            }`}
+                          >
+                            <Database className="h-4 w-4" />
+                            Details
+                          </button>
+                          <button
+                            onClick={() => setActiveModelTab('attributes')}
+                            className={`flex items-center gap-2 px-1 py-4 text-sm font-medium border-b-2 transition-colors ${
+                              activeModelTab === 'attributes'
+                                ? 'border-blue-500 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            }`}
+                          >
+                            <Type className="h-4 w-4" />
+                            Attributes
+                          </button>
+                          <button
+                            onClick={() => setActiveModelTab('activity')}
+                            className={`flex items-center gap-2 px-1 py-4 text-sm font-medium border-b-2 transition-colors ${
+                              activeModelTab === 'activity'
+                                ? 'border-blue-500 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            }`}
+                          >
+                            <History className="h-4 w-4" />
+                            Activity
+                          </button>
                         </div>
                       </div>
 
@@ -693,221 +1040,675 @@ export default function SpaceSettingsPage() {
                         </div>
                       )}
 
-                      {activeModelTab==='attributes' && editingModel && (
+                      {activeModelTab === 'attributes' && (
                         <div className="space-y-4">
-                          <div className="flex items-end gap-3">
-                            <div className="flex-1 grid grid-cols-2 gap-3">
-                              <div>
-                                <Label>Name</Label>
-                                <Input value={attrForm.name} onChange={(e)=> setAttrForm({ ...attrForm, name: e.target.value })} placeholder="e.g. customer_name" />
-                              </div>
-                              <div>
-                                <Label>Display Name</Label>
-                                <Input value={attrForm.display_name} onChange={(e)=> setAttrForm({ ...attrForm, display_name: e.target.value })} placeholder="e.g. Customer Name" />
-                              </div>
-                              <div>
-                                <Label>Data Type</Label>
-                                <select value={attrForm.data_type} onChange={(e)=> setAttrForm({ ...attrForm, data_type: e.target.value })} className="w-full p-2 border rounded-md">
-                                  <option value="text">Text</option>
-                                  <option value="number">Number</option>
-                                  <option value="boolean">Boolean</option>
-                                  <option value="date">Date</option>
-                                  <option value="email">Email</option>
-                                  <option value="phone">Phone</option>
-                                  <option value="url">URL</option>
-                                  <option value="select">Select</option>
-                                  <option value="multi_select">Multi Select</option>
-                                  <option value="textarea">Textarea</option>
-                                  <option value="json">JSON</option>
-                                </select>
-                              </div>
-                              <div>
-                                <Label>Default Value</Label>
-                                <Input value={attrForm.default_value} onChange={(e)=> setAttrForm({ ...attrForm, default_value: e.target.value })} placeholder="Optional" />
-                              </div>
-                              <label className="inline-flex items-center gap-2">
-                                <input type="checkbox" checked={attrForm.is_required} onChange={(e)=> setAttrForm({ ...attrForm, is_required: e.target.checked })} />
-                                <span className="text-sm">Required</span>
-                              </label>
-                              <label className="inline-flex items-center gap-2">
-                                <input type="checkbox" checked={attrForm.is_unique} onChange={(e)=> setAttrForm({ ...attrForm, is_unique: e.target.checked })} />
-                                <span className="text-sm">Unique</span>
-                              </label>
-                            </div>
-                            <Button size="sm" onClick={createAttribute}>
-                              <Plus className="h-4 w-4 mr-1" /> Add Attribute
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-medium">Attributes</h3>
+                            <Button size="sm" onClick={openCreateAttribute}>
+                              <Plus className="h-4 w-4 mr-1" /> Create Attribute
                             </Button>
                           </div>
-
-                          <div className="border rounded-md divide-y">
-                            {attributesLoading ? (
-                              <div className="p-4 text-center text-muted-foreground">Loading...</div>
-                            ) : attributes.length ? (
-                              attributes.map((attr:any)=> (
-                                <div key={attr.id} className="p-3 flex items-center justify-between gap-3">
+                          
+                          {attributesLoading ? (
+                            <div className="text-center py-8 text-muted-foreground">Loading attributes...</div>
+                          ) : attributes.length > 0 ? (
+                            <div className="border rounded-md divide-y">
+                              {attributes.map((attr: any) => (
+                                <div key={attr.id} className="p-3 flex items-center justify-between">
                                   <div className="min-w-0">
-                                    <div className="font-medium truncate cursor-pointer" onClick={()=>openAttributeDrawer(attr)}>{attr.display_name}</div>
-                                    <div className="text-xs text-muted-foreground truncate">{attr.name} • {attr.type}</div>
+                                    <div className="font-medium">{attr.display_name || attr.name}</div>
+                                    <div className="text-xs text-muted-foreground">
+                                      {attr.type} {attr.is_required && '• Required'} {attr.is_unique && '• Unique'}
+                                    </div>
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    <Button size="sm" variant="destructive" onClick={()=>deleteAttribute(attr)}>
-                                      <Trash2 className="h-4 w-4 mr-1" /> Delete
-                                    </Button>
+                                    <Badge variant="outline">{attr.type}</Badge>
                                   </div>
                                 </div>
-                              ))
-                            ) : (
-                              <div className="p-4 text-center text-muted-foreground">No attributes</div>
+                              ))}
+                            </div>
+                          ) : (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <Type className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                            <p className="text-lg font-medium">No attributes yet</p>
+                            <p className="text-sm">Create your first attribute to get started</p>
+                          </div>
+                          )}
+                        </div>
+                      )}
+
+                      {activeModelTab === 'activity' && (
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-medium">Activity</h3>
+                          <div className="text-center py-8 text-muted-foreground">
+                            <History className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                            <p className="text-lg font-medium">No activity yet</p>
+                            <p className="text-sm">Activity will appear here as you make changes</p>
+                          </div>
+                        </div>
+                      )}
+
+                    </div>
+                    <div className="flex justify-end gap-2 px-6 py-4 border-t">
+                      <Button variant="outline" onClick={()=>setShowModelDrawer(false)}>Close</Button>
+                      {activeModelTab === 'details' && (
+                        <Button onClick={saveModel}>
+                          {editingModel ? 'Update Model' : 'Create Model'}
+                          </Button>
+                      )}
+                    </div>
+                  </DrawerContent>
+                </Drawer>
+
+                {/* Create Attribute Drawer */}
+                <Drawer open={showCreateAttributeDrawer} onOpenChange={setShowCreateAttributeDrawer}>
+                  <DrawerContent widthClassName="w-[600px]">
+                    <DrawerHeader>
+                      <DrawerTitle>Create New Attribute</DrawerTitle>
+                      <DrawerDescription>Add a new attribute to this data model</DrawerDescription>
+                    </DrawerHeader>
+                    <div className="p-6 space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label>Name *</Label>
+                            <Input 
+                              value={createAttributeForm.name} 
+                              onChange={(e) => setCreateAttributeForm({ ...createAttributeForm, name: e.target.value })} 
+                              placeholder="e.g. customer_name" 
+                            />
+                          </div>
+                          <div>
+                            <Label>Display Name *</Label>
+                            <Input 
+                              value={createAttributeForm.display_name} 
+                              onChange={(e) => setCreateAttributeForm({ ...createAttributeForm, display_name: e.target.value })} 
+                              placeholder="e.g. Customer Name" 
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label>Data Type *</Label>
+                            <select 
+                              value={createAttributeForm.type} 
+                            onChange={(e) => {
+                              const newType = e.target.value
+                              setCreateAttributeForm({ 
+                                ...createAttributeForm, 
+                                type: newType,
+                                // Reset reference fields when changing type
+                                reference_model_id: newType === 'data_model_entities' ? createAttributeForm.reference_model_id : '',
+                                reference_attribute_code: newType === 'data_model_entities' ? createAttributeForm.reference_attribute_code : '',
+                                reference_attribute_label: newType === 'data_model_entities' ? createAttributeForm.reference_attribute_label : ''
+                              })
+                            }} 
+                              className="w-full p-2 border rounded-md"
+                            >
+                              <option value="text">Text</option>
+                              <option value="number">Number</option>
+                              <option value="boolean">Boolean</option>
+                              <option value="date">Date</option>
+                              <option value="email">Email</option>
+                              <option value="phone">Phone</option>
+                              <option value="url">URL</option>
+                            <option value="rich_text">Rich Text</option>
+                            <option value="currency">Currency</option>
+                            <option value="phone_number">Phone Number</option>
+                            <option value="address">Address</option>
+                            <option value="rating">Rating</option>
+                            <option value="color">Color</option>
+                            <option value="duration">Duration</option>
+                            <option value="geolocation">Geolocation</option>
+                            <option value="tags">Tags</option>
+                            <option value="reference">Reference</option>
+                              <option value="select">Select</option>
+                              <option value="multi_select">Multi Select</option>
+                              <option value="textarea">Textarea</option>
+                              <option value="json">JSON</option>
+                            <option value="attachment">Attachment</option>
+                            <option value="data_model_entities">Data Model Entities</option>
+                            </select>
+                          </div>
+                          <div>
+                            <Label>Default Value</Label>
+                            <Input 
+                              value={createAttributeForm.default_value} 
+                              onChange={(e) => setCreateAttributeForm({ ...createAttributeForm, default_value: e.target.value })} 
+                              placeholder="Optional" 
+                            />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-6">
+                          <label className="inline-flex items-center gap-2">
+                            <input 
+                              type="checkbox" 
+                              checked={createAttributeForm.is_required} 
+                              onChange={(e) => setCreateAttributeForm({ ...createAttributeForm, is_required: e.target.checked })} 
+                            />
+                            <span className="text-sm">Required</span>
+                          </label>
+                          <label className="inline-flex items-center gap-2">
+                            <input 
+                              type="checkbox" 
+                              checked={createAttributeForm.is_unique} 
+                              onChange={(e) => setCreateAttributeForm({ ...createAttributeForm, is_unique: e.target.checked })} 
+                            />
+                            <span className="text-sm">Unique</span>
+                          </label>
+                        </div>
+                        
+                        {(createAttributeForm.type === 'select' || createAttributeForm.type === 'multi_select') && (
+                          <div className="space-y-3">
+                            <Label>Options</Label>
+                            <div className="text-sm text-muted-foreground">Add selectable options for this attribute.</div>
+                            {createAttributeForm.options.map((opt: any, idx: number) => (
+                              <div key={idx} className="flex items-center gap-2">
+                                <Input 
+                                  value={typeof opt === 'string' ? opt : (opt?.label ?? '')} 
+                                  onChange={(e) => {
+                                    const next = [...createAttributeForm.options]
+                                    next[idx] = e.target.value
+                                    setCreateAttributeForm({ ...createAttributeForm, options: next })
+                                  }} 
+                                  placeholder={`Option ${idx + 1}`} 
+                                />
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => {
+                                    const next = [...createAttributeForm.options]
+                                    next.splice(idx, 1)
+                                    setCreateAttributeForm({ ...createAttributeForm, options: next })
+                                  }}
+                                >
+                                  Remove
+                                </Button>
+                              </div>
+                            ))}
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => {
+                                setCreateAttributeForm({ 
+                                  ...createAttributeForm, 
+                                  options: [...createAttributeForm.options, ''] 
+                                })
+                              }}
+                            >
+                              <Plus className="h-4 w-4 mr-1" /> Add Option
+                            </Button>
+                          </div>
+                        )}
+
+                      {createAttributeForm.type === 'data_model_entities' && (
+                        <div className="space-y-4">
+                          <Label>Data Model Reference</Label>
+                          <div className="text-sm text-muted-foreground mb-3">
+                            Select a data model to reference its records as dropdown options.
+                      </div>
+                          
+                          <div className="grid grid-cols-1 gap-4">
+                            <div>
+                              <Label>Reference Data Model *</Label>
+                              <select 
+                                value={createAttributeForm.reference_model_id} 
+                                onChange={(e) => {
+                                  const modelId = e.target.value
+                                  setCreateAttributeForm({ 
+                                    ...createAttributeForm, 
+                                    reference_model_id: modelId,
+                                    reference_attribute_code: '',
+                                    reference_attribute_label: ''
+                                  })
+                                  loadReferenceModelAttributes(modelId)
+                                }} 
+                                className="w-full p-2 border rounded-md"
+                              >
+                                <option value="">Select a data model</option>
+                                {availableModels.filter(m => m.id !== editingModel?.id).map((model: any) => (
+                                  <option key={model.id} value={model.id}>
+                                    {model.display_name || model.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            
+                            {createAttributeForm.reference_model_id && (
+                              <>
+                                <div>
+                                  <Label>Attribute Code *</Label>
+                                  <div className="text-xs text-muted-foreground mb-1">
+                                    The attribute that will store the record ID
+                                  </div>
+                                  <select 
+                                    value={createAttributeForm.reference_attribute_code} 
+                                    onChange={(e) => setCreateAttributeForm({ 
+                                      ...createAttributeForm, 
+                                      reference_attribute_code: e.target.value 
+                                    })} 
+                                    className="w-full p-2 border rounded-md"
+                                    disabled={loadingReferenceAttributes}
+                                  >
+                                    <option value="">Select attribute code</option>
+                                    {referenceModelAttributes.map((attr: any) => (
+                                      <option key={attr.id} value={attr.name}>
+                                        {attr.display_name || attr.name} ({attr.type})
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                                
+                                <div>
+                                  <Label>Attribute Label *</Label>
+                                  <div className="text-xs text-muted-foreground mb-1">
+                                    The attribute that will be displayed in the dropdown
+                                  </div>
+                                  <select 
+                                    value={createAttributeForm.reference_attribute_label} 
+                                    onChange={(e) => setCreateAttributeForm({ 
+                                      ...createAttributeForm, 
+                                      reference_attribute_label: e.target.value 
+                                    })} 
+                                    className="w-full p-2 border rounded-md"
+                                    disabled={loadingReferenceAttributes}
+                                  >
+                                    <option value="">Select attribute label</option>
+                                    {referenceModelAttributes.map((attr: any) => (
+                                      <option key={attr.id} value={attr.name}>
+                                        {attr.display_name || attr.name} ({attr.type})
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </>
                             )}
                           </div>
                         </div>
                       )}
-                    </div>
-                    <div className="flex justify-end gap-2 px-6 py-4 border-t">
-                      <Button variant="outline" onClick={()=>setShowModelDrawer(false)}>Close</Button>
-                      <Button onClick={saveModel}>{editingModel ? 'Update' : 'Create'} Model</Button>
-                    </div>
-                  </DrawerContent>
-                </Drawer>
 
-                <Drawer open={showAttributeDrawer} onOpenChange={setShowAttributeDrawer}>
-                  <DrawerContent widthClassName="w-[560px]">
-                    <DrawerHeader>
-                      <DrawerTitle>Attribute</DrawerTitle>
-                      <DrawerDescription>Configure attribute and options</DrawerDescription>
-                    </DrawerHeader>
-                    <div className="p-6 space-y-4">
-                      <div className="border-b">
-                        <div className="flex gap-2">
-                          <Button variant={activeAttributeTab==='config'?'default':'ghost'} size="sm" onClick={()=>setActiveAttributeTab('config')}>Config</Button>
-                          <Button variant={activeAttributeTab==='options'?'default':'ghost'} size="sm" onClick={()=>setActiveAttributeTab('options')}>Options</Button>
-                          {selectedAttribute && (
-                            <Button variant={activeAttributeTab==='activity'?'default':'ghost'} size="sm" onClick={()=>{ setActiveAttributeTab('activity'); loadAttributeActivity(selectedAttribute.id) }}>Activity</Button>
-                          )}
-                        </div>
-                      </div>
-
-                      {activeAttributeTab==='config' && (
+                      {createAttributeForm.type === 'currency' && (
                         <div className="space-y-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label>Name</Label>
-                              <Input value={attributeEditForm.name} onChange={(e)=> setAttributeEditForm({ ...attributeEditForm, name: e.target.value })} />
-                            </div>
-                            <div>
-                              <Label>Display Name</Label>
-                              <Input value={attributeEditForm.display_name} onChange={(e)=> setAttributeEditForm({ ...attributeEditForm, display_name: e.target.value })} />
-                            </div>
+                          <Label>Currency Configuration</Label>
+                          <div className="text-sm text-muted-foreground mb-3">
+                            Configure currency settings for this attribute.
                           </div>
+                          
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <Label>Type</Label>
-                              <select value={attributeEditForm.type} onChange={(e)=> setAttributeEditForm({ ...attributeEditForm, type: e.target.value })} className="w-full p-2 border rounded-md">
-                                <option value="text">Text</option>
-                                <option value="number">Number</option>
-                                <option value="boolean">Boolean</option>
-                                <option value="date">Date</option>
-                                <option value="email">Email</option>
-                                <option value="phone">Phone</option>
-                                <option value="url">URL</option>
-                                <option value="select">Select</option>
-                                <option value="multi_select">Multi Select</option>
-                                <option value="textarea">Textarea</option>
-                                <option value="json">JSON</option>
+                              <Label>Currency Code</Label>
+                              <select 
+                                value={createAttributeForm.currency_code || 'USD'}
+                                onChange={(e) => setCreateAttributeForm({ 
+                                  ...createAttributeForm, 
+                                  currency_code: e.target.value 
+                                })}
+                                className="w-full p-2 border rounded-md"
+                              >
+                                <option value="USD">USD - US Dollar</option>
+                                <option value="EUR">EUR - Euro</option>
+                                <option value="GBP">GBP - British Pound</option>
+                                <option value="JPY">JPY - Japanese Yen</option>
+                                <option value="CAD">CAD - Canadian Dollar</option>
+                                <option value="AUD">AUD - Australian Dollar</option>
+                                <option value="CHF">CHF - Swiss Franc</option>
+                                <option value="CNY">CNY - Chinese Yuan</option>
+                                <option value="INR">INR - Indian Rupee</option>
+                                <option value="BRL">BRL - Brazilian Real</option>
                               </select>
                             </div>
                             <div>
-                              <Label>Default Value</Label>
-                              <Input value={attributeEditForm.default_value} onChange={(e)=> setAttributeEditForm({ ...attributeEditForm, default_value: e.target.value })} />
+                              <Label>Decimal Places</Label>
+                              <Input 
+                                type="number"
+                                placeholder="2"
+                                value={createAttributeForm.decimal_places || '2'}
+                                onChange={(e) => setCreateAttributeForm({ 
+                                  ...createAttributeForm, 
+                                  decimal_places: e.target.value 
+                                })}
+                              />
+                              <div className="text-xs text-muted-foreground mt-1">
+                                Number of decimal places (0-4)
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-6">
-                            <label className="inline-flex items-center gap-2">
-                              <input type="checkbox" checked={attributeEditForm.is_required} onChange={(e)=> setAttributeEditForm({ ...attributeEditForm, is_required: e.target.checked })} />
-                              <span className="text-sm">Required</span>
-                            </label>
-                            <label className="inline-flex items-center gap-2">
-                              <input type="checkbox" checked={attributeEditForm.is_unique} onChange={(e)=> setAttributeEditForm({ ...attributeEditForm, is_unique: e.target.checked })} />
-                              <span className="text-sm">Unique</span>
-                            </label>
                           </div>
                         </div>
                       )}
 
-                      {activeAttributeTab==='options' && (
-                        <div className="space-y-3">
-                          <div className="text-sm text-muted-foreground">Add selectable options (for select/multi_select).</div>
-                          {((Array.isArray(attributeEditForm.options) ? attributeEditForm.options : [])).map((opt: any, idx: number) => (
-                            <div key={idx} className="flex items-center gap-2">
-                              <Input value={typeof opt === 'string' ? opt : (opt?.label ?? '')} onChange={(e)=>{
-                                const base = Array.isArray(attributeEditForm.options) ? attributeEditForm.options : []
-                                const next = [...base]
-                                next[idx] = e.target.value
-                                setAttributeEditForm({ ...attributeEditForm, options: next })
-                              }} placeholder={`Option ${idx+1}`} />
-                              <Button variant="outline" size="sm" onClick={()=>{
-                                const base = Array.isArray(attributeEditForm.options) ? attributeEditForm.options : []
-                                const next = [...base]
-                                next.splice(idx,1)
-                                setAttributeEditForm({ ...attributeEditForm, options: next })
-                              }}>Remove</Button>
+                      {createAttributeForm.type === 'rating' && (
+                        <div className="space-y-4">
+                          <Label>Rating Configuration</Label>
+                          <div className="text-sm text-muted-foreground mb-3">
+                            Configure rating scale and display options.
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label>Rating Scale</Label>
+                              <select 
+                                value={createAttributeForm.rating_scale || '5'}
+                                onChange={(e) => setCreateAttributeForm({ 
+                                  ...createAttributeForm, 
+                                  rating_scale: e.target.value 
+                                })}
+                                className="w-full p-2 border rounded-md"
+                              >
+                                <option value="3">3 Stars</option>
+                                <option value="5">5 Stars</option>
+                                <option value="10">10 Points</option>
+                                <option value="100">100 Points</option>
+                              </select>
                             </div>
-                          ))}
-                          <Button variant="outline" size="sm" onClick={()=> {
-                            const base = Array.isArray(attributeEditForm.options) ? attributeEditForm.options : []
-                            setAttributeEditForm({ ...attributeEditForm, options: [...base, ''] })
-                          }}>
-                            <Plus className="h-4 w-4 mr-1" /> Add Option
-                          </Button>
+                            <div>
+                              <Label>Display Type</Label>
+                              <select 
+                                value={createAttributeForm.rating_display || 'stars'}
+                                onChange={(e) => setCreateAttributeForm({ 
+                                  ...createAttributeForm, 
+                                  rating_display: e.target.value 
+                                })}
+                                className="w-full p-2 border rounded-md"
+                              >
+                                <option value="stars">Stars</option>
+                                <option value="numbers">Numbers</option>
+                                <option value="percentage">Percentage</option>
+                                <option value="thumbs">Thumbs Up/Down</option>
+                              </select>
+                            </div>
+                          </div>
                         </div>
                       )}
-                      {activeAttributeTab==='activity' && (
-                        <div className="space-y-3">
-                          {attrActivityLoading ? (
-                            <div className="p-4 text-center text-muted-foreground">Loading...</div>
-                          ) : (
-                            <div className="space-y-2">
-                              {attrActivity.length === 0 && <div className="text-sm text-muted-foreground">No activity</div>}
-                              {attrActivity.map((log:any) => (
-                                <div key={log.id} className="text-sm border rounded p-2">
-                                  <div className="flex items-center justify-between">
-                                    <div className="font-medium">{log.action}</div>
-                                    <div className="text-xs text-muted-foreground">{new Date(log.created_at).toLocaleString()}</div>
-                                  </div>
-                                  <div className="text-xs text-muted-foreground">{log.user_name || 'Unknown'} • {log.user_email || ''}</div>
-                                </div>
-                              ))}
+
+                      {createAttributeForm.type === 'address' && (
+                        <div className="space-y-4">
+                          <Label>Address Configuration</Label>
+                          <div className="text-sm text-muted-foreground mb-3">
+                            Configure address fields and formatting.
+                          </div>
+                          
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Label>Country</Label>
+                                <select 
+                                  value={createAttributeForm.default_country || ''}
+                                  onChange={(e) => setCreateAttributeForm({ 
+                                    ...createAttributeForm, 
+                                    default_country: e.target.value 
+                                  })}
+                                  className="w-full p-2 border rounded-md"
+                                >
+                                  <option value="">No default</option>
+                                  <option value="US">United States</option>
+                                  <option value="CA">Canada</option>
+                                  <option value="GB">United Kingdom</option>
+                                  <option value="AU">Australia</option>
+                                  <option value="DE">Germany</option>
+                                  <option value="FR">France</option>
+                                  <option value="JP">Japan</option>
+                                  <option value="IN">India</option>
+                                  <option value="BR">Brazil</option>
+                                </select>
+                              </div>
+                              <div>
+                                <Label>Address Format</Label>
+                                <select 
+                                  value={createAttributeForm.address_format || 'standard'}
+                                  onChange={(e) => setCreateAttributeForm({ 
+                                    ...createAttributeForm, 
+                                    address_format: e.target.value 
+                                  })}
+                                  className="w-full p-2 border rounded-md"
+                                >
+                                  <option value="standard">Standard (Street, City, State, ZIP)</option>
+                                  <option value="international">International (Street, City, Province, Postal Code)</option>
+                                  <option value="simple">Simple (Address, City, Country)</option>
+                                </select>
+                              </div>
                             </div>
-                          )}
+                            
+                            <div className="flex items-center gap-6">
+                              <label className="inline-flex items-center gap-2">
+                                <input 
+                                  type="checkbox" 
+                                  checked={createAttributeForm.require_country || false}
+                                  onChange={(e) => setCreateAttributeForm({ 
+                                    ...createAttributeForm, 
+                                    require_country: e.target.checked 
+                                  })} 
+                                />
+                                <span className="text-sm">Require Country</span>
+                              </label>
+                              <label className="inline-flex items-center gap-2">
+                                <input 
+                                  type="checkbox" 
+                                  checked={createAttributeForm.enable_geocoding || false}
+                                  onChange={(e) => setCreateAttributeForm({ 
+                                    ...createAttributeForm, 
+                                    enable_geocoding: e.target.checked 
+                                  })} 
+                                />
+                                <span className="text-sm">Enable Geocoding</span>
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {createAttributeForm.type === 'duration' && (
+                        <div className="space-y-4">
+                          <Label>Duration Configuration</Label>
+                          <div className="text-sm text-muted-foreground mb-3">
+                            Configure duration format and display options.
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label>Duration Format</Label>
+                              <select 
+                                value={createAttributeForm.duration_format || 'hh:mm:ss'}
+                                onChange={(e) => setCreateAttributeForm({ 
+                                  ...createAttributeForm, 
+                                  duration_format: e.target.value 
+                                })}
+                                className="w-full p-2 border rounded-md"
+                              >
+                                <option value="mm:ss">Minutes:Seconds</option>
+                                <option value="hh:mm">Hours:Minutes</option>
+                                <option value="hh:mm:ss">Hours:Minutes:Seconds</option>
+                                <option value="days">Days</option>
+                                <option value="hours">Hours</option>
+                                <option value="minutes">Minutes</option>
+                                <option value="seconds">Seconds</option>
+                              </select>
+                            </div>
+                            <div>
+                              <Label>Max Duration (hours)</Label>
+                              <Input 
+                                type="number"
+                                placeholder="24"
+                                value={createAttributeForm.max_duration || ''}
+                                onChange={(e) => setCreateAttributeForm({ 
+                                  ...createAttributeForm, 
+                                  max_duration: e.target.value 
+                                })}
+                              />
+                              <div className="text-xs text-muted-foreground mt-1">
+                                Maximum duration in hours (optional)
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {createAttributeForm.type === 'tags' && (
+                        <div className="space-y-4">
+                          <Label>Tags Configuration</Label>
+                          <div className="text-sm text-muted-foreground mb-3">
+                            Configure tag behavior and options.
+                          </div>
+                          
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-6">
+                              <label className="inline-flex items-center gap-2">
+                                <input 
+                                  type="checkbox" 
+                                  checked={createAttributeForm.allow_custom_tags || true}
+                                  onChange={(e) => setCreateAttributeForm({ 
+                                    ...createAttributeForm, 
+                                    allow_custom_tags: e.target.checked 
+                                  })} 
+                                />
+                                <span className="text-sm">Allow Custom Tags</span>
+                              </label>
+                              <label className="inline-flex items-center gap-2">
+                                <input 
+                                  type="checkbox" 
+                                  checked={createAttributeForm.require_tags || false}
+                                  onChange={(e) => setCreateAttributeForm({ 
+                                    ...createAttributeForm, 
+                                    require_tags: e.target.checked 
+                                  })} 
+                                />
+                                <span className="text-sm">Require at least one tag</span>
+                              </label>
+                            </div>
+                            
+                            <div>
+                              <Label>Max Tags</Label>
+                              <Input 
+                                type="number"
+                                placeholder="10"
+                                value={createAttributeForm.max_tags || ''}
+                                onChange={(e) => setCreateAttributeForm({ 
+                                  ...createAttributeForm, 
+                                  max_tags: e.target.value 
+                                })}
+                              />
+                              <div className="text-xs text-muted-foreground mt-1">
+                                Maximum number of tags allowed (optional)
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
                     <div className="flex justify-end gap-2 px-6 py-4 border-t">
-                      <Button variant="outline" onClick={()=>setShowAttributeDrawer(false)}>Close</Button>
-                      <Button onClick={saveAttributeConfig}>Save</Button>
+                      <Button variant="outline" onClick={() => setShowCreateAttributeDrawer(false)}>
+                        Cancel
+                      </Button>
+                      <Button 
+                        onClick={createAttribute}
+                        disabled={
+                          !createAttributeForm.name || 
+                          !createAttributeForm.display_name ||
+                          (createAttributeForm.type === 'data_model_entities' && (
+                            !createAttributeForm.reference_model_id ||
+                            !createAttributeForm.reference_attribute_code ||
+                            !createAttributeForm.reference_attribute_label
+                          ))
+                        }
+                      >
+                        Create Attribute
+                      </Button>
                     </div>
                   </DrawerContent>
                 </Drawer>
-                {activeModelTab==='activity' && (
-                  <div className="mt-4">
-                    {modelActivityLoading ? (
-                      <div className="p-4 text-center text-muted-foreground">Loading...</div>
-                    ) : (
-                      <div className="space-y-2">
-                        {modelActivity.length === 0 && <div className="text-sm text-muted-foreground">No activity</div>}
-                        {modelActivity.map((log:any) => (
-                          <div key={log.id} className="text-sm border rounded p-2">
-                            <div className="flex items-center justify-between">
-                              <div className="font-medium">{log.action}</div>
-                              <div className="text-xs text-muted-foreground">{new Date(log.created_at).toLocaleString()}</div>
-                            </div>
-                            <div className="text-xs text-muted-foreground">{log.user_name || 'Unknown'} • {log.user_email || ''}</div>
-                          </div>
-                        ))}
+
+                {/* Create Folder Dialog */}
+                <Dialog open={showCreateFolderDialog} onOpenChange={setShowCreateFolderDialog}>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Create New Folder</DialogTitle>
+                      <DialogDescription>Create a folder to organize your data models</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="folder-name">Folder Name</Label>
+                        <Input
+                          id="folder-name"
+                          value={folderForm.name}
+                          onChange={(e) => setFolderForm({ ...folderForm, name: e.target.value })}
+                          placeholder="e.g. CRM Models"
+                        />
                       </div>
-                    )}
-                  </div>
-                )}
+                      <div>
+                        <Label htmlFor="parent-folder">Parent Folder (Optional)</Label>
+                        <select
+                          id="parent-folder"
+                          value={folderForm.parent_id}
+                          onChange={(e) => setFolderForm({ ...folderForm, parent_id: e.target.value })}
+                          className="w-full p-2 border rounded-md"
+                        >
+                          <option value="">No parent (root level)</option>
+                          {folders.map((folder: any) => (
+                            <option key={folder.id} value={folder.id}>
+                              {folder.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setShowCreateFolderDialog(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={createFolder} disabled={!folderForm.name.trim()}>
+                        Create Folder
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+
+                {/* Share Model Dialog */}
+                <Dialog open={showShareModelDialog} onOpenChange={setShowShareModelDialog}>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Share Data Model</DialogTitle>
+                      <DialogDescription>
+                        Share "{selectedModelForSharing?.display_name || selectedModelForSharing?.name}" with other spaces
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Select Spaces to Share With</Label>
+                        <div className="text-sm text-muted-foreground mb-2">
+                          Choose which spaces can access this data model
+                        </div>
+                        <div className="space-y-2 max-h-60 overflow-y-auto border rounded-md p-3">
+                          {availableSpaces.map((space: any) => (
+                            <label key={space.id} className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={shareForm.space_ids.includes(space.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setShareForm({ space_ids: [...shareForm.space_ids, space.id] })
+                                  } else {
+                                    setShareForm({ space_ids: shareForm.space_ids.filter(id => id !== space.id) })
+                                  }
+                                }}
+                              />
+                              <div>
+                                <div className="font-medium">{space.name}</div>
+                                <div className="text-xs text-muted-foreground">{space.description || 'No description'}</div>
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setShowShareModelDialog(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={shareModel}>
+                        Update Sharing
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+
               </TabsContent>
 
               <TabsContent value="restore" className="space-y-6 w-full">
@@ -949,6 +1750,579 @@ export default function SpaceSettingsPage() {
                         }} />
                         <span className="text-sm">Import from JSON</span>
                       </label>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="attachments" className="space-y-6 w-full">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Database className="h-5 w-5" />
+                      <span>Attachment Storage Configuration</span>
+                    </CardTitle>
+                    <CardDescription>
+                      Configure how attachment attributes store files in this space. All attachment attributes will use the selected storage provider.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Storage Provider</Label>
+                        <select 
+                          value={attachmentStorage.provider}
+                          onChange={(e) => setAttachmentStorage({ 
+                            ...attachmentStorage, 
+                            provider: e.target.value 
+                          })}
+                          className="w-full p-2 border rounded-md"
+                        >
+                          <option value="minio">MinIO (Default)</option>
+                          <option value="s3">AWS S3</option>
+                          <option value="sftp">SFTP</option>
+                          <option value="ftp">FTP</option>
+                        </select>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Choose the storage provider for all attachment attributes in this space
+                        </div>
+                      </div>
+
+                      {/* MinIO Configuration */}
+                      {attachmentStorage.provider === 'minio' && (
+                        <div className="space-y-4 border rounded-lg p-4">
+                          <h4 className="font-medium">MinIO Configuration</h4>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label>Endpoint</Label>
+                              <Input 
+                                value={attachmentStorage.config.minio.endpoint}
+                                onChange={(e) => setAttachmentStorage({
+                                  ...attachmentStorage,
+                                  config: {
+                                    ...attachmentStorage.config,
+                                    minio: {
+                                      ...attachmentStorage.config.minio,
+                                      endpoint: e.target.value
+                                    }
+                                  }
+                                })}
+                                placeholder="http://localhost:9000"
+                              />
+                            </div>
+                            <div>
+                              <Label>Access Key</Label>
+                              <Input 
+                                type="password"
+                                value={attachmentStorage.config.minio.access_key}
+                                onChange={(e) => setAttachmentStorage({
+                                  ...attachmentStorage,
+                                  config: {
+                                    ...attachmentStorage.config,
+                                    minio: {
+                                      ...attachmentStorage.config.minio,
+                                      access_key: e.target.value
+                                    }
+                                  }
+                                })}
+                                placeholder="minioadmin"
+                              />
+                            </div>
+                            <div>
+                              <Label>Secret Key</Label>
+                              <Input 
+                                type="password"
+                                value={attachmentStorage.config.minio.secret_key}
+                                onChange={(e) => setAttachmentStorage({
+                                  ...attachmentStorage,
+                                  config: {
+                                    ...attachmentStorage.config,
+                                    minio: {
+                                      ...attachmentStorage.config.minio,
+                                      secret_key: e.target.value
+                                    }
+                                  }
+                                })}
+                                placeholder="minioadmin"
+                              />
+                            </div>
+                            <div>
+                              <Label>Bucket Name</Label>
+                              <Input 
+                                value={attachmentStorage.config.minio.bucket}
+                                onChange={(e) => setAttachmentStorage({
+                                  ...attachmentStorage,
+                                  config: {
+                                    ...attachmentStorage.config,
+                                    minio: {
+                                      ...attachmentStorage.config.minio,
+                                      bucket: e.target.value
+                                    }
+                                  }
+                                })}
+                                placeholder="attachments"
+                              />
+                            </div>
+                            <div>
+                              <Label>Region</Label>
+                              <Input 
+                                value={attachmentStorage.config.minio.region}
+                                onChange={(e) => setAttachmentStorage({
+                                  ...attachmentStorage,
+                                  config: {
+                                    ...attachmentStorage.config,
+                                    minio: {
+                                      ...attachmentStorage.config.minio,
+                                      region: e.target.value
+                                    }
+                                  }
+                                })}
+                                placeholder="us-east-1"
+                              />
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <input 
+                                type="checkbox" 
+                                checked={attachmentStorage.config.minio.use_ssl}
+                                onChange={(e) => setAttachmentStorage({
+                                  ...attachmentStorage,
+                                  config: {
+                                    ...attachmentStorage.config,
+                                    minio: {
+                                      ...attachmentStorage.config.minio,
+                                      use_ssl: e.target.checked
+                                    }
+                                  }
+                                })}
+                              />
+                              <Label>Use SSL</Label>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* AWS S3 Configuration */}
+                      {attachmentStorage.provider === 's3' && (
+                        <div className="space-y-4 border rounded-lg p-4">
+                          <h4 className="font-medium">AWS S3 Configuration</h4>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label>Access Key ID</Label>
+                              <Input 
+                                value={attachmentStorage.config.s3.access_key_id}
+                                onChange={(e) => setAttachmentStorage({
+                                  ...attachmentStorage,
+                                  config: {
+                                    ...attachmentStorage.config,
+                                    s3: {
+                                      ...attachmentStorage.config.s3,
+                                      access_key_id: e.target.value
+                                    }
+                                  }
+                                })}
+                                placeholder="AKIAIOSFODNN7EXAMPLE"
+                              />
+                            </div>
+                            <div>
+                              <Label>Secret Access Key</Label>
+                              <Input 
+                                type="password"
+                                value={attachmentStorage.config.s3.secret_access_key}
+                                onChange={(e) => setAttachmentStorage({
+                                  ...attachmentStorage,
+                                  config: {
+                                    ...attachmentStorage.config,
+                                    s3: {
+                                      ...attachmentStorage.config.s3,
+                                      secret_access_key: e.target.value
+                                    }
+                                  }
+                                })}
+                                placeholder="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+                              />
+                            </div>
+                            <div>
+                              <Label>Bucket Name</Label>
+                              <Input 
+                                value={attachmentStorage.config.s3.bucket}
+                                onChange={(e) => setAttachmentStorage({
+                                  ...attachmentStorage,
+                                  config: {
+                                    ...attachmentStorage.config,
+                                    s3: {
+                                      ...attachmentStorage.config.s3,
+                                      bucket: e.target.value
+                                    }
+                                  }
+                                })}
+                                placeholder="my-attachments-bucket"
+                              />
+                            </div>
+                            <div>
+                              <Label>Region</Label>
+                              <Input 
+                                value={attachmentStorage.config.s3.region}
+                                onChange={(e) => setAttachmentStorage({
+                                  ...attachmentStorage,
+                                  config: {
+                                    ...attachmentStorage.config,
+                                    s3: {
+                                      ...attachmentStorage.config.s3,
+                                      region: e.target.value
+                                    }
+                                  }
+                                })}
+                                placeholder="us-east-1"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* SFTP Configuration */}
+                      {attachmentStorage.provider === 'sftp' && (
+                        <div className="space-y-4 border rounded-lg p-4">
+                          <h4 className="font-medium">SFTP Configuration</h4>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label>Host</Label>
+                              <Input 
+                                value={attachmentStorage.config.sftp.host}
+                                onChange={(e) => setAttachmentStorage({
+                                  ...attachmentStorage,
+                                  config: {
+                                    ...attachmentStorage.config,
+                                    sftp: {
+                                      ...attachmentStorage.config.sftp,
+                                      host: e.target.value
+                                    }
+                                  }
+                                })}
+                                placeholder="sftp.example.com"
+                              />
+                            </div>
+                            <div>
+                              <Label>Port</Label>
+                              <Input 
+                                type="number"
+                                value={attachmentStorage.config.sftp.port}
+                                onChange={(e) => setAttachmentStorage({
+                                  ...attachmentStorage,
+                                  config: {
+                                    ...attachmentStorage.config,
+                                    sftp: {
+                                      ...attachmentStorage.config.sftp,
+                                      port: parseInt(e.target.value) || 22
+                                    }
+                                  }
+                                })}
+                                placeholder="22"
+                              />
+                            </div>
+                            <div>
+                              <Label>Username</Label>
+                              <Input 
+                                value={attachmentStorage.config.sftp.username}
+                                onChange={(e) => setAttachmentStorage({
+                                  ...attachmentStorage,
+                                  config: {
+                                    ...attachmentStorage.config,
+                                    sftp: {
+                                      ...attachmentStorage.config.sftp,
+                                      username: e.target.value
+                                    }
+                                  }
+                                })}
+                                placeholder="username"
+                              />
+                            </div>
+                            <div>
+                              <Label>Password</Label>
+                              <Input 
+                                type="password"
+                                value={attachmentStorage.config.sftp.password}
+                                onChange={(e) => setAttachmentStorage({
+                                  ...attachmentStorage,
+                                  config: {
+                                    ...attachmentStorage.config,
+                                    sftp: {
+                                      ...attachmentStorage.config.sftp,
+                                      password: e.target.value
+                                    }
+                                  }
+                                })}
+                                placeholder="password"
+                              />
+                            </div>
+                            <div className="col-span-2">
+                              <Label>Upload Path</Label>
+                              <Input 
+                                value={attachmentStorage.config.sftp.path}
+                                onChange={(e) => setAttachmentStorage({
+                                  ...attachmentStorage,
+                                  config: {
+                                    ...attachmentStorage.config,
+                                    sftp: {
+                                      ...attachmentStorage.config.sftp,
+                                      path: e.target.value
+                                    }
+                                  }
+                                })}
+                                placeholder="/uploads"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* FTP Configuration */}
+                      {attachmentStorage.provider === 'ftp' && (
+                        <div className="space-y-4 border rounded-lg p-4">
+                          <h4 className="font-medium">FTP Configuration</h4>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label>Host</Label>
+                              <Input 
+                                value={attachmentStorage.config.ftp.host}
+                                onChange={(e) => setAttachmentStorage({
+                                  ...attachmentStorage,
+                                  config: {
+                                    ...attachmentStorage.config,
+                                    ftp: {
+                                      ...attachmentStorage.config.ftp,
+                                      host: e.target.value
+                                    }
+                                  }
+                                })}
+                                placeholder="ftp.example.com"
+                              />
+                            </div>
+                            <div>
+                              <Label>Port</Label>
+                              <Input 
+                                type="number"
+                                value={attachmentStorage.config.ftp.port}
+                                onChange={(e) => setAttachmentStorage({
+                                  ...attachmentStorage,
+                                  config: {
+                                    ...attachmentStorage.config,
+                                    ftp: {
+                                      ...attachmentStorage.config.ftp,
+                                      port: parseInt(e.target.value) || 21
+                                    }
+                                  }
+                                })}
+                                placeholder="21"
+                              />
+                            </div>
+                            <div>
+                              <Label>Username</Label>
+                              <Input 
+                                value={attachmentStorage.config.ftp.username}
+                                onChange={(e) => setAttachmentStorage({
+                                  ...attachmentStorage,
+                                  config: {
+                                    ...attachmentStorage.config,
+                                    ftp: {
+                                      ...attachmentStorage.config.ftp,
+                                      username: e.target.value
+                                    }
+                                  }
+                                })}
+                                placeholder="username"
+                              />
+                            </div>
+                            <div>
+                              <Label>Password</Label>
+                              <Input 
+                                type="password"
+                                value={attachmentStorage.config.ftp.password}
+                                onChange={(e) => setAttachmentStorage({
+                                  ...attachmentStorage,
+                                  config: {
+                                    ...attachmentStorage.config,
+                                    ftp: {
+                                      ...attachmentStorage.config.ftp,
+                                      password: e.target.value
+                                    }
+                                  }
+                                })}
+                                placeholder="password"
+                              />
+                            </div>
+                            <div>
+                              <Label>Upload Path</Label>
+                              <Input 
+                                value={attachmentStorage.config.ftp.path}
+                                onChange={(e) => setAttachmentStorage({
+                                  ...attachmentStorage,
+                                  config: {
+                                    ...attachmentStorage.config,
+                                    ftp: {
+                                      ...attachmentStorage.config.ftp,
+                                      path: e.target.value
+                                    }
+                                  }
+                                })}
+                                placeholder="/uploads"
+                              />
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <input 
+                                type="checkbox" 
+                                checked={attachmentStorage.config.ftp.passive}
+                                onChange={(e) => setAttachmentStorage({
+                                  ...attachmentStorage,
+                                  config: {
+                                    ...attachmentStorage.config,
+                                    ftp: {
+                                      ...attachmentStorage.config.ftp,
+                                      passive: e.target.checked
+                                    }
+                                  }
+                                })}
+                              />
+                              <Label>Passive Mode</Label>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Test Connection */}
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-4">
+                          <Button 
+                            onClick={testStorageConnection}
+                            disabled={testingStorage}
+                            variant="outline"
+                          >
+                            {testingStorage ? 'Testing...' : 'Test Connection'}
+                          </Button>
+                          <Button onClick={saveAttachmentStorageConfig}>
+                            Save Configuration
+                          </Button>
+                        </div>
+
+                        {storageTestResult && (
+                          <div className={`p-4 rounded-lg ${
+                            storageTestResult.success 
+                              ? 'bg-green-50 border border-green-200' 
+                              : 'bg-red-50 border border-red-200'
+                          }`}>
+                            <div className={`font-medium ${
+                              storageTestResult.success ? 'text-green-800' : 'text-red-800'
+                            }`}>
+                              {storageTestResult.success ? 'Connection Successful' : 'Connection Failed'}
+                            </div>
+                            {storageTestResult.message && (
+                              <div className={`text-sm mt-1 ${
+                                storageTestResult.success ? 'text-green-700' : 'text-red-700'
+                              }`}>
+                                {storageTestResult.message}
+                              </div>
+                            )}
+                            {storageTestResult.error && (
+                              <div className="text-sm mt-1 text-red-700">
+                                Error: {storageTestResult.error}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="danger" className="space-y-6 w-full">
+                <Card className="border-red-200">
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2 text-red-600">
+                      <AlertTriangle className="h-5 w-5" />
+                      <span>Danger Zone</span>
+                    </CardTitle>
+                    <CardDescription>
+                      Irreversible and destructive actions. Please proceed with caution.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="border border-red-200 rounded-lg p-4 bg-red-50">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium text-red-900">Delete Space</h4>
+                          <p className="text-sm text-red-700 mt-1">
+                            Permanently delete this space and all its data. This action cannot be undone.
+                          </p>
+                        </div>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button 
+                              variant="destructive" 
+                              className="ml-4"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete Space
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle className="text-red-600">Delete Space</DialogTitle>
+                              <DialogDescription>
+                                Are you absolutely sure you want to delete "{selectedSpace?.name}"? This will permanently delete:
+                                <ul className="list-disc list-inside mt-2 space-y-1">
+                                  <li>All data models and their data</li>
+                                  <li>All dashboards and visualizations</li>
+                                  <li>All space members and permissions</li>
+                                  <li>All workflows and automation</li>
+                                  <li>All imported/exported data</li>
+                                </ul>
+                                <strong className="text-red-600 mt-3 block">
+                                  This action cannot be undone.
+                                </strong>
+                              </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                              <Button variant="outline" onClick={() => {}}>
+                                Cancel
+                              </Button>
+                              <Button 
+                                variant="destructive" 
+                                onClick={async () => {
+                                  try {
+                                    const response = await fetch(`/api/spaces/${selectedSpace.id}`, {
+                                      method: 'DELETE',
+                                    })
+
+                                    if (!response.ok) {
+                                      const error = await response.json()
+                                      throw new Error(error.error || 'Failed to delete space')
+                                    }
+
+                                    toast.success('Space deleted successfully')
+                                    await refreshSpaces()
+                                    
+                                    // Redirect to spaces page or another space
+                                    const remainingSpaces = spaces.filter(s => s.id !== selectedSpace.id)
+                                    if (remainingSpaces.length > 0) {
+                                      const defaultSpace = remainingSpaces.find(s => s.is_default) || remainingSpaces[0]
+                                      window.location.href = `/${defaultSpace.slug || defaultSpace.id}/settings`
+                                    } else {
+                                      sessionStorage.setItem('navigate-to-spaces', 'true')
+                                      window.location.href = '/spaces'
+                                    }
+                                  } catch (error) {
+                                    console.error('Error deleting space:', error)
+                                    toast.error(error instanceof Error ? error.message : 'Failed to delete space')
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete Space
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

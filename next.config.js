@@ -3,7 +3,7 @@ const nextConfig = {
   images: {
     domains: ['localhost', 'supabase.co'],
   },
-  output: 'standalone',
+  // output: 'standalone', // Commented out for development
 }
 
 module.exports = nextConfig

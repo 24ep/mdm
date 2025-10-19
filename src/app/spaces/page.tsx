@@ -6,8 +6,12 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Building2, Search, Plus, ArrowRight, Layout, Settings } from 'lucide-react'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Building2, Search, Plus, ArrowRight, Layout, Settings, FolderPlus } from 'lucide-react'
 import { useSpace } from '@/contexts/space-context'
+import toast from 'react-hot-toast'
 
 interface Space {
   id: string
@@ -20,10 +24,17 @@ interface Space {
 
 export default function SpaceSelectionPage() {
   const router = useRouter()
-  const { currentSpace, spaces, setCurrentSpace, isLoading, error } = useSpace()
+  const { currentSpace, spaces, setCurrentSpace, isLoading, error, refreshSpaces } = useSpace()
   const [search, setSearch] = useState('')
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
+  const [createFormData, setCreateFormData] = useState({
+    name: '',
+    description: '',
+    is_default: false
+  })
 
-  // If user has only one space, automatically redirect to it
+  // If user has only one space, automatically redirect to it (only on initial load)
   useEffect(() => {
     if (!isLoading && !error && spaces.length === 1) {
       const space = spaces[0]
@@ -31,10 +42,18 @@ export default function SpaceSelectionPage() {
     }
   }, [isLoading, error, spaces, router])
 
-  // If user has a current space selected, redirect to it
+  // Only redirect to current space if user didn't intentionally navigate to spaces page
   useEffect(() => {
     if (!isLoading && !error && currentSpace && spaces.length > 1) {
-      router.push(`/${currentSpace.slug || currentSpace.id}/dashboard`)
+      // Check if user intentionally navigated to spaces page
+      const intentionallyNavigated = sessionStorage.getItem('navigate-to-spaces')
+      
+      if (!intentionallyNavigated) {
+        router.push(`/${currentSpace.slug || currentSpace.id}/dashboard`)
+      } else {
+        // Clear the flag after using it
+        sessionStorage.removeItem('navigate-to-spaces')
+      }
     }
   }, [isLoading, error, currentSpace, spaces, router])
 
@@ -58,6 +77,47 @@ export default function SpaceSelectionPage() {
     e.stopPropagation() // Prevent card click
     setCurrentSpace(space)
     router.push(`/${space.slug || space.id}/settings`)
+  }
+
+  const handleCreateSpace = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!createFormData.name.trim()) {
+      toast.error('Space name is required')
+      return
+    }
+
+    setIsCreating(true)
+    try {
+      const response = await fetch('/api/spaces', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(createFormData),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to create space')
+      }
+
+      const result = await response.json()
+      toast.success('Space created successfully')
+      setIsCreateDialogOpen(false)
+      setCreateFormData({ name: '', description: '', is_default: false })
+      await refreshSpaces()
+      
+      // If this is the first space or it's set as default, navigate to it
+      if (spaces.length === 0 || result.space.is_default) {
+        setCurrentSpace(result.space)
+        router.push(`/${result.space.slug || result.space.id}/dashboard`)
+      }
+    } catch (error) {
+      console.error('Error creating space:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to create space')
+    } finally {
+      setIsCreating(false)
+    }
   }
 
   if (isLoading) {
@@ -116,30 +176,134 @@ export default function SpaceSelectionPage() {
                 className="pl-8"
               />
             </div>
-            <Link href="/settings/spaces">
-              <Button variant="outline">
-                <Plus className="h-4 w-4 mr-2" />
-                New
-              </Button>
-            </Link>
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Plus className="h-4 w-4 mr-2" />
+                  New
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Create New Space</DialogTitle>
+                  <DialogDescription>
+                    Create a new workspace to organize your data and collaborate with your team.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleCreateSpace}>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="name">Space Name</Label>
+                      <Input
+                        id="name"
+                        value={createFormData.name}
+                        onChange={(e) => setCreateFormData({ ...createFormData, name: e.target.value })}
+                        placeholder="Enter space name"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="description">Description (Optional)</Label>
+                      <Textarea
+                        id="description"
+                        value={createFormData.description}
+                        onChange={(e) => setCreateFormData({ ...createFormData, description: e.target.value })}
+                        placeholder="Enter space description"
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter className="mt-6">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsCreateDialogOpen(false)}
+                      disabled={isCreating}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={isCreating}>
+                      {isCreating ? 'Creating...' : 'Create Space'}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
         {filtered.length === 0 && !isLoading && (
-          <Card>
-            <CardContent className="py-10 text-center">
-              <Building2 className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-              <div className="font-medium mb-1">No workspaces found</div>
-              <div className="text-sm text-muted-foreground mb-4">
-                {search ? 'Try adjusting your search terms' : 'Create your first workspace to get started'}
-              </div>
-              {!search && (
-                <Link href="/settings/spaces">
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create workspace
-                  </Button>
-                </Link>
+          <Card className="border-dashed border-2">
+            <CardContent className="py-16 text-center">
+              {spaces.length === 0 ? (
+                <>
+                  <FolderPlus className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                  <div className="text-xl font-semibold mb-2">No spaces available</div>
+                  <div className="text-muted-foreground mb-6 max-w-md mx-auto">
+                    You don't have access to any workspaces yet. Create your first space to get started with organizing your data and collaborating with your team.
+                  </div>
+                  <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="lg">
+                        <Plus className="h-5 w-5 mr-2" />
+                        Create your first space
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Create New Space</DialogTitle>
+                        <DialogDescription>
+                          Create your first workspace to organize your data and collaborate with your team.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <form onSubmit={handleCreateSpace}>
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="name">Space Name</Label>
+                            <Input
+                              id="name"
+                              value={createFormData.name}
+                              onChange={(e) => setCreateFormData({ ...createFormData, name: e.target.value })}
+                              placeholder="Enter space name"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="description">Description (Optional)</Label>
+                            <Textarea
+                              id="description"
+                              value={createFormData.description}
+                              onChange={(e) => setCreateFormData({ ...createFormData, description: e.target.value })}
+                              placeholder="Enter space description"
+                              rows={3}
+                            />
+                          </div>
+                        </div>
+                        <DialogFooter className="mt-6">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setIsCreateDialogOpen(false)}
+                            disabled={isCreating}
+                          >
+                            Cancel
+                          </Button>
+                          <Button type="submit" disabled={isCreating}>
+                            {isCreating ? 'Creating...' : 'Create Space'}
+                          </Button>
+                        </DialogFooter>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                </>
+              ) : (
+                <>
+                  <Building2 className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                  <div className="font-medium mb-1">No workspaces found</div>
+                  <div className="text-sm text-muted-foreground mb-4">
+                    Try adjusting your search terms
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>

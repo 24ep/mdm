@@ -252,6 +252,9 @@ export function DashboardVersioning({
                         <DialogContent className="max-w-2xl">
                           <DialogHeader>
                             <DialogTitle>{version.name} - {version.version}</DialogTitle>
+                            <DialogDescription>
+                              View details and changes for this dashboard version.
+                            </DialogDescription>
                           </DialogHeader>
                           <div className="space-y-4">
                             <div>
@@ -310,6 +313,9 @@ export function DashboardVersioning({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create New Version</DialogTitle>
+            <DialogDescription>
+              Create a new version of your dashboard to track changes and maintain version history.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>

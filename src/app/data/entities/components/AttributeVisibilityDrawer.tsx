@@ -4,6 +4,7 @@ import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ScrollableList } from '@/components/ui/scrollable-list'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer'
 import { Eye, GripVertical, Trash2 } from 'lucide-react'
 
@@ -96,7 +97,7 @@ export function AttributeVisibilityDrawer(props: AttributeVisibilityDrawerProps)
                   )}
                 </div>
 
-                <div className="space-y-2 max-h-[60vh] overflow-y-auto border rounded p-3">
+                <ScrollableList maxHeight="VIEWPORT" className="p-3">
                   {tabAttributes.length === 0 ? (
                     <div className="text-center text-muted-foreground py-8">
                       <Eye className="h-8 w-8 mx-auto mb-2 text-gray-400" />
@@ -146,9 +147,9 @@ export function AttributeVisibilityDrawer(props: AttributeVisibilityDrawerProps)
                           </Button>
                         </div>
                       </div>
-                    ))
+                    )
                   )}
-                </div>
+                </ScrollableList>
               </div>
             )
           })()}
