@@ -109,7 +109,20 @@ export function SpaceProvider({ children }: { children: ReactNode }) {
         throw new Error('Failed to fetch spaces')
       }
 
-      const data = await response.json()
+      // Check if response is HTML (likely a redirect to login page)
+      const contentType = response.headers.get('content-type')
+      if (contentType && !contentType.includes('application/json')) {
+        throw new Error('Authentication required. Please sign in.')
+      }
+
+      let data
+      try {
+        data = await response.json()
+      } catch (jsonError) {
+        console.error('Failed to parse JSON response:', jsonError)
+        throw new Error('Invalid response format. Please try again.')
+      }
+      
       // Add default values for missing fields (features, sidebar_config, etc.)
       const spacesWithDefaults = (data.spaces || []).map((space: any) => ({
         ...space,

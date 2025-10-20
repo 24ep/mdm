@@ -4,7 +4,8 @@ let pool: Pool | null = null
 
 export function getDbPool(): Pool {
   if (!pool) {
-    const connectionString = process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:54322/postgres'
+    const connectionString = process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/customer_data_management'
+    console.log('🔗 PostgreSQL Database connection string:', connectionString)
     pool = new Pool({ 
       connectionString,
       max: 20, // Maximum number of clients in the pool

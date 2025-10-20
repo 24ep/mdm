@@ -18,7 +18,21 @@ export function DynamicFavicon({ faviconUrl }: DynamicFaviconProps) {
         try {
           const response = await fetch('/api/settings')
           if (response.ok) {
-            const settings = await response.json()
+            // Check if response is HTML (likely a redirect to login page)
+            const contentType = response.headers.get('content-type')
+            if (contentType && !contentType.includes('application/json')) {
+              console.warn('Authentication required for settings. Using default favicon.')
+              return
+            }
+            
+            let settings
+            try {
+              settings = await response.json()
+            } catch (jsonError) {
+              console.error('Failed to parse JSON response:', jsonError)
+              return
+            }
+            
             if (settings.faviconUrl) {
               setCurrentFavicon(settings.faviconUrl)
             }
