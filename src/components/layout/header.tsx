@@ -17,6 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Bell, Search, Settings, LogOut, User as UserIcon } from 'lucide-react'
 import { AnimatedIcon } from '@/components/ui/animated-icon'
 import { NotificationBell } from '@/components/notifications/notification-bell'
+import { SystemSettingsModal } from '@/components/settings/SystemSettingsModal'
 
 interface HeaderProps {
   user: {
@@ -29,6 +30,7 @@ interface HeaderProps {
 
 export function Header({ user }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState('')
+  const [showSettingsModal, setShowSettingsModal] = useState(false)
   const router = useRouter()
 
   const handleSignOut = async () => {
@@ -97,17 +99,15 @@ export function Header({ user }: HeaderProps) {
                 <span>Profile</span>
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/settings">
-                <AnimatedIcon 
-                  icon="Settings" 
-                  size={16} 
-                  animation="rotate" 
-                  trigger="hover"
-                  className="mr-2" 
-                />
-                <span>System Settings</span>
-              </Link>
+            <DropdownMenuItem onClick={() => setShowSettingsModal(true)}>
+              <AnimatedIcon 
+                icon="Settings" 
+                size={16} 
+                animation="rotate" 
+                trigger="hover"
+                className="mr-2" 
+              />
+              <span>System Settings</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut}>
@@ -123,6 +123,11 @@ export function Header({ user }: HeaderProps) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <SystemSettingsModal 
+        open={showSettingsModal} 
+        onOpenChange={setShowSettingsModal} 
+      />
     </header>
   )
 }

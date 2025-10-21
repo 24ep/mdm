@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AttachmentFieldIntegration } from './attachment-field-integration'
+import { UserSelectField } from './user-select-field'
+import { UserMultiSelectField } from './user-multi-select-field'
 import { Badge } from '@/components/ui/badge'
 import { Save, X } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -242,6 +244,42 @@ export function DataModelRecordForm({
               readOnly={readOnly}
             />
             {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
+          </div>
+        )
+
+      case 'user':
+        return (
+          <div key={attribute.id} className="space-y-2">
+            <Label htmlFor={attribute.code}>
+              {attribute.label}
+              {attribute.required && <span className="text-red-500 ml-1">*</span>}
+            </Label>
+            <UserSelectField
+              spaceId={spaceId}
+              value={value}
+              onChange={(val) => handleInputChange(attribute.code, val)}
+              disabled={readOnly}
+              placeholder="Select a user"
+            />
+            {error && <p className="text-sm text-red-500">{error}</p>}
+          </div>
+        )
+
+      case 'user_multi':
+        return (
+          <div key={attribute.id} className="space-y-2">
+            <Label htmlFor={attribute.code}>
+              {attribute.label}
+              {attribute.required && <span className="text-red-500 ml-1">*</span>}
+            </Label>
+            <UserMultiSelectField
+              spaceId={spaceId}
+              value={value}
+              onChange={(val) => handleInputChange(attribute.code, val)}
+              disabled={readOnly}
+              placeholder="Select users"
+            />
+            {error && <p className="text-sm text-red-500">{error}</p>}
           </div>
         )
 

@@ -20,6 +20,10 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } f
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import IconPickerPopover from '@/components/ui/icon-picker-popover'
 import { ColorPicker } from '@/components/ui/color-swatch'
+import { AttributeDetailDrawer } from '@/components/data-models/AttributeDetailDrawer'
+import { AttributeManagementPanel } from '@/components/attribute-management/AttributeManagementPanel'
+import { DraggableAttributeList } from '@/components/attribute-management/DraggableAttributeList'
+import { EnhancedAttributeDetailDrawer } from '@/components/attribute-management/EnhancedAttributeDetailDrawer'
 
 export default function SpaceSettingsPage() {
   const params = useParams() as { space: string }
@@ -55,6 +59,8 @@ export default function SpaceSettingsPage() {
   const [activeModelTab, setActiveModelTab] = useState<'details' | 'attributes' | 'activity'>('details')
   const [attributes, setAttributes] = useState<any[]>([])
   const [attributesLoading, setAttributesLoading] = useState(false)
+  const [showAttributeDrawer, setShowAttributeDrawer] = useState(false)
+  const [selectedAttribute, setSelectedAttribute] = useState<any | null>(null)
   
   // For data model entities reference
   const [availableModels, setAvailableModels] = useState<any[]>([])
@@ -385,6 +391,51 @@ export default function SpaceSettingsPage() {
     })
     setShowCreateAttributeDrawer(true)
     loadAvailableModels()
+  }
+
+  const openAttributeDrawer = (attribute: any) => {
+    console.log('Opening attribute drawer for:', attribute)
+    setSelectedAttribute(attribute)
+    setShowAttributeDrawer(true)
+  }
+
+  const handleAttributeSave = (updatedAttribute: any) => {
+    console.log('Saving attribute:', updatedAttribute)
+    setAttributes(prev => prev.map(attr => 
+      attr.id === updatedAttribute.id ? updatedAttribute : attr
+    ))
+    setShowAttributeDrawer(false)
+    setSelectedAttribute(null)
+    toast.success('Attribute updated successfully')
+  }
+
+  const handleAttributeDelete = (attributeId: string) => {
+    console.log('Deleting attribute:', attributeId)
+    setAttributes(prev => prev.filter(attr => attr.id !== attributeId))
+    setShowAttributeDrawer(false)
+    setSelectedAttribute(null)
+    toast.success('Attribute deleted successfully')
+  }
+
+  const handleAttributeReorder = (attributeId: string, newOrder: number) => {
+    console.log('Reordering attribute:', attributeId, 'to order:', newOrder)
+    setAttributes(prev => {
+      const sorted = [...prev].sort((a, b) => a.order - b.order)
+      const currentIndex = sorted.findIndex(attr => attr.id === attributeId)
+      const targetIndex = sorted.findIndex(attr => attr.order === newOrder)
+      
+      if (currentIndex === -1 || targetIndex === -1) return prev
+      
+      const newSorted = [...sorted]
+      const [movedItem] = newSorted.splice(currentIndex, 1)
+      newSorted.splice(targetIndex, 0, movedItem)
+      
+      return newSorted.map((attr, index) => ({
+        ...attr,
+        order: index
+      }))
+    })
+    toast.success('Attribute order updated')
   }
 
   const createAttribute = async () => {
@@ -1041,40 +1092,12 @@ export default function SpaceSettingsPage() {
                       )}
 
                       {activeModelTab === 'attributes' && (
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-medium">Attributes</h3>
-                            <Button size="sm" onClick={openCreateAttribute}>
-                              <Plus className="h-4 w-4 mr-1" /> Create Attribute
-                            </Button>
-                          </div>
-                          
-                          {attributesLoading ? (
-                            <div className="text-center py-8 text-muted-foreground">Loading attributes...</div>
-                          ) : attributes.length > 0 ? (
-                            <div className="border rounded-md divide-y">
-                              {attributes.map((attr: any) => (
-                                <div key={attr.id} className="p-3 flex items-center justify-between">
-                                  <div className="min-w-0">
-                                    <div className="font-medium">{attr.display_name || attr.name}</div>
-                                    <div className="text-xs text-muted-foreground">
-                                      {attr.type} {attr.is_required && '• Required'} {attr.is_unique && '• Unique'}
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <Badge variant="outline">{attr.type}</Badge>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                          <div className="text-center py-8 text-muted-foreground">
-                            <Type className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                            <p className="text-lg font-medium">No attributes yet</p>
-                            <p className="text-sm">Create your first attribute to get started</p>
-                          </div>
-                          )}
-                        </div>
+                        <DraggableAttributeList
+                          modelId={editingModel?.id || ''}
+                          onAttributesChange={(newAttributes) => {
+                            setAttributes(newAttributes)
+                          }}
+                        />
                       )}
 
                       {activeModelTab === 'activity' && (
@@ -2331,6 +2354,17 @@ export default function SpaceSettingsPage() {
           </div>
         </div>
       </Tabs>
+
+      {/* Attribute Detail Drawer */}
+      <AttributeDetailDrawer
+        open={showAttributeDrawer}
+        onOpenChange={setShowAttributeDrawer}
+        attribute={selectedAttribute}
+        onSave={handleAttributeSave}
+        onDelete={handleAttributeDelete}
+        onReorder={handleAttributeReorder}
+        allAttributes={attributes}
+      />
     </MainLayout>
   )
 }

@@ -28,6 +28,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { SystemSettingsModal } from '@/components/settings/SystemSettingsModal'
 
 interface MenuItem {
   title: string
@@ -77,6 +78,7 @@ const getMenuItems = (
     otherChildren.push({ title: 'Bulk Activity', href: `/${spaceId}/import-export`, icon: Download })
   }
   otherChildren.push({ title: 'Space Settings', href: `/${spaceId}/settings`, icon: Settings })
+  otherChildren.push({ title: 'System Settings', href: `/settings`, icon: Settings })
   items.push({ title: 'Others', icon: Settings, children: otherChildren })
 
   return items
@@ -94,6 +96,7 @@ export function Sidebar({ className }: SidebarProps) {
   const [dynamicModels, setDynamicModels] = useState<any[]>([])
   const [loadingModels, setLoadingModels] = useState(false)
   const [modelsError, setModelsError] = useState<string | null>(null)
+  const [showSettingsModal, setShowSettingsModal] = useState(false)
 
   const isActive = (href: string) => pathname === href
 
@@ -291,13 +294,15 @@ export function Sidebar({ className }: SidebarProps) {
             {item.children && (
               <div className="ml-2 space-y-1">
                 {item.children.map((child) => (
-                  <Link key={child.href} href={child.href!}>
+                  child.title === 'System Settings' ? (
                     <Button
-                      variant={isActive(child.href!) ? "secondary" : "ghost"}
+                      key={child.href}
+                      variant="ghost"
                       className="w-full justify-start text-sm"
+                      onClick={() => setShowSettingsModal(true)}
                       style={{ 
                         color: settings.fontColor,
-                        backgroundColor: isActive(child.href!) ? 'rgba(255, 255, 255, 0.1)' : 'transparent'
+                        backgroundColor: 'transparent'
                       }}
                     >
                       <AnimatedIcon 
@@ -309,7 +314,27 @@ export function Sidebar({ className }: SidebarProps) {
                       />
                       {child.title}
                     </Button>
-                  </Link>
+                  ) : (
+                    <Link key={child.href} href={child.href!}>
+                      <Button
+                        variant={isActive(child.href!) ? "secondary" : "ghost"}
+                        className="w-full justify-start text-sm"
+                        style={{ 
+                          color: settings.fontColor,
+                          backgroundColor: isActive(child.href!) ? 'rgba(255, 255, 255, 0.1)' : 'transparent'
+                        }}
+                      >
+                        <AnimatedIcon 
+                          icon={child.icon} 
+                          size={16} 
+                          animation="scale" 
+                          trigger="hover"
+                          className="mr-2"
+                        />
+                        {child.title}
+                      </Button>
+                    </Link>
+                  )
                 ))}
               </div>
             )}
@@ -373,6 +398,11 @@ export function Sidebar({ className }: SidebarProps) {
           </div>
         ))}
       </nav>
+      
+      <SystemSettingsModal 
+        open={showSettingsModal} 
+        onOpenChange={setShowSettingsModal} 
+      />
     </div>
   )
 }

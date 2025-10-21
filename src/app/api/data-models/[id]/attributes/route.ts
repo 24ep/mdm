@@ -112,7 +112,9 @@ export async function POST(
       'select': 'SELECT',
       'multi_select': 'MULTI_SELECT',
       'textarea': 'TEXTAREA',
-      'json': 'JSON'
+      'json': 'JSON',
+      'user': 'USER',
+      'user_multi': 'USER_MULTI'
     }
     const type = typeMapping[data_type?.toLowerCase()] || data_type?.toUpperCase() || 'TEXT'
 

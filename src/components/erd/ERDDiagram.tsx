@@ -484,6 +484,8 @@ function AttributeForm({ model, attribute, onSave, onCancel }: AttributeFormProp
             <SelectItem value="EMAIL">Email</SelectItem>
             <SelectItem value="SELECT">Select</SelectItem>
             <SelectItem value="JSON">JSON</SelectItem>
+            <SelectItem value="USER">User (Single)</SelectItem>
+            <SelectItem value="USER_MULTI">User (Multi-Select)</SelectItem>
           </SelectContent>
         </Select>
       </div>

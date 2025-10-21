@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { useSpace } from '@/contexts/space-context'
 import SpacesManager from './components/SpacesManager'
+import { EnhancedUserManagement } from './components/EnhancedUserManagement'
 import toast from 'react-hot-toast'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Button } from '@/components/ui/button'
@@ -82,9 +83,6 @@ function DynamicModelIcon({ name, className }: { name?: string, className?: stri
 
 export default function SettingsPage() {
   const { currentSpace } = useSpace()
-  const [appName, setAppName] = useState('Customer Data Management')
-  const [primaryColor, setPrimaryColor] = useState('#1e40af')
-  const [secondaryColor, setSecondaryColor] = useState('#64748b')
   const [deletePolicyDays, setDeletePolicyDays] = useState(30)
   const [faviconUrl, setFaviconUrl] = useState('')
   
@@ -195,9 +193,6 @@ export default function SettingsPage() {
         const response = await fetch('/api/settings')
         if (response.ok) {
           const settings = await response.json()
-          setAppName(settings.appName || 'Customer Data Management')
-          setPrimaryColor(settings.primaryColor || '#1e40af')
-          setSecondaryColor(settings.secondaryColor || '#64748b')
           setDeletePolicyDays(settings.deletePolicyDays || 30)
           setFaviconUrl(settings.faviconUrl || '')
         }
@@ -218,9 +213,6 @@ export default function SettingsPage() {
         },
         body: JSON.stringify({
           settings: {
-            appName,
-            primaryColor,
-            secondaryColor,
             deletePolicyDays,
             faviconUrl,
           },
@@ -658,6 +650,7 @@ export default function SettingsPage() {
   }
 
   const handleEditAttribute = (attribute: any) => {
+    console.log('Edit attribute clicked:', attribute)
     setEditingAttribute(attribute)
     setAttributeForm({
       name: attribute.name,
@@ -684,6 +677,7 @@ export default function SettingsPage() {
     if (attribute.id) {
       loadAttributeOptions(attribute.id)
     }
+    console.log('Opening attribute detail drawer')
     setShowAttributeDetail(true)
   }
 
@@ -809,8 +803,10 @@ export default function SettingsPage() {
   }
 
   const handleDeleteAttribute = (attributeId: string) => {
+    console.log('Delete attribute clicked:', attributeId)
     if (confirm('Are you sure you want to delete this attribute?')) {
       console.log('Deleting attribute:', attributeId)
+      // TODO: Implement actual deletion
     }
   }
 
@@ -960,87 +956,6 @@ export default function SettingsPage() {
               </div>
             </TabsContent>
 
-            {/* System Preferences - removed (moved to Space Settings) */}
-            {/* <TabsContent value="preferences" className="space-y-6 w-full"> */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Palette className="h-5 w-5" />
-                    <span>System Preferences</span>
-                  </CardTitle>
-                  <CardDescription>
-                    Customize the appearance and branding of your application
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="app-name">Application Name</Label>
-                    <Input
-                      id="app-name"
-                      value={appName}
-                      onChange={(e) => setAppName(e.target.value)}
-                      placeholder="Customer Data Management"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="app-logo">Application Logo</Label>
-                    <div className="flex items-center space-x-4">
-                      <Input
-                        id="app-logo"
-                        type="file"
-                        accept="image/*"
-                        className="flex-1"
-                      />
-                      <Button variant="outline" size="sm">
-                        <Upload className="mr-2 h-4 w-4" />
-                        Upload
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="primary-color">Primary Color</Label>
-                      <div className="flex items-center space-x-2">
-                        <Input
-                          id="primary-color"
-                          type="color"
-                          value={primaryColor}
-                          onChange={(e) => setPrimaryColor(e.target.value)}
-                          className="w-16 h-10 p-1"
-                        />
-                        <Input
-                          value={primaryColor}
-                          onChange={(e) => setPrimaryColor(e.target.value)}
-                          placeholder="#1e40af"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="secondary-color">Secondary Color</Label>
-                      <div className="flex items-center space-x-2">
-                        <Input
-                          id="secondary-color"
-                          type="color"
-                          value={secondaryColor}
-                          onChange={(e) => setSecondaryColor(e.target.value)}
-                          className="w-16 h-10 p-1"
-                        />
-                        <Input
-                          value={secondaryColor}
-                          onChange={(e) => setSecondaryColor(e.target.value)}
-                          placeholder="#64748b"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  
-                </CardContent>
-              </Card>
-            {/* </TabsContent> */}
 
             {/* Sidebar Configuration */}
             <TabsContent value="sidebar" className="space-y-6 w-full">
@@ -1550,7 +1465,7 @@ export default function SettingsPage() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <UsersSection />
+                      <EnhancedUserManagement />
                     </CardContent>
                   </Card>
                 </TabsContent>
@@ -2010,24 +1925,31 @@ export default function SettingsPage() {
                               <td className="p-3 text-right" onClick={(e) => e.stopPropagation()}>
                                 <div className="flex items-center justify-end space-x-1">
                                   <Button 
-                                    variant="ghost" 
+                                    variant="outline" 
                                     size="sm"
-                                    onClick={() => handleEditAttribute(attr)}
+                                    onClick={() => {
+                                      console.log('Edit button clicked for:', attr.display_name)
+                                      handleEditAttribute(attr)
+                                    }}
                                     title="Edit Attribute"
+                                    className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
                                   >
                                     <Edit className="h-4 w-4" />
                                     <span className="ml-1">Edit</span>
-            </Button>
+                                  </Button>
                                   <Button 
-                                    variant="ghost" 
+                                    variant="outline" 
                                     size="sm"
-                                    onClick={() => handleDeleteAttribute(attr.id)}
+                                    onClick={() => {
+                                      console.log('Delete button clicked for:', attr.display_name)
+                                      handleDeleteAttribute(attr.id)
+                                    }}
                                     title="Delete Attribute"
-                                    className="text-red-600 hover:text-red-700"
+                                    className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200"
                                   >
                                     <Trash2 className="h-4 w-4" />
                                     <span className="ml-1">Delete</span>
-            </Button>
+                                  </Button>
                                 </div>
                               </td>
                             </tr>

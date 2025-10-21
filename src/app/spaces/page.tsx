@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Building2, Search, Plus, ArrowRight, Layout, Settings, FolderPlus } from 'lucide-react'
 import { useSpace } from '@/contexts/space-context'
 import toast from 'react-hot-toast'
+import { SystemSettingsModal } from '@/components/settings/SystemSettingsModal'
 
 interface Space {
   id: string
@@ -28,6 +29,7 @@ export default function SpaceSelectionPage() {
   const [search, setSearch] = useState('')
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
+  const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [createFormData, setCreateFormData] = useState({
     name: '',
     description: '',
@@ -158,12 +160,14 @@ export default function SpaceSelectionPage() {
             <h1 className="text-3xl font-bold">Select a workspace</h1>
             <p className="text-muted-foreground">Choose a workspace to continue</p>
             <div className="mt-2">
-              <Link href="/settings">
-                <Button variant="outline" size="sm">
-                  <Settings className="h-4 w-4 mr-2" />
-                  System settings
-                </Button>
-              </Link>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowSettingsModal(true)}
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                System settings
+              </Button>
             </div>
           </div>
           <div className="w-64 flex items-center gap-2">
@@ -362,6 +366,11 @@ export default function SpaceSelectionPage() {
           ))}
         </div>
       </div>
+      
+      <SystemSettingsModal 
+        open={showSettingsModal} 
+        onOpenChange={setShowSettingsModal} 
+      />
     </div>
   )
 }

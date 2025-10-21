@@ -1,4 +1,6 @@
+// Legacy database connection - kept for backward compatibility
 import { Pool } from 'pg'
+import { prisma } from './prisma'
 
 let pool: Pool | null = null
 
@@ -17,6 +19,7 @@ export function getDbPool(): Pool {
   return pool
 }
 
+// Legacy query function - kept for backward compatibility
 export async function query<T = any>(text: string, params: any[] = []): Promise<{ rows: T[] }>{
   const client = await getDbPool().connect()
   try {
@@ -26,5 +29,8 @@ export async function query<T = any>(text: string, params: any[] = []): Promise<
     client.release()
   }
 }
+
+// Export Prisma client for new ORM usage
+export { prisma }
 
 

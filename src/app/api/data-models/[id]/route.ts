@@ -34,9 +34,9 @@ export async function PUT(
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await request.json()
-    const { name, display_name, description, is_active, icon, sort_order, is_pinned } = body
+    const { name, display_name, description, is_active, icon, sort_order, is_pinned, source_type, external_connection_id, external_schema, external_table, external_primary_key } = body
     let { slug } = body as any
-    if (!name && !display_name && description === undefined && is_active === undefined && icon === undefined && sort_order === undefined && is_pinned === undefined) {
+    if (!name && !display_name && description === undefined && is_active === undefined && icon === undefined && sort_order === undefined && is_pinned === undefined && source_type === undefined && external_connection_id === undefined && external_schema === undefined && external_table === undefined && external_primary_key === undefined) {
       return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
     }
 
@@ -50,6 +50,11 @@ export async function PUT(
     if (icon !== undefined) { fields.push(`icon = $${idx++}`); values.push(icon) }
     if (sort_order !== undefined) { fields.push(`sort_order = $${idx++}`); values.push(parseInt(sort_order) || 0) }
     if (is_pinned !== undefined) { fields.push(`is_pinned = $${idx++}`); values.push(!!is_pinned) }
+    if (source_type !== undefined) { fields.push(`source_type = $${idx++}`); values.push(source_type) }
+    if (external_connection_id !== undefined) { fields.push(`external_connection_id = $${idx++}`); values.push(external_connection_id) }
+    if (external_schema !== undefined) { fields.push(`external_schema = $${idx++}`); values.push(external_schema) }
+    if (external_table !== undefined) { fields.push(`external_table = $${idx++}`); values.push(external_table) }
+    if (external_primary_key !== undefined) { fields.push(`external_primary_key = $${idx++}`); values.push(external_primary_key) }
 
     // Handle slug update if provided
     if (slug !== undefined) {

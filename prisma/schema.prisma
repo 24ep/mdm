@@ -1,0 +1,383 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @unique
+  name      String
+  password  String
+  role      String   @default("USER")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  createdSpaces     Space[]           @relation("SpaceCreator")
+  spaceMemberships SpaceMember[]     @relation("UserSpaceMembers")
+  createdDataModels DataModel[]       @relation("DataModelCreator")
+  createdDataRecords DataRecord[]     @relation("DataRecordCreator")
+  notifications     Notification[]    @relation("UserNotifications")
+  teamMemberships   TeamMember[]      @relation("UserTeamMembers")
+
+  @@map("users")
+}
+
+model Space {
+  id                String   @id @default(uuid()) @db.Uuid
+  name              String
+  description       String?
+  slug              String   @unique
+  isDefault         Boolean  @default(false) @map("is_default")
+  isActive          Boolean  @default(true) @map("is_active")
+  icon              String?
+  logoUrl           String?  @map("logo_url")
+  features          Json?    @default("{}")
+  sidebarConfig     Json?    @map("sidebar_config")
+  enableAssignments Boolean  @default(true) @map("enable_assignments")
+  enableBulkActivity Boolean @default(true) @map("enable_bulk_activity")
+  enableWorkflows   Boolean  @default(true) @map("enable_workflows")
+  enableDashboard   Boolean  @default(true) @map("enable_dashboard")
+  createdBy         String   @map("created_by")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
+
+  // Relations
+  creator           User            @relation("SpaceCreator", fields: [createdBy], references: [id])
+  members           SpaceMember[]   @relation("SpaceMembers")
+  dataModels        DataModelSpace[] @relation("SpaceDataModels")
+  attachmentStorage SpaceAttachmentStorage[] @relation("SpaceAttachments")
+  externalConnections ExternalConnection[] @relation("SpaceExternalConnections")
+
+  @@map("spaces")
+}
+
+model SpaceMember {
+  id      String @id @default(uuid()) @db.Uuid
+  spaceId String @map("space_id")
+  userId  String @map("user_id")
+  role    String @default("MEMBER")
+
+  // Relations
+  space Space @relation("SpaceMembers", fields: [spaceId], references: [id], onDelete: Cascade)
+  user  User  @relation("UserSpaceMembers", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([spaceId, userId])
+  @@map("space_members")
+}
+
+model DataModel {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  creator     User            @relation("DataModelCreator", fields: [createdBy], references: [id])
+  spaces      DataModelSpace[] @relation("DataModelSpaces")
+  attributes  Attribute[]     @relation("DataModelAttributes")
+  dataRecords DataRecord[]    @relation("DataModelRecords")
+
+  @@map("data_models")
+}
+
+model DataModelSpace {
+  id          String @id @default(uuid()) @db.Uuid
+  dataModelId String @map("data_model_id")
+  spaceId     String @map("space_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  dataModel DataModel @relation("DataModelSpaces", fields: [dataModelId], references: [id], onDelete: Cascade)
+  space     Space     @relation("SpaceDataModels", fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@unique([dataModelId, spaceId])
+  @@map("data_model_spaces")
+}
+
+model Attribute {
+  id              String   @id @default(uuid()) @db.Uuid
+  name            String
+  displayName     String   @map("display_name")
+  type            String
+  description     String?
+  isRequired      Boolean  @default(false) @map("is_required")
+  isUnique        Boolean  @default(false) @map("is_unique")
+  isPrimaryKey    Boolean? @default(false) @map("is_primary_key")
+  isForeignKey    Boolean? @default(false) @map("is_foreign_key")
+  defaultValue    String?  @map("default_value")
+  validationRules Json?    @map("validation_rules")
+  options         Json?
+  order           Int      @default(0) @map("order")
+  isActive        Boolean  @default(true) @map("is_active")
+  deletedAt       DateTime? @map("deleted_at")
+  
+  // Data entity support
+  dataEntityModelId    String? @map("data_entity_model_id")
+  dataEntityAttributeId String? @map("data_entity_attribute_id")
+  
+  // Auto-increment support
+  isAutoIncrement           Boolean @default(false) @map("is_auto_increment")
+  autoIncrementPrefix       String  @default("") @map("auto_increment_prefix")
+  autoIncrementSuffix       String  @default("") @map("auto_increment_suffix")
+  autoIncrementStart        Int     @default(1) @map("auto_increment_start")
+  autoIncrementPadding      Int     @default(3) @map("auto_increment_padding")
+  currentAutoIncrementValue Int     @default(0) @map("current_auto_increment_value")
+  
+  // External connection support
+  externalColumn String? @map("external_column")
+  
+  dataModelId     String   @map("data_model_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  dataModel       DataModel       @relation("DataModelAttributes", fields: [dataModelId], references: [id], onDelete: Cascade)
+  dataRecordValues DataRecordValue[] @relation("AttributeValues")
+
+  @@map("data_model_attributes")
+}
+
+model ExternalConnection {
+  id        String   @id @default(uuid()) @db.Uuid
+  spaceId   String   @map("space_id")
+  name      String
+  dbType    String   @map("db_type") // 'postgres' | 'mysql'
+  host      String
+  port      Int?
+  database String?
+  username  String
+  password  String
+  options   Json?
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  // Relations
+  space       Space        @relation("SpaceExternalConnections", fields: [spaceId], references: [id], onDelete: Cascade)
+  dataModels  DataModel[]  @relation("ExternalConnectionDataModels")
+
+  @@map("external_connections")
+}
+
+model Team {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  members     TeamMember[]     @relation("TeamMembers")
+  permissions TeamPermission[] @relation("TeamPermissions")
+
+  @@map("teams")
+}
+
+model TeamMember {
+  id     String @id @default(uuid()) @db.Uuid
+  teamId String @map("team_id")
+  userId String @map("user_id")
+  role   String @default("member")
+
+  // Relations
+  team Team @relation("TeamMembers", fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation("UserTeamMembers", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@map("team_members")
+}
+
+model Permission {
+  id          String @id @default(uuid()) @db.Uuid
+  name        String @unique
+  description String?
+  resource    String
+  action      String
+
+  // Relations
+  teamPermissions TeamPermission[] @relation("PermissionTeamPermissions")
+  rolePermissions RolePermission[] @relation("PermissionRolePermissions")
+
+  @@map("permissions")
+}
+
+model TeamPermission {
+  id           String @id @default(uuid()) @db.Uuid
+  teamId       String @map("team_id")
+  permissionId String @map("permission_id")
+
+  // Relations
+  team       Team       @relation("TeamPermissions", fields: [teamId], references: [id], onDelete: Cascade)
+  permission Permission @relation("PermissionTeamPermissions", fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, permissionId])
+  @@map("team_permissions")
+}
+
+model Role {
+  id          String @id @default(uuid()) @db.Uuid
+  name        String @unique
+  description String?
+
+  // Relations
+  permissions RolePermission[] @relation("RolePermissions")
+
+  @@map("roles")
+}
+
+model RolePermission {
+  id           String @id @default(uuid()) @db.Uuid
+  roleId       String @map("role_id")
+  permissionId String @map("permission_id")
+
+  // Relations
+  role       Role       @relation("RolePermissions", fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation("PermissionRolePermissions", fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model Company {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  @@map("companies")
+}
+
+model Source {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  @@map("sources")
+}
+
+model Industry {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  @@map("industries")
+}
+
+model DataRecord {
+  id        String   @id @default(uuid()) @db.Uuid
+  dataModelId String @map("data_model_id")
+  createdBy  String   @map("created_by")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+
+  // Relations
+  dataModel DataModel       @relation("DataModelRecords", fields: [dataModelId], references: [id], onDelete: Cascade)
+  creator   User            @relation("DataRecordCreator", fields: [createdBy], references: [id])
+  values    DataRecordValue[] @relation("RecordValues")
+
+  @@map("data_records")
+}
+
+model DataRecordValue {
+  id        String @id @default(uuid()) @db.Uuid
+  dataRecordId String @map("data_record_id")
+  attributeId  String @map("attribute_id")
+  value     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  dataRecord DataRecord @relation("RecordValues", fields: [dataRecordId], references: [id], onDelete: Cascade)
+  attribute  Attribute  @relation("AttributeValues", fields: [attributeId], references: [id], onDelete: Cascade)
+
+  @@unique([dataRecordId, attributeId])
+  @@map("data_record_values")
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id")
+  type      String
+  title     String
+  message   String
+  priority  String   @default("MEDIUM")
+  status    String   @default("UNREAD")
+  data      Json?
+  actionUrl String?  @map("action_url")
+  actionLabel String? @map("action_label")
+  expiresAt DateTime? @map("expires_at")
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model SystemSetting {
+  id        String   @id @default(uuid()) @db.Uuid
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}
+
+model SpaceAttachmentStorage {
+  id        String   @id @default(uuid()) @db.Uuid
+  spaceId   String   @map("space_id")
+  fileName  String   @map("file_name")
+  filePath  String   @map("file_path")
+  fileSize  Int      @map("file_size")
+  mimeType  String   @map("mime_type")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  space Space @relation("SpaceAttachments", fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@map("space_attachment_storage")
+}
+
+model AttachmentFile {
+  id        String   @id @default(uuid()) @db.Uuid
+  fileName  String   @map("file_name")
+  filePath  String   @map("file_path")
+  fileSize  Int      @map("file_size")
+  mimeType  String   @map("mime_type")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("attachment_files")
+}

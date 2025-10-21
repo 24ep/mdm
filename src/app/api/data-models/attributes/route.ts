@@ -67,7 +67,9 @@ export async function POST(request: NextRequest) {
       'select': 'SELECT',
       'multi_select': 'MULTI_SELECT',
       'textarea': 'TEXTAREA',
-      'json': 'JSON'
+      'json': 'JSON',
+      'user': 'USER',
+      'user_multi': 'USER_MULTI'
     }
     const mappedType = typeMapping[type?.toLowerCase()] || type?.toUpperCase() || 'TEXT'
 
