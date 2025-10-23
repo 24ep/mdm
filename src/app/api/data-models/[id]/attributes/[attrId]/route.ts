@@ -38,6 +38,29 @@ export async function PUT(
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id: dataModelId, attrId } = params
+
+    // Check if user has permission to edit attributes in this space
+    const spaceCheck = await query(`
+      SELECT sm.role, s.created_by
+      FROM data_models dm
+      JOIN data_model_spaces dms ON dm.id = dms.data_model_id
+      JOIN spaces s ON dms.space_id = s.id
+      LEFT JOIN space_members sm ON s.id = sm.space_id AND sm.user_id = $1
+      WHERE dm.id = $2
+    `, [session.user.id, dataModelId])
+
+    if (spaceCheck.rows.length === 0) {
+      return NextResponse.json({ error: 'Data model not found' }, { status: 404 })
+    }
+
+    const spaceData = spaceCheck.rows[0]
+    const userRole = spaceData.role
+    const isOwner = spaceData.created_by === session.user.id
+    const canEdit = userRole === 'ADMIN' || userRole === 'MEMBER' || isOwner
+
+    if (!canEdit) {
+      return NextResponse.json({ error: 'Insufficient permissions to edit attributes' }, { status: 403 })
+    }
     const body = await request.json()
     const { 
       name, 
@@ -118,6 +141,29 @@ export async function DELETE(
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id: dataModelId, attrId } = params
+
+    // Check if user has permission to delete attributes in this space
+    const spaceCheck = await query(`
+      SELECT sm.role, s.created_by
+      FROM data_models dm
+      JOIN data_model_spaces dms ON dm.id = dms.data_model_id
+      JOIN spaces s ON dms.space_id = s.id
+      LEFT JOIN space_members sm ON s.id = sm.space_id AND sm.user_id = $1
+      WHERE dm.id = $2
+    `, [session.user.id, dataModelId])
+
+    if (spaceCheck.rows.length === 0) {
+      return NextResponse.json({ error: 'Data model not found' }, { status: 404 })
+    }
+
+    const spaceData = spaceCheck.rows[0]
+    const userRole = spaceData.role
+    const isOwner = spaceData.created_by === session.user.id
+    const canDelete = userRole === 'ADMIN' || isOwner
+
+    if (!canDelete) {
+      return NextResponse.json({ error: 'Insufficient permissions to delete attributes' }, { status: 403 })
+    }
 
     const { rows } = await query(
       'UPDATE public.data_model_attributes SET is_active = FALSE, deleted_at = NOW() WHERE id = $1 AND data_model_id = $2 RETURNING *',

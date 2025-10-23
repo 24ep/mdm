@@ -1,12 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSession } from 'next-auth/react'
 
 interface DynamicFaviconProps {
   faviconUrl?: string
 }
 
 export function DynamicFavicon({ faviconUrl }: DynamicFaviconProps) {
+  const { data: session, status } = useSession()
   const [currentFavicon, setCurrentFavicon] = useState<string | null>(null)
 
   useEffect(() => {
@@ -15,6 +17,12 @@ export function DynamicFavicon({ faviconUrl }: DynamicFaviconProps) {
     } else {
       // Load favicon from settings
       const loadFavicon = async () => {
+        // Don't fetch if user is not authenticated
+        if (status === 'unauthenticated' || !session?.user?.id) {
+          console.warn('Authentication required for settings. Using default favicon.')
+          return
+        }
+
         try {
           const response = await fetch('/api/settings')
           if (response.ok) {
@@ -43,7 +51,7 @@ export function DynamicFavicon({ faviconUrl }: DynamicFaviconProps) {
       }
       loadFavicon()
     }
-  }, [faviconUrl])
+  }, [faviconUrl, status, session?.user?.id])
 
   useEffect(() => {
     // Remove existing favicon links

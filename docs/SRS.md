@@ -36,7 +36,8 @@ The system provides a complete solution for customer data management including:
 ### 1.4 References
 - Next.js Documentation
 - Prisma ORM Documentation
-- Supabase Documentation
+- PostgreSQL Documentation
+- PostgREST Documentation
 - NextAuth.js Documentation
 
 ---
@@ -45,9 +46,10 @@ The system provides a complete solution for customer data management including:
 
 ### 2.1 Product Perspective
 The Customer Data Management System is a standalone web application that integrates with external services including:
-- Supabase for database and storage
+- PostgreSQL for database
+- PostgREST for API access
+- MinIO for file storage
 - Azure Active Directory for SSO
-- File storage for document management
 
 ### 2.2 Product Functions
 The system provides the following major functions:

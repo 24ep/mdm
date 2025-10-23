@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { ColorPicker } from '@/components/ui/color-picker'
 import { 
   Plus, 
   Trash2, 
@@ -293,65 +294,59 @@ export function AttributeForm({ initialData, onSubmit, onCancel, loading = false
               Define the available options for this {formData.type === 'select' ? 'select' : 'multi-select'} field
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {options.map((option, index) => (
-              <div key={index} className="flex items-center gap-3 p-3 border rounded-lg">
-                <GripVertical className="h-4 w-4 text-muted-foreground" />
-                
-                <div className="flex-1 grid grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor={`option-value-${index}`}>Value</Label>
-                    <Input
-                      id={`option-value-${index}`}
-                      value={option.value}
-                      onChange={(e) => handleOptionChange(index, 'value', e.target.value)}
-                      placeholder="option_value"
+          <CardContent>
+            <div className="space-y-2">
+              {options.map((option, index) => (
+                <div key={index} className="flex items-center gap-3 p-3 border rounded-lg">
+                  {/* Color Swatch */}
+                  <div className="flex items-center gap-2">
+                    <ColorPicker
+                      value={option.color || '#3B82F6'}
+                      onChange={(color) => handleOptionChange(index, 'color', color)}
                     />
-                  </div>
-                  <div>
-                    <Label htmlFor={`option-label-${index}`}>Label</Label>
-                    <Input
-                      id={`option-label-${index}`}
-                      value={option.label}
-                      onChange={(e) => handleOptionChange(index, 'label', e.target.value)}
-                      placeholder="Option Label"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1">
-                    {colorOptions.map(color => (
-                      <button
-                        key={color}
-                        className={`w-6 h-6 rounded-full border-2 ${
-                          option.color === color ? 'border-gray-800' : 'border-gray-300'
-                        }`}
-                        style={{ backgroundColor: color }}
-                        onClick={() => handleOptionChange(index, 'color', color)}
-                      />
-                    ))}
                   </div>
                   
+                  {/* Attribute Code */}
+                  <div className="flex-1 min-w-0">
+                    <Input
+                      value={option.value}
+                      onChange={(e) => handleOptionChange(index, 'value', e.target.value)}
+                      placeholder="Option value"
+                      className="h-8"
+                    />
+                  </div>
+                  
+                  {/* Attribute Label */}
+                  <div className="flex-1 min-w-0">
+                    <Input
+                      value={option.label}
+                      onChange={(e) => handleOptionChange(index, 'label', e.target.value)}
+                      placeholder="Option label"
+                      className="h-8"
+                    />
+                  </div>
+                  
+                  {/* Remove Button */}
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => removeOption(index)}
                     disabled={options.length === 1}
+                    className="h-8"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
-              </div>
-            ))}
+              ))}
 
-            {errors.options && <p className="text-sm text-red-500">{errors.options}</p>}
+              {errors.options && <p className="text-sm text-red-500">{errors.options}</p>}
 
-            <Button type="button" variant="outline" onClick={addOption}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Option
-            </Button>
+              <Button type="button" variant="outline" onClick={addOption} className="w-full">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Option
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}

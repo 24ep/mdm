@@ -32,7 +32,7 @@ export async function GET(
         u.id,
         u.name,
         u.email,
-        u.avatar,
+        NULL as avatar,
         sm.role as space_role,
         u.is_active
       FROM space_members sm

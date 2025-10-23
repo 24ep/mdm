@@ -1,57 +1,69 @@
-# Customer Data Management System
+# Master Data Management (MDM) System
 
-A comprehensive web application for event organizations to store and manage customer data, built with Supabase as the primary backend.
+A comprehensive web application for event organizations to store and manage customer data, built with PostgreSQL and PostgREST as the primary backend. **Now featuring a flexible EAV (Entity-Attribute-Value) system for dynamic data modeling.**
 
 ## 🚀 **Tech Stack**
 
 - **Frontend:** Next.js 14, React, TypeScript, Tailwind CSS
-- **Backend:** Supabase (Database, Auth, Storage, Realtime)
-- **Authentication:** Supabase Auth with OAuth providers
-- **Real-time:** Supabase Realtime with Server-Sent Events
+- **Backend:** PostgreSQL with PostgREST API
+- **Authentication:** NextAuth.js with OAuth providers
+- **Real-time:** Server-Sent Events for live updates
+- **Storage:** MinIO (S3-compatible) for file management
 - **Deployment:** Docker, Docker Compose
 - **UI Components:** Radix UI, Lucide React Icons
 
 ## ✨ **Features**
 
 ### **Core Functionality**
+- **EAV System:** Flexible Entity-Attribute-Value data modeling for dynamic schemas
 - **Customer Management:** Complete CRUD operations for customer data
 - **Assignment System:** Kanban-style task management with drag-and-drop
-- **Data Entry:** Manage companies, sources, industries, events, and more
+- **Dynamic Data Entry:** Manage any type of entity with configurable attributes
 - **Import/Export:** Excel/CSV file processing with progress tracking
 - **Settings:** Configurable system settings and user preferences
 
 ### **Advanced Features**
-- **Real-time Updates:** Live data synchronization using Supabase Realtime
-- **Role-based Access Control:** Granular permissions with Row Level Security
-- **Audit Trail:** Complete activity logging and tracking
-- **Search & Filtering:** Advanced search capabilities
+- **EAV Data Modeling:** Create any entity type with custom attributes dynamically
+- **Real-time Updates:** Live data synchronization using Server-Sent Events
+- **Role-based Access Control:** Granular permissions with database-level security
+- **Audit Trail:** Complete activity logging and value history tracking
+- **Search & Filtering:** Advanced search capabilities across all entity types
 - **Responsive Design:** Mobile-first, modern UI with glass morphism
 - **Dark/Light Theme:** Automatic theme switching
 - **Thai Font Support:** Full Unicode and Thai language support
-- **File Storage:** Supabase Storage for file uploads
+- **File Storage:** MinIO (S3-compatible) for file uploads
 
 ## 🏗️ **Architecture**
 
+### **EAV System Architecture**
+- **Entity Types:** Define different types of entities (Customer, Product, Order, etc.)
+- **Attributes:** Define fields and properties for each entity type
+- **Entities:** Individual instances of entity types
+- **Values:** Actual data stored for entity attributes
+- **Dynamic Schema:** No hardcoded tables - everything is configurable
+- **Type Safety:** Strong typing with enum-based data types
+- **Audit Trail:** Complete value history tracking
+
 ### **Frontend Architecture**
-- **Pages:** Dashboard, Customer Management, Assignments, Data Entry, Settings
-- **Components:** Reusable UI components with Radix UI
+- **Pages:** Dashboard, Customer Management, Assignments, Data Entry, Settings, EAV Management
+- **Components:** Reusable UI components with Radix UI, EAV-specific components
 - **Layout:** Responsive sidebar navigation with header
-- **State Management:** React hooks and Supabase client
+- **State Management:** React hooks and PostgREST client
 - **Styling:** Tailwind CSS with custom design system
 
 ### **Backend Architecture**
-- **Database:** Supabase PostgreSQL with native client
-- **Authentication:** Supabase Auth with multiple providers
-- **Real-time:** Supabase Realtime for live updates
-- **Storage:** Supabase Storage for file management
-- **API:** Next.js API routes with Supabase integration
+- **Database:** PostgreSQL with EAV schema and direct connection
+- **Authentication:** NextAuth.js with multiple OAuth providers
+- **Real-time:** Server-Sent Events for live updates
+- **Storage:** MinIO (S3-compatible) for file management
+- **API:** PostgREST for database operations and Next.js API routes
+- **EAV API:** Dedicated endpoints for entity types, attributes, entities, and values
 
 ## 🚀 **Quick Start**
 
 ### **Prerequisites**
 - Node.js 18+
 - Docker and Docker Compose
-- Supabase account
 
 ### **Installation**
 
@@ -66,25 +78,22 @@ A comprehensive web application for event organizations to store and manage cust
    npm install
    ```
 
-3. **Set up Supabase:**
-   ```bash
-   # Install Supabase CLI
-   npm install -g supabase
-   
-   # Start local Supabase (for development)
-   supabase start
-   ```
-
-4. **Set up environment variables:**
+3. **Set up environment variables:**
    ```bash
    cp env.example .env.local
-   # Edit .env.local with your Supabase configuration
+   # Edit .env.local with your configuration
+   ```
+
+4. **Start the development stack:**
+   ```bash
+   # Start PostgreSQL, PostgREST, and MinIO with Docker Compose
+   docker-compose up -d
    ```
 
 5. **Set up the database:**
    ```bash
    # Apply database schema
-   supabase db reset
+   npm run db:push
    
    # Seed initial data
    npm run db:seed
@@ -127,12 +136,10 @@ customer-data-management/
 │   │   ├── ui/               # Base UI components
 │   │   └── layout/           # Layout components
 │   ├── lib/                  # Utility libraries
-│   │   └── supabase/         # Supabase client configuration
+│   │   └── database.js       # Database connection utilities
 │   └── types/                # TypeScript type definitions
-├── supabase/                 # Supabase configuration
-│   ├── migrations/           # Database migrations
-│   ├── seed.ts              # Database seeding
-│   └── config.toml          # Supabase configuration
+├── prisma/                   # Database schema and migrations
+│   └── schema.prisma         # Prisma schema definition
 ├── docs/                     # Documentation
 ├── docker-compose.yml        # Production Docker setup
 └── Dockerfile               # Application container
@@ -163,10 +170,10 @@ The application uses a comprehensive Supabase database schema with:
 - `GET/POST /api/companies` - Company data
 - `GET/POST /api/import-export/import` - File import
 - `GET/POST /api/import-export/export` - Data export
-- `GET /api/sse` - Real-time updates via Supabase Realtime
+- `GET /api/sse` - Real-time updates via Server-Sent Events
 
 ### **Authentication**
-- Supabase Auth handles all authentication
+- NextAuth.js handles all authentication
 - OAuth providers: Google, Azure AD, Email
 - Automatic session management
 
@@ -210,13 +217,13 @@ The application uses a comprehensive Supabase database schema with:
 - **Server-side Rendering:** Next.js SSR for better SEO
 - **Image Optimization:** Next.js Image component
 - **Code Splitting:** Automatic bundle optimization
-- **Supabase Caching:** Built-in query caching
+- **Database Caching:** Query result caching
 - **Database Indexing:** Optimized query performance
 
 ### **Real-time Features**
-- **Supabase Realtime:** Live data synchronization
-- **Server-Sent Events:** Fallback for real-time updates
+- **Server-Sent Events:** Live data synchronization
 - **Connection Management:** Automatic reconnection
+- **Event Streaming:** Real-time updates for data changes
 
 ## 🧪 **Testing**
 
@@ -240,11 +247,14 @@ npm run test:coverage
 
 ## 📚 **Documentation**
 
+- **[Complete System Guide](docs/COMPLETE_SYSTEM_GUIDE.md)** - Comprehensive system overview and setup
+- **[API Documentation](docs/api/)** - Complete API reference for EAV system
+- **[Database Setup Guide](docs/DATABASE_SETUP_GUIDE.md)** - Database configuration and migration
+- **[Environment Setup](docs/ENVIRONMENT_SETUP.md)** - Environment variables and configuration
+- **[Documentation Index](docs/README.md)** - All available documentation
 - **[Software Requirements Specification (SRS)](docs/SRS.md)**
 - **[Business Requirements Document (BRD)](docs/BRD.md)**
 - **[Test Cases](docs/TEST_CASES.md)**
-- **[API Documentation](src/app/api/docs/page.tsx)**
-- **[Deployment Guide](DEPLOYMENT.md)**
 
 ## 🤝 **Contributing**
 

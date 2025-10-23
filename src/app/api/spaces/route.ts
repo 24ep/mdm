@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { query } from '@/lib/db'
+import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('🔍 Spaces API called')
+    
     const session = await getServerSession(authOptions)
+    console.log('Session:', session ? { userId: session.user?.id, userRole: session.user?.role } : 'No session')
+    
     if (!session?.user?.id) {
+      console.log('❌ No session or user ID')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -15,38 +20,72 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10')
     const offset = (page - 1) * limit
 
-    // Get spaces where user is a member
-    const spaces = await query(`
-      SELECT 
-        s.id, s.name, s.description, s.is_default, s.is_active, s.created_by, s.created_at, s.updated_at, s.deleted_at, s.slug,
-        u.name as created_by_name,
-        COUNT(sm.user_id) as member_count
-      FROM spaces s
-      LEFT JOIN users u ON s.created_by = u.id
-      LEFT JOIN space_members sm ON s.id = sm.space_id
-      WHERE s.deleted_at IS NULL 
-        AND s.id IN (
-          SELECT space_id FROM space_members WHERE user_id = $1
-        )
-      GROUP BY s.id, u.name
-      ORDER BY s.is_default DESC, s.created_at DESC
-      LIMIT $2 OFFSET $3
-    `, [session.user.id, limit, offset])
+    console.log('Querying spaces for user:', session.user.id)
+
+    // Get spaces where user is a member using Prisma
+    const spaces = await prisma.space.findMany({
+      where: {
+        deletedAt: null,
+        members: {
+          some: {
+            userId: session.user.id
+          }
+        }
+      },
+      include: {
+        creator: {
+          select: {
+            name: true
+          }
+        },
+        members: {
+          select: {
+            userId: true
+          }
+        }
+      },
+      orderBy: [
+        { isDefault: 'desc' },
+        { createdAt: 'desc' }
+      ],
+      skip: offset,
+      take: limit
+    })
+
+    // Transform the data to match the expected format
+    const transformedSpaces = spaces.map(space => ({
+      id: space.id,
+      name: space.name,
+      description: space.description,
+      is_default: space.isDefault,
+      is_active: space.isActive,
+      created_by: space.createdBy,
+      created_at: space.createdAt,
+      updated_at: space.updatedAt,
+      deleted_at: space.deletedAt,
+      slug: space.slug,
+      created_by_name: space.creator?.name,
+      member_count: space.members.length
+    }))
+
+    console.log('Spaces query result:', transformedSpaces.length, 'spaces found')
 
     // Get total count
-    const totalResult = await query(`
-      SELECT COUNT(*) as total
-      FROM spaces s
-      WHERE s.deleted_at IS NULL 
-        AND s.id IN (
-          SELECT space_id FROM space_members WHERE user_id = $1
-        )
-    `, [session.user.id])
+    const total = await prisma.space.count({
+      where: {
+        deletedAt: null,
+        members: {
+          some: {
+            userId: session.user.id
+          }
+        }
+      }
+    })
 
-    const total = parseInt(totalResult.rows[0]?.total || '0')
+    console.log('Total spaces:', total)
 
     return NextResponse.json({
-      spaces: spaces.rows,
+      spaces: transformedSpaces,
       pagination: {
         page,
         limit,
@@ -55,9 +94,14 @@ export async function GET(request: NextRequest) {
       }
     })
   } catch (error) {
-    console.error('Error fetching spaces:', error)
+    console.error('❌ Error fetching spaces:', error)
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    })
     return NextResponse.json(
-      { error: 'Failed to fetch spaces' },
+      { error: 'Failed to fetch spaces', details: error.message },
       { status: 500 }
     )
   }
@@ -80,27 +124,38 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if user has permission to create spaces (basic check - can be enhanced with RBAC)
-    const user = await query(
-      'SELECT role FROM users WHERE id = $1',
-      [session.user.id]
-    )
+    // Check if user has permission to create spaces
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true }
+    })
 
-    if (!user.rows[0] || !['SUPER_ADMIN', 'ADMIN', 'MANAGER'].includes(user.rows[0].role)) {
+    if (!user || !['SUPER_ADMIN', 'ADMIN', 'MANAGER'].includes(user.role)) {
       return NextResponse.json(
         { error: 'Insufficient permissions to create spaces' },
         { status: 403 }
       )
     }
 
-    // Create the space
-    const result = await query(`
-      INSERT INTO spaces (name, description, is_default, created_by, slug)
-      VALUES ($1, $2, $3, $4, COALESCE($5, LOWER(REGEXP_REPLACE($1, '[^a-zA-Z0-9]+', '-', 'g'))))
-      RETURNING *
-    `, [name.trim(), description?.trim() || null, is_default, session.user.id, slug?.trim() || null])
+    // Create the space using Prisma
+    const newSpace = await prisma.space.create({
+      data: {
+        name: name.trim(),
+        description: description?.trim() || null,
+        isDefault: is_default,
+        createdBy: session.user.id,
+        slug: slug?.trim() || name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')
+      }
+    })
 
-    const newSpace = result.rows[0]
+    // Add the creator as a member
+    await prisma.spaceMember.create({
+      data: {
+        spaceId: newSpace.id,
+        userId: session.user.id,
+        role: 'OWNER'
+      }
+    })
 
     return NextResponse.json({
       space: newSpace,

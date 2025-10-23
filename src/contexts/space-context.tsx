@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { useSession } from 'next-auth/react'
 
 interface Space {
   id: string
@@ -53,12 +54,20 @@ interface SpaceContextType {
 const SpaceContext = createContext<SpaceContextType | undefined>(undefined)
 
 export function SpaceProvider({ children }: { children: ReactNode }) {
+  const { data: session, status } = useSession()
   const [currentSpace, setCurrentSpace] = useState<Space | null>(null)
   const [spaces, setSpaces] = useState<Space[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetchSpaces = async () => {
+    // Don't fetch if user is not authenticated
+    if (status === 'unauthenticated' || !session?.user?.id) {
+      setIsLoading(false)
+      setError('Authentication required. Please sign in.')
+      return
+    }
+
     try {
       setIsLoading(true)
       setError(null)
@@ -177,13 +186,19 @@ export function SpaceProvider({ children }: { children: ReactNode }) {
 
   // Load spaces on mount with delay to prevent blocking initial render
   useEffect(() => {
-    // Add a small delay to allow the page to render first
-    const timer = setTimeout(() => {
-      fetchSpaces()
-    }, 100)
-    
-    return () => clearTimeout(timer)
-  }, [])
+    // Only fetch if user is authenticated
+    if (status === 'authenticated' && session?.user?.id) {
+      // Add a small delay to allow the page to render first
+      const timer = setTimeout(() => {
+        fetchSpaces()
+      }, 100)
+      
+      return () => clearTimeout(timer)
+    } else if (status === 'unauthenticated') {
+      setIsLoading(false)
+      setError('Authentication required. Please sign in.')
+    }
+  }, [status, session?.user?.id])
 
   // Save current space to localStorage
   useEffect(() => {

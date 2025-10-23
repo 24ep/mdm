@@ -31,6 +31,7 @@ import {
   Calendar,
   PieChart as PieChartIcon
 } from 'lucide-react'
+import { getStorageProviderIcon } from '@/lib/storage-provider-icons'
 
 interface FileAnalyticsProps {
   spaceId: string
@@ -393,7 +394,7 @@ export function FileAnalytics({ spaceId }: FileAnalyticsProps) {
                   <div key={provider.provider} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-medium">{provider.provider.toUpperCase()}</span>
+                        {getStorageProviderIcon(provider.provider, "h-4 w-4")}
                       </div>
                       <div>
                         <p className="font-medium capitalize">{provider.provider}</p>

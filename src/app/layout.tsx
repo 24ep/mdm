@@ -24,8 +24,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <DynamicFavicon />
         <Providers>
+          <DynamicFavicon />
           <SidebarProvider>
             <Suspense fallback={<LoadingPage />}>
               <SpaceProvider>

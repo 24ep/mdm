@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
 import { 
   Notification, 
   NotificationFilters, 
@@ -97,10 +98,17 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 
 // Provider component
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
+  const { data: session, status } = useSession();
   const [state, dispatch] = useReducer(notificationReducer, initialState);
 
   // Fetch notifications
   const fetchNotifications = useCallback(async (filters?: NotificationFilters) => {
+    // Don't fetch if user is not authenticated
+    if (status === 'unauthenticated' || !session?.user?.id) {
+      dispatch({ type: 'SET_ERROR', payload: 'Authentication required. Please sign in.' });
+      return;
+    }
+
     dispatch({ type: 'SET_LOADING', payload: true });
     dispatch({ type: 'SET_ERROR', payload: null });
 
@@ -240,13 +248,18 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   // Initial fetch with delay to prevent blocking initial render
   useEffect(() => {
-    // Add a delay to allow the page to render first
-    const timer = setTimeout(() => {
-      fetchNotifications();
-    }, 200);
-    
-    return () => clearTimeout(timer);
-  }, [fetchNotifications]);
+    // Only fetch if user is authenticated
+    if (status === 'authenticated' && session?.user?.id) {
+      // Add a delay to allow the page to render first
+      const timer = setTimeout(() => {
+        fetchNotifications();
+      }, 200);
+      
+      return () => clearTimeout(timer);
+    } else if (status === 'unauthenticated') {
+      dispatch({ type: 'SET_ERROR', payload: 'Authentication required. Please sign in.' });
+    }
+  }, [status, session?.user?.id, fetchNotifications]);
 
   const contextValue: NotificationContextType = {
     notifications: state.notifications,

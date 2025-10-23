@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
         u.name,
         u.role,
         u.is_active,
-        u.avatar,
+        NULL as avatar,
         u.created_at,
         u.updated_at,
         u.default_space_id,

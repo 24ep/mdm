@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { MainLayout } from '@/components/layout/main-layout'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -12,7 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Building2, Layout, Database, History, Users as UsersIcon, UserCog, UserPlus, Plus, Edit, Trash2, Search, Type, AlertTriangle, FolderPlus, Share2, Folder, FolderOpen, Move } from 'lucide-react'
+import { Building2, Layout, Database, History, Users as UsersIcon, UserCog, UserPlus, Plus, Edit, Trash2, Search, Type, AlertTriangle, FolderPlus, Share2, Folder, FolderOpen, Move, Settings, Palette, Shield, Archive, Trash } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useSpace } from '@/contexts/space-context'
 import { SpaceStudioLauncher } from '@/components/space-studio-launcher'
@@ -24,6 +23,7 @@ import { AttributeDetailDrawer } from '@/components/data-models/AttributeDetailD
 import { AttributeManagementPanel } from '@/components/attribute-management/AttributeManagementPanel'
 import { DraggableAttributeList } from '@/components/attribute-management/DraggableAttributeList'
 import { EnhancedAttributeDetailDrawer } from '@/components/attribute-management/EnhancedAttributeDetailDrawer'
+import { getStorageProviderIcon, getStorageProviderLabel } from '@/lib/storage-provider-icons'
 
 export default function SpaceSettingsPage() {
   const params = useParams() as { space: string }
@@ -597,22 +597,19 @@ export default function SpaceSettingsPage() {
 
   if (!selectedSpace) {
     return (
-      <MainLayout>
-        <div className="p-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Space Settings</CardTitle>
-              <CardDescription>Space not found.</CardDescription>
-            </CardHeader>
-          </Card>
-        </div>
-      </MainLayout>
+      <div className="p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Space Settings</CardTitle>
+            <CardDescription>Space not found.</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
     )
   }
 
   return (
-    <MainLayout>
-      <Tabs value={tab} onValueChange={setTab} orientation="vertical" className="flex h-full">
+    <Tabs value={tab} onValueChange={setTab} orientation="vertical" className="flex h-full">
         {/* Left Sidebar */}
         <div className="w-64 bg-card border-r flex flex-col">
           <div className="p-6 border-b">
@@ -622,20 +619,76 @@ export default function SpaceSettingsPage() {
 
           <nav className="flex-1 p-4 space-y-1">
             <TabsList className="w-full flex-col h-auto bg-transparent">
-              <TabsTrigger className="justify-start w-full" value="details">Space detail</TabsTrigger>
-              <TabsTrigger className="justify-start w-full" value="members">Space member</TabsTrigger>
-              <TabsTrigger className="justify-start w-full" value="studio">Space Studio</TabsTrigger>
-              <TabsTrigger className="justify-start w-full" value="data-model">Data Model</TabsTrigger>
-              <TabsTrigger className="justify-start w-full" value="attachments">Attachments</TabsTrigger>
-              <TabsTrigger className="justify-start w-full" value="restore">Restore</TabsTrigger>
-              <TabsTrigger className="justify-start w-full text-red-600 hover:text-red-700" value="danger">Danger Zone</TabsTrigger>
+              <TabsTrigger className="justify-start w-full h-auto p-3" value="details">
+                <div className="flex items-center space-x-3 w-full">
+                  <Building2 className="h-4 w-4 text-foreground flex-shrink-0" style={{ display: 'block' }} />
+                  <div className="flex flex-col items-start min-w-0 flex-1">
+                    <span className="font-medium">Space Details</span>
+                    <span className="text-xs text-muted-foreground break-words">Name, description, and basic info</span>
+                  </div>
+                </div>
+              </TabsTrigger>
+              <TabsTrigger className="justify-start w-full h-auto p-3" value="members">
+                <div className="flex items-center space-x-3 w-full">
+                  <UsersIcon className="h-4 w-4 text-foreground flex-shrink-0" style={{ display: 'block' }} />
+                  <div className="flex flex-col items-start min-w-0 flex-1">
+                    <span className="font-medium">Members</span>
+                    <span className="text-xs text-muted-foreground break-words">Manage team members and permissions</span>
+                  </div>
+                </div>
+              </TabsTrigger>
+              <TabsTrigger className="justify-start w-full h-auto p-3" value="studio">
+                <div className="flex items-center space-x-3 w-full">
+                  <Layout className="h-4 w-4 text-foreground flex-shrink-0" style={{ display: 'block' }} />
+                  <div className="flex flex-col items-start min-w-0 flex-1">
+                    <span className="font-medium">Space Studio</span>
+                    <span className="text-xs text-muted-foreground break-words">Customize appearance and branding</span>
+                  </div>
+                </div>
+              </TabsTrigger>
+              <TabsTrigger className="justify-start w-full h-auto p-3" value="data-model">
+                <div className="flex items-center space-x-3 w-full">
+                  <Database className="h-4 w-4 text-foreground flex-shrink-0" style={{ display: 'block' }} />
+                  <div className="flex flex-col items-start min-w-0 flex-1">
+                    <span className="font-medium">Data Model</span>
+                    <span className="text-xs text-muted-foreground break-words">Define data structure and attributes</span>
+                  </div>
+                </div>
+              </TabsTrigger>
+              <TabsTrigger className="justify-start w-full h-auto p-3" value="attachments">
+                <div className="flex items-center space-x-3 w-full">
+                  <FolderPlus className="h-4 w-4 text-foreground flex-shrink-0" />
+                  <div className="flex flex-col items-start min-w-0 flex-1">
+                    <span className="font-medium">Attachments</span>
+                    <span className="text-xs text-muted-foreground break-words">File storage and management</span>
+                  </div>
+                </div>
+              </TabsTrigger>
+              <TabsTrigger className="justify-start w-full h-auto p-3" value="restore">
+                <div className="flex items-center space-x-3 w-full">
+                  <Archive className="h-4 w-4 text-foreground flex-shrink-0" />
+                  <div className="flex flex-col items-start min-w-0 flex-1">
+                    <span className="font-medium">Restore</span>
+                    <span className="text-xs text-muted-foreground break-words">Backup and restore data</span>
+                  </div>
+                </div>
+              </TabsTrigger>
+              <TabsTrigger className="justify-start w-full h-auto p-3 text-red-600 hover:text-red-700" value="danger">
+                <div className="flex items-center space-x-3 w-full">
+                  <AlertTriangle className="h-4 w-4 text-current flex-shrink-0" />
+                  <div className="flex flex-col items-start min-w-0 flex-1">
+                    <span className="font-medium">Danger Zone</span>
+                    <span className="text-xs text-muted-foreground break-words">Delete space and irreversible actions</span>
+                  </div>
+                </div>
+              </TabsTrigger>
             </TabsList>
           </nav>
         </div>
 
         {/* Main Content Area */}
         <div className="flex-1 overflow-y-auto">
-          <div className="p-6">
+          <div className="p-4">
             <div className="space-y-6">
               <TabsContent value="details" className="space-y-6 w-full">
                 <Card>
@@ -1793,19 +1846,48 @@ export default function SpaceSettingsPage() {
                     <div className="space-y-4">
                       <div>
                         <Label>Storage Provider</Label>
-                        <select 
+                        <Select 
                           value={attachmentStorage.provider}
-                          onChange={(e) => setAttachmentStorage({ 
+                          onValueChange={(value) => setAttachmentStorage({ 
                             ...attachmentStorage, 
-                            provider: e.target.value 
+                            provider: value 
                           })}
-                          className="w-full p-2 border rounded-md"
                         >
-                          <option value="minio">MinIO (Default)</option>
-                          <option value="s3">AWS S3</option>
-                          <option value="sftp">SFTP</option>
-                          <option value="ftp">FTP</option>
-                        </select>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select storage provider">
+                              <div className="flex items-center gap-2">
+                                {getStorageProviderIcon(attachmentStorage.provider)}
+                                <span>{getStorageProviderLabel(attachmentStorage.provider)}</span>
+                              </div>
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="minio">
+                              <div className="flex items-center gap-2">
+                                {getStorageProviderIcon('minio')}
+                                <span>MinIO (Default)</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="s3">
+                              <div className="flex items-center gap-2">
+                                {getStorageProviderIcon('s3')}
+                                <span>AWS S3</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="sftp">
+                              <div className="flex items-center gap-2">
+                                {getStorageProviderIcon('sftp')}
+                                <span>SFTP</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="ftp">
+                              <div className="flex items-center gap-2">
+                                {getStorageProviderIcon('ftp')}
+                                <span>FTP</span>
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
                         <div className="text-xs text-muted-foreground mt-1">
                           Choose the storage provider for all attachment attributes in this space
                         </div>
@@ -2353,7 +2435,6 @@ export default function SpaceSettingsPage() {
             </div>
           </div>
         </div>
-      </Tabs>
 
       {/* Attribute Detail Drawer */}
       <AttributeDetailDrawer
@@ -2365,7 +2446,7 @@ export default function SpaceSettingsPage() {
         onReorder={handleAttributeReorder}
         allAttributes={attributes}
       />
-    </MainLayout>
+    </Tabs>
   )
 }
 

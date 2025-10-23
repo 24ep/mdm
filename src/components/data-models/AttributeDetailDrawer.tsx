@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,6 +13,8 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { ScrollableList } from '@/components/ui/scrollable-list'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { ColorPicker } from '@/components/ui/color-picker'
 import { 
   Database, 
   Type, 
@@ -25,7 +27,16 @@ import {
   Edit,
   Trash2,
   Save,
-  X
+  X,
+  BarChart3,
+  CheckCircle,
+  AlertTriangle,
+  TrendingUp,
+  Target,
+  MoreVertical,
+  Eye,
+  EyeOff,
+  Palette
 } from 'lucide-react'
 
 interface Attribute {
@@ -66,16 +77,175 @@ export function AttributeDetailDrawer({
   const [activeTab, setActiveTab] = useState('details')
   const [isEditing, setIsEditing] = useState(false)
   const [editForm, setEditForm] = useState<Partial<Attribute>>({})
+  const [activityData, setActivityData] = useState<any[]>([])
+  const [loadingActivity, setLoadingActivity] = useState(false)
+  const [showNewOption, setShowNewOption] = useState(false)
+  const [newOption, setNewOption] = useState({ value: '', label: '', color: '#3B82F6' })
+  const [incrementConfig, setIncrementConfig] = useState({
+    enabled: false,
+    prefix: '',
+    suffix: '',
+    startValue: 1,
+    step: 1
+  })
+  const [editingOption, setEditingOption] = useState<number | null>(null)
+  const [editingOptionData, setEditingOptionData] = useState({ value: '', label: '', color: '#3B82F6' })
+  const [qualityStats, setQualityStats] = useState<any>(null)
+  const [loadingQuality, setLoadingQuality] = useState(false)
 
   React.useEffect(() => {
     if (attribute) {
       setEditForm(attribute)
+      loadAttributeActivity()
+      loadQualityStats()
+      
+      // Load increment configuration
+      if (attribute.increment_config) {
+        try {
+          const config = JSON.parse(attribute.increment_config)
+          setIncrementConfig(config)
+        } catch (error) {
+          console.error('Error parsing increment config:', error)
+        }
+      }
     }
   }, [attribute])
 
+  const loadAttributeActivity = async () => {
+    if (!attribute) return
+    
+    setLoadingActivity(true)
+    try {
+      const response = await fetch(`/api/data-models/attributes/${attribute.id}/activity`)
+      if (response.ok) {
+        const data = await response.json()
+        setActivityData(data.activities || [])
+      }
+    } catch (error) {
+      console.error('Error loading attribute activity:', error)
+    } finally {
+      setLoadingActivity(false)
+    }
+  }
+
+  const loadQualityStats = async () => {
+    if (!attribute) return
+    
+    setLoadingQuality(true)
+    try {
+      const response = await fetch(`/api/data-models/attributes/${attribute.id}/quality-stats`)
+      if (response.ok) {
+        const data = await response.json()
+        setQualityStats(data)
+      }
+    } catch (error) {
+      console.error('Error loading quality stats:', error)
+    } finally {
+      setLoadingQuality(false)
+    }
+  }
+
+  const handleAddNewOption = () => {
+    setShowNewOption(true)
+    setNewOption({ value: '', label: '', color: '#3B82F6' })
+  }
+
+  const handleSaveNewOption = async () => {
+    if (!newOption.value || !newOption.label) return
+
+    try {
+      const currentOptions = attribute?.options || []
+      const updatedOptions = [...currentOptions, newOption]
+      
+      // Update the attribute with new options
+      const response = await fetch(`/api/data-models/attributes/${attribute.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ options: updatedOptions })
+      })
+
+      if (response.ok) {
+        setShowNewOption(false)
+        setNewOption({ value: '', label: '', color: '#3B82F6' })
+        // Refresh the attribute data
+        if (onSave) {
+          onSave({ ...attribute, options: updatedOptions })
+        }
+      }
+    } catch (error) {
+      console.error('Error saving new option:', error)
+    }
+  }
+
+  const handleCancelNewOption = () => {
+    setShowNewOption(false)
+    setNewOption({ value: '', label: '', color: '#3B82F6' })
+  }
+
+  const handleEditOption = (index: number, option: any) => {
+    setEditingOption(index)
+    setEditingOptionData({ ...option })
+  }
+
+  const handleSaveOption = async (index: number) => {
+    if (!editingOptionData.value || !editingOptionData.label) return
+
+    try {
+      const currentOptions = attribute?.options || []
+      const updatedOptions = [...currentOptions]
+      updatedOptions[index] = editingOptionData
+      
+      const response = await fetch(`/api/data-models/attributes/${attribute.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ options: updatedOptions })
+      })
+
+      if (response.ok) {
+        setEditingOption(null)
+        if (onSave) {
+          onSave({ ...attribute, options: updatedOptions })
+        }
+      }
+    } catch (error) {
+      console.error('Error saving option:', error)
+    }
+  }
+
+  const handleCancelEditOption = () => {
+    setEditingOption(null)
+    setEditingOptionData({ value: '', label: '', color: '#3B82F6' })
+  }
+
+  const handleRemoveOption = async (index: number) => {
+    try {
+      const currentOptions = attribute?.options || []
+      const updatedOptions = currentOptions.filter((_, i) => i !== index)
+      
+      const response = await fetch(`/api/data-models/attributes/${attribute.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ options: updatedOptions })
+      })
+
+      if (response.ok) {
+        if (onSave) {
+          onSave({ ...attribute, options: updatedOptions })
+        }
+      }
+    } catch (error) {
+      console.error('Error removing option:', error)
+    }
+  }
+
   const handleSave = () => {
     if (attribute && editForm) {
-      onSave({ ...attribute, ...editForm })
+      const updatedAttribute = { 
+        ...attribute, 
+        ...editForm,
+        increment_config: JSON.stringify(incrementConfig)
+      }
+      onSave(updatedAttribute)
       setIsEditing(false)
     }
   }
@@ -103,30 +273,6 @@ export function AttributeDetailDrawer({
   const canMoveUp = attribute && allAttributes.findIndex(attr => attr.id === attribute.id) > 0
   const canMoveDown = attribute && allAttributes.findIndex(attr => attr.id === attribute.id) < allAttributes.length - 1
 
-  // Mock activity data - in real implementation, this would come from API
-  const activityData = [
-    {
-      id: '1',
-      action: 'Created',
-      user: 'John Doe',
-      timestamp: '2024-01-15 10:30:00',
-      details: 'Attribute created with type "text"'
-    },
-    {
-      id: '2',
-      action: 'Modified',
-      user: 'Jane Smith',
-      timestamp: '2024-01-16 14:20:00',
-      details: 'Changed display name from "Name" to "Full Name"'
-    },
-    {
-      id: '3',
-      action: 'Used in Record',
-      user: 'System',
-      timestamp: '2024-01-17 09:15:00',
-      details: 'Attribute used in 5 new records'
-    }
-  ]
 
   if (!attribute) {
     console.log('AttributeDetailDrawer: No attribute provided')
@@ -182,7 +328,7 @@ export function AttributeDetailDrawer({
 
         <div className="flex-1 overflow-hidden">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="details" className="flex items-center gap-2">
                 <Database className="h-4 w-4" />
                 Details
@@ -190,6 +336,14 @@ export function AttributeDetailDrawer({
               <TabsTrigger value="position" className="flex items-center gap-2">
                 <GripVertical className="h-4 w-4" />
                 Position
+              </TabsTrigger>
+              <TabsTrigger value="options" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Options
+              </TabsTrigger>
+              <TabsTrigger value="quality" className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" />
+                Quality
               </TabsTrigger>
               <TabsTrigger value="activity" className="flex items-center gap-2">
                 <Activity className="h-4 w-4" />
@@ -354,6 +508,119 @@ export function AttributeDetailDrawer({
                     </div>
                   </CardContent>
                 </Card>
+
+                {attribute.type === 'number' && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Auto-Increment Configuration</CardTitle>
+                      <CardDescription>
+                        Configure automatic number generation for this attribute
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label>Enable Auto-Increment</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Automatically generate sequential numbers for new records
+                          </p>
+                        </div>
+                        {isEditing ? (
+                          <Switch
+                            checked={incrementConfig.enabled}
+                            onCheckedChange={(checked) => setIncrementConfig({ ...incrementConfig, enabled: checked })}
+                          />
+                        ) : (
+                          <Badge variant={incrementConfig.enabled ? 'default' : 'secondary'}>
+                            {incrementConfig.enabled ? 'Enabled' : 'Disabled'}
+                          </Badge>
+                        )}
+                      </div>
+
+                      {incrementConfig.enabled && (
+                        <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="prefix">Prefix</Label>
+                              {isEditing ? (
+                                <Input
+                                  id="prefix"
+                                  value={incrementConfig.prefix}
+                                  onChange={(e) => setIncrementConfig({ ...incrementConfig, prefix: e.target.value })}
+                                  placeholder="e.g., ID-"
+                                />
+                              ) : (
+                                <div className="p-2 bg-background rounded-md">
+                                  {incrementConfig.prefix || 'No prefix'}
+                                </div>
+                              )}
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="suffix">Suffix</Label>
+                              {isEditing ? (
+                                <Input
+                                  id="suffix"
+                                  value={incrementConfig.suffix}
+                                  onChange={(e) => setIncrementConfig({ ...incrementConfig, suffix: e.target.value })}
+                                  placeholder="e.g., -2024"
+                                />
+                              ) : (
+                                <div className="p-2 bg-background rounded-md">
+                                  {incrementConfig.suffix || 'No suffix'}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="start_value">Start Value</Label>
+                              {isEditing ? (
+                                <Input
+                                  id="start_value"
+                                  type="number"
+                                  value={incrementConfig.startValue}
+                                  onChange={(e) => setIncrementConfig({ ...incrementConfig, startValue: parseInt(e.target.value) || 1 })}
+                                  min="1"
+                                />
+                              ) : (
+                                <div className="p-2 bg-background rounded-md">
+                                  {incrementConfig.startValue}
+                                </div>
+                              )}
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="step">Step</Label>
+                              {isEditing ? (
+                                <Input
+                                  id="step"
+                                  type="number"
+                                  value={incrementConfig.step}
+                                  onChange={(e) => setIncrementConfig({ ...incrementConfig, step: parseInt(e.target.value) || 1 })}
+                                  min="1"
+                                />
+                              ) : (
+                                <div className="p-2 bg-background rounded-md">
+                                  {incrementConfig.step}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="text-sm font-medium text-blue-800 mb-1">Preview</div>
+                            <div className="text-sm text-blue-700">
+                              Next value: {incrementConfig.prefix}{incrementConfig.startValue}{incrementConfig.suffix}
+                            </div>
+                            <div className="text-sm text-blue-700">
+                              Following: {incrementConfig.prefix}{incrementConfig.startValue + incrementConfig.step}{incrementConfig.suffix}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </TabsContent>
 
@@ -433,6 +700,307 @@ export function AttributeDetailDrawer({
               </div>
             </TabsContent>
 
+            <TabsContent value="options" className="flex-1 overflow-y-auto p-6">
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>Attribute Options</CardTitle>
+                        <CardDescription>
+                          Available options for this attribute
+                        </CardDescription>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={handleAddNewOption}
+                        className="flex items-center gap-2"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Add Option
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {attribute.options && attribute.options.length > 0 && attribute.options.map((option, index) => (
+                        <div key={index} className="flex items-center gap-3 p-3 border rounded-lg">
+                          {/* Color Swatch */}
+                          <div className="flex items-center gap-2">
+                            <ColorPicker
+                              value={editingOption === index ? editingOptionData.color : option.color || '#3B82F6'}
+                              onChange={(color) => {
+                                if (editingOption === index) {
+                                  setEditingOptionData({ ...editingOptionData, color })
+                                } else {
+                                  // Update the option directly
+                                  const updatedOptions = [...(attribute.options || [])]
+                                  updatedOptions[index] = { ...updatedOptions[index], color }
+                                  onSave({ ...attribute, options: updatedOptions })
+                                }
+                              }}
+                            />
+                          </div>
+                          
+                          {/* Attribute Code */}
+                          <div className="flex-1 min-w-0">
+                            {editingOption === index ? (
+                              <Input
+                                value={editingOptionData.value}
+                                onChange={(e) => setEditingOptionData({ ...editingOptionData, value: e.target.value })}
+                                placeholder="Option value"
+                                className="h-8"
+                              />
+                            ) : (
+                              <div className="text-sm font-mono text-muted-foreground">{option.value}</div>
+                            )}
+                          </div>
+                          
+                          {/* Attribute Label */}
+                          <div className="flex-1 min-w-0">
+                            {editingOption === index ? (
+                              <Input
+                                value={editingOptionData.label}
+                                onChange={(e) => setEditingOptionData({ ...editingOptionData, label: e.target.value })}
+                                placeholder="Option label"
+                                className="h-8"
+                              />
+                            ) : (
+                              <div className="text-sm font-medium">{option.label}</div>
+                            )}
+                          </div>
+                          
+                          {/* Edit/Save Button */}
+                          <div className="flex items-center gap-1">
+                            {editingOption === index ? (
+                              <>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleSaveOption(index)}
+                                  disabled={!editingOptionData.label || !editingOptionData.value}
+                                  className="h-8"
+                                >
+                                  <Save className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={handleCancelEditOption}
+                                  className="h-8"
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleEditOption(index, option)}
+                                className="h-8"
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
+                          
+                          {/* 3-dot Menu */}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-8 w-8 p-0 hover:bg-gray-100"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem 
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleRemoveOption(index)
+                                }}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Remove
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-gray-600 hover:text-gray-700"
+                              >
+                                <EyeOff className="h-4 w-4 mr-2" />
+                                Hide Attribute Option
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      ))}
+                      
+                      {showNewOption && (
+                        <div className="flex items-center gap-3 p-3 border-2 border-dashed border-blue-300 bg-blue-50 rounded-lg">
+                          {/* Color Swatch */}
+                          <div className="flex items-center gap-2">
+                            <ColorPicker
+                              value={newOption.color}
+                              onChange={(color) => setNewOption({ ...newOption, color })}
+                            />
+                          </div>
+                        
+                        {/* Attribute Code */}
+                        <div className="flex-1 min-w-0">
+                          <Input
+                            placeholder="Option value"
+                            value={newOption.value}
+                            onChange={(e) => setNewOption({ ...newOption, value: e.target.value })}
+                            className="h-8"
+                          />
+                        </div>
+                        
+                        {/* Attribute Label */}
+                        <div className="flex-1 min-w-0">
+                          <Input
+                            placeholder="Option label"
+                            value={newOption.label}
+                            onChange={(e) => setNewOption({ ...newOption, label: e.target.value })}
+                            className="h-8"
+                          />
+                        </div>
+                        
+                        {/* Save/Cancel Buttons */}
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            onClick={handleSaveNewOption}
+                            disabled={!newOption.label || !newOption.value}
+                            className="h-8"
+                          >
+                            <Save className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleCancelNewOption}
+                            className="h-8"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {(!attribute.options || attribute.options.length === 0) && !showNewOption && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Settings className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                        <p className="text-lg font-medium">No options yet</p>
+                        <p className="text-sm">Add options for this {attribute.type} field</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+            <TabsContent value="quality" className="flex-1 overflow-y-auto p-6">
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Data Quality Statistics</CardTitle>
+                    <CardDescription>
+                      Overview of data quality metrics for this attribute
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {loadingQuality ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="text-sm text-muted-foreground">Loading quality statistics...</div>
+                      </div>
+                    ) : qualityStats ? (
+                      <div className="space-y-4">
+                        {/* Statistics Grid - Minimal Style */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div className="p-3 border rounded-lg">
+                            <div className="text-2xl font-semibold text-gray-900">
+                              {qualityStats.statistics.totalRecords.toLocaleString()}
+                            </div>
+                            <div className="text-sm text-gray-600">Total Records</div>
+                          </div>
+                          <div className="p-3 border rounded-lg">
+                            <div className="text-2xl font-semibold text-gray-900">
+                              {qualityStats.statistics.completionRate}%
+                            </div>
+                            <div className="text-sm text-gray-600">Completion Rate</div>
+                          </div>
+                          <div className="p-3 border rounded-lg">
+                            <div className="text-2xl font-semibold text-gray-900">
+                              {qualityStats.statistics.uniqueCount.toLocaleString()}
+                            </div>
+                            <div className="text-sm text-gray-600">Unique Values</div>
+                          </div>
+                          <div className="p-3 border rounded-lg">
+                            <div className="text-2xl font-semibold text-gray-900">
+                              {qualityStats.statistics.recentChanges}
+                            </div>
+                            <div className="text-sm text-gray-600">Recent Changes</div>
+                          </div>
+                        </div>
+
+                        {/* Quality Issues - Minimal Style */}
+                        {qualityStats.qualityIssues && qualityStats.qualityIssues.length > 0 && (
+                          <div className="space-y-2">
+                            <h4 className="text-sm font-medium text-gray-900">Quality Issues</h4>
+                            <div className="space-y-1">
+                              {qualityStats.qualityIssues.map((issue, index) => (
+                                <div key={index} className="flex items-center justify-between p-2 border rounded text-sm">
+                                  <div className="flex items-center gap-2">
+                                    <div className={`w-2 h-2 rounded-full ${
+                                      issue.severity === 'error' ? 'bg-red-500' : 
+                                      issue.severity === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+                                    }`} />
+                                    <span className="text-gray-700">{issue.message}</span>
+                                  </div>
+                                  <span className="text-gray-500">{issue.count}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Data Summary */}
+                        <div className="pt-4 border-t">
+                          <div className="grid grid-cols-3 gap-4 text-sm">
+                            <div>
+                              <div className="text-gray-600">Non-null values</div>
+                              <div className="font-medium">{qualityStats.statistics.nonNullCount.toLocaleString()}</div>
+                            </div>
+                            <div>
+                              <div className="text-gray-600">Missing values</div>
+                              <div className="font-medium">{qualityStats.statistics.missingValues.toLocaleString()}</div>
+                            </div>
+                            <div>
+                              <div className="text-gray-600">Data type</div>
+                              <div className="font-medium">{qualityStats.attribute.type}</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="text-center">
+                          <BarChart3 className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                          <p className="text-sm text-muted-foreground">No quality data available</p>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+
+              </div>
+            </TabsContent>
+
             <TabsContent value="activity" className="flex-1 overflow-y-auto p-6">
               <div className="space-y-6">
                 <Card>
@@ -444,45 +1012,43 @@ export function AttributeDetailDrawer({
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      <div className="grid grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
-                        <div className="text-center">
-                          <div className="text-2xl font-bold">12</div>
-                          <div className="text-sm text-muted-foreground">Total Records</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold">8</div>
-                          <div className="text-sm text-muted-foreground">Recent Changes</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold">95%</div>
-                          <div className="text-sm text-muted-foreground">Completion Rate</div>
-                        </div>
-                      </div>
-
                       <div className="space-y-2">
                         <h4 className="font-medium">Recent Activity</h4>
-                        <ScrollableList maxHeight="MEDIUM">
-                          {activityData.map((activity) => (
-                            <div key={activity.id} className="flex items-start gap-3 p-3 border rounded-lg">
-                              <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium">{activity.action}</span>
-                                  <Badge variant="outline" className="text-xs">
-                                    {activity.user}
-                                  </Badge>
-                                </div>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                  {activity.details}
-                                </p>
-                                <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
-                                  <Calendar className="h-3 w-3" />
-                                  {activity.timestamp}
+                        {loadingActivity ? (
+                          <div className="flex items-center justify-center py-8">
+                            <div className="text-sm text-muted-foreground">Loading activity...</div>
+                          </div>
+                        ) : activityData.length > 0 ? (
+                          <div className="space-y-1">
+                            {activityData.map((activity) => (
+                              <div key={activity.id} className="flex items-center gap-3 py-2 px-3 hover:bg-gray-50 rounded">
+                                <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium text-sm">{activity.action}</span>
+                                    <Badge variant="outline" className="text-xs">
+                                      {activity.user}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    {activity.details}
+                                  </p>
+                                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                    <Calendar className="h-3 w-3" />
+                                    {new Date(activity.timestamp).toLocaleString()}
+                                  </div>
                                 </div>
                               </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center py-8">
+                            <div className="text-center">
+                              <Activity className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                              <p className="text-sm text-muted-foreground">No activity recorded for this attribute</p>
                             </div>
-                          ))}
-                        </ScrollableList>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </CardContent>

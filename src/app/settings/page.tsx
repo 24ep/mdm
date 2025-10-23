@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { MultiSelect } from '@/components/ui/multi-select'
 import { Combobox } from '@/components/ui/combobox'
+import { ColorPicker } from '@/components/ui/color-picker'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -1520,68 +1521,89 @@ export default function SettingsPage() {
                     History
                   </TabsTrigger>
                 </TabsList>
-                <TabsContent value="model" className="flex-1 overflow-auto p-4 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="data-model-name">Name</Label>
-              <Input
-                id="data-model-name"
-                value={dataModelForm.name}
-                onChange={(e) => {
-                  const name = e.target.value
-                  const toSlug = (t: string) => (t || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-{2,}/g, '-').replace(/^-+|-+$/g, '')
-                  setDataModelForm({ ...dataModelForm, name, slug: dataModelForm.slug ? dataModelForm.slug : toSlug(name) })
-                }}
-                placeholder="Enter data model name"
-              />
-            <div className="space-y-2">
-              <Label htmlFor="data-model-slug">Slug</Label>
-              <Input
-                id="data-model-slug"
-                value={dataModelForm.slug}
-                onChange={(e) => setDataModelForm({ ...dataModelForm, slug: (e.target.value || '').toLowerCase() })}
-                placeholder="auto-generated-from-name"
-              />
-            </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="data-model-description">Description</Label>
-              <textarea
-                id="data-model-description"
-                value={dataModelForm.description}
-                onChange={(e) => setDataModelForm({ ...dataModelForm, description: e.target.value })}
-                placeholder="Enter description (optional)"
-                className="w-full p-3 border border-gray-300 rounded-md resize-vertical min-h-[120px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                rows={4}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="data-model-source-type">Source Type</Label>
-              <Select
-                value={dataModelForm.source_type}
-                onValueChange={(v) => setDataModelForm({ ...dataModelForm, source_type: v as any })}
-              >
-                <SelectTrigger id="data-model-source-type" className="w-full">
-                  <SelectValue placeholder="Select source type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="INTERNAL">In-app database</SelectItem>
-                  <SelectItem value="EXTERNAL">External datasource</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                <TabsContent value="model" className="flex-1 overflow-auto p-6 space-y-6">
+                  <div className="space-y-6">
+                    {/* Basic Information */}
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-lg font-medium mb-4">Basic Information</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="data-model-name">Name</Label>
+                            <p className="text-xs text-muted-foreground">The internal name used for the data model. This will be used in API calls and database references.</p>
+                            <Input
+                              id="data-model-name"
+                              value={dataModelForm.name}
+                              onChange={(e) => {
+                                const name = e.target.value
+                                const toSlug = (t: string) => (t || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-{2,}/g, '-').replace(/^-+|-+$/g, '')
+                                setDataModelForm({ ...dataModelForm, name, slug: dataModelForm.slug ? dataModelForm.slug : toSlug(name) })
+                              }}
+                              placeholder="Enter data model name"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="data-model-slug">Slug</Label>
+                            <p className="text-xs text-muted-foreground">URL-friendly identifier. Auto-generated from the name but can be customized.</p>
+                            <Input
+                              id="data-model-slug"
+                              value={dataModelForm.slug}
+                              onChange={(e) => setDataModelForm({ ...dataModelForm, slug: (e.target.value || '').toLowerCase() })}
+                              placeholder="auto-generated-from-name"
+                            />
+                          </div>
+                        </div>
+                      </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="data-model-spaces">Associated Spaces</Label>
-              <MultiSelect
-                options={(availableSpaces || []).map(s => ({ value: s.id, label: `${s.name} (${s.slug})` }))}
-                selected={dataModelForm.space_ids}
-                onChange={(ids) => setDataModelForm(prev => ({ ...prev, space_ids: ids }))}
-                placeholder={spacesLoading ? "Loading spaces..." : (availableSpaces?.length ? "Select spaces..." : "No spaces available")}
-                disabled={!!spacesLoading}
-                className="w-full"
-              />
-              <div className="text-xs text-muted-foreground">Select one or more spaces</div>
-            </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="data-model-description">Description</Label>
+                        <p className="text-xs text-muted-foreground">Optional description explaining the purpose and usage of this data model.</p>
+                        <textarea
+                          id="data-model-description"
+                          value={dataModelForm.description}
+                          onChange={(e) => setDataModelForm({ ...dataModelForm, description: e.target.value })}
+                          placeholder="Enter description (optional)"
+                          className="w-full p-3 border border-gray-300 rounded-md resize-vertical min-h-[120px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          rows={4}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Configuration */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium">Configuration</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="data-model-source-type">Source Type</Label>
+                          <p className="text-xs text-muted-foreground">Choose whether this model uses internal data or connects to an external database.</p>
+                          <Select
+                            value={dataModelForm.source_type}
+                            onValueChange={(v) => setDataModelForm({ ...dataModelForm, source_type: v as any })}
+                          >
+                            <SelectTrigger id="data-model-source-type" className="w-full">
+                              <SelectValue placeholder="Select source type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="INTERNAL">In-app database</SelectItem>
+                              <SelectItem value="EXTERNAL">External datasource</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="data-model-spaces">Associated Spaces</Label>
+                          <p className="text-xs text-muted-foreground">Select which spaces this data model will be available in.</p>
+                          <MultiSelect
+                            options={(availableSpaces || []).map(s => ({ value: s.id, label: `${s.name} (${s.slug})` }))}
+                            selected={dataModelForm.space_ids}
+                            onChange={(ids) => setDataModelForm(prev => ({ ...prev, space_ids: ids }))}
+                            placeholder={spacesLoading ? "Loading spaces..." : (availableSpaces?.length ? "Select spaces..." : "No spaces available")}
+                            disabled={!!spacesLoading}
+                            className="w-full"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
             {dataModelForm.source_type === 'EXTERNAL' && (
               <div className="space-y-4 border rounded-lg p-4">
@@ -2507,51 +2529,34 @@ export default function SettingsPage() {
                                                   <GripVertical className="h-4 w-4 text-gray-400" />
                                                 </div>
 
-                                                {/* Option Preview */}
-                                                <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                  {/* Value Field */}
-                                                  <div className="space-y-1">
-                                                    <Label className="text-xs font-medium text-muted-foreground">Value</Label>
-                                        <Input
+                                                {/* Single Row Layout */}
+                                                <div className="flex-1 flex items-center gap-3">
+                                                  {/* Color Swatch */}
+                                                  <div className="flex items-center gap-2">
+                                                    <ColorPicker
+                                                      value={option.color}
+                                                      onChange={(color) => updateAttributeOption(index, 'color', color)}
+                                                    />
+                                                  </div>
+                                                  
+                                                  {/* Attribute Code */}
+                                                  <div className="flex-1 min-w-0">
+                                                    <Input
+                                                      value={option.value}
+                                                      onChange={(e) => updateAttributeOption(index, 'value', e.target.value)}
                                                       placeholder="Option value"
-                                          value={option.value}
-                                          onChange={(e) => updateAttributeOption(index, 'value', e.target.value)}
-                                                      className="h-9"
+                                                      className="h-8"
                                                     />
                                                   </div>
-
-                                                  {/* Label Field */}
-                                                  <div className="space-y-1">
-                                                    <Label className="text-xs font-medium text-muted-foreground">Label</Label>
-                                        <Input
-                                                      placeholder="Display label"
-                                          value={option.label}
-                                          onChange={(e) => updateAttributeOption(index, 'label', e.target.value)}
-                                                      className="h-9"
+                                                  
+                                                  {/* Attribute Label */}
+                                                  <div className="flex-1 min-w-0">
+                                                    <Input
+                                                      value={option.label}
+                                                      onChange={(e) => updateAttributeOption(index, 'label', e.target.value)}
+                                                      placeholder="Option label"
+                                                      className="h-8"
                                                     />
-                                                  </div>
-
-                                                  {/* Color Field */}
-                                                  <div className="space-y-1">
-                                                    <Label className="text-xs font-medium text-muted-foreground">Color</Label>
-                                                    <div className="flex items-center gap-2">
-                                                      <div 
-                                                        className="w-8 h-8 rounded border cursor-pointer hover:ring-2 hover:ring-gray-300 transition-all"
-                                            style={{ backgroundColor: option.color }}
-                                            onClick={() => {
-                                              const newColor = option.color === '#3B82F6' ? '#DC2626' : 
-                                                             option.color === '#DC2626' ? '#16A34A' : 
-                                                             option.color === '#16A34A' ? '#CA8A04' : '#3B82F6'
-                                              updateAttributeOption(index, 'color', newColor)
-                                            }}
-                                                        title="Click to cycle colors"
-                                          />
-                                          <ColorPicker
-                                            value={option.color}
-                                            onChange={(color) => updateAttributeOption(index, 'color', color)}
-                                            className="flex-1"
-                                          />
-                                        </div>
                                                   </div>
                                                 </div>
 
@@ -2930,7 +2935,7 @@ function UsersSection() {
       is_active: u.is_active,
       default_space_id: u.default_space_id || '',
       spaces: u.spaces || [],
-      avatar: u.avatar || ''
+      avatar: u.avatar || null
     })
     loadSpaces()
     setOpen(true)

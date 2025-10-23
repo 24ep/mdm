@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { MultiSelect } from '@/components/ui/multi-select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -388,81 +389,71 @@ export default function DataModelsPage() {
                 </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="model" className="space-y-4">
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-sm font-medium">Name</label>
-                      <Input 
-                        value={form.name} 
-                        onChange={(e) => {
-                          const name = e.target.value
-                          const toSlug = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-{2,}/g, '-').replace(/^-+|-+$/g, '')
-                          setForm({ ...form, name, slug: !slugEdited ? toSlug(name) : form.slug })
-                        }} 
-                        placeholder="Enter model name"
+              <TabsContent value="model" className="space-y-6">
+                <div className="space-y-6">
+                  {/* Basic Information */}
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">Basic Information</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Name</label>
+                          <p className="text-xs text-muted-foreground">The internal name used for the data model. This will be used in API calls and database references.</p>
+                          <Input 
+                            value={form.name} 
+                            onChange={(e) => {
+                              const name = e.target.value
+                              const toSlug = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-{2,}/g, '-').replace(/^-+|-+$/g, '')
+                              setForm({ ...form, name, slug: !slugEdited ? toSlug(name) : form.slug })
+                            }} 
+                            placeholder="Enter model name"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Display Name</label>
+                          <p className="text-xs text-muted-foreground">The human-readable name that will be shown in the interface.</p>
+                          <Input 
+                            value={form.display_name} 
+                            onChange={(e) => setForm({ ...form, display_name: e.target.value })} 
+                            placeholder="Enter display name"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Slug</label>
+                      <p className="text-xs text-muted-foreground">URL-friendly identifier. Auto-generated from the name but can be customized.</p>
+                      <Input
+                        value={form.slug}
+                        onChange={(e) => { setForm({ ...form, slug: e.target.value.toLowerCase() }); setSlugEdited(true) }}
+                        placeholder="auto-generated-from-name"
                       />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Display Name</label>
-                      <Input 
-                        value={form.display_name} 
-                        onChange={(e) => setForm({ ...form, display_name: e.target.value })} 
-                        placeholder="Enter display name"
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Description</label>
+                      <p className="text-xs text-muted-foreground">Optional description explaining the purpose and usage of this data model.</p>
+                      <Textarea 
+                        value={form.description} 
+                        onChange={(e) => setForm({ ...form, description: e.target.value })} 
+                        placeholder="Enter description"
+                        rows={3}
                       />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-sm font-medium">Slug</label>
-                  <Input
-                    value={form.slug}
-                    onChange={(e) => { setForm({ ...form, slug: e.target.value.toLowerCase() }); setSlugEdited(true) }}
-                    placeholder="auto-generated-from-name"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-sm font-medium">Slug</label>
-                  <Input
-                    value={form.slug}
-                    onChange={(e) => { setForm({ ...form, slug: e.target.value.toLowerCase() }); setSlugEdited(true) }}
-                    placeholder="auto-generated-from-name"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Associate Spaces</label>
-                  {spacesLoading ? (
-                    <div className="text-sm text-muted-foreground">Loading spaces...</div>
-                  ) : spacesError ? (
-                    <div className="text-sm text-red-500">{spacesError}</div>
-                  ) : (
-                    <MultiSelect
-                      options={spaces.map(s => ({ value: s.id, label: s.name }))}
-                      selected={selectedSpaceIds}
-                      onChange={setSelectedSpaceIds}
-                      placeholder="Select spaces..."
-                      className="w-full"
-                    />
-                  )}
-                  <div className="text-xs text-muted-foreground mt-1">Select one or more spaces</div>
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Description</label>
-                    <Input 
-                      value={form.description} 
-                      onChange={(e) => setForm({ ...form, description: e.target.value })} 
-                      placeholder="Enter description"
-                    />
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium">Source Type</label>
-                    <Select
-                      value={form.source_type}
-                      onValueChange={(v) => setForm({ ...form, source_type: v as any })}
-                    >
+
+                  {/* Configuration */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium">Configuration</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Source Type</label>
+                        <p className="text-xs text-muted-foreground">Choose whether this model uses internal data or connects to an external database.</p>
+                        <Select
+                          value={form.source_type}
+                          onValueChange={(v) => setForm({ ...form, source_type: v as any })}
+                        >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select source type" />
                       </SelectTrigger>
@@ -471,6 +462,25 @@ export default function DataModelsPage() {
                         <SelectItem value="EXTERNAL">External datasource</SelectItem>
                       </SelectContent>
                     </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Associated Spaces</label>
+                        <p className="text-xs text-muted-foreground">Select which spaces this data model will be available in.</p>
+                        {spacesLoading ? (
+                          <div className="text-sm text-muted-foreground">Loading spaces...</div>
+                        ) : spacesError ? (
+                          <div className="text-sm text-red-500">{spacesError}</div>
+                        ) : (
+                          <MultiSelect
+                            options={spaces.map(s => ({ value: s.id, label: s.name }))}
+                            selected={selectedSpaceIds}
+                            onChange={setSelectedSpaceIds}
+                            placeholder="Select spaces..."
+                            className="w-full"
+                          />
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </TabsContent>

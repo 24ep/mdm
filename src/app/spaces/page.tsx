@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Building2, Search, Plus, ArrowRight, Layout, Settings, FolderPlus } from 'lucide-react'
+import { Building2, Search, Plus, ArrowRight, Layout, Settings, FolderPlus, Shield, Database, BarChart3 } from 'lucide-react'
 import { useSpace } from '@/contexts/space-context'
 import toast from 'react-hot-toast'
 import { SystemSettingsModal } from '@/components/settings/SystemSettingsModal'
@@ -36,36 +36,15 @@ export default function SpaceSelectionPage() {
     is_default: false
   })
 
-  // If user has only one space, automatically redirect to it (only on initial load)
-  useEffect(() => {
-    if (!isLoading && !error && spaces.length === 1) {
-      const space = spaces[0]
-      router.push(`/${space.slug || space.id}/dashboard`)
-    }
-  }, [isLoading, error, spaces, router])
-
-  // Only redirect to current space if user didn't intentionally navigate to spaces page
-  useEffect(() => {
-    if (!isLoading && !error && currentSpace && spaces.length > 1) {
-      // Check if user intentionally navigated to spaces page
-      const intentionallyNavigated = sessionStorage.getItem('navigate-to-spaces')
-      
-      if (!intentionallyNavigated) {
-        router.push(`/${currentSpace.slug || currentSpace.id}/dashboard`)
-      } else {
-        // Clear the flag after using it
-        sessionStorage.removeItem('navigate-to-spaces')
-      }
-    }
-  }, [isLoading, error, currentSpace, spaces, router])
+  // Removed automatic redirects to allow users to stay on spaces selection page
 
   const filtered = spaces.filter(s => (
     s.name.toLowerCase().includes(search.toLowerCase()) ||
     (s.description || '').toLowerCase().includes(search.toLowerCase())
   ))
 
-  const handleSpaceSelect = (space: Space) => {
-    setCurrentSpace(space)
+  const handleSpaceSelect = async (space: Space) => {
+    await setCurrentSpace(space)
     router.push(`/${space.slug || space.id}/dashboard`)
   }
 
@@ -79,6 +58,10 @@ export default function SpaceSelectionPage() {
     e.stopPropagation() // Prevent card click
     setCurrentSpace(space)
     router.push(`/${space.slug || space.id}/settings`)
+  }
+
+  const handleAdminConsole = () => {
+    router.push('/admin')
   }
 
   const handleCreateSpace = async (e: React.FormEvent) => {
@@ -314,6 +297,54 @@ export default function SpaceSelectionPage() {
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Admin Space Card */}
+          <Card 
+            className="border-2 border-dashed border-primary/20 bg-primary/5 hover:shadow-md transition-shadow cursor-pointer group"
+            onClick={handleAdminConsole}
+          >
+            <CardHeader className="flex flex-row items-center gap-3">
+              <Shield className="h-6 w-6 text-primary" />
+              <div className="flex-1">
+                <CardTitle className="text-base flex items-center gap-2">
+                  Admin Console
+                  <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">System</span>
+                </CardTitle>
+                <CardDescription>
+                  System administration & management
+                </CardDescription>
+              </div>
+              <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleAdminConsole()
+                  }}
+                >
+                  <Database className="h-4 w-4 mr-2" />
+                  BigQuery
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleAdminConsole()
+                  }}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           {filtered.map(space => (
             <Card 
               key={space.id} 

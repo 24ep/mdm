@@ -16,14 +16,14 @@ services:
     # volumes:
       # - ./uploads:/app/uploads
     depends_on:
-      - supabase-db
-      - supabase-rest
+      - postgres-db
+      - postgrest-api
       - minio
 
-  # PostgreSQL (Supabase DB)
-  supabase-db:
-    image: supabase/postgres:15.1.0.58
-    container_name: supabase-db
+  # PostgreSQL Database
+  postgres-db:
+    image: postgres:15
+    container_name: postgres-db
     restart: unless-stopped
     ports:
       - "54322:5432"
@@ -32,16 +32,16 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-postgres}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
     volumes:
-      - supabase_db:/var/lib/postgresql/data
+      - postgres_db:/var/lib/postgresql/data
 
-  # REST (PostgREST)
-  supabase-rest:
+  # PostgREST API
+  postgrest-api:
     image: postgrest/postgrest:v12.0.2
     depends_on:
-      - supabase-db
+      - postgres-db
     restart: unless-stopped
     environment:
-      PGRST_DB_URI: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@supabase-db:5432/${POSTGRES_DB:-postgres}
+      PGRST_DB_URI: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres-db:5432/${POSTGRES_DB:-postgres}
       PGRST_DB_SCHEMAS: public
       PGRST_DB_ANON_ROLE: anon
       # Disable JWT verification locally by omitting secret
@@ -63,6 +63,6 @@ services:
       - minio_data:/data
 
 volumes:
-  supabase_db:
+  postgres_db:
   minio_data:
 

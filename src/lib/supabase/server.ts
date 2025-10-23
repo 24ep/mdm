@@ -1,30 +1,48 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+// PostgREST client configuration
+// This file has been updated to use PostgREST instead of Supabase
 
 export function createClient() {
-  const cookieStore = cookies()
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY')
+  if (!apiUrl) {
+    throw new Error('Missing NEXT_PUBLIC_API_URL')
   }
 
-  return createServerClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value
-      },
-      set(name: string, value: string, options?: CookieOptions) {
-        cookieStore.set({ name, value, ...options })
-      },
-      remove(name: string, options?: CookieOptions) {
-        // next/headers cookies API supports delete by name; options are ignored by delete
-        cookieStore.delete(name)
-      },
-    },
-  })
+  // Return a simple fetch-based client for PostgREST
+  return {
+    from: (table: string) => ({
+      select: (columns = '*') => ({
+        eq: (column: string, value: any) => ({
+          single: () => fetch(`${apiUrl}/${table}?${column}=eq.${value}&select=${columns}`).then(res => res.json()),
+          then: (callback: any) => fetch(`${apiUrl}/${table}?${column}=eq.${value}&select=${columns}`).then(res => res.json()).then(callback)
+        }),
+        then: (callback: any) => fetch(`${apiUrl}/${table}?select=${columns}`).then(res => res.json()).then(callback)
+      }),
+      insert: (data: any) => ({
+        then: (callback: any) => fetch(`${apiUrl}/${table}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        }).then(res => res.json()).then(callback)
+      }),
+      update: (data: any) => ({
+        eq: (column: string, value: any) => ({
+          then: (callback: any) => fetch(`${apiUrl}/${table}?${column}=eq.${value}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          }).then(res => res.json()).then(callback)
+        })
+      }),
+      delete: () => ({
+        eq: (column: string, value: any) => ({
+          then: (callback: any) => fetch(`${apiUrl}/${table}?${column}=eq.${value}`, {
+            method: 'DELETE'
+          }).then(res => res.json()).then(callback)
+        })
+      })
+    })
+  }
 }
 
 

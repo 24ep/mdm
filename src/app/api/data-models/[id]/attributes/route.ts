@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 
 export async function GET(
@@ -71,7 +73,34 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
     const dataModelId = params.id
+
+    // Check if user has permission to create attributes in this space
+    const spaceCheck = await query(`
+      SELECT sm.role, s.created_by
+      FROM data_models dm
+      JOIN data_model_spaces dms ON dm.id = dms.data_model_id
+      JOIN spaces s ON dms.space_id = s.id
+      LEFT JOIN space_members sm ON s.id = sm.space_id AND sm.user_id = $1
+      WHERE dm.id = $2
+    `, [session.user.id, dataModelId])
+
+    if (spaceCheck.rows.length === 0) {
+      return NextResponse.json({ error: 'Data model not found' }, { status: 404 })
+    }
+
+    const spaceData = spaceCheck.rows[0]
+    const userRole = spaceData.role
+    const isOwner = spaceData.created_by === session.user.id
+    const canCreate = userRole === 'ADMIN' || userRole === 'MEMBER' || isOwner
+
+    if (!canCreate) {
+      return NextResponse.json({ error: 'Insufficient permissions to create attributes' }, { status: 403 })
+    }
+
     const body = await request.json()
     const {
       name,

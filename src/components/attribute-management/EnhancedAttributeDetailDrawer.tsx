@@ -12,6 +12,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@/components/ui/drawer'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { ColorPicker } from '@/components/ui/color-picker'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import { 
   Database, 
@@ -21,11 +23,21 @@ import {
   GripVertical,
   Plus,
   Trash2,
-  Save,
   X,
-  Palette
+  Palette,
+  AlertTriangle,
+  BarChart3,
+  CheckCircle,
+  TrendingUp,
+  Target,
+  MoreVertical,
+  Eye,
+  EyeOff,
+  Edit,
+  Save
 } from 'lucide-react'
 import { Attribute, AttributeFormData } from '@/lib/attribute-management'
+import { useSpacePermissions } from '@/hooks/use-space-permissions'
 import toast from 'react-hot-toast'
 
 interface AttributeOption {
@@ -52,11 +64,25 @@ export function EnhancedAttributeDetailDrawer({
   onDelete,
   allAttributes
 }: EnhancedAttributeDetailDrawerProps) {
+  const permissions = useSpacePermissions()
   const [activeTab, setActiveTab] = useState('details')
-  const [isEditing, setIsEditing] = useState(false)
   const [editForm, setEditForm] = useState<Partial<Attribute>>({})
   const [options, setOptions] = useState<AttributeOption[]>([])
+  const [activityData, setActivityData] = useState<any[]>([])
+  const [loadingActivity, setLoadingActivity] = useState(false)
+  const [showNewOption, setShowNewOption] = useState(false)
   const [newOption, setNewOption] = useState({ value: '', label: '', color: '#3B82F6' })
+  const [incrementConfig, setIncrementConfig] = useState({
+    enabled: false,
+    prefix: '',
+    suffix: '',
+    startValue: 1,
+    step: 1
+  })
+  const [qualityStats, setQualityStats] = useState<any>(null)
+  const [loadingQuality, setLoadingQuality] = useState(false)
+  const [editingOption, setEditingOption] = useState<number | null>(null)
+  const [editingOptionData, setEditingOptionData] = useState({ value: '', label: '', color: '#3B82F6' })
 
   const colorOptions = [
     '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
@@ -67,29 +93,164 @@ export function EnhancedAttributeDetailDrawer({
     if (attribute) {
       setEditForm(attribute)
       setOptions(attribute.options || [])
+      loadAttributeActivity()
+      loadQualityStats()
+      
+      // Load increment configuration
+      if (attribute.increment_config) {
+        try {
+          const config = JSON.parse(attribute.increment_config)
+          setIncrementConfig(config)
+        } catch (error) {
+          console.error('Error parsing increment config:', error)
+        }
+      }
     }
   }, [attribute])
 
-  const isSelectType = attribute?.type === 'select' || attribute?.type === 'multiselect'
-
-  const handleSave = () => {
-    if (attribute && editForm) {
-      const updatedAttribute = {
-        ...attribute,
-        ...editForm,
-        options: options.length > 0 ? options : undefined
+  const loadAttributeActivity = async () => {
+    if (!attribute) return
+    
+    setLoadingActivity(true)
+    try {
+      const response = await fetch(`/api/data-models/attributes/${attribute.id}/activity`)
+      if (response.ok) {
+        const data = await response.json()
+        setActivityData(data.activities || [])
       }
-      onSave(updatedAttribute)
-      setIsEditing(false)
+    } catch (error) {
+      console.error('Error loading attribute activity:', error)
+    } finally {
+      setLoadingActivity(false)
     }
   }
 
-  const handleCancel = () => {
-    if (attribute) {
-      setEditForm(attribute)
-      setOptions(attribute.options || [])
+  const loadQualityStats = async () => {
+    if (!attribute) return
+    
+    setLoadingQuality(true)
+    try {
+      const response = await fetch(`/api/data-models/attributes/${attribute.id}/quality-stats`)
+      if (response.ok) {
+        const data = await response.json()
+        setQualityStats(data)
+      }
+    } catch (error) {
+      console.error('Error loading quality stats:', error)
+    } finally {
+      setLoadingQuality(false)
     }
-    setIsEditing(false)
+  }
+
+  const handleAddNewOption = () => {
+    setShowNewOption(true)
+    setNewOption({ value: '', label: '', color: '#3B82F6' })
+  }
+
+  const handleSaveNewOption = async () => {
+    if (!newOption.value || !newOption.label) return
+
+    try {
+      const updatedOptions = [...options, newOption]
+      setOptions(updatedOptions)
+      
+      // Update the attribute with new options
+      const response = await fetch(`/api/data-models/attributes/${attribute.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ options: updatedOptions })
+      })
+
+      if (response.ok) {
+        setShowNewOption(false)
+        setNewOption({ value: '', label: '', color: '#3B82F6' })
+        // Refresh the attribute data
+        if (onSave) {
+          onSave({ ...attribute, options: updatedOptions })
+        }
+      }
+    } catch (error) {
+      console.error('Error saving new option:', error)
+    }
+  }
+
+  const handleCancelNewOption = () => {
+    setShowNewOption(false)
+    setNewOption({ value: '', label: '', color: '#3B82F6' })
+  }
+
+  const handleEditOption = (index: number, option: any) => {
+    setEditingOption(index)
+    setEditingOptionData({ ...option })
+  }
+
+  const handleSaveOption = async (index: number) => {
+    if (!editingOptionData.value || !editingOptionData.label) return
+
+    try {
+      const updatedOptions = [...options]
+      updatedOptions[index] = editingOptionData
+      setOptions(updatedOptions)
+      
+      const response = await fetch(`/api/data-models/attributes/${attribute.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ options: updatedOptions })
+      })
+
+      if (response.ok) {
+        setEditingOption(null)
+        if (onSave) {
+          onSave({ ...attribute, options: updatedOptions })
+        }
+      }
+    } catch (error) {
+      console.error('Error saving option:', error)
+    }
+  }
+
+  const handleCancelEditOption = () => {
+    setEditingOption(null)
+    setEditingOptionData({ value: '', label: '', color: '#3B82F6' })
+  }
+
+  const handleRemoveOption = async (index: number) => {
+    try {
+      const updatedOptions = options.filter((_, i) => i !== index)
+      setOptions(updatedOptions)
+      
+      const response = await fetch(`/api/data-models/attributes/${attribute.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ options: updatedOptions })
+      })
+
+      if (response.ok) {
+        if (onSave) {
+          onSave({ ...attribute, options: updatedOptions })
+        }
+      }
+    } catch (error) {
+      console.error('Error removing option:', error)
+    }
+  }
+
+  const isSelectType = attribute?.type === 'select' || attribute?.type === 'multiselect'
+
+  const handleFormChange = (field: string, value: any) => {
+    const newForm = { ...editForm, [field]: value }
+    setEditForm(newForm)
+    
+    // Auto-save after a short delay
+    if (attribute) {
+      const updatedAttribute = {
+        ...attribute,
+        ...newForm,
+        options: options.length > 0 ? options : undefined,
+        increment_config: JSON.stringify(incrementConfig)
+      }
+      onSave(updatedAttribute)
+    }
   }
 
   const handleAddOption = () => {
@@ -113,9 +274,6 @@ export function EnhancedAttributeDetailDrawer({
     setNewOption({ value: '', label: '', color: '#3B82F6' })
   }
 
-  const handleRemoveOption = (index: number) => {
-    setOptions(prev => prev.filter((_, i) => i !== index))
-  }
 
   const handleOptionDragEnd = (result: any) => {
     if (!result.destination) return
@@ -143,7 +301,7 @@ export function EnhancedAttributeDetailDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="h-screen w-[600px] flex flex-col">
+      <DrawerContent className="h-screen w-[720px] flex flex-col">
         <DrawerHeader className="border-b sticky top-0 bg-background z-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -154,29 +312,6 @@ export function EnhancedAttributeDetailDrawer({
               <Badge variant="outline">{attribute.type}</Badge>
             </div>
             <div className="flex items-center gap-2">
-              {isEditing ? (
-                <>
-                  <Button size="sm" variant="outline" onClick={handleCancel}>
-                    <X className="h-4 w-4 mr-1" />
-                    Cancel
-                  </Button>
-                  <Button size="sm" onClick={handleSave}>
-                    <Save className="h-4 w-4 mr-1" />
-                    Save
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>
-                    <Settings className="h-4 w-4 mr-1" />
-                    Edit
-                  </Button>
-                  <Button size="sm" variant="destructive" onClick={() => onDelete(attribute.id)}>
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Delete
-                  </Button>
-                </>
-              )}
               <DrawerClose asChild>
                 <Button variant="outline" size="sm">
                   Close
@@ -188,7 +323,7 @@ export function EnhancedAttributeDetailDrawer({
 
         <div className="flex-1 overflow-hidden">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className={`grid w-full ${isSelectType ? 'grid-cols-3' : 'grid-cols-3'}`}>
               <TabsTrigger value="details" className="flex items-center gap-2">
                 <Database className="h-4 w-4" />
                 Details
@@ -218,81 +353,61 @@ export function EnhancedAttributeDetailDrawer({
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="name">Name</Label>
-                        {isEditing ? (
-                          <Input
-                            id="name"
-                            value={editForm.name || ''}
-                            onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                            placeholder="attribute_name"
-                          />
-                        ) : (
-                          <div className="p-2 bg-muted rounded-md font-mono text-sm">
-                            {attribute.name}
-                          </div>
-                        )}
+                        <Input
+                          id="name"
+                          value={editForm.name || ''}
+                          onChange={(e) => handleFormChange('name', e.target.value)}
+                          placeholder="attribute_name"
+                          disabled={!permissions.canEdit}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="display_name">Display Name</Label>
-                        {isEditing ? (
-                          <Input
-                            id="display_name"
-                            value={editForm.display_name || ''}
-                            onChange={(e) => setEditForm({ ...editForm, display_name: e.target.value })}
-                            placeholder="Display Name"
-                          />
-                        ) : (
-                          <div className="p-2 bg-muted rounded-md">
-                            {attribute.display_name}
-                          </div>
-                        )}
+                        <Input
+                          id="display_name"
+                          value={editForm.display_name || ''}
+                          onChange={(e) => handleFormChange('display_name', e.target.value)}
+                          placeholder="Display Name"
+                          disabled={!permissions.canEdit}
+                        />
                       </div>
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="type">Type</Label>
-                      {isEditing ? (
-                        <Select
-                          value={editForm.type || ''}
-                          onValueChange={(value) => setEditForm({ ...editForm, type: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="text">Text</SelectItem>
-                            <SelectItem value="number">Number</SelectItem>
-                            <SelectItem value="email">Email</SelectItem>
-                            <SelectItem value="url">URL</SelectItem>
-                            <SelectItem value="date">Date</SelectItem>
-                            <SelectItem value="datetime">DateTime</SelectItem>
-                            <SelectItem value="boolean">Boolean</SelectItem>
-                            <SelectItem value="select">Select</SelectItem>
-                            <SelectItem value="multiselect">Multi-Select</SelectItem>
-                            <SelectItem value="attachment">Attachment</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <div className="p-2 bg-muted rounded-md">
-                          <Badge variant="secondary">{attribute.type}</Badge>
-                        </div>
-                      )}
+                      <Select
+                        value={editForm.type || ''}
+                        onValueChange={(value) => handleFormChange('type', value)}
+                        disabled={!permissions.canEdit}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="text">Text</SelectItem>
+                          <SelectItem value="number">Number</SelectItem>
+                          <SelectItem value="email">Email</SelectItem>
+                          <SelectItem value="url">URL</SelectItem>
+                          <SelectItem value="date">Date</SelectItem>
+                          <SelectItem value="datetime">DateTime</SelectItem>
+                          <SelectItem value="boolean">Boolean</SelectItem>
+                          <SelectItem value="select">Select</SelectItem>
+                          <SelectItem value="multiselect">Multi-Select</SelectItem>
+                          <SelectItem value="attachment">Attachment</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="description">Description</Label>
-                      {isEditing ? (
-                        <Textarea
-                          id="description"
-                          value={editForm.description || ''}
-                          onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                          placeholder="Describe this attribute..."
-                          rows={3}
-                        />
-                      ) : (
-                        <div className="p-2 bg-muted rounded-md min-h-[60px]">
-                          {attribute.description || 'No description provided'}
-                        </div>
-                      )}
+                      <Textarea
+                        id="description"
+                        value={editForm.description || ''}
+                        onChange={(e) => handleFormChange('description', e.target.value)}
+                        placeholder="Describe this attribute..."
+                        rows={3}
+                        disabled={!permissions.canEdit}
+                      />
                     </div>
                   </CardContent>
                 </Card>
@@ -312,16 +427,11 @@ export function EnhancedAttributeDetailDrawer({
                           This attribute must have a value
                         </p>
                       </div>
-                      {isEditing ? (
-                        <Switch
-                          checked={editForm.is_required || false}
-                          onCheckedChange={(checked) => setEditForm({ ...editForm, is_required: checked })}
-                        />
-                      ) : (
-                        <Badge variant={attribute.is_required ? 'default' : 'secondary'}>
-                          {attribute.is_required ? 'Required' : 'Optional'}
-                        </Badge>
-                      )}
+                      <Switch
+                        checked={editForm.is_required || false}
+                        onCheckedChange={(checked) => handleFormChange('is_required', checked)}
+                        disabled={!permissions.canEdit}
+                      />
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -331,16 +441,11 @@ export function EnhancedAttributeDetailDrawer({
                           Values must be unique across all records
                         </p>
                       </div>
-                      {isEditing ? (
-                        <Switch
-                          checked={editForm.is_unique || false}
-                          onCheckedChange={(checked) => setEditForm({ ...editForm, is_unique: checked })}
-                        />
-                      ) : (
-                        <Badge variant={attribute.is_unique ? 'default' : 'secondary'}>
-                          {attribute.is_unique ? 'Unique' : 'Not Unique'}
-                        </Badge>
-                      )}
+                      <Switch
+                        checked={editForm.is_unique || false}
+                        onCheckedChange={(checked) => handleFormChange('is_unique', checked)}
+                        disabled={!permissions.canEdit}
+                      />
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -350,16 +455,11 @@ export function EnhancedAttributeDetailDrawer({
                           This attribute serves as the primary identifier
                         </p>
                       </div>
-                      {isEditing ? (
-                        <Switch
-                          checked={editForm.is_primary_key || false}
-                          onCheckedChange={(checked) => setEditForm({ ...editForm, is_primary_key: checked })}
-                        />
-                      ) : (
-                        <Badge variant={attribute.is_primary_key ? 'default' : 'secondary'}>
-                          {attribute.is_primary_key ? 'Primary Key' : 'Not Primary Key'}
-                        </Badge>
-                      )}
+                      <Switch
+                        checked={editForm.is_primary_key || false}
+                        onCheckedChange={(checked) => handleFormChange('is_primary_key', checked)}
+                        disabled={!permissions.canEdit}
+                      />
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -369,41 +469,246 @@ export function EnhancedAttributeDetailDrawer({
                           This attribute references another table
                         </p>
                       </div>
-                      {isEditing ? (
-                        <Switch
-                          checked={editForm.is_foreign_key || false}
-                          onCheckedChange={(checked) => setEditForm({ ...editForm, is_foreign_key: checked })}
-                        />
-                      ) : (
-                        <Badge variant={attribute.is_foreign_key ? 'default' : 'secondary'}>
-                          {attribute.is_foreign_key ? 'Foreign Key' : 'Not Foreign Key'}
-                        </Badge>
-                      )}
+                      <Switch
+                        checked={editForm.is_foreign_key || false}
+                        onCheckedChange={(checked) => handleFormChange('is_foreign_key', checked)}
+                        disabled={!permissions.canEdit}
+                      />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="default_value">Default Value</Label>
-                      {isEditing ? (
-                        <Input
-                          id="default_value"
-                          value={editForm.default_value || ''}
-                          onChange={(e) => setEditForm({ ...editForm, default_value: e.target.value })}
-                          placeholder="Default value (optional)"
-                        />
-                      ) : (
-                        <div className="p-2 bg-muted rounded-md">
-                          {attribute.default_value || 'No default value'}
-                        </div>
-                      )}
+                      <Input
+                        id="default_value"
+                        value={editForm.default_value || ''}
+                        onChange={(e) => handleFormChange('default_value', e.target.value)}
+                        placeholder="Default value (optional)"
+                        disabled={!permissions.canEdit}
+                      />
                     </div>
                   </CardContent>
                 </Card>
+
+                {attribute.type === 'number' && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Auto-Increment Configuration</CardTitle>
+                      <CardDescription>
+                        Configure automatic number generation for this attribute
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label>Enable Auto-Increment</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Automatically generate sequential numbers for new records
+                          </p>
+                        </div>
+                        <Switch
+                          checked={incrementConfig.enabled}
+                          onCheckedChange={(checked) => setIncrementConfig({ ...incrementConfig, enabled: checked })}
+                          disabled={!permissions.canEdit}
+                        />
+                      </div>
+
+                      {incrementConfig.enabled && (
+                        <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="prefix">Prefix</Label>
+                              <Input
+                                id="prefix"
+                                value={incrementConfig.prefix}
+                                onChange={(e) => setIncrementConfig({ ...incrementConfig, prefix: e.target.value })}
+                                placeholder="e.g., ID-"
+                                disabled={!permissions.canEdit}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="suffix">Suffix</Label>
+                              <Input
+                                id="suffix"
+                                value={incrementConfig.suffix}
+                                onChange={(e) => setIncrementConfig({ ...incrementConfig, suffix: e.target.value })}
+                                placeholder="e.g., -2024"
+                                disabled={!permissions.canEdit}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="start_value">Start Value</Label>
+                              <Input
+                                id="start_value"
+                                type="number"
+                                value={incrementConfig.startValue}
+                                onChange={(e) => setIncrementConfig({ ...incrementConfig, startValue: parseInt(e.target.value) || 1 })}
+                                min="1"
+                                disabled={!permissions.canEdit}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="step">Step</Label>
+                              <Input
+                                id="step"
+                                type="number"
+                                value={incrementConfig.step}
+                                onChange={(e) => setIncrementConfig({ ...incrementConfig, step: parseInt(e.target.value) || 1 })}
+                                min="1"
+                                disabled={!permissions.canEdit}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="text-sm font-medium text-blue-800 mb-1">Preview</div>
+                            <div className="text-sm text-blue-700">
+                              Next value: {incrementConfig.prefix}{incrementConfig.startValue}{incrementConfig.suffix}
+                            </div>
+                            <div className="text-sm text-blue-700">
+                              Following: {incrementConfig.prefix}{incrementConfig.startValue + incrementConfig.step}{incrementConfig.suffix}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Danger Zone */}
+                {permissions.canDelete && (
+                  <Card className="border-red-200">
+                    <CardHeader>
+                      <CardTitle className="text-red-600 flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5" />
+                        Danger Zone
+                      </CardTitle>
+                      <CardDescription>
+                        Irreversible and destructive actions
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between p-4 border border-red-200 rounded-lg bg-red-50">
+                        <div>
+                          <h4 className="font-medium text-red-900">Delete Attribute</h4>
+                          <p className="text-sm text-red-700 mt-1">
+                            Once you delete an attribute, there is no going back. This will remove the attribute from all data records.
+                          </p>
+                        </div>
+                        <Button 
+                          variant="destructive" 
+                          onClick={() => onDelete(attribute.id)}
+                          className="ml-4"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete Attribute
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </TabsContent>
 
             {isSelectType && (
               <TabsContent value="options" className="flex-1 overflow-y-auto p-6">
                 <div className="space-y-6">
+                  {/* Data Quality Statistics */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Data Quality Statistics</CardTitle>
+                      <CardDescription>
+                        Overview of data quality metrics for this attribute
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {loadingQuality ? (
+                        <div className="flex items-center justify-center py-8">
+                          <div className="text-sm text-muted-foreground">Loading quality statistics...</div>
+                        </div>
+                      ) : qualityStats ? (
+                        <div className="space-y-4">
+                          {/* Statistics Grid - Minimal Style */}
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="p-3 border rounded-lg">
+                              <div className="text-2xl font-semibold text-gray-900">
+                                {qualityStats.statistics.totalRecords.toLocaleString()}
+                              </div>
+                              <div className="text-sm text-gray-600">Total Records</div>
+                            </div>
+                            <div className="p-3 border rounded-lg">
+                              <div className="text-2xl font-semibold text-gray-900">
+                                {qualityStats.statistics.completionRate}%
+                              </div>
+                              <div className="text-sm text-gray-600">Completion Rate</div>
+                            </div>
+                            <div className="p-3 border rounded-lg">
+                              <div className="text-2xl font-semibold text-gray-900">
+                                {qualityStats.statistics.uniqueCount.toLocaleString()}
+                              </div>
+                              <div className="text-sm text-gray-600">Unique Values</div>
+                            </div>
+                            <div className="p-3 border rounded-lg">
+                              <div className="text-2xl font-semibold text-gray-900">
+                                {qualityStats.statistics.recentChanges}
+                              </div>
+                              <div className="text-sm text-gray-600">Recent Changes</div>
+                            </div>
+                          </div>
+
+                          {/* Quality Issues - Minimal Style */}
+                          {qualityStats.qualityIssues && qualityStats.qualityIssues.length > 0 && (
+                            <div className="space-y-2">
+                              <h4 className="text-sm font-medium text-gray-900">Quality Issues</h4>
+                              <div className="space-y-1">
+                                {qualityStats.qualityIssues.map((issue, index) => (
+                                  <div key={index} className="flex items-center justify-between p-2 border rounded text-sm">
+                                    <div className="flex items-center gap-2">
+                                      <div className={`w-2 h-2 rounded-full ${
+                                        issue.severity === 'error' ? 'bg-red-500' : 
+                                        issue.severity === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+                                      }`} />
+                                      <span className="text-gray-700">{issue.message}</span>
+                                    </div>
+                                    <span className="text-gray-500">{issue.count}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Data Summary */}
+                          <div className="pt-4 border-t">
+                            <div className="grid grid-cols-3 gap-4 text-sm">
+                              <div>
+                                <div className="text-gray-600">Non-null values</div>
+                                <div className="font-medium">{qualityStats.statistics.nonNullCount.toLocaleString()}</div>
+                              </div>
+                              <div>
+                                <div className="text-gray-600">Missing values</div>
+                                <div className="font-medium">{qualityStats.statistics.missingValues.toLocaleString()}</div>
+                              </div>
+                              <div>
+                                <div className="text-gray-600">Data type</div>
+                                <div className="font-medium">{qualityStats.attribute.type}</div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center py-8">
+                          <div className="text-center">
+                            <BarChart3 className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground">No quality data available</p>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Attribute Options */}
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
@@ -414,148 +719,114 @@ export function EnhancedAttributeDetailDrawer({
                         Manage the available options for this {attribute.type} field. Drag and drop to reorder.
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      {/* Add New Option */}
-                      <div className="p-4 border rounded-lg bg-muted/20">
-                        <h4 className="font-medium mb-3">Add New Option</h4>
-                        <div className="grid grid-cols-2 gap-3 mb-3">
-                          <div>
-                            <Label htmlFor="option-value">Value *</Label>
-                            <Input
-                              id="option-value"
-                              value={newOption.value}
-                              onChange={(e) => setNewOption({ ...newOption, value: e.target.value })}
-                              placeholder="option_value"
-                            />
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Only letters, numbers, and underscores allowed
-                            </p>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {options.map((option, index) => (
+                          <div key={index} className="flex items-center gap-3 p-3 border rounded-lg">
+                            {/* Color Swatch */}
+                            <div className="flex items-center gap-2">
+                              <ColorPicker
+                                value={option.color || '#3B82F6'}
+                                onChange={(color) => handleOptionChange(index, 'color', color)}
+                                disabled={!permissions.canEdit}
+                              />
+                            </div>
+                            
+                            {/* Attribute Code */}
+                            <div className="flex-1 min-w-0">
+                              <Input
+                                value={option.value}
+                                onChange={(e) => handleOptionChange(index, 'value', e.target.value)}
+                                placeholder="Option value"
+                                className="h-8"
+                                disabled={!permissions.canEdit}
+                              />
+                            </div>
+                            
+                            {/* Attribute Label */}
+                            <div className="flex-1 min-w-0">
+                              <Input
+                                value={option.label}
+                                onChange={(e) => handleOptionChange(index, 'label', e.target.value)}
+                                placeholder="Option label"
+                                className="h-8"
+                                disabled={!permissions.canEdit}
+                              />
+                            </div>
+                            
+                            {/* Remove Button */}
+                            {permissions.canEdit && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleRemoveOption(index)}
+                                disabled={options.length === 1}
+                                className="h-8"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            )}
                           </div>
-                          <div>
-                            <Label htmlFor="option-label">Label *</Label>
-                            <Input
-                              id="option-label"
-                              value={newOption.label}
-                              onChange={(e) => setNewOption({ ...newOption, label: e.target.value })}
-                              placeholder="Option Label"
-                            />
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div>
-                            <Label>Color</Label>
-                            <div className="flex gap-1 mt-1">
-                              {colorOptions.map(color => (
-                                <button
-                                  key={color}
-                                  className={`w-6 h-6 rounded-full border-2 ${
-                                    newOption.color === color ? 'border-gray-800' : 'border-gray-300'
-                                  }`}
-                                  style={{ backgroundColor: color }}
-                                  onClick={() => setNewOption({ ...newOption, color })}
+                        ))}
+
+                        {permissions.canEdit && (
+                          <div className="p-4 border-2 border-dashed border-blue-300 bg-blue-50 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              {/* Color Swatch */}
+                              <div className="flex items-center gap-2">
+                                <ColorPicker
+                                  value={newOption.color}
+                                  onChange={(color) => setNewOption({ ...newOption, color })}
                                 />
-                              ))}
+                              </div>
+                              
+                              {/* Attribute Code */}
+                              <div className="flex-1 min-w-0">
+                                <Input
+                                  value={newOption.value}
+                                  onChange={(e) => setNewOption({ ...newOption, value: e.target.value })}
+                                  placeholder="Option value"
+                                  className="h-8"
+                                />
+                              </div>
+                              
+                              {/* Attribute Label */}
+                              <div className="flex-1 min-w-0">
+                                <Input
+                                  value={newOption.label}
+                                  onChange={(e) => setNewOption({ ...newOption, label: e.target.value })}
+                                  placeholder="Option label"
+                                  className="h-8"
+                                />
+                              </div>
+                              
+                              {/* Add Button */}
+                              <Button
+                                onClick={handleAddOption}
+                                disabled={!newOption.value.trim() || !newOption.label.trim()}
+                                className="h-8"
+                              >
+                                <Plus className="h-3 w-3" />
+                              </Button>
                             </div>
                           </div>
-                          <Button onClick={handleAddOption} disabled={!newOption.value.trim() || !newOption.label.trim()}>
-                            <Plus className="h-4 w-4 mr-1" />
-                            Add Option
-                          </Button>
-                        </div>
+                        )}
+
+                        {options.length === 0 && (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <Settings className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                            <p className="text-lg font-medium">No options yet</p>
+                            <p className="text-sm">Add options for this {attribute.type} field</p>
+                          </div>
+                        )}
                       </div>
-
-                      {/* Options List */}
-                      {options.length > 0 ? (
-                        <DragDropContext onDragEnd={handleOptionDragEnd}>
-                          <Droppable droppableId="options">
-                            {(provided, snapshot) => (
-                              <div
-                                {...provided.droppableProps}
-                                ref={provided.innerRef}
-                                className={`space-y-2 ${snapshot.isDraggingOver ? 'bg-blue-50' : ''}`}
-                              >
-                                {options.map((option, index) => (
-                                  <Draggable key={`${option.value}-${index}`} draggableId={`${option.value}-${index}`} index={index}>
-                                    {(provided, snapshot) => (
-                                      <div
-                                        ref={provided.innerRef}
-                                        {...provided.draggableProps}
-                                        className={`flex items-center gap-3 p-3 border rounded-lg transition-colors ${
-                                          snapshot.isDragging 
-                                            ? 'bg-blue-100 shadow-lg border-blue-300' 
-                                            : 'hover:bg-muted/50'
-                                        }`}
-                                      >
-                                        <div
-                                          {...provided.dragHandleProps}
-                                          className="cursor-move p-1 hover:bg-gray-200 rounded"
-                                        >
-                                          <GripVertical className="h-4 w-4 text-muted-foreground" />
-                                        </div>
-
-                                        <div className="flex-1 grid grid-cols-2 gap-3">
-                                          <div>
-                                            <Label>Value</Label>
-                                            <Input
-                                              value={option.value}
-                                              onChange={(e) => handleOptionChange(index, 'value', e.target.value)}
-                                              placeholder="option_value"
-                                            />
-                                          </div>
-                                          <div>
-                                            <Label>Label</Label>
-                                            <Input
-                                              value={option.label}
-                                              onChange={(e) => handleOptionChange(index, 'label', e.target.value)}
-                                              placeholder="Option Label"
-                                            />
-                                          </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-2">
-                                          <div className="flex gap-1">
-                                            {colorOptions.map(color => (
-                                              <button
-                                                key={color}
-                                                className={`w-6 h-6 rounded-full border-2 ${
-                                                  option.color === color ? 'border-gray-800' : 'border-gray-300'
-                                                }`}
-                                                style={{ backgroundColor: color }}
-                                                onClick={() => handleOptionChange(index, 'color', color)}
-                                              />
-                                            ))}
-                                          </div>
-                                          
-                                          <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => handleRemoveOption(index)}
-                                          >
-                                            <Trash2 className="h-4 w-4" />
-                                          </Button>
-                                        </div>
-                                      </div>
-                                    )}
-                                  </Draggable>
-                                ))}
-                                {provided.placeholder}
-                              </div>
-                            )}
-                          </Droppable>
-                        </DragDropContext>
-                      ) : (
-                        <div className="text-center py-8 text-muted-foreground">
-                          <Settings className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                          <p className="text-lg font-medium">No options yet</p>
-                          <p className="text-sm">Add options for this {attribute.type} field</p>
-                        </div>
-                      )}
                     </CardContent>
                   </Card>
                 </div>
               </TabsContent>
             )}
+
 
             <TabsContent value="activity" className="flex-1 overflow-y-auto p-6">
               <div className="space-y-6">
@@ -568,42 +839,42 @@ export function EnhancedAttributeDetailDrawer({
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      <div className="grid grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
-                        <div className="text-center">
-                          <div className="text-2xl font-bold">12</div>
-                          <div className="text-sm text-muted-foreground">Total Records</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold">8</div>
-                          <div className="text-sm text-muted-foreground">Recent Changes</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold">95%</div>
-                          <div className="text-sm text-muted-foreground">Completion Rate</div>
-                        </div>
-                      </div>
-
                       <div className="space-y-2">
                         <h4 className="font-medium">Recent Activity</h4>
-                        <div className="space-y-2">
-                          <div className="flex items-start gap-3 p-3 border rounded-lg">
-                            <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium">Created</span>
-                                <Badge variant="outline" className="text-xs">
-                                  John Doe
-                                </Badge>
+                        {loadingActivity ? (
+                          <div className="flex items-center justify-center py-8">
+                            <div className="text-sm text-muted-foreground">Loading activity...</div>
+                          </div>
+                        ) : activityData.length > 0 ? (
+                          <div className="space-y-1">
+                            {activityData.map((activity) => (
+                              <div key={activity.id} className="flex items-center gap-3 py-2 px-3 hover:bg-gray-50 rounded">
+                                <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium text-sm">{activity.action}</span>
+                                    <Badge variant="outline" className="text-xs">
+                                      {activity.user}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    {activity.details}
+                                  </p>
+                                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                    {new Date(activity.timestamp).toLocaleString()}
+                                  </div>
+                                </div>
                               </div>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                Attribute created with type "{attribute.type}"
-                              </p>
-                              <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
-                                2024-01-15 10:30:00
-                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center py-8">
+                            <div className="text-center">
+                              <Activity className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                              <p className="text-sm text-muted-foreground">No activity recorded for this attribute</p>
                             </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   </CardContent>

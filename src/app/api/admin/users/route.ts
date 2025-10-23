@@ -1,0 +1,107 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { query } from '@/lib/db'
+
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check if user has admin privileges
+    if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '20')
+    const search = searchParams.get('search') || ''
+    const role = searchParams.get('role') || ''
+    const active = searchParams.get('active') || ''
+    const spaceId = searchParams.get('spaceId') || ''
+
+    const offset = (page - 1) * limit
+
+    // Build the query with filters
+    let whereConditions = ['u.deleted_at IS NULL']
+    let queryParams: any[] = [limit, offset]
+    let paramIndex = 3
+
+    if (search) {
+      whereConditions.push(`(u.name ILIKE $${paramIndex} OR u.email ILIKE $${paramIndex})`)
+      queryParams.push(`%${search}%`)
+      paramIndex++
+    }
+
+    if (role) {
+      whereConditions.push(`u.role = $${paramIndex}`)
+      queryParams.push(role)
+      paramIndex++
+    }
+
+    // Note: is_active column doesn't exist in the current schema
+    // if (active !== '') {
+    //   whereConditions.push(`u.is_active = $${paramIndex}`)
+    //   queryParams.push(active === 'true')
+    //   paramIndex++
+    // }
+
+    if (spaceId) {
+      whereConditions.push(`u.id IN (SELECT user_id FROM space_members WHERE space_id = $${paramIndex})`)
+      queryParams.push(spaceId)
+      paramIndex++
+    }
+
+    const whereClause = whereConditions.join(' AND ')
+
+    // Get users with space associations
+    const users = await query(`
+      SELECT 
+        u.id, u.name, u.email, u.role, u.created_at,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'spaceId', sm.space_id,
+              'spaceName', s.name,
+              'role', sm.role
+            )
+          ) FILTER (WHERE sm.space_id IS NOT NULL),
+          '[]'::json
+        ) as spaces
+      FROM users u
+      LEFT JOIN space_members sm ON u.id = sm.user_id
+      LEFT JOIN spaces s ON sm.space_id = s.id
+      WHERE ${whereClause}
+      GROUP BY u.id, u.name, u.email, u.role, u.created_at
+      ORDER BY u.created_at DESC
+      LIMIT $1 OFFSET $2
+    `, queryParams)
+
+    // Get total count
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM users u
+      WHERE ${whereClause}
+    `
+    const countParams = queryParams.slice(2) // Remove limit and offset
+    const totalResult = await query(countQuery, countParams)
+    const total = parseInt(totalResult.rows[0]?.total || '0')
+
+    return NextResponse.json({
+      users: users.rows,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    })
+  } catch (error) {
+    console.error('Error fetching users:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch users' },
+      { status: 500 }
+    )
+  }
+}

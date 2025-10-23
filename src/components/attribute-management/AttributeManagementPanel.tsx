@@ -11,7 +11,6 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { 
   Plus, 
-  Edit, 
   Trash2, 
   Copy, 
   Download, 
@@ -26,6 +25,7 @@ import {
 } from 'lucide-react'
 import { AttributeDetailDrawer } from '@/components/data-models/AttributeDetailDrawer'
 import { AttributeManagementService, Attribute, AttributeFormData } from '@/lib/attribute-management'
+import { useSpacePermissions } from '@/hooks/use-space-permissions'
 import toast from 'react-hot-toast'
 
 interface AttributeManagementPanelProps {
@@ -34,6 +34,9 @@ interface AttributeManagementPanelProps {
 }
 
 export function AttributeManagementPanel({ modelId, onAttributesChange }: AttributeManagementPanelProps) {
+  // Permissions
+  const permissions = useSpacePermissions()
+  
   // State management
   const [attributes, setAttributes] = useState<Attribute[]>([])
   const [loading, setLoading] = useState(false)
@@ -106,6 +109,21 @@ export function AttributeManagementPanel({ modelId, onAttributesChange }: Attrib
       setSelectedAttribute(null)
     } catch (error) {
       console.error('Failed to save attribute:', error)
+    }
+  }
+
+  const handleUpdateAttribute = async (attributeId: string, field: string, value: any) => {
+    try {
+      const attribute = attributes.find(attr => attr.id === attributeId)
+      if (!attribute) return
+
+      const updatedData = { ...attribute, [field]: value }
+      const updated = await attributeService.updateAttribute(attributeId, updatedData)
+      if (updated) {
+        setAttributes(prev => prev.map(attr => attr.id === attributeId ? updated : attr))
+      }
+    } catch (error) {
+      console.error('Failed to update attribute:', error)
     }
   }
 
@@ -246,14 +264,18 @@ export function AttributeManagementPanel({ modelId, onAttributesChange }: Attrib
             <Download className="h-4 w-4 mr-1" />
             Export
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setShowImportDialog(true)}>
-            <Upload className="h-4 w-4 mr-1" />
-            Import
-          </Button>
-          <Button size="sm" onClick={handleCreateAttribute}>
-            <Plus className="h-4 w-4 mr-1" />
-            Add Attribute
-          </Button>
+          {permissions.canCreate && (
+            <>
+              <Button variant="outline" size="sm" onClick={() => setShowImportDialog(true)}>
+                <Upload className="h-4 w-4 mr-1" />
+                Import
+              </Button>
+              <Button size="sm" onClick={handleCreateAttribute}>
+                <Plus className="h-4 w-4 mr-1" />
+                Add Attribute
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -286,7 +308,7 @@ export function AttributeManagementPanel({ modelId, onAttributesChange }: Attrib
       </div>
 
       {/* Bulk Actions */}
-      {selectedAttributes.length > 0 && (
+      {selectedAttributes.length > 0 && permissions.canDelete && (
         <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
           <span className="text-sm font-medium">
             {selectedAttributes.length} selected
@@ -331,44 +353,76 @@ export function AttributeManagementPanel({ modelId, onAttributesChange }: Attrib
               
               <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
               
-              <div className="flex-1 min-w-0">
-                <div className="font-medium">{attr.display_name}</div>
-                <div className="text-sm text-muted-foreground">
-                  {attr.name} • {attr.type}
-                  {attr.is_required && ' • Required'}
-                  {attr.is_unique && ' • Unique'}
+              <div className="flex-1 min-w-0 space-y-2">
+                <div className="flex items-center gap-2">
+                  {permissions.canEdit ? (
+                    <Input
+                      value={attr.display_name}
+                      onChange={(e) => handleUpdateAttribute(attr.id, 'display_name', e.target.value)}
+                      className="font-medium border-0 bg-transparent p-0 h-auto focus:bg-white focus:border focus:px-2 focus:py-1"
+                      placeholder="Display Name"
+                    />
+                  ) : (
+                    <div className="font-medium">{attr.display_name}</div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  {permissions.canEdit ? (
+                    <>
+                      <Input
+                        value={attr.name}
+                        onChange={(e) => handleUpdateAttribute(attr.id, 'name', e.target.value)}
+                        className="text-sm border-0 bg-transparent p-0 h-auto focus:bg-white focus:border focus:px-2 focus:py-1"
+                        placeholder="attribute_name"
+                      />
+                      <span>•</span>
+                      <Select
+                        value={attr.type}
+                        onValueChange={(value) => handleUpdateAttribute(attr.id, 'type', value)}
+                      >
+                        <SelectTrigger className="h-6 w-24 text-xs border-0 bg-transparent p-0">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="text">Text</SelectItem>
+                          <SelectItem value="number">Number</SelectItem>
+                          <SelectItem value="email">Email</SelectItem>
+                          <SelectItem value="url">URL</SelectItem>
+                          <SelectItem value="date">Date</SelectItem>
+                          <SelectItem value="datetime">DateTime</SelectItem>
+                          <SelectItem value="boolean">Boolean</SelectItem>
+                          <SelectItem value="select">Select</SelectItem>
+                          <SelectItem value="multiselect">Multi-Select</SelectItem>
+                          <SelectItem value="attachment">Attachment</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-sm">{attr.name}</span>
+                      <span>•</span>
+                      <Badge variant="outline" className="text-xs">{attr.type}</Badge>
+                    </>
+                  )}
+                  {attr.is_required && <span>• Required</span>}
+                  {attr.is_unique && <span>• Unique</span>}
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
                 <Badge variant="outline">{attr.type}</Badge>
                 
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleEditAttribute(attr)}
-                  className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
+                {permissions.canCreate && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleDuplicateAttribute(attr)}
+                    className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                )}
                 
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleDuplicateAttribute(attr)}
-                  className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-                
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleDeleteAttribute(attr.id)}
-                  className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
               </div>
             </div>
           ))}

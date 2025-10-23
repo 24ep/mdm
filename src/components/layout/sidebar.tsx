@@ -305,13 +305,7 @@ export function Sidebar({ className }: SidebarProps) {
                         backgroundColor: 'transparent'
                       }}
                     >
-                      <AnimatedIcon 
-                        icon={child.icon} 
-                        size={16} 
-                        animation="scale" 
-                        trigger="hover"
-                        className="mr-2"
-                      />
+                      <child.icon className="mr-2 h-4 w-4" />
                       {child.title}
                     </Button>
                   ) : (
@@ -324,13 +318,7 @@ export function Sidebar({ className }: SidebarProps) {
                           backgroundColor: isActive(child.href!) ? 'rgba(255, 255, 255, 0.1)' : 'transparent'
                         }}
                       >
-                        <AnimatedIcon 
-                          icon={child.icon} 
-                          size={16} 
-                          animation="scale" 
-                          trigger="hover"
-                          className="mr-2"
-                        />
+                        <child.icon className="mr-2 h-4 w-4" />
                         {child.title}
                       </Button>
                     </Link>
