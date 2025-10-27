@@ -1,58 +1,115 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
 
 export async function GET() {
   try {
-    // Mock cache instances data
-    const instances = [
-      {
-        id: '1',
-        name: 'Redis Primary',
-        type: 'redis',
-        host: 'localhost',
-        port: 6379,
-        isActive: true,
-        status: 'connected',
-        lastConnected: new Date(),
-        memory: {
-          used: 256 * 1024 * 1024, // 256MB
-          total: 512 * 1024 * 1024, // 512MB
-          peak: 400 * 1024 * 1024 // 400MB
-        },
+    const instances = await prisma.cacheInstance.findMany({
+      include: {
+        keys: true,
         stats: {
-          hits: 15000,
-          misses: 2000,
-          evictions: 50,
-          expired: 100,
-          keys: 5000
-        }
-      },
-      {
-        id: '2',
-        name: 'Memcached Cluster',
-        type: 'memcached',
-        host: 'localhost',
-        port: 11211,
-        isActive: true,
-        status: 'connected',
-        lastConnected: new Date(),
-        memory: {
-          used: 128 * 1024 * 1024, // 128MB
-          total: 256 * 1024 * 1024, // 256MB
-          peak: 200 * 1024 * 1024 // 200MB
-        },
-        stats: {
-          hits: 8000,
-          misses: 1000,
-          evictions: 25,
-          expired: 75,
-          keys: 2500
+          orderBy: {
+            createdAt: 'desc'
+          },
+          take: 1
         }
       }
-    ]
+    })
 
-    return NextResponse.json({ instances })
+    // Transform the data to match the frontend interface
+    const transformedInstances = instances.map(instance => {
+      const latestStats = instance.stats[0]
+      const keyCount = instance.keys.length
+      
+      return {
+        id: instance.id,
+        name: instance.name,
+        type: instance.type,
+        host: instance.host,
+        port: instance.port,
+        isActive: instance.isActive,
+        status: instance.status,
+        lastConnected: instance.lastConnected,
+        memory: {
+          used: latestStats ? Number(latestStats.memoryUsage) : 0,
+          total: 1024 * 1024 * 1024, // Default 1GB total
+          peak: latestStats ? Number(latestStats.memoryUsage) * 1.2 : 0
+        },
+        stats: {
+          hits: latestStats?.hits || 0,
+          misses: latestStats?.misses || 0,
+          evictions: latestStats?.evictions || 0,
+          expired: latestStats?.expired || 0,
+          keys: keyCount
+        }
+      }
+    })
+
+    return NextResponse.json({ instances: transformedInstances })
   } catch (error) {
     console.error('Error fetching cache instances:', error)
     return NextResponse.json({ error: 'Failed to fetch cache instances' }, { status: 500 })
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { name, type, host, port, password } = body
+
+    // Validate required fields
+    if (!name || !type || !host || !port) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    // Create the cache instance
+    const instance = await prisma.cacheInstance.create({
+      data: {
+        name,
+        type,
+        host,
+        port: parseInt(port),
+        password: password || null,
+        status: 'disconnected'
+      }
+    })
+
+    // Create initial stats record
+    await prisma.cacheStats.create({
+      data: {
+        instanceId: instance.id,
+        totalKeys: 0,
+        memoryUsage: 0,
+        hitRate: 0,
+        missRate: 0,
+        evictionRate: 0,
+        avgResponseTime: 0,
+        connections: 0,
+        commandsPerSecond: 0,
+        hits: 0,
+        misses: 0,
+        evictions: 0,
+        expired: 0
+      }
+    })
+
+    // Create default configuration
+    await prisma.cacheConfig.create({
+      data: {
+        instanceId: instance.id,
+        maxMemory: '1gb',
+        evictionPolicy: 'allkeys-lru',
+        ttl: 3600,
+        compression: false,
+        persistence: false,
+        clustering: false
+      }
+    })
+
+    return NextResponse.json({ instance }, { status: 201 })
+  } catch (error) {
+    console.error('Error creating cache instance:', error)
+    return NextResponse.json({ error: 'Failed to create cache instance' }, { status: 500 })
   }
 }

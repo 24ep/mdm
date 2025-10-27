@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { createClient } from '@/lib/supabase/server'
+import { db } from '@/lib/db'
 
 export async function PUT(
   request: NextRequest,
@@ -20,50 +20,45 @@ export async function PUT(
       return NextResponse.json({ error: 'space_ids must be an array' }, { status: 400 })
     }
 
-    const supabase = createClient()
+    // Get the data model to check permissions using Prisma
+    const dataModel = await db.dataModel.findUnique({
+      where: { id: params.id },
+      select: { spaceIds: true }
+    })
 
-    // Get the data model to check permissions
-    const { data: dataModel, error: modelError } = await supabase
-      .from('data_models')
-      .select('space_ids')
-      .eq('id', params.id)
-      .single()
-
-    if (modelError || !dataModel) {
+    if (!dataModel) {
       return NextResponse.json({ error: 'Data model not found' }, { status: 404 })
     }
 
     // Check if user has admin/owner access to the original space
-    const originalSpaceId = dataModel.space_ids?.[0]
+    const originalSpaceId = dataModel.spaceIds?.[0]
     if (!originalSpaceId) {
       return NextResponse.json({ error: 'Data model has no original space' }, { status: 400 })
     }
 
-    const { data: spaceMember, error: spaceError } = await supabase
-      .from('space_members')
-      .select('role')
-      .eq('space_id', originalSpaceId)
-      .eq('user_id', session.user.id)
-      .single()
+    const spaceMember = await db.spaceMember.findFirst({
+      where: {
+        spaceId: originalSpaceId,
+        userId: session.user.id
+      },
+      select: { role: true }
+    })
 
-    if (spaceError || !spaceMember || !['admin', 'owner'].includes(spaceMember.role)) {
+    if (!spaceMember || !['admin', 'owner'].includes(spaceMember.role)) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
-    // Validate that all target spaces exist and user has access
+    // Validate that all target spaces exist and user has access using Prisma
     if (space_ids.length > 0) {
-      const { data: targetSpaces, error: targetSpacesError } = await supabase
-        .from('space_members')
-        .select('space_id')
-        .eq('user_id', session.user.id)
-        .in('space_id', space_ids)
+      const targetSpaces = await db.spaceMember.findMany({
+        where: {
+          userId: session.user.id,
+          spaceId: { in: space_ids }
+        },
+        select: { spaceId: true }
+      })
 
-      if (targetSpacesError) {
-        console.error('Error checking target spaces:', targetSpacesError)
-        return NextResponse.json({ error: 'Failed to validate target spaces' }, { status: 500 })
-      }
-
-      const accessibleSpaceIds = targetSpaces?.map(s => s.space_id) || []
+      const accessibleSpaceIds = targetSpaces.map(s => s.spaceId)
       const invalidSpaceIds = space_ids.filter(id => !accessibleSpaceIds.includes(id))
       
       if (invalidSpaceIds.length > 0) {
@@ -73,21 +68,14 @@ export async function PUT(
       }
     }
 
-    // Update the data model with new space_ids
-    const { data: updatedModel, error: updateError } = await supabase
-      .from('data_models')
-      .update({
-        space_ids: [originalSpaceId, ...space_ids],
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', params.id)
-      .select()
-      .single()
-
-    if (updateError) {
-      console.error('Error updating data model sharing:', updateError)
-      return NextResponse.json({ error: 'Failed to update sharing' }, { status: 500 })
-    }
+    // Update the data model with new space_ids using Prisma
+    const updatedModel = await db.dataModel.update({
+      where: { id: params.id },
+      data: {
+        spaceIds: [originalSpaceId, ...space_ids],
+        updatedAt: new Date()
+      }
+    })
 
     return NextResponse.json({ 
       dataModel: updatedModel,

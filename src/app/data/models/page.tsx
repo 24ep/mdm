@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { MultiSelect } from '@/components/ui/multi-select'
@@ -14,7 +15,8 @@ import { ScrollableList } from '@/components/ui/scrollable-list'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Search, Edit, Trash2, Database, Type, Settings, GitBranch } from 'lucide-react'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Plus, Search, Edit, Trash2, Database, Type, Settings, GitBranch, MoreVertical, Folder, FolderOpen, FolderPlus } from 'lucide-react'
 import { AttributeDetailDrawer } from '@/components/data-models/AttributeDetailDrawer'
 
 type DataModel = {
@@ -66,11 +68,27 @@ export default function DataModelsPage() {
   })
   const [showAttributeDrawer, setShowAttributeDrawer] = useState(false)
   const [selectedAttribute, setSelectedAttribute] = useState<Attribute | null>(null)
+  
+  // Folder management
+  const [folders, setFolders] = useState<any[]>([])
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null)
+  const [showCreateFolderDialog, setShowCreateFolderDialog] = useState(false)
+  const [folderForm, setFolderForm] = useState({ name: '', parent_id: '' })
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase()
-    return models.filter(m => m.name.toLowerCase().includes(q) || m.display_name.toLowerCase().includes(q) || (m.description || '').toLowerCase().includes(q))
-  }, [models, search])
+    let filteredModels = models.filter(m => m.name.toLowerCase().includes(q) || m.display_name.toLowerCase().includes(q) || (m.description || '').toLowerCase().includes(q))
+    
+    // Filter by selected folder
+    if (selectedFolder) {
+      filteredModels = filteredModels.filter(m => m.folder_id === selectedFolder)
+    } else {
+      // Show only root level models when no folder is selected
+      filteredModels = filteredModels.filter(m => !m.folder_id)
+    }
+    
+    return filteredModels
+  }, [models, search, selectedFolder])
 
   async function loadModels() {
     setLoading(true)
@@ -86,7 +104,52 @@ export default function DataModelsPage() {
   useEffect(() => {
     loadModels()
     loadSpaces()
+    loadFolders()
   }, [])
+
+  const loadFolders = async () => {
+    try {
+      const res = await fetch('/api/folders?type=data_model')
+      if (res.status === 503) {
+        // Folders feature not available yet
+        setFolders([])
+        return
+      }
+      const json = await res.json().catch(() => ({}))
+      setFolders(json.folders || [])
+    } catch (e) {
+      setFolders([])
+    }
+  }
+
+  const createFolder = async () => {
+    if (!folderForm.name.trim()) return
+    
+    try {
+      const res = await fetch('/api/folders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: folderForm.name,
+          type: 'data_model',
+          parent_id: folderForm.parent_id || null
+        })
+      })
+      
+      if (res.status === 503) {
+        alert('Folders feature not yet available. Please run database migrations.')
+        return
+      }
+      
+      if (!res.ok) throw new Error('Failed to create folder')
+      
+      setShowCreateFolderDialog(false)
+      setFolderForm({ name: '', parent_id: '' })
+      await loadFolders()
+    } catch (e) {
+      alert('Failed to create folder')
+    }
+  }
 
   function openCreate() {
     setEditingModel(null)
@@ -277,11 +340,7 @@ export default function DataModelsPage() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        {/* SIMPLE TEST - This should always be visible */}
-        <div className="p-4 bg-red-500 text-white text-center font-bold text-xl">
-          🚨 PAGE IS WORKING - IF YOU SEE THIS, THE PAGE IS RENDERING 🚨
-        </div>
-        
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Data Models</h1>
@@ -301,8 +360,80 @@ export default function DataModelsPage() {
           </div>
         </div>
 
+        {/* Main Content - Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Left Sidebar - Folders */}
+          <div className="lg:col-span-1">
         <Card>
-          <CardContent className="pt-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Folder className="h-5 w-5" />
+                  Folders
+                </CardTitle>
+                <CardDescription>Organize your data models</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full justify-start"
+                    onClick={() => setSelectedFolder(null)}
+                  >
+                    <FolderOpen className="h-4 w-4 mr-2" />
+                    All Models
+                  </Button>
+                  {/* Folder list */}
+                  {folders.length > 0 ? (
+                    folders.map((folder: any) => (
+                      <Button 
+                        key={folder.id}
+                        variant={selectedFolder === folder.id ? "default" : "outline"}
+                        size="sm" 
+                        className="w-full justify-start"
+                        onClick={() => setSelectedFolder(folder.id)}
+                      >
+                        <Folder className="h-4 w-4 mr-2" />
+                        {folder.name}
+                      </Button>
+                    ))
+                  ) : (
+                    <div className="text-center py-4 text-muted-foreground">
+                      <Folder className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No folders yet</p>
+                      <p className="text-xs">Create folders to organize your models</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Side - Data Models */}
+          <div className="lg:col-span-3">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Data Models</CardTitle>
+                    <CardDescription>
+                      {selectedFolder ? `Models in selected folder` : 'All data models'}
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setShowCreateFolderDialog(true)}>
+                      <FolderPlus className="mr-2 h-4 w-4" />
+                      New Folder
+                    </Button>
+                    <Button size="sm" onClick={openCreate}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      New Model
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -312,15 +443,8 @@ export default function DataModelsPage() {
                 className="pl-10"
               />
             </div>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Models</CardTitle>
-            <CardDescription>List of defined data models</CardDescription>
-          </CardHeader>
-          <CardContent>
+                {/* Models Table */}
             <Table>
               <TableHeader>
                 <TableRow>
@@ -363,7 +487,10 @@ export default function DataModelsPage() {
             </Table>
           </CardContent>
         </Card>
+          </div>
+        </div>
 
+        {/* Dialogs */}
         <Dialog open={showModelDialog} onOpenChange={setShowModelDialog}>
           <DialogContent className="max-w-4xl max-h-[80vh]">
             <DialogHeader>
@@ -574,7 +701,8 @@ export default function DataModelsPage() {
                     {attributesLoading ? (
                       <div className="text-center py-4">Loading attributes...</div>
                     ) : (
-                      <div className="max-h-96 overflow-y-auto space-y-2">
+                      <div className="h-[500px] overflow-y-auto border border-gray-200 rounded-lg bg-white">
+                        <div className="space-y-2 p-4">
                         {console.log('Rendering attributes:', attributes)}
                         
                         {/* Test attribute to verify rendering */}
@@ -599,19 +727,43 @@ export default function DataModelsPage() {
                               <Edit className="h-4 w-4" />
                               <span className="text-xs">Edit</span>
                             </Button>
+                            
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
                             <Button 
                               size="sm" 
-                              variant="destructive"
-                              className="flex items-center gap-1 bg-red-50 hover:bg-red-100 border-red-200 text-red-700"
+                                  variant="ghost" 
+                                  className="h-8 w-8 p-0 hover:bg-gray-100"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem 
                               onClick={(e) => {
                                 e.stopPropagation()
-                                console.log('TEST Delete button clicked')
-                                alert('Test Delete button works!')
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              <span className="text-xs">Delete</span>
-                            </Button>
+                                    console.log('TEST Edit from dropdown clicked')
+                                    alert('Test Edit from dropdown works!')
+                                  }}
+                                  className="text-gray-700"
+                                >
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit Attribute
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    console.log('TEST Delete from dropdown clicked')
+                                    alert('Test Delete from dropdown works!')
+                                  }}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete Attribute
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </div>
                       
@@ -631,7 +783,7 @@ export default function DataModelsPage() {
                           <div className="flex-1">
                             <div className="font-medium">{attr.display_name}</div>
                             <div className="text-sm text-muted-foreground">
-                              {attr.name} • {attr.type} • {attr.is_required ? 'Required' : 'Optional'}
+                              {attr.name} • {attr.is_required ? 'Required' : 'Optional'}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -648,19 +800,43 @@ export default function DataModelsPage() {
                               <Edit className="h-4 w-4" />
                               <span className="text-xs">Edit</span>
                             </Button>
+                            
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
                             <Button 
                               size="sm" 
-                              variant="destructive"
-                              className="flex items-center gap-1 bg-red-50 hover:bg-red-100 border-red-200 text-red-700"
+                                  variant="ghost" 
+                                  className="h-8 w-8 p-0 hover:bg-gray-100"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem 
                               onClick={(e) => {
                                 e.stopPropagation()
-                                console.log('Delete button clicked for:', attr.display_name)
+                                    console.log('Edit from dropdown clicked for:', attr.display_name)
+                                    openAttributeDrawer(attr)
+                                  }}
+                                  className="text-gray-700"
+                                >
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit Attribute
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    console.log('Delete from dropdown clicked for:', attr.display_name)
                                 handleAttributeDelete(attr.id)
                               }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              <span className="text-xs">Delete</span>
-                            </Button>
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete Attribute
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </div>
                         )
@@ -671,6 +847,7 @@ export default function DataModelsPage() {
                           No attributes found for this model.
                         </div>
                       )}
+                        </div>
                     </div>
                   )}
                 </div>
@@ -823,6 +1000,53 @@ export default function DataModelsPage() {
           onReorder={handleAttributeReorder}
           allAttributes={attributes}
         />
+
+        {/* Create Folder Dialog */}
+        <Dialog open={showCreateFolderDialog} onOpenChange={setShowCreateFolderDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New Folder</DialogTitle>
+              <DialogDescription>
+                Create a new folder to organize your data models
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="folder-name">Folder Name</Label>
+                <Input
+                  id="folder-name"
+                  value={folderForm.name}
+                  onChange={(e) => setFolderForm({ ...folderForm, name: e.target.value })}
+                  placeholder="Enter folder name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="parent-folder">Parent Folder (Optional)</Label>
+                <Select value={folderForm.parent_id} onValueChange={(value) => setFolderForm({ ...folderForm, parent_id: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select parent folder" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No parent (Root level)</SelectItem>
+                    {folders.map((folder: any) => (
+                      <SelectItem key={folder.id} value={folder.id}>
+                        {folder.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCreateFolderDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={createFolder}>
+                Create Folder
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         
         {/* Debug info */}
         {process.env.NODE_ENV === 'development' && (

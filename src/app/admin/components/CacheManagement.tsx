@@ -104,6 +104,8 @@ export function CacheManagement() {
   const [showKeyDialog, setShowKeyDialog] = useState(false)
   const [selectedInstance, setSelectedInstance] = useState<CacheInstance | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   const [newInstance, setNewInstance] = useState({
     name: '',
@@ -131,8 +133,19 @@ export function CacheManagement() {
     }
   }, [selectedInstance])
 
+  // Auto-dismiss success messages
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage(null)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [successMessage])
+
   const loadInstances = async () => {
     setIsLoading(true)
+    setError(null)
     try {
       const response = await fetch('/api/admin/cache-instances')
       if (response.ok) {
@@ -141,9 +154,13 @@ export function CacheManagement() {
           ...instance,
           lastConnected: instance.lastConnected ? new Date(instance.lastConnected) : undefined
         })))
+      } else {
+        const errorData = await response.json()
+        setError(errorData.error || 'Failed to load cache instances')
       }
     } catch (error) {
       console.error('Error loading cache instances:', error)
+      setError('Network error: Failed to load cache instances')
     } finally {
       setIsLoading(false)
     }
@@ -158,9 +175,13 @@ export function CacheManagement() {
           ...key,
           lastAccessed: key.lastAccessed ? new Date(key.lastAccessed) : undefined
         })))
+      } else {
+        const errorData = await response.json()
+        setError(errorData.error || 'Failed to load cache keys')
       }
     } catch (error) {
       console.error('Error loading cache keys:', error)
+      setError('Network error: Failed to load cache keys')
     }
   }
 
@@ -170,9 +191,13 @@ export function CacheManagement() {
       if (response.ok) {
         const data = await response.json()
         setStats(data.stats)
+      } else {
+        const errorData = await response.json()
+        setError(errorData.error || 'Failed to load cache stats')
       }
     } catch (error) {
       console.error('Error loading cache stats:', error)
+      setError('Network error: Failed to load cache stats')
     }
   }
 
@@ -182,9 +207,13 @@ export function CacheManagement() {
       if (response.ok) {
         const data = await response.json()
         setConfig(data.config)
+      } else {
+        const errorData = await response.json()
+        setError(errorData.error || 'Failed to load cache config')
       }
     } catch (error) {
       console.error('Error loading cache config:', error)
+      setError('Network error: Failed to load cache config')
     }
   }
 
@@ -205,10 +234,15 @@ export function CacheManagement() {
           port: 6379,
           password: ''
         })
+        setSuccessMessage('Cache instance created successfully')
         loadInstances()
+      } else {
+        const errorData = await response.json()
+        setError(errorData.error || 'Failed to create cache instance')
       }
     } catch (error) {
       console.error('Error creating cache instance:', error)
+      setError('Network error: Failed to create cache instance')
     }
   }
 
@@ -343,7 +377,7 @@ export function CacheManagement() {
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8']
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
@@ -361,6 +395,61 @@ export function CacheManagement() {
           </Button>
         </div>
       </div>
+
+      {/* Error and Success Messages */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <XCircle className="h-5 w-5 text-red-400" />
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">Error</h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p>{error}</p>
+              </div>
+              <div className="mt-4">
+                <div className="-mx-2 -my-1.5 flex">
+                  <button
+                    type="button"
+                    className="bg-red-50 px-2 py-1.5 rounded-md text-sm font-medium text-red-800 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-red-50 focus:ring-red-600"
+                    onClick={() => setError(null)}
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="bg-green-50 border border-green-200 rounded-md p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <CheckCircle className="h-5 w-5 text-green-400" />
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-green-800">Success</h3>
+              <div className="mt-2 text-sm text-green-700">
+                <p>{successMessage}</p>
+              </div>
+              <div className="mt-4">
+                <div className="-mx-2 -my-1.5 flex">
+                  <button
+                    type="button"
+                    className="bg-green-50 px-2 py-1.5 rounded-md text-sm font-medium text-green-800 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-green-50 focus:ring-green-600"
+                    onClick={() => setSuccessMessage(null)}
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Cache Statistics */}
       {stats && (
@@ -515,7 +604,20 @@ export function CacheManagement() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {instances.map(instance => (
+            {instances.length === 0 && !isLoading ? (
+              <div className="col-span-full text-center py-12">
+                <Database className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Cache Instances</h3>
+                <p className="text-muted-foreground mb-4">
+                  Create your first cache instance to get started
+                </p>
+                <Button onClick={() => setShowCreateInstance(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Instance
+                </Button>
+              </div>
+            ) : (
+              instances.map(instance => (
               <Card key={instance.id}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -588,7 +690,8 @@ export function CacheManagement() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              ))
+            )}
           </div>
         </TabsContent>
 
@@ -664,7 +767,20 @@ export function CacheManagement() {
 
           {selectedInstance ? (
             <div className="space-y-4">
-              {filteredKeys.map(key => (
+              {filteredKeys.length === 0 ? (
+                <div className="text-center py-12">
+                  <Key className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Cache Keys</h3>
+                  <p className="text-muted-foreground mb-4">
+                    This cache instance has no keys yet
+                  </p>
+                  <Button onClick={() => setShowKeyDialog(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Key
+                  </Button>
+                </div>
+              ) : (
+                filteredKeys.map(key => (
                 <Card key={key.key}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
@@ -694,7 +810,8 @@ export function CacheManagement() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                ))
+              )}
             </div>
           ) : (
             <div className="text-center py-12">

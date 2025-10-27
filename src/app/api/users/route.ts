@@ -1,36 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { db } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
   try {
-    // Get all users from the auth.users table
-    const { data, error } = await supabase.auth.admin.listUsers()
+    // Get all users from the User table using Prisma
+    const users = await db.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        avatar: true,
+        createdAt: true,
+        updatedAt: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
 
-    if (error) {
-      console.error('Error fetching users:', error)
-      return NextResponse.json(
-        { error: 'Failed to fetch users' },
-        { status: 500 }
-      )
-    }
-
-    // Transform user data to include only necessary fields
-    const users = data.users.map(user => ({
+    // Transform user data to match expected format
+    const transformedUsers = users.map(user => ({
       id: user.id,
       email: user.email,
-      name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Unknown User',
-      created_at: user.created_at,
-      last_sign_in_at: user.last_sign_in_at
+      name: user.name,
+      role: user.role,
+      avatar: user.avatar,
+      created_at: user.createdAt,
+      last_sign_in_at: user.updatedAt
     }))
 
     return NextResponse.json({
       success: true,
-      users
+      users: transformedUsers
     })
   } catch (error) {
     console.error('Error in users GET:', error)

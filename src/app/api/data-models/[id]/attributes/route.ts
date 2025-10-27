@@ -9,15 +9,26 @@ export async function GET(
 ) {
   try {
     const dataModelId = params.id
-    // Check if the new columns exist
+    
+    // Validate that dataModelId is a valid UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    if (!uuidRegex.test(dataModelId)) {
+      return NextResponse.json({ 
+        error: 'Invalid data model ID format',
+        details: 'Data model ID must be a valid UUID'
+      }, { status: 400 })
+    }
+    // Check if the new columns exist by querying information_schema
     let hasNewColumns = false
     try {
-      await query(`
-        SELECT data_entity_model_id 
-        FROM public.data_model_attributes 
-        LIMIT 1
+      const { rows } = await query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'data_model_attributes' 
+        AND column_name = 'data_entity_model_id'
+        AND table_schema = 'public'
       `)
-      hasNewColumns = true
+      hasNewColumns = rows.length > 0
     } catch (error) {
       hasNewColumns = false
     }
@@ -30,7 +41,7 @@ export async function GET(
               is_required,
               is_unique,
               default_value,
-              validation as validation_rules,
+              validation_rules as validation_rules,
               options,
               "order" as order_index,
               created_at,
@@ -51,7 +62,7 @@ export async function GET(
     const { rows } = await query<any>(
       `SELECT ${selectFields}
          FROM public.data_model_attributes
-        WHERE data_model_id = $1
+        WHERE data_model_id = $1::text
           AND (deleted_at IS NULL OR deleted_at IS NULL)
         ORDER BY "order" ASC, created_at ASC`,
       [dataModelId]
@@ -82,8 +93,8 @@ export async function POST(
     const spaceCheck = await query(`
       SELECT sm.role, s.created_by
       FROM data_models dm
-      JOIN data_model_spaces dms ON dm.id = dms.data_model_id
-      JOIN spaces s ON dms.space_id = s.id
+      JOIN data_model_spaces dms ON dm.id = dms.data_model_id::uuid
+      JOIN spaces s ON s.id = dms.space_id::uuid
       LEFT JOIN space_members sm ON s.id = sm.space_id AND sm.user_id = $1
       WHERE dm.id = $2
     `, [session.user.id, dataModelId])
@@ -147,17 +158,18 @@ export async function POST(
     }
     const type = typeMapping[data_type?.toLowerCase()] || data_type?.toUpperCase() || 'TEXT'
 
-    // Check if the new columns exist by trying a simple query first
+    // Check if the new columns exist by querying information_schema
     let hasNewColumns = false
     try {
-      await query(`
-        SELECT data_entity_model_id 
-        FROM public.data_model_attributes 
-        LIMIT 1
+      const { rows } = await query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'data_model_attributes' 
+        AND column_name = 'data_entity_model_id'
+        AND table_schema = 'public'
       `)
-      hasNewColumns = true
+      hasNewColumns = rows.length > 0
     } catch (error) {
-      // Columns don't exist yet, use the old schema
       hasNewColumns = false
     }
 

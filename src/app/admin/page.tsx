@@ -28,13 +28,13 @@ import {
   FileText as FileTextIcon,
   Zap,
   HardDrive,
-  BarChart3 as BarChart3Icon
+  BarChart3 as BarChart3Icon,
+  Bot
 } from 'lucide-react'
 import { AdminLayout } from '@/components/admin/AdminLayout'
 import { BigQueryInterface } from './components/BigQueryInterface'
 import { DataScienceNotebook } from './components/DataScienceNotebook'
 import { AttachmentManager } from './components/AttachmentManager'
-import { TableSchemaViewer } from './components/TableSchemaViewer'
 import { UserManagement } from './components/UserManagement'
 import { SystemSettings } from './components/SystemSettings'
 import { AnalyticsDashboard } from './components/AnalyticsDashboard'
@@ -53,8 +53,9 @@ import { DatabaseManagement } from './components/DatabaseManagement'
 import { CacheManagement } from './components/CacheManagement'
 import { FileSystemManagement } from './components/FileSystemManagement'
 import { BusinessIntelligence } from './components/BusinessIntelligence'
-import { SQLQueryManager } from './components/SQLQueryManager'
 import { SpaceManagement } from './components/SpaceManagement'
+import { AIAnalyst } from './components/AIAnalyst'
+import { KernelManagement } from './components/KernelManagement'
 
 export default function AdminConsolePage() {
   const router = useRouter()
@@ -105,10 +106,11 @@ export default function AdminConsolePage() {
       selectedSpace={selectedSpace}
       onSpaceChange={setSelectedSpace}
     >
-      <div className="p-6">
+      <div>
         {/* Overview Cards */}
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('bigquery')}>
               <CardHeader className="flex flex-row items-center gap-3">
                 <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/20">
@@ -143,6 +145,23 @@ export default function AdminConsolePage() {
               </CardContent>
             </Card>
 
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('ai-analyst')}>
+              <CardHeader className="flex flex-row items-center gap-3">
+                <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/20">
+                  <Bot className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">AI Analyst</CardTitle>
+                  <CardDescription>ChatGPT-like data analysis interface</CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  AI-powered data analysis, visualization, and insights generation
+                </p>
+              </CardContent>
+            </Card>
+
             <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('attachments')}>
               <CardHeader className="flex flex-row items-center gap-3">
                 <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/20">
@@ -160,22 +179,6 @@ export default function AdminConsolePage() {
               </CardContent>
             </Card>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('schema')}>
-              <CardHeader className="flex flex-row items-center gap-3">
-                <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/20">
-                  <Table className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">Table Schema</CardTitle>
-                  <CardDescription>Supabase-like schema viewer</CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  View and manage database schemas across all spaces
-                </p>
-              </CardContent>
-            </Card>
 
             <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('users')}>
               <CardHeader className="flex flex-row items-center gap-3">
@@ -210,12 +213,13 @@ export default function AdminConsolePage() {
                 </p>
               </CardContent>
             </Card>
+            </div>
           </div>
         )}
 
         {/* Tab Content */}
         {activeTab === 'overview' && (
-          <div className="text-center py-12">
+          <div className="text-center py-12 px-6">
             <Shield className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-xl font-semibold mb-2">Admin Console Overview</h3>
             <p className="text-muted-foreground max-w-md mx-auto">
@@ -239,13 +243,14 @@ export default function AdminConsolePage() {
         {activeTab === 'cache' && <CacheManagement />}
         {activeTab === 'filesystem' && <FileSystemManagement />}
         {activeTab === 'bi' && <BusinessIntelligence />}
-        {activeTab === 'sql' && <SQLQueryManager />}
         {activeTab === 'users' && <UserManagement />}
         {activeTab === 'spaces' && <SpaceManagement />}
         {activeTab === 'attachments' && <AttachmentManager />}
-        {activeTab === 'schema' && <TableSchemaViewer />}
         {activeTab === 'bigquery' && <BigQueryInterface />}
         {activeTab === 'notebook' && <DataScienceNotebook />}
+        {activeTab === 'kernels' && <KernelManagement />}
+        {activeTab === 'ai-analyst' && <AIAnalyst />}
+        {activeTab === 'integrations' && <IntegrationHub />}
         {activeTab === 'settings' && <SystemSettings />}
       </div>
     </AdminLayout>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { createClient } from '@/lib/supabase/server'
+import { db } from '@/lib/db'
 import { query } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
@@ -64,8 +64,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const supabase = createClient()
-
     const body = await request.json()
     const { name, description, dataModel, format, columns, filters, isPublic, sharing } = body
 
@@ -74,41 +72,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Create the export profile
-    const { data: profile, error: profileError } = await supabase
-      .from('export_profiles')
-      .insert({
+    // Create the export profile using Prisma
+    const profile = await db.exportProfile.create({
+      data: {
         name,
         description,
-        data_model: dataModel,
+        dataModel: dataModel,
         format,
         columns: columns || [],
         filters: filters || [],
-        is_public: isPublic || false,
-        created_by: session.user.id
-      })
-      .select()
-      .single()
+        isPublic: isPublic || false,
+        createdBy: session.user.id
+      }
+    })
 
-    if (profileError) {
-      console.error('Error creating export profile:', profileError)
-      return NextResponse.json({ error: 'Failed to create export profile' }, { status: 500 })
-    }
-
-    // Create sharing configurations if provided
+    // Create sharing configurations if provided using Prisma
     if (sharing && sharing.length > 0) {
       const sharingData = sharing.map((share: any) => ({
-        profile_id: profile.id,
-        sharing_type: share.type,
-        target_id: share.targetId || null,
-        target_group: share.targetGroup || null
+        profileId: profile.id,
+        sharingType: share.type,
+        targetId: share.targetId || null,
+        targetGroup: share.targetGroup || null
       }))
 
-      const { error: sharingError } = await supabase
-        .from('export_profile_sharing')
-        .insert(sharingData)
-
-      if (sharingError) {
+      try {
+        await db.exportProfileSharing.createMany({
+          data: sharingData
+        })
+      } catch (sharingError) {
         console.error('Error creating sharing configurations:', sharingError)
         // Don't fail the request, just log the error
       }

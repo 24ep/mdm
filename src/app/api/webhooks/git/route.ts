@@ -98,22 +98,7 @@ async function processGitLabWebhook(payload: any) {
 }
 
 async function syncQueryFromGit(repository: string, filePath: string, commitId: string) {
-  try {
-    // Find queries that are connected to this repository and file
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/admin/sql-queries/sync-from-git`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        repository,
-        filePath,
-        commitId
-      })
-    })
-
-    if (!response.ok) {
-      console.error('Failed to sync query from Git:', await response.text())
-    }
-  } catch (error) {
-    console.error('Error syncing query from Git:', error)
-  }
+  // SQL Query Manager has been removed - this function is no longer needed
+  console.log(`Git webhook received for repository: ${repository}, file: ${filePath}, commit: ${commitId}`)
+  console.log('SQL Query Manager has been removed - Git sync functionality disabled')
 }

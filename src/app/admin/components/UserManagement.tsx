@@ -116,7 +116,15 @@ export function UserManagement() {
       const response = await fetch(`/api/admin/users?${params}`)
       if (response.ok) {
         const data = await response.json()
-        setUsers(data.users || [])
+        // Transform the data to match the component's interface
+        const transformedUsers = data.users?.map((user: any) => ({
+          ...user,
+          isActive: user.is_active,
+          lastLoginAt: user.last_login_at ? new Date(user.last_login_at) : undefined,
+          defaultSpaceId: user.default_space_id,
+          createdAt: new Date(user.created_at)
+        })) || []
+        setUsers(transformedUsers)
         setTotal(data.total || 0)
       } else {
         setError('Failed to load users')
@@ -376,9 +384,9 @@ export function UserManagement() {
                         {user.email}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        Joined {user.createdAt.toLocaleDateString()}
+                        Joined {new Date(user.createdAt).toLocaleDateString()}
                         {user.lastLoginAt && (
-                          <span> • Last login {user.lastLoginAt.toLocaleDateString()}</span>
+                          <span> • Last login {new Date(user.lastLoginAt).toLocaleDateString()}</span>
                         )}
                       </div>
                     </div>

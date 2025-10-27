@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { createClient } from '@/lib/supabase/server'
+import { db } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,36 +18,31 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Space ID is required' }, { status: 400 })
     }
 
-    const supabase = createClient()
+    // Check if user has access to the space using Prisma
+    const spaceMember = await db.spaceMember.findFirst({
+      where: {
+        spaceId: spaceId,
+        userId: session.user.id
+      },
+      select: {
+        role: true
+      }
+    })
 
-    // Check if user has access to the space
-    const { data: spaceMember, error: spaceError } = await supabase
-      .from('space_members')
-      .select('role')
-      .eq('space_id', spaceId)
-      .eq('user_id', session.user.id)
-      .single()
-
-    if (spaceError || !spaceMember) {
+    if (!spaceMember) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
-    // Get folders for the space
-    const { data: folders, error } = await supabase
-      .from('folders')
-      .select('*')
-      .eq('space_id', spaceId)
-      .eq('type', type)
-      .order('name')
-
-    if (error) {
-      console.error('Error fetching folders:', error)
-      // If folders table doesn't exist yet, return empty array
-      if (error.code === 'PGRST116' || error.message?.includes('relation "folders" does not exist')) {
-        return NextResponse.json({ folders: [] })
+    // Get folders for the space using Prisma
+    const folders = await db.folder.findMany({
+      where: {
+        spaceId: spaceId,
+        type: type
+      },
+      orderBy: {
+        name: 'asc'
       }
-      return NextResponse.json({ error: 'Failed to fetch folders' }, { status: 500 })
-    }
+    })
 
     return NextResponse.json({ folders: folders || [] })
   } catch (error) {
@@ -70,41 +65,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Name and space_id are required' }, { status: 400 })
     }
 
-    const supabase = createClient()
+    // Check if user has admin/owner access to the space using Prisma
+    const spaceMember = await db.spaceMember.findFirst({
+      where: {
+        spaceId: space_id,
+        userId: session.user.id
+      },
+      select: {
+        role: true
+      }
+    })
 
-    // Check if user has admin/owner access to the space
-    const { data: spaceMember, error: spaceError } = await supabase
-      .from('space_members')
-      .select('role')
-      .eq('space_id', space_id)
-      .eq('user_id', session.user.id)
-      .single()
-
-    if (spaceError || !spaceMember || !['admin', 'owner'].includes(spaceMember.role)) {
+    if (!spaceMember || !['admin', 'owner'].includes(spaceMember.role)) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
-    // Create the folder
-    const { data: folder, error } = await supabase
-      .from('folders')
-      .insert({
+    // Create the folder using Prisma
+    const folder = await db.folder.create({
+      data: {
         name,
         type,
-        space_id,
-        parent_id: parent_id || null,
-        created_by: session.user.id
-      })
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Error creating folder:', error)
-      // If folders table doesn't exist yet, return a helpful error
-      if (error.code === 'PGRST116' || error.message?.includes('relation "folders" does not exist')) {
-        return NextResponse.json({ error: 'Folders feature not yet available. Please run database migrations.' }, { status: 503 })
+        spaceId: space_id,
+        parentId: parent_id || null,
+        createdBy: session.user.id
       }
-      return NextResponse.json({ error: 'Failed to create folder' }, { status: 500 })
-    }
+    })
 
     return NextResponse.json({ folder })
   } catch (error) {

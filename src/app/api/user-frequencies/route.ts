@@ -1,31 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { db } from '@/lib/db'
 
 const COMP_PREFIX = 'freq:companies:'
 const IND_PREFIX = 'freq:industries:'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const compKey = `${COMP_PREFIX}${user.id}`
-    const indKey = `${IND_PREFIX}${user.id}`
+    const compKey = `${COMP_PREFIX}${session.user.id}`
+    const indKey = `${IND_PREFIX}${session.user.id}`
 
-    const { data: compRow } = await supabase
-      .from('system_settings')
-      .select('value')
-      .eq('key', compKey)
-      .maybeSingle()
-
-    const { data: indRow } = await supabase
-      .from('system_settings')
-      .select('value')
-      .eq('key', indKey)
-      .maybeSingle()
+    const [compRow, indRow] = await Promise.all([
+      db.systemSetting.findUnique({
+        where: { key: compKey },
+        select: { value: true }
+      }),
+      db.systemSetting.findUnique({
+        where: { key: indKey },
+        select: { value: true }
+      })
+    ])
 
     return NextResponse.json({
       companies: (compRow?.value as Record<string, number>) || {},
@@ -39,9 +39,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -49,20 +48,20 @@ export async function POST(request: NextRequest) {
     const companies: string[] = Array.isArray(body?.companies) ? body.companies : []
     const industries: string[] = Array.isArray(body?.industries) ? body.industries : []
 
-    const compKey = `${COMP_PREFIX}${user.id}`
-    const indKey = `${IND_PREFIX}${user.id}`
+    const compKey = `${COMP_PREFIX}${session.user.id}`
+    const indKey = `${IND_PREFIX}${session.user.id}`
 
-    // Load existing
-    const { data: compRow } = await supabase
-      .from('system_settings')
-      .select('value')
-      .eq('key', compKey)
-      .maybeSingle()
-    const { data: indRow } = await supabase
-      .from('system_settings')
-      .select('value')
-      .eq('key', indKey)
-      .maybeSingle()
+    // Load existing using Prisma
+    const [compRow, indRow] = await Promise.all([
+      db.systemSetting.findUnique({
+        where: { key: compKey },
+        select: { value: true }
+      }),
+      db.systemSetting.findUnique({
+        where: { key: indKey },
+        select: { value: true }
+      })
+    ])
 
     const compMap: Record<string, number> = (compRow?.value as any) || {}
     const indMap: Record<string, number> = (indRow?.value as any) || {}
@@ -77,14 +76,18 @@ export async function POST(request: NextRequest) {
     }
 
     if (companies.length > 0) {
-      await supabase
-        .from('system_settings')
-        .upsert({ key: compKey, value: compMap, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+      await db.systemSetting.upsert({
+        where: { key: compKey },
+        update: { value: compMap, updatedAt: new Date() },
+        create: { key: compKey, value: compMap }
+      })
     }
     if (industries.length > 0) {
-      await supabase
-        .from('system_settings')
-        .upsert({ key: indKey, value: indMap, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+      await db.systemSetting.upsert({
+        where: { key: indKey },
+        update: { value: indMap, updatedAt: new Date() },
+        create: { key: indKey, value: indMap }
+      })
     }
 
     return NextResponse.json({ ok: true })

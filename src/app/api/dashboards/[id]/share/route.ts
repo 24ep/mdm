@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { db } from '@/lib/db'
 
 export async function POST(
   request: NextRequest,
@@ -17,31 +12,28 @@ export async function POST(
     // Generate a unique public link
     const publicLink = generatePublicLink()
 
-    // Update dashboard with sharing settings
-    const { data, error } = await supabase
-      .from('dashboards')
-      .update({
+    // Update dashboard with sharing settings using Prisma
+    const dashboard = await db.dashboard.update({
+      where: { id: dashboardId },
+      data: {
         visibility,
-        embed_enabled,
-        public_link: publicLink,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', dashboardId)
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Error updating dashboard share settings:', error)
-      return NextResponse.json(
-        { error: 'Failed to update share settings' },
-        { status: 500 }
-      )
-    }
+        embedEnabled: embed_enabled,
+        publicLink: publicLink,
+        updatedAt: new Date()
+      }
+    })
 
     return NextResponse.json({
       success: true,
       public_link: publicLink,
-      dashboard: data
+      dashboard: {
+        id: dashboard.id,
+        name: dashboard.name,
+        visibility: dashboard.visibility,
+        embedEnabled: dashboard.embedEnabled,
+        publicLink: dashboard.publicLink,
+        updatedAt: dashboard.updatedAt
+      }
     })
   } catch (error) {
     console.error('Error in share POST:', error)
@@ -60,31 +52,29 @@ export async function PUT(
     const { visibility, allowed_users, embed_enabled, public_link } = await request.json()
     const dashboardId = params.id
 
-    // Update dashboard with sharing settings
-    const { data, error } = await supabase
-      .from('dashboards')
-      .update({
+    // Update dashboard with sharing settings using Prisma
+    const dashboard = await db.dashboard.update({
+      where: { id: dashboardId },
+      data: {
         visibility,
-        allowed_users,
-        embed_enabled,
-        public_link,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', dashboardId)
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Error updating dashboard share settings:', error)
-      return NextResponse.json(
-        { error: 'Failed to update share settings' },
-        { status: 500 }
-      )
-    }
+        allowedUsers: allowed_users,
+        embedEnabled: embed_enabled,
+        publicLink: public_link,
+        updatedAt: new Date()
+      }
+    })
 
     return NextResponse.json({
       success: true,
-      dashboard: data
+      dashboard: {
+        id: dashboard.id,
+        name: dashboard.name,
+        visibility: dashboard.visibility,
+        allowedUsers: dashboard.allowedUsers,
+        embedEnabled: dashboard.embedEnabled,
+        publicLink: dashboard.publicLink,
+        updatedAt: dashboard.updatedAt
+      }
     })
   } catch (error) {
     console.error('Error in share PUT:', error)
@@ -102,24 +92,38 @@ export async function GET(
   try {
     const dashboardId = params.id
 
-    // Get dashboard share settings
-    const { data, error } = await supabase
-      .from('dashboards')
-      .select('id, name, visibility, allowed_users, embed_enabled, public_link, created_by')
-      .eq('id', dashboardId)
-      .single()
+    // Get dashboard share settings using Prisma
+    const dashboard = await db.dashboard.findUnique({
+      where: { id: dashboardId },
+      select: {
+        id: true,
+        name: true,
+        visibility: true,
+        allowedUsers: true,
+        embedEnabled: true,
+        publicLink: true,
+        createdBy: true
+      }
+    })
 
-    if (error) {
-      console.error('Error fetching dashboard share settings:', error)
+    if (!dashboard) {
       return NextResponse.json(
-        { error: 'Failed to fetch share settings' },
-        { status: 500 }
+        { error: 'Dashboard not found' },
+        { status: 404 }
       )
     }
 
     return NextResponse.json({
       success: true,
-      shareSettings: data
+      shareSettings: {
+        id: dashboard.id,
+        name: dashboard.name,
+        visibility: dashboard.visibility,
+        allowed_users: dashboard.allowedUsers,
+        embed_enabled: dashboard.embedEnabled,
+        public_link: dashboard.publicLink,
+        created_by: dashboard.createdBy
+      }
     })
   } catch (error) {
     console.error('Error in share GET:', error)

@@ -163,7 +163,7 @@ export function VersionControl({
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        {version.createdAt.toLocaleDateString()}
+                        {new Date(version.createdAt).toLocaleDateString()}
                       </div>
                       {version.commitHash && (
                         <div className="flex items-center gap-1">

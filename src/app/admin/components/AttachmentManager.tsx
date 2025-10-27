@@ -500,7 +500,7 @@ export function AttachmentManager() {
                   <span className="font-medium">Uploaded by:</span> {selectedAttachment.uploadedByName}
                 </div>
                 <div>
-                  <span className="font-medium">Created:</span> {selectedAttachment.createdAt.toLocaleDateString()}
+                  <span className="font-medium">Created:</span> {new Date(selectedAttachment.createdAt).toLocaleDateString()}
                 </div>
               </div>
               

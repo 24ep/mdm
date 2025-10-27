@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { db } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -14,31 +15,41 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50')
     const search = searchParams.get('search') || ''
 
-    const from = (page - 1) * limit
-    const to = from + limit - 1
+    const skip = (page - 1) * limit
 
-    let query = supabase
-      .from('positions')
-      .select('id, name, description')
-      .eq('deleted_at', null)
-      .order('name', { ascending: true })
-      .range(from, to)
-
-    if (search) {
-      query = query.ilike('name', `%${search}%`)
+    // Build where clause for filtering
+    const where: any = {
+      deletedAt: null
     }
 
-    const { data, error } = await query
-    if (error) throw error
+    if (search) {
+      where.name = {
+        contains: search,
+        mode: 'insensitive'
+      }
+    }
 
-    const { count } = await supabase
-      .from('positions')
-      .select('*', { count: 'exact', head: true })
-      .eq('deleted_at', null)
+    // Get positions with pagination using Prisma
+    const [positions, total] = await Promise.all([
+      db.position.findMany({
+        where,
+        select: {
+          id: true,
+          name: true,
+          description: true
+        },
+        orderBy: {
+          name: 'asc'
+        },
+        skip,
+        take: limit
+      }),
+      db.position.count({ where })
+    ])
 
     return NextResponse.json({
-      positions: data || [],
-      pagination: { page, limit, total: count || 0, pages: Math.ceil((count || 0) / limit) },
+      positions: positions || [],
+      pagination: { page, limit, total: total || 0, pages: Math.ceil((total || 0) / limit) },
     })
   } catch (error) {
     console.error('Error fetching positions:', error)

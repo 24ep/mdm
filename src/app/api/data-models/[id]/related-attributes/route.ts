@@ -1,33 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { db } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await createClient()
     const dataModelId = params.id
 
-    // Get all related data models and their attributes
-    const { data: relations, error: relationsError } = await supabase
-      .from('data_model_relations')
-      .select(`
-        id,
-        related_data_model_id,
-        relation_type,
-        related_data_model:related_data_model_id (
-          id,
-          name,
-          display_name
-        )
-      `)
-      .eq('data_model_id', dataModelId)
-
-    if (relationsError) {
-      console.error('Error fetching relations:', relationsError)
-      return NextResponse.json({ error: 'Failed to fetch relations' }, { status: 500 })
-    }
+    // Get all related data models and their attributes using Prisma
+    const relations = await db.dataModelRelation.findMany({
+      where: { dataModelId: dataModelId },
+      include: {
+        relatedDataModel: {
+          select: {
+            id: true,
+            name: true,
+            displayName: true
+          }
+        }
+      }
+    })
 
     if (!relations || relations.length === 0) {
       return NextResponse.json({ 
@@ -36,40 +29,32 @@ export async function GET(
       })
     }
 
-    // Get attributes for all related data models
-    const relatedModelIds = relations.map(r => r.related_data_model_id)
-    const { data: relatedAttributes, error: attributesError } = await supabase
-      .from('data_model_attributes')
-      .select(`
-        id,
-        name,
-        display_name,
-        data_type,
-        is_required,
-        is_unique,
-        default_value,
-        validation_rules,
-        options,
-        order_index,
-        data_model_id,
-        created_at,
-        updated_at
-      `)
-      .in('data_model_id', relatedModelIds)
-      .order('order_index', { ascending: true })
-
-    if (attributesError) {
-      console.error('Error fetching related attributes:', attributesError)
-      return NextResponse.json({ error: 'Failed to fetch related attributes' }, { status: 500 })
-    }
+    // Get attributes for all related data models using Prisma
+    const relatedModelIds = relations.map(r => r.relatedDataModelId)
+    const relatedAttributes = await db.dataModelAttribute.findMany({
+      where: { dataModelId: { in: relatedModelIds } },
+      orderBy: { orderIndex: 'asc' }
+    })
 
     // Add related model information to each attribute
-    const attributesWithModel = (relatedAttributes || []).map(attr => {
-      const relation = relations.find(r => r.related_data_model_id === attr.data_model_id)
+    const attributesWithModel = relatedAttributes.map(attr => {
+      const relation = relations.find(r => r.relatedDataModelId === attr.dataModelId)
       return {
-        ...attr,
-        related_model: relation?.related_data_model?.display_name || relation?.related_data_model?.name,
-        relation_type: relation?.relation_type
+        id: attr.id,
+        name: attr.name,
+        display_name: attr.displayName,
+        data_type: attr.dataType,
+        is_required: attr.isRequired,
+        is_unique: attr.isUnique,
+        default_value: attr.defaultValue,
+        validation_rules: attr.validationRules,
+        options: attr.options,
+        order_index: attr.orderIndex,
+        data_model_id: attr.dataModelId,
+        created_at: attr.createdAt,
+        updated_at: attr.updatedAt,
+        related_model: relation?.relatedDataModel?.displayName || relation?.relatedDataModel?.name,
+        relation_type: relation?.relationType
       }
     })
 

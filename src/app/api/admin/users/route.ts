@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
 
     // Build the query with filters
-    let whereConditions = ['u.deleted_at IS NULL']
+    let whereConditions: string[] = []
     let queryParams: any[] = [limit, offset]
     let paramIndex = 3
 
@@ -42,25 +42,21 @@ export async function GET(request: NextRequest) {
       paramIndex++
     }
 
-    // Note: is_active column doesn't exist in the current schema
-    // if (active !== '') {
-    //   whereConditions.push(`u.is_active = $${paramIndex}`)
-    //   queryParams.push(active === 'true')
-    //   paramIndex++
-    // }
-
     if (spaceId) {
       whereConditions.push(`u.id IN (SELECT user_id FROM space_members WHERE space_id = $${paramIndex})`)
       queryParams.push(spaceId)
       paramIndex++
     }
 
-    const whereClause = whereConditions.join(' AND ')
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : ''
 
     // Get users with space associations
     const users = await query(`
       SELECT 
         u.id, u.name, u.email, u.role, u.created_at,
+        true as is_active,
+        null as last_login_at,
+        null as default_space_id,
         COALESCE(
           json_agg(
             json_build_object(
@@ -74,7 +70,7 @@ export async function GET(request: NextRequest) {
       FROM users u
       LEFT JOIN space_members sm ON u.id = sm.user_id
       LEFT JOIN spaces s ON sm.space_id = s.id
-      WHERE ${whereClause}
+      ${whereClause}
       GROUP BY u.id, u.name, u.email, u.role, u.created_at
       ORDER BY u.created_at DESC
       LIMIT $1 OFFSET $2
@@ -84,7 +80,7 @@ export async function GET(request: NextRequest) {
     const countQuery = `
       SELECT COUNT(*) as total
       FROM users u
-      WHERE ${whereClause}
+      ${whereClause}
     `
     const countParams = queryParams.slice(2) // Remove limit and offset
     const totalResult = await query(countQuery, countParams)

@@ -323,7 +323,7 @@ export function EnhancedAttributeDetailDrawer({
 
         <div className="flex-1 overflow-hidden">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-            <TabsList className={`grid w-full ${isSelectType ? 'grid-cols-3' : 'grid-cols-3'}`}>
+            <TabsList className={`grid w-full ${isSelectType ? 'grid-cols-4' : 'grid-cols-3'}`}>
               <TabsTrigger value="details" className="flex items-center gap-2">
                 <Database className="h-4 w-4" />
                 Details
@@ -334,6 +334,10 @@ export function EnhancedAttributeDetailDrawer({
                   Options
                 </TabsTrigger>
               )}
+              <TabsTrigger value="quality" className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" />
+                Quality
+              </TabsTrigger>
               <TabsTrigger value="activity" className="flex items-center gap-2">
                 <Activity className="h-4 w-4" />
                 Activity
@@ -615,109 +619,29 @@ export function EnhancedAttributeDetailDrawer({
             {isSelectType && (
               <TabsContent value="options" className="flex-1 overflow-y-auto p-6">
                 <div className="space-y-6">
-                  {/* Data Quality Statistics */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Data Quality Statistics</CardTitle>
-                      <CardDescription>
-                        Overview of data quality metrics for this attribute
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {loadingQuality ? (
-                        <div className="flex items-center justify-center py-8">
-                          <div className="text-sm text-muted-foreground">Loading quality statistics...</div>
-                        </div>
-                      ) : qualityStats ? (
-                        <div className="space-y-4">
-                          {/* Statistics Grid - Minimal Style */}
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="p-3 border rounded-lg">
-                              <div className="text-2xl font-semibold text-gray-900">
-                                {qualityStats.statistics.totalRecords.toLocaleString()}
-                              </div>
-                              <div className="text-sm text-gray-600">Total Records</div>
-                            </div>
-                            <div className="p-3 border rounded-lg">
-                              <div className="text-2xl font-semibold text-gray-900">
-                                {qualityStats.statistics.completionRate}%
-                              </div>
-                              <div className="text-sm text-gray-600">Completion Rate</div>
-                            </div>
-                            <div className="p-3 border rounded-lg">
-                              <div className="text-2xl font-semibold text-gray-900">
-                                {qualityStats.statistics.uniqueCount.toLocaleString()}
-                              </div>
-                              <div className="text-sm text-gray-600">Unique Values</div>
-                            </div>
-                            <div className="p-3 border rounded-lg">
-                              <div className="text-2xl font-semibold text-gray-900">
-                                {qualityStats.statistics.recentChanges}
-                              </div>
-                              <div className="text-sm text-gray-600">Recent Changes</div>
-                            </div>
-                          </div>
-
-                          {/* Quality Issues - Minimal Style */}
-                          {qualityStats.qualityIssues && qualityStats.qualityIssues.length > 0 && (
-                            <div className="space-y-2">
-                              <h4 className="text-sm font-medium text-gray-900">Quality Issues</h4>
-                              <div className="space-y-1">
-                                {qualityStats.qualityIssues.map((issue, index) => (
-                                  <div key={index} className="flex items-center justify-between p-2 border rounded text-sm">
-                                    <div className="flex items-center gap-2">
-                                      <div className={`w-2 h-2 rounded-full ${
-                                        issue.severity === 'error' ? 'bg-red-500' : 
-                                        issue.severity === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
-                                      }`} />
-                                      <span className="text-gray-700">{issue.message}</span>
-                                    </div>
-                                    <span className="text-gray-500">{issue.count}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Data Summary */}
-                          <div className="pt-4 border-t">
-                            <div className="grid grid-cols-3 gap-4 text-sm">
-                              <div>
-                                <div className="text-gray-600">Non-null values</div>
-                                <div className="font-medium">{qualityStats.statistics.nonNullCount.toLocaleString()}</div>
-                              </div>
-                              <div>
-                                <div className="text-gray-600">Missing values</div>
-                                <div className="font-medium">{qualityStats.statistics.missingValues.toLocaleString()}</div>
-                              </div>
-                              <div>
-                                <div className="text-gray-600">Data type</div>
-                                <div className="font-medium">{qualityStats.attribute.type}</div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center py-8">
-                          <div className="text-center">
-                            <BarChart3 className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                            <p className="text-sm text-muted-foreground">No quality data available</p>
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
 
                   {/* Attribute Options */}
                   <Card>
                     <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Settings className="h-5 w-5" />
-                        Attribute Options
-                      </CardTitle>
-                      <CardDescription>
-                        Manage the available options for this {attribute.type} field. Drag and drop to reorder.
-                      </CardDescription>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            <Settings className="h-5 w-5" />
+                            Attribute Options
+                          </CardTitle>
+                          <CardDescription>
+                            Manage the available options for this {attribute.type} field. Drag and drop to reorder.
+                          </CardDescription>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={handleAddNewOption}
+                          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Create New Attribute Option
+                        </Button>
+                      </div>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2">
@@ -770,7 +694,7 @@ export function EnhancedAttributeDetailDrawer({
                           </div>
                         ))}
 
-                        {permissions.canEdit && (
+                        {permissions.canEdit && showNewOption && (
                           <div className="p-4 border-2 border-dashed border-blue-300 bg-blue-50 rounded-lg">
                             <div className="flex items-center gap-3">
                               {/* Color Swatch */}
@@ -813,7 +737,7 @@ export function EnhancedAttributeDetailDrawer({
                           </div>
                         )}
 
-                        {options.length === 0 && (
+                        {options.length === 0 && !showNewOption && (
                           <div className="text-center py-8 text-muted-foreground">
                             <Settings className="h-12 w-12 mx-auto mb-2 opacity-50" />
                             <p className="text-lg font-medium">No options yet</p>
@@ -827,6 +751,101 @@ export function EnhancedAttributeDetailDrawer({
               </TabsContent>
             )}
 
+            <TabsContent value="quality" className="flex-1 overflow-y-auto p-6">
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Data Quality Statistics</CardTitle>
+                    <CardDescription>
+                      Overview of data quality metrics for this attribute
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {loadingQuality ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="text-sm text-muted-foreground">Loading quality statistics...</div>
+                      </div>
+                    ) : qualityStats ? (
+                      <div className="space-y-4">
+                        {/* Statistics Grid - Minimal Style */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div className="p-3 border rounded-lg">
+                            <div className="text-2xl font-semibold text-gray-900">
+                              {qualityStats.statistics.totalRecords.toLocaleString()}
+                            </div>
+                            <div className="text-sm text-gray-600">Total Records</div>
+                          </div>
+                          <div className="p-3 border rounded-lg">
+                            <div className="text-2xl font-semibold text-gray-900">
+                              {qualityStats.statistics.completionRate}%
+                            </div>
+                            <div className="text-sm text-gray-600">Completion Rate</div>
+                          </div>
+                          <div className="p-3 border rounded-lg">
+                            <div className="text-2xl font-semibold text-gray-900">
+                              {qualityStats.statistics.uniqueCount.toLocaleString()}
+                            </div>
+                            <div className="text-sm text-gray-600">Unique Values</div>
+                          </div>
+                          <div className="p-3 border rounded-lg">
+                            <div className="text-2xl font-semibold text-gray-900">
+                              {qualityStats.statistics.recentChanges}
+                            </div>
+                            <div className="text-sm text-gray-600">Recent Changes</div>
+                          </div>
+                        </div>
+
+                        {/* Quality Issues - Minimal Style */}
+                        {qualityStats.qualityIssues && qualityStats.qualityIssues.length > 0 && (
+                          <div className="space-y-2">
+                            <h4 className="text-sm font-medium text-gray-900">Quality Issues</h4>
+                            <div className="space-y-1">
+                              {qualityStats.qualityIssues.map((issue, index) => (
+                                <div key={index} className="flex items-center justify-between p-2 border rounded text-sm">
+                                  <div className="flex items-center gap-2">
+                                    <div className={`w-2 h-2 rounded-full ${
+                                      issue.severity === 'error' ? 'bg-red-500' : 
+                                      issue.severity === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+                                    }`} />
+                                    <span className="text-gray-700">{issue.message}</span>
+                                  </div>
+                                  <span className="text-gray-500">{issue.count}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Data Summary */}
+                        <div className="pt-4 border-t">
+                          <div className="grid grid-cols-3 gap-4 text-sm">
+                            <div>
+                              <div className="text-gray-600">Non-null values</div>
+                              <div className="font-medium">{qualityStats.statistics.nonNullCount.toLocaleString()}</div>
+                            </div>
+                            <div>
+                              <div className="text-gray-600">Missing values</div>
+                              <div className="font-medium">{qualityStats.statistics.missingValues.toLocaleString()}</div>
+                            </div>
+                            <div>
+                              <div className="text-gray-600">Data type</div>
+                              <div className="font-medium">{qualityStats.attribute.type}</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="text-center">
+                          <BarChart3 className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                          <p className="text-sm text-muted-foreground">No quality data available</p>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
 
             <TabsContent value="activity" className="flex-1 overflow-y-auto p-6">
               <div className="space-y-6">

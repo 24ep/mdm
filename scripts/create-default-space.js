@@ -1,95 +1,88 @@
-const { createClient } = require('@supabase/supabase-js')
+const { Pool } = require('pg')
 require('dotenv').config()
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL
+})
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('Missing required environment variables')
+if (!process.env.DATABASE_URL) {
+  console.error('Missing required DATABASE_URL environment variable')
   process.exit(1)
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
-
 async function createDefaultSpace() {
+  const client = await pool.connect()
+  
   try {
     console.log('Creating default space...')
 
     // First, check if a default space already exists
-    const { data: existingSpaces, error: checkError } = await supabase
-      .from('spaces')
-      .select('*')
-      .eq('is_default', true)
-      .eq('deleted_at', null)
+    const checkResult = await client.query(`
+      SELECT * FROM public.spaces 
+      WHERE is_default = true AND deleted_at IS NULL
+    `)
 
-    if (checkError) {
-      console.error('Error checking existing spaces:', checkError)
-      return
-    }
-
-    if (existingSpaces && existingSpaces.length > 0) {
-      console.log('Default space already exists:', existingSpaces[0].name)
+    if (checkResult.rows.length > 0) {
+      console.log('Default space already exists:', checkResult.rows[0].name)
       return
     }
 
     // Get the first admin user to be the creator
-    const { data: adminUsers, error: userError } = await supabase
-      .from('users')
-      .select('*')
-      .in('role', ['SUPER_ADMIN', 'ADMIN'])
-      .eq('is_active', true)
-      .limit(1)
+    const userResult = await client.query(`
+      SELECT * FROM public.users 
+      WHERE role IN ('SUPER_ADMIN', 'ADMIN') AND is_active = true 
+      LIMIT 1
+    `)
 
-    if (userError) {
-      console.error('Error fetching admin users:', userError)
-      return
-    }
-
-    if (!adminUsers || adminUsers.length === 0) {
+    if (userResult.rows.length === 0) {
       console.error('No admin users found. Please create an admin user first.')
       return
     }
 
-    const adminUser = adminUsers[0]
+    const adminUser = userResult.rows[0]
 
     // Create the default space
-    const { data: newSpace, error: createError } = await supabase
-      .from('spaces')
-      .insert({
-        name: 'Default Space',
-        description: 'The default workspace for organizing your data',
-        is_default: true,
-        is_active: true,
-        created_by: adminUser.id
-      })
-      .select()
-      .single()
+    const createResult = await client.query(`
+      INSERT INTO public.spaces (name, description, is_default, is_active, created_by)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING *
+    `, [
+      'Default Space',
+      'The default workspace for organizing your data',
+      true,
+      true,
+      adminUser.id
+    ])
 
-    if (createError) {
-      console.error('Error creating default space:', createError)
-      return
-    }
-
+    const newSpace = createResult.rows[0]
     console.log('Default space created successfully:', newSpace.name)
     console.log('Space ID:', newSpace.id)
     console.log('Created by:', adminUser.name || adminUser.email)
 
-    // The trigger should automatically add the creator as owner, but let's verify
-    const { data: members, error: memberError } = await supabase
-      .from('space_members')
-      .select('*')
-      .eq('space_id', newSpace.id)
+    // Check space members
+    const memberResult = await client.query(`
+      SELECT * FROM public.space_members WHERE space_id = $1
+    `, [newSpace.id])
 
-    if (memberError) {
-      console.error('Error checking space members:', memberError)
-    } else {
-      console.log('Space members:', members)
-    }
+    console.log('Space members:', memberResult.rows)
 
   } catch (error) {
     console.error('Unexpected error:', error)
+    throw error
+  } finally {
+    client.release()
   }
 }
 
 // Run the script
-createDefaultSpace()
+if (require.main === module) {
+  createDefaultSpace()
+    .then(() => {
+      console.log('✅ Default space creation completed successfully')
+      process.exit(0)
+    })
+    .catch((error) => {
+      console.error('❌ Default space creation failed:', error)
+      process.exit(1)
+    })
+}

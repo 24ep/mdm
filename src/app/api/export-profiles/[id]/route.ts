@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { createClient } from '@/lib/supabase/server'
+import { db } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
@@ -13,24 +13,14 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const supabase = createClient()
+    const profile = await db.exportProfile.findUnique({
+      where: { id: params.id },
+      include: {
+        exportProfileSharing: true
+      }
+    })
 
-    const { data: profile, error } = await supabase
-      .from('export_profiles')
-      .select(`
-        *,
-        export_profile_sharing (
-          id,
-          sharing_type,
-          target_id,
-          target_group
-        )
-      `)
-      .eq('id', params.id)
-      .single()
-
-    if (error) {
-      console.error('Error fetching export profile:', error)
+    if (!profile) {
       return NextResponse.json({ error: 'Export profile not found' }, { status: 404 })
     }
 
@@ -51,70 +41,59 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const supabase = createClient()
-
     const body = await request.json()
     const { name, description, dataModel, format, columns, filters, isPublic, sharing } = body
 
-    // First, check if the user owns this profile
-    const { data: existingProfile, error: checkError } = await supabase
-      .from('export_profiles')
-      .select('created_by')
-      .eq('id', params.id)
-      .single()
+    // First, check if the user owns this profile using Prisma
+    const existingProfile = await db.exportProfile.findUnique({
+      where: { id: params.id },
+      select: { createdBy: true }
+    })
 
-    if (checkError || !existingProfile) {
+    if (!existingProfile) {
       return NextResponse.json({ error: 'Export profile not found' }, { status: 404 })
     }
 
-    if (existingProfile.created_by !== session.user.id) {
+    if (existingProfile.createdBy !== session.user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Update the export profile
-    const { data: profile, error: profileError } = await supabase
-      .from('export_profiles')
-      .update({
+    // Update the export profile using Prisma
+    const profile = await db.exportProfile.update({
+      where: { id: params.id },
+      data: {
         name,
         description,
-        data_model: dataModel,
+        dataModel: dataModel,
         format,
         columns: columns || [],
         filters: filters || [],
-        is_public: isPublic || false,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', params.id)
-      .select()
-      .single()
+        isPublic: isPublic || false,
+        updatedAt: new Date()
+      }
+    })
 
-    if (profileError) {
-      console.error('Error updating export profile:', profileError)
-      return NextResponse.json({ error: 'Failed to update export profile' }, { status: 500 })
-    }
-
-    // Update sharing configurations if provided
+    // Update sharing configurations if provided using Prisma
     if (sharing !== undefined) {
       // Delete existing sharing configurations
-      await supabase
-        .from('export_profile_sharing')
-        .delete()
-        .eq('profile_id', params.id)
+      await db.exportProfileSharing.deleteMany({
+        where: { profileId: params.id }
+      })
 
       // Insert new sharing configurations
       if (sharing.length > 0) {
         const sharingData = sharing.map((share: any) => ({
-          profile_id: params.id,
-          sharing_type: share.type,
-          target_id: share.targetId || null,
-          target_group: share.targetGroup || null
+          profileId: params.id,
+          sharingType: share.type,
+          targetId: share.targetId || null,
+          targetGroup: share.targetGroup || null
         }))
 
-        const { error: sharingError } = await supabase
-          .from('export_profile_sharing')
-          .insert(sharingData)
-
-        if (sharingError) {
+        try {
+          await db.exportProfileSharing.createMany({
+            data: sharingData
+          })
+        } catch (sharingError) {
           console.error('Error updating sharing configurations:', sharingError)
           // Don't fail the request, just log the error
         }
@@ -138,33 +117,24 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const supabase = createClient()
+    // First, check if the user owns this profile using Prisma
+    const existingProfile = await db.exportProfile.findUnique({
+      where: { id: params.id },
+      select: { createdBy: true }
+    })
 
-    // First, check if the user owns this profile
-    const { data: existingProfile, error: checkError } = await supabase
-      .from('export_profiles')
-      .select('created_by')
-      .eq('id', params.id)
-      .single()
-
-    if (checkError || !existingProfile) {
+    if (!existingProfile) {
       return NextResponse.json({ error: 'Export profile not found' }, { status: 404 })
     }
 
-    if (existingProfile.created_by !== session.user.id) {
+    if (existingProfile.createdBy !== session.user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Delete the export profile (sharing configurations will be deleted automatically due to CASCADE)
-    const { error } = await supabase
-      .from('export_profiles')
-      .delete()
-      .eq('id', params.id)
-
-    if (error) {
-      console.error('Error deleting export profile:', error)
-      return NextResponse.json({ error: 'Failed to delete export profile' }, { status: 500 })
-    }
+    // Delete the export profile using Prisma (sharing configurations will be deleted automatically due to CASCADE)
+    await db.exportProfile.delete({
+      where: { id: params.id }
+    })
 
     return NextResponse.json({ message: 'Export profile deleted successfully' })
   } catch (error) {

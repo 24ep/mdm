@@ -2,9 +2,12 @@ const bcrypt = require('bcryptjs');
 const { Pool } = require('pg');
 const { v4: uuidv4 } = require('uuid');
 
+// Load environment variables
+require('dotenv').config({ path: '.env.local' });
+
 // Database connection
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/postgres',
+  connectionString: process.env.DATABASE_URL,
 });
 
 async function createAdminUser() {
@@ -24,11 +27,12 @@ async function createAdminUser() {
     
     // Create admin user
     const userId = uuidv4();
+    const now = new Date();
     const result = await pool.query(
-      `INSERT INTO public.users (id, email, name, password, role, is_active) 
-       VALUES ($1, $2, $3, $4, $5, $6) 
+      `INSERT INTO public.users (id, email, name, password, role, created_at, updated_at) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7) 
        RETURNING id, email, name, role`,
-      [userId, 'admin@example.com', 'Admin User', hashedPassword, 'ADMIN', true]
+      [userId, 'admin@example.com', 'Admin User', hashedPassword, 'ADMIN', now, now]
     );
     
     console.log('Admin user created successfully:', result.rows[0]);

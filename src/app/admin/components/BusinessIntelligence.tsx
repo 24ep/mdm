@@ -515,7 +515,7 @@ export function BusinessIntelligence() {
                   </p>
                   <div className="flex items-center justify-between">
                     <div className="text-xs text-muted-foreground">
-                      Updated: {dashboard.updatedAt.toLocaleDateString()}
+                      Updated: {new Date(dashboard.updatedAt).toLocaleDateString()}
                     </div>
                     <div className="flex items-center gap-1">
                       <Button size="sm" variant="outline">

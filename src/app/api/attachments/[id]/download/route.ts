@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { db } from '@/lib/db'
 import { AttachmentStorageService } from '@/lib/attachment-storage'
 
 export async function GET(
@@ -7,56 +9,53 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
-    if (authError || !user) {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const attachmentId = params.id
 
-    // Get attachment metadata
-    const { data: attachment, error: attachmentError } = await supabase
-      .from('attachment_files')
-      .select(`
-        *,
-        data_model_attributes!inner(
-          data_models!inner(
-            space_id
-          )
-        )
-      `)
-      .eq('id', attachmentId)
-      .single()
+    // Get attachment metadata using Prisma
+    const attachment = await db.attachmentFile.findUnique({
+      where: { id: attachmentId },
+      include: {
+        dataModelAttribute: {
+          include: {
+            dataModel: {
+              select: { spaceId: true }
+            }
+          }
+        }
+      }
+    })
 
-    if (attachmentError || !attachment) {
+    if (!attachment) {
       return NextResponse.json({ error: 'Attachment not found' }, { status: 404 })
     }
 
-    const spaceId = attachment.data_model_attributes.data_models.space_id
+    const spaceId = attachment.dataModelAttribute.dataModel.spaceId
 
-    // Check if user has access to this space
-    const { data: spaceMember, error: memberError } = await supabase
-      .from('space_members')
-      .select('role')
-      .eq('space_id', spaceId)
-      .eq('user_id', user.id)
-      .single()
+    // Check if user has access to this space using Prisma
+    const spaceMember = await db.spaceMember.findFirst({
+      where: {
+        spaceId: spaceId,
+        userId: session.user.id
+      },
+      select: { role: true }
+    })
 
-    if (memberError || !spaceMember) {
+    if (!spaceMember) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
-    // Get storage configuration
-    const { data: storageConfig, error: configError } = await supabase
-      .from('space_attachment_storage')
-      .select('*')
-      .eq('space_id', spaceId)
-      .single()
+    // Get storage configuration using Prisma
+    const storageConfig = await db.spaceAttachmentStorage.findUnique({
+      where: { spaceId: spaceId }
+    })
 
-    if (configError) {
-      console.error('Error fetching storage config:', configError)
+    if (!storageConfig) {
+      console.error('Storage configuration not found')
       return NextResponse.json({ error: 'Storage configuration not found' }, { status: 500 })
     }
 
@@ -64,7 +63,7 @@ export async function GET(
     const storageService = new AttachmentStorageService(storageConfig)
 
     // Download file
-    const downloadResult = await storageService.downloadFile(attachment.stored_name)
+    const downloadResult = await storageService.downloadFile(attachment.storedName)
 
     if (!downloadResult.success) {
       return NextResponse.json({ 
@@ -85,9 +84,9 @@ export async function GET(
     // Return file with appropriate headers
     return new NextResponse(fileBuffer, {
       headers: {
-        'Content-Type': attachment.content_type,
-        'Content-Disposition': `attachment; filename="${attachment.original_name}"`,
-        'Content-Length': attachment.file_size.toString(),
+        'Content-Type': attachment.contentType,
+        'Content-Disposition': `attachment; filename="${attachment.originalName}"`,
+        'Content-Length': attachment.fileSize.toString(),
         'Cache-Control': 'private, max-age=3600'
       }
     })

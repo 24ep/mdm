@@ -11,12 +11,13 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Building2, Layout, Database, History, Users as UsersIcon, UserCog, UserPlus, Plus, Edit, Trash2, Search, Type, AlertTriangle, FolderPlus, Share2, Folder, FolderOpen, Move, Settings, Palette, Shield, Archive, Trash } from 'lucide-react'
+import { Building2, Layout, Database, History, Users as UsersIcon, UserCog, UserPlus, Plus, Edit, Trash2, Search, Type, AlertTriangle, FolderPlus, Share2, Folder, FolderOpen, Move, Settings, Palette, Shield, Archive, Trash, MoreVertical } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useSpace } from '@/contexts/space-context'
 import { SpaceStudioLauncher } from '@/components/space-studio-launcher'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import IconPickerPopover from '@/components/ui/icon-picker-popover'
 import { ColorPicker } from '@/components/ui/color-swatch'
 import { AttributeDetailDrawer } from '@/components/data-models/AttributeDetailDrawer'
@@ -24,6 +25,7 @@ import { AttributeManagementPanel } from '@/components/attribute-management/Attr
 import { DraggableAttributeList } from '@/components/attribute-management/DraggableAttributeList'
 import { EnhancedAttributeDetailDrawer } from '@/components/attribute-management/EnhancedAttributeDetailDrawer'
 import { getStorageProviderIcon, getStorageProviderLabel } from '@/lib/storage-provider-icons'
+import { DataModelTreeView } from '@/components/data-model/DataModelTreeView'
 
 export default function SpaceSettingsPage() {
   const params = useParams() as { space: string }
@@ -77,6 +79,7 @@ export default function SpaceSettingsPage() {
   const [shareForm, setShareForm] = useState({ space_ids: [] as string[] })
   const [spaceDetails, setSpaceDetails] = useState<any | null>(null)
   const [savingLoginImage, setSavingLoginImage] = useState(false)
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
 
   // Extra model config
   const [modelIcon, setModelIcon] = useState<string>('')
@@ -589,6 +592,62 @@ export default function SpaceSettingsPage() {
     }
   }
 
+  const handleFolderExpand = (folderId: string) => {
+    setExpandedFolders(prev => new Set([...prev, folderId]))
+  }
+
+  const handleFolderCollapse = (folderId: string) => {
+    setExpandedFolders(prev => {
+      const newSet = new Set(prev)
+      newSet.delete(folderId)
+      return newSet
+    })
+  }
+
+  const handleCreateFolder = async (name: string, parentId?: string) => {
+    try {
+      const res = await fetch('/api/folders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          parent_id: parentId,
+          space_id: selectedSpace?.id,
+          type: 'data_model'
+        })
+      })
+      if (res.ok) {
+        await loadFolders()
+        toast.success('Folder created')
+      } else {
+        throw new Error()
+      }
+    } catch {
+      toast.error('Failed to create folder')
+    }
+  }
+
+  const handleEditFolder = async (folder: any) => {
+    // TODO: Implement folder editing
+    toast.info('Folder editing not implemented yet')
+  }
+
+  const handleDeleteFolder = async (folder: any) => {
+    if (!confirm(`Delete folder "${folder.name}"? This will move all models to root level.`)) return
+    try {
+      const res = await fetch(`/api/folders/${folder.id}`, { method: 'DELETE' })
+      if (res.ok) {
+        await loadFolders()
+        await loadModels()
+        toast.success('Folder deleted')
+      } else {
+        throw new Error()
+      }
+    } catch {
+      toast.error('Failed to delete folder')
+    }
+  }
+
 
 
 
@@ -611,7 +670,7 @@ export default function SpaceSettingsPage() {
   return (
     <Tabs value={tab} onValueChange={setTab} orientation="vertical" className="flex h-full">
         {/* Left Sidebar */}
-        <div className="w-64 bg-card border-r flex flex-col">
+        <div className="w-64 bg-card flex flex-col">
           <div className="p-6 border-b">
             <h1 className="text-xl font-bold">Space Settings</h1>
             <p className="text-sm text-muted-foreground mt-1">Configure this space</p>
@@ -883,161 +942,24 @@ export default function SpaceSettingsPage() {
               </TabsContent>
 
               <TabsContent value="data-model" className="space-y-6 w-full">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Database className="h-5 w-5" />
-                      <span>Data Model</span>
-                    </CardTitle>
-                    <CardDescription>Manage data models in this space</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          placeholder="Search models..."
-                          value={modelSearch}
-                          onChange={(e) => setModelSearch(e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" onClick={() => setShowCreateFolderDialog(true)}>
-                          <FolderPlus className="mr-2 h-4 w-4" /> New Folder
-                        </Button>
-                      <Button onClick={openCreateModel}>
-                        <Plus className="mr-2 h-4 w-4" /> New Model
-                      </Button>
-                    </div>
-                    </div>
-                    <div className="border rounded-md">
-                      {modelsLoading ? (
-                        <div className="p-4 text-center text-muted-foreground">Loading...</div>
-                      ) : (
-                        <div className="divide-y">
-                          {/* Root level models (no folder) */}
-                          {(() => {
-                            const filteredModels = models.filter((m) => {
-                          const q = modelSearch.toLowerCase()
-                          return !q || (m.name||'').toLowerCase().includes(q) || (m.display_name||'').toLowerCase().includes(q) || (m.description||'').toLowerCase().includes(q)
-                            })
-                            
-                            const rootModels = filteredModels.filter(m => !m.folder_id)
-                            const folderModels = filteredModels.filter(m => m.folder_id)
-                            
-                            return (
-                              <>
-                                {/* Root level models */}
-                                {rootModels.map((m: any) => (
-                          <div key={m.id} className="p-3 flex items-center justify-between gap-3">
-                                    <div className="min-w-0 flex items-center gap-3">
-                                      <Database className="h-4 w-4 text-muted-foreground" />
-                                      <div>
-                              <div className="font-medium truncate">{m.display_name || m.name}</div>
-                              <div className="text-xs text-muted-foreground truncate">{m.description || '—'}</div>
-                                        {m.shared_spaces && m.shared_spaces.length > 0 && (
-                                          <div className="text-xs text-blue-600 mt-1">
-                                            Shared with {m.shared_spaces.length} space(s)
-                                          </div>
-                                        )}
-                                      </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                      <Button size="sm" variant="outline" onClick={() => openShareModel(m)}>
-                                        <Share2 className="h-4 w-4" />
-                                      </Button>
-                                      <Select onValueChange={(folderId) => moveModelToFolder(m.id, folderId === 'root' ? null : folderId)}>
-                                        <SelectTrigger className="w-32">
-                                          <Move className="h-4 w-4" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="root">Root</SelectItem>
-                                          {folders.map((folder: any) => (
-                                            <SelectItem key={folder.id} value={folder.id}>
-                                              {folder.name}
-                                            </SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
-                                      <Button size="sm" variant="outline" onClick={()=>openEditModel(m)}>
-                                        <Edit className="h-4 w-4" />
-                                      </Button>
-                              <Button size="sm" variant="destructive" onClick={()=>deleteModel(m)}>
-                                        <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                                ))}
-                                
-                                {/* Folder-organized models */}
-                                {folders.map((folder: any) => {
-                                  const folderModelsList = folderModels.filter(m => m.folder_id === folder.id)
-                                  if (folderModelsList.length === 0) return null
-                                  
-                                  return (
-                                    <div key={folder.id} className="border-l-2 border-blue-200">
-                                      <div className="p-3 bg-blue-50 flex items-center gap-2">
-                                        <FolderOpen className="h-4 w-4 text-blue-600" />
-                                        <span className="font-medium text-blue-900">{folder.name}</span>
-                                        <Badge variant="outline" className="text-xs">
-                                          {folderModelsList.length} model(s)
-                                        </Badge>
-                                      </div>
-                                      {folderModelsList.map((m: any) => (
-                                        <div key={m.id} className="p-3 pl-8 flex items-center justify-between gap-3">
-                                          <div className="min-w-0 flex items-center gap-3">
-                                            <Database className="h-4 w-4 text-muted-foreground" />
-                                            <div>
-                                              <div className="font-medium truncate">{m.display_name || m.name}</div>
-                                              <div className="text-xs text-muted-foreground truncate">{m.description || '—'}</div>
-                                              {m.shared_spaces && m.shared_spaces.length > 0 && (
-                                                <div className="text-xs text-blue-600 mt-1">
-                                                  Shared with {m.shared_spaces.length} space(s)
-                                                </div>
-                                              )}
-                                            </div>
-                                          </div>
-                                          <div className="flex items-center gap-2">
-                                            <Button size="sm" variant="outline" onClick={() => openShareModel(m)}>
-                                              <Share2 className="h-4 w-4" />
-                                            </Button>
-                                            <Select onValueChange={(folderId) => moveModelToFolder(m.id, folderId === 'root' ? null : folderId)}>
-                                              <SelectTrigger className="w-32">
-                                                <Move className="h-4 w-4" />
-                                              </SelectTrigger>
-                                              <SelectContent>
-                                                <SelectItem value="root">Root</SelectItem>
-                                                {folders.map((f: any) => (
-                                                  <SelectItem key={f.id} value={f.id}>
-                                                    {f.name}
-                                                  </SelectItem>
-                                                ))}
-                                              </SelectContent>
-                                            </Select>
-                                            <Button size="sm" variant="outline" onClick={()=>openEditModel(m)}>
-                                              <Edit className="h-4 w-4" />
-                                            </Button>
-                                            <Button size="sm" variant="destructive" onClick={()=>deleteModel(m)}>
-                                              <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )
-                                })}
-                              </>
-                            )
-                          })()}
-                        </div>
-                      )}
-                      {!modelsLoading && models.length === 0 && (
-                        <div className="p-4 text-center text-muted-foreground">No models yet</div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                <DataModelTreeView
+                  models={models}
+                  folders={folders}
+                  loading={modelsLoading}
+                  searchValue={modelSearch}
+                  onSearchChange={setModelSearch}
+                  onModelEdit={openEditModel}
+                  onModelDelete={deleteModel}
+                  onModelMove={moveModelToFolder}
+                  onModelShare={openShareModel}
+                  onCreateModel={openCreateModel}
+                  onCreateFolder={handleCreateFolder}
+                  onEditFolder={handleEditFolder}
+                  onDeleteFolder={handleDeleteFolder}
+                  onFolderExpand={handleFolderExpand}
+                  onFolderCollapse={handleFolderCollapse}
+                  expandedFolders={expandedFolders}
+                />
 
                 <Drawer open={showModelDrawer} onOpenChange={setShowModelDrawer}>
                   <DrawerContent widthClassName="w-[720px]">

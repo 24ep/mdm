@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { 
   Plus, 
   Edit, 
@@ -320,7 +321,7 @@ export function DraggableAttributeList({ modelId, onAttributesChange }: Draggabl
               <div
                 {...provided.droppableProps}
                 ref={provided.innerRef}
-                className={`space-y-2 ${snapshot.isDraggingOver ? 'bg-blue-50' : ''}`}
+                className={`h-[500px] overflow-y-auto space-y-2 p-2 border border-gray-200 rounded-lg bg-white ${snapshot.isDraggingOver ? 'bg-blue-50' : ''}`}
               >
                 {/* Select All */}
                 <div className="flex items-center gap-2 p-2 border rounded-lg">
@@ -377,23 +378,43 @@ export function DraggableAttributeList({ modelId, onAttributesChange }: Draggabl
                             <Edit className="h-4 w-4" />
                           </Button>
                           
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDuplicateAttribute(attr)}
-                            className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                          
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDeleteAttribute(attr.id)}
-                            className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-8 w-8 p-0 hover:bg-gray-100"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  console.log('3-dot button clicked')
+                                }}
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48 z-50" side="bottom" sideOffset={5}>
+                              <DropdownMenuItem 
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDuplicateAttribute(attr)
+                                }}
+                                className="text-green-700"
+                              >
+                                <Copy className="h-4 w-4 mr-2" />
+                                Duplicate Attribute
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDeleteAttribute(attr.id)
+                                }}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete Attribute
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </div>
                     )}

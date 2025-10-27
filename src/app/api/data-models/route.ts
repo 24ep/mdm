@@ -29,6 +29,15 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Validate that spaceId is a valid UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    if (!uuidRegex.test(spaceId)) {
+      return NextResponse.json({ 
+        error: 'Invalid space ID format',
+        details: 'Space ID must be a valid UUID'
+      }, { status: 400 })
+    }
+
     const offset = (page - 1) * limit
     const params: any[] = [spaceId]
     const filters: string[] = ['dm.deleted_at IS NULL', 'dms.space_id = $1']
@@ -41,14 +50,16 @@ export async function GET(request: NextRequest) {
     const where = filters.length ? 'WHERE ' + filters.join(' AND ') : ''
     
     const listSql = `
-      SELECT DISTINCT dm.*, 
+      SELECT DISTINCT dm.id, dm.name, dm.description, dm.created_at, dm.updated_at, dm.deleted_at,
+             dm.is_active, dm.sort_order, dm.created_by,
              ARRAY_AGG(s.slug) as space_slugs,
              ARRAY_AGG(s.name) as space_names
       FROM public.data_models dm
-      JOIN data_model_spaces dms ON dms.data_model_id = dm.id
-      JOIN spaces s ON s.id = dms.space_id
+      JOIN data_model_spaces dms ON dms.data_model_id::uuid = dm.id
+      JOIN spaces s ON s.id = dms.space_id::uuid
       ${where}
-      GROUP BY dm.id
+      GROUP BY dm.id, dm.name, dm.description, dm.created_at, dm.updated_at, dm.deleted_at,
+               dm.is_active, dm.sort_order, dm.created_by
       ORDER BY dm.sort_order ASC, dm.created_at DESC
       LIMIT $${params.length + 1} OFFSET $${params.length + 2}
     `
@@ -56,7 +67,7 @@ export async function GET(request: NextRequest) {
     const countSql = `
       SELECT COUNT(DISTINCT dm.id)::int AS total 
       FROM public.data_models dm
-      JOIN data_model_spaces dms ON dms.data_model_id = dm.id
+      JOIN data_model_spaces dms ON dms.data_model_id::uuid = dm.id
       ${where}
     `
     
@@ -82,11 +93,10 @@ export async function POST(request: NextRequest) {
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await request.json()
-    const { name, display_name, description, space_ids, source_type, external_connection_id, external_schema, external_table, external_primary_key } = body
-    let { slug } = body as any
+    const { name, description, space_ids } = body
 
-    if (!name || !display_name) {
-      return NextResponse.json({ error: 'Name and display_name are required' }, { status: 400 })
+    if (!name) {
+      return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     }
 
     if (!space_ids || !Array.isArray(space_ids) || space_ids.length === 0) {
@@ -104,49 +114,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Access denied to one or more spaces' }, { status: 403 })
     }
 
-    // Slugify helper
-    const toSlug = (text: string) => (
-      text || ''
-    ).toString().toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/-{2,}/g, '-')
-      .replace(/^-+|-+$/g, '')
-
-    // Prepare slug
-    slug = (slug && toSlug(slug)) || toSlug(name)
-    if (!slug) {
-      return NextResponse.json({ error: 'Invalid slug derived from name' }, { status: 400 })
-    }
-
-    // Ensure slug unique; if conflict, add short hash suffix
-    const { rows: conflict } = await query<{ id: string }>(
-      'SELECT id FROM public.data_models WHERE slug = $1 AND deleted_at IS NULL LIMIT 1',
-      [slug]
-    )
-    if (conflict.length > 0) {
-      const suffix = (Math.random().toString(36).slice(2, 8))
-      slug = `${slug}-${suffix}`
-    }
-
-    // Create the data model (without space_id since we'll use junction table)
-    const insertSql = `INSERT INTO public.data_models (name, display_name, description, source_type, external_connection_id, external_schema, external_table, external_primary_key, slug)
-                       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`
+    // Create the data model
+    const insertSql = `INSERT INTO public.data_models (name, description, created_by, is_active, sort_order)
+                       VALUES ($1, $2, $3, $4, $5) RETURNING *`
     const { rows } = await query<any>(insertSql, [
       name,
-      display_name,
       description ?? null,
-      source_type ?? 'INTERNAL',
-      external_connection_id ?? null,
-      external_schema ?? null,
-      external_table ?? null,
-      external_primary_key ?? null,
-      slug,
+      session.user.id,
+      true,
+      0
     ])
 
     const dataModel = rows[0]
 
     // Associate the data model with all specified spaces
     for (const spaceId of space_ids) {
+      // Validate that spaceId is a valid UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+      if (!uuidRegex.test(spaceId)) {
+        return NextResponse.json({ 
+          error: 'Invalid space ID format',
+          details: `Space ID ${spaceId} must be a valid UUID`
+        }, { status: 400 })
+      }
+      
       await query(
         'INSERT INTO data_model_spaces (data_model_id, space_id, created_by) VALUES ($1, $2, $3)',
         [dataModel.id, spaceId, session.user.id]

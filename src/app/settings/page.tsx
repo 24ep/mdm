@@ -87,6 +87,9 @@ export default function SettingsPage() {
   const [deletePolicyDays, setDeletePolicyDays] = useState(30)
   const [faviconUrl, setFaviconUrl] = useState('')
   
+  // Debug logging
+  console.log('SettingsPage - currentSpace:', currentSpace)
+  
   // Sidebar Configuration
   const { settings: sidebarSettings, updateSettings: updateSidebarSettings, resetSettings: resetSidebarSettings } = useSidebar()
   
@@ -439,15 +442,53 @@ export default function SettingsPage() {
     setDataModelsLoading(true)
     setDataModelsError(null)
     try {
-      const spaceParam = currentSpace?.id ? `&space_id=${currentSpace.id}` : ''
-      const res = await fetch(`/api/data-models?page=1&limit=100${spaceParam}`, { cache: 'no-store' })
+      console.log('Loading data models, currentSpace:', currentSpace)
+      
+      // If no current space, try to load without space filter first
+      let apiUrl = '/api/data-models?page=1&limit=100'
+      if (currentSpace?.id) {
+        apiUrl += `&space_id=${currentSpace.id}`
+      }
+      
+      console.log('API URL:', apiUrl)
+      const res = await fetch(apiUrl, { cache: 'no-store' })
+      console.log('API Response status:', res.status)
+      
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
+        console.error('API Error:', err)
+        
+        // If space_id is required, try to get spaces first
+        if (err.error && err.error.includes('Space ID is required')) {
+          console.log('Space ID required, trying to load spaces first...')
+          const spacesRes = await fetch('/api/spaces?page=1&limit=10')
+          if (spacesRes.ok) {
+            const spacesData = await spacesRes.json()
+            console.log('Available spaces:', spacesData.spaces)
+            
+            if (spacesData.spaces && spacesData.spaces.length > 0) {
+              // Use the first available space
+              const firstSpace = spacesData.spaces[0]
+              console.log('Using first available space:', firstSpace.id)
+              const res2 = await fetch(`/api/data-models?page=1&limit=100&space_id=${firstSpace.id}`, { cache: 'no-store' })
+              if (res2.ok) {
+                const json2 = await res2.json()
+                console.log('API Response data (with space):', json2)
+                setDataModels(json2.dataModels || [])
+                return
+              }
+            }
+          }
+        }
+        
         throw new Error(err.error || 'Failed to load data models')
       }
+      
       const json = await res.json()
+      console.log('API Response data:', json)
       setDataModels(json.dataModels || [])
     } catch (e: any) {
+      console.error('Error loading data models:', e)
       setDataModelsError(e.message || 'Failed to load data models')
     } finally {
       setDataModelsLoading(false)
@@ -874,35 +915,70 @@ export default function SettingsPage() {
     <MainLayout>
       <Tabs defaultValue="system" orientation="vertical" className="flex h-full">
         {/* Left Sidebar */}
-        <div className="w-64 bg-card border-r flex flex-col">
+        <div className="w-72 bg-card flex flex-col border-r">
           <div className="p-6 border-b">
             <h1 className="text-xl font-bold">System Settings</h1>
             <p className="text-sm text-muted-foreground mt-1">Applied to all spaces</p>
           </div>
           
-          <nav className="flex-1 p-4 space-y-1">
-            <TabsList className="w-full flex-col h-auto bg-transparent">
-              <TabsTrigger className="justify-start w-full" value="system">System</TabsTrigger>
-              <TabsTrigger className="justify-start w-full" value="api-docs">API Docs</TabsTrigger>
-              <TabsTrigger className="justify-start w-full" value="users">Users</TabsTrigger>
+          <nav className="flex-1 p-4 space-y-2">
+            <TabsList className="w-full flex-col h-auto bg-transparent space-y-1">
+              <TabsTrigger 
+                className="justify-start w-full h-12 px-4 py-3 rounded-lg text-left hover:bg-muted/50 transition-colors data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm" 
+                value="system"
+              >
+                <div className="flex items-center space-x-3">
+                  <Settings className="h-5 w-5" />
+                  <div>
+                    <div className="font-medium">System</div>
+                    <div className="text-xs text-muted-foreground">Core settings & policies</div>
+                  </div>
+                </div>
+              </TabsTrigger>
+              
+              <TabsTrigger 
+                className="justify-start w-full h-12 px-4 py-3 rounded-lg text-left hover:bg-muted/50 transition-colors data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm" 
+                value="api-docs"
+              >
+                <div className="flex items-center space-x-3">
+                  <FileText className="h-5 w-5" />
+                  <div>
+                    <div className="font-medium">API Documentation</div>
+                    <div className="text-xs text-muted-foreground">Swagger & endpoints</div>
+                  </div>
+                </div>
+              </TabsTrigger>
+              
+              <TabsTrigger 
+                className="justify-start w-full h-12 px-4 py-3 rounded-lg text-left hover:bg-muted/50 transition-colors data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm" 
+                value="users"
+              >
+                <div className="flex items-center space-x-3">
+                  <Users className="h-5 w-5" />
+                  <div>
+                    <div className="font-medium">Users & Roles</div>
+                    <div className="text-xs text-muted-foreground">Manage access & permissions</div>
+                  </div>
+                </div>
+              </TabsTrigger>
             </TabsList>
           </nav>
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-6">
-            <div className="space-y-6">
+        <div className="flex-1 overflow-y-auto bg-background">
+          <div className="p-8 max-w-4xl">
+            <div className="space-y-8">
             {/* System Settings */}
             <TabsContent value="system" className="space-y-6 w-full">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <SettingsIcon className="h-5 w-5" />
+              <Card className="w-full shadow-sm">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-3 text-xl">
+                    <SettingsIcon className="h-6 w-6 text-primary" />
                     <span>System Settings</span>
                   </CardTitle>
-                  <CardDescription>
-                    Configure system-wide settings and policies
+                  <CardDescription className="text-base mt-2">
+                    Configure system-wide settings and policies that apply to all spaces
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -960,13 +1036,13 @@ export default function SettingsPage() {
 
             {/* Sidebar Configuration */}
             <TabsContent value="sidebar" className="space-y-6 w-full">
-              <Card>
-                <CardHeader>
+              <Card className="w-full max-w-full">
+                <CardHeader className="w-full">
                   <CardTitle className="flex items-center space-x-2">
                     <Layout className="h-5 w-5" />
                     <span>Sidebar Configuration</span>
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="break-words overflow-wrap-anywhere whitespace-normal max-w-full">
                     Customize the appearance and behavior of the sidebar
                   </CardDescription>
                   <div className="mt-4">
@@ -1248,6 +1324,58 @@ export default function SettingsPage() {
                   </div>
                   
                   <div className="space-y-4">
+                    {dataModelsLoading ? (
+                      <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                        <p className="mt-2 text-sm text-gray-600">Loading data models...</p>
+                      </div>
+                    ) : dataModelsError ? (
+                      <div className="text-center py-8">
+                        <p className="text-red-600">{dataModelsError}</p>
+                        <div className="mt-4 space-y-2">
+                          <Button onClick={loadDataModels} className="mr-2">
+                            Try Again
+                          </Button>
+                          <Button onClick={handleCreateDataModel} variant="outline">
+                            Create Sample Data Model
+                          </Button>
+                        </div>
+                      </div>
+                    ) : filteredDataModels.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-gray-600">No models yet</p>
+                        <div className="mt-4 space-y-2">
+                          <Button onClick={handleCreateDataModel} className="mr-2">
+                            Create Your First Data Model
+                          </Button>
+                          <Button onClick={async () => {
+                            // Create a sample data model
+                            try {
+                              const res = await fetch('/api/data-models', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  name: 'Sample Data Model',
+                                  slug: 'sample-data-model',
+                                  description: 'A sample data model to get you started',
+                                  status: 'Active',
+                                  source_type: 'INTERNAL',
+                                  space_ids: currentSpace?.id ? [currentSpace.id] : []
+                                })
+                              })
+                              if (res.ok) {
+                                await loadDataModels()
+                                toast.success('Sample data model created!')
+                              }
+                            } catch (e) {
+                              toast.error('Failed to create sample data model')
+                            }
+                          }} variant="outline">
+                            Create Sample Data Model
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
                     <DragDropContext onDragEnd={handleDragEnd}>
                     <div className="border rounded-lg overflow-hidden">
                       <table className="w-full text-sm">
@@ -1373,6 +1501,7 @@ export default function SettingsPage() {
                         Create New Data Model
                       </Button>
                     </div>
+                    )}
                   </div>
                 </div>
                 </div>
@@ -1381,14 +1510,14 @@ export default function SettingsPage() {
 
             {/* API Documentation */}
             <TabsContent value="api-docs" className="space-y-6 w-full">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <FileText className="h-5 w-5" />
-                    <span>Swagger API Documentation</span>
+              <Card className="w-full shadow-sm">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-3 text-xl">
+                    <FileText className="h-6 w-6 text-primary" />
+                    <span>API Documentation</span>
                   </CardTitle>
-                  <CardDescription>
-                    Access the complete API documentation
+                  <CardDescription className="text-base mt-2">
+                    Access comprehensive API documentation with Swagger integration
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -1413,13 +1542,13 @@ export default function SettingsPage() {
 
             {/* Restore Data */}
             <TabsContent value="restore" className="space-y-6 w-full">
-              <Card>
-                <CardHeader>
+              <Card className="w-full max-w-full">
+                <CardHeader className="w-full">
                   <CardTitle className="flex items-center space-x-2">
                     <Trash2 className="h-5 w-5" />
                     <span>Restore Data</span>
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="break-words overflow-wrap-anywhere whitespace-normal max-w-full">
                     Restore deleted data within the retention period
                   </CardDescription>
                 </CardHeader>
@@ -1448,20 +1577,36 @@ export default function SettingsPage() {
 
             {/* User Management */}
             <TabsContent value="users" className="space-y-6 w-full">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold flex items-center space-x-3">
+                  <Users className="h-7 w-7 text-primary" />
+                  <span>Users & Roles</span>
+                </h2>
+                <p className="text-muted-foreground mt-2">
+                  Manage user accounts, roles, and permissions across your organization
+                </p>
+              </div>
+              
               <Tabs defaultValue="user-management" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="user-management">User Management</TabsTrigger>
-                  <TabsTrigger value="roles-permissions">Roles & Permissions</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-2 mb-6">
+                  <TabsTrigger value="user-management" className="flex items-center space-x-2">
+                    <Users className="h-4 w-4" />
+                    <span>User Management</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="roles-permissions" className="flex items-center space-x-2">
+                    <Shield className="h-4 w-4" />
+                    <span>Roles & Permissions</span>
+                  </TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="user-management" className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center space-x-2">
-                        <Users className="h-5 w-5" />
+                  <Card className="w-full shadow-sm">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="flex items-center space-x-3 text-lg">
+                        <Users className="h-5 w-5 text-primary" />
                         <span>User Management</span>
                       </CardTitle>
-                      <CardDescription>
+                      <CardDescription className="text-base mt-2">
                         Manage users, teams, roles, and permissions
                       </CardDescription>
                     </CardHeader>
@@ -1472,13 +1617,13 @@ export default function SettingsPage() {
                 </TabsContent>
                 
                 <TabsContent value="roles-permissions" className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center space-x-2">
-                        <Shield className="h-5 w-5" />
+                  <Card className="w-full shadow-sm">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="flex items-center space-x-3 text-lg">
+                        <Shield className="h-5 w-5 text-primary" />
                         <span>Roles & Permissions</span>
                       </CardTitle>
-                      <CardDescription>
+                      <CardDescription className="text-base mt-2">
                         Create roles and assign permissions
                       </CardDescription>
                     </CardHeader>
@@ -2541,19 +2686,19 @@ export default function SettingsPage() {
                                                   
                                                   {/* Attribute Code */}
                                                   <div className="flex-1 min-w-0">
-                                                    <Input
-                                                      value={option.value}
-                                                      onChange={(e) => updateAttributeOption(index, 'value', e.target.value)}
+                                        <Input
+                                          value={option.value}
+                                          onChange={(e) => updateAttributeOption(index, 'value', e.target.value)}
                                                       placeholder="Option value"
                                                       className="h-8"
                                                     />
                                                   </div>
-                                                  
+
                                                   {/* Attribute Label */}
                                                   <div className="flex-1 min-w-0">
-                                                    <Input
-                                                      value={option.label}
-                                                      onChange={(e) => updateAttributeOption(index, 'label', e.target.value)}
+                                        <Input
+                                          value={option.label}
+                                          onChange={(e) => updateAttributeOption(index, 'label', e.target.value)}
                                                       placeholder="Option label"
                                                       className="h-8"
                                                     />

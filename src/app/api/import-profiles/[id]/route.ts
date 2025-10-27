@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { createClient } from '@/lib/supabase/server'
+import { db } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
@@ -13,7 +13,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const supabase = createClient()
+    // Using Prisma instead of Supabase
 
     const { data: profile, error } = await supabase
       .from('import_profiles')
@@ -51,7 +51,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const supabase = createClient()
+    // Using Prisma instead of Supabase
 
     const body = await request.json()
     const { 
@@ -170,7 +170,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const supabase = createClient()
+    // Using Prisma instead of Supabase
 
     // First, check if the user owns this profile
     const { data: existingProfile, error: checkError } = await supabase

@@ -328,7 +328,7 @@ export function AttributeDetailDrawer({
 
         <div className="flex-1 overflow-hidden">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="details" className="flex items-center gap-2">
                 <Database className="h-4 w-4" />
                 Details
@@ -714,10 +714,10 @@ export function AttributeDetailDrawer({
                       <Button
                         size="sm"
                         onClick={handleAddNewOption}
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
                       >
                         <Plus className="h-4 w-4" />
-                        Add Option
+                        Create New Attribute Option
                       </Button>
                     </div>
                   </CardHeader>

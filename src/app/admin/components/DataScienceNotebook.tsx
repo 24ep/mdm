@@ -392,7 +392,7 @@ export function DataScienceNotebook() {
               <CardContent>
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
                   <span>{notebook.cells.length} cells</span>
-                  <span>{notebook.updatedAt.toLocaleDateString()}</span>
+                  <span>{new Date(notebook.updatedAt).toLocaleDateString()}</span>
                 </div>
               </CardContent>
             </Card>

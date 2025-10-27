@@ -496,7 +496,7 @@ export function BackupRecovery() {
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span>Created:</span>
-                      <span>{backup.createdAt.toLocaleDateString()}</span>
+                      <span>{new Date(backup.createdAt).toLocaleDateString()}</span>
                     </div>
                     <div className="flex items-center gap-2 pt-2">
                       <Button

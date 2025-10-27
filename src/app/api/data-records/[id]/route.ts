@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { db } from '@/lib/db'
 import { createAuditLog } from '@/lib/audit'
 import { isUuid } from '@/lib/validation'
 
@@ -11,21 +13,24 @@ export async function GET(
     if (!isUuid(params.id)) {
       return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
     }
-    const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
+    
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data, error } = await supabase
-      .from('data_records')
-      .select('*, data_record_values(*)')
-      .eq('id', params.id)
-      .single()
+    const record = await db.dataRecord.findUnique({
+      where: { id: params.id },
+      include: {
+        dataRecordValues: true
+      }
+    })
 
-    if (error) throw error
-    if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    return NextResponse.json({ record: data })
+    if (!record) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+    
+    return NextResponse.json({ record })
   } catch (error) {
     console.error('Error fetching record:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -40,9 +45,9 @@ export async function PUT(
     if (!isUuid(params.id)) {
       return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
     }
-    const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
+    
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -53,24 +58,38 @@ export async function PUT(
       return NextResponse.json({ error: 'values[] required' }, { status: 400 })
     }
 
-    // Upsert values
+    // Upsert values using Prisma
     if (values.length) {
-      const { error: upsertError } = await supabase
-        .from('data_record_values')
-        .upsert(values.map((v: any) => ({
-          data_record_id: params.id,
-          attribute_id: v.attribute_id,
-          value: v.value ?? null,
-        })), { onConflict: 'data_record_id,attribute_id' })
-      if (upsertError) throw upsertError
+      for (const v of values) {
+        await db.dataRecordValue.upsert({
+          where: {
+            dataRecordId_attributeId: {
+              dataRecordId: params.id,
+              attributeId: v.attribute_id
+            }
+          },
+          update: {
+            value: v.value ?? null
+          },
+          create: {
+            dataRecordId: params.id,
+            attributeId: v.attribute_id,
+            value: v.value ?? null
+          }
+        })
+      }
     }
 
-    const { data, error } = await supabase
-      .from('data_records')
-      .select('*, data_record_values(*)')
-      .eq('id', params.id)
-      .single()
-    if (error) throw error
+    const record = await db.dataRecord.findUnique({
+      where: { id: params.id },
+      include: {
+        dataRecordValues: true
+      }
+    })
+
+    if (!record) {
+      return NextResponse.json({ error: 'Record not found' }, { status: 404 })
+    }
 
     // Create audit log
     await createAuditLog({
@@ -78,13 +97,13 @@ export async function PUT(
       entityType: 'DataRecord',
       entityId: params.id,
       oldValue: null, // We don't have old values in this case
-      newValue: data,
-      userId: user.id,
+      newValue: record,
+      userId: session.user.id,
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown'
     })
 
-    return NextResponse.json({ record: data })
+    return NextResponse.json({ record })
   } catch (error) {
     console.error('Error updating record:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -99,17 +118,19 @@ export async function DELETE(
     if (!isUuid(params.id)) {
       return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
     }
-    const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
+    
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { error } = await supabase
-      .from('data_records')
-      .update({ is_active: false, deleted_at: new Date().toISOString() })
-      .eq('id', params.id)
-    if (error) throw error
+    await db.dataRecord.update({
+      where: { id: params.id },
+      data: {
+        isActive: false,
+        deletedAt: new Date()
+      }
+    })
 
     return NextResponse.json({ success: true })
   } catch (error) {

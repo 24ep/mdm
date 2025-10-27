@@ -33,9 +33,11 @@ import {
   Play,
   Pause,
   Eye,
-  EyeOff
+  EyeOff,
+  Bot
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { APIConfiguration } from './APIConfiguration'
 
 interface Integration {
   id: string
@@ -361,10 +363,11 @@ export function IntegrationHub() {
       </div>
 
       <Tabs defaultValue="integrations" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
           <TabsTrigger value="oauth">OAuth Providers</TabsTrigger>
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
+          <TabsTrigger value="ai-config">AI Configuration</TabsTrigger>
         </TabsList>
 
         <TabsContent value="integrations" className="space-y-6">
@@ -565,6 +568,10 @@ export function IntegrationHub() {
               </Card>
             ))}
           </div>
+        </TabsContent>
+
+        <TabsContent value="ai-config" className="space-y-6">
+          <APIConfiguration />
         </TabsContent>
       </Tabs>
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { createClient } from '@/lib/supabase/server'
+import { db } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,47 +10,36 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const supabase = createClient()
-
     const { searchParams } = new URL(request.url)
     const dataModel = searchParams.get('dataModel')
     const isPublic = searchParams.get('isPublic')
     const importType = searchParams.get('importType')
 
-    let query = supabase
-      .from('import_profiles')
-      .select(`
-        *,
-        import_profile_sharing (
-          id,
-          sharing_type,
-          target_id,
-          target_group
-        )
-      `)
-      .order('created_at', { ascending: false })
-
-    // Filter by data model if provided
+    // Build where clause for filtering using Prisma
+    const where: any = {}
+    
     if (dataModel) {
-      query = query.eq('data_model', dataModel)
+      where.dataModel = dataModel
     }
-
-    // Filter by public status if provided
+    
     if (isPublic !== null) {
-      query = query.eq('is_public', isPublic === 'true')
+      where.isPublic = isPublic === 'true'
     }
-
-    // Filter by import type if provided
+    
     if (importType) {
-      query = query.eq('import_type', importType)
+      where.importType = importType
     }
 
-    const { data: profiles, error } = await query
-
-    if (error) {
-      console.error('Error fetching import profiles:', error)
-      return NextResponse.json({ error: 'Failed to fetch import profiles' }, { status: 500 })
-    }
+    // Get import profiles using Prisma
+    const profiles = await db.importProfile.findMany({
+      where,
+      include: {
+        importProfileSharing: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
 
     return NextResponse.json({ profiles })
   } catch (error) {
@@ -65,8 +54,6 @@ export async function POST(request: NextRequest) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    const supabase = createClient()
 
     const body = await request.json()
     const { 
@@ -99,50 +86,43 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid import type' }, { status: 400 })
     }
 
-    // Create the import profile
-    const { data: profile, error: profileError } = await supabase
-      .from('import_profiles')
-      .insert({
+    // Create the import profile using Prisma
+    const profile = await db.importProfile.create({
+      data: {
         name,
         description,
-        data_model: dataModel,
-        file_types: fileTypes,
-        header_row: headerRow || 1,
-        data_start_row: dataStartRow || 2,
-        chunk_size: chunkSize || 1000,
-        max_items: maxItems || null,
-        import_type: importType,
-        primary_key_attribute: primaryKeyAttribute || null,
-        date_format: dateFormat || 'YYYY-MM-DD',
-        time_format: timeFormat || 'HH:mm:ss',
-        boolean_format: booleanFormat || 'true/false',
-        attribute_mapping: attributeMapping || {},
-        attribute_options: attributeOptions || {},
-        is_public: isPublic || false,
-        created_by: session.user.id
-      })
-      .select()
-      .single()
+        dataModel: dataModel,
+        fileTypes: fileTypes,
+        headerRow: headerRow || 1,
+        dataStartRow: dataStartRow || 2,
+        chunkSize: chunkSize || 1000,
+        maxItems: maxItems || null,
+        importType: importType,
+        primaryKeyAttribute: primaryKeyAttribute || null,
+        dateFormat: dateFormat || 'YYYY-MM-DD',
+        timeFormat: timeFormat || 'HH:mm:ss',
+        booleanFormat: booleanFormat || 'true/false',
+        attributeMapping: attributeMapping || {},
+        attributeOptions: attributeOptions || {},
+        isPublic: isPublic || false,
+        createdBy: session.user.id
+      }
+    })
 
-    if (profileError) {
-      console.error('Error creating import profile:', profileError)
-      return NextResponse.json({ error: 'Failed to create import profile' }, { status: 500 })
-    }
-
-    // Create sharing configurations if provided
+    // Create sharing configurations if provided using Prisma
     if (sharing && sharing.length > 0) {
       const sharingData = sharing.map((share: any) => ({
-        profile_id: profile.id,
-        sharing_type: share.type,
-        target_id: share.targetId || null,
-        target_group: share.targetGroup || null
+        profileId: profile.id,
+        sharingType: share.type,
+        targetId: share.targetId || null,
+        targetGroup: share.targetGroup || null
       }))
 
-      const { error: sharingError } = await supabase
-        .from('import_profile_sharing')
-        .insert(sharingData)
-
-      if (sharingError) {
+      try {
+        await db.importProfileSharing.createMany({
+          data: sharingData
+        })
+      } catch (sharingError) {
         console.error('Error creating sharing configurations:', sharingError)
         // Don't fail the request, just log the error
       }

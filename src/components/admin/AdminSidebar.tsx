@@ -27,7 +27,8 @@ import {
   HardDrive,
   Building,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Bot
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -36,13 +37,15 @@ interface AdminSidebarProps {
   onTabChange: (tab: string) => void
   selectedSpace?: string
   onSpaceChange?: (spaceId: string) => void
+  collapsed?: boolean
 }
 
 export function AdminSidebar({ 
   activeTab, 
   onTabChange, 
   selectedSpace, 
-  onSpaceChange 
+  onSpaceChange,
+  collapsed = false
 }: AdminSidebarProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [spaces, setSpaces] = useState<any[]>([])
@@ -86,12 +89,6 @@ export function AdminSidebar({
       description: 'File and attachment management'
     },
     {
-      id: 'schema',
-      name: 'Schema Viewer',
-      icon: Table,
-      description: 'Database schema visualization'
-    },
-    {
       id: 'bigquery',
       name: 'BigQuery Interface',
       icon: Code,
@@ -102,6 +99,12 @@ export function AdminSidebar({
       name: 'Data Science',
       icon: FileText,
       description: 'Jupyter-style notebooks'
+    },
+    {
+      id: 'ai-analyst',
+      name: 'AI Analyst',
+      icon: Bot,
+      description: 'AI-powered data analysis'
     },
     {
       id: 'settings',
@@ -169,12 +172,6 @@ export function AdminSidebar({
       icon: BarChart3,
       description: 'Business intelligence'
     },
-    {
-      id: 'sql',
-      name: 'SQL Queries',
-      icon: Code,
-      description: 'SQL query management'
-    }
   ]
 
   const groupedTabs = {
@@ -189,11 +186,11 @@ export function AdminSidebar({
       { id: 'attachments', name: 'Attachments', icon: Paperclip }
     ],
     tools: [
-      { id: 'schema', name: 'Schema Viewer', icon: Table },
       { id: 'bigquery', name: 'BigQuery Interface', icon: Code },
       { id: 'notebook', name: 'Data Science', icon: FileText },
+      { id: 'kernels', name: 'Kernel Management', icon: Server },
+      { id: 'ai-analyst', name: 'AI Analyst', icon: Bot },
       { id: 'bi', name: 'BI & Reports', icon: BarChart3 },
-      { id: 'sql', name: 'SQL Queries', icon: Code }
     ],
     system: [
       { id: 'health', name: 'System Health', icon: Heart },
@@ -242,84 +239,115 @@ export function AdminSidebar({
 
 
   return (
-    <div className="w-80 h-full bg-white border-r border-gray-200 flex flex-col">
+    <div className={`h-full border-r border-gray-200 flex flex-col w-full ${collapsed ? 'bg-blue-50' : 'bg-white'}`}>
       {/* GCP-style Header */}
-      <div className="px-4 py-3 border-b border-gray-200 bg-white">
+      <div className={`px-4 py-3 border-b border-gray-200 bg-white ${collapsed ? 'px-2' : ''}`}>
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded bg-blue-600 flex items-center justify-center">
             <Shield className="h-5 w-5 text-white" />
           </div>
-          <div>
-            <h2 className="text-base font-medium text-gray-900">Admin Console</h2>
-            <p className="text-xs text-gray-500">System Administration</p>
-          </div>
+          {!collapsed && (
+            <div>
+              <h2 className="text-base font-medium text-gray-900">Admin Console</h2>
+              <p className="text-xs text-gray-500">System Administration</p>
+            </div>
+          )}
         </div>
       </div>
 
       {/* GCP-style Navigation */}
       <ScrollArea className="flex-1">
         <div className="py-2">
-          {Object.entries(groupedTabs).map(([sectionName, tabs]) => (
-            <div key={sectionName} className="mb-1">
-              <Button
-                variant="ghost"
-                className={cn(
-                  "w-full justify-between text-sm font-normal h-9 px-4 rounded-none hover:bg-gray-50 transition-colors duration-150",
-                  expandedSection === sectionName 
-                    ? "bg-blue-50 text-blue-700 border-r-2 border-blue-600" 
-                    : "text-gray-700 hover:text-gray-900"
-                )}
-                onClick={() => toggleSection(sectionName)}
-              >
-                <span className="flex items-center gap-2">
-                  <span className="text-sm font-medium">
-                    {sectionName.charAt(0).toUpperCase() + sectionName.slice(1)}
-                  </span>
-                  <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
-                    {tabs.length}
-                  </span>
-                </span>
-                {expandedSection === sectionName ? (
-                  <ChevronDown className="h-4 w-4 text-gray-500" />
-                ) : (
-                  <ChevronRight className="h-4 w-4 text-gray-500" />
-                )}
-              </Button>
-              
-              {expandedSection === sectionName && (
-                <div className="bg-gray-50 border-l-2 border-blue-200">
-                  {tabs.map(tab => (
-                    <Button
-                      key={tab.id}
-                      variant="ghost"
-                      className={cn(
-                        "w-full justify-start text-sm h-8 px-8 rounded-none transition-colors duration-150",
-                        activeTab === tab.id 
-                          ? "bg-blue-100 text-blue-700 border-r-2 border-blue-600" 
-                          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                      )}
-                      onClick={() => handleTabClick(tab.id)}
-                    >
-                      <tab.icon className="h-4 w-4 mr-3 text-gray-500" />
-                      <span className="truncate">{tab.name}</span>
-                    </Button>
-                  ))}
-                </div>
-              )}
+          {collapsed ? (
+            // Collapsed view - show only icons
+            <div className="space-y-1">
+              {adminTabs.map(tab => (
+                <Button
+                  key={tab.id}
+                  variant="ghost"
+                  className={cn(
+                    "w-full justify-center h-10 rounded-none transition-colors duration-150",
+                    activeTab === tab.id 
+                      ? "bg-blue-100 text-blue-700" 
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  )}
+                  onClick={() => handleTabClick(tab.id)}
+                  title={tab.name}
+                >
+                  <tab.icon className="h-5 w-5" />
+                </Button>
+              ))}
             </div>
-          ))}
+          ) : (
+            // Expanded view - show full navigation
+            Object.entries(groupedTabs).map(([sectionName, tabs]) => (
+              <div key={sectionName} className="mb-1">
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    "w-full justify-between text-sm font-normal h-9 px-4 rounded-none hover:bg-gray-50 transition-colors duration-150",
+                    expandedSection === sectionName 
+                      ? "bg-blue-50 text-blue-700 border-r-2 border-blue-600" 
+                      : "text-gray-700 hover:text-gray-900"
+                  )}
+                  onClick={() => toggleSection(sectionName)}
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="text-sm font-medium">
+                      {sectionName.charAt(0).toUpperCase() + sectionName.slice(1)}
+                    </span>
+                    <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
+                      {tabs.length}
+                    </span>
+                  </span>
+                  {expandedSection === sectionName ? (
+                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 text-gray-500" />
+                  )}
+                </Button>
+                
+                {expandedSection === sectionName && (
+                  <div className="bg-gray-50 border-l-2 border-blue-200">
+                    {tabs.map(tab => (
+                      <Button
+                        key={tab.id}
+                        variant="ghost"
+                        className={cn(
+                          "w-full justify-start text-sm h-8 px-8 rounded-none transition-colors duration-150",
+                          activeTab === tab.id 
+                            ? "bg-blue-100 text-blue-700 border-r-2 border-blue-600" 
+                            : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                        )}
+                        onClick={() => handleTabClick(tab.id)}
+                      >
+                        <tab.icon className="h-4 w-4 mr-3 text-gray-500" />
+                        <span className="truncate">{tab.name}</span>
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))
+          )}
         </div>
       </ScrollArea>
 
       {/* GCP-style Footer */}
-      <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
-        <div className="flex items-center justify-between text-xs text-gray-500">
-          <div className="flex items-center gap-2">
+      <div className={`px-4 py-3 border-t border-gray-200 bg-gray-50 ${collapsed ? 'px-2' : ''}`}>
+        {collapsed ? (
+          <div className="flex justify-center">
             <div className="w-2 h-2 rounded-full bg-green-500"></div>
-            <span>System Online</span>
           </div>
-          <span>v1.0</span>
-        </div>
+        ) : (
+          <div className="flex items-center justify-between text-xs text-gray-500">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-500"></div>
+              <span>System Online</span>
+            </div>
+            <span>v1.0</span>
+          </div>
+        )}
       </div>
     </div>
   )

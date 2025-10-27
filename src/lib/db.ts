@@ -1,36 +1,20 @@
-// Legacy database connection - kept for backward compatibility
-import { Pool } from 'pg'
-import { prisma } from './prisma'
+import { PrismaClient } from '@prisma/client'
 
-let pool: Pool | null = null
-
-export function getDbPool(): Pool {
-  if (!pool) {
-    const connectionString = process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/customer_data_management'
-    console.log('🔗 PostgreSQL Database connection string:', connectionString)
-    pool = new Pool({ 
-      connectionString,
-      max: 20, // Maximum number of clients in the pool
-      idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-      connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
-      maxUses: 7500, // Close (and replace) a connection after it has been used 7500 times
-    })
-  }
-  return pool
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined
 }
 
-// Legacy query function - kept for backward compatibility
-export async function query<T = any>(text: string, params: any[] = []): Promise<{ rows: T[] }>{
-  const client = await getDbPool().connect()
+export const db = globalForPrisma.prisma ?? new PrismaClient()
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
+
+// Raw SQL query function for compatibility with existing code
+export async function query(sql: string, params: any[] = []) {
   try {
-    const res = await client.query(text, params)
-    return { rows: res.rows as T[] }
-  } finally {
-    client.release()
+    const result = await db.$queryRawUnsafe(sql, ...params)
+    return { rows: Array.isArray(result) ? result : [result] }
+  } catch (error) {
+    console.error('Database query error:', error)
+    throw error
   }
 }
-
-// Export Prisma client for new ORM usage
-export { prisma }
-
-

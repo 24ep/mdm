@@ -31,15 +31,14 @@ export function AdminLayout({
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
-      <div className={`transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'w-0 overflow-hidden' : 'w-80'}`}>
-        {!sidebarCollapsed && (
-          <AdminSidebar
-            activeTab={activeTab}
-            onTabChange={onTabChange}
-            selectedSpace={selectedSpace}
-            onSpaceChange={onSpaceChange}
-          />
-        )}
+      <div className={`transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'w-16' : 'w-80'} flex-shrink-0`}>
+        <AdminSidebar
+          activeTab={activeTab}
+          onTabChange={onTabChange}
+          selectedSpace={selectedSpace}
+          onSpaceChange={onSpaceChange}
+          collapsed={sidebarCollapsed}
+        />
       </div>
 
       {/* Main Content */}

@@ -1021,7 +1021,7 @@ export default function SpaceStudioTemplatePage() {
                         </div>
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
-                          {version.createdAt.toLocaleDateString()}
+                          {new Date(version.createdAt).toLocaleDateString()}
                         </div>
                       </div>
                       {version.changes.length > 0 && (

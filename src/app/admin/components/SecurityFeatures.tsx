@@ -464,7 +464,7 @@ export function SecurityFeatures() {
                 <CardContent className="space-y-4">
                   <div className="text-sm text-muted-foreground">
                     <div>Type: {policy.type}</div>
-                    <div>Created: {policy.createdAt.toLocaleDateString()}</div>
+                    <div>Created: {new Date(policy.createdAt).toLocaleDateString()}</div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button

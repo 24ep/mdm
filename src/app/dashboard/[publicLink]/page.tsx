@@ -1,10 +1,5 @@
 import { notFound } from 'next/navigation'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { db } from '@/lib/db'
 
 interface PublicDashboardPageProps {
   params: {
@@ -15,19 +10,19 @@ interface PublicDashboardPageProps {
 export default async function PublicDashboardPage({ params }: PublicDashboardPageProps) {
   const { publicLink } = params
 
-  // Fetch dashboard by public link
-  const { data: dashboard, error } = await supabase
-    .from('dashboards')
-    .select(`
-      *,
-      elements: dashboard_elements(*),
-      datasources: data_sources(*)
-    `)
-    .eq('public_link', publicLink)
-    .eq('visibility', 'PUBLIC')
-    .single()
+  // Fetch dashboard by public link using Prisma
+  const dashboard = await db.dashboard.findFirst({
+    where: {
+      publicLink: publicLink,
+      visibility: 'PUBLIC'
+    },
+    include: {
+      elements: true,
+      datasources: true
+    }
+  })
 
-  if (error || !dashboard) {
+  if (!dashboard) {
     notFound()
   }
 
