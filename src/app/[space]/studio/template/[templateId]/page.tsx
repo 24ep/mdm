@@ -405,10 +405,10 @@ export default function TemplateStudioPage() {
         <div className="flex-1 flex flex-col bg-muted/20">
           <div className="p-4 border-b bg-background">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList>
-                <TabsTrigger value="design">Design</TabsTrigger>
-                <TabsTrigger value="settings">Settings</TabsTrigger>
-                <TabsTrigger value="preview">Preview</TabsTrigger>
+              <TabsList className="flex gap-2 justify-start">
+                <TabsTrigger value="design" className="justify-start">Design</TabsTrigger>
+                <TabsTrigger value="settings" className="justify-start">Settings</TabsTrigger>
+                <TabsTrigger value="preview" className="justify-start">Preview</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -500,7 +500,7 @@ export default function TemplateStudioPage() {
                           onCheckedChange={() => {}}
                         />
                         <Label htmlFor="template-public">Make this template public</Label>
-                      </div>
+          </div>
                     </CardContent>
                   </Card>
         </div>

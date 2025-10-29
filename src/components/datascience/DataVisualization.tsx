@@ -11,7 +11,7 @@ import {
   BarChart3, 
   LineChart, 
   PieChart, 
-  Scatter, 
+  Circle as Scatter, 
   TrendingUp,
   Download,
   Settings,
@@ -252,16 +252,38 @@ export function DataVisualization({ data, columns, onUpdate, className }: DataVi
 
   return (
     <div className={cn("space-y-4", className)}>
-      {/* Configuration Panel */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Palette className="h-5 w-5" />
-            Visualization Settings
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Side-by-side Preview (70) and Config (30) */}
+      <div className="grid grid-cols-1 md:grid-cols-10 gap-4">
+        {/* Preview 70% */}
+        <div className="md:col-span-7">
+          <Card>
+            <CardContent className="p-4">
+              <div className={cn(
+                "flex justify-center",
+                isFullscreen ? "fixed inset-0 z-50 bg-white p-4" : ""
+              )}>
+                <canvas
+                  ref={canvasRef}
+                  width={config.width}
+                  height={config.height}
+                  className="border border-gray-200 rounded-lg"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Config 30% */}
+        <div className="md:col-span-3">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Palette className="h-5 w-5" />
+                Visualization Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
             {/* Chart Type */}
             <div className="space-y-2">
               <Label>Chart Type</Label>
@@ -354,10 +376,10 @@ export function DataVisualization({ data, columns, onUpdate, className }: DataVi
                 max="1200"
               />
             </div>
-          </div>
+            </div>
 
-          {/* Options */}
-          <div className="flex items-center gap-4 mt-4">
+            {/* Options */}
+            <div className="flex items-center gap-4 mt-4">
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -377,10 +399,10 @@ export function DataVisualization({ data, columns, onUpdate, className }: DataVi
               />
               Show Grid
             </label>
-          </div>
+            </div>
 
-          {/* Actions */}
-          <div className="flex items-center gap-2 mt-4">
+            {/* Actions */}
+            <div className="flex items-center gap-2 mt-4">
             <Button 
               onClick={generateVisualization}
               disabled={isGenerating || !config.xAxis || !config.yAxis}
@@ -409,26 +431,11 @@ export function DataVisualization({ data, columns, onUpdate, className }: DataVi
                 <Maximize2 className="h-4 w-4" />
               )}
             </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Chart Display */}
-      <Card>
-        <CardContent className="p-4">
-          <div className={cn(
-            "flex justify-center",
-            isFullscreen ? "fixed inset-0 z-50 bg-white p-4" : ""
-          )}>
-            <canvas
-              ref={canvasRef}
-              width={config.width}
-              height={config.height}
-              className="border border-gray-200 rounded-lg"
-            />
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   )
 }

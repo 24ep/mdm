@@ -2,7 +2,7 @@ import { TemplateManager } from './template-manager'
 import { TemplateGenerator } from './template-generator'
 import { Template, DataModel } from './template-generator'
 
-export interface SpaceStudioPage {
+export interface SpacesEditorPage {
   id: string
   name: string
   displayName: string
@@ -16,10 +16,10 @@ export interface SpaceStudioPage {
   updatedAt: string
 }
 
-export interface SpaceStudioConfig {
+export interface SpacesEditorConfig {
   id: string
   spaceId: string
-  pages: SpaceStudioPage[]
+  pages: SpacesEditorPage[]
   sidebarConfig: {
     items: Array<{
       id: string
@@ -39,14 +39,14 @@ export interface SpaceStudioConfig {
   updatedAt: string
 }
 
-export class SpaceStudioManager {
-  private static readonly STORAGE_KEY = 'space_studio_configs'
-  private static readonly API_BASE = '/api/space-studio'
+export class SpacesEditorManager {
+  private static readonly STORAGE_KEY = 'spaces_editor_configs'
+  private static readonly API_BASE = '/api/spaces-editor'
 
   /**
-   * Get space studio configuration for a space
+   * Get spaces editor configuration for a space
    */
-  static async getSpaceStudioConfig(spaceId: string): Promise<SpaceStudioConfig | null> {
+  static async getSpacesEditorConfig(spaceId: string): Promise<SpacesEditorConfig | null> {
     try {
       // Try to fetch from API first
       const response = await fetch(`${this.API_BASE}/${spaceId}`)
@@ -55,13 +55,13 @@ export class SpaceStudioManager {
         return data.config
       }
     } catch (error) {
-      console.warn('Failed to fetch space studio config from API, using local storage:', error)
+      console.warn('Failed to fetch spaces editor config from API, using local storage:', error)
     }
 
     // Fallback to local storage
     const stored = localStorage.getItem(this.STORAGE_KEY)
     if (stored) {
-      const configs: Record<string, SpaceStudioConfig> = JSON.parse(stored)
+      const configs: Record<string, SpacesEditorConfig> = JSON.parse(stored)
       return configs[spaceId] || null
     }
 
@@ -69,9 +69,9 @@ export class SpaceStudioManager {
   }
 
   /**
-   * Save space studio configuration
+   * Save spaces editor configuration
    */
-  static async saveSpaceStudioConfig(config: SpaceStudioConfig): Promise<void> {
+  static async saveSpacesEditorConfig(config: SpacesEditorConfig): Promise<void> {
     try {
       // Try to save to API first
       const response = await fetch(`${this.API_BASE}/${config.spaceId}`, {
@@ -86,157 +86,26 @@ export class SpaceStudioManager {
         return
       }
     } catch (error) {
-      console.warn('Failed to save space studio config to API, using local storage:', error)
+      console.warn('Failed to save spaces editor config to API, using local storage:', error)
     }
 
     // Fallback to local storage
     const stored = localStorage.getItem(this.STORAGE_KEY)
-    const configs: Record<string, SpaceStudioConfig> = stored ? JSON.parse(stored) : {}
+    const configs: Record<string, SpacesEditorConfig> = stored ? JSON.parse(stored) : {}
     configs[config.spaceId] = { ...config, updatedAt: new Date().toISOString() }
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(configs))
   }
 
   /**
-   * Create default space studio configuration
+   * Create default spaces editor configuration
    */
-  static async createDefaultConfig(spaceId: string): Promise<SpaceStudioConfig> {
-    const now = new Date().toISOString()
-    const defaultPages: SpaceStudioPage[] = [
-      {
-        id: 'dashboard',
-        name: 'dashboard',
-        displayName: 'Dashboard',
-        description: 'Main dashboard with key metrics, charts, and recent activity overview',
-        isCustom: false,
-        path: '/dashboard',
-        order: 1,
-        isActive: true,
-        createdAt: now,
-        updatedAt: now
-      },
-      {
-        id: 'customers',
-        name: 'customers',
-        displayName: 'Customer Management',
-        description: 'Manage customer data, profiles, and relationships with advanced filtering and search',
-        isCustom: false,
-        path: '/customers',
-        order: 2,
-        isActive: true,
-        createdAt: now,
-        updatedAt: now
-      },
-      {
-        id: 'analytics',
-        name: 'analytics',
-        displayName: 'Analytics & Reports',
-        description: 'Comprehensive analytics dashboard with interactive charts and custom reports',
-        isCustom: false,
-        path: '/analytics',
-        order: 3,
-        isActive: true,
-        createdAt: now,
-        updatedAt: now
-      },
-      {
-        id: 'projects',
-        name: 'projects',
-        displayName: 'Project Management',
-        description: 'Track projects, tasks, deadlines, and team collaboration in one place',
-        isCustom: false,
-        path: '/projects',
-        order: 4,
-        isActive: true,
-        createdAt: now,
-        updatedAt: now
-      },
-      {
-        id: 'inventory',
-        name: 'inventory',
-        displayName: 'Inventory Control',
-        description: 'Monitor stock levels, manage suppliers, and track product movements',
-        isCustom: false,
-        path: '/inventory',
-        order: 5,
-        isActive: true,
-        createdAt: now,
-        updatedAt: now
-      },
-      {
-        id: 'employee-portal',
-        name: 'employee-portal',
-        displayName: 'Employee Portal',
-        description: 'Self-service portal for employees to manage their information and requests',
-        templateId: 'employee-portal-template',
-        isCustom: false,
-        path: '/employee-portal',
-        order: 6,
-        isActive: true,
-        createdAt: now,
-        updatedAt: now
-      },
-      {
-        id: 'sales-dashboard',
-        name: 'sales-dashboard',
-        displayName: 'Sales Dashboard',
-        description: 'Real-time sales performance tracking with pipeline visualization',
-        templateId: 'sales-dashboard-template',
-        isCustom: false,
-        path: '/sales-dashboard',
-        order: 7,
-        isActive: true,
-        createdAt: now,
-        updatedAt: now
-      },
-      {
-        id: 'settings',
-        name: 'settings',
-        displayName: 'System Settings',
-        description: 'Configure system preferences, user permissions, and integration settings',
-        isCustom: false,
-        path: '/settings',
-        order: 8,
-        isActive: true,
-        createdAt: now,
-        updatedAt: now
-      }
-    ]
-
-    const config: SpaceStudioConfig = {
+  static async createDefaultConfig(spaceId: string): Promise<SpacesEditorConfig> {
+    const config: SpacesEditorConfig = {
       id: `config_${spaceId}_${Date.now()}`,
       spaceId,
-      pages: defaultPages,
+      pages: [],
       sidebarConfig: {
-        items: defaultPages.map(page => {
-          const iconMap: Record<string, string> = {
-            'dashboard': 'LayoutDashboard',
-            'customers': 'Users',
-            'analytics': 'BarChart3',
-            'projects': 'FolderKanban',
-            'inventory': 'Package',
-            'employee-portal': 'UserCheck',
-            'sales-dashboard': 'TrendingUp',
-            'settings': 'Settings'
-          }
-          const colorMap: Record<string, string> = {
-            'dashboard': '#3b82f6',
-            'customers': '#10b981',
-            'analytics': '#f59e0b',
-            'projects': '#8b5cf6',
-            'inventory': '#ef4444',
-            'employee-portal': '#06b6d4',
-            'sales-dashboard': '#84cc16',
-            'settings': '#6b7280'
-          }
-          return {
-            id: page.id,
-            type: 'page' as const,
-            name: page.displayName,
-            icon: iconMap[page.id] || 'File',
-            color: colorMap[page.id] || '#6b7280',
-            pageId: page.id
-          }
-        }),
+        items: [],
         background: '#ffffff',
         textColor: '#374151',
         fontSize: '14px'
@@ -246,25 +115,25 @@ export class SpaceStudioManager {
       updatedAt: new Date().toISOString()
     }
 
-    await this.saveSpaceStudioConfig(config)
+    await this.saveSpacesEditorConfig(config)
     return config
   }
 
   /**
    * Get all pages for a space
    */
-  static async getPages(spaceId: string): Promise<SpaceStudioPage[]> {
-    const config = await this.getSpaceStudioConfig(spaceId)
+  static async getPages(spaceId: string): Promise<SpacesEditorPage[]> {
+    const config = await this.getSpacesEditorConfig(spaceId)
     return config?.pages || []
   }
 
   /**
    * Create a new page
    */
-  static async createPage(spaceId: string, pageData: Partial<SpaceStudioPage>): Promise<SpaceStudioPage> {
-    const config = await this.getSpaceStudioConfig(spaceId) || await this.createDefaultConfig(spaceId)
+  static async createPage(spaceId: string, pageData: Partial<SpacesEditorPage>): Promise<SpacesEditorPage> {
+    const config = await this.getSpacesEditorConfig(spaceId) || await this.createDefaultConfig(spaceId)
     
-    const newPage: SpaceStudioPage = {
+    const newPage: SpacesEditorPage = {
       id: `page_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       name: pageData.name || 'new-page',
       displayName: pageData.displayName || 'New Page',
@@ -279,15 +148,15 @@ export class SpaceStudioManager {
     }
 
     config.pages.push(newPage)
-    await this.saveSpaceStudioConfig(config)
+    await this.saveSpacesEditorConfig(config)
     return newPage
   }
 
   /**
    * Update a page
    */
-  static async updatePage(spaceId: string, pageId: string, updates: Partial<SpaceStudioPage>): Promise<void> {
-    const config = await this.getSpaceStudioConfig(spaceId)
+  static async updatePage(spaceId: string, pageId: string, updates: Partial<SpacesEditorPage>): Promise<void> {
+    const config = await this.getSpacesEditorConfig(spaceId)
     if (!config) return
 
     const pageIndex = config.pages.findIndex(p => p.id === pageId)
@@ -297,7 +166,7 @@ export class SpaceStudioManager {
         ...updates,
         updatedAt: new Date().toISOString()
       }
-      await this.saveSpaceStudioConfig(config)
+      await this.saveSpacesEditorConfig(config)
     }
   }
 
@@ -305,11 +174,11 @@ export class SpaceStudioManager {
    * Delete a page
    */
   static async deletePage(spaceId: string, pageId: string): Promise<void> {
-    const config = await this.getSpaceStudioConfig(spaceId)
+    const config = await this.getSpacesEditorConfig(spaceId)
     if (!config) return
 
     config.pages = config.pages.filter(p => p.id !== pageId)
-    await this.saveSpaceStudioConfig(config)
+    await this.saveSpacesEditorConfig(config)
   }
 
   /**
@@ -334,7 +203,7 @@ export class SpaceStudioManager {
   /**
    * Create a page from template
    */
-  static async createPageFromTemplate(spaceId: string, templateId: string, pageData: Partial<SpaceStudioPage>): Promise<SpaceStudioPage> {
+  static async createPageFromTemplate(spaceId: string, templateId: string, pageData: Partial<SpacesEditorPage>): Promise<SpacesEditorPage> {
     const template = await TemplateManager.getTemplate(templateId)
     if (!template) {
       throw new Error('Template not found')
@@ -347,5 +216,36 @@ export class SpaceStudioManager {
     })
 
     return newPage
+  }
+
+  /**
+   * Clear spaces editor configuration (remove all pages)
+   */
+  static async clearSpacesEditorConfig(spaceId: string): Promise<void> {
+    const config = await this.getSpacesEditorConfig(spaceId)
+    if (!config) return
+
+    const clearedConfig: SpacesEditorConfig = {
+      ...config,
+      pages: [],
+      sidebarConfig: {
+        ...config.sidebarConfig,
+        items: []
+      },
+      updatedAt: new Date().toISOString()
+    }
+
+    await this.saveSpacesEditorConfig(clearedConfig)
+  }
+
+  /**
+   * Reset spaces editor configuration to default (empty)
+   */
+  static async resetSpacesEditorConfig(spaceId: string): Promise<SpacesEditorConfig> {
+    // Clear existing config
+    await this.clearSpacesEditorConfig(spaceId)
+    
+    // Create new default config
+    return await this.createDefaultConfig(spaceId)
   }
 }

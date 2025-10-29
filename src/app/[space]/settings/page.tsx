@@ -17,13 +17,13 @@ import { UserInviteInput } from '@/components/ui/user-invite-input'
 import { MemberManagementPanel } from '@/components/space-management/MemberManagementPanel'
 import { MemberPermissionsPanel } from '@/components/space-management/MemberPermissionsPanel'
 import { MemberAuditLog } from '@/components/space-management/MemberAuditLog'
-import { Building2, Layout, Database, History, Users as UsersIcon, UserCog, UserPlus, Plus, Edit, Trash2, Search, Type, AlertTriangle, FolderPlus, Share2, Folder, FolderOpen, Move, Settings, Palette, Shield, Archive, Trash, MoreVertical, ChevronDown, ArrowLeft, ExternalLink, Grid3X3 } from 'lucide-react'
+import { Building2, Layout, Database, History, Users as UsersIcon, UserCog, UserPlus, Plus, Edit, Trash2, Search, Type, AlertTriangle, FolderPlus, Share2, Folder, FolderOpen, Move, Settings, Palette, Shield, Archive, Trash, MoreVertical, ChevronDown, ChevronRight, ArrowLeft, ExternalLink, Grid3X3 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useSpace } from '@/contexts/space-context'
 import { useSession } from 'next-auth/react'
-import { SpaceStudioLauncher } from '@/components/space-studio-launcher'
 import { PagesManagement } from '@/components/studio/pages-management'
-import { useSpaceStudio } from '@/hooks/use-space-studio'
+import { SpaceStudio } from '@/components/studio/space-studio'
+import { useSpacesEditor } from '@/hooks/use-space-studio'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
@@ -40,29 +40,43 @@ export default function SpaceSettingsPage() {
   const router = useRouter()
   const params = useParams() as { space: string }
   const searchParams = useSearchParams()
-  const allowedTabs = ['details','members','studio','pages','data-model','attachments','restore','danger']
+  const allowedTabs = ['details','members','space-studio','data-model','attachments','restore','danger']
   const initialTabRaw = (searchParams.get('tab') as string) || 'details'
   const initialTab = allowedTabs.includes(initialTabRaw) ? initialTabRaw : 'details'
   const { spaces, currentSpace, refreshSpaces } = useSpace()
   const { data: session } = useSession()
 
-  // Space Studio: pages/templates management for this space
+  // Spaces Editor: pages/templates management for this space
   const {
-    pages: studioPages,
-    templates: studioTemplates,
-    createPage: createStudioPage,
-    updatePage: updateStudioPage,
-    deletePage: deleteStudioPage,
-    assignTemplateToPage: assignTemplateToStudioPage
-  } = useSpaceStudio(currentSpace?.id || '')
+    pages: editorPages,
+    templates: editorTemplates,
+    createPage: createEditorPage,
+    updatePage: updateEditorPage,
+    deletePage: deleteEditorPage,
+    assignTemplateToPage: assignTemplateToEditorPage,
+    refreshConfig: refreshEditorConfig
+  } = useSpacesEditor(currentSpace?.id || '')
+
+  // Reset all pages function
+  const handleResetPages = async () => {
+    try {
+      const { SpacesEditorManager } = await import('@/lib/space-studio-manager')
+      await SpacesEditorManager.clearSpacesEditorConfig(currentSpace?.id || '')
+      await refreshEditorConfig()
+      toast.success('All pages have been removed')
+    } catch (error) {
+      console.error('Failed to reset pages:', error)
+      toast.error('Failed to reset pages')
+    }
+  }
 
   const homepage = useMemo(() => {
-    if (!studioPages || studioPages.length === 0) return null
-    const byOrder = [...studioPages]
+    if (!editorPages || editorPages.length === 0) return null
+    const byOrder = [...editorPages]
       .filter(p => p.isActive)
       .sort((a, b) => (a.order || 0) - (b.order || 0))
     return byOrder[0] || null
-  }, [studioPages])
+  }, [editorPages])
 
   const selectedSpace = useMemo(() => {
     return (
@@ -240,6 +254,31 @@ export default function SpaceSettingsPage() {
   const [showModelDrawer, setShowModelDrawer] = useState(false)
   const [editingModel, setEditingModel] = useState<any | null>(null)
   const [modelForm, setModelForm] = useState({ name: '', display_name: '', description: '', slug: '' })
+  
+  // Data Model Type Selection
+  const [showDataModelTypeDialog, setShowDataModelTypeDialog] = useState(false)
+  const [selectedDataModelType, setSelectedDataModelType] = useState<'internal' | 'external' | null>(null)
+  
+  // External Data Source Connection
+  const [showDatabaseSelection, setShowDatabaseSelection] = useState(false)
+  const [databaseSearch, setDatabaseSearch] = useState('')
+  const [selectedDatabaseType, setSelectedDatabaseType] = useState<'postgres' | 'mysql' | null>(null)
+  const [showConnectionForm, setShowConnectionForm] = useState(false)
+  const [connectionForm, setConnectionForm] = useState({
+    name: '',
+    db_type: 'postgres' as 'postgres' | 'mysql',
+    host: '',
+    port: '',
+    database: '',
+    username: '',
+    password: '',
+    schema: '',
+    table: ''
+  })
+  const [testingConnection, setTestingConnection] = useState(false)
+  const [connectionTestResult, setConnectionTestResult] = useState<any>(null)
+  const [connectionSchemas, setConnectionSchemas] = useState<string[]>([])
+  const [connectionTables, setConnectionTables] = useState<Record<string, string[]>>({})
   const [activeModelTab, setActiveModelTab] = useState<'details' | 'attributes' | 'activity'>('details')
   const [attributes, setAttributes] = useState<any[]>([])
   const [attributesLoading, setAttributesLoading] = useState(false)
@@ -435,15 +474,191 @@ export default function SpaceSettingsPage() {
   }
 
   const openCreateModel = () => {
-    setEditingModel(null)
-    setModelForm({ name: '', display_name: '', description: '', slug: '' })
-    setModelIcon('')
-    setModelPrimaryColor('#1e40af')
-    setModelTags([])
-    setModelGroupFolder('')
-    setModelOwnerName('')
-    setShowModelDrawer(true)
+    // Show dialog to select data model type
+    setShowDataModelTypeDialog(true)
+    setSelectedDataModelType(null)
+    setShowDatabaseSelection(false)
+    setShowConnectionForm(false)
+    setDatabaseSearch('')
+    setSelectedDatabaseType(null)
+    setConnectionForm({
+      name: '',
+      db_type: 'postgres',
+      host: '',
+      port: '',
+      database: '',
+      username: '',
+      password: '',
+      schema: '',
+      table: ''
+    })
   }
+
+  const handleSelectDataModelType = (type: 'internal' | 'external') => {
+    setSelectedDataModelType(type)
+    if (type === 'external') {
+      setShowDatabaseSelection(true)
+      setShowDataModelTypeDialog(false)
+    } else {
+      // Internal - proceed with existing flow
+      setShowDataModelTypeDialog(false)
+      setEditingModel(null)
+      setModelForm({ name: '', display_name: '', description: '', slug: '' })
+      setModelIcon('')
+      setModelPrimaryColor('#1e40af')
+      setModelTags([])
+      setModelGroupFolder('')
+      setModelOwnerName('')
+      setShowModelDrawer(true)
+    }
+  }
+
+  const handleSelectDatabase = (dbType: 'postgres' | 'mysql') => {
+    setSelectedDatabaseType(dbType)
+    setConnectionForm(prev => ({ ...prev, db_type: dbType, port: dbType === 'postgres' ? '5432' : '3306' }))
+    setShowDatabaseSelection(false)
+    setShowConnectionForm(true)
+  }
+
+  const testConnection = async () => {
+    if (!selectedSpace?.id) return
+    
+    setTestingConnection(true)
+    setConnectionTestResult(null)
+    
+    try {
+      const res = await fetch('/api/external-connections/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          space_id: selectedSpace.id,
+          db_type: connectionForm.db_type,
+          host: connectionForm.host,
+          port: connectionForm.port ? parseInt(connectionForm.port) : undefined,
+          database: connectionForm.database || undefined,
+          username: connectionForm.username || undefined,
+          password: connectionForm.password || undefined
+        })
+      })
+      
+      const json = await res.json()
+      if (res.ok && json.ok) {
+        setConnectionTestResult({ success: true, schemas: json.schemas, tablesBySchema: json.tablesBySchema })
+        setConnectionSchemas(json.schemas || [])
+        setConnectionTables(json.tablesBySchema || {})
+        toast.success('Connection test successful')
+      } else {
+        setConnectionTestResult({ success: false, error: json.error || 'Connection failed' })
+        toast.error('Connection test failed')
+      }
+    } catch (error: any) {
+      setConnectionTestResult({ success: false, error: error.message || 'Connection test failed' })
+      toast.error('Connection test failed')
+    } finally {
+      setTestingConnection(false)
+    }
+  }
+
+  const saveExternalConnection = async () => {
+    if (!selectedSpace?.id) return
+    
+    if (!connectionForm.name || !connectionForm.host || !connectionForm.db_type) {
+      toast.error('Please fill in all required fields')
+      return
+    }
+
+    // For PostgreSQL, schema and table are required. For MySQL, schema might be optional
+    if (!connectionForm.table) {
+      toast.error('Please select a table')
+      return
+    }
+
+    // For PostgreSQL, schema is required. For MySQL, use database name as schema if not provided
+    const schemaToUse = connectionForm.schema || (connectionForm.db_type === 'mysql' ? connectionForm.database : null)
+    if (connectionForm.db_type === 'postgres' && !schemaToUse) {
+      toast.error('Please select a schema')
+      return
+    }
+
+    try {
+      // Create external connection
+      const connectionRes = await fetch('/api/external-connections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          space_id: selectedSpace.id,
+          name: connectionForm.name,
+          db_type: connectionForm.db_type,
+          host: connectionForm.host,
+          port: connectionForm.port ? parseInt(connectionForm.port) : (connectionForm.db_type === 'postgres' ? 5432 : 3306),
+          database: connectionForm.database || null,
+          username: connectionForm.username || null,
+          password: connectionForm.password || null,
+          options: {}
+        })
+      })
+
+      if (!connectionRes.ok) {
+        const error = await connectionRes.json().catch(() => ({}))
+        throw new Error(error.error || 'Failed to create connection')
+      }
+
+      const connectionData = await connectionRes.json()
+      const connectionId = connectionData.connection?.id || connectionData.id
+
+      // Create data model linked to external connection
+      const modelRes = await fetch('/api/data-models', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: connectionForm.table || connectionForm.name.toLowerCase().replace(/\s+/g, '_'),
+          display_name: connectionForm.name,
+          description: `External data source: ${connectionForm.db_type} - ${connectionForm.host}/${connectionForm.database || ''}`,
+          slug: connectionForm.table || connectionForm.name.toLowerCase().replace(/\s+/g, '_'),
+          space_ids: [selectedSpace.id],
+          source_type: 'EXTERNAL',
+          external_connection_id: connectionId,
+          external_schema: schemaToUse || connectionForm.database || null,
+          external_table: connectionForm.table
+        })
+      })
+
+      if (!modelRes.ok) {
+        throw new Error('Failed to create data model')
+      }
+
+      toast.success('External data source connected successfully')
+      setShowConnectionForm(false)
+      setShowDatabaseSelection(false)
+      setSelectedDataModelType(null)
+      setConnectionForm({
+        name: '',
+        db_type: 'postgres',
+        host: '',
+        port: '',
+        database: '',
+        username: '',
+        password: '',
+        schema: '',
+        table: ''
+      })
+      await loadModels()
+    } catch (error: any) {
+      console.error('Error saving external connection:', error)
+      toast.error(error.message || 'Failed to save external connection')
+    }
+  }
+
+  // Database types available
+  const databaseTypes = [
+    { id: 'postgres', name: 'PostgreSQL', icon: '🐘', description: 'PostgreSQL database' },
+    { id: 'mysql', name: 'MySQL', icon: '🐬', description: 'MySQL database' }
+  ]
+
+  const filteredDatabaseTypes = databaseTypes.filter(db => 
+    db.name.toLowerCase().includes(databaseSearch.toLowerCase()) ||
+    db.description.toLowerCase().includes(databaseSearch.toLowerCase())
+  )
 
   const openEditModel = (model: any) => {
     setEditingModel(model)
@@ -943,12 +1158,12 @@ export default function SpaceSettingsPage() {
                   </div>
                 </div>
               </TabsTrigger>
-              <TabsTrigger className="justify-start w-full h-auto p-3 mb-1 data-[state=active]:bg-gray-200 dark:data-[state=active]:bg-gray-800 data-[state=inactive]:hover:bg-gray-100 dark:data-[state=inactive]:hover:bg-gray-800 rounded-lg border-0 border-b-0 data-[state=active]:border-b-0 data-[state=active]:!border-b-0" value="pages">
+              <TabsTrigger className="justify-start w-full h-auto p-3 mb-1 data-[state=active]:bg-gray-200 dark:data-[state=active]:bg-gray-800 data-[state=inactive]:hover:bg-gray-100 dark:data-[state=inactive]:hover:bg-gray-800 rounded-lg border-0 border-b-0 data-[state=active]:border-b-0 data-[state=active]:!border-b-0" value="space-studio">
                 <div className="flex items-center space-x-3 w-full">
                   <Layout className="h-4 w-4 text-foreground flex-shrink-0" style={{ display: 'block' }} />
                   <div className="flex flex-col items-start min-w-0 flex-1">
-                    <span className="font-medium">Pages</span>
-                    <span className="text-xs text-muted-foreground break-words leading-tight">Create and manage space pages</span>
+                    <span className="font-medium">Space Studio</span>
+                    <span className="text-xs text-muted-foreground break-words leading-tight">Design layout and manage space pages</span>
                   </div>
                 </div>
               </TabsTrigger>
@@ -961,15 +1176,7 @@ export default function SpaceSettingsPage() {
                   </div>
                 </div>
               </TabsTrigger>
-              <TabsTrigger className="justify-start w-full h-auto p-3 mb-1 data-[state=active]:bg-gray-200 dark:data-[state=active]:bg-gray-800 data-[state=inactive]:hover:bg-gray-100 dark:data-[state=inactive]:hover:bg-gray-800 rounded-lg border-0 border-b-0 data-[state=active]:border-b-0 data-[state=active]:!border-b-0" value="studio">
-                <div className="flex items-center space-x-3 w-full">
-                  <Layout className="h-4 w-4 text-foreground flex-shrink-0" style={{ display: 'block' }} />
-                  <div className="flex flex-col items-start min-w-0 flex-1">
-                    <span className="font-medium">Space Studio</span>
-                    <span className="text-xs text-muted-foreground break-words leading-tight">Customize appearance and branding</span>
-                  </div>
-                </div>
-              </TabsTrigger>
+              
               <TabsTrigger className="justify-start w-full h-auto p-3 mb-1 data-[state=active]:bg-gray-200 dark:data-[state=active]:bg-gray-800 data-[state=inactive]:hover:bg-gray-100 dark:data-[state=inactive]:hover:bg-gray-800 rounded-lg border-0 border-b-0 data-[state=active]:border-b-0 data-[state=active]:!border-b-0" value="data-model">
                 <div className="flex items-center space-x-3 w-full">
                   <Database className="h-4 w-4 text-foreground flex-shrink-0" style={{ display: 'block' }} />
@@ -1050,12 +1257,12 @@ export default function SpaceSettingsPage() {
 
                 {/* Details Sub-tabs */}
                 <Tabs defaultValue="basic" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="basic" className="flex items-center gap-2">
+                  <TabsList className="flex gap-2 justify-start">
+                    <TabsTrigger value="basic" className="flex items-center gap-2 justify-start">
                       <Settings className="h-4 w-4" />
                       Basic Information
                     </TabsTrigger>
-                    <TabsTrigger value="login" className="flex items-center gap-2">
+                    <TabsTrigger value="login" className="flex items-center gap-2 justify-start">
                       <Layout className="h-4 w-4" />
                       Login Page
                     </TabsTrigger>
@@ -1199,11 +1406,11 @@ export default function SpaceSettingsPage() {
 
               <TabsContent value="members" className="space-y-6 w-full">
                 <Tabs defaultValue="management" className="w-full">
-                  <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="management">Management</TabsTrigger>
-                    <TabsTrigger value="permissions">Permissions</TabsTrigger>
-                    <TabsTrigger value="activity">Activity</TabsTrigger>
-                    <TabsTrigger value="audit">Audit Log</TabsTrigger>
+                  <TabsList className="flex gap-2 justify-start flex-wrap">
+                    <TabsTrigger value="management" className="justify-start">Management</TabsTrigger>
+                    <TabsTrigger value="permissions" className="justify-start">Permissions</TabsTrigger>
+                    <TabsTrigger value="activity" className="justify-start">Activity</TabsTrigger>
+                    <TabsTrigger value="audit" className="justify-start">Audit Log</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="management" className="space-y-6">
@@ -1255,27 +1462,12 @@ export default function SpaceSettingsPage() {
                 </Tabs>
               </TabsContent>
 
-              <TabsContent value="studio" className="space-y-6 w-full">
-                <SpaceStudioLauncher />
-              </TabsContent>
+              
 
-              <TabsContent value="pages" className="space-y-6 w-full">
-                <Card className="bg-card">
-      
-                  <CardContent>
-                    <PagesManagement
-                      spaceId={currentSpace?.id || ''}
-                      pages={studioPages}
-                      templates={studioTemplates}
-                      onCreatePage={createStudioPage}
-                      onUpdatePage={updateStudioPage}
-                      onDeletePage={deleteStudioPage}
-                      onAssignTemplate={assignTemplateToStudioPage}
-                      onEditPage={(page)=> router.push(`/${params.space}/studio/page/${page.id}`)}
-                      onViewPage={(page)=> router.push(`/${params.space}/studio/page/${page.id}`)}
-                    />
-                  </CardContent>
-                </Card>
+              <TabsContent value="space-studio" className="space-y-6 w-full">
+                <SpaceStudio 
+                  spaceId={currentSpace?.id || ''}
+                />
               </TabsContent>
 
               <TabsContent value="data-model" className="space-y-6 w-full">
@@ -1306,7 +1498,7 @@ export default function SpaceSettingsPage() {
                     </DrawerHeader>
                     <div className="p-6 space-y-4">
                       <div className="border-b">
-                        <div className="flex space-x-8">
+                        <div className="flex space-x-8 justify-start">
                           <button
                             onClick={() => setActiveModelTab('details')}
                             className={`flex items-center gap-2 px-1 py-4 text-sm font-medium border-b-2 transition-colors ${
@@ -2041,6 +2233,313 @@ export default function SpaceSettingsPage() {
                       </Button>
                       <Button onClick={shareModel}>
                         Update Sharing
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+
+                {/* Data Model Type Selection Dialog */}
+                <Dialog open={showDataModelTypeDialog} onOpenChange={setShowDataModelTypeDialog}>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Add Data Model</DialogTitle>
+                      <DialogDescription>
+                        Choose the type of data model you want to create
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <button
+                        onClick={() => handleSelectDataModelType('internal')}
+                        className="w-full p-6 text-left border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                            <Database className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-semibold text-lg">Internal Data Model</div>
+                            <div className="text-sm text-muted-foreground mt-1">
+                              Create a new data model within this space
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => handleSelectDataModelType('external')}
+                        className="w-full p-6 text-left border-2 rounded-lg hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                            <ExternalLink className="h-6 w-6 text-green-600 dark:text-green-400" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-semibold text-lg">External Data Source</div>
+                            <div className="text-sm text-muted-foreground mt-1">
+                              Connect to an external database
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setShowDataModelTypeDialog(false)}>
+                        Cancel
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+
+                {/* Database Selection Dialog */}
+                <Dialog open={showDatabaseSelection} onOpenChange={(open) => {
+                  setShowDatabaseSelection(open)
+                  if (!open) {
+                    setDatabaseSearch('')
+                  }
+                }}>
+                  <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                      <DialogTitle>Select Database Type</DialogTitle>
+                      <DialogDescription>
+                        Choose the database type you want to connect to
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      {/* Search */}
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                        <Input
+                          placeholder="Search databases..."
+                          value={databaseSearch}
+                          onChange={(e) => setDatabaseSearch(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+
+                      {/* Database List */}
+                      <div className="space-y-2 max-h-96 overflow-y-auto">
+                        {filteredDatabaseTypes.length === 0 ? (
+                          <div className="text-center py-8 text-muted-foreground">
+                            No databases found
+                          </div>
+                        ) : (
+                          filteredDatabaseTypes.map((db) => (
+                            <button
+                              key={db.id}
+                              onClick={() => handleSelectDatabase(db.id as 'postgres' | 'mysql')}
+                              className="w-full p-4 text-left border rounded-lg hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
+                            >
+                              <div className="flex items-center gap-4">
+                                <div className="text-3xl">{db.icon}</div>
+                                <div className="flex-1">
+                                  <div className="font-semibold">{db.name}</div>
+                                  <div className="text-sm text-muted-foreground">{db.description}</div>
+                                </div>
+                                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                              </div>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => {
+                        setShowDatabaseSelection(false)
+                        setShowDataModelTypeDialog(true)
+                      }}>
+                        Back
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+
+                {/* Connection Form Dialog */}
+                <Dialog open={showConnectionForm} onOpenChange={(open) => {
+                  setShowConnectionForm(open)
+                  if (!open) {
+                    setConnectionTestResult(null)
+                    setConnectionSchemas([])
+                    setConnectionTables({})
+                  }
+                }}>
+                  <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Configure External Connection</DialogTitle>
+                      <DialogDescription>
+                        Enter connection details for {selectedDatabaseType === 'postgres' ? 'PostgreSQL' : 'MySQL'} database
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      {/* Connection Name */}
+                      <div>
+                        <Label htmlFor="connection-name">Connection Name *</Label>
+                        <Input
+                          id="connection-name"
+                          value={connectionForm.name}
+                          onChange={(e) => setConnectionForm({ ...connectionForm, name: e.target.value })}
+                          placeholder="e.g. Production Database"
+                          className="mt-1"
+                        />
+                      </div>
+
+                      {/* Host */}
+                      <div>
+                        <Label htmlFor="host">Host *</Label>
+                        <Input
+                          id="host"
+                          value={connectionForm.host}
+                          onChange={(e) => setConnectionForm({ ...connectionForm, host: e.target.value })}
+                          placeholder="localhost or IP address"
+                          className="mt-1"
+                        />
+                      </div>
+
+                      {/* Port */}
+                      <div>
+                        <Label htmlFor="port">Port</Label>
+                        <Input
+                          id="port"
+                          type="number"
+                          value={connectionForm.port}
+                          onChange={(e) => setConnectionForm({ ...connectionForm, port: e.target.value })}
+                          placeholder={connectionForm.db_type === 'postgres' ? '5432' : '3306'}
+                          className="mt-1"
+                        />
+                      </div>
+
+                      {/* Database */}
+                      <div>
+                        <Label htmlFor="database">Database</Label>
+                        <Input
+                          id="database"
+                          value={connectionForm.database}
+                          onChange={(e) => setConnectionForm({ ...connectionForm, database: e.target.value })}
+                          placeholder="Database name"
+                          className="mt-1"
+                        />
+                      </div>
+
+                      {/* Username */}
+                      <div>
+                        <Label htmlFor="username">Username</Label>
+                        <Input
+                          id="username"
+                          value={connectionForm.username}
+                          onChange={(e) => setConnectionForm({ ...connectionForm, username: e.target.value })}
+                          placeholder="Database username"
+                          className="mt-1"
+                        />
+                      </div>
+
+                      {/* Password */}
+                      <div>
+                        <Label htmlFor="password">Password</Label>
+                        <Input
+                          id="password"
+                          type="password"
+                          value={connectionForm.password}
+                          onChange={(e) => setConnectionForm({ ...connectionForm, password: e.target.value })}
+                          placeholder="Database password"
+                          className="mt-1"
+                        />
+                      </div>
+
+                      {/* Schema and Table Selection (shown after test) */}
+                      {connectionTestResult?.success && connectionSchemas.length > 0 && (
+                        <>
+                          <div>
+                            <Label htmlFor="schema">
+                              Schema * {connectionForm.db_type === 'mysql' && <span className="text-xs text-muted-foreground">(typically the database name)</span>}
+                            </Label>
+                            <Select
+                              value={connectionForm.schema}
+                              onValueChange={(value) => {
+                                setConnectionForm({ ...connectionForm, schema: value, table: '' })
+                              }}
+                            >
+                              <SelectTrigger className="mt-1">
+                                <SelectValue placeholder="Select schema" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {connectionSchemas.map((schema) => (
+                                  <SelectItem key={schema} value={schema}>
+                                    {schema}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {connectionForm.schema && connectionTables[connectionForm.schema] && (
+                            <div>
+                              <Label htmlFor="table">Table *</Label>
+                              <Select
+                                value={connectionForm.table}
+                                onValueChange={(value) => setConnectionForm({ ...connectionForm, table: value })}
+                              >
+                                <SelectTrigger className="mt-1">
+                                  <SelectValue placeholder="Select table" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {connectionTables[connectionForm.schema].map((table) => (
+                                    <SelectItem key={table} value={table}>
+                                      {table}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      {/* Test Result */}
+                      {connectionTestResult && (
+                        <div className={`p-4 rounded-lg ${
+                          connectionTestResult.success
+                            ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+                            : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+                        }`}>
+                          <div className={`font-medium ${
+                            connectionTestResult.success ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'
+                          }`}>
+                            {connectionTestResult.success ? '✓ Connection Successful' : '✗ Connection Failed'}
+                          </div>
+                          {connectionTestResult.error && (
+                            <div className="text-sm text-red-700 dark:text-red-300 mt-1">
+                              {connectionTestResult.error}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowConnectionForm(false)
+                          setShowDatabaseSelection(true)
+                        }}
+                      >
+                        Back
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={testConnection}
+                        disabled={testingConnection || !connectionForm.host}
+                      >
+                        {testingConnection ? 'Testing...' : 'Test Connection'}
+                      </Button>
+                      <Button
+                        onClick={saveExternalConnection}
+                        disabled={
+                          !connectionForm.name || 
+                          !connectionForm.host || 
+                          !connectionTestResult?.success || 
+                          !connectionForm.table ||
+                          (connectionForm.db_type === 'postgres' && !connectionForm.schema)
+                        }
+                      >
+                        Save Connection
                       </Button>
                     </DialogFooter>
                   </DialogContent>

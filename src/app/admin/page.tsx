@@ -29,11 +29,12 @@ import {
   Zap,
   HardDrive,
   BarChart3 as BarChart3Icon,
-  Bot
+  Bot,
+  Layout
 } from 'lucide-react'
 import { AdminLayout } from '@/components/admin/AdminLayout'
 import { BigQueryInterface } from './components/BigQueryInterface'
-// import { DeepNoteLayoutRefactored as DeepNoteLayout } from '@/components/datascience'
+import { DeepNoteLayoutRefactored as DeepNoteLayout } from '@/components/datascience'
 import { AttachmentManager } from './components/AttachmentManager'
 import { UserManagement } from './components/UserManagement'
 import { SystemSettings } from './components/SystemSettings'
@@ -55,6 +56,7 @@ import { CacheManagement } from './components/CacheManagement'
 import { FileSystemManagement } from './components/FileSystemManagement'
 import { BusinessIntelligence } from './components/BusinessIntelligence'
 import { SpaceManagement } from './components/SpaceManagement'
+import { SpaceLayoutsAdmin } from './components/SpaceLayoutsAdmin'
 import { AIAnalyst } from './components/AIAnalyst'
 import { KernelManagement } from './components/KernelManagement'
 
@@ -164,6 +166,22 @@ export default function AdminConsolePage() {
             </Card>
 
             <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('attachments')}>
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('space-layouts')}>
+              <CardHeader className="flex flex-row items-center gap-3">
+                <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/20">
+                  <Layout className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Space Layouts</CardTitle>
+                  <CardDescription>Manage layout templates and allowed spaces</CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Configure templates, preview, and control which spaces can use them
+                </p>
+              </CardContent>
+            </Card>
               <CardHeader className="flex flex-row items-center gap-3">
                 <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/20">
                   <Paperclip className="h-6 w-6 text-orange-600 dark:text-orange-400" />
@@ -249,17 +267,57 @@ export default function AdminConsolePage() {
         {activeTab === 'attachments' && <AttachmentManager />}
         {activeTab === 'bigquery' && <BigQueryInterface />}
         {activeTab === 'notebook' && (
-          <div className="h-screen p-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-bold mb-4">Data Science Notebook</h2>
-              <p className="text-gray-600">Notebook component temporarily disabled for debugging.</p>
-            </div>
+          <div className="h-screen flex flex-col">
+            <DeepNoteLayout
+              initialNotebook={{
+                id: 'admin-notebook-1',
+                name: 'Admin Data Science Notebook',
+                description: 'Advanced data science notebook for administrative analysis',
+                cells: [
+                  {
+                    id: 'cell-1',
+                    type: 'markdown',
+                    content: '# Admin Data Science Notebook\n\nThis notebook is available for administrative data analysis and reporting.',
+                    status: 'idle',
+                    timestamp: new Date(),
+                    metadata: {}
+                  },
+                  {
+                    id: 'cell-2',
+                    type: 'code',
+                    content: '# Import libraries\nimport pandas as pd\nimport numpy as np\nimport matplotlib.pyplot as plt\n\nprint("Admin notebook ready!")',
+                    status: 'idle',
+                    timestamp: new Date(),
+                    metadata: {}
+                  }
+                ],
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                tags: ['admin', 'data-science'],
+                isPublic: false,
+                author: 'Admin',
+                theme: 'light',
+                settings: {
+                  autoSave: true,
+                  executionMode: 'sequential',
+                  showLineNumbers: true,
+                  fontSize: 14,
+                  tabSize: 2,
+                  wordWrap: true
+                }
+              }}
+              enableCollaboration={true}
+              enableFileManager={true}
+              enableExport={true}
+              enableVersionControl={true}
+            />
           </div>
         )}
         {activeTab === 'kernels' && <KernelManagement />}
         {activeTab === 'ai-analyst' && <AIAnalyst />}
         {activeTab === 'integrations' && <IntegrationHub />}
         {activeTab === 'settings' && <SystemSettings />}
+        {activeTab === 'space-layouts' && <SpaceLayoutsAdmin />}
         {activeTab === 'page-templates' && <PageTemplatesAdmin />}
       </div>
     </AdminLayout>

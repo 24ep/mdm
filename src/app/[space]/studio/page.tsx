@@ -15,14 +15,14 @@ import {
   Settings
 } from 'lucide-react'
 import { useSpace } from '@/contexts/space-context'
-import { useSpaceStudio } from '@/hooks/use-space-studio'
+import { useSpacesEditor } from '@/hooks/use-space-studio'
 import { useTemplateInitialization } from '@/hooks/use-template-initialization'
 import { TemplateManagement } from '@/components/studio/template-management'
 import { PagesManagement } from '@/components/studio/pages-management'
 import { Template } from '@/lib/template-generator'
-import { SpaceStudioPage } from '@/lib/space-studio-manager'
+import { SpacesEditorPage } from '@/lib/space-studio-manager'
 
-export default function SpaceStudioPage() {
+export default function SpacesEditorPage() {
   const params = useParams()
   const router = useRouter()
   const { currentSpace } = useSpace()
@@ -36,7 +36,7 @@ export default function SpaceStudioPage() {
     initializeTemplates 
   } = useTemplateInitialization()
 
-  // Space Studio management
+  // Spaces Editor management
   const {
     config,
     loading: configLoading,
@@ -52,7 +52,7 @@ export default function SpaceStudioPage() {
     createPageFromTemplate,
     refreshConfig,
     clearError
-  } = useSpaceStudio(currentSpace?.id || '')
+  } = useSpacesEditor(currentSpace?.id || '')
 
   // Auto-initialize templates on first load
   useEffect(() => {
@@ -74,11 +74,11 @@ export default function SpaceStudioPage() {
     refreshConfig()
   }
 
-  const handleEditPage = (page: SpaceStudioPage) => {
+  const handleEditPage = (page: SpacesEditorPage) => {
     router.push(`/${params.space}/studio/page/${page.id}`)
   }
 
-  const handleViewPage = (page: SpaceStudioPage) => {
+  const handleViewPage = (page: SpacesEditorPage) => {
     router.push(`/${params.space}/studio/template/${page.templateId || 'new'}`)
   }
 
@@ -88,7 +88,7 @@ export default function SpaceStudioPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Space Studio</h1>
+            <h1 className="text-3xl font-bold">Spaces Editor</h1>
             <p className="text-muted-foreground">
               Template and page management for your {currentSpace?.name} workspace
             </p>

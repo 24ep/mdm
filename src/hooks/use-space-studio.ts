@@ -1,17 +1,17 @@
 import { useState, useEffect, useCallback } from 'react'
-import { SpaceStudioManager, SpaceStudioPage, SpaceStudioConfig } from '@/lib/space-studio-manager'
+import { SpacesEditorManager, SpacesEditorPage, SpacesEditorConfig } from '@/lib/space-studio-manager'
 import { Template } from '@/lib/template-generator'
 
-interface UseSpaceStudioReturn {
+interface UseSpacesEditorReturn {
   // Configuration
-  config: SpaceStudioConfig | null
+  config: SpacesEditorConfig | null
   loading: boolean
   error: string | null
   
   // Pages
-  pages: SpaceStudioPage[]
-  createPage: (pageData: Partial<SpaceStudioPage>) => Promise<SpaceStudioPage>
-  updatePage: (pageId: string, updates: Partial<SpaceStudioPage>) => Promise<void>
+  pages: SpacesEditorPage[]
+  createPage: (pageData: Partial<SpacesEditorPage>) => Promise<SpacesEditorPage>
+  updatePage: (pageId: string, updates: Partial<SpacesEditorPage>) => Promise<void>
   deletePage: (pageId: string) => Promise<void>
   
   // Templates
@@ -21,13 +21,13 @@ interface UseSpaceStudioReturn {
   
   // Actions
   assignTemplateToPage: (pageId: string, templateId: string) => Promise<void>
-  createPageFromTemplate: (templateId: string, pageData: Partial<SpaceStudioPage>) => Promise<SpaceStudioPage>
+  createPageFromTemplate: (templateId: string, pageData: Partial<SpacesEditorPage>) => Promise<SpacesEditorPage>
   refreshConfig: () => Promise<void>
   clearError: () => void
 }
 
-export function useSpaceStudio(spaceId: string): UseSpaceStudioReturn {
-  const [config, setConfig] = useState<SpaceStudioConfig | null>(null)
+export function useSpacesEditor(spaceId: string): UseSpacesEditorReturn {
+  const [config, setConfig] = useState<SpacesEditorConfig | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
@@ -42,16 +42,16 @@ export function useSpaceStudio(spaceId: string): UseSpaceStudioReturn {
     setError(null)
     
     try {
-      let spaceConfig = await SpaceStudioManager.getSpaceStudioConfig(spaceId)
+      let spaceConfig = await SpacesEditorManager.getSpacesEditorConfig(spaceId)
       
       // Create default config if none exists
       if (!spaceConfig) {
-        spaceConfig = await SpaceStudioManager.createDefaultConfig(spaceId)
+        spaceConfig = await SpacesEditorManager.createDefaultConfig(spaceId)
       }
       
       setConfig(spaceConfig)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load space studio configuration')
+      setError(err instanceof Error ? err.message : 'Failed to load spaces editor configuration')
     } finally {
       setLoading(false)
     }
@@ -64,7 +64,7 @@ export function useSpaceStudio(spaceId: string): UseSpaceStudioReturn {
     setTemplatesError(null)
     
     try {
-      const availableTemplates = await SpaceStudioManager.getAvailableTemplates(spaceId)
+      const availableTemplates = await SpacesEditorManager.getAvailableTemplates(spaceId)
       setTemplates(availableTemplates)
     } catch (err) {
       setTemplatesError(err instanceof Error ? err.message : 'Failed to load templates')
@@ -73,9 +73,9 @@ export function useSpaceStudio(spaceId: string): UseSpaceStudioReturn {
     }
   }, [spaceId])
 
-  const createPage = useCallback(async (pageData: Partial<SpaceStudioPage>): Promise<SpaceStudioPage> => {
+  const createPage = useCallback(async (pageData: Partial<SpacesEditorPage>): Promise<SpacesEditorPage> => {
     try {
-      const newPage = await SpaceStudioManager.createPage(spaceId, pageData)
+      const newPage = await SpacesEditorManager.createPage(spaceId, pageData)
       await loadConfig() // Refresh config
       return newPage
     } catch (err) {
@@ -84,9 +84,9 @@ export function useSpaceStudio(spaceId: string): UseSpaceStudioReturn {
     }
   }, [spaceId, loadConfig])
 
-  const updatePage = useCallback(async (pageId: string, updates: Partial<SpaceStudioPage>): Promise<void> => {
+  const updatePage = useCallback(async (pageId: string, updates: Partial<SpacesEditorPage>): Promise<void> => {
     try {
-      await SpaceStudioManager.updatePage(spaceId, pageId, updates)
+      await SpacesEditorManager.updatePage(spaceId, pageId, updates)
       await loadConfig() // Refresh config
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update page')
@@ -96,7 +96,7 @@ export function useSpaceStudio(spaceId: string): UseSpaceStudioReturn {
 
   const deletePage = useCallback(async (pageId: string): Promise<void> => {
     try {
-      await SpaceStudioManager.deletePage(spaceId, pageId)
+      await SpacesEditorManager.deletePage(spaceId, pageId)
       await loadConfig() // Refresh config
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete page')
@@ -106,7 +106,7 @@ export function useSpaceStudio(spaceId: string): UseSpaceStudioReturn {
 
   const assignTemplateToPage = useCallback(async (pageId: string, templateId: string): Promise<void> => {
     try {
-      await SpaceStudioManager.assignTemplateToPage(spaceId, pageId, templateId)
+      await SpacesEditorManager.assignTemplateToPage(spaceId, pageId, templateId)
       await loadConfig() // Refresh config
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to assign template to page')
@@ -114,9 +114,9 @@ export function useSpaceStudio(spaceId: string): UseSpaceStudioReturn {
     }
   }, [spaceId, loadConfig])
 
-  const createPageFromTemplate = useCallback(async (templateId: string, pageData: Partial<SpaceStudioPage>): Promise<SpaceStudioPage> => {
+  const createPageFromTemplate = useCallback(async (templateId: string, pageData: Partial<SpacesEditorPage>): Promise<SpacesEditorPage> => {
     try {
-      const newPage = await SpaceStudioManager.createPageFromTemplate(spaceId, templateId, pageData)
+      const newPage = await SpacesEditorManager.createPageFromTemplate(spaceId, templateId, pageData)
       await loadConfig() // Refresh config
       return newPage
     } catch (err) {

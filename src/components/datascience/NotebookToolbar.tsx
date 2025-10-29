@@ -119,6 +119,8 @@ interface NotebookToolbarProps {
   onRestart: () => void
   onShutdown: () => void
   onShowTemplates: () => void
+  toolbarPosition?: 'top' | 'body'
+  onToggleToolbarPosition?: () => void
 }
 
 export function NotebookToolbar({
@@ -142,7 +144,9 @@ export function NotebookToolbar({
   onInterrupt,
   onRestart,
   onShutdown,
-  onShowTemplates
+  onShowTemplates,
+  toolbarPosition = 'top',
+  onToggleToolbarPosition
 }: NotebookToolbarProps) {
   const [showAddMenu, setShowAddMenu] = useState(false)
   const [showKernelMenu, setShowKernelMenu] = useState(false)
@@ -166,7 +170,10 @@ export function NotebookToolbar({
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-2">
+    <div className={cn(
+      "bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-2",
+      toolbarPosition === 'body' ? "rounded-lg border" : ""
+    )}>
       <div className="flex items-center justify-between">
         {/* Left Section */}
         <div className="flex items-center gap-4">
@@ -176,18 +183,17 @@ export function NotebookToolbar({
             <span className="font-semibold text-gray-900 dark:text-white">{notebook.name}</span>
           </div>
           
-          {/* Status Badges */}
+          {/* Status Badges (hide cell count, hide 'Ready') */}
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs">
-              {notebook.cells.length} cells
-            </Badge>
-            <Badge 
-              variant={kernelStatus === 'idle' ? 'secondary' : kernelStatus === 'busy' ? 'default' : 'destructive'}
-              className="text-xs"
-            >
-              <div className={cn("w-2 h-2 rounded-full mr-1", getKernelStatusColor(kernelStatus))} />
-              {getKernelStatusText(kernelStatus)}
-            </Badge>
+            {kernelStatus !== 'idle' && (
+              <Badge 
+                variant={kernelStatus === 'busy' ? 'default' : 'destructive'}
+                className="text-xs"
+              >
+                <div className={cn("w-2 h-2 rounded-full mr-1", getKernelStatusColor(kernelStatus))} />
+                {getKernelStatusText(kernelStatus)}
+              </Badge>
+            )}
             {executionCount > 0 && (
               <Badge variant="outline" className="text-xs">
                 [{executionCount}]
@@ -222,7 +228,7 @@ export function NotebookToolbar({
               Run Selected
             </Button>
             
-            {isExecuting ? (
+            {isExecuting && (
               <Button
                 size="sm"
                 variant="outline"
@@ -231,16 +237,6 @@ export function NotebookToolbar({
               >
                 <Square className="h-4 w-4 mr-1" />
                 Stop
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={onInterrupt}
-                className="h-8 px-3"
-              >
-                <Square className="h-4 w-4 mr-1" />
-                Interrupt
               </Button>
             )}
             
@@ -255,56 +251,7 @@ export function NotebookToolbar({
             </Button>
           </div>
 
-          {/* Add Cell Menu */}
-          <div className="relative">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setShowAddMenu(!showAddMenu)}
-              className="h-8 px-3"
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              Add Cell
-              <ChevronDown className="h-3 w-3 ml-1" />
-            </Button>
-            
-            {showAddMenu && (
-              <div className="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50">
-                <div className="py-1">
-                  <button
-                    onClick={() => {
-                      onAddCell('code')
-                      setShowAddMenu(false)
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                  >
-                    <Code className="h-4 w-4" />
-                    Code Cell
-                  </button>
-                  <button
-                    onClick={() => {
-                      onAddCell('markdown')
-                      setShowAddMenu(false)
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                  >
-                    <FileText className="h-4 w-4" />
-                    Markdown Cell
-                  </button>
-                  <button
-                    onClick={() => {
-                      onAddCell('raw')
-                      setShowAddMenu(false)
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                  >
-                    <FileCode className="h-4 w-4" />
-                    Raw Cell
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          {/* Add Cell Menu removed per request */}
 
           {/* Kernel Menu */}
           <div className="relative">

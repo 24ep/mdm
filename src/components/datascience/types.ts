@@ -1,15 +1,33 @@
 // Enhanced Cell Types
-export type CellType = 'code' | 'markdown' | 'raw'
+export type CellType = 'code' | 'markdown' | 'raw' | 'sql'
 
 export interface NotebookCell {
   id: string
   type: CellType
+  title?: string
   content: string
   output?: any
   status: 'idle' | 'running' | 'success' | 'error'
   executionTime?: number
+  executionCount?: number
   timestamp: Date
   metadata: Record<string, any>
+  // SQL-specific properties
+  sqlVariableName?: string
+  sqlConnection?: string
+  sqlQuery?: string
+  // Common cell features
+  tags?: string[]
+  comments?: Array<{
+    id: string
+    content: string
+    author: string
+    timestamp: Date
+    lineNumber?: number
+  }>
+  isCollapsed?: boolean
+  isSelected?: boolean
+  isExecuting?: boolean
 }
 
 export interface Notebook {

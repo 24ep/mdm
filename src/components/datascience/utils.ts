@@ -8,20 +8,34 @@ export const getDefaultContent = (type: CellType): string => {
       return '# Markdown Cell\n\nWrite your markdown content here...'
     case 'raw':
       return 'Raw text content...'
+    case 'sql':
+      return 'SELECT * FROM table_name WHERE condition;'
     default:
       return ''
   }
 }
 
 export const createNewCell = (type: CellType): NotebookCell => {
-  return {
+  const baseCell = {
     id: `cell-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     type,
+    title: 'Untitled',
     content: getDefaultContent(type),
-    status: 'idle',
+    status: 'idle' as const,
     timestamp: new Date(),
     metadata: {}
   }
+
+  if (type === 'sql') {
+    return {
+      ...baseCell,
+      sqlQuery: getDefaultContent(type),
+      sqlVariableName: '',
+      sqlConnection: 'default'
+    }
+  }
+
+  return baseCell
 }
 
 export const getStatusIcon = (status: string) => {

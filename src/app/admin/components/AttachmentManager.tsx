@@ -39,7 +39,7 @@ import {
   FileAudio,
   FileSpreadsheet,
   FileCode,
-  FilePdf,
+  FileText as FilePdf,
   Search
 } from 'lucide-react'
 import toast from 'react-hot-toast'

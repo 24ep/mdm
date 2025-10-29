@@ -32,7 +32,7 @@ import {
   EyeOff,
   FileText,
   Package,
-  Docker,
+  Server as Docker,
   GitBranch,
   Zap,
   Monitor,

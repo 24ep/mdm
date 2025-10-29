@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { notebookEngine, Kernel } from '@/lib/notebook-engine'
 import { Notebook, NotebookState, NotebookActions } from './types'
 import { createNewCell, generateNotebookId } from './utils'
@@ -62,7 +62,7 @@ export function useNotebookState(initialNotebook?: Notebook): [NotebookState, No
     { name: 'README.md', type: 'file' as const, size: '1.1 KB', modified: new Date() }
   ])
 
-  const state: NotebookState = {
+  const state: NotebookState = useMemo(() => ({
     notebook,
     activeCellId,
     selectedCellIds,
@@ -87,9 +87,34 @@ export function useNotebookState(initialNotebook?: Notebook): [NotebookState, No
     kernels,
     variables,
     files
-  }
+  }), [
+    notebook,
+    activeCellId,
+    selectedCellIds,
+    isExecuting,
+    showSidebar,
+    showFileManager,
+    showCollaboration,
+    selectedCellType,
+    notebookHistory,
+    showHistory,
+    showSettings,
+    showExport,
+    showTemplates,
+    isFullscreen,
+    layout,
+    currentTheme,
+    showVariables,
+    showOutput,
+    kernelStatus,
+    executionCount,
+    currentKernel,
+    kernels,
+    variables,
+    files
+  ])
 
-  const actions: NotebookActions = {
+  const actions: NotebookActions = useMemo(() => ({
     setNotebook,
     setActiveCellId,
     setSelectedCellIds,
@@ -98,6 +123,7 @@ export function useNotebookState(initialNotebook?: Notebook): [NotebookState, No
     setShowFileManager,
     setShowCollaboration,
     setSelectedCellType,
+    setNotebookHistory,
     setShowHistory,
     setShowSettings,
     setShowExport,
@@ -113,7 +139,32 @@ export function useNotebookState(initialNotebook?: Notebook): [NotebookState, No
     setKernels,
     setVariables,
     setFiles
-  }
+  }), [
+    setNotebook,
+    setActiveCellId,
+    setSelectedCellIds,
+    setIsExecuting,
+    setShowSidebar,
+    setShowFileManager,
+    setShowCollaboration,
+    setSelectedCellType,
+    setNotebookHistory,
+    setShowHistory,
+    setShowSettings,
+    setShowExport,
+    setShowTemplates,
+    setIsFullscreen,
+    setLayout,
+    setCurrentTheme,
+    setShowVariables,
+    setShowOutput,
+    setKernelStatus,
+    setExecutionCount,
+    setCurrentKernel,
+    setKernels,
+    setVariables,
+    setFiles
+  ])
 
   return [state, actions]
 }

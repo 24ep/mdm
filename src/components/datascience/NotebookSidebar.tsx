@@ -18,7 +18,7 @@ import {
   Zap,
   Wand2,
   Sparkles,
-  NotebookPen,
+  FileText as NotebookPen,
   FileSpreadsheet,
   FileImage,
   FileVideo,

@@ -37,6 +37,7 @@ export function CellOutput({
 }: CellOutputProps) {
   const [isExpanded, setIsExpanded] = useState(true)
   const [copied, setCopied] = useState(false)
+  const [showScrollbar, setShowScrollbar] = useState(false)
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -261,7 +262,11 @@ export function CellOutput({
 
       {/* Output Content */}
       {isExpanded && (
-        <div className="p-3">
+        <div 
+          className="p-3 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent"
+          onMouseEnter={() => setShowScrollbar(true)}
+          onMouseLeave={() => setShowScrollbar(false)}
+        >
           {renderOutput()}
         </div>
       )}

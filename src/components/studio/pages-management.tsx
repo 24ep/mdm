@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
   Layout, 
   Plus, 
@@ -25,19 +26,20 @@ import {
   Grid3X3,
   List
 } from 'lucide-react'
-import { SpaceStudioPage } from '@/lib/space-studio-manager'
+import { SpacesEditorPage } from '@/lib/space-studio-manager'
 import { Template } from '@/lib/template-generator'
 
 interface PagesManagementProps {
   spaceId: string
-  pages: SpaceStudioPage[]
+  pages: SpacesEditorPage[]
   templates: Template[]
-  onCreatePage: (pageData: Partial<SpaceStudioPage>) => Promise<SpaceStudioPage>
-  onUpdatePage: (pageId: string, updates: Partial<SpaceStudioPage>) => Promise<void>
+  onCreatePage: (pageData: Partial<SpacesEditorPage>) => Promise<SpacesEditorPage>
+  onUpdatePage: (pageId: string, updates: Partial<SpacesEditorPage>) => Promise<void>
   onDeletePage: (pageId: string) => Promise<void>
   onAssignTemplate: (pageId: string, templateId: string) => Promise<void>
-  onEditPage: (page: SpaceStudioPage) => void
-  onViewPage: (page: SpaceStudioPage) => void
+  onEditPage: (page: SpacesEditorPage) => void
+  onViewPage: (page: SpacesEditorPage) => void
+  onResetPages?: () => Promise<void>
 }
 
 export function PagesManagement({
@@ -49,11 +51,12 @@ export function PagesManagement({
   onDeletePage,
   onAssignTemplate,
   onEditPage,
-  onViewPage
+  onViewPage,
+  onResetPages
 }: PagesManagementProps) {
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showTemplateDialog, setShowTemplateDialog] = useState(false)
-  const [editingPage, setEditingPage] = useState<SpaceStudioPage | null>(null)
+  const [editingPage, setEditingPage] = useState<SpacesEditorPage | null>(null)
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
   const [viewMode, setViewMode] = useState<'cards' | 'routes'>('cards')
   
@@ -101,7 +104,7 @@ export function PagesManagement({
     }
   }
 
-  const handleDeletePage = async (page: SpaceStudioPage) => {
+  const handleDeletePage = async (page: SpacesEditorPage) => {
     if (window.confirm(`Are you sure you want to delete "${page.displayName}"?`)) {
       try {
         await onDeletePage(page.id)
@@ -111,7 +114,7 @@ export function PagesManagement({
     }
   }
 
-  const getPageIcon = (page: SpaceStudioPage) => {
+  const getPageIcon = (page: SpacesEditorPage) => {
     if (page.templateId) {
       const template = templates.find(t => t.id === page.templateId)
       if (template) {
@@ -132,7 +135,7 @@ export function PagesManagement({
     return <Layout className="h-5 w-5" />
   }
 
-  const getPageStatus = (page: SpaceStudioPage) => {
+  const getPageStatus = (page: SpacesEditorPage) => {
     if (page.templateId) {
       return { label: 'Template', variant: 'default' as const }
     }
@@ -149,36 +152,42 @@ export function PagesManagement({
             Manage your space pages and assign templates
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-            <Button
-              variant={viewMode === 'cards' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('cards')}
-              className="h-8"
-            >
-              <Grid3X3 className="h-4 w-4 mr-1" />
-              Cards
-            </Button>
-            <Button
-              variant={viewMode === 'routes' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('routes')}
-              className="h-8"
-            >
-              <List className="h-4 w-4 mr-1" />
-              Routes
-            </Button>
-          </div>
-          <Button variant="outline" onClick={() => setShowTemplateDialog(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            From Template
-          </Button>
-          <Button onClick={() => setShowCreateDialog(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create New
-          </Button>
-        </div>
+              <div className="flex items-center gap-2">
+                <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'cards' | 'routes')}>
+                  <TabsList className="flex gap-2 justify-start">
+                    <TabsTrigger value="cards" className="flex items-center gap-2 justify-start">
+                      <Grid3X3 className="h-4 w-4" />
+                      Cards
+                    </TabsTrigger>
+                    <TabsTrigger value="routes" className="flex items-center gap-2 justify-start">
+                      <List className="h-4 w-4" />
+                      Routes
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                {onResetPages && pages.length > 0 && (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      if (confirm('Are you sure you want to remove all pages? This action cannot be undone.')) {
+                        onResetPages()
+                      }
+                    }}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Clear All
+                  </Button>
+                )}
+                <Button variant="outline" onClick={() => setShowTemplateDialog(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  From Template
+                </Button>
+                <Button onClick={() => setShowCreateDialog(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create New
+                </Button>
+              </div>
       </div>
 
       {/* Pages List */}

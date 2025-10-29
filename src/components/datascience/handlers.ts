@@ -50,6 +50,21 @@ export interface NotebookHandlers {
   undo: () => void
   redo: () => void
   handleSelectTemplate: (template: Notebook) => void
+  handleShowTemplates: () => void
+  // SQL specific
+  handleVariableNameChange: (cellId: string, variableName: string) => void
+  handleConnectionChange: (cellId: string, connection: string) => void
+  handleSQLExecute: (cellId: string) => Promise<void> | void
+  // Common cell feature handlers
+  handleCopyCell: (cellId: string) => void
+  handleCutCell: (cellId: string) => void
+  handlePasteCell: (cellId: string) => void
+  handleMergeCells: (cellId: string, direction: 'above' | 'below') => void
+  handleSplitCell: (cellId: string) => void
+  handleAddComment: (cellId: string) => void
+  handleAddTag: (cellId: string) => void
+  handleSearchCell: (cellId: string) => void
+  handleRenameCellTitle: (cellId: string, title: string) => void
 }
 
 export function createNotebookHandlers(
@@ -454,6 +469,292 @@ export function createNotebookHandlers(
     setShowTemplates(true)
   }
 
+  const handleRenameCellTitle = (cellId: string, title: string) => {
+    setNotebook(prev => ({
+      ...prev,
+      cells: prev.cells.map(cell => cell.id === cellId ? { ...cell, title } : cell),
+      updatedAt: new Date()
+    }))
+  }
+
+  // Common cell feature handlers
+  const handleCopyCell = (cellId: string) => {
+    const cell = notebook.cells.find(c => c.id === cellId)
+    if (cell) {
+      // Copy to clipboard
+      navigator.clipboard.writeText(cell.content)
+      toast.success('Cell copied to clipboard')
+    }
+  }
+
+  const handleCutCell = (cellId: string) => {
+    const cell = notebook.cells.find(c => c.id === cellId)
+    if (cell) {
+      navigator.clipboard.writeText(cell.content)
+      deleteCell(cellId)
+      toast.success('Cell cut and copied to clipboard')
+    }
+  }
+
+  const handlePasteCell = (cellId: string) => {
+    navigator.clipboard.readText().then(text => {
+      if (text) {
+        const newCell = createNewCell('code')
+        newCell.content = text
+        setNotebook(prev => ({
+          ...prev,
+          cells: prev.cells.map(c => 
+            c.id === cellId ? newCell : c
+          ),
+          updatedAt: new Date()
+        }))
+        toast.success('Cell pasted')
+      }
+    }).catch(() => {
+      toast.error('Failed to paste cell')
+    })
+  }
+
+  const handleMergeCells = (cellId: string, direction: 'above' | 'below') => {
+    const currentIndex = notebook.cells.findIndex(c => c.id === cellId)
+    const targetIndex = direction === 'above' ? currentIndex - 1 : currentIndex + 1
+    
+    if (targetIndex >= 0 && targetIndex < notebook.cells.length) {
+      const currentCell = notebook.cells[currentIndex]
+      const targetCell = notebook.cells[targetIndex]
+      
+      const mergedContent = direction === 'above' 
+        ? `${targetCell.content}\n${currentCell.content}`
+        : `${currentCell.content}\n${targetCell.content}`
+      
+      setNotebook(prev => ({
+        ...prev,
+        cells: prev.cells.map((cell, idx) => {
+          if (idx === currentIndex) {
+            return { ...cell, content: mergedContent }
+          } else if (idx === targetIndex) {
+            return null // Will be filtered out
+          }
+          return cell
+        }).filter(Boolean),
+        updatedAt: new Date()
+      }))
+      toast.success('Cells merged')
+    }
+  }
+
+  const handleSplitCell = (cellId: string) => {
+    const cell = notebook.cells.find(c => c.id === cellId)
+    if (cell && cell.content.trim()) {
+      const lines = cell.content.split('\n')
+      const midPoint = Math.floor(lines.length / 2)
+      
+      const firstHalf = lines.slice(0, midPoint).join('\n')
+      const secondHalf = lines.slice(midPoint).join('\n')
+      
+      const newCell = createNewCell(cell.type)
+      newCell.content = secondHalf
+      
+      setNotebook(prev => ({
+        ...prev,
+        cells: prev.cells.map(c => 
+          c.id === cellId 
+            ? { ...c, content: firstHalf }
+            : c
+        ).concat(newCell),
+        updatedAt: new Date()
+      }))
+      toast.success('Cell split')
+    }
+  }
+
+  const handleAddComment = (cellId: string) => {
+    const comment = prompt('Add a comment:')
+    if (comment) {
+      setNotebook(prev => ({
+        ...prev,
+        cells: prev.cells.map(cell => 
+          cell.id === cellId 
+            ? {
+                ...cell,
+                comments: [
+                  ...(cell.comments || []),
+                  {
+                    id: `comment-${Date.now()}`,
+                    content: comment,
+                    author: 'Current User',
+                    timestamp: new Date()
+                  }
+                ]
+              }
+            : cell
+        ),
+        updatedAt: new Date()
+      }))
+      toast.success('Comment added')
+    }
+  }
+
+  const handleAddTag = (cellId: string) => {
+    const tag = prompt('Add a tag:')
+    if (tag) {
+      setNotebook(prev => ({
+        ...prev,
+        cells: prev.cells.map(cell => 
+          cell.id === cellId 
+            ? {
+                ...cell,
+                tags: [...(cell.tags || []), tag]
+              }
+            : cell
+        ),
+        updatedAt: new Date()
+      }))
+      toast.success('Tag added')
+    }
+  }
+
+  const handleSearchCell = (cellId: string) => {
+    const searchTerm = prompt('Search in cell:')
+    if (searchTerm) {
+      const cell = notebook.cells.find(c => c.id === cellId)
+      if (cell && cell.content.includes(searchTerm)) {
+        toast.success(`Found "${searchTerm}" in cell`)
+        // In a real implementation, you'd highlight the search term
+      } else {
+        toast.error(`"${searchTerm}" not found in cell`)
+      }
+    }
+  }
+
+  // SQL-specific handlers
+  const handleVariableNameChange = (cellId: string, variableName: string) => {
+    setNotebook(prev => ({
+      ...prev,
+      cells: prev.cells.map(cell => 
+        cell.id === cellId 
+          ? { ...cell, sqlVariableName: variableName, updatedAt: new Date() }
+          : cell
+      ),
+      updatedAt: new Date()
+    }))
+  }
+
+  const handleConnectionChange = (cellId: string, connection: string) => {
+    setNotebook(prev => ({
+      ...prev,
+      cells: prev.cells.map(cell => 
+        cell.id === cellId 
+          ? { ...cell, sqlConnection: connection, updatedAt: new Date() }
+          : cell
+      ),
+      updatedAt: new Date()
+    }))
+  }
+
+  const handleSQLExecute = async (cellId: string) => {
+    const cell = notebook.cells.find(c => c.id === cellId)
+    if (!cell || cell.type !== 'sql') return
+
+    if (!cell.sqlQuery || !cell.sqlVariableName) {
+      toast.error('Please enter both SQL query and variable name')
+      return
+    }
+
+    setIsExecuting(true)
+    setKernelStatus('busy')
+    
+    setNotebook(prev => ({
+      ...prev,
+      cells: prev.cells.map(c => 
+        c.id === cellId ? { ...c, status: 'running' } : c
+      )
+    }))
+
+    try {
+      const startTime = Date.now()
+      
+      // Mock SQL execution - replace with actual SQL execution
+      const mockResult = {
+        data: [
+          { id: 1, name: 'John Doe', age: 30, city: 'New York' },
+          { id: 2, name: 'Jane Smith', age: 25, city: 'Los Angeles' },
+          { id: 3, name: 'Bob Johnson', age: 35, city: 'Chicago' }
+        ],
+        columns: ['id', 'name', 'age', 'city'],
+        rowCount: 3,
+        columnCount: 4,
+        preview: {
+          columns: ['id', 'name', 'age', 'city'],
+          data: [
+            [1, 'John Doe', 30, 'New York'],
+            [2, 'Jane Smith', 25, 'Los Angeles'],
+            [3, 'Bob Johnson', 35, 'Chicago']
+          ]
+        }
+      }
+
+      const executionTime = Date.now() - startTime
+
+      setNotebook(prev => ({
+        ...prev,
+        cells: prev.cells.map(c => 
+          c.id === cellId 
+            ? { 
+                ...c, 
+                output: mockResult, 
+                status: 'success', 
+                executionTime,
+                timestamp: new Date()
+              } 
+            : c
+        )
+      }))
+
+      // Add the variable to the variables list
+      const newVariable = {
+        name: cell.sqlVariableName,
+        type: 'DataFrame',
+        value: `Shape: (${mockResult.rowCount}, ${mockResult.columnCount})`,
+        size: `${mockResult.rowCount} rows × ${mockResult.columnCount} columns`
+      }
+
+      setVariables(prev => {
+        const existing = prev.find(v => v.name === cell.sqlVariableName)
+        if (existing) {
+          return prev.map(v => v.name === cell.sqlVariableName ? newVariable : v)
+        } else {
+          return [...prev, newVariable]
+        }
+      })
+
+      setKernelStatus('idle')
+      setExecutionCount(prev => prev + 1)
+      toast.success(`SQL query executed and saved as '${cell.sqlVariableName}'`)
+    } catch (error) {
+      setNotebook(prev => ({
+        ...prev,
+        cells: prev.cells.map(c => 
+          c.id === cellId 
+            ? { 
+                ...c, 
+                output: { 
+                  error: error instanceof Error ? error.message : 'SQL execution failed',
+                  details: error 
+                }, 
+                status: 'error',
+                timestamp: new Date()
+              } 
+            : c
+        )
+      }))
+      setKernelStatus('error')
+      toast.error('SQL query execution failed')
+    } finally {
+      setIsExecuting(false)
+    }
+  }
+
   return {
     createNewCell: createNewCellHandler,
     deleteCell,
@@ -490,6 +791,18 @@ export function createNotebookHandlers(
     undo,
     redo,
     handleSelectTemplate,
-    handleShowTemplates
+    handleShowTemplates,
+    handleVariableNameChange,
+    handleConnectionChange,
+    handleSQLExecute,
+    handleCopyCell,
+    handleCutCell,
+    handlePasteCell,
+    handleMergeCells,
+    handleSplitCell,
+    handleAddComment,
+    handleAddTag,
+    handleSearchCell,
+    handleRenameCellTitle
   }
 }

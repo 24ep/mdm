@@ -18,7 +18,12 @@ import {
   RefreshCw,
   Eye,
   FileText,
-  Zap
+  Zap,
+  Users,
+  GitBranch,
+  Clock,
+  Cloud,
+  Search
 } from 'lucide-react'
 import { DataVisualization } from './DataVisualization'
 import { DataImportExport } from './DataImportExport'
@@ -26,7 +31,13 @@ import { SQLIntegration } from './SQLIntegration'
 import { MLPipeline } from './MLPipeline'
 import { StatisticalAnalysis } from './StatisticalAnalysis'
 import { DataProfiling } from './DataProfiling'
-import { DeepNoteLayoutRefactored as DeepNoteLayout } from './DeepNoteLayout'
+import { CollaborationFeatures } from './CollaborationFeatures'
+import { VersionControl } from './VersionControl'
+import { SchedulingAutomation } from './SchedulingAutomation'
+import { CloudIntegration } from './CloudIntegration'
+import { DeepNoteLayoutRefactored as DeepNoteLayout } from './DeepNoteLayoutRefactored'
+import { NotebookTemplates } from './NotebookTemplates'
+import { generateNotebookId } from './utils'
 import { cn } from '@/lib/utils'
 
 interface DataScienceDashboardProps {
@@ -43,7 +54,10 @@ interface DashboardStats {
 }
 
 export function DataScienceDashboard({ className }: DataScienceDashboardProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'notebooks' | 'data' | 'sql' | 'viz' | 'ml' | 'stats' | 'profiling'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'notebooks' | 'data' | 'sql' | 'viz' | 'ml' | 'stats' | 'profiling' | 'collaboration' | 'version' | 'scheduling' | 'cloud'>('overview')
+  const [notebookView, setNotebookView] = useState<'table' | 'grid'>('table')
+  const [selectedNotebook, setSelectedNotebook] = useState<any | null>(null)
+  const [notebooks, setNotebooks] = useState<any[]>([])
   const [stats, setStats] = useState<DashboardStats>({
     totalNotebooks: 0,
     activeNotebooks: 0,
@@ -55,6 +69,8 @@ export function DataScienceDashboard({ className }: DataScienceDashboardProps) {
   const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [sampleData, setSampleData] = useState<any[]>([])
   const [dataColumns, setDataColumns] = useState<string[]>([])
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showTemplatesModal, setShowTemplatesModal] = useState(false)
 
   // Load sample data
   useEffect(() => {
@@ -83,6 +99,43 @@ export function DataScienceDashboard({ className }: DataScienceDashboardProps) {
       { id: 3, type: 'viz', action: 'Generated', name: 'Revenue Chart', time: '6 hours ago' },
       { id: 4, type: 'data', action: 'Imported', name: 'customer_data.csv', time: '1 day ago' },
       { id: 5, type: 'ml', action: 'Trained', name: 'Price Prediction Model', time: '2 days ago' }
+    ])
+
+    // Sample notebooks list (replace with real data source when ready)
+    setNotebooks([
+      {
+        id: 'nb-1',
+        name: 'Sales Analysis',
+        description: 'Analyze sales trends and performance',
+        tags: ['sales', 'analysis'],
+        author: 'Data Scientist',
+        updatedAt: new Date(),
+        createdAt: new Date(),
+        cells: [
+          { id: 'c1', type: 'markdown', content: '# Intro', status: 'idle', timestamp: new Date(), metadata: {} },
+          { id: 'c2', type: 'code', content: 'print("Hello")', status: 'idle', timestamp: new Date(), metadata: {} }
+        ]
+      },
+      {
+        id: 'nb-2',
+        name: 'Customer Segmentation',
+        description: 'Clustering customers by behavior',
+        tags: ['ml', 'customers'],
+        author: 'Analyst',
+        updatedAt: new Date(),
+        createdAt: new Date(),
+        cells: []
+      },
+      {
+        id: 'nb-3',
+        name: 'Inventory Forecasting',
+        description: 'Predict inventory levels',
+        tags: ['forecast', 'inventory'],
+        author: 'Ops',
+        updatedAt: new Date(),
+        createdAt: new Date(),
+        cells: []
+      }
     ])
   }, [])
 
@@ -155,7 +208,7 @@ export function DataScienceDashboard({ className }: DataScienceDashboardProps) {
       </div>
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-12">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="notebooks">Notebooks</TabsTrigger>
           <TabsTrigger value="data">Data</TabsTrigger>
@@ -164,6 +217,10 @@ export function DataScienceDashboard({ className }: DataScienceDashboardProps) {
           <TabsTrigger value="ml">ML Pipeline</TabsTrigger>
           <TabsTrigger value="stats">Statistics</TabsTrigger>
           <TabsTrigger value="profiling">Profiling</TabsTrigger>
+          <TabsTrigger value="collaboration">Collaboration</TabsTrigger>
+          <TabsTrigger value="version">Version Control</TabsTrigger>
+          <TabsTrigger value="scheduling">Scheduling</TabsTrigger>
+          <TabsTrigger value="cloud">Cloud</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -331,10 +388,34 @@ export function DataScienceDashboard({ className }: DataScienceDashboardProps) {
                   <Button 
                     variant="outline" 
                     className="h-20 flex flex-col items-center gap-2"
-                    onClick={() => setActiveTab('overview')}
+                    onClick={() => setActiveTab('collaboration')}
                   >
-                    <Eye className="h-6 w-6" />
-                    <span className="text-sm">Overview</span>
+                    <Users className="h-6 w-6" />
+                    <span className="text-sm">Collaborate</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="h-20 flex flex-col items-center gap-2"
+                    onClick={() => setActiveTab('version')}
+                  >
+                    <GitBranch className="h-6 w-6" />
+                    <span className="text-sm">Version Control</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="h-20 flex flex-col items-center gap-2"
+                    onClick={() => setActiveTab('scheduling')}
+                  >
+                    <Clock className="h-6 w-6" />
+                    <span className="text-sm">Schedule</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="h-20 flex flex-col items-center gap-2"
+                    onClick={() => setActiveTab('cloud')}
+                  >
+                    <Cloud className="h-6 w-6" />
+                    <span className="text-sm">Cloud</span>
                   </Button>
                 </div>
               </CardContent>
@@ -345,54 +426,115 @@ export function DataScienceDashboard({ className }: DataScienceDashboardProps) {
         <TabsContent value="notebooks">
           <Card>
             <CardHeader>
-              <CardTitle>Jupyter Notebooks</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Notebooks</CardTitle>
+                {!selectedNotebook && (
+                  <div className="flex items-center gap-2">
+                    <Button onClick={() => setShowCreateModal(true)} size="sm">
+                      Create New
+                    </Button>
+                    <Button variant={notebookView === 'table' ? 'default' : 'outline'} onClick={() => setNotebookView('table')} size="sm">
+                      Table
+                    </Button>
+                    <Button variant={notebookView === 'grid' ? 'default' : 'outline'} onClick={() => setNotebookView('grid')} size="sm">
+                      Grid
+                    </Button>
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="h-[600px]">
-                <DeepNoteLayout
-                  initialNotebook={{
-                    id: 'dashboard-notebook-1',
-                    name: 'Data Science Analysis',
-                    description: 'Comprehensive data analysis notebook',
-                    cells: [
-                      {
-                        id: 'cell-1',
-                        type: 'markdown',
-                        content: '# Data Science Analysis\n\nThis notebook demonstrates various data science techniques.',
-                        status: 'idle',
-                        timestamp: new Date(),
-                        metadata: {}
-                      },
-                      {
-                        id: 'cell-2',
-                        type: 'code',
-                        content: '# Import libraries\nimport pandas as pd\nimport numpy as np\nimport matplotlib.pyplot as plt\nimport seaborn as sns\n\nprint("Libraries imported successfully!")',
-                        status: 'idle',
-                        timestamp: new Date(),
-                        metadata: {}
-                      }
-                    ],
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                    tags: ['data-science', 'analysis'],
-                    isPublic: false,
-                    author: 'Data Scientist',
-                    theme: 'light',
-                    settings: {
-                      autoSave: true,
-                      executionMode: 'sequential',
-                      showLineNumbers: true,
-                      fontSize: 14,
-                      tabSize: 2,
-                      wordWrap: true
-                    }
-                  }}
-                  enableCollaboration={true}
-                  enableFileManager={true}
-                  enableExport={true}
-                  enableVersionControl={true}
-                />
-              </div>
+              {!selectedNotebook ? (
+                <div className="space-y-4">
+                  {notebookView === 'table' ? (
+                    <div className="w-full overflow-x-auto">
+                      <table className="min-w-full border border-gray-200 rounded-lg">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="text-left text-sm font-medium text-gray-600 px-4 py-2 border-b">Name</th>
+                            <th className="text-left text-sm font-medium text-gray-600 px-4 py-2 border-b">Author</th>
+                            <th className="text-left text-sm font-medium text-gray-600 px-4 py-2 border-b">Tags</th>
+                            <th className="text-left text-sm font-medium text-gray-600 px-4 py-2 border-b">Cells</th>
+                            <th className="text-left text-sm font-medium text-gray-600 px-4 py-2 border-b">Updated</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {notebooks.map((nb) => (
+                            <tr key={nb.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => setSelectedNotebook(nb)}>
+                              <td className="px-4 py-2 border-b text-sm font-medium text-blue-600">{nb.name}</td>
+                              <td className="px-4 py-2 border-b text-sm text-gray-700">{nb.author}</td>
+                              <td className="px-4 py-2 border-b text-sm text-gray-700">
+                                <div className="flex flex-wrap gap-1">
+                                  {(nb.tags || []).map((t: string) => (
+                                    <Badge key={t} variant="outline" className="text-xs">{t}</Badge>
+                                  ))}
+                                </div>
+                              </td>
+                              <td className="px-4 py-2 border-b text-sm text-gray-700">{nb.cells?.length || 0}</td>
+                              <td className="px-4 py-2 border-b text-sm text-gray-700">{new Date(nb.updatedAt).toLocaleString()}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {notebooks.map((nb) => (
+                        <div key={nb.id} className="border rounded-lg p-4 hover:shadow cursor-pointer" onClick={() => setSelectedNotebook(nb)}>
+                          <div className="text-base font-semibold text-gray-900">{nb.name}</div>
+                          <div className="text-xs text-gray-500 mt-1">by {nb.author}</div>
+                          <div className="text-sm text-gray-600 mt-2 line-clamp-2">{nb.description}</div>
+                          <div className="flex items-center justify-between mt-3">
+                            <div className="flex flex-wrap gap-1">
+                              {(nb.tags || []).map((t: string) => (
+                                <Badge key={t} variant="outline" className="text-xs">{t}</Badge>
+                              ))}
+                            </div>
+                            <div className="text-xs text-gray-500">{nb.cells?.length || 0} cells</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={() => setSelectedNotebook(null)}>Back</Button>
+                      <div className="text-sm text-gray-600">Viewing: <span className="font-medium text-gray-900">{selectedNotebook.name}</span></div>
+                    </div>
+                  </div>
+                  <div className="h-[600px]">
+                    <DeepNoteLayout
+                      initialNotebook={{
+                        id: selectedNotebook.id,
+                        name: selectedNotebook.name,
+                        description: selectedNotebook.description || '',
+                        cells: selectedNotebook.cells || [],
+                        createdAt: selectedNotebook.createdAt || new Date(),
+                        updatedAt: selectedNotebook.updatedAt || new Date(),
+                        tags: selectedNotebook.tags || [],
+                        isPublic: selectedNotebook.isPublic || false,
+                        author: selectedNotebook.author || 'Unknown',
+                        theme: 'light',
+                        settings: {
+                          autoSave: true,
+                          executionMode: 'sequential',
+                          showLineNumbers: true,
+                          fontSize: 14,
+                          tabSize: 2,
+                          wordWrap: true
+                        }
+                      }}
+                      enableCollaboration={true}
+                      enableFileManager={true}
+                      enableExport={true}
+                      enableVersionControl={true}
+                    />
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -540,7 +682,145 @@ export function DataScienceDashboard({ className }: DataScienceDashboardProps) {
             }}
           />
         </TabsContent>
+
+        <TabsContent value="collaboration">
+          <CollaborationFeatures
+            notebookId="notebook-1"
+            onShare={(shareConfig) => {
+              console.log('Sharing notebook with config:', shareConfig)
+            }}
+            onInviteUser={(email, role) => {
+              console.log('Inviting user:', email, 'with role:', role)
+            }}
+            onComment={(comment) => {
+              console.log('New comment:', comment)
+            }}
+            onUpdatePermissions={(userId, permissions) => {
+              console.log('Updating permissions for user:', userId, permissions)
+            }}
+          />
+        </TabsContent>
+
+        <TabsContent value="version">
+          <VersionControl
+            notebookId="notebook-1"
+            onCommit={(commit) => {
+              console.log('New commit:', commit)
+            }}
+            onBranch={(branch) => {
+              console.log('New branch:', branch)
+            }}
+            onMerge={(merge) => {
+              console.log('Merge request:', merge)
+            }}
+            onRevert={(version) => {
+              console.log('Reverting to version:', version)
+            }}
+            onExport={(version, format) => {
+              console.log('Exporting version:', version, 'as', format)
+            }}
+          />
+        </TabsContent>
+
+        <TabsContent value="scheduling">
+          <SchedulingAutomation
+            notebookId="notebook-1"
+            onSchedule={(schedule) => {
+              console.log('New schedule:', schedule)
+            }}
+            onRunNow={(schedule) => {
+              console.log('Running schedule now:', schedule)
+            }}
+            onStop={(scheduleId) => {
+              console.log('Stopping schedule:', scheduleId)
+            }}
+            onDelete={(scheduleId) => {
+              console.log('Deleting schedule:', scheduleId)
+            }}
+            onUpdate={(schedule) => {
+              console.log('Updating schedule:', schedule)
+            }}
+          />
+        </TabsContent>
+
+        <TabsContent value="cloud">
+          <CloudIntegration
+            onConnect={(config) => {
+              console.log('Connecting to cloud:', config)
+            }}
+            onDisconnect={(configId) => {
+              console.log('Disconnecting from cloud:', configId)
+            }}
+            onSync={(configId) => {
+              console.log('Syncing cloud resources:', configId)
+            }}
+            onDeploy={(deployment) => {
+              console.log('Deploying to cloud:', deployment)
+            }}
+          />
+        </TabsContent>
       </Tabs>
+      {showCreateModal && !showTemplatesModal && !selectedNotebook && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Create New Notebook</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Choose how you want to start</p>
+            </div>
+            <div className="p-6 space-y-3">
+              <Button className="w-full" onClick={() => { setShowTemplatesModal(true) }}>
+                Create from Template
+              </Button>
+              <Button 
+                className="w-full" 
+                variant="outline"
+                onClick={() => {
+                  const newNb = {
+                    id: generateNotebookId(),
+                    name: 'Untitled Notebook',
+                    description: '',
+                    cells: [],
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    tags: [],
+                    isPublic: false,
+                    author: 'Current User',
+                    theme: 'light',
+                    settings: {
+                      autoSave: true,
+                      executionMode: 'sequential',
+                      showLineNumbers: true,
+                      fontSize: 14,
+                      tabSize: 2,
+                      wordWrap: true
+                    }
+                  }
+                  setNotebooks(prev => [newNb, ...prev])
+                  setSelectedNotebook(newNb)
+                  setShowCreateModal(false)
+                }}
+              >
+                Create from New
+              </Button>
+              <div className="flex justify-end pt-2">
+                <Button variant="ghost" onClick={() => setShowCreateModal(false)}>Cancel</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showTemplatesModal && showCreateModal && !selectedNotebook && (
+        <NotebookTemplates 
+          onSelectTemplate={(tpl) => {
+            setNotebooks(prev => [tpl, ...prev])
+            setSelectedNotebook(tpl)
+            setShowTemplatesModal(false)
+            setShowCreateModal(false)
+          }} 
+          onClose={() => setShowTemplatesModal(false)} 
+        />
+      )}
     </div>
   )
 }

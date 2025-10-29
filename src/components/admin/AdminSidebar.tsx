@@ -28,7 +28,8 @@ import {
   Building,
   ChevronDown,
   ChevronRight,
-  Bot
+  Bot,
+  Layout
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -182,6 +183,7 @@ export function AdminSidebar({
     management: [
       { id: 'users', name: 'User Management', icon: Users },
       { id: 'spaces', name: 'Space Management', icon: Building },
+      { id: 'space-layouts', name: 'Space Layouts', icon: Layout },
       { id: 'data', name: 'Data Models', icon: Database },
       { id: 'attachments', name: 'Attachments', icon: Paperclip }
     ],
