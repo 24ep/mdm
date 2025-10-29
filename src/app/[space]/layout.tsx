@@ -1,7 +1,7 @@
 'use client'
 
 import { useSpace } from '@/contexts/space-context'
-import { useParams } from 'next/navigation'
+import { useParams, usePathname } from 'next/navigation'
 import { useEffect } from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
 
@@ -11,6 +11,7 @@ export default function SpaceLayout({
   children: React.ReactNode
 }) {
   const params = useParams()
+  const pathname = usePathname()
   const spaceSlug = params.space as string
   const { currentSpace, setCurrentSpace, spaces, isLoading } = useSpace()
 
@@ -64,8 +65,19 @@ export default function SpaceLayout({
     )
   }
 
+  const isSpaceSettings = pathname?.includes('/settings')
+
+  // For space settings, use a custom layout without main sidebar
+  if (isSpaceSettings) {
+    return (
+      <div className="min-h-screen bg-background">
+        {children}
+      </div>
+    )
+  }
+
   return (
-    <MainLayout>
+    <MainLayout contentClassName={isSpaceSettings ? 'p-0' : undefined}>
       {children}
     </MainLayout>
   )

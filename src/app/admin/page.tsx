@@ -33,10 +33,11 @@ import {
 } from 'lucide-react'
 import { AdminLayout } from '@/components/admin/AdminLayout'
 import { BigQueryInterface } from './components/BigQueryInterface'
-import { DataScienceNotebook } from './components/DataScienceNotebook'
+// import { DeepNoteLayoutRefactored as DeepNoteLayout } from '@/components/datascience'
 import { AttachmentManager } from './components/AttachmentManager'
 import { UserManagement } from './components/UserManagement'
 import { SystemSettings } from './components/SystemSettings'
+import { PageTemplatesAdmin } from './components/PageTemplatesAdmin'
 import { AnalyticsDashboard } from './components/AnalyticsDashboard'
 import { AuditLogs } from './components/AuditLogs'
 import { BackupRecovery } from './components/BackupRecovery'
@@ -247,11 +248,19 @@ export default function AdminConsolePage() {
         {activeTab === 'spaces' && <SpaceManagement />}
         {activeTab === 'attachments' && <AttachmentManager />}
         {activeTab === 'bigquery' && <BigQueryInterface />}
-        {activeTab === 'notebook' && <DataScienceNotebook />}
+        {activeTab === 'notebook' && (
+          <div className="h-screen p-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-xl font-bold mb-4">Data Science Notebook</h2>
+              <p className="text-gray-600">Notebook component temporarily disabled for debugging.</p>
+            </div>
+          </div>
+        )}
         {activeTab === 'kernels' && <KernelManagement />}
         {activeTab === 'ai-analyst' && <AIAnalyst />}
         {activeTab === 'integrations' && <IntegrationHub />}
         {activeTab === 'settings' && <SystemSettings />}
+        {activeTab === 'page-templates' && <PageTemplatesAdmin />}
       </div>
     </AdminLayout>
   )

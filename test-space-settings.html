@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Settings Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+    </style>
+</head>
+<body>
+    <h1>Space Settings Layout Test</h1>
+    
+    <div class="test-section info">
+        <h3>✅ Changes Made:</h3>
+        <ul>
+            <li>Removed main navigation sidebar from space settings page</li>
+            <li>Added space dropdown at the top of the page</li>
+            <li>Added "Back to Spaces" button</li>
+            <li>Updated layout to be full-width without main sidebar</li>
+            <li>Space dropdown allows switching between spaces</li>
+        </ul>
+    </div>
+
+    <div class="test-section success">
+        <h3>✅ Features Implemented:</h3>
+        <ul>
+            <li><strong>Space Dropdown:</strong> Shows current space and allows switching to other spaces</li>
+            <li><strong>Back Navigation:</strong> "Back to Spaces" button to return to space selection</li>
+            <li><strong>Clean Layout:</strong> No main sidebar, full-width space settings interface</li>
+            <li><strong>Pages Tab:</strong> Added Pages management tab with create/remove functionality</li>
+            <li><strong>Page Studio Navigation:</strong> Clicking pages navigates to Page Studio</li>
+            <li><strong>Admin Templates:</strong> Added Page Templates tab in admin console</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h3>🧪 Test Instructions:</h3>
+        <ol>
+            <li>Navigate to any space settings page: <code>/{space}/settings</code></li>
+            <li>Verify the main navigation sidebar is not visible</li>
+            <li>Check that the space dropdown at the top shows the current space</li>
+            <li>Test switching spaces using the dropdown</li>
+            <li>Test the "Back to Spaces" button</li>
+            <li>Navigate to the "Pages" tab and test page management</li>
+            <li>Click on a page to verify it opens Page Studio</li>
+            <li>Check admin console for the new "Page Templates" tab</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h3>📁 Files Modified:</h3>
+        <ul>
+            <li><code>src/app/[space]/layout.tsx</code> - Added conditional layout for settings pages</li>
+            <li><code>src/app/[space]/settings/page.tsx</code> - Added space dropdown and removed main sidebar</li>
+            <li><code>src/components/admin/AdminSidebar.tsx</code> - Added Page Templates tab</li>
+            <li><code>src/app/admin/page.tsx</code> - Added PageTemplatesAdmin component</li>
+            <li><code>src/app/admin/components/PageTemplatesAdmin.tsx</code> - New admin component</li>
+        </ul>
+    </div>
+</body>
+</html>

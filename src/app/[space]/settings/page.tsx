@@ -1,20 +1,29 @@
 "use client"
 
 import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Building2, Layout, Database, History, Users as UsersIcon, UserCog, UserPlus, Plus, Edit, Trash2, Search, Type, AlertTriangle, FolderPlus, Share2, Folder, FolderOpen, Move, Settings, Palette, Shield, Archive, Trash, MoreVertical } from 'lucide-react'
+import { UserInviteInput } from '@/components/ui/user-invite-input'
+import { MemberManagementPanel } from '@/components/space-management/MemberManagementPanel'
+import { MemberPermissionsPanel } from '@/components/space-management/MemberPermissionsPanel'
+import { MemberAuditLog } from '@/components/space-management/MemberAuditLog'
+import { Building2, Layout, Database, History, Users as UsersIcon, UserCog, UserPlus, Plus, Edit, Trash2, Search, Type, AlertTriangle, FolderPlus, Share2, Folder, FolderOpen, Move, Settings, Palette, Shield, Archive, Trash, MoreVertical, ChevronDown, ArrowLeft, ExternalLink, Grid3X3 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useSpace } from '@/contexts/space-context'
+import { useSession } from 'next-auth/react'
 import { SpaceStudioLauncher } from '@/components/space-studio-launcher'
+import { PagesManagement } from '@/components/studio/pages-management'
+import { useSpaceStudio } from '@/hooks/use-space-studio'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
@@ -28,12 +37,32 @@ import { getStorageProviderIcon, getStorageProviderLabel } from '@/lib/storage-p
 import { DataModelTreeView } from '@/components/data-model/DataModelTreeView'
 
 export default function SpaceSettingsPage() {
+  const router = useRouter()
   const params = useParams() as { space: string }
   const searchParams = useSearchParams()
-  const allowedTabs = new Set(['details','members','studio','data-model','attachments','restore','danger'])
+  const allowedTabs = ['details','members','studio','pages','data-model','attachments','restore','danger']
   const initialTabRaw = (searchParams.get('tab') as string) || 'details'
-  const initialTab = allowedTabs.has(initialTabRaw) ? initialTabRaw : 'details'
+  const initialTab = allowedTabs.includes(initialTabRaw) ? initialTabRaw : 'details'
   const { spaces, currentSpace, refreshSpaces } = useSpace()
+  const { data: session } = useSession()
+
+  // Space Studio: pages/templates management for this space
+  const {
+    pages: studioPages,
+    templates: studioTemplates,
+    createPage: createStudioPage,
+    updatePage: updateStudioPage,
+    deletePage: deleteStudioPage,
+    assignTemplateToPage: assignTemplateToStudioPage
+  } = useSpaceStudio(currentSpace?.id || '')
+
+  const homepage = useMemo(() => {
+    if (!studioPages || studioPages.length === 0) return null
+    const byOrder = [...studioPages]
+      .filter(p => p.isActive)
+      .sort((a, b) => (a.order || 0) - (b.order || 0))
+    return byOrder[0] || null
+  }, [studioPages])
 
   const selectedSpace = useMemo(() => {
     return (
@@ -46,10 +75,163 @@ export default function SpaceSettingsPage() {
     setTab(initialTab)
   }, [initialTab])
 
-  const [inviteForm, setInviteForm] = useState<{ user_id: string; role: 'member' | 'admin' | 'owner' }>({ user_id: '', role: 'member' })
   const [members, setMembers] = useState<any[]>([])
-  const [availableUsers, setAvailableUsers] = useState<any[]>([])
+  const [memberPermissions, setMemberPermissions] = useState<any[]>([])
+  const [auditLogs, setAuditLogs] = useState<any[]>([])
+  const [auditLogsLoading, setAuditLogsLoading] = useState(false)
   const canManageMembers = selectedSpace?.user_role === 'owner' || selectedSpace?.user_role === 'admin'
+
+  // Handle user invitation
+  const handleInviteUser = async (user: any, role: string) => {
+    if (!selectedSpace?.id) return
+
+    try {
+      if (user.id) {
+        // Existing user - add directly to space
+        const res = await fetch(`/api/spaces/${selectedSpace.id}/members`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: user.id, role })
+        })
+        
+        if (res.ok) {
+          toast.success('User added to space')
+          await loadMembers(selectedSpace.id)
+        } else {
+          const error = await res.json()
+          toast.error(error.error || 'Failed to add user')
+        }
+      } else {
+        // New user - send invitation email
+        const res = await fetch(`/api/spaces/${selectedSpace.id}/invite`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: user.email, role })
+        })
+        
+        if (res.ok) {
+          toast.success('Invitation sent successfully')
+        } else {
+          const error = await res.json()
+          toast.error(error.error || 'Failed to send invitation')
+        }
+      }
+    } catch (error) {
+      console.error('Error inviting user:', error)
+      toast.error('Failed to invite user')
+    }
+  }
+
+  // Handle bulk operations
+  const handleBulkOperation = async (operation: string, userIds: string[], data?: any) => {
+    if (!selectedSpace?.id) return
+
+    try {
+      const res = await fetch(`/api/spaces/${selectedSpace.id}/members/bulk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ operation, userIds, data })
+      })
+      
+      if (res.ok) {
+        await loadMembers(selectedSpace.id)
+        toast.success('Bulk operation completed successfully')
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to perform bulk operation')
+      }
+    } catch (error) {
+      console.error('Error performing bulk operation:', error)
+      toast.error('Failed to perform bulk operation')
+    }
+  }
+
+  // Handle member role update
+  const handleUpdateRole = async (userId: string, role: string) => {
+    if (!selectedSpace?.id) return
+
+    try {
+      const res = await fetch(`/api/spaces/${selectedSpace.id}/members/${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role })
+      })
+      
+      if (res.ok) {
+        await loadMembers(selectedSpace.id)
+        toast.success('Role updated successfully')
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to update role')
+      }
+    } catch (error) {
+      console.error('Error updating role:', error)
+      toast.error('Failed to update role')
+    }
+  }
+
+  // Handle member removal
+  const handleRemoveMember = async (userId: string) => {
+    if (!selectedSpace?.id) return
+
+    try {
+      const res = await fetch(`/api/spaces/${selectedSpace.id}/members/${userId}`, {
+        method: 'DELETE'
+      })
+      
+      if (res.ok) {
+        await loadMembers(selectedSpace.id)
+        toast.success('Member removed successfully')
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to remove member')
+      }
+    } catch (error) {
+      console.error('Error removing member:', error)
+      toast.error('Failed to remove member')
+    }
+  }
+
+  // Handle permission updates
+  const handleUpdatePermissions = async (userId: string, permissions: string[]) => {
+    if (!selectedSpace?.id) return
+
+    try {
+      const res = await fetch(`/api/spaces/${selectedSpace.id}/members/${userId}/permissions`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ permissions })
+      })
+      
+      if (res.ok) {
+        toast.success('Permissions updated successfully')
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to update permissions')
+      }
+    } catch (error) {
+      console.error('Error updating permissions:', error)
+      toast.error('Failed to update permissions')
+    }
+  }
+
+  // Load audit logs
+  const loadAuditLogs = async () => {
+    if (!selectedSpace?.id) return
+
+    try {
+      setAuditLogsLoading(true)
+      const res = await fetch(`/api/spaces/${selectedSpace.id}/audit-log`)
+      if (res.ok) {
+        const data = await res.json()
+        setAuditLogs(data.auditLogs || [])
+      }
+    } catch (error) {
+      console.error('Error loading audit logs:', error)
+    } finally {
+      setAuditLogsLoading(false)
+    }
+  }
 
   // Embedded Data Models (space-scoped)
   const [models, setModels] = useState<any[]>([])
@@ -79,7 +261,7 @@ export default function SpaceSettingsPage() {
   const [shareForm, setShareForm] = useState({ space_ids: [] as string[] })
   const [spaceDetails, setSpaceDetails] = useState<any | null>(null)
   const [savingLoginImage, setSavingLoginImage] = useState(false)
-  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
+  const [expandedFolders, setExpandedFolders] = useState<string[]>([])
 
   // Extra model config
   const [modelIcon, setModelIcon] = useState<string>('')
@@ -184,6 +366,7 @@ export default function SpaceSettingsPage() {
   useEffect(() => {
     if (tab === 'members' && selectedSpace?.id) {
       loadMembers(selectedSpace.id)
+      loadAuditLogs()
     }
     if (tab === 'data-model' && selectedSpace?.id) {
       loadModels()
@@ -202,16 +385,10 @@ export default function SpaceSettingsPage() {
 
   const loadMembers = async (spaceId: string) => {
     try {
-      const res = await fetch(`/api/spaces/${spaceId}`)
+      const res = await fetch(`/api/spaces/${spaceId}/members`)
       if (!res.ok) throw new Error('Failed to load members')
       const json = await res.json()
       setMembers(json.members || [])
-      const usersRes = await fetch('/api/users?page=1&limit=200')
-      if (usersRes.ok) {
-        const usersJson = await usersRes.json()
-        const memberIds = new Set((json.members || []).map((m: any) => m.user_id))
-        setAvailableUsers((usersJson.users || []).filter((u: any) => !memberIds.has(u.id) && u.is_active))
-      }
     } catch (e) {
       toast.error('Failed to load members')
     }
@@ -593,15 +770,11 @@ export default function SpaceSettingsPage() {
   }
 
   const handleFolderExpand = (folderId: string) => {
-    setExpandedFolders(prev => new Set([...prev, folderId]))
+    setExpandedFolders(prev => prev.includes(folderId) ? prev : [...prev, folderId])
   }
 
   const handleFolderCollapse = (folderId: string) => {
-    setExpandedFolders(prev => {
-      const newSet = new Set(prev)
-      newSet.delete(folderId)
-      return newSet
-    })
+    setExpandedFolders(prev => prev.filter(id => id !== folderId))
   }
 
   const handleCreateFolder = async (name: string, parentId?: string) => {
@@ -629,7 +802,7 @@ export default function SpaceSettingsPage() {
 
   const handleEditFolder = async (folder: any) => {
     // TODO: Implement folder editing
-    toast.info('Folder editing not implemented yet')
+    toast('Folder editing not implemented yet')
   }
 
   const handleDeleteFolder = async (folder: any) => {
@@ -668,76 +841,168 @@ export default function SpaceSettingsPage() {
   }
 
   return (
-    <Tabs value={tab} onValueChange={setTab} orientation="vertical" className="flex h-full">
-        {/* Left Sidebar */}
-        <div className="w-64 bg-card flex flex-col">
-          <div className="p-6 border-b">
-            <h1 className="text-xl font-bold">Space Settings</h1>
-            <p className="text-sm text-muted-foreground mt-1">Configure this space</p>
-          </div>
+    <div className="min-h-screen bg-background">
+      {/* Header with Space Dropdown */}
+      <div className="border-b bg-card">
+        <div className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-4">
+            {/* Header */}
+            <div className="flex items-center gap-3">
+              <Building2 className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <h1 className="text-xl font-bold">Space Settings</h1>
+                <p className="text-sm text-muted-foreground">Configure your workspace</p>
+              </div>
+            </div>
+            
+            <div className="h-6 w-px bg-border" />
+            
+            {/* Space dropdown */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Space:</span>
+              <Select 
+                value={selectedSpace?.id || ''} 
+                onValueChange={(spaceId) => {
+                  const space = spaces.find(s => s.id === spaceId)
+                  if (space) {
+                    router.push(`/${space.slug || space.id}/settings`)
+                  }
+                }}
+              >
+                <SelectTrigger className="w-56">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4" />
+                    <span className="truncate">{selectedSpace?.name || 'Select Space'}</span>
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  {spaces.map((space: any) => (
+                    <SelectItem key={space.id} value={space.id}>
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4" />
+                        <span className="truncate">{space.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <nav className="flex-1 p-4 space-y-1">
+            {/* Go to Space/Homepage button with open-in-new-tab icon */}
+            <Button
+              variant={homepage ? 'default' : 'outline'}
+              size="sm"
+              disabled={!homepage}
+              onClick={() => {
+                if (!homepage) return
+                const base = `/${selectedSpace?.slug || selectedSpace?.id}`
+                router.push(`${base}${homepage.path}`)
+              }}
+              className="flex items-center gap-2"
+            >
+              <ExternalLink className="h-4 w-4" />
+              {homepage ? 'Go to Space' : 'No homepage'}
+            </Button>
+          </div>
+          
+          {/* Right side actions */}
+          <div className="flex items-center gap-3">
+            {/* Back to Spaces button - moved to right with board icon */}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => router.push('/spaces')}
+              className="flex items-center gap-2"
+            >
+              <Grid3X3 className="h-4 w-4" />
+              Back to Spaces
+            </Button>
+
+            {/* Account avatar */}
+            <div className="h-8 w-8">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={(session?.user as any)?.image || ''} alt={(session?.user as any)?.name || 'User'} />
+                <AvatarFallback>{((session?.user as any)?.name || 'U').slice(0,1).toUpperCase()}</AvatarFallback>
+              </Avatar>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <Tabs value={tab} onValueChange={setTab} className="flex h-[calc(100vh-73px)]">
+        {/* Left Sidebar */}
+        <div className="w-80 bg-gray-50 dark:bg-gray-900 flex flex-col border-r">
+          <nav className="flex-1 p-4 space-y-0">
             <TabsList className="w-full flex-col h-auto bg-transparent">
-              <TabsTrigger className="justify-start w-full h-auto p-3" value="details">
+              <TabsTrigger className="justify-start w-full h-auto p-3 mb-1 data-[state=active]:bg-gray-200 dark:data-[state=active]:bg-gray-800 data-[state=inactive]:hover:bg-gray-100 dark:data-[state=inactive]:hover:bg-gray-800 rounded-lg border-0 border-b-0 data-[state=active]:border-b-0 data-[state=active]:!border-b-0" value="details">
                 <div className="flex items-center space-x-3 w-full">
                   <Building2 className="h-4 w-4 text-foreground flex-shrink-0" style={{ display: 'block' }} />
                   <div className="flex flex-col items-start min-w-0 flex-1">
                     <span className="font-medium">Space Details</span>
-                    <span className="text-xs text-muted-foreground break-words">Name, description, and basic info</span>
+                    <span className="text-xs text-muted-foreground break-words leading-tight">Name, description, and basic info</span>
                   </div>
                 </div>
               </TabsTrigger>
-              <TabsTrigger className="justify-start w-full h-auto p-3" value="members">
+              <TabsTrigger className="justify-start w-full h-auto p-3 mb-1 data-[state=active]:bg-gray-200 dark:data-[state=active]:bg-gray-800 data-[state=inactive]:hover:bg-gray-100 dark:data-[state=inactive]:hover:bg-gray-800 rounded-lg border-0 border-b-0 data-[state=active]:border-b-0 data-[state=active]:!border-b-0" value="pages">
+                <div className="flex items-center space-x-3 w-full">
+                  <Layout className="h-4 w-4 text-foreground flex-shrink-0" style={{ display: 'block' }} />
+                  <div className="flex flex-col items-start min-w-0 flex-1">
+                    <span className="font-medium">Pages</span>
+                    <span className="text-xs text-muted-foreground break-words leading-tight">Create and manage space pages</span>
+                  </div>
+                </div>
+              </TabsTrigger>
+              <TabsTrigger className="justify-start w-full h-auto p-3 mb-1 data-[state=active]:bg-gray-200 dark:data-[state=active]:bg-gray-800 data-[state=inactive]:hover:bg-gray-100 dark:data-[state=inactive]:hover:bg-gray-800 rounded-lg border-0 border-b-0 data-[state=active]:border-b-0 data-[state=active]:!border-b-0" value="members">
                 <div className="flex items-center space-x-3 w-full">
                   <UsersIcon className="h-4 w-4 text-foreground flex-shrink-0" style={{ display: 'block' }} />
                   <div className="flex flex-col items-start min-w-0 flex-1">
                     <span className="font-medium">Members</span>
-                    <span className="text-xs text-muted-foreground break-words">Manage team members and permissions</span>
+                    <span className="text-xs text-muted-foreground break-words leading-tight">Manage team members and permissions</span>
                   </div>
                 </div>
               </TabsTrigger>
-              <TabsTrigger className="justify-start w-full h-auto p-3" value="studio">
+              <TabsTrigger className="justify-start w-full h-auto p-3 mb-1 data-[state=active]:bg-gray-200 dark:data-[state=active]:bg-gray-800 data-[state=inactive]:hover:bg-gray-100 dark:data-[state=inactive]:hover:bg-gray-800 rounded-lg border-0 border-b-0 data-[state=active]:border-b-0 data-[state=active]:!border-b-0" value="studio">
                 <div className="flex items-center space-x-3 w-full">
                   <Layout className="h-4 w-4 text-foreground flex-shrink-0" style={{ display: 'block' }} />
                   <div className="flex flex-col items-start min-w-0 flex-1">
                     <span className="font-medium">Space Studio</span>
-                    <span className="text-xs text-muted-foreground break-words">Customize appearance and branding</span>
+                    <span className="text-xs text-muted-foreground break-words leading-tight">Customize appearance and branding</span>
                   </div>
                 </div>
               </TabsTrigger>
-              <TabsTrigger className="justify-start w-full h-auto p-3" value="data-model">
+              <TabsTrigger className="justify-start w-full h-auto p-3 mb-1 data-[state=active]:bg-gray-200 dark:data-[state=active]:bg-gray-800 data-[state=inactive]:hover:bg-gray-100 dark:data-[state=inactive]:hover:bg-gray-800 rounded-lg border-0 border-b-0 data-[state=active]:border-b-0 data-[state=active]:!border-b-0" value="data-model">
                 <div className="flex items-center space-x-3 w-full">
                   <Database className="h-4 w-4 text-foreground flex-shrink-0" style={{ display: 'block' }} />
                   <div className="flex flex-col items-start min-w-0 flex-1">
                     <span className="font-medium">Data Model</span>
-                    <span className="text-xs text-muted-foreground break-words">Define data structure and attributes</span>
+                    <span className="text-xs text-muted-foreground break-words leading-tight">Define data structure and attributes</span>
                   </div>
                 </div>
               </TabsTrigger>
-              <TabsTrigger className="justify-start w-full h-auto p-3" value="attachments">
+              <TabsTrigger className="justify-start w-full h-auto p-3 mb-1 data-[state=active]:bg-gray-200 dark:data-[state=active]:bg-gray-800 data-[state=inactive]:hover:bg-gray-100 dark:data-[state=inactive]:hover:bg-gray-800 rounded-lg border-0 border-b-0 data-[state=active]:border-b-0 data-[state=active]:!border-b-0" value="attachments">
                 <div className="flex items-center space-x-3 w-full">
                   <FolderPlus className="h-4 w-4 text-foreground flex-shrink-0" />
                   <div className="flex flex-col items-start min-w-0 flex-1">
                     <span className="font-medium">Attachments</span>
-                    <span className="text-xs text-muted-foreground break-words">File storage and management</span>
+                    <span className="text-xs text-muted-foreground break-words leading-tight">File storage and management</span>
                   </div>
                 </div>
               </TabsTrigger>
-              <TabsTrigger className="justify-start w-full h-auto p-3" value="restore">
+              <TabsTrigger className="justify-start w-full h-auto p-3 mb-1 data-[state=active]:bg-gray-200 dark:data-[state=active]:bg-gray-800 data-[state=inactive]:hover:bg-gray-100 dark:data-[state=inactive]:hover:bg-gray-800 rounded-lg border-0 border-b-0 data-[state=active]:border-b-0 data-[state=active]:!border-b-0" value="restore">
                 <div className="flex items-center space-x-3 w-full">
                   <Archive className="h-4 w-4 text-foreground flex-shrink-0" />
                   <div className="flex flex-col items-start min-w-0 flex-1">
                     <span className="font-medium">Restore</span>
-                    <span className="text-xs text-muted-foreground break-words">Backup and restore data</span>
+                    <span className="text-xs text-muted-foreground break-words leading-tight">Backup and restore data</span>
                   </div>
                 </div>
               </TabsTrigger>
-              <TabsTrigger className="justify-start w-full h-auto p-3 text-red-600 hover:text-red-700" value="danger">
+              <TabsTrigger className="justify-start w-full h-auto p-3 mb-1 text-red-600 hover:text-red-700 data-[state=active]:bg-red-100 dark:data-[state=active]:bg-red-900/20 data-[state=inactive]:hover:bg-red-50 dark:data-[state=inactive]:hover:bg-red-900/10 rounded-lg border-0 border-b-0 data-[state=active]:border-b-0 data-[state=active]:!border-b-0" value="danger">
                 <div className="flex items-center space-x-3 w-full">
                   <AlertTriangle className="h-4 w-4 text-current flex-shrink-0" />
                   <div className="flex flex-col items-start min-w-0 flex-1">
                     <span className="font-medium">Danger Zone</span>
-                    <span className="text-xs text-muted-foreground break-words">Delete space and irreversible actions</span>
+                    <span className="text-xs text-muted-foreground break-words leading-tight">Delete space and irreversible actions</span>
                   </div>
                 </div>
               </TabsTrigger>
@@ -747,198 +1012,270 @@ export default function SpaceSettingsPage() {
 
         {/* Main Content Area */}
         <div className="flex-1 overflow-y-auto">
-          <div className="p-4">
-            <div className="space-y-6">
+            <div className="p-4 flat-cards">
+              <div className="space-y-6">
               <TabsContent value="details" className="space-y-6 w-full">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Building2 className="h-5 w-5" />
-                      <span>Space detail</span>
-                    </CardTitle>
-                    <CardDescription>Update the space name, description, and slug</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <Label htmlFor="space-name">Name</Label>
-                      <Input id="space-name" defaultValue={selectedSpace.name} onBlur={async (e) => {
-                        const name = e.currentTarget.value.trim()
-                        if (!name || name === selectedSpace.name) return
-                        const res = await fetch(`/api/spaces/${selectedSpace.id}`, {
-                          method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ name })
-                        })
-                        if (res.ok) { toast.success('Space name updated'); await refreshSpaces() } else { toast.error('Failed to update name') }
-                      }} />
+                {/* Space Overview Header */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+                        <Building2 className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{selectedSpace.name}</h2>
+                        <p className="text-gray-600 dark:text-gray-300 mt-1">
+                          {selectedSpace.description || 'No description provided'}
+                        </p>
+                        <div className="flex items-center gap-4 mt-3">
+                          <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                            <Building2 className="h-3 w-3 mr-1" />
+                            Space ID: {selectedSpace.id}
+                          </Badge>
+                          <Badge variant="outline" className="border-0">
+                            <Layout className="h-3 w-3 mr-1" />
+                            URL: /{selectedSpace.slug || selectedSpace.id}
+                          </Badge>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <Label htmlFor="space-desc">Description</Label>
-                      <Textarea id="space-desc" defaultValue={selectedSpace.description || ''} rows={3} onBlur={async (e) => {
-                        const description = e.currentTarget.value
-                        if (description === (selectedSpace.description || '')) return
-                        const res = await fetch(`/api/spaces/${selectedSpace.id}`, {
-                          method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ description })
-                        })
-                        if (res.ok) { toast.success('Description updated'); await refreshSpaces() } else { toast.error('Failed to update description') }
-                      }} />
+                    <div className="text-right">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Created</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        {selectedSpace.created_at ? new Date(selectedSpace.created_at).toLocaleDateString() : 'Unknown'}
+                      </p>
                     </div>
-                    <div>
-                      <Label htmlFor="space-slug">Custom URL (slug)</Label>
-                      <Input id="space-slug" defaultValue={selectedSpace.slug || ''} onBlur={async (e) => {
-                        const slug = e.currentTarget.value.trim()
-                        if (slug === (selectedSpace.slug || '')) return
-                        const res = await fetch(`/api/spaces/${selectedSpace.id}`, {
-                          method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ slug })
-                        })
-                        if (res.ok) { toast.success('Slug updated'); await refreshSpaces() } else { toast.error('Failed to update slug') }
-                      }} />
-                      <p className="text-xs text-muted-foreground mt-1">URL will be /{selectedSpace.slug || selectedSpace.id}/dashboard</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Layout className="h-5 w-5" />
-                      <span>Login page</span>
-                    </CardTitle>
-                    <CardDescription>Set a custom image for this space's login screen</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <Label htmlFor="login-image-url">Login image URL</Label>
-                      <Input
-                        id="login-image-url"
-                        defaultValue={(() => {
-                          const features = spaceDetails?.features || null
-                          try { return typeof features === 'string' ? JSON.parse(features)?.login_image_url || '' : (features?.login_image_url || '') } catch { return '' }
-                        })()}
-                        placeholder="https://.../image.jpg"
-                        onBlur={async (e) => {
-                          const url = e.currentTarget.value.trim()
-                          setSavingLoginImage(true)
-                          try {
-                            // Merge into existing features JSON
-                            let features: any = {}
-                            if (spaceDetails?.features) {
-                              if (typeof spaceDetails.features === 'string') {
-                                try { features = JSON.parse(spaceDetails.features) || {} } catch { features = {} }
-                              } else {
-                                features = spaceDetails.features || {}
+                {/* Details Sub-tabs */}
+                <Tabs defaultValue="basic" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="basic" className="flex items-center gap-2">
+                      <Settings className="h-4 w-4" />
+                      Basic Information
+                    </TabsTrigger>
+                    <TabsTrigger value="login" className="flex items-center gap-2">
+                      <Layout className="h-4 w-4" />
+                      Login Page
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="basic" className="space-y-6 mt-6">
+                    <Card className="border-0 shadow-sm bg-card">
+                      <CardHeader className="pb-4">
+                        <CardTitle className="flex items-center space-x-2 text-lg">
+                          <Settings className="h-5 w-5" />
+                          <span>Basic Information</span>
+                        </CardTitle>
+                        <CardDescription>Update your space's core details and configuration</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                            <Label htmlFor="space-name" className="text-sm font-medium">Space Name</Label>
+                            <Input 
+                              id="space-name" 
+                              defaultValue={selectedSpace.name} 
+                              className="h-11 border border-input bg-background"
+                              onBlur={async (e) => {
+                                const name = e.currentTarget.value.trim()
+                                if (!name || name === selectedSpace.name) return
+                                const res = await fetch(`/api/spaces/${selectedSpace.id}`, {
+                                  method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ name })
+                                })
+                                if (res.ok) { toast.success('Space name updated'); await refreshSpaces() } else { toast.error('Failed to update name') }
+                              }} 
+                            />
+                            <p className="text-xs text-muted-foreground">The display name for your space</p>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="space-slug" className="text-sm font-medium">Custom URL (Slug)</Label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">/</span>
+                              <Input 
+                                id="space-slug" 
+                                defaultValue={selectedSpace.slug || ''} 
+                                className="h-11 pl-8 border border-input bg-background"
+                                placeholder="my-space"
+                                onBlur={async (e) => {
+                                  const slug = e.currentTarget.value.trim()
+                                  if (slug === (selectedSpace.slug || '')) return
+                                  const res = await fetch(`/api/spaces/${selectedSpace.id}`, {
+                                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ slug })
+                                  })
+                                  if (res.ok) { toast.success('Slug updated'); await refreshSpaces() } else { toast.error('Failed to update slug') }
+                                }} 
+                              />
+                            </div>
+                            <p className="text-xs text-muted-foreground">Custom URL: /{selectedSpace.slug || selectedSpace.id}/dashboard</p>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="space-desc" className="text-sm font-medium">Description</Label>
+                          <Textarea 
+                            id="space-desc" 
+                            defaultValue={selectedSpace.description || ''} 
+                            rows={4} 
+                            className="resize-none border border-input bg-background"
+                            placeholder="Describe what this space is used for..."
+                            onBlur={async (e) => {
+                              const description = e.currentTarget.value
+                              if (description === (selectedSpace.description || '')) return
+                              const res = await fetch(`/api/spaces/${selectedSpace.id}`, {
+                                method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ description })
+                              })
+                              if (res.ok) { toast.success('Description updated'); await refreshSpaces() } else { toast.error('Failed to update description') }
+                            }} 
+                          />
+                          <p className="text-xs text-muted-foreground">A brief description of your space's purpose</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="login" className="space-y-6 mt-6">
+                    <Card className="border-0 shadow-sm bg-card">
+                      <CardHeader className="pb-4">
+                        <CardTitle className="flex items-center space-x-2 text-lg">
+                          <Layout className="h-5 w-5" />
+                          <span>Login Page Customization</span>
+                        </CardTitle>
+                        <CardDescription>Customize the appearance of your space's login screen</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        <div className="space-y-2">
+                          <Label htmlFor="login-image-url" className="text-sm font-medium">Login Image URL</Label>
+                          <Input
+                            id="login-image-url"
+                            defaultValue={(() => {
+                              const features = spaceDetails?.features || null
+                              try { return typeof features === 'string' ? JSON.parse(features)?.login_image_url || '' : (features?.login_image_url || '') } catch { return '' }
+                            })()}
+                            placeholder="https://.../image.jpg"
+                            className="border border-input bg-background"
+                            onBlur={async (e) => {
+                              const url = e.currentTarget.value.trim()
+                              setSavingLoginImage(true)
+                              try {
+                                // Merge into existing features JSON
+                                let features: any = {}
+                                if (spaceDetails?.features) {
+                                  if (typeof spaceDetails.features === 'string') {
+                                    try { features = JSON.parse(spaceDetails.features) || {} } catch { features = {} }
+                                  } else {
+                                    features = spaceDetails.features || {}
+                                  }
+                                }
+                                features.login_image_url = url || null
+                                const res = await fetch(`/api/spaces/${selectedSpace.id}`, {
+                                  method: 'PUT',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ features })
+                                })
+                                if (res.ok) {
+                                  toast.success('Login image saved')
+                                  const j = await res.json().catch(()=>({}))
+                                  setSpaceDetails(j.space || { ...spaceDetails, features })
+                                } else {
+                                  toast.error('Failed to save login image')
+                                }
+                              } finally {
+                                setSavingLoginImage(false)
                               }
-                            }
-                            features.login_image_url = url || null
-                            const res = await fetch(`/api/spaces/${selectedSpace.id}`, {
-                              method: 'PUT',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ features })
-                            })
-                            if (res.ok) {
-                              toast.success('Login image saved')
-                              const j = await res.json().catch(()=>({}))
-                              setSpaceDetails(j.space || { ...spaceDetails, features })
-                            } else {
-                              toast.error('Failed to save login image')
-                            }
-                          } finally {
-                            setSavingLoginImage(false)
-                          }
-                        }}
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">Shown on the left side of the space-specific login page.</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                            }}
+                          />
+                          <p className="text-xs text-muted-foreground">Shown on the left side of the space-specific login page.</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                </Tabs>
               </TabsContent>
 
               <TabsContent value="members" className="space-y-6 w-full">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <UsersIcon className="h-5 w-5" />
-                      <span>Space member</span>
-                    </CardTitle>
-                    <CardDescription>Manage members and roles for this space</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-end gap-3">
-                      <div className="flex-1">
-                        <Label htmlFor="invite-user">Invite user</Label>
-                        <Select value={inviteForm.user_id} onValueChange={(v) => setInviteForm({ ...inviteForm, user_id: v })}>
-                          <SelectTrigger id="invite-user"><SelectValue placeholder="Select user" /></SelectTrigger>
-                          <SelectContent>
-                            {availableUsers.map((u: any) => (
-                              <SelectItem key={u.id} value={u.id}>{u.name} ({u.email})</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label>Role</Label>
-                        <Select value={inviteForm.role} onValueChange={(v: any) => setInviteForm({ ...inviteForm, role: v })}>
-                          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="member">Member</SelectItem>
-                            <SelectItem value="admin">Admin</SelectItem>
-                            {selectedSpace.user_role === 'owner' && <SelectItem value="owner">Owner</SelectItem>}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <Button disabled={!canManageMembers || !inviteForm.user_id} onClick={async () => {
-                        const res = await fetch(`/api/spaces/${selectedSpace.id}/members`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(inviteForm) })
-                        if (res.ok) { toast.success('User invited'); await loadMembers(selectedSpace.id) } else { toast.error('Failed to invite') }
-                      }}>
-                        <UserPlus className="h-4 w-4 mr-2" /> Invite
-                      </Button>
-                    </div>
+                <Tabs defaultValue="management" className="w-full">
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="management">Management</TabsTrigger>
+                    <TabsTrigger value="permissions">Permissions</TabsTrigger>
+                    <TabsTrigger value="activity">Activity</TabsTrigger>
+                    <TabsTrigger value="audit">Audit Log</TabsTrigger>
+                  </TabsList>
 
-                    <div className="border rounded-md">
-                      <div className="grid grid-cols-5 gap-2 px-3 py-2 text-xs text-muted-foreground border-b">
-                        <div>User</div><div>Email</div><div>System role</div><div>Space role</div><div>Actions</div>
-                      </div>
-                      {members.map((m: any) => (
-                        <div key={m.id || m.user_id} className="grid grid-cols-5 gap-2 px-3 py-2 items-center border-b last:border-b-0">
-                          <div className="font-medium">{m.user_name || 'Unknown'}</div>
-                          <div>{m.user_email || 'N/A'}</div>
-                          <div><Badge variant="outline">{m.user_system_role || 'N/A'}</Badge></div>
-                          <div>
-                            {canManageMembers && m.role !== 'owner' ? (
-                              <Select value={m.role} onValueChange={async (role) => {
-                                const r = await fetch(`/api/spaces/${selectedSpace.id}/members/${m.user_id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role }) })
-                                if (r.ok) { toast.success('Role updated'); await loadMembers(selectedSpace.id) } else { toast.error('Failed to update') }
-                              }}>
-                                <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="member">Member</SelectItem>
-                                  <SelectItem value="admin">Admin</SelectItem>
-                                  {selectedSpace.user_role === 'owner' && <SelectItem value="owner">Owner</SelectItem>}
-                                </SelectContent>
-                              </Select>
-                            ) : (
-                              <Badge variant="outline">{m.role}</Badge>
-                            )}
-                          </div>
-                          <div>
-                            {canManageMembers && m.role !== 'owner' && (
-                              <Button variant="outline" size="sm" className="text-red-600" onClick={async () => {
-                                if (!confirm('Remove this member?')) return
-                                const r = await fetch(`/api/spaces/${selectedSpace.id}/members/${m.user_id}`, { method: 'DELETE' })
-                                if (r.ok) { toast.success('Member removed'); await loadMembers(selectedSpace.id) } else { toast.error('Failed to remove') }
-                              }}>Remove</Button>
-                            )}
-                          </div>
+                  <TabsContent value="management" className="space-y-6">
+                    <MemberManagementPanel
+                      spaceId={selectedSpace.id}
+                      members={members}
+                      onInvite={handleInviteUser}
+                      onUpdateRole={handleUpdateRole}
+                      onRemoveMember={handleRemoveMember}
+                      onBulkOperation={handleBulkOperation}
+                      canManageMembers={canManageMembers}
+                      loading={false}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="permissions" className="space-y-6">
+                    <MemberPermissionsPanel
+                      spaceId={selectedSpace.id}
+                      members={members}
+                      onUpdatePermissions={handleUpdatePermissions}
+                      canManagePermissions={canManageMembers}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="activity" className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Member Activity</CardTitle>
+                        <CardDescription>
+                          Track member activity and engagement in this space.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-center py-8 text-muted-foreground">
+                          <UsersIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                          <p>Activity tracking coming soon...</p>
                         </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="audit" className="space-y-6">
+                    <MemberAuditLog
+                      spaceId={selectedSpace.id}
+                      auditLogs={auditLogs}
+                      loading={auditLogsLoading}
+                    />
+                  </TabsContent>
+                </Tabs>
               </TabsContent>
 
               <TabsContent value="studio" className="space-y-6 w-full">
                 <SpaceStudioLauncher />
+              </TabsContent>
+
+              <TabsContent value="pages" className="space-y-6 w-full">
+                <Card className="bg-card">
+      
+                  <CardContent>
+                    <PagesManagement
+                      spaceId={currentSpace?.id || ''}
+                      pages={studioPages}
+                      templates={studioTemplates}
+                      onCreatePage={createStudioPage}
+                      onUpdatePage={updateStudioPage}
+                      onDeletePage={deleteStudioPage}
+                      onAssignTemplate={assignTemplateToStudioPage}
+                      onEditPage={(page)=> router.push(`/${params.space}/studio/page/${page.id}`)}
+                      onViewPage={(page)=> router.push(`/${params.space}/studio/page/${page.id}`)}
+                    />
+                  </CardContent>
+                </Card>
               </TabsContent>
 
               <TabsContent value="data-model" className="space-y-6 w-full">
@@ -1011,20 +1348,20 @@ export default function SpaceSettingsPage() {
                           <div className="grid grid-cols-2 gap-4">
                             <div>
                               <Label>Name</Label>
-                              <Input value={modelForm.name} onChange={(e)=> setModelForm({ ...modelForm, name: e.target.value })} placeholder="e.g. customer" />
+                              <Input value={modelForm.name} onChange={(e)=> setModelForm({ ...modelForm, name: e.target.value })} placeholder="e.g. customer" className="border border-input bg-background" />
                             </div>
                             <div>
                               <Label>Display Name</Label>
-                              <Input value={modelForm.display_name} onChange={(e)=> setModelForm({ ...modelForm, display_name: e.target.value })} placeholder="e.g. Customer" />
+                              <Input value={modelForm.display_name} onChange={(e)=> setModelForm({ ...modelForm, display_name: e.target.value })} placeholder="e.g. Customer" className="border border-input bg-background" />
                             </div>
                           </div>
                           <div>
                             <Label>Slug</Label>
-                            <Input value={modelForm.slug} onChange={(e)=> setModelForm({ ...modelForm, slug: e.target.value.toLowerCase() })} placeholder="auto-generated-from-name" />
+                            <Input value={modelForm.slug} onChange={(e)=> setModelForm({ ...modelForm, slug: e.target.value.toLowerCase() })} placeholder="auto-generated-from-name" className="border border-input bg-background" />
                           </div>
                           <div>
                             <Label>Description</Label>
-                            <Textarea value={modelForm.description} onChange={(e)=> setModelForm({ ...modelForm, description: e.target.value })} placeholder="Optional description" />
+                            <Textarea value={modelForm.description} onChange={(e)=> setModelForm({ ...modelForm, description: e.target.value })} placeholder="Optional description" className="border border-input bg-background" />
                           </div>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
@@ -1049,8 +1386,8 @@ export default function SpaceSettingsPage() {
                               ))}
                             </div>
                             <div className="mt-2 flex items-center gap-2">
-                              <Input value={newTag} onChange={(e)=>setNewTag(e.target.value)} placeholder="Add tag" />
-                              <Button variant="outline" onClick={()=>{ const v = newTag.trim(); if (v && !modelTags.includes(v)) { setModelTags([...modelTags, v]); setNewTag('') } }}>Add</Button>
+                              <Input value={newTag} onChange={(e)=>setNewTag(e.target.value)} placeholder="Add tag" className="border border-input bg-background" />
+                              <Button variant="outline" className="border-0" onClick={()=>{ const v = newTag.trim(); if (v && !modelTags.includes(v)) { setModelTags([...modelTags, v]); setNewTag('') } }}>Add</Button>
                             </div>
                           </div>
                           <div className="grid grid-cols-2 gap-4">
@@ -1088,7 +1425,7 @@ export default function SpaceSettingsPage() {
 
                     </div>
                     <div className="flex justify-end gap-2 px-6 py-4 border-t">
-                      <Button variant="outline" onClick={()=>setShowModelDrawer(false)}>Close</Button>
+                      <Button variant="outline" className="border-0" onClick={()=>setShowModelDrawer(false)}>Close</Button>
                       {activeModelTab === 'details' && (
                         <Button onClick={saveModel}>
                           {editingModel ? 'Update Model' : 'Create Model'}
@@ -1213,6 +1550,7 @@ export default function SpaceSettingsPage() {
                                 <Button 
                                   variant="outline" 
                                   size="sm" 
+                                  className="border-0"
                                   onClick={() => {
                                     const next = [...createAttributeForm.options]
                                     next.splice(idx, 1)
@@ -1226,6 +1564,7 @@ export default function SpaceSettingsPage() {
                             <Button 
                               variant="outline" 
                               size="sm" 
+                              className="border-0"
                               onClick={() => {
                                 setCreateAttributeForm({ 
                                   ...createAttributeForm, 
@@ -1592,7 +1931,7 @@ export default function SpaceSettingsPage() {
                       )}
                     </div>
                     <div className="flex justify-end gap-2 px-6 py-4 border-t">
-                      <Button variant="outline" onClick={() => setShowCreateAttributeDrawer(false)}>
+                      <Button variant="outline" className="border-0" onClick={() => setShowCreateAttributeDrawer(false)}>
                         Cancel
                       </Button>
                       <Button 
@@ -1648,7 +1987,7 @@ export default function SpaceSettingsPage() {
                       </div>
                     </div>
                     <DialogFooter>
-                      <Button variant="outline" onClick={() => setShowCreateFolderDialog(false)}>
+                      <Button variant="outline" className="border-0" onClick={() => setShowCreateFolderDialog(false)}>
                         Cancel
                       </Button>
                       <Button onClick={createFolder} disabled={!folderForm.name.trim()}>
@@ -1697,7 +2036,7 @@ export default function SpaceSettingsPage() {
                       </div>
                     </div>
                     <DialogFooter>
-                      <Button variant="outline" onClick={() => setShowShareModelDialog(false)}>
+                      <Button variant="outline" className="border-0" onClick={() => setShowShareModelDialog(false)}>
                         Cancel
                       </Button>
                       <Button onClick={shareModel}>
@@ -1710,7 +2049,7 @@ export default function SpaceSettingsPage() {
               </TabsContent>
 
               <TabsContent value="restore" className="space-y-6 w-full">
-                <Card>
+                <Card className="bg-card">
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
                       <History className="h-5 w-5" />
@@ -1754,7 +2093,7 @@ export default function SpaceSettingsPage() {
               </TabsContent>
 
               <TabsContent value="attachments" className="space-y-6 w-full">
-                <Card>
+                <Card className="bg-card">
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
                       <Database className="h-5 w-5" />
@@ -2222,6 +2561,7 @@ export default function SpaceSettingsPage() {
                             onClick={testStorageConnection}
                             disabled={testingStorage}
                             variant="outline"
+                            className="border-0"
                           >
                             {testingStorage ? 'Testing...' : 'Test Connection'}
                           </Button>
@@ -2309,7 +2649,7 @@ export default function SpaceSettingsPage() {
                               </DialogDescription>
                             </DialogHeader>
                             <DialogFooter>
-                              <Button variant="outline" onClick={() => {}}>
+                              <Button variant="outline" className="border-0" onClick={() => {}}>
                                 Cancel
                               </Button>
                               <Button 
@@ -2354,9 +2694,29 @@ export default function SpaceSettingsPage() {
                   </CardContent>
                 </Card>
               </TabsContent>
+              </div>
             </div>
-          </div>
+            {/* <style jsx>{`
+              .flat-cards :global(.bg-card) { background-color: transparent !important; }
+              .flat-cards :global(.shadow-sm) { box-shadow: none !important; }
+              .flat-cards :global(.border) { border-width: 0 !important; }
+              :global(input:not([class*="border"])) { 
+                border: 1px solid hsl(var(--border)) !important; 
+                background-color: hsl(var(--background)) !important; 
+              }
+              :global(textarea:not([class*="border"])) { 
+                border: 1px solid hsl(var(--border)) !important; 
+                background-color: hsl(var(--background)) !important; 
+              }
+              :global([data-state="active"]) { 
+                border-bottom: none !important; 
+              }
+              :global(.tabs-trigger) { 
+                border-bottom: none !important; 
+              }
+            `}</style> */}
         </div>
+      </Tabs>
 
       {/* Attribute Detail Drawer */}
       <AttributeDetailDrawer
@@ -2368,7 +2728,7 @@ export default function SpaceSettingsPage() {
         onReorder={handleAttributeReorder}
         allAttributes={attributes}
       />
-    </Tabs>
+    </div>
   )
 }
 

@@ -715,12 +715,12 @@ export function DataScienceNotebook({
 
   return (
     <div className={cn(
-      "h-screen bg-gray-50 flex flex-col transition-all duration-300",
+      "h-screen bg-gray-50 flex flex-col transition-all duration-300 p-6",
       currentTheme === 'dark' ? "dark bg-gray-900" : "",
-      isFullscreen ? "fixed inset-0 z-50" : ""
+      isFullscreen ? "fixed inset-0 z-50 p-0" : ""
     )}>
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 rounded-t-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
@@ -824,10 +824,10 @@ export function DataScienceNotebook({
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex min-h-0">
+      <div className="flex-1 flex min-h-0 bg-white dark:bg-gray-800 rounded-b-lg">
         {/* Sidebar */}
         {showSidebar && (
-          <div className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
+          <div className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto rounded-bl-lg">
             <div className="p-4">
               <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Notebook Info</h3>
               <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
@@ -883,7 +883,7 @@ export function DataScienceNotebook({
         )}
 
         {/* Notebook Cells */}
-        <div className="flex-1 overflow-y-auto p-4" ref={notebookRef}>
+        <div className="flex-1 overflow-y-auto p-4 rounded-br-lg" ref={notebookRef}>
           {notebook.cells.length === 0 ? (
             <div className="text-center py-12">
               <FileCode className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -997,7 +997,7 @@ export function DataScienceNotebook({
       </div>
 
       {/* Status Bar */}
-      <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-2">
+      <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-2 rounded-b-lg mt-6">
         <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
           <div className="flex items-center gap-4">
             <span>Cells: {notebook.cells.length}</span>

@@ -1,4 +1,5 @@
 const { Pool } = require('pg')
+const { randomUUID } = require('crypto')
 require('dotenv').config()
 
 const pool = new Pool({
@@ -19,7 +20,7 @@ async function createComprehensiveDataModels() {
     // Get the first admin user to be the creator
     const userResult = await client.query(`
       SELECT * FROM public.users 
-      WHERE role IN ('SUPER_ADMIN', 'ADMIN') AND is_active = true 
+      WHERE role IN ('SUPER_ADMIN', 'ADMIN') 
       LIMIT 1
     `)
 
@@ -42,11 +43,13 @@ async function createComprehensiveDataModels() {
       customerSpace = spaceCheckResult.rows[0]
       console.log(`📁 Customer Data space already exists: ${customerSpace.name}`)
     } else {
+      const spaceId = randomUUID()
       const spaceResult = await client.query(`
-        INSERT INTO public.spaces (name, slug, description, is_default, is_active, created_by)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO public.spaces (id, name, slug, description, is_default, is_active, created_by, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
         RETURNING *
       `, [
+        spaceId,
         'Customer Data',
         'customer-data',
         'Comprehensive customer and business data management workspace',
@@ -478,28 +481,41 @@ ORDER BY count DESC`,
       // Check if model already exists
       const modelCheckResult = await client.query(`
         SELECT * FROM public.data_models 
-        WHERE name = $1 AND space_id = $2
-      `, [modelData.name, customerSpace.id])
+        WHERE name = $1
+      `, [modelData.name])
 
       let model
       if (modelCheckResult.rows.length > 0) {
         model = modelCheckResult.rows[0]
         console.log(`  ⏭️  Model already exists: ${model.display_name}`)
       } else {
+        const modelId = randomUUID()
         const modelResult = await client.query(`
-          INSERT INTO public.data_models (name, display_name, description, space_id, created_by)
-          VALUES ($1, $2, $3, $4, $5)
+          INSERT INTO public.data_models (id, name, description, created_by, updated_at)
+          VALUES ($1, $2, $3, $4, NOW())
           RETURNING *
         `, [
+          modelId,
           modelData.name,
-          modelData.display_name,
           modelData.description,
-          customerSpace.id,
           adminUser.id
         ])
 
         model = modelResult.rows[0]
         console.log(`  ✅ Created model: ${model.display_name} (ID: ${model.id})`)
+      }
+
+      // Ensure model is linked to the space in data_model_spaces
+      const dmsCheck = await client.query(`
+        SELECT 1 FROM public.data_model_spaces 
+        WHERE data_model_id = $1 AND space_id = $2
+      `, [model.id, customerSpace.id])
+
+      if (dmsCheck.rows.length === 0) {
+        await client.query(`
+          INSERT INTO public.data_model_spaces (id, data_model_id, space_id, created_at, updated_at)
+          VALUES ($1, $2, $3, NOW(), NOW())
+        `, [randomUUID(), model.id, customerSpace.id])
       }
 
       // Create attributes
@@ -513,12 +529,13 @@ ORDER BY count DESC`,
         if (attrCheckResult.rows.length === 0) {
           const attrResult = await client.query(`
             INSERT INTO public.data_model_attributes (
-              name, display_name, type, required, is_unique, "order", 
-              validation_rules, options, default_value, data_model_id, created_by
+              id, name, display_name, type, is_required, is_unique, "order", 
+              validation_rules, options, default_value, data_model_id, updated_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
             RETURNING *
           `, [
+            randomUUID(),
             attr.name,
             attr.display_name,
             attr.type,
@@ -528,8 +545,7 @@ ORDER BY count DESC`,
             attr.validation_rules ? JSON.stringify(attr.validation_rules) : null,
             attr.options ? JSON.stringify(attr.options) : null,
             attr.default_value || null,
-            model.id,
-            adminUser.id
+            model.id
           ])
 
           console.log(`    ✅ Created attribute: ${attr.display_name} (${attr.type})`)
@@ -544,11 +560,12 @@ ORDER BY count DESC`,
         
         for (const recordData of modelData.sampleData) {
           // Create the main record
+          const recordId = randomUUID()
           const recordResult = await client.query(`
-            INSERT INTO public.data_records (data_model_id, created_by)
-            VALUES ($1, $2)
+            INSERT INTO public.data_records (id, data_model_id, created_by, updated_at)
+            VALUES ($1, $2, $3, NOW())
             RETURNING *
-          `, [model.id, adminUser.id])
+          `, [recordId, model.id, adminUser.id])
 
           const record = recordResult.rows[0]
           console.log(`    📄 Created record ID: ${record.id}`)
@@ -580,9 +597,9 @@ ORDER BY count DESC`,
               }
 
               await client.query(`
-                INSERT INTO public.data_record_values (data_record_id, attribute_id, value)
-                VALUES ($1, $2, $3)
-              `, [record.id, attr.id, processedValue])
+                INSERT INTO public.data_record_values (id, data_record_id, attribute_id, value, updated_at)
+                VALUES ($1, $2, $3, $4, NOW())
+              `, [randomUUID(), record.id, attr.id, processedValue])
             }
           }
         }

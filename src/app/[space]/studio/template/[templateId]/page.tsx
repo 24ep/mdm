@@ -1,16 +1,16 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
 import { 
   ArrowLeft, 
   Save, 
@@ -33,1063 +33,684 @@ import {
   Clock,
   User,
   MessageSquare,
-  Tag
+  Tag,
+  Grid3X3,
+  List,
+  Table,
+  BarChart3,
+  FileText,
+  Image,
+  Video,
+  Music,
+  Calendar,
+  MapPin,
+  Phone,
+  Mail,
+  Globe,
+  Database,
+  Zap,
+  Shield,
+  Star,
+  Heart,
+  ThumbsUp,
+  Share2,
+  ExternalLink,
+  Users,
+  Building2
 } from 'lucide-react'
 import { useSpace } from '@/contexts/space-context'
-import { SidebarBuilder } from '@/components/studio/sidebar-builder'
-import { PageBuilder } from '@/components/studio/page-builder'
-import { ComponentLibrary } from '@/components/studio/component-library'
-import { ComponentConfig } from '@/components/studio/component-config'
-import { VersionControl } from '@/components/studio/version-control'
-import { CanvasBackgroundConfig } from '@/components/studio/canvas-background-config'
-import { AlignmentToolbar } from '@/components/studio/alignment-toolbar'
-import { useHistory } from '@/hooks/use-history'
-import { alignComponents, distributeComponents } from '@/lib/component-alignment'
-import { createGroup, ungroupComponents, getGroupComponents } from '@/lib/component-grouping'
-import { componentClipboard, duplicateComponents } from '@/lib/component-clipboard'
+import { useTemplates } from '@/hooks/use-templates'
+import { Template } from '@/lib/template-generator'
 
-interface SidebarItem {
-  id: string
-  type: 'page' | 'divider' | 'group' | 'text'
-  label: string
-  icon?: string
-  color?: string
-  children?: SidebarItem[]
-  isCollapsed?: boolean
-}
-
-interface PageComponent {
+interface TemplateComponent {
   id: string
   type: string
-  x: number
-  y: number
-  width: number
-  height: number
-  config: any
-  style: any
-}
-
-interface Page {
-  id: string
   name: string
-  path: string
-  components: PageComponent[]
+  props: Record<string, any>
+  position: { x: number; y: number }
+  size: { width: number; height: number }
+  children?: TemplateComponent[]
 }
 
-interface TemplateVersion {
-  id: string
-  version: string
-  name: string
-  description: string
-  createdAt: Date
-  createdBy: string
-  isCurrent: boolean
-  changes: string[]
-  sidebarItems: SidebarItem[]
-  pages: Page[]
-  sidebarConfig: any
-  canvasBackground?: any
-}
-
-interface VersionControlState {
-  currentVersion: string
-  hasUnsavedChanges: boolean
-  versions: TemplateVersion[]
-  isSaving: boolean
-  showVersionDialog: boolean
-  showHistoryDialog: boolean
-  newVersionName: string
-  newVersionDescription: string
-}
-
-const defaultSidebarItems: SidebarItem[] = [
-  {
-    id: 'dashboard',
-    type: 'page',
-    label: 'Dashboard',
-    icon: 'LayoutDashboard',
-    color: '#3b82f6'
-  },
-  {
-    id: 'assignments',
-    type: 'page',
-    label: 'Assignments',
-    icon: 'UserCheck',
-    color: '#10b981'
-  },
-  {
-    id: 'data',
-    type: 'page',
-    label: 'Data',
-    icon: 'Database',
-    color: '#8b5cf6'
-  },
-  {
-    id: 'workflows',
-    type: 'page',
-    label: 'Workflows',
-    icon: 'GitBranch',
-    color: '#f59e0b'
-  },
-  {
-    id: 'settings',
-    type: 'page',
-    label: 'Settings',
-    icon: 'Settings',
-    color: '#6b7280'
-  }
-]
-
-const defaultPages: Page[] = [
-  {
-    id: 'dashboard',
-    name: 'Dashboard',
-    path: '/dashboard',
-    components: []
-  },
-  {
-    id: 'assignments',
-    name: 'Assignments',
-    path: '/assignments',
-    components: []
-  },
-  {
-    id: 'data',
-    name: 'Data',
-    path: '/data',
-    components: []
-  },
-  {
-    id: 'workflows',
-    name: 'Workflows',
-    path: '/workflows',
-    components: []
-  },
-  {
-    id: 'settings',
-    name: 'Settings',
-    path: '/settings',
-    components: []
-  }
-]
-
-export default function SpaceStudioTemplatePage() {
+export default function TemplateStudioPage() {
   const params = useParams()
   const router = useRouter()
   const { currentSpace } = useSpace()
+  const templateId = params.templateId as string
   
-  const [sidebarItems, setSidebarItems] = useState<SidebarItem[]>(defaultSidebarItems)
-  const [pages, setPages] = useState<Page[]>(defaultPages)
-  const [activePage, setActivePage] = useState<string>('dashboard')
-  const [selectedComponent, setSelectedComponent] = useState<PageComponent | null>(null)
-  const [selectedComponents, setSelectedComponents] = useState<string[]>([])
-  const [componentGroups, setComponentGroups] = useState<any[]>([])
-  const [clipboardData, setClipboardData] = useState<any>(null)
-  const [sidebarConfig, setSidebarConfig] = useState({
-    backgroundColor: '#ffffff',
-    textColor: '#374151',
-    iconSize: 'medium',
-    showIcons: true,
-    collapsed: false
-  })
-
-  // Canvas Background Configuration
-  const [canvasBackground, setCanvasBackground] = useState({
-    type: 'color' as 'color' | 'image',
-    color: '#f8fafc',
-    image: '',
-    opacity: 1,
-    blur: 0,
-    position: 'center' as 'center' | 'top' | 'bottom' | 'left' | 'right' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right',
-    size: 'cover' as 'cover' | 'contain' | 'auto' | '100%'
-  })
-
-  // Version Control State
-  const [versionControl, setVersionControl] = useState<VersionControlState>({
-    currentVersion: '1.0.0',
-    hasUnsavedChanges: false,
-    versions: [
-      {
-        id: 'v1',
-        version: '1.0.0',
-        name: 'Initial Version',
-        description: 'Initial template setup',
-        createdAt: new Date(),
-        createdBy: 'System',
-        isCurrent: true,
-        changes: ['Initial template creation'],
-        sidebarItems: defaultSidebarItems,
-        pages: defaultPages,
-        sidebarConfig: {
-          backgroundColor: '#ffffff',
-          textColor: '#374151',
-          iconSize: 'medium',
-          showIcons: true,
-          collapsed: false
-        },
-        canvasBackground: {
-          type: 'color',
-          color: '#f8fafc',
-          image: '',
-          opacity: 1,
-          blur: 0,
-          position: 'center',
-          size: 'cover'
-        }
-      }
-    ],
-    isSaving: false,
-    showVersionDialog: false,
-    showHistoryDialog: false,
-    newVersionName: '',
-    newVersionDescription: ''
-  })
-
-  // History management
   const {
-    currentState: historyState,
-    addToHistory,
-    undo,
-    redo,
-    canUndo,
-    canRedo
-  } = useHistory({
-    sidebarItems,
-    pages,
-    sidebarConfig,
-    canvasBackground,
-    componentGroups
-  })
+    templates,
+    loading,
+    error,
+    updateTemplate,
+    createTemplate,
+    deleteTemplate
+  } = useTemplates()
 
-  // Track changes for version control
+  const [template, setTemplate] = useState<Template | null>(null)
+  const [activeTab, setActiveTab] = useState('design')
+  const [selectedComponent, setSelectedComponent] = useState<TemplateComponent | null>(null)
+  const [selectedComponents, setSelectedComponents] = useState<string[]>([])
+  const [components, setComponents] = useState<TemplateComponent[]>([])
+  const [isDirty, setIsDirty] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isNewTemplate, setIsNewTemplate] = useState(templateId === 'new')
+
+  // Load template data
   useEffect(() => {
-    setVersionControl(prev => ({
-      ...prev,
-      hasUnsavedChanges: true
-    }))
-  }, [sidebarItems, pages, sidebarConfig, canvasBackground])
-
-  // Clipboard management
-  useEffect(() => {
-    const unsubscribe = componentClipboard.subscribe(setClipboardData)
-    return unsubscribe
-  }, [])
-
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        switch (e.key) {
-          case 'z':
-            e.preventDefault()
-            if (e.shiftKey) {
-              handleRedo()
-            } else {
-              handleUndo()
-            }
-            break
-          case 'y':
-            e.preventDefault()
-            handleRedo()
-            break
-          case 'c':
-            e.preventDefault()
-            handleCopy()
-            break
-          case 'x':
-            e.preventDefault()
-            handleCut()
-            break
-          case 'v':
-            e.preventDefault()
-            handlePaste()
-            break
-          case 'd':
-            e.preventDefault()
-            handleDuplicate()
-            break
-        }
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleUndo, handleRedo, handleCopy, handleCut, handlePaste, handleDuplicate])
-
-  const handleSidebarUpdate = useCallback((items: SidebarItem[]) => {
-    setSidebarItems(items)
-  }, [])
-
-  const handlePageUpdate = useCallback((pageId: string, components: PageComponent[]) => {
-    setPages(prev => prev.map(page => 
-      page.id === pageId ? { ...page, components } : page
-    ))
-  }, [])
-
-  const handleComponentSelect = useCallback((component: PageComponent | null) => {
-    setSelectedComponent(component)
-    if (component) {
-      setSelectedComponents([component.id])
-    } else {
-      setSelectedComponents([])
-    }
-  }, [])
-
-  const handleMultiSelect = useCallback((componentIds: string[]) => {
-    setSelectedComponents(componentIds)
-    if (componentIds.length === 1) {
-      const component = currentPage?.components.find(comp => comp.id === componentIds[0])
-      setSelectedComponent(component || null)
-    } else {
-      setSelectedComponent(null)
-    }
-  }, [currentPage])
-
-  // Alignment functions
-  const handleAlign = useCallback((alignment: string) => {
-    if (!currentPage || selectedComponents.length < 2) return
-
-    const selectedComps = currentPage.components.filter(comp => 
-      selectedComponents.includes(comp.id)
-    )
-    
-    const alignedComponents = alignComponents(selectedComps, alignment as any)
-    const updatedComponents = currentPage.components.map(comp => {
-      const aligned = alignedComponents.find(ac => ac.id === comp.id)
-      return aligned || comp
-    })
-
-    addToHistory(`Align ${alignment}`, {
-      ...historyState,
-      pages: pages.map(page => 
-        page.id === currentPage.id ? { ...page, components: updatedComponents } : page
-      )
-    })
-
-    handlePageUpdate(currentPage.id, updatedComponents)
-  }, [currentPage, selectedComponents, addToHistory, historyState, pages, handlePageUpdate])
-
-  const handleDistribute = useCallback((distribution: string) => {
-    if (!currentPage || selectedComponents.length < 3) return
-
-    const selectedComps = currentPage.components.filter(comp => 
-      selectedComponents.includes(comp.id)
-    )
-    
-    const distributedComponents = distributeComponents(selectedComps, distribution as any)
-    const updatedComponents = currentPage.components.map(comp => {
-      const distributed = distributedComponents.find(dc => dc.id === comp.id)
-      return distributed || comp
-    })
-
-    addToHistory(`Distribute ${distribution}`, {
-      ...historyState,
-      pages: pages.map(page => 
-        page.id === currentPage.id ? { ...page, components: updatedComponents } : page
-      )
-    })
-
-    handlePageUpdate(currentPage.id, updatedComponents)
-  }, [currentPage, selectedComponents, addToHistory, historyState, pages, handlePageUpdate])
-
-  // Grouping functions
-  const handleGroup = useCallback(() => {
-    if (!currentPage || selectedComponents.length < 2) return
-
-    const selectedComps = currentPage.components.filter(comp => 
-      selectedComponents.includes(comp.id)
-    )
-    
-    const { updatedComponents, newGroup } = createGroup(selectedComps, selectedComponents)
-    const updatedPages = pages.map(page => 
-      page.id === currentPage.id ? { ...page, components: updatedComponents } : page
-    )
-
-    addToHistory('Group Components', {
-      ...historyState,
-      pages: updatedPages,
-      componentGroups: [...componentGroups, newGroup]
-    })
-
-    setComponentGroups(prev => [...prev, newGroup])
-    handlePageUpdate(currentPage.id, updatedComponents)
-  }, [currentPage, selectedComponents, addToHistory, historyState, pages, componentGroups, handlePageUpdate])
-
-  const handleUngroup = useCallback(() => {
-    if (!currentPage || selectedComponents.length === 0) return
-
-    const selectedComps = currentPage.components.filter(comp => 
-      selectedComponents.includes(comp.id)
-    )
-    
-    const groupIds = [...new Set(selectedComps.map(comp => comp.groupId).filter(Boolean))]
-    
-    let updatedComponents = currentPage.components
-    let updatedGroups = componentGroups
-
-    groupIds.forEach(groupId => {
-      const { updatedComponents: newComponents, updatedGroups: newGroups } = 
-        ungroupComponents(updatedComponents, updatedGroups, groupId)
-      updatedComponents = newComponents
-      updatedGroups = newGroups
-    })
-
-    const updatedPages = pages.map(page => 
-      page.id === currentPage.id ? { ...page, components: updatedComponents } : page
-    )
-
-    addToHistory('Ungroup Components', {
-      ...historyState,
-      pages: updatedPages,
-      componentGroups: updatedGroups
-    })
-
-    setComponentGroups(updatedGroups)
-    handlePageUpdate(currentPage.id, updatedComponents)
-  }, [currentPage, selectedComponents, addToHistory, historyState, pages, componentGroups, handlePageUpdate])
-
-  // Clipboard functions
-  const handleCopy = useCallback(() => {
-    if (!currentPage || selectedComponents.length === 0) return
-
-    const selectedComps = currentPage.components.filter(comp => 
-      selectedComponents.includes(comp.id)
-    )
-    
-    componentClipboard.copy(selectedComps)
-  }, [currentPage, selectedComponents])
-
-  const handleCut = useCallback(() => {
-    if (!currentPage || selectedComponents.length === 0) return
-
-    const selectedComps = currentPage.components.filter(comp => 
-      selectedComponents.includes(comp.id)
-    )
-    
-    componentClipboard.cut(selectedComps)
-    
-    const updatedComponents = currentPage.components.filter(comp => 
-      !selectedComponents.includes(comp.id)
-    )
-
-    addToHistory('Cut Components', {
-      ...historyState,
-      pages: pages.map(page => 
-        page.id === currentPage.id ? { ...page, components: updatedComponents } : page
-      )
-    })
-
-    handlePageUpdate(currentPage.id, updatedComponents)
-    setSelectedComponents([])
-    setSelectedComponent(null)
-  }, [currentPage, selectedComponents, addToHistory, historyState, pages, handlePageUpdate])
-
-  const handlePaste = useCallback(() => {
-    if (!currentPage || !componentClipboard.canPaste()) return
-
-    const pastedComponents = componentClipboard.paste()
-    const updatedComponents = [...currentPage.components, ...pastedComponents]
-
-    addToHistory('Paste Components', {
-      ...historyState,
-      pages: pages.map(page => 
-        page.id === currentPage.id ? { ...page, components: updatedComponents } : page
-      )
-    })
-
-    handlePageUpdate(currentPage.id, updatedComponents)
-    setSelectedComponents(pastedComponents.map(comp => comp.id))
-  }, [currentPage, addToHistory, historyState, pages, handlePageUpdate])
-
-  const handleDuplicate = useCallback(() => {
-    if (!currentPage || selectedComponents.length === 0) return
-
-    const selectedComps = currentPage.components.filter(comp => 
-      selectedComponents.includes(comp.id)
-    )
-    
-    const duplicatedComponents = duplicateComponents(selectedComps, selectedComponents)
-    const updatedComponents = [...currentPage.components, ...duplicatedComponents]
-
-    addToHistory('Duplicate Components', {
-      ...historyState,
-      pages: pages.map(page => 
-        page.id === currentPage.id ? { ...page, components: updatedComponents } : page
-      )
-    })
-
-    handlePageUpdate(currentPage.id, updatedComponents)
-    setSelectedComponents(duplicatedComponents.map(comp => comp.id))
-  }, [currentPage, selectedComponents, addToHistory, historyState, pages, handlePageUpdate])
-
-  // History functions
-  const handleUndo = useCallback(() => {
-    const historyItem = undo()
-    if (historyItem) {
-      const state = historyItem.data
-      setSidebarItems(state.sidebarItems)
-      setPages(state.pages)
-      setSidebarConfig(state.sidebarConfig)
-      setCanvasBackground(state.canvasBackground)
-      setComponentGroups(state.componentGroups)
-    }
-  }, [undo])
-
-  const handleRedo = useCallback(() => {
-    const historyItem = redo()
-    if (historyItem) {
-      const state = historyItem.data
-      setSidebarItems(state.sidebarItems)
-      setPages(state.pages)
-      setSidebarConfig(state.sidebarConfig)
-      setCanvasBackground(state.canvasBackground)
-      setComponentGroups(state.componentGroups)
-    }
-  }, [redo])
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    try {
-      const data = JSON.parse(e.dataTransfer.getData('application/json'))
-      if (data.type === 'component') {
-        const rect = e.currentTarget.getBoundingClientRect()
-        const x = Math.round((e.clientX - rect.left) / 20) * 20
-        const y = Math.round((e.clientY - rect.top) / 20) * 20
-        
-        const newComponent = {
-          ...data.component,
-          x: Math.max(0, x),
-          y: Math.max(0, y)
-        }
-        
-        if (currentPage) {
-          const updatedComponents = [...currentPage.components, newComponent]
-          handlePageUpdate(currentPage.id, updatedComponents)
-        }
-      }
-    } catch (error) {
-      console.error('Error handling drop:', error)
-    }
-  }, [currentPage, handlePageUpdate])
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-  }, [])
-
-  // Version Control Functions
-  const handleCreateVersion = async () => {
-    if (!versionControl.newVersionName.trim()) return
-
-    setVersionControl(prev => ({ ...prev, isSaving: true }))
-
-    try {
-      const newVersion: TemplateVersion = {
-        id: `v${Date.now()}`,
-        version: generateNextVersion(versionControl.currentVersion),
-        name: versionControl.newVersionName,
-        description: versionControl.newVersionDescription,
-        createdAt: new Date(),
-        createdBy: 'Current User', // Replace with actual user
-        isCurrent: true,
-        changes: ['Template updated'],
-        sidebarItems: [...sidebarItems],
-        pages: [...pages],
-        sidebarConfig: { ...sidebarConfig },
-        canvasBackground: { ...canvasBackground }
-      }
-
-      // Mark all other versions as not current
-      const updatedVersions = versionControl.versions.map(v => ({ ...v, isCurrent: false }))
-      updatedVersions.push(newVersion)
-
-      setVersionControl(prev => ({
-        ...prev,
-        versions: updatedVersions,
-        currentVersion: newVersion.version,
-        hasUnsavedChanges: false,
-        isSaving: false,
-        showVersionDialog: false,
-        newVersionName: '',
-        newVersionDescription: ''
-      }))
-
-      // Save to backend
-      await saveVersionToBackend(newVersion)
-    } catch (error) {
-      console.error('Error creating version:', error)
-      setVersionControl(prev => ({ ...prev, isSaving: false }))
-    }
-  }
-
-  const handleLoadVersion = async (versionId: string) => {
-    const version = versionControl.versions.find(v => v.id === versionId)
-    if (!version) return
-
-    // Update all other versions to not be current
-    const updatedVersions = versionControl.versions.map(v => ({
-      ...v,
-      isCurrent: v.id === versionId
-    }))
-
-    setVersionControl(prev => ({
-      ...prev,
-      versions: updatedVersions,
-      currentVersion: version.version,
-      hasUnsavedChanges: false
-    }))
-
-    // Load version data
-    setSidebarItems([...version.sidebarItems])
-    setPages([...version.pages])
-    setSidebarConfig({ ...version.sidebarConfig })
-    if (version.canvasBackground) {
-      setCanvasBackground({ ...version.canvasBackground })
-    }
-  }
-
-  const handleSave = async () => {
-    if (versionControl.hasUnsavedChanges) {
-      setVersionControl(prev => ({ ...prev, showVersionDialog: true }))
-    } else {
-      // Just save current state
-      await saveCurrentState()
-    }
-  }
-
-  const saveCurrentState = async () => {
-    setVersionControl(prev => ({ ...prev, isSaving: true }))
-    try {
-      // Save current state to backend
-      await saveToBackend({
-        sidebarItems,
-        pages,
-        sidebarConfig,
-        canvasBackground,
-        version: versionControl.currentVersion
+    if (templateId === 'new') {
+      setIsNewTemplate(true)
+      setTemplate({
+        id: '',
+        name: '',
+        displayName: '',
+        description: '',
+        category: 'Dashboard',
+        version: '1.0.0',
+        dataModelId: '',
+        pages: [],
+        sidebarConfig: {
+          items: [],
+          background: '#ffffff',
+          textColor: '#374151',
+          fontSize: '14px'
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       })
-      setVersionControl(prev => ({ ...prev, isSaving: false, hasUnsavedChanges: false }))
+    } else if (templates && templateId) {
+      const foundTemplate = templates.find(t => t.id === templateId)
+      if (foundTemplate) {
+        setTemplate(foundTemplate)
+        const templateComponents = foundTemplate.pages?.[0]?.components || []
+        setComponents(templateComponents.map(comp => ({
+          id: comp.id,
+          type: comp.type,
+          name: comp.type.charAt(0).toUpperCase() + comp.type.slice(1) + ' Component',
+          props: comp.config || {},
+          position: { x: comp.x, y: comp.y },
+          size: { width: comp.width, height: comp.height }
+        })))
+      }
+    }
+  }, [templates, templateId])
+
+  const handleSave = useCallback(async () => {
+    if (!template) return
+    
+    setIsSaving(true)
+    try {
+      if (isNewTemplate) {
+        await createTemplate({
+          ...template,
+          pages: [{
+            id: 'main',
+            name: 'main',
+            displayName: 'Main Page',
+            description: 'Main template page',
+            components: components.map(comp => ({
+              id: comp.id,
+              type: comp.type,
+              x: comp.position.x,
+              y: comp.position.y,
+              width: comp.size.width,
+              height: comp.size.height,
+              config: comp.props
+            })),
+            background: {
+              type: 'color',
+              color: '#ffffff'
+            }
+          }],
+          updatedAt: new Date().toISOString()
+        })
+        router.push(`/${params.space}/studio`)
+    } else {
+        await updateTemplate({
+          ...template,
+          pages: [{
+            id: 'main',
+            name: 'main',
+            displayName: 'Main Page',
+            description: 'Main template page',
+            components: components.map(comp => ({
+              id: comp.id,
+              type: comp.type,
+              x: comp.position.x,
+              y: comp.position.y,
+              width: comp.size.width,
+              height: comp.size.height,
+              config: comp.props
+            })),
+            background: {
+              type: 'color',
+              color: '#ffffff'
+            }
+          }],
+          updatedAt: new Date().toISOString()
+        })
+      }
+      setIsDirty(false)
     } catch (error) {
-      console.error('Error saving:', error)
-      setVersionControl(prev => ({ ...prev, isSaving: false }))
+      console.error('Failed to save template:', error)
+    } finally {
+      setIsSaving(false)
+    }
+  }, [template, templateId, components, updateTemplate, createTemplate, isNewTemplate, router, params.space])
+
+  const addComponent = (type: string) => {
+    const newComponent: TemplateComponent = {
+      id: `comp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      type,
+      name: `${type.charAt(0).toUpperCase() + type.slice(1)} Component`,
+      props: getDefaultProps(type),
+      position: { x: 100, y: 100 },
+      size: { width: 200, height: 100 }
+    }
+    
+    setComponents(prev => [...prev, newComponent])
+    setIsDirty(true)
+  }
+
+  const getDefaultProps = (type: string): Record<string, any> => {
+    const defaults: Record<string, any> = {
+      text: { content: 'Sample text', fontSize: 16, color: '#000000' },
+      button: { text: 'Click me', variant: 'default', size: 'md' },
+      image: { src: '', alt: 'Image', width: 200, height: 150 },
+      table: { columns: 3, rows: 3, data: [] },
+      chart: { type: 'bar', data: [], width: 400, height: 300 },
+      form: { fields: [], submitText: 'Submit' },
+      card: { title: 'Card Title', content: 'Card content' },
+      list: { items: ['Item 1', 'Item 2', 'Item 3'], ordered: false },
+      divider: { thickness: 1, color: '#e5e7eb' },
+      spacer: { height: 20 },
+      entity_table: { 
+        entityType: 'customer', 
+        columns: ['name', 'email', 'phone'],
+        actions: ['view', 'edit', 'delete']
+      },
+      analytics_chart: {
+        type: 'line',
+        data: [],
+        title: 'Analytics Chart',
+        width: 400,
+        height: 300
+      },
+      form_builder: {
+        fields: [],
+        submitAction: 'save',
+        validation: true
+      }
+    }
+    return defaults[type] || {}
+  }
+
+  const updateComponent = (id: string, updates: Partial<TemplateComponent>) => {
+    setComponents(prev => 
+      prev.map(comp => 
+        comp.id === id ? { ...comp, ...updates } : comp
+      )
+    )
+    setIsDirty(true)
+  }
+
+  const deleteComponent = (id: string) => {
+    setComponents(prev => prev.filter(comp => comp.id !== id))
+    setSelectedComponent(null)
+    setIsDirty(true)
+  }
+
+  const duplicateComponent = (id: string) => {
+    const component = components.find(comp => comp.id === id)
+    if (component) {
+      const newComponent = {
+        ...component,
+        id: `comp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        position: {
+          x: component.position.x + 20,
+          y: component.position.y + 20
+        }
+      }
+      setComponents(prev => [...prev, newComponent])
+      setIsDirty(true)
     }
   }
 
-  const generateNextVersion = (currentVersion: string): string => {
-    const parts = currentVersion.split('.')
-    const major = parseInt(parts[0])
-    const minor = parseInt(parts[1])
-    const patch = parseInt(parts[2])
-    return `${major}.${minor}.${patch + 1}`
+  const componentLibrary = [
+    { type: 'text', name: 'Text', icon: FileText, description: 'Add text content', category: 'Basic' },
+    { type: 'button', name: 'Button', icon: Zap, description: 'Interactive button', category: 'Basic' },
+    { type: 'image', name: 'Image', icon: Image, description: 'Display images', category: 'Basic' },
+    { type: 'table', name: 'Table', icon: Table, description: 'Data table', category: 'Data' },
+    { type: 'chart', name: 'Chart', icon: BarChart3, description: 'Data visualization', category: 'Data' },
+    { type: 'form', name: 'Form', icon: FileText, description: 'Input form', category: 'Forms' },
+    { type: 'card', name: 'Card', icon: Grid3X3, description: 'Content card', category: 'Layout' },
+    { type: 'list', name: 'List', icon: List, description: 'Item list', category: 'Layout' },
+    { type: 'divider', name: 'Divider', icon: GripVertical, description: 'Visual separator', category: 'Layout' },
+    { type: 'spacer', name: 'Spacer', icon: GripVertical, description: 'Empty space', category: 'Layout' },
+    { type: 'entity_table', name: 'Entity Table', icon: Database, description: 'Dynamic data table', category: 'Advanced' },
+    { type: 'analytics_chart', name: 'Analytics Chart', icon: BarChart3, description: 'Advanced charts', category: 'Advanced' },
+    { type: 'form_builder', name: 'Form Builder', icon: FileText, description: 'Dynamic forms', category: 'Advanced' }
+  ]
+
+  const categories = ['All', 'Basic', 'Data', 'Forms', 'Layout', 'Advanced']
+  const [selectedCategory, setSelectedCategory] = useState('All')
+
+  const filteredComponents = componentLibrary.filter(comp => 
+    selectedCategory === 'All' || comp.category === selectedCategory
+  )
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading template...</p>
+        </div>
+      </div>
+    )
   }
 
-  const saveVersionToBackend = async (version: TemplateVersion) => {
-    // Implement API call to save version
-    console.log('Saving version to backend:', version)
+  if (error || (!template && !isNewTemplate)) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Template Not Found</h1>
+          <p className="text-muted-foreground mb-4">The template you're looking for doesn't exist.</p>
+          <Button onClick={() => router.back()}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Go Back
+          </Button>
+        </div>
+      </div>
+    )
   }
-
-  const saveToBackend = async (data: any) => {
-    // Implement API call to save current state
-    console.log('Saving to backend:', data)
-  }
-
-  const handlePreview = () => {
-    // Open preview in new tab
-    window.open(`/${params.space}/preview`, '_blank')
-  }
-
-  const currentPage = pages.find(page => page.id === activePage)
 
   return (
-    <div className="h-screen flex flex-col bg-background">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b bg-background">
+      <div className="border-b bg-card">
+        <div className="flex items-center justify-between px-6 py-4">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" onClick={() => router.back()}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
           <div>
-            <h1 className="text-xl font-semibold">Space Studio</h1>
-            <div className="flex items-center gap-2">
-              <p className="text-sm text-muted-foreground">
-                {currentSpace?.name} • Template: {params.templateId}
-              </p>
-              <Badge variant="outline" className="text-xs">
-                <GitBranch className="h-3 w-3 mr-1" />
-                v{versionControl.currentVersion}
-              </Badge>
-              {versionControl.hasUnsavedChanges && (
-                <Badge variant="destructive" className="text-xs">
-                  Unsaved Changes
-                </Badge>
-              )}
-            </div>
+              <h1 className="text-xl font-bold">
+                {isNewTemplate ? 'Create New Template' : template?.displayName}
+              </h1>
+              <p className="text-sm text-muted-foreground">Template Studio</p>
           </div>
         </div>
         
         <div className="flex items-center gap-2">
+            <Badge variant={isDirty ? "destructive" : "secondary"}>
+              {isDirty ? "Unsaved changes" : "Saved"}
+            </Badge>
           <Button 
-            variant="outline" 
+              onClick={handleSave} 
+              disabled={!isDirty || isSaving}
             size="sm" 
-            onClick={() => setVersionControl(prev => ({ ...prev, showHistoryDialog: true }))}
           >
-            <History className="h-4 w-4 mr-2" />
-            History
+              <Save className="h-4 w-4 mr-2" />
+              {isSaving ? "Saving..." : "Save"}
           </Button>
-          <Button variant="outline" size="sm" onClick={handlePreview}>
+            <Button variant="outline" size="sm">
             <Eye className="h-4 w-4 mr-2" />
             Preview
           </Button>
-          <Button 
-            size="sm" 
-            onClick={handleSave}
-            disabled={versionControl.isSaving}
-          >
-            <Save className="h-4 w-4 mr-2" />
-            {versionControl.isSaving ? 'Saving...' : 'Save'}
-            {versionControl.hasUnsavedChanges && (
-              <Badge variant="destructive" className="ml-2 text-xs">
-                Unsaved
-              </Badge>
-            )}
-          </Button>
+          </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left Panel - Sidebar Builder */}
-        <div className="w-80 border-r bg-background flex flex-col">
+      <div className="flex h-[calc(100vh-73px)]">
+        {/* Left Panel - Component Library */}
+        <div className="w-80 border-r bg-card flex flex-col">
           <div className="p-4 border-b">
             <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Sidebar Configuration
+              <Plus className="h-5 w-5" />
+              Components
             </h2>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map(category => (
+                  <SelectItem key={category} value={category}>{category}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <div className="flex-1 overflow-auto">
-            <SidebarBuilder
-              items={sidebarItems}
-              config={sidebarConfig}
-              onUpdate={handleSidebarUpdate}
-              onConfigUpdate={setSidebarConfig}
-            />
+          <div className="flex-1 overflow-auto p-4">
+            <div className="grid grid-cols-2 gap-3">
+              {filteredComponents.map(({ type, name, icon: Icon, description }) => (
+                <Card 
+                  key={type}
+                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => addComponent(type)}
+                >
+                  <CardContent className="p-3 text-center">
+                    <Icon className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-sm font-medium">{name}</p>
+                    <p className="text-xs text-muted-foreground">{description}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Center Panel - Page Builder */}
+        {/* Center Panel - Canvas */}
         <div className="flex-1 flex flex-col bg-muted/20">
           <div className="p-4 border-b bg-background">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <h2 className="text-lg font-semibold flex items-center gap-2">
-                  <Layout className="h-5 w-5" />
-                  Page Builder
-                </h2>
-                <div className="flex items-center gap-2">
-                  {pages.map(page => (
-                    <Button
-                      key={page.id}
-                      variant={activePage === page.id ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setActivePage(page.id)}
-                    >
-                      {page.name}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-              <Button variant="outline" size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Page
-              </Button>
-            </div>
-            
-            {/* Alignment Toolbar */}
-            <div className="mt-4">
-              <AlignmentToolbar
-                selectedComponents={currentPage?.components.filter(comp => 
-                  selectedComponents.includes(comp.id)
-                ) || []}
-                onAlign={handleAlign}
-                onDistribute={handleDistribute}
-                onGroup={handleGroup}
-                onUngroup={handleUngroup}
-                onCopy={handleCopy}
-                onCut={handleCut}
-                onPaste={handlePaste}
-                onDuplicate={handleDuplicate}
-                onUndo={handleUndo}
-                onRedo={handleRedo}
-                canUndo={canUndo}
-                canRedo={canRedo}
-                canPaste={componentClipboard.canPaste()}
-                hasSelection={selectedComponents.length > 0}
-                hasMultipleSelection={selectedComponents.length > 1}
-                hasGroup={selectedComponents.some(id => 
-                  currentPage?.components.find(comp => comp.id === id)?.groupId
-                )}
-              />
-            </div>
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList>
+                <TabsTrigger value="design">Design</TabsTrigger>
+                <TabsTrigger value="settings">Settings</TabsTrigger>
+                <TabsTrigger value="preview">Preview</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
           
-          <div 
-            className="flex-1 overflow-auto p-4"
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-          >
-            {currentPage && (
-              <PageBuilder
-                page={currentPage}
-                onUpdate={(components) => handlePageUpdate(currentPage.id, components)}
-                onComponentSelect={handleComponentSelect}
-                onMultiSelect={handleMultiSelect}
-                selectedComponent={selectedComponent}
-                selectedComponents={selectedComponents}
-                canvasBackground={canvasBackground}
+          <div className="flex-1 overflow-auto p-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsContent value="design" className="mt-0">
+                <div className="min-h-[600px] bg-white rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 relative">
+                  <div className="text-center text-muted-foreground mb-6">
+                    <Layout className="h-12 w-12 mx-auto mb-2" />
+                    <h3 className="text-lg font-semibold">Template Canvas</h3>
+                    <p>Drag components from the library to build your template</p>
+                  </div>
+                  
+                  {components.map(component => (
+                    <div
+                      key={component.id}
+                      className="absolute border-2 border-transparent hover:border-primary/50 cursor-move p-2 rounded"
+                      style={{
+                        left: component.position.x,
+                        top: component.position.y,
+                        width: component.size.width,
+                        height: component.size.height
+                      }}
+                      onClick={() => setSelectedComponent(component)}
+                    >
+                      <div className="w-full h-full bg-background border rounded p-2">
+                        {renderComponent(component)}
+                </div>
+              </div>
+                  ))}
+            </div>
+              </TabsContent>
+              
+              <TabsContent value="settings" className="mt-0">
+                <div className="space-y-6">
+                  <h3 className="text-lg font-semibold">Template Settings</h3>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Basic Information</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label htmlFor="template-name">Template Name</Label>
+                        <Input 
+                          id="template-name"
+                          value={template?.name || ''}
+                          onChange={(e) => setTemplate(prev => prev ? { ...prev, name: e.target.value } : null)}
               />
-            )}
+            </div>
+                      <div>
+                        <Label htmlFor="template-display-name">Display Name</Label>
+                        <Input 
+                          id="template-display-name"
+                          value={template?.displayName || ''}
+                          onChange={(e) => setTemplate(prev => prev ? { ...prev, displayName: e.target.value } : null)}
+                        />
           </div>
+                      <div>
+                        <Label htmlFor="template-description">Description</Label>
+                        <Textarea 
+                          id="template-description"
+                          value={template?.description || ''}
+                          onChange={(e) => setTemplate(prev => prev ? { ...prev, description: e.target.value } : null)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="template-category">Category</Label>
+                        <Select 
+                          value={template?.category || 'Dashboard'} 
+                          onValueChange={(value) => setTemplate(prev => prev ? { ...prev, category: value } : null)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Dashboard">Dashboard</SelectItem>
+                            <SelectItem value="Entity Management">Entity Management</SelectItem>
+                            <SelectItem value="Analytics">Analytics</SelectItem>
+                            <SelectItem value="Forms">Forms</SelectItem>
+                            <SelectItem value="Reports">Reports</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Switch 
+                          id="template-public"
+                          checked={false}
+                          onCheckedChange={() => {}}
+                        />
+                        <Label htmlFor="template-public">Make this template public</Label>
+                      </div>
+                    </CardContent>
+                  </Card>
         </div>
-
-        {/* Right Panel - Component Library & Config */}
-        <div className="w-80 border-l bg-background flex flex-col">
-          <Tabs defaultValue="components" className="flex-1 flex flex-col">
-            <TabsList className="grid w-full grid-cols-4 m-4 mb-0">
-              <TabsTrigger value="components">Components</TabsTrigger>
-              <TabsTrigger value="config">Configuration</TabsTrigger>
-              <TabsTrigger value="canvas">Canvas</TabsTrigger>
-              <TabsTrigger value="versions">Versions</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="components" className="flex-1 overflow-auto">
-              <ComponentLibrary />
             </TabsContent>
             
-            <TabsContent value="config" className="flex-1 overflow-auto">
-              {selectedComponent ? (
-                <ComponentConfig
-                  component={selectedComponent}
-                  onUpdate={(updatedComponent) => {
-                    if (currentPage) {
-                      const updatedComponents = currentPage.components.map(comp =>
-                        comp.id === updatedComponent.id ? updatedComponent : comp
-                      )
-                      handlePageUpdate(currentPage.id, updatedComponents)
-                      setSelectedComponent(updatedComponent)
-                    }
-                  }}
-                />
-              ) : (
-                <div className="p-4 text-center text-muted-foreground">
-                  <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Select a component to configure</p>
+              <TabsContent value="preview" className="mt-0">
+                <div className="space-y-6">
+                  <h3 className="text-lg font-semibold">Template Preview</h3>
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="min-h-[400px] bg-white border rounded p-4">
+                        {components.length === 0 ? (
+                          <div className="text-center text-muted-foreground">
+                            <Layout className="h-12 w-12 mx-auto mb-2" />
+                            <p>No components added yet</p>
+                          </div>
+                        ) : (
+                          <div className="relative">
+                            {components.map(component => (
+                              <div
+                                key={component.id}
+                                className="absolute"
+                                style={{
+                                  left: component.position.x,
+                                  top: component.position.y,
+                                  width: component.size.width,
+                                  height: component.size.height
+                                }}
+                              >
+                                {renderComponent(component)}
+                              </div>
+                            ))}
                 </div>
               )}
-            </TabsContent>
-
-            <TabsContent value="canvas" className="flex-1 overflow-auto">
-              <CanvasBackgroundConfig
-                background={canvasBackground}
-                onUpdate={setCanvasBackground}
-              />
-            </TabsContent>
-
-            <TabsContent value="versions" className="flex-1 overflow-auto">
-              <VersionControl
-                currentVersion={versionControl.currentVersion}
-                versions={versionControl.versions}
-                hasUnsavedChanges={versionControl.hasUnsavedChanges}
-                onLoadVersion={handleLoadVersion}
-                onCreateVersion={() => setVersionControl(prev => ({ ...prev, showVersionDialog: true }))}
-                onExportVersion={(version) => {
-                  const dataStr = JSON.stringify(version, null, 2)
-                  const dataBlob = new Blob([dataStr], { type: 'application/json' })
-                  const url = URL.createObjectURL(dataBlob)
-                  const link = document.createElement('a')
-                  link.href = url
-                  link.download = `template-version-${version.version}.json`
-                  link.click()
-                }}
-                onImportVersion={async (file) => {
-                  try {
-                    const text = await file.text()
-                    const version = JSON.parse(text)
-                    // Handle imported version
-                    console.log('Imported version:', version)
-                  } catch (error) {
-                    console.error('Error importing version:', error)
-                  }
-                }}
-              />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
             </TabsContent>
           </Tabs>
         </div>
       </div>
 
-      {/* Version Control Dialogs */}
-      
-      {/* Create Version Dialog */}
-      <Dialog 
-        open={versionControl.showVersionDialog} 
-        onOpenChange={(open) => setVersionControl(prev => ({ ...prev, showVersionDialog: open }))}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <GitBranch className="h-5 w-5" />
-              Create New Version
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
+        {/* Right Panel - Component Properties */}
+        {selectedComponent && (
+          <div className="w-80 border-l bg-card">
+            <div className="p-4 border-b">
+              <h3 className="text-lg font-semibold">Component Properties</h3>
+            </div>
+            <div className="p-4 space-y-4">
             <div>
-              <Label htmlFor="version-name">Version Name</Label>
+                <Label>Component Name</Label>
               <Input
-                id="version-name"
-                value={versionControl.newVersionName}
-                onChange={(e) => setVersionControl(prev => ({ ...prev, newVersionName: e.target.value }))}
-                placeholder="e.g., Added new dashboard components"
+                  value={selectedComponent.name}
+                  onChange={(e) => updateComponent(selectedComponent.id, { name: e.target.value })}
               />
             </div>
             <div>
-              <Label htmlFor="version-description">Description</Label>
-              <Textarea
-                id="version-description"
-                value={versionControl.newVersionDescription}
-                onChange={(e) => setVersionControl(prev => ({ ...prev, newVersionDescription: e.target.value }))}
-                placeholder="Describe what changes were made in this version..."
-                rows={3}
+                <Label>Position X</Label>
+                <Input 
+                  type="number"
+                  value={selectedComponent.position.x}
+                  onChange={(e) => updateComponent(selectedComponent.id, { 
+                    position: { ...selectedComponent.position, x: parseInt(e.target.value) || 0 }
+                  })}
               />
             </div>
-            <div className="text-sm text-muted-foreground">
-              <p>Next version: <Badge variant="outline">{generateNextVersion(versionControl.currentVersion)}</Badge></p>
+              <div>
+                <Label>Position Y</Label>
+                <Input 
+                  type="number"
+                  value={selectedComponent.position.y}
+                  onChange={(e) => updateComponent(selectedComponent.id, { 
+                    position: { ...selectedComponent.position, y: parseInt(e.target.value) || 0 }
+                  })}
+                />
             </div>
+              <div>
+                <Label>Width</Label>
+                <Input 
+                  type="number"
+                  value={selectedComponent.size.width}
+                  onChange={(e) => updateComponent(selectedComponent.id, { 
+                    size: { ...selectedComponent.size, width: parseInt(e.target.value) || 0 }
+                  })}
+                />
           </div>
-          <DialogFooter>
+              <div>
+                <Label>Height</Label>
+                <Input 
+                  type="number"
+                  value={selectedComponent.size.height}
+                  onChange={(e) => updateComponent(selectedComponent.id, { 
+                    size: { ...selectedComponent.size, height: parseInt(e.target.value) || 0 }
+                  })}
+                />
+              </div>
+              
+              <div className="flex gap-2 pt-4">
             <Button 
               variant="outline" 
-              onClick={() => setVersionControl(prev => ({ ...prev, showVersionDialog: false }))}
+                  size="sm"
+                  onClick={() => duplicateComponent(selectedComponent.id)}
             >
-              Cancel
+                  <Copy className="h-4 w-4 mr-2" />
+                  Duplicate
             </Button>
             <Button 
-              onClick={handleCreateVersion}
-              disabled={!versionControl.newVersionName.trim() || versionControl.isSaving}
+                  variant="destructive" 
+                  size="sm"
+                  onClick={() => deleteComponent(selectedComponent.id)}
             >
-              {versionControl.isSaving ? 'Creating...' : 'Create Version'}
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                      </div>
+                        </div>
+                        </div>
+        )}
+                      </div>
+                        </div>
+  )
+}
 
-      {/* Version History Dialog */}
-      <Dialog 
-        open={versionControl.showHistoryDialog} 
-        onOpenChange={(open) => setVersionControl(prev => ({ ...prev, showHistoryDialog: open }))}
-      >
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <History className="h-5 w-5" />
-              Version History
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 max-h-96 overflow-auto">
-            {versionControl.versions.map((version) => (
-              <Card key={version.id} className={`${version.isCurrent ? 'ring-2 ring-primary' : ''}`}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-semibold">{version.name}</h4>
-                        <Badge variant={version.isCurrent ? "default" : "outline"}>
-                          v{version.version}
-                        </Badge>
-                        {version.isCurrent && (
-                          <Badge variant="secondary">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Current
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {version.description}
-                      </p>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          {version.createdBy}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {new Date(version.createdAt).toLocaleDateString()}
-                        </div>
-                      </div>
-                      {version.changes.length > 0 && (
-                        <div className="mt-2">
-                          <p className="text-xs font-medium text-muted-foreground mb-1">Changes:</p>
-                          <ul className="text-xs text-muted-foreground space-y-1">
-                            {version.changes.map((change, index) => (
-                              <li key={index} className="flex items-center gap-1">
-                                <span className="w-1 h-1 bg-muted-foreground rounded-full"></span>
-                                {change}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
+function renderComponent(component: TemplateComponent) {
+  switch (component.type) {
+    case 'text':
+      return (
+        <div style={{ fontSize: component.props.fontSize, color: component.props.color }}>
+          {component.props.content}
                     </div>
-                    <div className="flex gap-2">
-                      {!version.isCurrent && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleLoadVersion(version.id)}
-                        >
-                          <RotateCcw className="h-3 w-3 mr-1" />
-                          Restore
-                        </Button>
-                      )}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          // Export version functionality
-                          const dataStr = JSON.stringify(version, null, 2)
-                          const dataBlob = new Blob([dataStr], { type: 'application/json' })
-                          const url = URL.createObjectURL(dataBlob)
-                          const link = document.createElement('a')
-                          link.href = url
-                          link.download = `template-version-${version.version}.json`
-                          link.click()
-                        }}
-                      >
-                        <Download className="h-3 w-3 mr-1" />
-                        Export
-                      </Button>
+      )
+    case 'button':
+      return (
+        <button className="px-4 py-2 bg-primary text-primary-foreground rounded">
+          {component.props.text}
+        </button>
+      )
+    case 'image':
+      return (
+        <div className="w-full h-full bg-muted flex items-center justify-center">
+          {component.props.src ? (
+            <img src={component.props.src} alt={component.props.alt} className="max-w-full max-h-full object-contain" />
+          ) : (
+            <span className="text-muted-foreground">No image</span>
+          )}
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+      )
+    case 'table':
+      return (
+        <table className="w-full border-collapse border">
+          <tbody>
+            {Array.from({ length: component.props.rows }, (_, i) => (
+              <tr key={i}>
+                {Array.from({ length: component.props.columns }, (_, j) => (
+                  <td key={j} className="border p-2">Cell {i+1},{j+1}</td>
+                ))}
+              </tr>
             ))}
+          </tbody>
+        </table>
+      )
+    case 'card':
+      return (
+        <div className="border rounded p-4">
+          <h3 className="font-semibold mb-2">{component.props.title}</h3>
+          <p className="text-sm text-muted-foreground">{component.props.content}</p>
+                  </div>
+      )
+    case 'list':
+      return (
+        <ul className={component.props.ordered ? "list-decimal" : "list-disc"}>
+          {component.props.items.map((item: string, index: number) => (
+            <li key={index}>{item}</li>
+          ))}
+        </ul>
+      )
+    case 'divider':
+      return (
+        <hr style={{ borderWidth: component.props.thickness, borderColor: component.props.color }} />
+      )
+    case 'spacer':
+      return (
+        <div style={{ height: component.props.height }} />
+      )
+    case 'entity_table':
+      return (
+        <div className="border rounded p-4">
+          <h3 className="font-semibold mb-2">Entity Table</h3>
+          <p className="text-sm text-muted-foreground">Entity: {component.props.entityType}</p>
+          <p className="text-sm text-muted-foreground">Columns: {component.props.columns.join(', ')}</p>
           </div>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setVersionControl(prev => ({ ...prev, showHistoryDialog: false }))}
-            >
-              Close
-            </Button>
-            <Button 
-              onClick={() => {
-                setVersionControl(prev => ({ ...prev, showHistoryDialog: false, showVersionDialog: true }))
-              }}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Create New Version
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      )
+    case 'analytics_chart':
+      return (
+        <div className="border rounded p-4">
+          <h3 className="font-semibold mb-2">{component.props.title}</h3>
+          <div className="w-full h-32 bg-muted flex items-center justify-center">
+            <span className="text-muted-foreground">Chart Preview</span>
+          </div>
     </div>
   )
+    case 'form_builder':
+      return (
+        <div className="border rounded p-4">
+          <h3 className="font-semibold mb-2">Form Builder</h3>
+          <p className="text-sm text-muted-foreground">Fields: {component.props.fields.length}</p>
+        </div>
+      )
+    default:
+      return <div className="text-muted-foreground">Unknown component</div>
+  }
 }

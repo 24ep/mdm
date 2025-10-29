@@ -205,6 +205,7 @@ export function AdminSidebar({
     ],
     integrations: [
       { id: 'settings', name: 'System Settings', icon: Settings },
+      { id: 'page-templates', name: 'Page Templates', icon: FileText },
       { id: 'export', name: 'Data Export', icon: Cloud },
       { id: 'integrations', name: 'Integrations', icon: Key }
     ]

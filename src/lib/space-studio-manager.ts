@@ -100,30 +100,105 @@ export class SpaceStudioManager {
    * Create default space studio configuration
    */
   static async createDefaultConfig(spaceId: string): Promise<SpaceStudioConfig> {
+    const now = new Date().toISOString()
     const defaultPages: SpaceStudioPage[] = [
       {
         id: 'dashboard',
         name: 'dashboard',
         displayName: 'Dashboard',
-        description: 'Main dashboard page',
+        description: 'Main dashboard with key metrics, charts, and recent activity overview',
         isCustom: false,
         path: '/dashboard',
         order: 1,
         isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        createdAt: now,
+        updatedAt: now
       },
       {
-        id: 'data',
-        name: 'data',
-        displayName: 'Data',
-        description: 'Data management page',
+        id: 'customers',
+        name: 'customers',
+        displayName: 'Customer Management',
+        description: 'Manage customer data, profiles, and relationships with advanced filtering and search',
         isCustom: false,
-        path: '/data',
+        path: '/customers',
         order: 2,
         isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        createdAt: now,
+        updatedAt: now
+      },
+      {
+        id: 'analytics',
+        name: 'analytics',
+        displayName: 'Analytics & Reports',
+        description: 'Comprehensive analytics dashboard with interactive charts and custom reports',
+        isCustom: false,
+        path: '/analytics',
+        order: 3,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now
+      },
+      {
+        id: 'projects',
+        name: 'projects',
+        displayName: 'Project Management',
+        description: 'Track projects, tasks, deadlines, and team collaboration in one place',
+        isCustom: false,
+        path: '/projects',
+        order: 4,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now
+      },
+      {
+        id: 'inventory',
+        name: 'inventory',
+        displayName: 'Inventory Control',
+        description: 'Monitor stock levels, manage suppliers, and track product movements',
+        isCustom: false,
+        path: '/inventory',
+        order: 5,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now
+      },
+      {
+        id: 'employee-portal',
+        name: 'employee-portal',
+        displayName: 'Employee Portal',
+        description: 'Self-service portal for employees to manage their information and requests',
+        templateId: 'employee-portal-template',
+        isCustom: false,
+        path: '/employee-portal',
+        order: 6,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now
+      },
+      {
+        id: 'sales-dashboard',
+        name: 'sales-dashboard',
+        displayName: 'Sales Dashboard',
+        description: 'Real-time sales performance tracking with pipeline visualization',
+        templateId: 'sales-dashboard-template',
+        isCustom: false,
+        path: '/sales-dashboard',
+        order: 7,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now
+      },
+      {
+        id: 'settings',
+        name: 'settings',
+        displayName: 'System Settings',
+        description: 'Configure system preferences, user permissions, and integration settings',
+        isCustom: false,
+        path: '/settings',
+        order: 8,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now
       }
     ]
 
@@ -132,14 +207,36 @@ export class SpaceStudioManager {
       spaceId,
       pages: defaultPages,
       sidebarConfig: {
-        items: defaultPages.map(page => ({
-          id: page.id,
-          type: 'page' as const,
-          name: page.displayName,
-          icon: page.id === 'dashboard' ? 'LayoutDashboard' : 'Database',
-          color: page.id === 'dashboard' ? '#3b82f6' : '#8b5cf6',
-          pageId: page.id
-        })),
+        items: defaultPages.map(page => {
+          const iconMap: Record<string, string> = {
+            'dashboard': 'LayoutDashboard',
+            'customers': 'Users',
+            'analytics': 'BarChart3',
+            'projects': 'FolderKanban',
+            'inventory': 'Package',
+            'employee-portal': 'UserCheck',
+            'sales-dashboard': 'TrendingUp',
+            'settings': 'Settings'
+          }
+          const colorMap: Record<string, string> = {
+            'dashboard': '#3b82f6',
+            'customers': '#10b981',
+            'analytics': '#f59e0b',
+            'projects': '#8b5cf6',
+            'inventory': '#ef4444',
+            'employee-portal': '#06b6d4',
+            'sales-dashboard': '#84cc16',
+            'settings': '#6b7280'
+          }
+          return {
+            id: page.id,
+            type: 'page' as const,
+            name: page.displayName,
+            icon: iconMap[page.id] || 'File',
+            color: colorMap[page.id] || '#6b7280',
+            pageId: page.id
+          }
+        }),
         background: '#ffffff',
         textColor: '#374151',
         fontSize: '14px'

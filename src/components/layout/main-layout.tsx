@@ -7,9 +7,10 @@ import { Header } from './header'
 
 interface MainLayoutProps {
   children: React.ReactNode
+  contentClassName?: string
 }
 
-export function MainLayout({ children }: MainLayoutProps) {
+export function MainLayout({ children, contentClassName }: MainLayoutProps) {
   const { data: session, status } = useSession()
   const router = useRouter()
 
@@ -35,7 +36,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header user={session.user} />
-        <main className="flex-1 overflow-auto p-6">
+        <main className={`flex-1 overflow-auto ${contentClassName ?? 'p-6'}`}>
           {children}
         </main>
       </div>
