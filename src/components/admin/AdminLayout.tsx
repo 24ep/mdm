@@ -1,9 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { ArrowLeft } from 'lucide-react'
 import { AdminSidebar } from './AdminSidebar'
 
 interface AdminLayoutProps {
@@ -12,6 +9,7 @@ interface AdminLayoutProps {
   onTabChange: (tab: string) => void
   selectedSpace?: string
   onSpaceChange?: (spaceId: string) => void
+  breadcrumbItems?: string[]
 }
 
 export function AdminLayout({ 
@@ -19,14 +17,11 @@ export function AdminLayout({
   activeTab, 
   onTabChange, 
   selectedSpace, 
-  onSpaceChange 
+  onSpaceChange,
+  breadcrumbItems
 }: AdminLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const router = useRouter()
-
-  const handleBackToSpaces = () => {
-    router.push('/spaces')
-  }
+  
 
   return (
     <div className="flex h-screen bg-background">
@@ -43,9 +38,9 @@ export function AdminLayout({
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Bar */}
-        <div className="h-12 border-b bg-background flex items-center justify-between px-4">
-          <div className="flex items-center gap-2">
+        {/* Breadcrumb Bar */}
+        <div className="h-10 border-b bg-background flex items-center px-4">
+          <div className="flex items-center gap-2 text-sm">
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               className="p-1 hover:bg-muted rounded"
@@ -61,21 +56,25 @@ export function AdminLayout({
                 </svg>
               )}
             </button>
-            <div className="text-sm font-medium">
-              {activeTab.charAt(0).toUpperCase() + activeTab.slice(1).replace(/([A-Z])/g, ' $1')}
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleBackToSpaces}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Spaces
-            </Button>
+            <nav aria-label="Breadcrumb" className="truncate text-muted-foreground">
+              <ol className="flex items-center space-x-2">
+                {(
+                  breadcrumbItems && breadcrumbItems.length
+                    ? breadcrumbItems
+                    : [
+                        'Admin Console',
+                        activeTab.charAt(0).toUpperCase() + activeTab.slice(1).replace(/([A-Z])/g, ' $1')
+                      ]
+                ).map((item, idx, arr) => (
+                  <>
+                    <li key={`bc-${idx}`} className={`truncate ${idx === arr.length - 1 ? 'font-medium text-foreground' : 'whitespace-nowrap'}`}>
+                      {item}
+                    </li>
+                    {idx < arr.length - 1 && <li key={`sep-${idx}`} className="text-muted-foreground">/</li>}
+                  </>
+                ))}
+              </ol>
+            </nav>
           </div>
         </div>
 

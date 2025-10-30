@@ -84,9 +84,12 @@ import {
   Save,
   Download,
   Upload,
-  Settings
+  Settings,
+  MoreVertical
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Pencil, Download as DownloadIcon, History as HistoryIcon } from 'lucide-react'
 
 interface NotebookSidebarProps {
   notebook: {
@@ -110,11 +113,15 @@ interface NotebookSidebarProps {
   onAddCell: (type: 'code' | 'markdown' | 'raw') => void
   onOpenFile: (filePath: string) => void
   onNewFile: () => void
+  onCreateFile?: (name: string) => void
+  onCreateFolder?: (name: string) => void
   onNewFolder: () => void
   onUploadFile: () => void
   onDeleteFile: (filePath: string) => void
   onRenameFile: (filePath: string, newName: string) => void
   onMoveFile: (filePath: string, newPath: string) => void
+  onExportFile?: (filePath?: string) => void
+  onShowVersions?: (filePath?: string) => void
 }
 
 export function NotebookSidebar({
@@ -124,16 +131,27 @@ export function NotebookSidebar({
   onAddCell,
   onOpenFile,
   onNewFile,
+  onCreateFile,
+  onCreateFolder,
   onNewFolder,
   onUploadFile,
   onDeleteFile,
   onRenameFile,
-  onMoveFile
+  onMoveFile,
+  onExportFile,
+  onShowVersions
 }: NotebookSidebarProps) {
   const [activeTab, setActiveTab] = useState<'files' | 'variables' | 'outline'>('files')
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
   const [selectedFile, setSelectedFile] = useState<string | null>(null)
+  const [dragIndex, setDragIndex] = useState<number | null>(null)
+  const [showVersionsFor, setShowVersionsFor] = useState<string | null>(null)
+  const [showCreate, setShowCreate] = useState(false)
+  const [createStep, setCreateStep] = useState<'kind' | 'filetype' | 'folderName'>('kind')
+  const [selectedFileType, setSelectedFileType] = useState<'ipynb' | 'csv' | 'md' | null>(null)
+  const [createName, setCreateName] = useState('')
+  const isNotebookSelected = selectedFile?.toLowerCase().endsWith('.ipynb') ?? false
 
   const toggleFolder = (folderPath: string) => {
     const newExpanded = new Set(expandedFolders)
@@ -183,7 +201,7 @@ export function NotebookSidebar({
         <Button
           size="sm"
           variant="outline"
-          onClick={onNewFile}
+          onClick={() => { setShowCreate(true); setCreateStep('kind') }}
           className="h-7 px-2 text-xs"
         >
           <Plus className="h-3 w-3 mr-1" />
@@ -220,7 +238,7 @@ export function NotebookSidebar({
             <div
               key={index}
               className={cn(
-                "flex items-center gap-2 px-2 py-1 rounded text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700",
+                "flex items-center gap-2 px-2 py-1 rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-700",
                 selectedFile === file.name && "bg-blue-100 dark:bg-blue-900"
               )}
               onClick={() => {
@@ -231,14 +249,42 @@ export function NotebookSidebar({
                   onOpenFile(file.name)
                 }
               }}
+              draggable={file.type === 'file'}
+              onDragStart={(e) => { setDragIndex(index) }}
+              onDragOver={(e) => { e.preventDefault() }}
+              onDrop={(e) => {
+                e.preventDefault()
+                if (dragIndex !== null && dragIndex !== index) {
+                  onMoveFile(files[dragIndex].name, `index:${index}`)
+                }
+                setDragIndex(null)
+              }}
             >
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
                 {getFileIcon(file.name, file.type)}
                 <span className="truncate">{file.name}</span>
               </div>
-              {file.type === 'file' && file.size && (
-                <span className="text-xs text-gray-500 ml-auto">{file.size}</span>
-              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="icon" variant="ghost" className="h-6 w-6" onClick={(e) => e.stopPropagation()}>
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); const newName = prompt('Rename to:', file.name); if (newName) onRenameFile(file.name, newName) }}>
+                    <Pencil className="h-4 w-4 mr-2" /> Rename
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onExportFile && onExportFile(file.name) }}>
+                    <DownloadIcon className="h-4 w-4 mr-2" /> Export
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setShowVersionsFor(file.name) }}>
+                    <HistoryIcon className="h-4 w-4 mr-2" /> Versions
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDeleteFile(file.name) }} className="text-red-600">
+                    <Trash2 className="h-4 w-4 mr-2" /> Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           ))}
       </div>
@@ -334,16 +380,8 @@ export function NotebookSidebar({
 
   return (
     <div className="w-64 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
-      {/* Header */}
+      {/* Tabs */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-center gap-2 mb-3">
-          <NotebookPen className="h-5 w-5 text-blue-600" />
-          <span className="font-semibold text-gray-900 dark:text-white text-sm">
-            {notebook.name}
-          </span>
-        </div>
-        
-        {/* Tabs */}
         <div className="flex space-x-1 bg-gray-100 dark:bg-gray-700 rounded p-1">
           <button
             onClick={() => setActiveTab('files')}
@@ -356,6 +394,7 @@ export function NotebookSidebar({
           >
             Files
           </button>
+          {isNotebookSelected && (
           <button
             onClick={() => setActiveTab('variables')}
             className={cn(
@@ -367,6 +406,8 @@ export function NotebookSidebar({
           >
             Variables
           </button>
+          )}
+          {isNotebookSelected && (
           <button
             onClick={() => setActiveTab('outline')}
             className={cn(
@@ -378,6 +419,7 @@ export function NotebookSidebar({
           >
             Outline
           </button>
+          )}
         </div>
       </div>
 
@@ -388,28 +430,104 @@ export function NotebookSidebar({
         {activeTab === 'outline' && renderOutlineTab()}
       </div>
 
-      {/* Quick Actions */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-        <div className="space-y-2">
-          <Button
-            size="sm"
-            onClick={() => onAddCell('code')}
-            className="w-full h-8 text-xs"
-          >
-            <Plus className="h-3 w-3 mr-1" />
-            Add Code Cell
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onAddCell('markdown')}
-            className="w-full h-8 text-xs"
-          >
-            <FileText className="h-3 w-3 mr-1" />
-            Add Markdown
-          </Button>
+      {/* Versions Drawer */}
+      {showVersionsFor && (
+        <div className="fixed inset-0 z-50" onClick={() => setShowVersionsFor(null)}>
+          <div className="absolute inset-0 bg-black/30" />
+          <div className="absolute top-0 right-0 h-full w-96 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-xl flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 font-medium text-sm flex items-center justify-between">
+              <span>Versions • {showVersionsFor}</span>
+              <Button size="sm" variant="outline" onClick={() => { onShowVersions && onShowVersions(showVersionsFor); }}>Open History</Button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              {[...Array(5)].map((_, i) => {
+                const date = new Date(Date.now() - i * 3600_000)
+                return (
+                  <div key={i} className="p-2 rounded border border-gray-200 dark:border-gray-700 text-sm flex items-center justify-between">
+                    <div>
+                      <div className="font-medium">{date.toLocaleString()}</div>
+                      <div className="text-xs text-gray-500">v{i + 1} • {Math.round(Math.random()*100)} KB</div>
+                    </div>
+                    <Button size="sm" onClick={() => { /* restore mock */ setShowVersionsFor(null) }}>Restore</Button>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="p-3 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-500">Showing latest 5 versions</div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Create Modal */}
+      {showCreate && (
+        <div className="fixed inset-0 z-50" onClick={() => setShowCreate(false)}>
+          <div className="absolute inset-0 bg-black/30" />
+          <div className="absolute inset-0 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-xl w-[520px] max-w-[92vw]">
+              <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 font-medium text-sm">
+                Create New
+              </div>
+              <div className="p-4">
+                {createStep === 'kind' && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <button className="p-4 border rounded hover:bg-gray-50 dark:hover:bg-gray-800 text-left" onClick={() => { setCreateStep('folderName'); setCreateName('New Folder') }}>
+                      <Folder className="h-6 w-6 mb-2" />
+                      <div className="text-sm font-medium">Folder</div>
+                    </button>
+                    <button className="p-4 border rounded hover:bg-gray-50 dark:hover:bg-gray-800 text-left" onClick={() => setCreateStep('filetype')}>
+                      <File className="h-6 w-6 mb-2" />
+                      <div className="text-sm font-medium">File</div>
+                    </button>
+                  </div>
+                )}
+                {createStep === 'filetype' && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-3 gap-3">
+                      <button className="p-4 border rounded hover:bg-gray-50 dark:hover:bg-gray-800 text-left" onClick={() => { setSelectedFileType('ipynb'); setCreateName('Untitled.ipynb') }}>
+                        <NotebookPen className="h-6 w-6 mb-2 text-orange-500" />
+                        <div className="text-sm font-medium">Notebook (.ipynb)</div>
+                      </button>
+                      <button className="p-4 border rounded hover:bg-gray-50 dark:hover:bg-gray-800 text-left" onClick={() => { setSelectedFileType('csv'); setCreateName('data.csv') }}>
+                        <FileSpreadsheet className="h-6 w-6 mb-2 text-green-600" />
+                        <div className="text-sm font-medium">CSV (.csv)</div>
+                      </button>
+                      <button className="p-4 border rounded hover:bg-gray-50 dark:hover:bg-gray-800 text-left" onClick={() => { setSelectedFileType('md'); setCreateName('notes.md') }}>
+                        <FileText className="h-6 w-6 mb-2 text-gray-600" />
+                        <div className="text-sm font-medium">Markdown (.md)</div>
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs text-gray-600 dark:text-gray-400">File name</label>
+                      <Input value={createName} onChange={(e) => setCreateName(e.target.value)} placeholder="Enter file name" />
+                    </div>
+                  </div>
+                )}
+                {createStep === 'folderName' && (
+                  <div className="space-y-2">
+                    <label className="text-xs text-gray-600 dark:text-gray-400">Folder name</label>
+                    <Input value={createName} onChange={(e) => setCreateName(e.target.value)} placeholder="Enter folder name" />
+                  </div>
+                )}
+              </div>
+              <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
+                <Button size="sm" variant="outline" onClick={() => setShowCreate(false)}>Close</Button>
+                {createStep !== 'kind' && (
+                  <Button size="sm" variant="outline" onClick={() => setCreateStep('kind')}>Back</Button>
+                )}
+                {createStep === 'filetype' && (
+                  <Button size="sm" onClick={() => { if (createName && selectedFileType) { onCreateFile ? onCreateFile(createName) : onNewFile(); setShowCreate(false) } }}>Create</Button>
+                )}
+                {createStep === 'folderName' && (
+                  <Button size="sm" onClick={() => { if (createName) { onCreateFolder ? onCreateFolder(createName) : onNewFolder(); setShowCreate(false) } }}>Create</Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Actions */}
+      <div className="p-2 border-t border-gray-200 dark:border-gray-700 text-[10px] text-gray-500">Files and data sources</div>
     </div>
   )
 }

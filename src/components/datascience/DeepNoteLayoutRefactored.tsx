@@ -17,8 +17,13 @@ import {
   FileText,
   RefreshCw,
   Settings,
-  Database
+  Database,
+  Upload,
+  Download,
+  PanelLeft
 } from 'lucide-react'
+import { CSVEditor } from './CSVEditor'
+import { MarkdownFileEditor } from './MarkdownFileEditor'
 import { Button } from '@/components/ui/button'
 import {
   DndContext,
@@ -47,10 +52,15 @@ export function DeepNoteLayoutRefactored({
   enableCollaboration = true,
   enableFileManager = true,
   enableExport = true,
-  enableVersionControl = true
+  enableVersionControl = true,
+  // permissions gating: defaults to full access
+  canEdit = true,
+  canExecute = true,
+  onControlsReady
 }: DeepNoteLayoutProps) {
   // State management
   const [state, actions] = useNotebookState(initialNotebook)
+  const [openedFile, setOpenedFile] = useState<{ name: string; type: 'ipynb' | 'csv' | 'md' | 'other' } | null>(null)
   const { kernels, currentKernel, setCurrentKernel } = useKernelInitialization()
   const { notebookRef, cellRefs, scrollToCell, focusCell } = useNotebookRefs()
   
@@ -82,6 +92,24 @@ export function DeepNoteLayoutRefactored({
     createNotebookHandlers(state, actions, dataSource, onSave),
     [state, actions, dataSource, onSave]
   )
+
+  useEffect(() => {
+    if (onControlsReady) {
+      onControlsReady({
+        toggleSidebar: () => actions.setShowSidebar(!state.showSidebar),
+        save: canEdit ? handlers.handleSave : () => {},
+        openSettings: () => actions.setShowSettings(true),
+        renameProject: (name: string) => actions.setNotebook((prev: any) => ({ ...prev, name, updatedAt: new Date() }))
+      })
+    }
+  }, [onControlsReady, actions, state.showSidebar, handlers.handleSave, canEdit])
+
+  const handleOpenFromSidebar = (filePath: string) => {
+    const ext = filePath.split('.').pop()?.toLowerCase()
+    const type = ext === 'ipynb' ? 'ipynb' : ext === 'csv' ? 'csv' : ext === 'md' ? 'md' : 'other'
+    setOpenedFile({ name: filePath, type })
+    handlers.handleOpenFile(filePath)
+  }
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -154,86 +182,71 @@ export function DeepNoteLayoutRefactored({
       state.currentTheme === 'dark' ? "dark bg-gray-900" : "",
       state.isFullscreen ? "fixed inset-0 z-50" : ""
     )}>
-      {/* DeepNote-style Header */}
-      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <FileCode className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-              <span className="font-medium text-gray-900 dark:text-white">{state.notebook.name}</span>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button size="sm" variant="outline" onClick={handlers.handleSave}>
-              <RefreshCw className="h-4 w-4 mr-1" />
-              Save
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => actions.setShowSettings(true)}>
-              <Settings className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
+      {/* Header removed as requested */}
 
-      {/* DeepNote-style Toolbar */}
-      <div className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-2">
-        <NotebookToolbar
-          toolbarPosition="top"
-          onToggleToolbarPosition={() => {
-            // Toggle toolbar position logic here
-          }}
-          notebook={state.notebook}
-          isExecuting={state.isExecuting}
-          kernelStatus={state.kernelStatus}
-          executionCount={state.executionCount}
-          showSidebar={state.showSidebar}
-          showVariables={state.showVariables}
-          onExecuteAll={handlers.executeAllCells}
-          onStopExecution={handlers.handleInterrupt}
-          onClearOutputs={handlers.clearAllOutputs}
-          onSave={handlers.handleSave}
-          onExport={handlers.handleExport}
-          onImport={handlers.handleImport}
-          onToggleSidebar={() => actions.setShowSidebar(!state.showSidebar)}
-          onToggleVariables={() => actions.setShowVariables(!state.showVariables)}
-          onToggleSettings={() => actions.setShowSettings(true)}
-          onAddCell={handlers.createNewCell}
-          onShowTemplates={handlers.handleShowTemplates}
-          onRunSelected={handlers.handleRunSelected}
-          onInterrupt={handlers.handleInterrupt}
-          onRestart={handlers.handleRestart}
-          onShutdown={handlers.handleShutdown}
-        />
-      </div>
+      {/* Toolbar Card */}
+      
 
       {/* Main Content Area */}
       <div className="flex-1 flex min-h-0">
         {/* Left Sidebar */}
         {state.showSidebar && (
-          <div className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+          <div className="w-64 h-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-sm m-0 flex flex-col min-h-0">
             <NotebookSidebar
               notebook={state.notebook}
               variables={state.variables}
               files={state.files}
               onAddCell={handlers.createNewCell}
-              onOpenFile={handlers.handleOpenFile}
+              onOpenFile={handleOpenFromSidebar}
               onNewFile={handlers.handleNewFile}
+              onCreateFile={handlers.handleCreateFile}
+              onCreateFolder={handlers.handleCreateFolder}
               onNewFolder={handlers.handleNewFolder}
               onUploadFile={handlers.handleUploadFile}
               onDeleteFile={handlers.handleDeleteFile}
               onRenameFile={handlers.handleRenameFile}
               onMoveFile={handlers.handleMoveFile}
+              onExportFile={() => handlers.handleExport()}
+              onShowVersions={() => actions.setShowHistory(true)}
             />
           </div>
         )}
 
-              {/* Notebook Area - DeepNote Style */}
-              <div className="flex-1 flex flex-col min-h-0 bg-white dark:bg-gray-900 relative">
+              {/* Main Area Card - switches between Notebook and File viewers */}
+              <div className="flex-1 flex flex-col min-h-0 bg-white dark:bg-gray-900 relative border border-gray-200 dark:border-gray-700 shadow-sm m-0">
+                {/* Folder toolbar removed from notebook; shown on projects page instead */}
+                {/* Notebook toolbar row (only when a notebook is selected) */}
+                {(!openedFile || openedFile.type === 'ipynb') && (
+                  <div className="px-2 py-1 border-b border-gray-200 dark:border-gray-700">
+                    <NotebookToolbar
+                      toolbarPosition="top"
+                      onToggleToolbarPosition={() => {}}
+                      notebook={state.notebook}
+                      isExecuting={state.isExecuting}
+                      kernelStatus={state.kernelStatus}
+                      executionCount={state.executionCount}
+                      showSidebar={state.showSidebar}
+                      showVariables={state.showVariables}
+                      showFileOps={false}
+                      showViewControls={false}
+                      onExecuteAll={canExecute ? handlers.executeAllCells : (() => {})}
+                      onStopExecution={canExecute ? handlers.handleInterrupt : (() => {})}
+                      onClearOutputs={canEdit ? handlers.clearAllOutputs : (() => {})}
+                      onSave={canEdit ? handlers.handleSave : (() => {})}
+                      onExport={enableExport ? handlers.handleExport : (() => {})}
+                      onImport={handlers.handleImport}
+                      onToggleSidebar={() => actions.setShowSidebar(!state.showSidebar)}
+                      onToggleVariables={() => actions.setShowVariables(!state.showVariables)}
+                      onToggleSettings={() => actions.setShowSettings(true)}
+                      onAddCell={canEdit ? handlers.createNewCell : (() => {})}
+                      onShowTemplates={handlers.handleShowTemplates}
+                      onRunSelected={canExecute ? handlers.handleRunSelected : (() => {})}
+                      onInterrupt={canExecute ? handlers.handleInterrupt : (() => {})}
+                      onRestart={canExecute ? handlers.handleRestart : (() => {})}
+                      onShutdown={canExecute ? handlers.handleShutdown : (() => {})}
+                    />
+                  </div>
+                )}
                 <div 
                   className="flex-1 overflow-y-auto relative pb-16" 
                   ref={notebookRef}
@@ -244,7 +257,20 @@ export function DeepNoteLayoutRefactored({
                     }
                   }}
                 >
-            {state.notebook.cells.length === 0 ? (
+            {openedFile && openedFile.type !== 'ipynb' ? (
+              // File viewers
+              <div className="max-w-5xl mx-auto py-4 px-2">
+                {openedFile.type === 'csv' && (
+                  <CSVEditor key={openedFile.name} fileName={openedFile.name} />
+                )}
+                {openedFile.type === 'md' && (
+                  <MarkdownFileEditor key={openedFile.name} fileName={openedFile.name} />
+                )}
+                {openedFile.type === 'other' && (
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Unsupported file type.</div>
+                )}
+              </div>
+            ) : state.notebook.cells.length === 0 ? (
               <div className="flex items-center justify-center h-full bg-gray-50 dark:bg-gray-800">
                 <div className="text-center max-w-md">
                   <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -276,7 +302,7 @@ export function DeepNoteLayoutRefactored({
                     items={state.notebook.cells.map(cell => cell.id)}
                     strategy={verticalListSortingStrategy}
                   >
-                    <div className="space-y-3">
+                  <div className="space-y-0">
                       {state.notebook.cells.map((cell, index) => (
                         <div key={cell.id} className="group">
                           <SortableCell
@@ -414,8 +440,8 @@ export function DeepNoteLayoutRefactored({
           </div>
         </div>
 
-      {/* Fixed Footer Status Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-2">
+      {/* Footer Status Bar (not fixed to avoid overlaying admin sidebar) */}
+      <div className="bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-2">
         <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
           <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-2">

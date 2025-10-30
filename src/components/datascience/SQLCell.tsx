@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -18,6 +18,9 @@ import {
   Download
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import CodeMirror from '@uiw/react-codemirror'
+import { oneDark } from '@codemirror/theme-one-dark'
+import { EditorView } from '@codemirror/view'
 import { NotebookCell } from './types'
 
 interface SQLCellProps {
@@ -31,6 +34,8 @@ interface SQLCellProps {
   onFocus: (cellId: string) => void
   onSelect: (cellId: string, selected: boolean) => void
   onTitleChange?: (cellId: string, title: string) => void
+  canEdit?: boolean
+  canExecute?: boolean
 }
 
 export function SQLCell({
@@ -43,10 +48,33 @@ export function SQLCell({
   onConnectionChange,
   onFocus,
   onSelect,
-  onTitleChange
+  onTitleChange,
+  canEdit = true,
+  canExecute = true
 }: SQLCellProps) {
   const [showOutput, setShowOutput] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
+  const [languageExtensions, setLanguageExtensions] = useState<any[]>([])
+  const isDark = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
+  const lightEditorTheme = EditorView.theme({
+    '&': { backgroundColor: 'transparent' },
+    '.cm-scroller': { backgroundColor: 'transparent' },
+    '.cm-gutters': { backgroundColor: 'transparent', border: 'none' },
+    '.cm-activeLine, .cm-activeLineGutter': { backgroundColor: 'transparent' },
+    '.cm-content': { fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace', fontSize: '0.9rem' }
+  }, { dark: false })
+
+  useEffect(() => {
+    let isMounted = true
+    const dynamicImport = (specifier: string) => (new Function('s', 'return import(s)'))(specifier)
+    const spec = '@codemirror/lang-' + 'sql'
+    dynamicImport(spec)
+      .then((mod: any) => {
+        if (isMounted && mod?.sql) setLanguageExtensions([mod.sql()])
+      })
+      .catch(() => { if (isMounted) setLanguageExtensions([]) })
+    return () => { isMounted = false }
+  }, [])
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -77,13 +105,13 @@ export function SQLCell({
   return (
     <div
       className={cn(
-        "group relative transition-all duration-200 border-2 rounded-md",
+        "group relative transition-all duration-200 rounded-md",
         // Default background for all cells (like hover state)
         "bg-gray-50 dark:bg-gray-800/50",
         // Enhanced hover state
         "hover:bg-gray-100 dark:hover:bg-gray-800",
         // Blue border for active/selected cells
-        isActive || isSelected ? "border-blue-500 dark:border-blue-400" : "border-transparent",
+        "",
         // Active state background
         isActive ? "bg-blue-50/50 dark:bg-blue-900/20" : "",
         // Selected state background
@@ -109,7 +137,7 @@ export function SQLCell({
                 e.stopPropagation()
                 handleExecute()
               }}
-              disabled={cell.status === 'running' || !cell.sqlQuery || !cell.sqlVariableName}
+              disabled={!canExecute || cell.status === 'running' || !cell.sqlQuery || !cell.sqlVariableName}
               className="h-6 w-6 p-0 hover:bg-blue-100 dark:hover:bg-blue-900"
             >
               <Play className="h-3 w-3" />
@@ -119,20 +147,50 @@ export function SQLCell({
 
         {/* SQL Cell Content Area */}
         <div className="flex-1 min-w-0">
-          {/* SQL Cell Header */}
-          <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-700 bg-blue-50/30 dark:bg-blue-900/20">
+          {/* SQL Cell Header - match code cell style */}
+          <div className="flex items-center justify-between px-2 py-1 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
                 <span className="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wide">
                   SQL
                 </span>
                 </div>
-              <input
-                value={cell.title || ''}
-                placeholder="Untitled"
-                onChange={(e) => onTitleChange && onTitleChange(cell.id, e.target.value)}
-                className="text-sm bg-transparent border-b border-transparent focus:border-blue-400 outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-              />
+              {/* Inline title, variable name, and space selector */}
+              <div className="flex items-center space-x-3">
+                <input
+                  value={cell.title || ''}
+                  placeholder="Untitled"
+                  onChange={(e) => onTitleChange && onTitleChange(cell.id, e.target.value)}
+                  className="text-sm bg-transparent border-b border-transparent focus:border-blue-400 outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+                  disabled={!canEdit}
+                />
+                <div className="flex items-center space-x-2">
+                  <Input
+                    id={`sql-var-${cell.id}`}
+                    value={cell.sqlVariableName || ''}
+                    onChange={(e) => onVariableNameChange(cell.id, e.target.value)}
+                    placeholder="Variable name (e.g., df)"
+                    className="h-8 max-w-48 font-mono text-xs"
+                    onFocus={() => onFocus(cell.id)}
+                    disabled={!canEdit}
+                  />
+                  <Select
+                    value={cell.sqlConnection || 'default'}
+                    onValueChange={(value) => onConnectionChange(cell.id, value)}
+                  >
+                    <SelectTrigger className="h-8 w-36 text-xs">
+                      <SelectValue placeholder="Space" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="default">Default</SelectItem>
+                      <SelectItem value="bigquery">BigQuery</SelectItem>
+                      <SelectItem value="postgres">PostgreSQL</SelectItem>
+                      <SelectItem value="mysql">MySQL</SelectItem>
+                      <SelectItem value="sqlite">SQLite</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
               {cell.status !== 'idle' && getStatusIcon(cell.status)}
               {cell.executionTime && (
                 <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -158,60 +216,27 @@ export function SQLCell({
                       </div>
                     </div>
 
-          {/* SQL Cell Content */}
-          <div className="p-4 space-y-4">
-            {/* Variable Name Input */}
-            <div className="flex items-center space-x-3">
-              <Label htmlFor={`sql-var-${cell.id}`} className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                Save as:
-              </Label>
-              <Input
-                id={`sql-var-${cell.id}`}
-                value={cell.sqlVariableName || ''}
-                onChange={(e) => onVariableNameChange(cell.id, e.target.value)}
-                placeholder="df, result, data..."
-                className="max-w-48 font-mono text-sm"
-                onFocus={() => onFocus(cell.id)}
-              />
-                      <Select
-                value={cell.sqlConnection || 'default'}
-                onValueChange={(value) => onConnectionChange(cell.id, value)}
-                      >
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder="Connection" />
-                        </SelectTrigger>
-                        <SelectContent>
-                  <SelectItem value="default">Default</SelectItem>
-                  <SelectItem value="bigquery">BigQuery</SelectItem>
-                  <SelectItem value="postgres">PostgreSQL</SelectItem>
-                  <SelectItem value="mysql">MySQL</SelectItem>
-                  <SelectItem value="sqlite">SQLite</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
+          {/* SQL Cell Content - match code cell spacing */}
+          <div className="space-y-2 px-0 py-0">
             {/* SQL Query Editor */}
-            <div className="space-y-2">
-              <Label htmlFor={`sql-query-${cell.id}`} className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                SQL Query:
-              </Label>
-              <textarea
-                id={`sql-query-${cell.id}`}
-                value={cell.sqlQuery || cell.content}
-                onChange={(e) => {
-                  onContentChange(cell.id, e.target.value)
-                  // Also update sqlQuery for consistency
-                  if (cell.sqlQuery !== undefined) {
-                    onContentChange(cell.id, e.target.value)
-                  }
+              <CodeMirror
+                value={cell.sqlQuery || cell.content || ''}
+                height="auto"
+                theme={isDark ? oneDark : undefined}
+                extensions={[EditorView.lineWrapping, EditorView.theme({ '&': { height: 'auto', minHeight: '160px' }, '.cm-scroller': { overflow: 'visible' } }), ...(isDark ? [] : [lightEditorTheme]), ...languageExtensions]}
+                basicSetup={{
+                  lineNumbers: true,
+                  highlightActiveLineGutter: true,
+                  highlightActiveLine: true,
+                  foldGutter: true,
+                  bracketMatching: true
                 }}
-                className="w-full min-h-[120px] p-4 border border-gray-300 dark:border-gray-600 rounded-md font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 dark:placeholder-gray-500 bg-gray-50 dark:bg-gray-800"
+                onChange={(val) => onContentChange(cell.id, val)}
+                className="bg-transparent"
+                style={{ border: 'none', outline: 'none', minHeight: 160 }}
                 placeholder="SELECT * FROM table_name WHERE condition;"
                 onFocus={() => onFocus(cell.id)}
-                style={{ 
-                  fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
-                  lineHeight: '1.5'
-                }}
+                readOnly={!canEdit}
               />
                   </div>
 
@@ -220,7 +245,7 @@ export function SQLCell({
               <div className="flex items-center space-x-2">
                           <Button
                   onClick={handleExecute}
-                  disabled={cell.status === 'running' || !cell.sqlQuery || !cell.sqlVariableName}
+                  disabled={!canExecute || cell.status === 'running' || !cell.sqlQuery || !cell.sqlVariableName}
                   className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   <Play className="h-4 w-4 mr-2" />
@@ -229,7 +254,7 @@ export function SQLCell({
                       <Button
                         variant="outline"
                   onClick={handleSaveAsDataFrame}
-                  disabled={cell.status === 'running' || !cell.sqlQuery || !cell.sqlVariableName}
+                  disabled={!canExecute || cell.status === 'running' || !cell.sqlQuery || !cell.sqlVariableName}
                   className="border-green-300 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
                       >
                   <Save className="h-4 w-4 mr-2" />
@@ -305,9 +330,9 @@ export function SQLCell({
               </div>
             </div>
           )}
+          {/* Close content area and outer flex container */}
           </div>
-                </div>
-              </div>
-            </div>
+        </div>
+      </div>
   )
 }

@@ -13,6 +13,7 @@ import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import toast from 'react-hot-toast'
+import { SpacesEditorManager } from '@/lib/space-studio-manager'
 import {
   Layout,
   PanelLeft,
@@ -155,14 +156,41 @@ export function SpaceStudio({
 
   const handleSaveLayout = useCallback(() => {
     try {
-      const key = `spaces_editor_layout_${spaceId}`
-      localStorage.setItem(key, JSON.stringify(componentConfigs))
+      // Save via API/manager (with localStorage fallback inside manager)
+      SpacesEditorManager.saveLayoutConfig(spaceId, componentConfigs)
       toast.success('Layout saved')
     } catch (error) {
       console.error('Failed to save layout', error)
       toast.error('Failed to save layout')
     }
   }, [componentConfigs, spaceId])
+
+  const defaultConfigs: Record<string, ComponentConfig> = {
+    sidebar: { 
+      type: 'sidebar', visible: true, position: 'left', width: 250,
+      backgroundColor: '#ffffff', textColor: '#374151', borderColor: '#e5e7eb', borderWidth: 1, borderRadius: 0,
+      padding: 16, margin: 0, fontSize: 14, fontWeight: 'normal', opacity: 100, zIndex: 1, shadow: false, sticky: false
+    },
+    top: { 
+      type: 'top', visible: true, position: 'top', height: 64, width: 220,
+      backgroundColor: '#ffffff', textColor: '#374151', borderColor: '#e5e7eb', borderWidth: 1, borderRadius: 0,
+      padding: 16, margin: 0, fontSize: 14, fontWeight: 'normal', opacity: 100, zIndex: 2, shadow: false, sticky: true
+    },
+    footer: {
+      type: 'footer', visible: false, position: 'bottom', height: 60,
+      backgroundColor: '#f9fafb', textColor: '#6b7280', borderColor: '#e5e7eb', borderWidth: 1, borderRadius: 0,
+      padding: 16, margin: 0, fontSize: 14, fontWeight: 'normal', opacity: 100, zIndex: 1, shadow: false, sticky: false
+    }
+  }
+
+  const handleResetLayout = useCallback(() => {
+    setComponentConfigs(defaultConfigs)
+    try {
+      const key = `spaces_editor_layout_${spaceId}`
+      localStorage.removeItem(key)
+    } catch {}
+    toast.success('Layout reset to defaults')
+  }, [spaceId])
 
   const handleSaveLayoutAsNewPage = useCallback(async () => {
     try {
@@ -251,7 +279,7 @@ export function SpaceStudio({
 
   const handleEditLayout = useCallback(() => {
     // Navigate to dedicated layout configuration screen
-    router.push(`/${spaceId}/studio`)
+    router.push(`/${spaceId}/studio/layout`)
   }, [router, spaceId])
 
   React.useEffect(() => {
@@ -261,16 +289,33 @@ export function SpaceStudio({
     } catch {}
   }, [selectionKey])
 
+  // Load saved layout config on mount
+  React.useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const saved = await SpacesEditorManager.getLayoutConfig(spaceId)
+        if (saved && mounted) {
+          setComponentConfigs((prev) => ({ ...prev, ...saved }))
+        }
+      } catch (e) {
+        // ignore, preview continues with defaults
+      }
+    })()
+    return () => { mounted = false }
+  }, [spaceId])
+
   // helper: templates allowed for this space from admin
   const adminTemplates = (() => {
     try { return JSON.parse(localStorage.getItem('space_layout_templates') || '[]') } catch { return [] }
   })() as Array<{ id: string; name: string; description?: string; allowedSpaceIds?: string[] }>
   const allowedTemplates = adminTemplates.filter(t => (t.allowedSpaceIds || []).includes(spaceId))
+  const [layoutQuery, setLayoutQuery] = useState('')
 
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'layout' | 'pages')}>
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="w-full justify-start">
           <TabsTrigger value="layout">
             <Layout className="h-4 w-4 mr-2" />
             Space Layout

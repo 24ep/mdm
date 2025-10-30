@@ -121,6 +121,8 @@ interface NotebookToolbarProps {
   onShowTemplates: () => void
   toolbarPosition?: 'top' | 'body'
   onToggleToolbarPosition?: () => void
+  showFileOps?: boolean
+  showViewControls?: boolean
 }
 
 export function NotebookToolbar({
@@ -146,7 +148,9 @@ export function NotebookToolbar({
   onShutdown,
   onShowTemplates,
   toolbarPosition = 'top',
-  onToggleToolbarPosition
+  onToggleToolbarPosition,
+  showFileOps = true,
+  showViewControls = true
 }: NotebookToolbarProps) {
   const [showAddMenu, setShowAddMenu] = useState(false)
   const [showKernelMenu, setShowKernelMenu] = useState(false)
@@ -175,14 +179,12 @@ export function NotebookToolbar({
       toolbarPosition === 'body' ? "rounded-lg border" : ""
     )}>
       <div className="flex items-center justify-between">
-        {/* Left Section */}
-        <div className="flex items-center gap-4">
-          {/* Notebook Info */}
-          <div className="flex items-center gap-2">
-            <NotebookPen className="h-5 w-5 text-blue-600" />
-            <span className="font-semibold text-gray-900 dark:text-white">{notebook.name}</span>
+        {/* Left Section - show selected notebook/file name */}
+        <div className="flex items-center gap-4 min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <NotebookPen className="h-5 w-5 text-blue-600 shrink-0" />
+            <span className="font-semibold text-gray-900 dark:text-white truncate max-w-[320px]">{notebook.name}</span>
           </div>
-          
           {/* Status Badges (hide cell count, hide 'Ready') */}
           <div className="flex items-center gap-2">
             {kernelStatus !== 'idle' && (
@@ -307,75 +309,77 @@ export function NotebookToolbar({
 
         {/* Right Section */}
         <div className="flex items-center gap-1">
-          {/* View Controls */}
-          <div className="flex items-center gap-1 border-r border-gray-200 pr-2 mr-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onToggleSidebar}
-              className={cn("h-8 w-8 p-0", showSidebar && "bg-blue-100 text-blue-700")}
-            >
-              <PanelLeft className="h-4 w-4" />
-            </Button>
-            
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onToggleVariables}
-              className={cn("h-8 w-8 p-0", showVariables && "bg-blue-100 text-blue-700")}
-            >
-              <Database className="h-4 w-4" />
-            </Button>
-          </div>
+          {showViewControls && (
+            <div className="flex items-center gap-1 border-r border-gray-200 pr-2 mr-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onToggleSidebar}
+                className={cn("h-8 w-8 p-0", showSidebar && "bg-blue-100 text-blue-700")}
+              >
+                <PanelLeft className="h-4 w-4" />
+              </Button>
+              
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onToggleVariables}
+                className={cn("h-8 w-8 p-0", showVariables && "bg-blue-100 text-blue-700")}
+              >
+                <Database className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
 
-          {/* File Operations */}
-          <div className="flex items-center gap-1">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onSave}
-              className="h-8 w-8 p-0"
-            >
-              <Save className="h-4 w-4" />
-            </Button>
-            
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onExport}
-              className="h-8 w-8 p-0"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-            
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onImport}
-              className="h-8 w-8 p-0"
-            >
-              <Upload className="h-4 w-4" />
-            </Button>
-            
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onShowTemplates}
-              className="h-8 px-3"
-            >
-              <FileText className="h-4 w-4 mr-1" />
-              Templates
-            </Button>
-            
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onToggleSettings}
-              className="h-8 w-8 p-0"
-            >
-              <Settings className="h-4 w-4" />
-            </Button>
-          </div>
+          {showFileOps && (
+            <div className="flex items-center gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onSave}
+                className="h-8 w-8 p-0"
+              >
+                <Save className="h-4 w-4" />
+              </Button>
+              
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onExport}
+                className="h-8 w-8 p-0"
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+              
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onImport}
+                className="h-8 w-8 p-0"
+              >
+                <Upload className="h-4 w-4" />
+              </Button>
+              
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onShowTemplates}
+                className="h-8 px-3"
+              >
+                <FileText className="h-4 w-4 mr-1" />
+                Templates
+              </Button>
+              
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onToggleSettings}
+                className="h-8 w-8 p-0"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>

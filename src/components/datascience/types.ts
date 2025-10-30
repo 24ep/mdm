@@ -60,6 +60,14 @@ export interface DeepNoteLayoutProps {
   enableFileManager?: boolean
   enableExport?: boolean
   enableVersionControl?: boolean
+  canEdit?: boolean
+  canExecute?: boolean
+  onControlsReady?: (controls: {
+    toggleSidebar: () => void
+    save: () => void
+    openSettings: () => void
+    renameProject: (name: string) => void
+  }) => void
 }
 
 export interface Variable {

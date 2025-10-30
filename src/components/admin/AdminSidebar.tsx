@@ -1,8 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { useSession } from 'next-auth/react'
 import { 
   Shield, 
   Database, 
@@ -48,6 +51,8 @@ export function AdminSidebar({
   onSpaceChange,
   collapsed = false
 }: AdminSidebarProps) {
+  const router = useRouter()
+  const { data: session } = useSession()
   const [isLoading, setIsLoading] = useState(false)
   const [spaces, setSpaces] = useState<any[]>([])
   const [expandedSection, setExpandedSection] = useState<string>('overview')
@@ -237,7 +242,16 @@ export function AdminSidebar({
   }
 
   const handleTabClick = (tabId: string) => {
+    // Update parent state if present
     onTabChange(tabId)
+    // Ensure navigation to admin page with the selected tab
+    try {
+      router.push(`/admin?tab=${encodeURIComponent(tabId)}`)
+    } catch {}
+  }
+
+  const handleBackToSpaces = () => {
+    router.push('/spaces')
   }
 
 
@@ -245,16 +259,27 @@ export function AdminSidebar({
     <div className={`h-full border-r border-gray-200 flex flex-col w-full ${collapsed ? 'bg-blue-50' : 'bg-white'}`}>
       {/* GCP-style Header */}
       <div className={`px-4 py-3 border-b border-gray-200 bg-white ${collapsed ? 'px-2' : ''}`}>
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded bg-blue-600 flex items-center justify-center">
-            <Shield className="h-5 w-5 text-white" />
-          </div>
-          {!collapsed && (
-            <div>
-              <h2 className="text-base font-medium text-gray-900">Admin Console</h2>
-              <p className="text-xs text-gray-500">System Administration</p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded bg-blue-600 flex items-center justify-center">
+              <Shield className="h-5 w-5 text-white" />
             </div>
-          )}
+            {!collapsed && (
+              <div>
+                <h2 className="text-base font-medium text-gray-900">Admin Console</h2>
+                <p className="text-xs text-gray-500">System Administration</p>
+              </div>
+            )}
+          </div>
+          {/* User Avatar */}
+          <div>
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={(session as any)?.user?.image || ''} alt={(session as any)?.user?.name || 'User'} />
+              <AvatarFallback>
+                {((session as any)?.user?.name || (session as any)?.user?.email || 'U')?.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+          </div>
         </div>
       </div>
 
@@ -339,16 +364,32 @@ export function AdminSidebar({
       {/* GCP-style Footer */}
       <div className={`px-4 py-3 border-t border-gray-200 bg-gray-50 ${collapsed ? 'px-2' : ''}`}>
         {collapsed ? (
-          <div className="flex justify-center">
-            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+          <div className="flex items-center justify-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={handleBackToSpaces}
+              title="Back to Spaces"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </Button>
           </div>
         ) : (
-          <div className="flex items-center justify-between text-xs text-gray-500">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-500"></div>
-              <span>System Online</span>
-            </div>
-            <span>v1.0</span>
+          <div className="flex items-center justify-start">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBackToSpaces}
+              className="w-full justify-start flex items-center gap-2"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back to Spaces
+            </Button>
           </div>
         )}
       </div>

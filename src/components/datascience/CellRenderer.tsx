@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { 
   Play, 
@@ -17,7 +17,8 @@ import {
   FileText,
   Tag,
   MessageSquare,
-  Search
+  Search,
+  FileCode
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import CodeMirror from '@uiw/react-codemirror'
@@ -46,10 +47,12 @@ interface CellRendererProps {
   onCut?: (cellId: string) => void
   onMerge?: (cellId: string, direction: 'above' | 'below') => void
   onSplit?: (cellId: string) => void
-  onAddComment?: (cellId: string) => void
+  onAddComment?: (cellId: string, content?: string) => void
   onAddTag?: (cellId: string) => void
   onSearch?: (cellId: string) => void
   onTitleChange?: (cellId: string, title: string) => void
+  canEdit?: boolean
+  canExecute?: boolean
 }
 
 export function CellRenderer({
@@ -75,9 +78,27 @@ export function CellRenderer({
   onAddTag,
   onSearch
   ,
-  onTitleChange
+  onTitleChange,
+  canEdit = true,
+  canExecute = true
 }: CellRendererProps) {
   const [showOutput, setShowOutput] = useState(true)
+  const [showComments, setShowComments] = useState(false)
+  const [commentsLimit, setCommentsLimit] = useState(5)
+  const [newComment, setNewComment] = useState('')
+  const [codeLanguageExtensions, setCodeLanguageExtensions] = useState<any[]>([])
+
+  useEffect(() => {
+    let isMounted = true
+    const dynamicImport = (specifier: string) => (new Function('s', 'return import(s)'))(specifier)
+    const spec = '@codemirror/lang-' + 'python'
+    dynamicImport(spec)
+      .then((mod: any) => {
+        if (isMounted && mod?.python) setCodeLanguageExtensions([mod.python()])
+      })
+      .catch(() => { if (isMounted) setCodeLanguageExtensions([]) })
+    return () => { isMounted = false }
+  }, [])
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -107,9 +128,17 @@ export function CellRenderer({
         <div className="border-0">
           <CodeMirror
             value={cell.content}
-            height="200px"
+            height="auto"
             theme={isDark ? oneDark : undefined}
-            extensions={isDark ? [oneDark] : [lightEditorTheme]}
+            extensions={[
+              EditorView.lineWrapping,
+              EditorView.theme({ 
+                '&': { height: 'auto', minHeight: '160px' },
+                '.cm-scroller': { overflow: 'visible' }
+              }),
+              ...(isDark ? [] : [lightEditorTheme]),
+              ...codeLanguageExtensions
+            ]}
             basicSetup={{
               lineNumbers: true,
               highlightActiveLineGutter: true,
@@ -119,7 +148,7 @@ export function CellRenderer({
             }}
             onChange={(val) => onContentChange(cell.id, val)}
             className="bg-transparent"
-            style={{ border: 'none', outline: 'none' }}
+            style={{ border: 'none', outline: 'none', minHeight: 160 }}
           />
         </div>
 
@@ -136,24 +165,13 @@ export function CellRenderer({
     )
   }
 
-  const renderMarkdownCell = () => (
-    <div className="space-y-0">
-      <textarea
-        value={cell.content}
-        onChange={(e) => onContentChange(cell.id, e.target.value)}
-        className="w-full min-h-[80px] p-4 border-0 bg-transparent resize-none focus:outline-none focus:ring-0 placeholder-gray-400 dark:placeholder-gray-500"
-        placeholder="Write your markdown here..."
-        onFocus={() => onFocus(cell.id)}
-        style={{ 
-          lineHeight: '1.6'
-        }}
-      />
-      
-      {cell.content.trim() && (
-        <div className="border-t border-gray-200 dark:border-gray-700 p-4">
-          <div className="prose max-w-none dark:prose-invert">
-            <div dangerouslySetInnerHTML={{ 
-              __html: cell.content
+  const renderMarkdownCell = () => {
+    const rendered = (
+      <div className="p-2">
+        <div className="prose max-w-none dark:prose-invert">
+          <div
+            dangerouslySetInnerHTML={{
+              __html: (cell.content || '')
                 .replace(/\n/g, '<br>')
                 .replace(/# (.*)/g, '<h1 class="text-2xl font-bold mb-4">$1</h1>')
                 .replace(/## (.*)/g, '<h2 class="text-xl font-semibold mb-3">$1</h2>')
@@ -161,22 +179,50 @@ export function CellRenderer({
                 .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
                 .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
                 .replace(/`(.*?)`/g, '<code class="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm font-mono">$1</code>')
-            }} />
-          </div>
+            }}
+          />
         </div>
-      )}
-    </div>
-  )
+      </div>
+    )
+
+    if (isActive || isSelected) {
+      return (
+        <div className="space-y-0">
+          <textarea
+            value={cell.content}
+            onChange={(e) => onContentChange(cell.id, e.target.value)}
+            onInput={(e) => { const el = e.currentTarget; el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }}
+            className="w-full p-2 border-0 bg-transparent resize-none focus:outline-none focus:ring-0 placeholder-gray-400 dark:placeholder-gray-500"
+            placeholder="Write your markdown here..."
+            onFocus={() => onFocus(cell.id)}
+            style={{
+              lineHeight: '1.6',
+              minHeight: '160px'
+            }}
+          />
+        </div>
+      )
+    }
+
+    // Not selected: show rendered output only (empty placeholder if no content)
+    return cell.content.trim() ? rendered : (
+      <div className="p-4 text-sm text-gray-400 dark:text-gray-500" onClick={() => onFocus(cell.id)}>
+        Click to add markdown…
+      </div>
+    )
+  }
 
   const renderRawCell = () => (
     <textarea
       value={cell.content}
       onChange={(e) => onContentChange(cell.id, e.target.value)}
-      className="w-full min-h-[80px] p-4 border-0 bg-transparent resize-none focus:outline-none focus:ring-0 placeholder-gray-400 dark:placeholder-gray-500"
+      onInput={(e) => { const el = e.currentTarget; el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }}
+      className="w-full p-4 border-0 bg-transparent resize-none focus:outline-none focus:ring-0 placeholder-gray-400 dark:placeholder-gray-500"
       placeholder="Raw text content..."
       onFocus={() => onFocus(cell.id)}
       style={{ 
-        lineHeight: '1.6'
+        lineHeight: '1.6',
+        minHeight: '160px'
       }}
     />
   )
@@ -204,20 +250,18 @@ export function CellRenderer({
   return (
     <div
       className={cn(
-        "group relative transition-all duration-200 border-2 rounded-md",
-        // Default background for all cells (like hover state)
-        "bg-gray-50 dark:bg-gray-800/50",
-        // Enhanced hover state
-        "hover:bg-gray-100 dark:hover:bg-gray-800",
+        "group relative transition-all duration-200 rounded-md",
+        // Background only for structured cells; free-form for markdown/raw
+        cell.type === 'markdown' || cell.type === 'raw' ? "bg-transparent hover:bg-transparent" : "bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800",
         // Blue border for active/selected cells
-        isActive || isSelected ? "border-blue-500 dark:border-blue-400" : "border-transparent",
+        "",
         // Active state background
-        isActive ? "bg-blue-50/50 dark:bg-blue-900/20" : "",
+        (cell.type === 'markdown' || cell.type === 'raw') ? "" : (isActive ? "bg-blue-50/50 dark:bg-blue-900/20" : ""),
         // Selected state background
-        isSelected ? "bg-blue-100/40 dark:bg-blue-900/30" : "",
+        (cell.type === 'markdown' || cell.type === 'raw') ? "" : (isSelected ? "bg-blue-100/40 dark:bg-blue-900/30" : ""),
         // Status-based backgrounds override default
-        cell.status === 'running' ? "bg-yellow-50/70 dark:bg-yellow-900/30" : "",
-        cell.status === 'error' ? "bg-red-50/70 dark:bg-red-900/30" : ""
+        (cell.type === 'markdown' || cell.type === 'raw') ? "" : (cell.status === 'running' ? "bg-yellow-50/70 dark:bg-yellow-900/30" : ""),
+        (cell.type === 'markdown' || cell.type === 'raw') ? "" : (cell.status === 'error' ? "bg-red-50/70 dark:bg-red-900/30" : "")
       )}
       onClick={() => onFocus(cell.id)}
     >
@@ -238,37 +282,11 @@ export function CellRenderer({
                 e.stopPropagation()
                 onExecute(cell.id)
               }}
-              disabled={cell.type !== 'code' || cell.status === 'running'}
+              disabled={!canExecute || cell.type !== 'code' || cell.status === 'running'}
               className="h-6 w-6 p-0 hover:bg-blue-100 dark:hover:bg-blue-900"
             >
               <Play className="h-3 w-3" />
             </Button>
-            {onCopy && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onCopy(cell.id)
-                }}
-                className="h-6 w-6 p-0 hover:bg-gray-200 dark:hover:bg-gray-700"
-              >
-                <Copy className="h-3 w-3" />
-              </Button>
-            )}
-            {onCut && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onCut(cell.id)
-                }}
-                className="h-6 w-6 p-0 hover:bg-gray-200 dark:hover:bg-gray-700"
-              >
-                <Scissors className="h-3 w-3" />
-              </Button>
-            )}
             <Button
               size="sm"
               variant="ghost"
@@ -291,19 +309,6 @@ export function CellRenderer({
             >
               <ArrowDown className="h-3 w-3" />
             </Button>
-            {onSplit && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onSplit(cell.id)
-                }}
-                className="h-6 w-6 p-0 hover:bg-gray-200 dark:hover:bg-gray-700"
-              >
-                <FileText className="h-3 w-3" />
-              </Button>
-            )}
             <Button
               size="sm"
               variant="ghost"
@@ -320,10 +325,15 @@ export function CellRenderer({
 
         {/* Cell Content Area */}
         <div className="flex-1 min-w-0">
-          {/* Cell Type Indicator */}
-          <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-700">
+          {/* Cell Type Indicator - hidden for free-form markdown/raw */}
+          {cell.type !== 'markdown' && cell.type !== 'raw' && (
+          <div className="flex items-center justify-between px-2 py-1 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
+                {/* Small icon before type when Python (code) */}
+                {cell.type === 'code' && (
+                  <FileCode className="h-3 w-3 text-gray-500 dark:text-gray-400" />
+                )}
                 <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                   {cell.type}
                 </span>
@@ -340,12 +350,13 @@ export function CellRenderer({
                 )}
               </div>
 
-              {/* Editable Title */}
+              {/* Editable Title (disabled if no edit) */}
               <input
                 value={cell.title || ''}
                 placeholder="Untitled"
                 onChange={(e) => onTitleChange && onTitleChange(cell.id, e.target.value)}
                 className="text-sm bg-transparent border-b border-transparent focus:border-blue-400 outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+                disabled={!canEdit}
               />
               {cell.tags && cell.tags.length > 0 && (
                 <div className="flex items-center space-x-1">
@@ -372,17 +383,24 @@ export function CellRenderer({
                 </Button>
               )}
               {onAddComment && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onAddComment(cell.id)
-                  }}
-                  className="h-6 w-6 p-0 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
-                >
-                  <MessageSquare className="h-3 w-3" />
-                </Button>
+                <div className="relative">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setShowComments(true)
+                    }}
+                    className="h-6 w-6 p-0 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 relative"
+                  >
+                    <MessageSquare className="h-3 w-3" />
+                  </Button>
+                  {(cell.comments && cell.comments.length > 0) && (
+                    <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[9px] leading-none px-1.5 py-0.5 rounded-full">
+                      {cell.comments.length}
+                    </span>
+                  )}
+                </div>
               )}
               {onAddTag && (
                 <Button
@@ -413,14 +431,51 @@ export function CellRenderer({
               )}
             </div>
           </div>
+          )}
 
           {/* Cell Content */}
-          <div className={cell.type === 'code' ? '' : 'p-4'}>
+          <div className={cell.type === 'code' ? '' : ''}>
             {cell.type === 'code' ? renderCodeCell() : 
              cell.type === 'markdown' ? renderMarkdownCell() : 
              cell.type === 'sql' ? renderSQLCell() :
-             renderRawCell()}
+             /* Treat RAW like Markdown */
+             renderMarkdownCell()}
           </div>
+
+      {/* Comments Drawer */}
+      {showComments && (
+        <div className="fixed inset-0 z-50" onClick={() => setShowComments(false)}>
+          <div className="absolute inset-0 bg-black/30" />
+          <div className="absolute top-0 right-0 h-full w-96 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-xl flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 font-medium text-sm">Comments</div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              {(cell.comments || []).slice(0, commentsLimit).map((c) => (
+                <div key={c.id} className="p-2 rounded border border-gray-200 dark:border-gray-700 text-sm">
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{c.author} • {new Date(c.timestamp).toLocaleString()}</div>
+                  <div className="text-gray-800 dark:text-gray-200">{c.content}</div>
+                </div>
+              ))}
+              {((cell.comments?.length || 0) > commentsLimit) && (
+                <Button size="sm" variant="outline" className="w-full" onClick={() => setCommentsLimit(commentsLimit + 5)}>Load more</Button>
+              )}
+              {((cell.comments?.length || 0) === 0) && (
+                <div className="text-xs text-gray-500">No comments yet.</div>
+              )}
+            </div>
+            <div className="p-3 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-2">
+                <input
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Write a comment..."
+                  className="flex-1 h-9 px-2 rounded border border-gray-300 dark:border-gray-600 bg-transparent text-sm focus:outline-none"
+                />
+                <Button size="sm" className="h-9" onClick={() => { if (newComment.trim()) { onAddComment?.(cell.id, newComment.trim()); setNewComment(''); setCommentsLimit((cell.comments?.length || 0) + 1) } }}>Send</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
         </div>
       </div>
     </div>

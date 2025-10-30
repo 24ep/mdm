@@ -35,6 +35,7 @@ import { DraggableAttributeList } from '@/components/attribute-management/Dragga
 import { EnhancedAttributeDetailDrawer } from '@/components/attribute-management/EnhancedAttributeDetailDrawer'
 import { getStorageProviderIcon, getStorageProviderLabel } from '@/lib/storage-provider-icons'
 import { DataModelTreeView } from '@/components/data-model/DataModelTreeView'
+import LayoutConfig from '@/components/studio/layout-config'
 
 export default function SpaceSettingsPage() {
   const router = useRouter()
@@ -44,6 +45,7 @@ export default function SpaceSettingsPage() {
   const initialTabRaw = (searchParams.get('tab') as string) || 'details'
   const initialTab = allowedTabs.includes(initialTabRaw) ? initialTabRaw : 'details'
   const { spaces, currentSpace, refreshSpaces } = useSpace()
+  const studioMode = (searchParams.get('studio') as string) || null
   const { data: session } = useSession()
 
   // Spaces Editor: pages/templates management for this space
@@ -502,14 +504,14 @@ export default function SpaceSettingsPage() {
     } else {
       // Internal - proceed with existing flow
       setShowDataModelTypeDialog(false)
-      setEditingModel(null)
-      setModelForm({ name: '', display_name: '', description: '', slug: '' })
-      setModelIcon('')
-      setModelPrimaryColor('#1e40af')
-      setModelTags([])
-      setModelGroupFolder('')
-      setModelOwnerName('')
-      setShowModelDrawer(true)
+    setEditingModel(null)
+    setModelForm({ name: '', display_name: '', description: '', slug: '' })
+    setModelIcon('')
+    setModelPrimaryColor('#1e40af')
+    setModelTags([])
+    setModelGroupFolder('')
+    setModelOwnerName('')
+    setShowModelDrawer(true)
     }
   }
 
@@ -1065,11 +1067,11 @@ export default function SpaceSettingsPage() {
             <div className="flex items-center gap-3">
               <Building2 className="h-5 w-5 text-muted-foreground" />
               <div>
-                <h1 className="text-xl font-bold">Space Settings</h1>
+            <h1 className="text-xl font-bold">Space Settings</h1>
                 <p className="text-sm text-muted-foreground">Configure your workspace</p>
               </div>
-            </div>
-            
+          </div>
+
             <div className="h-6 w-px bg-border" />
             
             {/* Space dropdown */}
@@ -1219,8 +1221,8 @@ export default function SpaceSettingsPage() {
 
         {/* Main Content Area */}
         <div className="flex-1 overflow-y-auto">
-            <div className="p-4 flat-cards">
-              <div className="space-y-6">
+            <div>
+            <div className="space-y-6">
               <TabsContent value="details" className="space-y-6 w-full">
                 {/* Space Overview Header */}
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
@@ -1274,9 +1276,9 @@ export default function SpaceSettingsPage() {
                         <CardTitle className="flex items-center space-x-2 text-lg">
                           <Settings className="h-5 w-5" />
                           <span>Basic Information</span>
-                        </CardTitle>
+                    </CardTitle>
                         <CardDescription>Update your space's core details and configuration</CardDescription>
-                      </CardHeader>
+                  </CardHeader>
                       <CardContent className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <div className="space-y-2">
@@ -1286,17 +1288,17 @@ export default function SpaceSettingsPage() {
                               defaultValue={selectedSpace.name} 
                               className="h-11 border border-input bg-background"
                               onBlur={async (e) => {
-                                const name = e.currentTarget.value.trim()
-                                if (!name || name === selectedSpace.name) return
-                                const res = await fetch(`/api/spaces/${selectedSpace.id}`, {
-                                  method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ name })
-                                })
-                                if (res.ok) { toast.success('Space name updated'); await refreshSpaces() } else { toast.error('Failed to update name') }
+                        const name = e.currentTarget.value.trim()
+                        if (!name || name === selectedSpace.name) return
+                        const res = await fetch(`/api/spaces/${selectedSpace.id}`, {
+                          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ name })
+                        })
+                        if (res.ok) { toast.success('Space name updated'); await refreshSpaces() } else { toast.error('Failed to update name') }
                               }} 
                             />
                             <p className="text-xs text-muted-foreground">The display name for your space</p>
-                          </div>
+                    </div>
                           <div className="space-y-2">
                             <Label htmlFor="space-slug" className="text-sm font-medium">Custom URL (Slug)</Label>
                             <div className="relative">
@@ -1307,13 +1309,13 @@ export default function SpaceSettingsPage() {
                                 className="h-11 pl-8 border border-input bg-background"
                                 placeholder="my-space"
                                 onBlur={async (e) => {
-                                  const slug = e.currentTarget.value.trim()
-                                  if (slug === (selectedSpace.slug || '')) return
-                                  const res = await fetch(`/api/spaces/${selectedSpace.id}`, {
-                                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ slug })
-                                  })
-                                  if (res.ok) { toast.success('Slug updated'); await refreshSpaces() } else { toast.error('Failed to update slug') }
+                        const slug = e.currentTarget.value.trim()
+                        if (slug === (selectedSpace.slug || '')) return
+                        const res = await fetch(`/api/spaces/${selectedSpace.id}`, {
+                          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ slug })
+                        })
+                        if (res.ok) { toast.success('Slug updated'); await refreshSpaces() } else { toast.error('Failed to update slug') }
                                 }} 
                               />
                             </div>
@@ -1340,66 +1342,66 @@ export default function SpaceSettingsPage() {
                             }} 
                           />
                           <p className="text-xs text-muted-foreground">A brief description of your space's purpose</p>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    </div>
+                  </CardContent>
+                </Card>
                   </TabsContent>
 
                   <TabsContent value="login" className="space-y-6 mt-6">
                     <Card className="border-0 shadow-sm bg-card">
                       <CardHeader className="pb-4">
                         <CardTitle className="flex items-center space-x-2 text-lg">
-                          <Layout className="h-5 w-5" />
+                      <Layout className="h-5 w-5" />
                           <span>Login Page Customization</span>
-                        </CardTitle>
+                    </CardTitle>
                         <CardDescription>Customize the appearance of your space's login screen</CardDescription>
-                      </CardHeader>
+                  </CardHeader>
                       <CardContent className="space-y-6">
                         <div className="space-y-2">
                           <Label htmlFor="login-image-url" className="text-sm font-medium">Login Image URL</Label>
-                          <Input
-                            id="login-image-url"
-                            defaultValue={(() => {
-                              const features = spaceDetails?.features || null
-                              try { return typeof features === 'string' ? JSON.parse(features)?.login_image_url || '' : (features?.login_image_url || '') } catch { return '' }
-                            })()}
-                            placeholder="https://.../image.jpg"
+                      <Input
+                        id="login-image-url"
+                        defaultValue={(() => {
+                          const features = spaceDetails?.features || null
+                          try { return typeof features === 'string' ? JSON.parse(features)?.login_image_url || '' : (features?.login_image_url || '') } catch { return '' }
+                        })()}
+                        placeholder="https://.../image.jpg"
                             className="border border-input bg-background"
-                            onBlur={async (e) => {
-                              const url = e.currentTarget.value.trim()
-                              setSavingLoginImage(true)
-                              try {
-                                // Merge into existing features JSON
-                                let features: any = {}
-                                if (spaceDetails?.features) {
-                                  if (typeof spaceDetails.features === 'string') {
-                                    try { features = JSON.parse(spaceDetails.features) || {} } catch { features = {} }
-                                  } else {
-                                    features = spaceDetails.features || {}
-                                  }
-                                }
-                                features.login_image_url = url || null
-                                const res = await fetch(`/api/spaces/${selectedSpace.id}`, {
-                                  method: 'PUT',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ features })
-                                })
-                                if (res.ok) {
-                                  toast.success('Login image saved')
-                                  const j = await res.json().catch(()=>({}))
-                                  setSpaceDetails(j.space || { ...spaceDetails, features })
-                                } else {
-                                  toast.error('Failed to save login image')
-                                }
-                              } finally {
-                                setSavingLoginImage(false)
+                        onBlur={async (e) => {
+                          const url = e.currentTarget.value.trim()
+                          setSavingLoginImage(true)
+                          try {
+                            // Merge into existing features JSON
+                            let features: any = {}
+                            if (spaceDetails?.features) {
+                              if (typeof spaceDetails.features === 'string') {
+                                try { features = JSON.parse(spaceDetails.features) || {} } catch { features = {} }
+                              } else {
+                                features = spaceDetails.features || {}
                               }
-                            }}
-                          />
+                            }
+                            features.login_image_url = url || null
+                            const res = await fetch(`/api/spaces/${selectedSpace.id}`, {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ features })
+                            })
+                            if (res.ok) {
+                              toast.success('Login image saved')
+                              const j = await res.json().catch(()=>({}))
+                              setSpaceDetails(j.space || { ...spaceDetails, features })
+                            } else {
+                              toast.error('Failed to save login image')
+                            }
+                          } finally {
+                            setSavingLoginImage(false)
+                          }
+                        }}
+                      />
                           <p className="text-xs text-muted-foreground">Shown on the left side of the space-specific login page.</p>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    </div>
+                  </CardContent>
+                </Card>
                   </TabsContent>
                 </Tabs>
               </TabsContent>
@@ -1436,21 +1438,21 @@ export default function SpaceSettingsPage() {
                   </TabsContent>
 
                   <TabsContent value="activity" className="space-y-6">
-                    <Card>
-                      <CardHeader>
+                <Card>
+                  <CardHeader>
                         <CardTitle>Member Activity</CardTitle>
                         <CardDescription>
                           Track member activity and engagement in this space.
                         </CardDescription>
-                      </CardHeader>
+                  </CardHeader>
                       <CardContent>
                         <div className="text-center py-8 text-muted-foreground">
                           <UsersIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
                           <p>Activity tracking coming soon...</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
                   <TabsContent value="audit" className="space-y-6">
                     <MemberAuditLog
@@ -1464,10 +1466,20 @@ export default function SpaceSettingsPage() {
 
               
 
-              <TabsContent value="space-studio" className="space-y-6 w-full">
-                <SpaceStudio 
-                  spaceId={currentSpace?.id || ''}
-                />
+              <TabsContent value="space-studio" className={studioMode === 'layout' ? "space-y-4 w-full" : "space-y-4 w-full p-4"}>
+                {studioMode !== 'layout' && (
+                  <div className="border-b pb-2">
+                    <h2 className="text-lg font-semibold">Space Studio</h2>
+                    <p className="text-sm text-muted-foreground">Configure layout and pages for this space.</p>
+                  </div>
+                )}
+                {studioMode === 'layout' ? (
+                  <LayoutConfig spaceId={currentSpace?.id || ''} />
+                ) : (
+                  <SpaceStudio 
+                    spaceId={currentSpace?.id || ''}
+                  />
+                )}
               </TabsContent>
 
               <TabsContent value="data-model" className="space-y-6 w-full">
@@ -3193,12 +3205,10 @@ export default function SpaceSettingsPage() {
                   </CardContent>
                 </Card>
               </TabsContent>
-              </div>
             </div>
+          </div>
             {/* <style jsx>{`
-              .flat-cards :global(.bg-card) { background-color: transparent !important; }
-              .flat-cards :global(.shadow-sm) { box-shadow: none !important; }
-              .flat-cards :global(.border) { border-width: 0 !important; }
+              
               :global(input:not([class*="border"])) { 
                 border: 1px solid hsl(var(--border)) !important; 
                 background-color: hsl(var(--background)) !important; 

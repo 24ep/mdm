@@ -20,6 +20,7 @@ export interface SpacesEditorConfig {
   id: string
   spaceId: string
   pages: SpacesEditorPage[]
+  layoutConfig?: any
   sidebarConfig: {
     items: Array<{
       id: string
@@ -104,6 +105,7 @@ export class SpacesEditorManager {
       id: `config_${spaceId}_${Date.now()}`,
       spaceId,
       pages: [],
+      layoutConfig: {},
       sidebarConfig: {
         items: [],
         background: '#ffffff',
@@ -117,6 +119,27 @@ export class SpacesEditorManager {
 
     await this.saveSpacesEditorConfig(config)
     return config
+  }
+
+  /**
+   * Get only the layout configuration for a space
+   */
+  static async getLayoutConfig(spaceId: string): Promise<any | null> {
+    const config = await this.getSpacesEditorConfig(spaceId)
+    return config?.layoutConfig || null
+  }
+
+  /**
+   * Save only the layout configuration for a space
+   */
+  static async saveLayoutConfig(spaceId: string, layoutConfig: any): Promise<void> {
+    const config = (await this.getSpacesEditorConfig(spaceId)) || (await this.createDefaultConfig(spaceId))
+    const next: SpacesEditorConfig = {
+      ...config,
+      layoutConfig,
+      updatedAt: new Date().toISOString(),
+    }
+    await this.saveSpacesEditorConfig(next)
   }
 
   /**

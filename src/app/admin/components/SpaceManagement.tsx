@@ -27,8 +27,11 @@ import {
   Unlock,
   Star,
   Archive,
-  RefreshCw
+  RefreshCw,
+  Grid3X3,
+  List
 } from 'lucide-react'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 interface Space {
   id: string
@@ -56,6 +59,7 @@ export function SpaceManagement() {
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [selectedSpace, setSelectedSpace] = useState<Space | null>(null)
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid')
 
   const [newSpace, setNewSpace] = useState({
     name: '',
@@ -179,7 +183,7 @@ export function SpaceManagement() {
   })
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
@@ -191,6 +195,28 @@ export function SpaceManagement() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <div className="flex items-center rounded-md border">
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'ghost'}
+              size="sm"
+              className="rounded-none"
+              onClick={() => setViewMode('grid')}
+              aria-pressed={viewMode === 'grid'}
+              title="Grid view"
+            >
+              <Grid3X3 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'table' ? 'default' : 'ghost'}
+              size="sm"
+              className="rounded-none"
+              onClick={() => setViewMode('table')}
+              aria-pressed={viewMode === 'table'}
+              title="Table view"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
           <Button variant="outline" size="sm" onClick={loadSpaces} disabled={isLoading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
@@ -293,112 +319,196 @@ export function SpaceManagement() {
       </div>
 
       {/* Spaces List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredSpaces.map(space => (
-          <Card key={space.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {space.icon && (
-                    <span className="text-2xl">{space.icon}</span>
-                  )}
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      {space.name}
-                      {space.isDefault && (
-                        <Badge variant="default" className="text-xs">Default</Badge>
-                      )}
-                    </CardTitle>
-                    <CardDescription>
-                      {space.slug} • {space.memberCount} members
-                    </CardDescription>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setSelectedSpace(space)
-                      setShowEditDialog(true)
-                    }}
-                  >
-                    <Edit className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => deleteSpace(space.id)}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  {space.description}
-                </p>
-                
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1">
-                      <Users className="h-3 w-3" />
-                      {space.memberCount}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Database className="h-3 w-3" />
-                      {space.dataModelCount}
+      {viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredSpaces.map(space => (
+            <Card key={space.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {space.icon && (
+                      <span className="text-2xl">{space.icon}</span>
+                    )}
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        {space.name}
+                        {space.isDefault && (
+                          <Badge variant="default" className="text-xs">Default</Badge>
+                        )}
+                      </CardTitle>
+                      <CardDescription>
+                        {space.slug} • {space.memberCount} members
+                      </CardDescription>
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setSelectedSpace(space)
+                        setShowEditDialog(true)
+                      }}
+                    >
+                      <Edit className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => deleteSpace(space.id)}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    {space.description}
+                  </p>
+                  
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-1">
+                        <Users className="h-3 w-3" />
+                        {space.memberCount}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Database className="h-3 w-3" />
+                        {space.dataModelCount}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {space.isActive ? (
+                        <Badge variant="outline" className="text-green-600">Active</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-red-600">Inactive</Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => toggleSpaceStatus(space.id, !space.isActive)}
+                    >
+                      {space.isActive ? (
+                        <>
+                          <Lock className="h-3 w-3 mr-1" />
+                          Deactivate
+                        </>
+                      ) : (
+                        <>
+                          <Unlock className="h-3 w-3 mr-1" />
+                          Activate
+                        </>
+                      )}
+                    </Button>
+                    {!space.isDefault && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setDefaultSpace(space.id)}
+                      >
+                        <Star className="h-3 w-3 mr-1" />
+                        Set Default
+                      </Button>
+                    )}
+                    <Button size="sm" variant="outline">
+                      <Settings className="h-3 w-3 mr-1" />
+                      Settings
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-md border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Slug</TableHead>
+                <TableHead>Members</TableHead>
+                <TableHead>Data Models</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Default</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredSpaces.map(space => (
+                <TableRow key={space.id}>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      {space.icon && <span className="text-xl leading-none">{space.icon}</span>}
+                      <span>{space.name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{space.slug}</TableCell>
+                  <TableCell>{space.memberCount}</TableCell>
+                  <TableCell>{space.dataModelCount}</TableCell>
+                  <TableCell>
                     {space.isActive ? (
                       <Badge variant="outline" className="text-green-600">Active</Badge>
                     ) : (
                       <Badge variant="outline" className="text-red-600">Inactive</Badge>
                     )}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => toggleSpaceStatus(space.id, !space.isActive)}
-                  >
-                    {space.isActive ? (
-                      <>
-                        <Lock className="h-3 w-3 mr-1" />
-                        Deactivate
-                      </>
-                    ) : (
-                      <>
-                        <Unlock className="h-3 w-3 mr-1" />
-                        Activate
-                      </>
+                  </TableCell>
+                  <TableCell>
+                    {space.isDefault && (
+                      <Badge variant="default" className="text-xs">Default</Badge>
                     )}
-                  </Button>
-                  {!space.isDefault && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setDefaultSpace(space.id)}
-                    >
-                      <Star className="h-3 w-3 mr-1" />
-                      Set Default
-                    </Button>
-                  )}
-                  <Button size="sm" variant="outline">
-                    <Settings className="h-3 w-3 mr-1" />
-                    Settings
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => toggleSpaceStatus(space.id, !space.isActive)}
+                      >
+                        {space.isActive ? 'Deactivate' : 'Activate'}
+                      </Button>
+                      {!space.isDefault && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setDefaultSpace(space.id)}
+                        >
+                          Set Default
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setSelectedSpace(space)
+                          setShowEditDialog(true)
+                        }}
+                        aria-label="Edit"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => deleteSpace(space.id)}
+                        aria-label="Delete"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       {/* Edit Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>

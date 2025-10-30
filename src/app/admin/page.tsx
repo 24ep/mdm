@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -34,7 +34,7 @@ import {
 } from 'lucide-react'
 import { AdminLayout } from '@/components/admin/AdminLayout'
 import { BigQueryInterface } from './components/BigQueryInterface'
-import { DeepNoteLayoutRefactored as DeepNoteLayout } from '@/components/datascience'
+import { ProjectsList } from '@/components/datascience/ProjectsList'
 import { AttachmentManager } from './components/AttachmentManager'
 import { UserManagement } from './components/UserManagement'
 import { SystemSettings } from './components/SystemSettings'
@@ -62,6 +62,7 @@ import { KernelManagement } from './components/KernelManagement'
 
 export default function AdminConsolePage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState('overview')
   const [selectedSpace, setSelectedSpace] = useState<string>('')
   const [error, setError] = useState<string | null>(null)
@@ -76,6 +77,22 @@ export default function AdminConsolePage() {
     window.addEventListener('error', handleError)
     return () => window.removeEventListener('error', handleError)
   }, [])
+
+  // Sync activeTab with URL (?tab=...)
+  useEffect(() => {
+    const urlTab = searchParams?.get('tab')
+    if (urlTab && urlTab !== activeTab) {
+      setActiveTab(urlTab)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab)
+    const params = new URLSearchParams(Array.from(searchParams?.entries?.() || []))
+    params.set('tab', tab)
+    router.replace(`?${params.toString()}`)
+  }
 
   const handleBackToSpaces = () => {
     router.push('/spaces')
@@ -105,7 +122,7 @@ export default function AdminConsolePage() {
   return (
     <AdminLayout
       activeTab={activeTab}
-      onTabChange={setActiveTab}
+      onTabChange={handleTabChange}
       selectedSpace={selectedSpace}
       onSpaceChange={setSelectedSpace}
     >
@@ -266,53 +283,7 @@ export default function AdminConsolePage() {
         {activeTab === 'spaces' && <SpaceManagement />}
         {activeTab === 'attachments' && <AttachmentManager />}
         {activeTab === 'bigquery' && <BigQueryInterface />}
-        {activeTab === 'notebook' && (
-          <div className="h-screen flex flex-col">
-            <DeepNoteLayout
-              initialNotebook={{
-                id: 'admin-notebook-1',
-                name: 'Admin Data Science Notebook',
-                description: 'Advanced data science notebook for administrative analysis',
-                cells: [
-                  {
-                    id: 'cell-1',
-                    type: 'markdown',
-                    content: '# Admin Data Science Notebook\n\nThis notebook is available for administrative data analysis and reporting.',
-                    status: 'idle',
-                    timestamp: new Date(),
-                    metadata: {}
-                  },
-                  {
-                    id: 'cell-2',
-                    type: 'code',
-                    content: '# Import libraries\nimport pandas as pd\nimport numpy as np\nimport matplotlib.pyplot as plt\n\nprint("Admin notebook ready!")',
-                    status: 'idle',
-                    timestamp: new Date(),
-                    metadata: {}
-                  }
-                ],
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                tags: ['admin', 'data-science'],
-                isPublic: false,
-                author: 'Admin',
-                theme: 'light',
-                settings: {
-                  autoSave: true,
-                  executionMode: 'sequential',
-                  showLineNumbers: true,
-                  fontSize: 14,
-                  tabSize: 2,
-                  wordWrap: true
-                }
-              }}
-              enableCollaboration={true}
-              enableFileManager={true}
-              enableExport={true}
-              enableVersionControl={true}
-            />
-          </div>
-        )}
+        {activeTab === 'notebook' && <ProjectsList />}
         {activeTab === 'kernels' && <KernelManagement />}
         {activeTab === 'ai-analyst' && <AIAnalyst />}
         {activeTab === 'integrations' && <IntegrationHub />}

@@ -99,7 +99,7 @@ export function UserManagement() {
   useEffect(() => {
     loadUsers()
     loadSpaces()
-  }, [page, limit, roleFilter, activeFilter, spaceFilter])
+  }, [page, limit, roleFilter, activeFilter, spaceFilter, search])
 
   const loadUsers = async () => {
     setLoading(true)
@@ -126,8 +126,14 @@ export function UserManagement() {
         })) || []
         setUsers(transformedUsers)
         setTotal(data.total || 0)
+        setError(null)
       } else {
-        setError('Failed to load users')
+        let message = 'Failed to load users'
+        try {
+          const err = await response.json()
+          if (err?.error) message = err.error
+        } catch {}
+        setError(`${response.status} ${message}`)
       }
     } catch (error) {
       console.error('Error loading users:', error)
@@ -268,7 +274,7 @@ export function UserManagement() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">

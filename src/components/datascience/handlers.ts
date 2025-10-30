@@ -31,6 +31,8 @@ export interface NotebookHandlers {
   handleImport: () => void
   handleOpenFile: (filePath: string) => void
   handleNewFile: () => void
+  handleCreateFile: (name: string) => void
+  handleCreateFolder: (name: string) => void
   handleNewFolder: () => void
   handleUploadFile: () => void
   handleDeleteFile: (filePath: string) => void
@@ -61,7 +63,7 @@ export interface NotebookHandlers {
   handlePasteCell: (cellId: string) => void
   handleMergeCells: (cellId: string, direction: 'above' | 'below') => void
   handleSplitCell: (cellId: string) => void
-  handleAddComment: (cellId: string) => void
+  handleAddComment: (cellId: string, content?: string) => void
   handleAddTag: (cellId: string) => void
   handleSearchCell: (cellId: string) => void
   handleRenameCellTitle: (cellId: string, title: string) => void
@@ -408,15 +410,48 @@ export function createNotebookHandlers(
   }
 
   const handleOpenFile = (filePath: string) => {
-    toast.success(`Opening file: ${filePath}`)
+    const ext = filePath.split('.').pop()?.toLowerCase()
+    if (ext === 'csv') {
+      toast.success(`Opening spreadsheet: ${filePath}`)
+    } else if (ext === 'md') {
+      toast.success(`Opening markdown: ${filePath}`)
+    } else if (ext === 'ipynb') {
+      toast.success(`Opening notebook: ${filePath}`)
+    } else {
+      toast.success(`Opening file: ${filePath}`)
+    }
   }
 
   const handleNewFile = () => {
-    toast.success('Creating new file')
+    const name = prompt('Enter file name (e.g., notebook.ipynb, data.csv, notes.md):')
+    if (!name) return
+    const now = new Date()
+    setFiles((prev: FileItem[]) => [{ name, type: 'file', modified: now }, ...prev])
+    toast.success(`Created ${name}`)
+  }
+
+  const handleCreateFile = (name: string) => {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    const now = new Date()
+    setFiles((prev: FileItem[]) => [{ name: trimmed, type: 'file', modified: now }, ...prev])
+    toast.success(`Created ${trimmed}`)
   }
 
   const handleNewFolder = () => {
-    toast.success('Creating new folder')
+    const name = prompt('Enter folder name:')
+    if (!name) return
+    const now = new Date()
+    setFiles((prev: FileItem[]) => [{ name, type: 'folder', modified: now }, ...prev])
+    toast.success(`Folder "${name}" created`)
+  }
+
+  const handleCreateFolder = (name: string) => {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    const now = new Date()
+    setFiles((prev: FileItem[]) => [{ name: trimmed, type: 'folder', modified: now }, ...prev])
+    toast.success(`Folder "${trimmed}" created`)
   }
 
   const handleUploadFile = () => {
@@ -436,6 +471,21 @@ export function createNotebookHandlers(
   }
 
   const handleMoveFile = (filePath: string, newPath: string) => {
+    // Support simple reordering via newPath like "index:NUMBER"
+    if (newPath.startsWith('index:')) {
+      const index = parseInt(newPath.split(':')[1] || '0', 10)
+      setFiles((prev: FileItem[]) => {
+        const list = [...prev]
+        const from = list.findIndex(f => f.name === filePath)
+        if (from === -1) return prev
+        const [item] = list.splice(from, 1)
+        const to = Math.max(0, Math.min(index, list.length))
+        list.splice(to, 0, item)
+        return list
+      })
+      toast.success(`Reordered: ${filePath}`)
+      return
+    }
     toast.success(`Moved ${filePath} to ${newPath}`)
   }
 
@@ -568,9 +618,9 @@ export function createNotebookHandlers(
     }
   }
 
-  const handleAddComment = (cellId: string) => {
-    const comment = prompt('Add a comment:')
-    if (comment) {
+  const handleAddComment = (cellId: string, content?: string) => {
+    const commentText = content ?? prompt('Add a comment:') ?? ''
+    if (commentText) {
       setNotebook(prev => ({
         ...prev,
         cells: prev.cells.map(cell => 
@@ -581,7 +631,7 @@ export function createNotebookHandlers(
                   ...(cell.comments || []),
                   {
                     id: `comment-${Date.now()}`,
-                    content: comment,
+                    content: commentText,
                     author: 'Current User',
                     timestamp: new Date()
                   }
