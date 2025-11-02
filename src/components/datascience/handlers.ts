@@ -5,6 +5,18 @@ import { notebookEngine } from '@/lib/notebook-engine'
 import { Notebook, NotebookCell, CellType, Variable, FileItem } from './types'
 import { createNewCell, getDefaultContent, generateCellId, exportNotebook, importNotebook, copyToClipboard } from './utils'
 
+// History store for undo/redo functionality - uses WeakMap to store state per handler instance
+const historyStore = new WeakMap<any, {
+  history: Notebook[]
+  historyIndex: number
+  findReplaceState: {
+    searchText: string
+    replaceText: string
+    matches: any[]
+    currentMatchIndex: number
+  }
+}>()
+
 export interface NotebookHandlers {
   // Cell operations
   createNewCell: (type: CellType, position?: 'above' | 'below', targetCellId?: string) => void
@@ -47,8 +59,8 @@ export interface NotebookHandlers {
   
   // UI operations
   toggleOutput: () => void
-  find: () => void
-  replace: () => void
+  find: (searchText?: string) => void
+  replace: (searchText?: string, replaceText?: string, replaceAll?: boolean) => void
   undo: () => void
   redo: () => void
   handleSelectTemplate: (template: Notebook) => void
@@ -97,6 +109,44 @@ export function createNotebookHandlers(
     setShowOutput
   } = actions
 
+  // Get or create history store for this handler instance
+  let store = historyStore.get(actions)
+  if (!store) {
+    store = {
+      history: [JSON.parse(JSON.stringify(notebook))],
+      historyIndex: 0,
+      findReplaceState: {
+        searchText: '',
+        replaceText: '',
+        matches: [],
+        currentMatchIndex: 0
+      }
+    }
+    historyStore.set(actions, store)
+  }
+
+  const MAX_HISTORY = 50
+
+  const saveToHistory = (notebook: Notebook) => {
+    const history = store!.history
+    const index = store!.historyIndex
+    
+    // Remove any future history if we're not at the end
+    if (index < history.length - 1) {
+      history.splice(index + 1)
+    }
+    
+    // Add new state
+    history.push(JSON.parse(JSON.stringify(notebook)))
+    
+    // Limit history size
+    if (history.length > MAX_HISTORY) {
+      history.shift()
+    } else {
+      store!.historyIndex++
+    }
+  }
+
   // Cell operations
   const createNewCellHandler = (type: CellType, position?: 'above' | 'below', targetCellId?: string) => {
     const newCell = createNewCell(type)
@@ -115,11 +165,13 @@ export function createNotebookHandlers(
         newCells.push(newCell)
       }
       
-      return {
+      const updated = {
         ...prev,
         cells: newCells,
         updatedAt: new Date()
       }
+      saveToHistory(updated)
+      return updated
     })
 
     setActiveCellId(newCell.id)
@@ -127,23 +179,48 @@ export function createNotebookHandlers(
   }
 
   const deleteCell = (cellId: string) => {
-    setNotebook((prev: Notebook) => ({
-      ...prev,
-      cells: prev.cells.filter(cell => cell.id !== cellId),
-      updatedAt: new Date()
-    }))
+    setNotebook((prev: Notebook) => {
+      const updated = {
+        ...prev,
+        cells: prev.cells.filter(cell => cell.id !== cellId),
+        updatedAt: new Date()
+      }
+      saveToHistory(updated)
+      return updated
+    })
     setActiveCellId(null)
     toast.success('Cell deleted')
   }
 
+  // Debounce timer for history saving
+  let historySaveTimer: NodeJS.Timeout | null = null
+
   const updateCellContent = (cellId: string, content: string) => {
-    setNotebook((prev: Notebook) => ({
-      ...prev,
-      cells: prev.cells.map(cell => 
-        cell.id === cellId ? { ...cell, content, timestamp: new Date() } : cell
-      ),
-      updatedAt: new Date()
-    }))
+    setNotebook((prev: Notebook) => {
+      const updated = {
+        ...prev,
+        cells: prev.cells.map(cell => 
+          cell.id === cellId 
+            ? { 
+                ...cell, 
+                content, 
+                ...(cell.type === 'sql' ? { sqlQuery: content } : {}),
+                timestamp: new Date() 
+              } 
+            : cell
+        ),
+        updatedAt: new Date()
+      }
+      // Save to history (debounced)
+      if (historySaveTimer) {
+        clearTimeout(historySaveTimer)
+      }
+      historySaveTimer = setTimeout(() => {
+        saveToHistory(updated)
+        historySaveTimer = null
+      }, 500)
+      return updated
+    })
   }
 
   const moveCell = (cellId: string, direction: 'up' | 'down') => {
@@ -329,35 +406,210 @@ export function createNotebookHandlers(
       toast.error('Select at least 2 cells to merge')
       return
     }
-    // Implementation for merging cells
-    toast.success('Merge cells feature coming soon')
+    
+    // Get selected cells in order
+    const selectedArray = Array.from(selectedCellIds)
+    const cellsToMerge = selectedArray
+      .map(id => {
+        const index = notebook.cells.findIndex(c => c.id === id)
+        return { id, index, cell: notebook.cells[index] }
+      })
+      .filter(item => item.index !== -1)
+      .sort((a, b) => a.index - b.index)
+    
+    if (cellsToMerge.length < 2) {
+      toast.error('Could not find cells to merge')
+      return
+    }
+    
+    // Merge content from all cells
+    const mergedContent = cellsToMerge
+      .map(item => {
+        const cell = item.cell
+        const content = cell.type === 'sql' ? (cell.sqlQuery || cell.content) : cell.content
+        return content
+      })
+      .filter(content => content.trim())
+      .join('\n\n')
+    
+    // Determine merged cell type (prefer code, then sql, then markdown)
+    const mergedType = cellsToMerge.find(item => 
+      item.cell.type === 'code' || item.cell.type === 'sql'
+    )?.cell.type || cellsToMerge[0].cell.type
+    
+    // Create merged cell
+    const firstCell = cellsToMerge[0].cell
+    const mergedCell: NotebookCell = {
+      ...firstCell,
+      content: mergedContent,
+      ...(mergedType === 'sql' ? { sqlQuery: mergedContent } : {}),
+      timestamp: new Date()
+    }
+    
+    // Replace first cell with merged cell, remove others
+    setNotebook((prev: Notebook) => {
+      const newCells = [...prev.cells]
+      const firstIndex = cellsToMerge[0].index
+      
+      // Replace first cell
+      newCells[firstIndex] = mergedCell
+      
+      // Remove other merged cells (in reverse order to maintain indices)
+      for (let i = cellsToMerge.length - 1; i > 0; i--) {
+        newCells.splice(cellsToMerge[i].index, 1)
+      }
+      
+      const updated = {
+        ...prev,
+        cells: newCells,
+        updatedAt: new Date()
+      }
+      saveToHistory(updated)
+      return updated
+    })
+    
+    setSelectedCellIds(new Set([mergedCell.id]))
+    setActiveCellId(mergedCell.id)
+    toast.success(`Merged ${cellsToMerge.length} cells`)
   }
 
   const splitCell = (cellId: string) => {
-    // Implementation for splitting cells
-    toast.success('Split cell feature coming soon')
+    const cell = notebook.cells.find(c => c.id === cellId)
+    if (!cell) {
+      toast.error('Cell not found')
+      return
+    }
+    
+    const content = cell.type === 'sql' ? (cell.sqlQuery || cell.content) : cell.content
+    const lines = content.split('\n')
+    
+    if (lines.length < 2) {
+      toast.error('Cell must have at least 2 lines to split')
+      return
+    }
+    
+    const midPoint = Math.floor(lines.length / 2)
+    const firstHalf = lines.slice(0, midPoint).join('\n')
+    const secondHalf = lines.slice(midPoint).join('\n')
+    
+    // Find cell index
+    const cellIndex = notebook.cells.findIndex(c => c.id === cellId)
+    if (cellIndex === -1) return
+    
+    // Create new cell for second half
+    const newCell = createNewCell(cell.type)
+    newCell.content = secondHalf
+    if (cell.type === 'sql') {
+      newCell.sqlQuery = secondHalf
+      newCell.sqlVariableName = cell.sqlVariableName || ''
+      newCell.sqlConnection = cell.sqlConnection || 'default'
+    }
+    
+    // Update first cell and insert new cell
+    setNotebook((prev: Notebook) => {
+      const newCells = [...prev.cells]
+      newCells[cellIndex] = {
+        ...cell,
+        content: firstHalf,
+        ...(cell.type === 'sql' ? { sqlQuery: firstHalf } : {}),
+        timestamp: new Date()
+      }
+      newCells.splice(cellIndex + 1, 0, newCell)
+      
+      const updated = {
+        ...prev,
+        cells: newCells,
+        updatedAt: new Date()
+      }
+      saveToHistory(updated)
+      return updated
+    })
+    
+    setActiveCellId(newCell.id)
+    toast.success('Cell split successfully')
   }
 
   const toggleCellType = (cellId: string) => {
-    setNotebook((prev: Notebook) => ({
-      ...prev,
-      cells: prev.cells.map(cell => 
-        cell.id === cellId 
-          ? { 
-              ...cell, 
-              type: cell.type === 'code' ? 'markdown' : cell.type === 'markdown' ? 'raw' : 'code',
-              content: getDefaultContent(cell.type === 'code' ? 'markdown' : cell.type === 'markdown' ? 'raw' : 'code')
-            } 
-          : cell
-      ),
-      updatedAt: new Date()
-    }))
+    setNotebook((prev: Notebook) => {
+      const updated = {
+        ...prev,
+        cells: prev.cells.map(cell => {
+          if (cell.id === cellId) {
+            const newType: CellType = cell.type === 'code' 
+              ? 'markdown' 
+              : cell.type === 'markdown' 
+                ? 'raw' 
+                : cell.type === 'raw'
+                  ? 'sql'
+                  : 'code'
+            const newContent = getDefaultContent(newType)
+            
+            const updatedCell: NotebookCell = {
+              ...cell,
+              type: newType,
+              content: newContent,
+              ...(newType === 'sql' ? {
+                sqlQuery: newContent,
+                sqlVariableName: '',
+                sqlConnection: 'default'
+              } : {}),
+              // Clear SQL-specific fields if switching away from SQL
+              ...(cell.type === 'sql' && newType !== 'sql' ? {
+                sqlQuery: undefined,
+                sqlVariableName: undefined,
+                sqlConnection: undefined
+              } : {}),
+              timestamp: new Date()
+            }
+            return updatedCell
+          }
+          return cell
+        }),
+        updatedAt: new Date()
+      }
+      saveToHistory(updated)
+      return updated
+    })
+    toast.success('Cell type changed')
   }
 
   // File operations
-  const handleSave = () => {
-    onSave?.(notebook)
-    toast.success('Notebook saved')
+  const handleSave = async () => {
+    try {
+      // Save notebook
+      await onSave?.(notebook)
+      
+      // Auto-create version if enabled (you can add a flag for this)
+      // For now, we'll create a version on manual save
+      if (notebook.id) {
+        try {
+          await fetch(`/api/notebooks/${encodeURIComponent(notebook.id)}/versions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              notebook_data: notebook,
+              commit_message: 'Manual save',
+              commit_description: 'Notebook saved manually',
+              branch_name: 'main',
+              tags: [],
+              change_summary: {
+                files_modified: ['notebook.ipynb'],
+                lines_added: 0,
+                lines_deleted: 0
+              },
+              is_current: true
+            })
+          })
+        } catch (versionError) {
+          console.error('Failed to create version:', versionError)
+          // Don't fail the save if versioning fails
+        }
+      }
+      
+      toast.success('Notebook saved')
+    } catch (error) {
+      toast.error('Failed to save notebook')
+    }
   }
 
   const handleExport = () => {
@@ -493,20 +745,125 @@ export function createNotebookHandlers(
     setShowOutput(!state.showOutput)
   }
 
-  const find = () => {
-    toast.success('Find feature coming soon')
+  const find = (searchText?: string) => {
+    // If searchText is provided, use it; otherwise use prompt for backward compatibility
+    const finalSearchText = searchText || prompt('Find:', store.findReplaceState.searchText) || ''
+    
+    if (finalSearchText) {
+      store.findReplaceState.searchText = finalSearchText
+      
+      // Find all matches
+      const matches: Array<{ cellId: string; index: number }> = []
+      notebook.cells.forEach(cell => {
+        const content = cell.type === 'sql' ? (cell.sqlQuery || cell.content) : cell.content
+        let index = -1
+        let startIndex = 0
+        while ((index = content.toLowerCase().indexOf(finalSearchText.toLowerCase(), startIndex)) !== -1) {
+          matches.push({ cellId: cell.id, index })
+          startIndex = index + 1
+        }
+      })
+      
+      store.findReplaceState.matches = matches
+      store.findReplaceState.currentMatchIndex = 0
+      
+      if (matches.length > 0) {
+        // Focus on first match
+        setActiveCellId(matches[0].cellId)
+        toast.success(`Found ${matches.length} match(es)`)
+      } else {
+        toast.error('No matches found')
+      }
+    }
   }
 
-  const replace = () => {
-    toast.success('Replace feature coming soon')
+  const replace = (searchText?: string, replaceText?: string, replaceAll: boolean = false) => {
+    // If parameters provided, use them; otherwise use prompts for backward compatibility
+    const finalSearchText = searchText || prompt('Find:', store.findReplaceState.searchText) || ''
+    const finalReplaceText = replaceText !== undefined ? replaceText : (prompt('Replace with:', store.findReplaceState.replaceText) || '')
+    
+    if (!finalSearchText) {
+      if (!searchText) {
+        toast.error('Search text is required')
+      }
+      return
+    }
+    
+    store.findReplaceState.searchText = finalSearchText
+    store.findReplaceState.replaceText = finalReplaceText
+    
+    // Find all matches and replace
+    let replacedCount = 0
+    setNotebook((prev: Notebook) => {
+      const updated = {
+        ...prev,
+        cells: prev.cells.map(cell => {
+          const content = cell.type === 'sql' ? (cell.sqlQuery || cell.content) : cell.content
+          const regex = new RegExp(finalSearchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi')
+          const newContent = replaceAll 
+            ? content.replace(regex, finalReplaceText)
+            : content.replace(regex, (match) => {
+                replacedCount++
+                return finalReplaceText
+              })
+          
+          if (replaceAll) {
+            // Count all replacements
+            const matches = content.match(regex)
+            if (matches) {
+              replacedCount += matches.length
+            }
+          }
+          
+          if (newContent !== content) {
+            return {
+              ...cell,
+              content: newContent,
+              ...(cell.type === 'sql' ? { sqlQuery: newContent } : {}),
+              timestamp: new Date()
+            }
+          }
+          return cell
+        }),
+        updatedAt: new Date()
+      }
+      saveToHistory(updated)
+      return updated
+    })
+    
+    if (replacedCount > 0) {
+      toast.success(`Replaced ${replacedCount} occurrence(s)`)
+    } else {
+      toast.error('No matches found to replace')
+    }
   }
 
   const undo = () => {
-    toast.success('Undo feature coming soon')
+    const history = store.history
+    const index = store.historyIndex
+    
+    if (index > 0) {
+      store.historyIndex--
+      const previousState = history[index - 1]
+      setNotebook(JSON.parse(JSON.stringify(previousState)))
+      toast.success('Undone')
+    } else {
+      toast.error('Nothing to undo')
+    }
   }
 
   const redo = () => {
-    toast.success('Redo feature coming soon')
+    const history = store.history
+    const index = store.historyIndex
+    
+    if (index < history.length - 1) {
+      store.historyIndex++
+      const nextState = history[index + 1]
+      setNotebook(JSON.parse(JSON.stringify(nextState)))
+      toast.success('Redone')
+    } else {
+      toast.error('Nothing to redo')
+    }
   }
 
   const handleSelectTemplate = (template: Notebook) => {
@@ -573,49 +930,109 @@ export function createNotebookHandlers(
       const currentCell = notebook.cells[currentIndex]
       const targetCell = notebook.cells[targetIndex]
       
-      const mergedContent = direction === 'above' 
-        ? `${targetCell.content}\n${currentCell.content}`
-        : `${currentCell.content}\n${targetCell.content}`
+      // Get content for both cells (handle SQL cells)
+      const currentContent = currentCell.type === 'sql' 
+        ? (currentCell.sqlQuery || currentCell.content) 
+        : currentCell.content
+      const targetContent = targetCell.type === 'sql' 
+        ? (targetCell.sqlQuery || targetCell.content) 
+        : targetCell.content
       
-      setNotebook(prev => ({
-        ...prev,
-        cells: prev.cells.map((cell, idx) => {
-          if (idx === currentIndex) {
-            return { ...cell, content: mergedContent }
-          } else if (idx === targetIndex) {
-            return null // Will be filtered out
-          }
-          return cell
-        }).filter(Boolean),
-        updatedAt: new Date()
-      }))
+      const mergedContent = direction === 'above' 
+        ? `${targetContent}\n\n${currentContent}`
+        : `${currentContent}\n\n${targetContent}`
+      
+      setNotebook(prev => {
+        const updated = {
+          ...prev,
+          cells: prev.cells.map((cell, idx) => {
+            if (idx === currentIndex) {
+              const updatedCell = { 
+                ...cell, 
+                content: mergedContent,
+                timestamp: new Date()
+              }
+              // Handle SQL cells
+              if (cell.type === 'sql') {
+                updatedCell.sqlQuery = mergedContent
+              }
+              return updatedCell
+            } else if (idx === targetIndex) {
+              return null // Will be filtered out
+            }
+            return cell
+          }).filter(Boolean) as NotebookCell[],
+          updatedAt: new Date()
+        }
+        saveToHistory(updated)
+        return updated
+      })
       toast.success('Cells merged')
+    } else {
+      toast.error('Cannot merge: target cell not found')
     }
   }
 
   const handleSplitCell = (cellId: string) => {
     const cell = notebook.cells.find(c => c.id === cellId)
-    if (cell && cell.content.trim()) {
-      const lines = cell.content.split('\n')
-      const midPoint = Math.floor(lines.length / 2)
-      
-      const firstHalf = lines.slice(0, midPoint).join('\n')
-      const secondHalf = lines.slice(midPoint).join('\n')
-      
-      const newCell = createNewCell(cell.type)
-      newCell.content = secondHalf
-      
-      setNotebook(prev => ({
-        ...prev,
-        cells: prev.cells.map(c => 
-          c.id === cellId 
-            ? { ...c, content: firstHalf }
-            : c
-        ).concat(newCell),
-        updatedAt: new Date()
-      }))
-      toast.success('Cell split')
+    if (!cell) {
+      toast.error('Cell not found')
+      return
     }
+    
+    const content = cell.type === 'sql' 
+      ? (cell.sqlQuery || cell.content) 
+      : cell.content
+    
+    if (!content.trim()) {
+      toast.error('Cell is empty')
+      return
+    }
+    
+    const lines = content.split('\n')
+    
+    if (lines.length < 2) {
+      toast.error('Cell must have at least 2 lines to split')
+      return
+    }
+    
+    const midPoint = Math.floor(lines.length / 2)
+    const firstHalf = lines.slice(0, midPoint).join('\n')
+    const secondHalf = lines.slice(midPoint).join('\n')
+    
+    const cellIndex = notebook.cells.findIndex(c => c.id === cellId)
+    if (cellIndex === -1) return
+    
+    // Create new cell for second half
+    const newCell = createNewCell(cell.type)
+    newCell.content = secondHalf
+    if (cell.type === 'sql') {
+      newCell.sqlQuery = secondHalf
+      newCell.sqlVariableName = cell.sqlVariableName || ''
+      newCell.sqlConnection = cell.sqlConnection || 'default'
+    }
+    
+    setNotebook(prev => {
+      const newCells = [...prev.cells]
+      newCells[cellIndex] = {
+        ...cell,
+        content: firstHalf,
+        ...(cell.type === 'sql' ? { sqlQuery: firstHalf } : {}),
+        timestamp: new Date()
+      }
+      newCells.splice(cellIndex + 1, 0, newCell)
+      
+      const updated = {
+        ...prev,
+        cells: newCells,
+        updatedAt: new Date()
+      }
+      saveToHistory(updated)
+      return updated
+    })
+    
+    setActiveCellId(newCell.id)
+    toast.success('Cell split successfully')
   }
 
   const handleAddComment = (cellId: string, content?: string) => {
@@ -724,27 +1141,40 @@ export function createNotebookHandlers(
     try {
       const startTime = Date.now()
       
-      // Mock SQL execution - replace with actual SQL execution
-      const mockResult = {
-        data: [
-          { id: 1, name: 'John Doe', age: 30, city: 'New York' },
-          { id: 2, name: 'Jane Smith', age: 25, city: 'Los Angeles' },
-          { id: 3, name: 'Bob Johnson', age: 35, city: 'Chicago' }
-        ],
-        columns: ['id', 'name', 'age', 'city'],
-        rowCount: 3,
-        columnCount: 4,
-        preview: {
-          columns: ['id', 'name', 'age', 'city'],
-          data: [
-            [1, 'John Doe', 30, 'New York'],
-            [2, 'Jane Smith', 25, 'Los Angeles'],
-            [3, 'Bob Johnson', 35, 'Chicago']
-          ]
-        }
+      // Execute SQL query via API endpoint
+      const response = await fetch('/api/notebook/execute-sql', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: cell.sqlQuery,
+          connection: cell.sqlConnection || 'default',
+          spaceId: notebook.id // TODO: Get actual space ID from context
+        })
+      })
+
+      const result = await response.json()
+      const executionTime = Date.now() - startTime
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'SQL execution failed')
       }
 
-      const executionTime = Date.now() - startTime
+      // Format result for cell output
+      const formattedResult = {
+        data: result.data || [],
+        columns: result.columns || [],
+        rowCount: result.rowCount || 0,
+        columnCount: result.columnCount || 0,
+        preview: result.preview || {
+          columns: result.columns || [],
+          data: (result.data || []).slice(0, 5).map((row: any) => 
+            (result.columns || []).map((col: string) => row[col])
+          )
+        },
+        executionTime: result.executionTime || executionTime
+      }
 
       setNotebook(prev => ({
         ...prev,
@@ -752,9 +1182,9 @@ export function createNotebookHandlers(
           c.id === cellId 
             ? { 
                 ...c, 
-                output: mockResult, 
+                output: formattedResult, 
                 status: 'success', 
-                executionTime,
+                executionTime: formattedResult.executionTime,
                 timestamp: new Date()
               } 
             : c
@@ -765,8 +1195,8 @@ export function createNotebookHandlers(
       const newVariable = {
         name: cell.sqlVariableName,
         type: 'DataFrame',
-        value: `Shape: (${mockResult.rowCount}, ${mockResult.columnCount})`,
-        size: `${mockResult.rowCount} rows × ${mockResult.columnCount} columns`
+        value: `Shape: (${formattedResult.rowCount}, ${formattedResult.columnCount})`,
+        size: `${formattedResult.rowCount} rows × ${formattedResult.columnCount} columns`
       }
 
       setVariables(prev => {
@@ -780,8 +1210,26 @@ export function createNotebookHandlers(
 
       setKernelStatus('idle')
       setExecutionCount(prev => prev + 1)
-      toast.success(`SQL query executed and saved as '${cell.sqlVariableName}'`)
-    } catch (error) {
+      
+      // Show rate limit info if available
+      if (result.rateLimit) {
+        toast.success(
+          `SQL query executed and saved as '${cell.sqlVariableName}' (${result.rateLimit.remaining} queries remaining)`,
+          { duration: 3000 }
+        )
+      } else {
+        toast.success(`SQL query executed and saved as '${cell.sqlVariableName}'`)
+      }
+    } catch (error: any) {
+      // Handle rate limit errors
+      if (error.message?.includes('rate limit') || error.message?.includes('Rate limit')) {
+        toast.error('Too many queries. Please wait a moment before trying again.')
+      } else if (error.message?.includes('timeout')) {
+        toast.error('Query timeout: The query took too long to execute.')
+      } else {
+        toast.error(error.message || 'SQL query execution failed')
+      }
+
       setNotebook(prev => ({
         ...prev,
         cells: prev.cells.map(c => 
@@ -789,7 +1237,7 @@ export function createNotebookHandlers(
             ? { 
                 ...c, 
                 output: { 
-                  error: error instanceof Error ? error.message : 'SQL execution failed',
+                  error: error.message || 'SQL execution failed',
                   details: error 
                 }, 
                 status: 'error',
@@ -799,7 +1247,6 @@ export function createNotebookHandlers(
         )
       }))
       setKernelStatus('error')
-      toast.error('SQL query execution failed')
     } finally {
       setIsExecuting(false)
     }

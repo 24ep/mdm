@@ -305,7 +305,7 @@ export default function DashboardPage() {
             <Card>
               <CardContent className="p-6">
                 <div
-                  className="relative min-h-96 bg-white rounded-lg shadow-sm"
+                  className="relative min-h-96 bg-background rounded-lg shadow-sm"
                   style={{
                     backgroundColor: defaultDashboard.background_color,
                     fontFamily: defaultDashboard.font_family,

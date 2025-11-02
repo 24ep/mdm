@@ -9,6 +9,9 @@ import { QueryHistory } from './QueryHistory'
 import { ChartRenderer } from '@/components/charts/ChartRenderer'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
+import { EnhancedResultsTable } from './EnhancedResultsTable'
+import { ValidationPanel } from './ValidationPanel'
+import { ChartControls } from './ChartControls'
 
 interface QueryResult {
   id: string
@@ -296,109 +299,21 @@ export function ResultsPanel({
       <div className="flex-1 overflow-hidden">
         {footerTab === 'results' && (
           currentResult ? (
-          <div className="h-full flex flex-col">
-            <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium text-gray-900">Query Results</h3>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <span>{currentResult.results.length} rows</span>
-                    {currentResult.executionTime && (
-                      <span>• {formatDuration(currentResult.executionTime)}</span>
-                    )}
-                    {currentResult.size && (
-                      <span>• {formatBytes(currentResult.size)}</span>
-                    )}
-                  </div>
-                  <div className="relative">
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      className="h-7 px-2 text-xs"
-                      onClick={() => setShowDownloadDropdown(!showDownloadDropdown)}
-                    >
-                      <Download className="h-3 w-3 mr-1" />
-                      Download
-                      <ChevronDown className="h-3 w-3 ml-1" />
-                    </Button>
-                    {showDownloadDropdown && (
-                      <div className="absolute right-0 top-full mt-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                        <button
-                          onClick={() => { exportResults('csv'); setShowDownloadDropdown(false); }}
-                          className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
-                        >
-                          <FileText className="h-4 w-4" />
-                          CSV
-                        </button>
-                        <button
-                          onClick={() => { exportResults('json'); setShowDownloadDropdown(false); }}
-                          className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
-                        >
-                          <FileText className="h-4 w-4" />
-                          JSON
-                        </button>
-                        <button
-                          onClick={() => { exportResults('excel'); setShowDownloadDropdown(false); }}
-                          className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
-                        >
-                          <FileText className="h-4 w-4" />
-                          Excel
-                        </button>
-                        <button
-                          onClick={() => { exportResults('pdf'); setShowDownloadDropdown(false); }}
-                          className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
-                        >
-                          <FileText className="h-4 w-4" />
-                          PDF
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-            <ScrollArea className="flex-1">
-              <div>
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      {currentResult.columns.map(col => (
-                        <th
-                          key={col}
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          {col}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {currentResult.results.map((row, rowIndex) => (
-                      <tr key={rowIndex}>
-                        {currentResult.columns.map(col => (
-                          <td key={`${rowIndex}-${col}`} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {row[col] !== null && row[col] !== undefined ? String(row[col]) : 'NULL'}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </ScrollArea>
-          </div>
+            <EnhancedResultsTable
+              currentResult={currentResult}
+              formatDuration={formatDuration}
+              formatBytes={formatBytes}
+            />
           ) : (
-          <div className="h-full flex items-center justify-center bg-gray-50">
-            <div className="text-center">
-              <Table className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-lg font-medium mb-2 text-gray-700">No Results</h3>
-              <p className="text-sm text-gray-500">Run a query to see results here</p>
+            <div className="h-full flex items-center justify-center bg-gray-50">
+              <div className="text-center">
+                <Table className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                <h3 className="text-lg font-medium mb-2 text-gray-700">No Results</h3>
+                <p className="text-sm text-gray-500">Run a query to see results here</p>
+              </div>
             </div>
-          </div>
           )
         )}
-
         {footerTab === 'history' && (
           <QueryHistory
             queryHistory={queryHistory}
@@ -410,188 +325,34 @@ export function ResultsPanel({
             formatBytes={formatBytes}
           />
         )}
-
-        {footerTab === 'visualization' && (
+        {footerTab === 'visualization' && currentResult && (
           <div className="h-full flex flex-col">
-            {currentResult ? (
-              <>
-                {/* Visualization Controls */}
-                <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium text-gray-900">Data Visualization</h3>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <Label htmlFor="chart-type" className="text-xs text-gray-600">Chart:</Label>
-                        <Select value={chartType} onValueChange={setChartType}>
-                          <SelectTrigger className="h-8 w-32 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="BAR">Bar Chart</SelectItem>
-                            <SelectItem value="LINE">Line Chart</SelectItem>
-                            <SelectItem value="PIE">Pie Chart</SelectItem>
-                            <SelectItem value="AREA">Area Chart</SelectItem>
-                            <SelectItem value="SCATTER">Scatter Plot</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <Label htmlFor="dimension" className="text-xs text-gray-600">X-Axis:</Label>
-                        <Select 
-                          value={chartConfig.dimensions[0] || ''} 
-                          onValueChange={(value) => setChartConfig(prev => ({ 
-                            ...prev, 
-                            dimensions: [value] 
-                          }))}
-                        >
-                          <SelectTrigger className="h-8 w-32 text-xs">
-                            <SelectValue placeholder="Select dimension" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {getAvailableColumns().map(column => (
-                              <SelectItem key={column} value={column}>
-                                {column}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <Label htmlFor="measure" className="text-xs text-gray-600">Y-Axis:</Label>
-                        <Select 
-                          value={chartConfig.measures[0] || ''} 
-                          onValueChange={(value) => setChartConfig(prev => ({ 
-                            ...prev, 
-                            measures: [value] 
-                          }))}
-                        >
-                          <SelectTrigger className="h-8 w-32 text-xs">
-                            <SelectValue placeholder="Select measure" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {getNumericColumns().map(column => (
-                              <SelectItem key={column} value={column}>
-                                {column}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Chart Visualization */}
-                <div className="flex-1 p-4">
-                  {chartConfig.dimensions.length > 0 && chartConfig.measures.length > 0 ? (
-                    <div className="h-full">
-                      <ChartRenderer
-                        type="chart"
-                        chartType={chartType}
-                        data={prepareChartData()}
-                        dimensions={chartConfig.dimensions}
-                        measures={chartConfig.measures}
-                        filters={[]}
-                        title={chartConfig.title}
-                        className="h-full"
-                      />
-                    </div>
-                  ) : (
-                    <div className="h-full bg-gray-50 rounded-lg flex items-center justify-center">
-                      <div className="text-center">
-                        <BarChart3 className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                        <h3 className="text-lg font-medium mb-2 text-gray-700">Configure Visualization</h3>
-                        <p className="text-sm text-gray-500 mb-4">Select a dimension (X-axis) and measure (Y-axis) to create a chart</p>
-                        <div className="text-xs text-gray-400">
-                          <p>Available columns: {getAvailableColumns().join(', ')}</p>
-                          {getNumericColumns().length > 0 && (
-                            <p>Numeric columns: {getNumericColumns().join(', ')}</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="flex-1 p-4">
-                <div className="h-full bg-gray-50 rounded-lg flex items-center justify-center">
-                  <div className="text-center">
-                    <BarChart3 className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                    <h3 className="text-lg font-medium mb-2 text-gray-700">No Data to Visualize</h3>
-                    <p className="text-sm text-gray-500">Run a query to see visualization options</p>
-                  </div>
-                </div>
-              </div>
-            )}
+            <div className="px-4 py-3 border-b">
+              <ChartControls
+                chartType={chartType}
+                chartConfig={chartConfig}
+                availableColumns={getAvailableColumns()}
+                numericColumns={getNumericColumns()}
+                onChartTypeChange={setChartType}
+                onDimensionChange={(dim) => setChartConfig(prev => ({ ...prev, dimensions: [dim] }))}
+                onMeasureChange={(meas) => setChartConfig(prev => ({ ...prev, measures: [...prev.measures, meas] }))}
+              />
+            </div>
+            <div className="flex-1 p-4">
+              <ChartRenderer
+                data={prepareChartData()}
+                chartType={chartType}
+                config={chartConfig}
+              />
+            </div>
           </div>
         )}
-
-        {footerTab === 'validation' && (
-          <div className="h-full flex flex-col">
-            <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
-              <h3 className="text-sm font-medium text-gray-900">Query Validation</h3>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4">
-              {validation ? (
-                <div className="space-y-3">
-                  {validation.errors.length === 0 && validation.warnings.length === 0 ? (
-                    <div className="flex items-center gap-2 text-sm text-green-600 p-3 bg-green-50 border border-green-200 rounded-md">
-                      <AlertCircle className="h-4 w-4" />
-                      <span>No issues found. Query is valid.</span>
-                    </div>
-                  ) : (
-                    <>
-                      {validation.errors.map((error, index) => (
-                        <div 
-                          key={`error-${index}`} 
-                          className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-md cursor-pointer hover:bg-red-100"
-                          onClick={() => {
-                            const match = error.match(/line (\d+), column (\d+)/)
-                            if (match && onJumpToLine) {
-                              onJumpToLine(parseInt(match[1]), parseInt(match[2]))
-                            }
-                          }}
-                        >
-                          <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 shrink-0" />
-                          <div className="flex-1 text-sm text-red-800">
-                            <span className="font-medium">Error: </span>{error}
-                          </div>
-                        </div>
-                      ))}
-
-                      {validation.warnings.map((warning, index) => (
-                        <div 
-                          key={`warning-${index}`} 
-                          className="flex items-start gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md cursor-pointer hover:bg-yellow-100"
-                          onClick={() => {
-                            const match = warning.match(/line (\d+), column (\d+)/)
-                            if (match && onJumpToLine) {
-                              onJumpToLine(parseInt(match[1]), parseInt(match[2]))
-                            }
-                          }}
-                        >
-                          <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5 shrink-0" />
-                          <div className="flex-1 text-sm text-yellow-800">
-                            <span className="font-medium">Warning: </span>{warning}
-                          </div>
-                        </div>
-                      ))}
-                    </>
-                  )}
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center">
-                    <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                    <h3 className="text-lg font-medium mb-2 text-gray-700">No Validation Data</h3>
-                    <p className="text-sm text-gray-500">Validation will appear here when you type a query</p>
-                  </div>
-                </div>
-              )}
-            </div>
+        {footerTab === 'validation' && validation && (
+          <div className="h-full p-4">
+            <ValidationPanel
+              validation={validation}
+              onJumpToLine={onJumpToLine}
+            />
           </div>
         )}
       </div>

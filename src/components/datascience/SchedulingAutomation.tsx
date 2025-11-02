@@ -142,206 +142,379 @@ export function SchedulingAutomation({
   ]
 
   useEffect(() => {
-    // Initialize with mock data
-    setSchedules([
-      {
-        id: 'schedule-1',
-        name: 'Daily Data Processing',
-        description: 'Process daily sales data and generate reports',
-        notebookId: 'notebook-1',
-        notebookName: 'Sales Analysis',
-        frequency: {
-          type: 'daily',
-          value: '0 6 * * *',
-          description: 'Daily at 6:00 AM'
-        },
-        timezone: 'UTC',
-        enabled: true,
-        lastRun: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        nextRun: new Date(Date.now() + 4 * 60 * 60 * 1000),
-        status: 'active',
-        notifications: {
-          enabled: true,
-          onSuccess: true,
-          onFailure: true,
-          onCompletion: false,
-          email: ['admin@example.com']
-        },
-        parameters: {
-          dataSource: 'sales_db',
-          outputFormat: 'pdf'
-        },
-        createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-        updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
-      },
-      {
-        id: 'schedule-2',
-        name: 'Weekly ML Model Retraining',
-        description: 'Retrain machine learning models with new data',
-        notebookId: 'notebook-2',
-        notebookName: 'ML Pipeline',
-        frequency: {
-          type: 'weekly',
-          value: '0 2 * * 0',
-          description: 'Weekly on Sunday at 2:00 AM'
-        },
-        timezone: 'UTC',
-        enabled: true,
-        lastRun: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-        nextRun: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-        status: 'active',
-        notifications: {
-          enabled: true,
-          onSuccess: true,
-          onFailure: true,
-          onCompletion: true,
-          email: ['ml-team@example.com']
-        },
-        parameters: {
-          modelType: 'random_forest',
-          validationSplit: 0.2
-        },
-        createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
-        updatedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
-      },
-      {
-        id: 'schedule-3',
-        name: 'Monthly Report Generation',
-        description: 'Generate comprehensive monthly business reports',
-        notebookId: 'notebook-3',
-        notebookName: 'Monthly Reports',
-        frequency: {
-          type: 'monthly',
-          value: '0 8 1 * *',
-          description: 'Monthly on 1st at 8:00 AM'
-        },
-        timezone: 'UTC',
-        enabled: false,
-        lastRun: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-        nextRun: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
-        status: 'paused',
-        notifications: {
-          enabled: true,
-          onSuccess: true,
-          onFailure: true,
-          onCompletion: true,
-          email: ['executives@example.com']
-        },
-        parameters: {
-          reportType: 'executive',
-          includeCharts: true
-        },
-        createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
-        updatedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-      }
-    ])
+    if (!notebookId) return
 
-    setExecutions([
-      {
-        id: 'exec-1',
-        scheduleId: 'schedule-1',
-        status: 'completed',
-        startTime: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        endTime: new Date(Date.now() - 2 * 60 * 60 * 1000 + 15 * 60 * 1000),
-        duration: 15 * 60 * 1000,
-        output: 'Report generated successfully',
-        logs: [
-          { timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), level: 'info', message: 'Starting data processing' },
-          { timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000 + 5 * 60 * 1000), level: 'info', message: 'Data loaded successfully' },
-          { timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000 + 10 * 60 * 1000), level: 'info', message: 'Analysis completed' },
-          { timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000 + 15 * 60 * 1000), level: 'info', message: 'Report generated and saved' }
-        ]
-      },
-      {
-        id: 'exec-2',
-        scheduleId: 'schedule-1',
-        status: 'failed',
-        startTime: new Date(Date.now() - 26 * 60 * 60 * 1000),
-        endTime: new Date(Date.now() - 26 * 60 * 60 * 1000 + 5 * 60 * 1000),
-        duration: 5 * 60 * 1000,
-        error: 'Database connection failed',
-        logs: [
-          { timestamp: new Date(Date.now() - 26 * 60 * 60 * 1000), level: 'info', message: 'Starting data processing' },
-          { timestamp: new Date(Date.now() - 26 * 60 * 60 * 1000 + 2 * 60 * 1000), level: 'error', message: 'Database connection failed', details: { error: 'Connection timeout' } },
-          { timestamp: new Date(Date.now() - 26 * 60 * 60 * 1000 + 5 * 60 * 1000), level: 'error', message: 'Execution failed' }
-        ]
-      }
-    ])
-  }, [])
+    // Fetch schedules from API
+    const fetchSchedules = async () => {
+      try {
+        const response = await fetch(`/api/notebooks/${encodeURIComponent(notebookId)}/schedules`)
+        if (!response.ok) {
+          throw new Error('Failed to fetch schedules')
+        }
 
-  const handleCreateSchedule = () => {
+        const data = await response.json()
+        if (data.success && data.schedules) {
+          // Transform API schedules to component format
+          const transformedSchedules: Schedule[] = data.schedules.map((s: any) => {
+            const scheduleConfig = typeof s.schedule_config === 'string' 
+              ? JSON.parse(s.schedule_config) 
+              : s.schedule_config || {}
+            
+            // Generate frequency description
+            let frequencyDesc = ''
+            switch (s.schedule_type) {
+              case 'daily':
+                const hour = scheduleConfig.hour || 9
+                const minute = scheduleConfig.minute || 0
+                frequencyDesc = `Daily at ${hour}:${minute.toString().padStart(2, '0')}`
+                break
+              case 'weekly':
+                const dayOfWeek = scheduleConfig.dayOfWeek || 1
+                const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+                frequencyDesc = `Weekly on ${dayNames[dayOfWeek]}`
+                break
+              case 'monthly':
+                frequencyDesc = `Monthly on day ${scheduleConfig.dayOfMonth || 1}`
+                break
+              case 'interval':
+                frequencyDesc = `Every ${scheduleConfig.value || 60} ${scheduleConfig.unit || 'minutes'}`
+                break
+              case 'cron':
+                frequencyDesc = scheduleConfig.expression || 'Custom cron'
+                break
+              default:
+                frequencyDesc = 'Once'
+            }
+
+            return {
+              id: s.id,
+              name: s.name,
+              description: s.description || '',
+              notebookId: s.notebook_id,
+              notebookName: s.notebook_id, // TODO: Get actual notebook name
+              frequency: {
+                type: s.schedule_type,
+                value: scheduleConfig.expression || scheduleConfig.value || '',
+                description: frequencyDesc
+              },
+              timezone: s.timezone || 'UTC',
+              enabled: s.enabled || false,
+              lastRun: s.last_run_at ? new Date(s.last_run_at) : undefined,
+              nextRun: s.next_run_at ? new Date(s.next_run_at) : undefined,
+              status: s.status || 'active',
+              notifications: typeof s.notifications === 'string' 
+                ? JSON.parse(s.notifications) 
+                : s.notifications || { enabled: false },
+              parameters: typeof s.parameters === 'string' 
+                ? JSON.parse(s.parameters) 
+                : s.parameters || {},
+              createdAt: new Date(s.created_at),
+              updatedAt: new Date(s.updated_at)
+            }
+          })
+
+          setSchedules(transformedSchedules)
+        }
+      } catch (error) {
+        console.error('Error fetching schedules:', error)
+        toast.error('Failed to load schedules')
+      }
+    }
+
+    fetchSchedules()
+
+    // Fetch executions
+    const fetchExecutions = async () => {
+      try {
+        // TODO: Create API endpoint for executions
+        // For now, we'll use mock data
+      } catch (error) {
+        console.error('Error fetching executions:', error)
+      }
+    }
+
+    fetchExecutions()
+  }, [notebookId])
+
+  const handleCreateSchedule = async () => {
     if (!newSchedule.name?.trim()) {
       toast.error('Please enter a schedule name')
       return
     }
 
-    const schedule: Schedule = {
-      id: `schedule-${Date.now()}`,
-      name: newSchedule.name,
-      description: newSchedule.description,
-      notebookId: notebookId,
-      notebookName: 'Current Notebook',
-      frequency: newSchedule.frequency!,
-      timezone: newSchedule.timezone!,
-      enabled: newSchedule.enabled!,
-      status: 'active',
-      notifications: newSchedule.notifications!,
-      parameters: newSchedule.parameters!,
-      createdAt: new Date(),
-      updatedAt: new Date()
+    if (!notebookId) {
+      toast.error('Notebook ID is required')
+      return
     }
 
-    setSchedules(prev => [schedule, ...prev])
-    onSchedule?.(schedule)
-    setNewSchedule({
-      name: '',
-      description: '',
-      frequency: {
-        type: 'daily',
-        value: '0 9 * * *',
-        description: 'Daily at 9:00 AM'
-      },
-      timezone: 'UTC',
-      enabled: true,
-      notifications: {
-        enabled: true,
-        onSuccess: true,
-        onFailure: true,
-        onCompletion: false,
-        email: []
-      },
-      parameters: {}
-    })
-    toast.success('Schedule created successfully')
+    try {
+      // Build schedule config based on frequency type
+      let scheduleConfig: any = {}
+      const freq = newSchedule.frequency!
+
+      switch (freq.type) {
+        case 'daily':
+          // Parse time from cron or use defaults
+          const dailyMatch = freq.value.match(/(\d+)\s+(\d+)/)
+          scheduleConfig = {
+            hour: dailyMatch ? parseInt(dailyMatch[1]) : 9,
+            minute: dailyMatch ? parseInt(dailyMatch[2]) : 0
+          }
+          break
+        case 'weekly':
+          const weeklyMatch = freq.value.match(/\*\s+\*\s+(\d+)/)
+          scheduleConfig = {
+            dayOfWeek: weeklyMatch ? parseInt(weeklyMatch[1]) : 1,
+            hour: 9,
+            minute: 0
+          }
+          break
+        case 'monthly':
+          const monthlyMatch = freq.value.match(/(\d+)\s+\*/)
+          scheduleConfig = {
+            dayOfMonth: monthlyMatch ? parseInt(monthlyMatch[1]) : 1,
+            hour: 9,
+            minute: 0
+          }
+          break
+        case 'interval':
+          const intervalMatch = freq.value.match(/(\d+)\s+(minutes|hours)/)
+          scheduleConfig = {
+            value: intervalMatch ? parseInt(intervalMatch[1]) : 60,
+            unit: intervalMatch ? intervalMatch[2] : 'minutes'
+          }
+          break
+        case 'cron':
+          scheduleConfig = {
+            expression: freq.value
+          }
+          break
+      }
+
+      const response = await fetch(`/api/notebooks/${encodeURIComponent(notebookId)}/schedules`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newSchedule.name,
+          description: newSchedule.description,
+          schedule_type: freq.type,
+          schedule_config: scheduleConfig,
+          timezone: newSchedule.timezone || 'UTC',
+          enabled: newSchedule.enabled !== false,
+          notifications: newSchedule.notifications,
+          parameters: newSchedule.parameters
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to create schedule')
+      }
+
+      const data = await response.json()
+      if (data.success) {
+        // Refresh schedules
+        const refreshResponse = await fetch(`/api/notebooks/${encodeURIComponent(notebookId)}/schedules`)
+        if (refreshResponse.ok) {
+          const refreshData = await refreshResponse.json()
+          if (refreshData.success && refreshData.schedules) {
+            // Transform and set schedules (same logic as in useEffect)
+            const transformed = refreshData.schedules.map((s: any) => {
+              const config = typeof s.schedule_config === 'string' ? JSON.parse(s.schedule_config) : s.schedule_config || {}
+              let desc = ''
+              switch (s.schedule_type) {
+                case 'daily':
+                  desc = `Daily at ${config.hour || 9}:${(config.minute || 0).toString().padStart(2, '0')}`
+                  break
+                case 'weekly':
+                  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+                  desc = `Weekly on ${dayNames[config.dayOfWeek || 1]}`
+                  break
+                case 'monthly':
+                  desc = `Monthly on day ${config.dayOfMonth || 1}`
+                  break
+                case 'interval':
+                  desc = `Every ${config.value || 60} ${config.unit || 'minutes'}`
+                  break
+                case 'cron':
+                  desc = config.expression || 'Custom cron'
+                  break
+                default:
+                  desc = 'Once'
+              }
+              return {
+                id: s.id,
+                name: s.name,
+                description: s.description || '',
+                notebookId: s.notebook_id,
+                notebookName: s.notebook_id,
+                frequency: { type: s.schedule_type, value: '', description: desc },
+                timezone: s.timezone || 'UTC',
+                enabled: s.enabled || false,
+                lastRun: s.last_run_at ? new Date(s.last_run_at) : undefined,
+                nextRun: s.next_run_at ? new Date(s.next_run_at) : undefined,
+                status: s.status || 'active',
+                notifications: typeof s.notifications === 'string' ? JSON.parse(s.notifications) : s.notifications || {},
+                parameters: typeof s.parameters === 'string' ? JSON.parse(s.parameters) : s.parameters || {},
+                createdAt: new Date(s.created_at),
+                updatedAt: new Date(s.updated_at)
+              }
+            })
+            setSchedules(transformed)
+          }
+        }
+
+        onSchedule?.(data.schedule)
+        setNewSchedule({
+          name: '',
+          description: '',
+          frequency: {
+            type: 'daily',
+            value: '0 9 * * *',
+            description: 'Daily at 9:00 AM'
+          },
+          timezone: 'UTC',
+          enabled: true,
+          notifications: {
+            enabled: true,
+            onSuccess: true,
+            onFailure: true,
+            onCompletion: false,
+            email: []
+          },
+          parameters: {}
+        })
+        setActiveTab('schedules')
+        toast.success('Schedule created successfully')
+      }
+    } catch (error: any) {
+      console.error('Error creating schedule:', error)
+      toast.error('Failed to create schedule')
+    }
   }
 
-  const handleToggleSchedule = (scheduleId: string) => {
-    setSchedules(prev => prev.map(schedule => 
-      schedule.id === scheduleId 
-        ? { 
-            ...schedule, 
+  const handleToggleSchedule = async (scheduleId: string) => {
+    if (!notebookId) return
+
+    try {
+      const schedule = schedules.find((s) => s.id === scheduleId)
+      if (!schedule) return
+
+      const response = await fetch(
+        `/api/notebooks/${encodeURIComponent(notebookId)}/schedules/${scheduleId}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
             enabled: !schedule.enabled,
             status: !schedule.enabled ? 'active' : 'paused'
-          } 
-        : schedule
-    ))
-    toast.success('Schedule status updated')
+          })
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to update schedule')
+      }
+
+      // Update local state
+      setSchedules((prev) =>
+        prev.map((s) =>
+          s.id === scheduleId
+            ? {
+                ...s,
+                enabled: !s.enabled,
+                status: !s.enabled ? 'active' : 'paused'
+              }
+            : s
+        )
+      )
+
+      toast.success('Schedule status updated')
+    } catch (error: any) {
+      console.error('Error updating schedule:', error)
+      toast.error('Failed to update schedule')
+    }
   }
 
-  const handleRunNow = (schedule: Schedule) => {
-    onRunNow?.(schedule)
-    toast.success(`Running schedule: ${schedule.name}`)
+  const handleRunNow = async (schedule: Schedule) => {
+    if (!notebookId) return
+
+    try {
+      const response = await fetch(
+        `/api/notebooks/${encodeURIComponent(notebookId)}/schedules/${schedule.id}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to run schedule')
+      }
+
+      onRunNow?.(schedule)
+      toast.success(`Running schedule: ${schedule.name}`)
+    } catch (error: any) {
+      console.error('Error running schedule:', error)
+      toast.error('Failed to run schedule')
+    }
   }
 
-  const handleStopSchedule = (scheduleId: string) => {
-    onStop?.(scheduleId)
-    toast.success('Schedule stopped')
+  const handleStopSchedule = async (scheduleId: string) => {
+    if (!notebookId) return
+
+    try {
+      const response = await fetch(
+        `/api/notebooks/${encodeURIComponent(notebookId)}/schedules/${scheduleId}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            enabled: false,
+            status: 'paused'
+          })
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to stop schedule')
+      }
+
+      setSchedules((prev) =>
+        prev.map((s) =>
+          s.id === scheduleId ? { ...s, enabled: false, status: 'paused' } : s
+        )
+      )
+
+      onStop?.(scheduleId)
+      toast.success('Schedule stopped')
+    } catch (error: any) {
+      console.error('Error stopping schedule:', error)
+      toast.error('Failed to stop schedule')
+    }
   }
 
-  const handleDeleteSchedule = (scheduleId: string) => {
-    setSchedules(prev => prev.filter(schedule => schedule.id !== scheduleId))
-    onDelete?.(scheduleId)
-    toast.success('Schedule deleted')
+  const handleDeleteSchedule = async (scheduleId: string) => {
+    if (!notebookId) return
+
+    try {
+      const response = await fetch(
+        `/api/notebooks/${encodeURIComponent(notebookId)}/schedules/${scheduleId}`,
+        {
+          method: 'DELETE'
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to delete schedule')
+      }
+
+      setSchedules((prev) => prev.filter((schedule) => schedule.id !== scheduleId))
+      onDelete?.(scheduleId)
+      toast.success('Schedule deleted')
+    } catch (error: any) {
+      console.error('Error deleting schedule:', error)
+      toast.error('Failed to delete schedule')
+    }
   }
 
   const getStatusIcon = (status: string) => {

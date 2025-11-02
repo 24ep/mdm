@@ -32,7 +32,9 @@ import {
   Eye,
   BarChart3,
   LineChart,
-  PieChart
+  PieChart,
+  Plus,
+  Trash2
 } from 'lucide-react'
 import { LineChart as RechartsLineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell } from 'recharts'
 

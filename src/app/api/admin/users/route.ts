@@ -27,8 +27,8 @@ export async function GET(request: NextRequest) {
 
     // Build the query with filters
     let whereConditions: string[] = []
-    let queryParams: any[] = [limit, offset]
-    let paramIndex = 3
+    let queryParams: any[] = []
+    let paramIndex = 1
 
     if (search) {
       whereConditions.push(`(u.name ILIKE $${paramIndex} OR u.email ILIKE $${paramIndex})`)
@@ -42,8 +42,14 @@ export async function GET(request: NextRequest) {
       paramIndex++
     }
 
+    if (active !== '') {
+      whereConditions.push(`u.is_active = $${paramIndex}`)
+      queryParams.push(active === 'true')
+      paramIndex++
+    }
+
     if (spaceId) {
-      whereConditions.push(`u.id IN (SELECT user_id FROM space_members WHERE space_id = $${paramIndex})`)
+      whereConditions.push(`u.id IN (SELECT user_id FROM space_members WHERE space_id = $${paramIndex}::uuid)`)
       queryParams.push(spaceId)
       paramIndex++
     }
@@ -51,6 +57,11 @@ export async function GET(request: NextRequest) {
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : ''
 
     // Get users with space associations
+    // Add limit and offset as the last parameters
+    const limitParamIndex = paramIndex
+    const offsetParamIndex = paramIndex + 1
+    const usersQueryParams = [...queryParams, limit, offset]
+    
     const users = await query(`
       SELECT 
         u.id, u.name, u.email, u.role, u.created_at,
@@ -73,17 +84,16 @@ export async function GET(request: NextRequest) {
       ${whereClause}
       GROUP BY u.id, u.name, u.email, u.role, u.created_at
       ORDER BY u.created_at DESC
-      LIMIT $1 OFFSET $2
-    `, queryParams)
+      LIMIT $${limitParamIndex} OFFSET $${offsetParamIndex}
+    `, usersQueryParams)
 
-    // Get total count
+    // Get total count (reuse the same WHERE clause and params, without limit/offset)
     const countQuery = `
       SELECT COUNT(*) as total
       FROM users u
       ${whereClause}
     `
-    const countParams = queryParams.slice(2) // Remove limit and offset
-    const totalResult = await query(countQuery, countParams)
+    const totalResult = await query(countQuery, queryParams)
     const total = parseInt(totalResult.rows[0]?.total || '0')
 
     return NextResponse.json({

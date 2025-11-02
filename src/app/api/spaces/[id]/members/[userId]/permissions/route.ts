@@ -19,7 +19,7 @@ export async function GET(
     // Check if current user has permission to view member permissions
     const memberCheck = await query(`
       SELECT role FROM space_members 
-      WHERE space_id = $1 AND user_id = $2
+      WHERE space_id = $1::uuid AND user_id = $2::uuid
     `, [spaceId, session.user.id])
 
     if (memberCheck.rows.length === 0 || !['owner', 'admin'].includes(memberCheck.rows[0].role)) {
@@ -29,7 +29,7 @@ export async function GET(
     // Get member permissions
     const permissions = await query(`
       SELECT permissions FROM member_permissions 
-      WHERE space_id = $1 AND user_id = $2
+      WHERE space_id = $1::uuid AND user_id = $2::uuid
     `, [spaceId, userId])
 
     return NextResponse.json({
@@ -66,7 +66,7 @@ export async function PUT(
     // Check if current user has permission to manage member permissions
     const memberCheck = await query(`
       SELECT role FROM space_members 
-      WHERE space_id = $1 AND user_id = $2
+      WHERE space_id = $1::uuid AND user_id = $2::uuid
     `, [spaceId, session.user.id])
 
     if (memberCheck.rows.length === 0 || !['owner', 'admin'].includes(memberCheck.rows[0].role)) {
@@ -76,7 +76,7 @@ export async function PUT(
     // Check if target user is a member of the space
     const targetMemberCheck = await query(`
       SELECT role FROM space_members 
-      WHERE space_id = $1 AND user_id = $2
+      WHERE space_id = $1::uuid AND user_id = $2::uuid
     `, [spaceId, userId])
 
     if (targetMemberCheck.rows.length === 0) {
@@ -91,7 +91,7 @@ export async function PUT(
     // Update or insert member permissions
     await query(`
       INSERT INTO member_permissions (space_id, user_id, permissions, updated_at)
-      VALUES ($1, $2, $3, NOW())
+      VALUES ($1::uuid, $2::uuid, $3, NOW())
       ON CONFLICT (space_id, user_id)
       DO UPDATE SET permissions = $3, updated_at = NOW()
     `, [spaceId, userId, permissions])

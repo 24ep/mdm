@@ -1,829 +1,832 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Switch } from '@/components/ui/switch'
-import { Textarea } from '@/components/ui/textarea'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { 
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Progress } from '@/components/ui/progress'
 import { 
   HardDrive, 
   Folder, 
-  File, 
-  Upload, 
+  File,
+  Upload,
   Download,
   Trash2,
-  Edit,
+  MoreVertical,
+  Search,
   Plus,
   RefreshCw,
-  Search,
-  Filter,
-  Settings,
-  Eye,
   Copy,
-  Move,
-  Archive,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Clock,
-  TrendingUp,
-  TrendingDown,
-  BarChart3,
-  Activity,
-  Database,
-  Image,
-  Video,
-  Music,
+  Eye,
+  FolderPlus,
+  Grid3x3,
+  List,
+  Image as ImageIcon,
+  Video as VideoIcon,
   FileText,
+  Archive,
+  Music,
   Code,
-  Archive as ArchiveIcon,
-  FolderOpen,
-  FolderPlus
+  FileImage,
+  ExternalLink,
+  ChevronRight,
+  Settings,
+  X,
+  Check,
+  Loader2
 } from 'lucide-react'
-import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts'
+import { cn } from '@/lib/utils'
+import toast from 'react-hot-toast'
 
-interface FileSystemItem {
+interface Bucket {
   id: string
   name: string
-  type: 'file' | 'directory'
-  path: string
-  size: number
-  permissions: string
-  owner: string
-  group: string
-  modified: Date
-  accessed: Date
+  public: boolean
+  fileCount: number
+  totalSize: number
   created: Date
-  isHidden: boolean
-  isSymlink: boolean
-  mimeType?: string
-  extension?: string
   spaceId?: string
   spaceName?: string
-  isAttachment: boolean
-  attachmentId?: string
 }
 
-interface StorageStats {
-  totalSpace: number
-  usedSpace: number
-  freeSpace: number
-  inodes: {
-    total: number
-    used: number
-    free: number
-  }
-  mountPoint: string
-  fileSystem: string
-  readOnly: boolean
-}
-
-interface FileOperation {
+interface StorageFile {
   id: string
-  type: 'upload' | 'download' | 'delete' | 'move' | 'copy' | 'rename'
-  source: string
-  destination?: string
-  status: 'pending' | 'in_progress' | 'completed' | 'failed'
-  progress: number
-  started: Date
-  completed?: Date
-  error?: string
-}
-
-interface DirectoryTree {
   name: string
-  path: string
-  type: 'directory' | 'file'
   size: number
-  children?: DirectoryTree[]
-  isExpanded?: boolean
+  mimeType: string
+  updatedAt: Date
+  createdAt: Date
+  publicUrl?: string
+  bucketId: string
+  bucketName: string
+  path?: string
+  uploadedBy?: string
+  uploadedByName?: string
 }
 
-export function FileSystemManagement() {
-  const [currentPath, setCurrentPath] = useState('/')
-  const [items, setItems] = useState<FileSystemItem[]>([])
-  const [storageStats, setStorageStats] = useState<StorageStats | null>(null)
-  const [operations, setOperations] = useState<FileOperation[]>([])
-  const [directoryTree, setDirectoryTree] = useState<DirectoryTree[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [showUploadDialog, setShowUploadDialog] = useState(false)
-  const [showCreateFolderDialog, setShowCreateFolderDialog] = useState(false)
-  const [selectedItems, setSelectedItems] = useState<string[]>([])
+export function StorageManagement() {
+  const [buckets, setBuckets] = useState<Bucket[]>([])
+  const [selectedBucket, setSelectedBucket] = useState<string | null>(null)
+  const [files, setFiles] = useState<StorageFile[]>([])
+  const [currentPath, setCurrentPath] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [sortBy, setSortBy] = useState('name')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
-  const [spaces, setSpaces] = useState<Array<{id: string, name: string}>>([])
-  const [selectedSpace, setSelectedSpace] = useState<string>('all')
-
-  const [newFolderName, setNewFolderName] = useState('')
-  const [uploadFiles, setUploadFiles] = useState<FileList | null>(null)
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
+  const [isLoading, setIsLoading] = useState(false)
+  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set())
+  const [showCreateBucket, setShowCreateBucket] = useState(false)
+  const [showUploadDialog, setShowUploadDialog] = useState(false)
+  const [newBucketName, setNewBucketName] = useState('')
+  const [isPublicBucket, setIsPublicBucket] = useState(false)
+  const [uploadFiles, setUploadFiles] = useState<File[]>([])
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({})
+  const [showFilePreview, setShowFilePreview] = useState<StorageFile | null>(null)
 
   useEffect(() => {
-    loadSpaces()
-    loadStorageStats()
-    loadDirectoryTree()
-    loadOperations()
+    loadBuckets()
   }, [])
 
-  const loadSpaces = async () => {
-    try {
-      const response = await fetch('/api/spaces')
-      if (response.ok) {
-        const data = await response.json()
-        setSpaces(data.spaces || [])
-      }
-    } catch (error) {
-      console.error('Error loading spaces:', error)
-    }
-  }
-
   useEffect(() => {
-    loadDirectoryContents(currentPath)
-  }, [currentPath])
-
-  const loadStorageStats = async () => {
-    try {
-      const response = await fetch('/api/admin/filesystem/stats')
-      if (response.ok) {
-        const data = await response.json()
-        setStorageStats(data.stats)
-      }
-    } catch (error) {
-      console.error('Error loading storage stats:', error)
+    if (selectedBucket) {
+      loadFiles(selectedBucket, currentPath)
     }
-  }
+  }, [selectedBucket, currentPath])
 
-  const loadDirectoryContents = async (path: string) => {
+  const loadBuckets = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch(`/api/admin/filesystem/contents?path=${encodeURIComponent(path)}`)
+      const response = await fetch('/api/admin/storage/buckets')
       if (response.ok) {
         const data = await response.json()
-        setItems(data.items.map((item: any) => ({
-          ...item,
-          modified: new Date(item.modified),
-          accessed: new Date(item.accessed),
-          created: new Date(item.created)
-        })))
+        setBuckets(data.buckets || [])
+        if (!selectedBucket && data.buckets?.length > 0) {
+          setSelectedBucket(data.buckets[0].id)
+        }
       }
     } catch (error) {
-      console.error('Error loading directory contents:', error)
+      console.error('Error loading buckets:', error)
+      toast.error('Failed to load buckets')
     } finally {
       setIsLoading(false)
     }
   }
 
-  const loadDirectoryTree = async () => {
+  const loadFiles = async (bucketId: string, path: string[] = []) => {
+    setIsLoading(true)
     try {
-      const response = await fetch('/api/admin/filesystem/tree')
+      const pathParam = path.length > 0 ? path.join('/') : ''
+      const response = await fetch(`/api/admin/storage/buckets/${bucketId}/files?path=${encodeURIComponent(pathParam)}&search=${encodeURIComponent(searchTerm)}`)
       if (response.ok) {
         const data = await response.json()
-        setDirectoryTree(data.tree)
+        setFiles(data.files || [])
       }
     } catch (error) {
-      console.error('Error loading directory tree:', error)
+      console.error('Error loading files:', error)
+      toast.error('Failed to load files')
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const loadOperations = async () => {
-    try {
-      const response = await fetch('/api/admin/filesystem/operations')
-      if (response.ok) {
-        const data = await response.json()
-        setOperations(data.operations.map((op: any) => ({
-          ...op,
-          started: new Date(op.started),
-          completed: op.completed ? new Date(op.completed) : undefined
-        })))
-      }
-    } catch (error) {
-      console.error('Error loading operations:', error)
-    }
-  }
-
-  const createFolder = async () => {
-    if (!newFolderName.trim()) return
+  const handleCreateBucket = async () => {
+    if (!newBucketName.trim()) return
 
     try {
-      const response = await fetch('/api/admin/filesystem/create-folder', {
+      const response = await fetch('/api/admin/storage/buckets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          path: currentPath,
-          name: newFolderName
+          name: newBucketName,
+          public: isPublicBucket
         })
       })
 
       if (response.ok) {
-        setShowCreateFolderDialog(false)
-        setNewFolderName('')
-        loadDirectoryContents(currentPath)
-        loadDirectoryTree()
+        toast.success('Bucket created successfully')
+        setShowCreateBucket(false)
+        setNewBucketName('')
+        setIsPublicBucket(false)
+        loadBuckets()
+      } else {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to create bucket')
       }
-    } catch (error) {
-      console.error('Error creating folder:', error)
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create bucket')
     }
   }
 
-  const handleUploadFiles = async () => {
-    if (!uploadFiles || uploadFiles.length === 0) return
+  const handleUpload = async () => {
+    if (!selectedBucket || uploadFiles.length === 0) return
 
     const formData = new FormData()
-    Array.from(uploadFiles).forEach(file => {
+    uploadFiles.forEach(file => {
       formData.append('files', file)
     })
-    formData.append('path', currentPath)
+    formData.append('path', currentPath.join('/'))
 
     try {
-      const response = await fetch('/api/admin/filesystem/upload', {
-        method: 'POST',
-        body: formData
+      const xhr = new XMLHttpRequest()
+      
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          uploadFiles.forEach((file, index) => {
+            const progress = ((e.loaded / e.total) * 100) / uploadFiles.length
+            setUploadProgress(prev => ({ ...prev, [file.name]: progress }))
+          })
+        }
       })
 
-      if (response.ok) {
-        setShowUploadDialog(false)
-        setUploadFiles(null)
-        loadDirectoryContents(currentPath)
-        loadOperations()
-      }
+      xhr.addEventListener('load', () => {
+        if (xhr.status === 200) {
+          toast.success('Files uploaded successfully')
+          setShowUploadDialog(false)
+          setUploadFiles([])
+          setUploadProgress({})
+          loadFiles(selectedBucket, currentPath)
+        }
+      })
+
+      xhr.open('POST', `/api/admin/storage/buckets/${selectedBucket}/upload`)
+      xhr.send(formData)
     } catch (error) {
-      console.error('Error uploading files:', error)
+      toast.error('Failed to upload files')
     }
   }
 
-  const deleteItems = async (itemIds: string[]) => {
-    if (!confirm(`Are you sure you want to delete ${itemIds.length} item(s)?`)) return
+  const handleDeleteFiles = async (fileIds: string[]) => {
+    if (!confirm(`Are you sure you want to delete ${fileIds.length} file(s)?`)) return
 
     try {
-      const response = await fetch('/api/admin/filesystem/delete', {
+      const response = await fetch('/api/admin/storage/files/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ itemIds })
+        body: JSON.stringify({ fileIds })
       })
 
       if (response.ok) {
-        setSelectedItems([])
-        loadDirectoryContents(currentPath)
-        loadOperations()
+        toast.success('Files deleted successfully')
+        setSelectedFiles(new Set())
+        loadFiles(selectedBucket!, currentPath)
       }
     } catch (error) {
-      console.error('Error deleting items:', error)
+      toast.error('Failed to delete files')
     }
   }
 
-  const downloadItem = async (itemId: string) => {
+  const handleDeleteBucket = async (bucketId: string) => {
+    if (!confirm('Are you sure you want to delete this bucket? All files will be removed.')) return
+
     try {
-      const response = await fetch(`/api/admin/filesystem/download/${itemId}`)
+      const response = await fetch(`/api/admin/storage/buckets/${bucketId}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        toast.success('Bucket deleted successfully')
+        if (selectedBucket === bucketId) {
+          setSelectedBucket(null)
+          setFiles([])
+        }
+        loadBuckets()
+      }
+    } catch (error) {
+      toast.error('Failed to delete bucket')
+    }
+  }
+
+  const handleDownload = async (file: StorageFile) => {
+    try {
+      const response = await fetch(`/api/admin/storage/files/${file.id}/download`)
       if (response.ok) {
         const blob = await response.blob()
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = items.find(item => item.id === itemId)?.name || 'download'
+        a.download = file.name
         a.click()
         URL.revokeObjectURL(url)
       }
     } catch (error) {
-      console.error('Error downloading item:', error)
+      toast.error('Failed to download file')
     }
   }
 
-  const getFileIcon = (item: FileSystemItem) => {
-    if (item.type === 'directory') {
-      return <Folder className="h-4 w-4 text-blue-500" />
+  const handleCopyUrl = (file: StorageFile) => {
+    if (file.publicUrl) {
+      navigator.clipboard.writeText(file.publicUrl)
+      toast.success('Public URL copied to clipboard')
     }
-
-    const mimeType = item.mimeType || ''
-    const extension = item.extension || ''
-
-    if (mimeType.startsWith('image/')) return <Image className="h-4 w-4 text-green-500" />
-    if (mimeType.startsWith('video/')) return <Video className="h-4 w-4 text-purple-500" />
-    if (mimeType.startsWith('audio/')) return <Music className="h-4 w-4 text-pink-500" />
-    if (mimeType.startsWith('text/')) return <FileText className="h-4 w-4 text-gray-500" />
-    if (['.js', '.ts', '.jsx', '.tsx', '.py', '.java', '.cpp', '.c', '.cs'].includes(extension)) {
-      return <Code className="h-4 w-4 text-orange-500" />
-    }
-    if (['.zip', '.rar', '.7z', '.tar', '.gz'].includes(extension)) {
-      return <ArchiveIcon className="h-4 w-4 text-yellow-500" />
-    }
-
-    return <File className="h-4 w-4 text-gray-500" />
   }
 
   const formatBytes = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes'
+    if (bytes === 0) return '0 B'
     const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
   const formatDate = (date: Date) => {
-    return date.toLocaleString()
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric'
+    }).format(new Date(date))
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <CheckCircle className="h-4 w-4 text-green-500" />
-      case 'in_progress':
-        return <Clock className="h-4 w-4 text-blue-500" />
-      case 'failed':
-        return <XCircle className="h-4 w-4 text-red-500" />
-      default:
-        return <Clock className="h-4 w-4 text-gray-500" />
-    }
+  const getFileIcon = (file: StorageFile) => {
+    const mimeType = file.mimeType || ''
+    if (mimeType.startsWith('image/')) return <ImageIcon className="h-5 w-5 text-blue-500" />
+    if (mimeType.startsWith('video/')) return <VideoIcon className="h-5 w-5 text-purple-500" />
+    if (mimeType.startsWith('audio/')) return <Music className="h-5 w-5 text-pink-500" />
+    if (mimeType.startsWith('text/') || mimeType === 'application/pdf') return <FileText className="h-5 w-5 text-red-500" />
+    if (mimeType.includes('zip') || mimeType.includes('archive')) return <Archive className="h-5 w-5 text-yellow-500" />
+    if (mimeType.startsWith('application/javascript') || mimeType.includes('code')) return <Code className="h-5 w-5 text-green-500" />
+    return <File className="h-5 w-5 text-gray-500" />
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800'
-      case 'in_progress':
-        return 'bg-blue-100 text-blue-800'
-      case 'failed':
-        return 'bg-red-100 text-red-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
-  }
+  const filteredFiles = files.filter(file => 
+    file.name.toLowerCase().includes(searchTerm.toLowerCase())
+  )
 
-  const filteredItems = items
-    .filter(item => {
-      const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase())
-      const matchesSpace = selectedSpace === 'all' || item.spaceId === selectedSpace
-      return matchesSearch && matchesSpace
-    })
-    .sort((a, b) => {
-      let comparison = 0
-      switch (sortBy) {
-        case 'name':
-          comparison = a.name.localeCompare(b.name)
-          break
-        case 'size':
-          comparison = a.size - b.size
-          break
-        case 'modified':
-          comparison = a.modified.getTime() - b.modified.getTime()
-          break
-        default:
-          comparison = 0
-      }
-      return sortOrder === 'asc' ? comparison : -comparison
-    })
-
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8']
+  const currentBucket = buckets.find(b => b.id === selectedBucket)
+  const breadcrumb = currentBucket ? [currentBucket.name, ...currentPath] : []
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <HardDrive className="h-6 w-6" />
-            File System Management
-          </h2>
-          <p className="text-muted-foreground">
-            File system monitoring, storage management, and file operations
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => loadDirectoryContents(currentPath)} disabled={isLoading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
+    <div className="flex h-[calc(100vh-4rem)] bg-background">
+      {/* Left Sidebar - Buckets */}
+      <div className="w-64 border-r bg-white dark:bg-gray-950 flex flex-col">
+        <div className="p-4 border-b">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Buckets</h2>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 w-8 p-0"
+              onClick={() => setShowCreateBucket(true)}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full justify-start"
+            onClick={() => {
+              setShowCreateBucket(true)
+            }}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New bucket
           </Button>
         </div>
-      </div>
-
-      {/* Storage Statistics */}
-      {storageStats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Space</CardTitle>
-              <HardDrive className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatBytes(storageStats.totalSpace)}</div>
-              <div className="text-xs text-muted-foreground">
-                {storageStats.fileSystem} filesystem
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Used Space</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatBytes(storageStats.usedSpace)}</div>
-              <div className="text-xs text-muted-foreground">
-                {((storageStats.usedSpace / storageStats.totalSpace) * 100).toFixed(1)}% used
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Free Space</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatBytes(storageStats.freeSpace)}</div>
-              <div className="text-xs text-muted-foreground">
-                Available space
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Inodes</CardTitle>
-              <Database className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{storageStats.inodes.used.toLocaleString()}</div>
-              <div className="text-xs text-muted-foreground">
-                {storageStats.inodes.free.toLocaleString()} free
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      <Tabs defaultValue="files" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="files">Files</TabsTrigger>
-          <TabsTrigger value="tree">Tree</TabsTrigger>
-          <TabsTrigger value="operations">Operations</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="files" className="space-y-6">
-          {/* Navigation and Controls */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPath(currentPath.split('/').slice(0, -1).join('/') || '/')}
-                disabled={currentPath === '/'}
+        <ScrollArea className="flex-1">
+          <div className="p-2 space-y-1">
+            {buckets.map(bucket => (
+              <button
+                key={bucket.id}
+                onClick={() => {
+                  setSelectedBucket(bucket.id)
+                  setCurrentPath([])
+                }}
+                className={cn(
+                  "w-full text-left px-3 py-2 rounded-md text-sm transition-colors",
+                  "hover:bg-gray-100 dark:hover:bg-gray-800",
+                  selectedBucket === bucket.id && "bg-gray-100 dark:bg-gray-800 font-medium"
+                )}
               >
-                ← Back
-              </Button>
-              <span className="text-sm text-muted-foreground font-mono">
-                {currentPath}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Select value={selectedSpace} onValueChange={setSelectedSpace}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Filter by space" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Spaces</SelectItem>
-                  {spaces.map(space => (
-                    <SelectItem key={space.id} value={space.id}>
-                      {space.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Input
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search files..."
-                className="w-64"
-              />
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="name">Name</SelectItem>
-                  <SelectItem value="size">Size</SelectItem>
-                  <SelectItem value="modified">Modified</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              >
-                {sortOrder === 'asc' ? '↑' : '↓'}
-              </Button>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2">
-            <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Upload Files</DialogTitle>
-                  <DialogDescription>
-                    Select files to upload to {currentPath}
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="file-upload">Select Files</Label>
-                    <Input
-                      id="file-upload"
-                      type="file"
-                      multiple
-                      onChange={(e) => setUploadFiles(e.target.files)}
-                    />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <Folder className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                    <span className="truncate">{bucket.name}</span>
                   </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setShowUploadDialog(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleUploadFiles} disabled={!uploadFiles || uploadFiles.length === 0}>
-                    Upload Files
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-
-            <Dialog open={showCreateFolderDialog} onOpenChange={setShowCreateFolderDialog}>
-              <DialogTrigger asChild>
-                <Button variant="outline">
-                  <FolderPlus className="h-4 w-4 mr-2" />
-                  New Folder
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create Folder</DialogTitle>
-                  <DialogDescription>
-                    Create a new folder in {currentPath}
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="folder-name">Folder Name</Label>
-                    <Input
-                      id="folder-name"
-                      value={newFolderName}
-                      onChange={(e) => setNewFolderName(e.target.value)}
-                      placeholder="New Folder"
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setShowCreateFolderDialog(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={createFolder} disabled={!newFolderName.trim()}>
-                    Create Folder
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-
-            {selectedItems.length > 0 && (
-              <Button
-                variant="destructive"
-                onClick={() => deleteItems(selectedItems)}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete ({selectedItems.length})
-              </Button>
-            )}
-          </div>
-
-          {/* File List */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Directory Contents</CardTitle>
-              <CardDescription>
-                {filteredItems.length} items in {currentPath}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                  <p className="text-muted-foreground">Loading directory contents...</p>
-                </div>
-              ) : filteredItems.length === 0 ? (
-                <div className="text-center py-12">
-                  <Folder className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No files found</h3>
-                  <p className="text-muted-foreground">
-                    This directory is empty or no files match your search
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {filteredItems.map(item => (
-                    <div
-                      key={item.id}
-                      className={`flex items-center gap-4 p-4 border rounded-lg hover:bg-muted/50 cursor-pointer ${
-                        selectedItems.includes(item.id) ? 'bg-muted' : ''
-                      }`}
-                      onClick={() => {
-                        if (item.type === 'directory') {
-                          setCurrentPath(item.path)
-                        } else {
-                          setSelectedItems(prev => 
-                            prev.includes(item.id) 
-                              ? prev.filter(id => id !== item.id)
-                              : [...prev, item.id]
-                          )
-                        }
-                      }}
-                    >
-                      <div className="flex-shrink-0">
-                        {getFileIcon(item)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium truncate">{item.name}</span>
-                          {item.isHidden && (
-                            <Badge variant="outline" className="text-xs">Hidden</Badge>
-                          )}
-                          {item.isSymlink && (
-                            <Badge variant="outline" className="text-xs">Symlink</Badge>
-                          )}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {item.type === 'directory' ? 'Directory' : `${formatBytes(item.size)} • ${item.mimeType || 'Unknown type'}`}
-                          {item.spaceName && (
-                            <span className="ml-2 text-blue-600">• {item.spaceName}</span>
-                          )}
-                          {item.isAttachment && (
-                            <Badge variant="outline" className="ml-2 text-xs">Attachment</Badge>
-                          )}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          Modified: {formatDate(item.modified)} • {item.permissions} • {item.owner}:{item.group}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {item.type === 'file' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              downloadItem(item.id)
-                            }}
-                          >
-                            <Download className="h-3 w-3" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="tree" className="space-y-6">
-          <h3 className="text-lg font-semibold">Directory Tree</h3>
-          <Card>
-            <CardContent className="p-4">
-              <ScrollArea className="h-[600px]">
-                <div className="space-y-1">
-                  {directoryTree.map(item => (
-                    <div key={item.path} className="flex items-center gap-2 py-1">
-                      {item.type === 'directory' ? (
-                        <Folder className="h-4 w-4 text-blue-500" />
-                      ) : (
-                        <File className="h-4 w-4 text-gray-500" />
-                      )}
-                      <span className="text-sm">{item.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        ({formatBytes(item.size)})
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="operations" className="space-y-6">
-          <h3 className="text-lg font-semibold">File Operations</h3>
-          <div className="space-y-4">
-            {operations.map(operation => (
-              <Card key={operation.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {getStatusIcon(operation.status)}
-                      <div>
-                        <div className="font-medium">{operation.type.toUpperCase()}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {operation.source} {operation.destination && `→ ${operation.destination}`}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          Started: {formatDate(operation.started)}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge className={getStatusColor(operation.status)}>
-                        {operation.status}
-                      </Badge>
-                      {operation.status === 'in_progress' && (
-                        <div className="w-20">
-                          <Progress value={operation.progress} />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  {operation.error && (
-                    <div className="mt-2 text-sm text-red-600">
-                      Error: {operation.error}
-                    </div>
+                  {bucket.public && (
+                    <Badge variant="outline" className="text-xs ml-2">Public</Badge>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+                <div className="text-xs text-gray-500 mt-1 ml-6">
+                  {bucket.fileCount} files • {formatBytes(bucket.totalSize)}
+                </div>
+              </button>
             ))}
           </div>
-        </TabsContent>
+        </ScrollArea>
+      </div>
 
-        <TabsContent value="analytics" className="space-y-6">
-          <h3 className="text-lg font-semibold">Storage Analytics</h3>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Storage Usage</CardTitle>
-                <CardDescription>Disk space utilization</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={[
-                        { name: 'Used', value: storageStats?.usedSpace || 0, fill: '#FF8042' },
-                        { name: 'Free', value: storageStats?.freeSpace || 0, fill: '#00C49F' }
-                      ]}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      dataKey="value"
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header Bar */}
+        <div className="border-b bg-white dark:bg-gray-950 px-6 py-4">
+          <div className="flex items-center justify-between mb-4">
+            {/* Breadcrumb */}
+            <div className="flex items-center gap-2 text-sm">
+              <button
+                onClick={() => setCurrentPath([])}
+                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              >
+                Storage
+              </button>
+              {breadcrumb.map((segment, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <ChevronRight className="h-4 w-4 text-gray-400" />
+                  <button
+                    onClick={() => setCurrentPath(breadcrumb.slice(1, index + 1))}
+                    className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                  >
+                    {segment}
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+              >
+                {viewMode === 'grid' ? <List className="h-4 w-4" /> : <Grid3x3 className="h-4 w-4" />}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => loadFiles(selectedBucket!, currentPath)}
+                disabled={isLoading}
+              >
+                <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+              </Button>
+              {selectedBucket && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowUploadDialog(true)}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload file
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search files..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
+        {/* File Browser */}
+        <ScrollArea className="flex-1">
+          {!selectedBucket ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <HardDrive className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No bucket selected</h3>
+                <p className="text-gray-500 mb-4">Select a bucket from the sidebar or create a new one</p>
+                <Button onClick={() => setShowCreateBucket(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create bucket
+                </Button>
+              </div>
+            </div>
+          ) : isLoading && files.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+            </div>
+          ) : filteredFiles.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <Folder className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No files found</h3>
+                <p className="text-gray-500 mb-4">
+                  {searchTerm ? 'Try a different search term' : 'Upload your first file to get started'}
+                </p>
+                {!searchTerm && (
+                  <Button onClick={() => setShowUploadDialog(true)}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload file
+                  </Button>
+                )}
+              </div>
+            </div>
+          ) : viewMode === 'list' ? (
+            <div className="p-6">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12">
+                      <input
+                        type="checkbox"
+                        checked={selectedFiles.size === filteredFiles.length && filteredFiles.length > 0}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedFiles(new Set(filteredFiles.map(f => f.id)))
+                          } else {
+                            setSelectedFiles(new Set())
+                          }
+                        }}
+                        className="rounded border-gray-300"
+                      />
+                    </TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Size</TableHead>
+                    <TableHead>Last modified</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredFiles.map(file => (
+                    <TableRow
+                      key={file.id}
+                      className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900"
+                      onClick={() => setShowFilePreview(file)}
                     >
-                      {[0, 1].map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => formatBytes(Number(value))} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>File Types</CardTitle>
-                <CardDescription>Distribution of file types</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Images</span>
-                    <span className="text-sm font-medium">45%</span>
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          checked={selectedFiles.has(file.id)}
+                          onChange={(e) => {
+                            e.stopPropagation()
+                            const newSelected = new Set(selectedFiles)
+                            if (e.target.checked) {
+                              newSelected.add(file.id)
+                            } else {
+                              newSelected.delete(file.id)
+                            }
+                            setSelectedFiles(newSelected)
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="rounded border-gray-300"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {getFileIcon(file)}
+                          <span className="font-medium">{file.name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-gray-500">{formatBytes(file.size)}</TableCell>
+                      <TableCell className="text-gray-500">{formatDate(file.updatedAt)}</TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDownload(file) }}>
+                              <Download className="h-4 w-4 mr-2" />
+                              Download
+                            </DropdownMenuItem>
+                            {file.publicUrl && (
+                              <>
+                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleCopyUrl(file) }}>
+                                  <Copy className="h-4 w-4 mr-2" />
+                                  Copy URL
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); window.open(file.publicUrl, '_blank') }}>
+                                  <ExternalLink className="h-4 w-4 mr-2" />
+                                  Open in new tab
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDeleteFiles([file.id])
+                              }}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="p-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+              {filteredFiles.map(file => (
+                <div
+                  key={file.id}
+                  className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer group relative"
+                  onClick={() => setShowFilePreview(file)}
+                >
+                  <div className="aspect-square mb-3 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded">
+                    {file.mimeType?.startsWith('image/') && file.publicUrl ? (
+                      <img
+                        src={file.publicUrl}
+                        alt={file.name}
+                        className="w-full h-full object-cover rounded"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center">
+                        {getFileIcon(file)}
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm">Documents</span>
-                    <span className="text-sm font-medium">30%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Videos</span>
-                    <span className="text-sm font-medium">15%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Other</span>
-                    <span className="text-sm font-medium">10%</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{file.name}</p>
+                      <p className="text-xs text-gray-500">{formatBytes(file.size)}</p>
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDownload(file) }}>
+                          <Download className="h-4 w-4 mr-2" />
+                          Download
+                        </DropdownMenuItem>
+                        {file.publicUrl && (
+                          <>
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleCopyUrl(file) }}>
+                              <Copy className="h-4 w-4 mr-2" />
+                              Copy URL
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); window.open(file.publicUrl, '_blank') }}>
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              Open in new tab
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteFiles([file.id])
+                          }}
+                          className="text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
+
+        {/* Selected Files Actions Bar */}
+        {selectedFiles.size > 0 && (
+          <div className="border-t bg-white dark:bg-gray-950 px-6 py-3 flex items-center justify-between">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              {selectedFiles.size} file{selectedFiles.size > 1 ? 's' : ''} selected
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleDeleteFiles(Array.from(selectedFiles))}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedFiles(new Set())}
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
-        </TabsContent>
-      </Tabs>
+        )}
+      </div>
+
+      {/* Create Bucket Dialog */}
+      <Dialog open={showCreateBucket} onOpenChange={setShowCreateBucket}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create new bucket</DialogTitle>
+            <DialogDescription>
+              Buckets are containers for your files. Choose a unique name for your bucket.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Name</label>
+              <Input
+                value={newBucketName}
+                onChange={(e) => setNewBucketName(e.target.value)}
+                placeholder="bucket-name"
+                className="font-mono"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-sm font-medium">Public bucket</label>
+                <p className="text-xs text-gray-500">Anyone with the URL can access files</p>
+              </div>
+              <button
+                onClick={() => setIsPublicBucket(!isPublicBucket)}
+                className={cn(
+                  "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+                  isPublicBucket ? "bg-green-500" : "bg-gray-200"
+                )}
+              >
+                <span
+                  className={cn(
+                    "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                    isPublicBucket ? "translate-x-6" : "translate-x-1"
+                  )}
+                />
+              </button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateBucket(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateBucket} disabled={!newBucketName.trim()}>
+              Create bucket
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Upload Dialog */}
+      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Upload files</DialogTitle>
+            <DialogDescription>
+              Select files to upload to {currentBucket?.name || 'bucket'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="border-2 border-dashed rounded-lg p-8 text-center">
+              <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <label htmlFor="file-upload" className="cursor-pointer">
+                <span className="text-sm font-medium text-primary">Click to upload</span>
+                <span className="text-sm text-gray-500"> or drag and drop</span>
+              </label>
+              <input
+                id="file-upload"
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || [])
+                  setUploadFiles(files)
+                }}
+              />
+            </div>
+            {uploadFiles.length > 0 && (
+              <div className="space-y-2">
+                {uploadFiles.map((file, index) => (
+                  <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                    <span className="text-sm">{file.name}</span>
+                    <span className="text-xs text-gray-500">{formatBytes(file.size)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowUploadDialog(false)
+              setUploadFiles([])
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpload} disabled={uploadFiles.length === 0}>
+              Upload {uploadFiles.length} file{uploadFiles.length > 1 ? 's' : ''}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* File Preview Dialog */}
+      {showFilePreview && (
+        <Dialog open={!!showFilePreview} onOpenChange={() => setShowFilePreview(null)}>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>{showFilePreview.name}</DialogTitle>
+              <DialogDescription>
+                {formatBytes(showFilePreview.size)} • {formatDate(showFilePreview.updatedAt)}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              {showFilePreview.mimeType?.startsWith('image/') && showFilePreview.publicUrl && (
+                <img
+                  src={showFilePreview.publicUrl}
+                  alt={showFilePreview.name}
+                  className="max-w-full max-h-96 object-contain mx-auto"
+                />
+              )}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Public URL</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Input value={showFilePreview.publicUrl || 'Not available'} readOnly />
+                    {showFilePreview.publicUrl && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCopyUrl(showFilePreview!)}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Bucket</label>
+                  <Input value={showFilePreview.bucketName} readOnly className="mt-1" />
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowFilePreview(null)}>
+                Close
+              </Button>
+              <Button onClick={() => handleDownload(showFilePreview)}>
+                <Download className="h-4 w-4 mr-2" />
+                Download
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   )
 }

@@ -155,49 +155,47 @@ class NotebookExecutionEngine {
   }
 
   private async executePython(code: string, kernel: Kernel, context?: ExecutionContext): Promise<ExecutionResult> {
-    // Mock Python execution - replace with actual Python kernel
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500))
-    
-    // Simulate different types of outputs based on code content
-    if (code.includes('matplotlib') || code.includes('plt.')) {
-      return {
-        stdout: 'Plot generated successfully',
-        result: 'Chart created',
-        charts: [{
-          type: 'line',
-          data: this.generateSampleData('line'),
-          config: { title: 'Generated Chart' },
-          title: 'Python Plot'
-        }],
-        variables: { ...kernel.variables, 'plot_generated': true }
+    try {
+      // Call the actual Python execution API
+      const response = await fetch('/api/notebook/execute-python', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code,
+          timeout: 30000, // 30 seconds default timeout
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `Python execution failed: ${response.statusText}`)
       }
-    }
-    
-    if (code.includes('pandas') || code.includes('DataFrame')) {
+
+      const result = await response.json()
+
+      // Convert API response to ExecutionResult format
       return {
-        stdout: 'DataFrame created',
-        result: 'Data processed',
-        tables: [{
-          data: this.generateSampleTableData(),
-          columns: ['id', 'name', 'value', 'category'],
-          title: 'DataFrame Output'
-        }],
-        variables: { ...kernel.variables, 'df': 'DataFrame object' }
+        stdout: result.stdout || '',
+        stderr: result.stderr || '',
+        result: result.result || result.stdout || null,
+        error: result.error || null,
+        executionTime: result.executionTime || 0,
+        variables: result.variables || { ...kernel.variables },
+        // Extract tables and charts if available (for future enhancement)
+        tables: result.tables || [],
+        charts: result.charts || [],
+        images: result.images || [],
       }
-    }
-    
-    if (code.includes('print(')) {
+    } catch (error) {
+      // If API call fails, return error
       return {
-        stdout: 'Hello from Python!\nCode executed successfully',
-        result: 'Print statement executed',
-        variables: { ...kernel.variables, 'output': 'printed' }
+        error: error instanceof Error ? error.message : 'Python execution failed',
+        stderr: error instanceof Error ? error.message : 'Unknown error',
+        executionTime: 0,
+        variables: kernel.variables,
       }
-    }
-    
-    return {
-      stdout: 'Python code executed successfully',
-      result: 'Execution completed',
-      variables: { ...kernel.variables, 'last_execution': Date.now() }
     }
   }
 

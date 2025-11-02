@@ -17,12 +17,15 @@ export interface WorkflowCondition {
 }
 
 export interface WorkflowAction {
-  target_attribute_id: string
-  action_type: string
+  id?: string
+  target_attribute_id?: string
+  action_type: string // 'UPDATE_VALUE', 'SET_DEFAULT', 'CALCULATE', 'COPY_FROM', 'EXECUTE_NOTEBOOK', 'CALL_API'
   new_value?: string
   calculation_formula?: string
   source_attribute_id?: string
   action_order: number
+  notebook_id?: string // For EXECUTE_NOTEBOOK action
+  action_config?: any // Additional configuration (API endpoints, parameters, etc.)
 }
 
 export class WorkflowExecutor {
@@ -186,9 +189,21 @@ export class WorkflowExecutor {
 
   private async processRecord(recordId: string, executionId: string): Promise<boolean> {
     let updated = false
+    const notebookExecutionResults: any[] = []
 
     for (const action of this.actions) {
       try {
+        // Handle notebook execution actions separately
+        if (action.action_type === 'EXECUTE_NOTEBOOK') {
+          const notebookResult = await this.executeNotebookAction(action, recordId, executionId)
+          if (notebookResult) {
+            notebookExecutionResults.push(notebookResult)
+            updated = true
+          }
+          continue
+        }
+
+        // Handle standard attribute update actions
         const newValue = await this.calculateNewValue(action, recordId)
         
         if (newValue !== null) {
@@ -206,7 +221,7 @@ export class WorkflowExecutor {
             `INSERT INTO public.workflow_execution_results 
              (execution_id, data_record_id, action_id, new_value, status)
              VALUES ($1, $2, $3, $4, 'SUCCESS')`,
-            [executionId, recordId, action.target_attribute_id, newValue]
+            [executionId, recordId, action.id || action.target_attribute_id, newValue]
           )
 
           updated = true
@@ -219,12 +234,143 @@ export class WorkflowExecutor {
           `INSERT INTO public.workflow_execution_results 
            (execution_id, data_record_id, action_id, status, error_message)
            VALUES ($1, $2, $3, 'FAILED', $4)`,
-          [executionId, recordId, action.target_attribute_id, error instanceof Error ? error.message : 'Unknown error']
+          [executionId, recordId, action.id || action.target_attribute_id, error instanceof Error ? error.message : 'Unknown error']
         )
       }
     }
 
+    // Store notebook execution results in workflow execution
+    if (notebookExecutionResults.length > 0) {
+      await query(
+        `UPDATE public.workflow_executions
+         SET notebook_executions = $1
+         WHERE id = $2`,
+        [JSON.stringify(notebookExecutionResults), executionId]
+      )
+    }
+
     return updated
+  }
+
+  private async executeNotebookAction(
+    action: WorkflowAction,
+    recordId: string,
+    executionId: string
+  ): Promise<any | null> {
+    if (!action.notebook_id) {
+      console.warn('EXECUTE_NOTEBOOK action missing notebook_id')
+      return null
+    }
+
+    try {
+      // Get notebook data from current version
+      const { rows: notebookRows } = await query(
+        `SELECT notebook_data 
+         FROM public.notebook_versions 
+         WHERE notebook_id = $1 AND is_current = true
+         LIMIT 1`,
+        [action.notebook_id]
+      )
+
+      if (notebookRows.length === 0) {
+        throw new Error(`Notebook ${action.notebook_id} not found or no current version`)
+      }
+
+      const notebookData = typeof notebookRows[0].notebook_data === 'string'
+        ? JSON.parse(notebookRows[0].notebook_data)
+        : notebookRows[0].notebook_data
+
+      // Execute notebook cells
+      const cellsToExecute = action.action_config?.cell_ids || 
+        (notebookData.cells || []).filter((cell: any) => cell.type === 'code' || cell.type === 'sql')
+
+      const executionResults: any[] = []
+      
+      for (const cell of cellsToExecute) {
+        try {
+          if (cell.type === 'sql') {
+            // Execute SQL cell via API endpoint (handles connections and security)
+            try {
+              const sqlResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/notebook/execute-sql`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  query: cell.sqlQuery || cell.content,
+                  connection: cell.sqlConnection || 'default',
+                  spaceId: action.action_config?.space_id
+                })
+              })
+
+              if (!sqlResponse.ok) {
+                const errorData = await sqlResponse.json()
+                throw new Error(errorData.error || 'SQL execution failed')
+              }
+
+              const sqlResult = await sqlResponse.json()
+              executionResults.push({
+                cell_id: cell.id,
+                type: 'sql',
+                success: true,
+                result: sqlResult
+              })
+            } catch (sqlError: any) {
+              throw new Error(`SQL execution failed: ${sqlError.message}`)
+            }
+          } else {
+            // Code cells - would need kernel implementation
+            executionResults.push({
+              cell_id: cell.id,
+              type: 'code',
+              success: false,
+              error: 'Code execution not yet implemented'
+            })
+          }
+        } catch (error: any) {
+          executionResults.push({
+            cell_id: cell.id,
+            type: cell.type,
+            success: false,
+            error: error.message
+          })
+        }
+      }
+
+      // Log notebook execution result
+      await query(
+        `INSERT INTO public.workflow_execution_results 
+         (execution_id, data_record_id, action_id, status, error_message)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [
+          executionId,
+          recordId,
+          action.id || 'notebook_action',
+          executionResults.every((r) => r.success) ? 'SUCCESS' : 'COMPLETED_WITH_ERRORS',
+          executionResults.some((r) => !r.success) 
+            ? `Notebook execution completed with ${executionResults.filter((r) => !r.success).length} errors`
+            : null
+        ]
+      )
+
+      return {
+        notebook_id: action.notebook_id,
+        record_id: recordId,
+        cells_executed: executionResults.length,
+        cells_succeeded: executionResults.filter((r) => r.success).length,
+        cells_failed: executionResults.filter((r) => !r.success).length,
+        results: executionResults
+      }
+    } catch (error: any) {
+      console.error(`Error executing notebook ${action.notebook_id}:`, error)
+      
+      await query(
+        `INSERT INTO public.workflow_execution_results 
+         (execution_id, data_record_id, action_id, status, error_message)
+         VALUES ($1, $2, $3, 'FAILED', $4)`,
+        [executionId, recordId, action.id || 'notebook_action', error.message]
+      )
+
+      return null
+    }
   }
 
   private async calculateNewValue(action: WorkflowAction, recordId: string): Promise<string | null> {
@@ -313,9 +459,20 @@ export async function executeWorkflow(workflowId: string): Promise<WorkflowExecu
       [workflowId]
     )
 
-    // Get actions
+    // Get actions (including notebook_id and action_config)
     const { rows: actions } = await query(
-      `SELECT * FROM public.workflow_actions 
+      `SELECT 
+        id,
+        workflow_id,
+        target_attribute_id,
+        action_type,
+        new_value,
+        calculation_formula,
+        source_attribute_id,
+        action_order,
+        notebook_id,
+        action_config
+       FROM public.workflow_actions 
        WHERE workflow_id = $1
        ORDER BY action_order`,
       [workflowId]

@@ -64,14 +64,32 @@ export function useNotebookKeyboardShortcuts({
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     // Don't trigger shortcuts when typing in inputs or textareas
     const target = event.target as HTMLElement
-    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
-      // Only handle specific shortcuts in text areas
+    const isInputOrTextarea = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA'
+    const isCodeMirror = target.closest('.cm-editor') !== null || target.closest('.cm-content') !== null
+    
+    // Allow Delete/Backspace in CodeMirror only if content is empty, otherwise handle text deletion normally
+    if (isInputOrTextarea || isCodeMirror) {
+      // Only handle Escape and Delete/Backspace (for empty cells)
       if (event.key === 'Escape') {
         event.preventDefault()
         target.blur()
         return
       }
-      return
+      // For Delete/Backspace in code editor, only delete cell if editor is empty
+      if ((event.key === 'Delete' || event.key === 'Backspace') && activeCellId) {
+        // Check if CodeMirror editor is empty
+        if (isCodeMirror) {
+          const editorElement = target.closest('.cm-editor')
+          if (editorElement) {
+            // Allow normal deletion in editor, don't delete cell
+            return
+          }
+        }
+      }
+      // For normal inputs, don't handle delete
+      if (isInputOrTextarea && (event.key === 'Delete' || event.key === 'Backspace')) {
+        return
+      }
     }
 
     const isCtrlOrCmd = event.ctrlKey || event.metaKey
@@ -131,7 +149,25 @@ export function useNotebookKeyboardShortcuts({
       toast.success('Raw cell inserted below')
     }
 
-    // Cell deletion shortcuts
+    // Cell deletion shortcuts - only when NOT editing
+    if ((event.key === 'Delete' || event.key === 'Backspace') && !isInputOrTextarea && !isCodeMirror) {
+      // Delete/Backspace: Delete active cell (when not in input/textarea/code editor)
+      if (activeCellId) {
+        // Only delete if we're not actively editing
+        const isEditing = document.activeElement?.tagName === 'INPUT' || 
+                         document.activeElement?.tagName === 'TEXTAREA' ||
+                         document.activeElement?.closest('.cm-editor') !== null ||
+                         document.activeElement?.closest('.cm-content') !== null
+        
+        if (!isEditing) {
+          event.preventDefault()
+          onDeleteCell(activeCellId)
+          toast.success('Cell deleted')
+          return
+        }
+      }
+    }
+
     if (event.key === 'd' && isCtrlOrCmd) {
       if (isShift) {
         // Ctrl+Shift+D: Delete cell
@@ -142,8 +178,16 @@ export function useNotebookKeyboardShortcuts({
       } else {
         // Ctrl+D: Duplicate cell
         if (activeCellId) {
-          // This would need to be implemented
-          toast.info('Duplicate cell feature coming soon')
+          // Call duplicate handler if available
+          const cell = notebook.cells.find((c: any) => c.id === activeCellId)
+          if (cell) {
+            // Duplicate will be handled via copy + paste
+            onCopyCell(activeCellId)
+            setTimeout(() => {
+              onPasteCell()
+            }, 100)
+            toast.success('Cell duplicated')
+          }
         }
       }
     }
@@ -305,6 +349,7 @@ Keyboard Shortcuts:
 • Ctrl+B: Insert cell below
 • Ctrl+M: Insert markdown cell
 • Ctrl+D: Duplicate cell
+• Del/Backspace: Delete cell
 • Ctrl+Shift+D: Delete cell
 • Ctrl+Up/Down: Move cell
 • Ctrl+C/V: Copy/Paste cell

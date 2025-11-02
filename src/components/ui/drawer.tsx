@@ -11,16 +11,37 @@ const DrawerClose = DialogPrimitive.Close
 const DrawerOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
->(({ className, ...props }, ref) => (
-  <DialogPrimitive.Overlay
-    ref={ref}
-    className={cn(
-      "fixed inset-0 z-[9998] bg-black/40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0",
-      className
-    )}
-    {...props}
-  />
-))
+>(({ className, ...props }, ref) => {
+  const [isDragging, setIsDragging] = React.useState(false)
+  
+  React.useEffect(() => {
+    const handleDragStart = () => setIsDragging(true)
+    const handleDragEnd = () => setIsDragging(false)
+    
+    document.addEventListener('dragstart', handleDragStart)
+    document.addEventListener('dragend', handleDragEnd)
+    
+    return () => {
+      document.removeEventListener('dragstart', handleDragStart)
+      document.removeEventListener('dragend', handleDragEnd)
+    }
+  }, [])
+  
+  return (
+    <DialogPrimitive.Overlay
+      ref={ref}
+      className={cn(
+        "fixed inset-0 z-[9998] bg-black/40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0",
+        className
+      )}
+      style={{
+        ...(props as any).style,
+        pointerEvents: isDragging ? 'none' : 'auto',
+      }}
+      {...props}
+    />
+  )
+})
 DrawerOverlay.displayName = DialogPrimitive.Overlay.displayName
 
 const DrawerContent = React.forwardRef<
@@ -36,6 +57,7 @@ const DrawerContent = React.forwardRef<
         widthClassName,
         className
       )}
+      data-drawer-content
       {...props}
     >
       {children}

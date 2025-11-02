@@ -1,9 +1,10 @@
 'use client'
 
 import { useSpace } from '@/contexts/space-context'
-import { useParams, usePathname } from 'next/navigation'
-import { useEffect } from 'react'
+import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
+import { PlatformLayout } from '@/components/platform/PlatformLayout'
 
 export default function SpaceLayout({
   children,
@@ -12,8 +13,11 @@ export default function SpaceLayout({
 }) {
   const params = useParams()
   const pathname = usePathname()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const spaceSlug = params.space as string
   const { currentSpace, setCurrentSpace, spaces, isLoading } = useSpace()
+  const [activeTab, setActiveTab] = useState('space-settings')
 
   // Set the current space based on the URL parameter
   useEffect(() => {
@@ -34,6 +38,14 @@ export default function SpaceLayout({
       }
     }
   }, [currentSpace, spaces, spaceSlug, setCurrentSpace])
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab)
+    // Navigate to homepage with the tab when clicking other tabs
+    if (tab !== 'space-settings') {
+      router.push(`/?tab=${encodeURIComponent(tab)}`)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -67,12 +79,28 @@ export default function SpaceLayout({
 
   const isSpaceSettings = pathname?.includes('/settings')
 
-  // For space settings, use a custom layout without main sidebar
+  // For space settings, use PlatformLayout to show platform sidebar
   if (isSpaceSettings) {
     return (
-      <div className="min-h-screen bg-background">
+      <PlatformLayout
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        selectedSpace={currentSpace?.id}
+        onSpaceChange={(spaceId) => {
+          const space = spaces.find(s => s.id === spaceId)
+          if (space) {
+            router.push(`/${space.slug || space.id}/settings`)
+          }
+        }}
+        breadcrumbItems={[
+          { label: 'Unified Data Platform', href: '/' },
+          { label: 'System', href: '/?tab=space-settings' },
+          { label: 'Space Settings', href: `/${spaceSlug}/settings` },
+          currentSpace?.name || ''
+        ]}
+      >
         {children}
-      </div>
+      </PlatformLayout>
     )
   }
 

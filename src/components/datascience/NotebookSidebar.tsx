@@ -90,6 +90,7 @@ import {
 import { cn } from '@/lib/utils'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Pencil, Download as DownloadIcon, History as HistoryIcon } from 'lucide-react'
+import { VersionsDrawer } from './VersionsDrawer'
 
 interface NotebookSidebarProps {
   notebook: {
@@ -250,12 +251,34 @@ export function NotebookSidebar({
                 }
               }}
               draggable={file.type === 'file'}
-              onDragStart={(e) => { setDragIndex(index) }}
-              onDragOver={(e) => { e.preventDefault() }}
+              onDragStart={(e) => { 
+                if (file.type === 'file') {
+                  setDragIndex(index)
+                  e.dataTransfer.effectAllowed = 'move'
+                }
+              }}
+              onDragOver={(e) => { 
+                e.preventDefault()
+                if (file.type === 'folder' && dragIndex !== null) {
+                  e.currentTarget.classList.add('bg-blue-100', 'dark:bg-blue-900')
+                }
+              }}
+              onDragLeave={(e) => {
+                e.currentTarget.classList.remove('bg-blue-100', 'dark:bg-blue-900')
+              }}
               onDrop={(e) => {
                 e.preventDefault()
+                e.currentTarget.classList.remove('bg-blue-100', 'dark:bg-blue-900')
+                
                 if (dragIndex !== null && dragIndex !== index) {
-                  onMoveFile(files[dragIndex].name, `index:${index}`)
+                  const draggedFile = files[dragIndex]
+                  // If dropping on a folder, move file into folder
+                  if (file.type === 'folder') {
+                    onMoveFile(draggedFile.name, `${file.name}/${draggedFile.name}`)
+                  } else {
+                    // Otherwise move to position
+                    onMoveFile(draggedFile.name, `index:${index}`)
+                  }
                 }
                 setDragIndex(null)
               }}
@@ -271,15 +294,30 @@ export function NotebookSidebar({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  {file.type === 'folder' && (
+                    <DropdownMenuItem onClick={(e) => { 
+                      e.stopPropagation()
+                      const folderName = prompt('New folder name:', 'New Folder')
+                      if (folderName && onCreateFolder) {
+                        onCreateFolder(`${file.name}/${folderName}`)
+                      }
+                    }}>
+                      <Folder className="h-4 w-4 mr-2" /> New Folder Inside
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={(e) => { e.stopPropagation(); const newName = prompt('Rename to:', file.name); if (newName) onRenameFile(file.name, newName) }}>
                     <Pencil className="h-4 w-4 mr-2" /> Rename
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onExportFile && onExportFile(file.name) }}>
-                    <DownloadIcon className="h-4 w-4 mr-2" /> Export
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setShowVersionsFor(file.name) }}>
-                    <HistoryIcon className="h-4 w-4 mr-2" /> Versions
-                  </DropdownMenuItem>
+                  {file.type === 'file' && (
+                    <>
+                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onExportFile && onExportFile(file.name) }}>
+                        <DownloadIcon className="h-4 w-4 mr-2" /> Export
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setShowVersionsFor(file.name) }}>
+                        <HistoryIcon className="h-4 w-4 mr-2" /> Versions
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDeleteFile(file.name) }} className="text-red-600">
                     <Trash2 className="h-4 w-4 mr-2" /> Delete
                   </DropdownMenuItem>
@@ -432,30 +470,11 @@ export function NotebookSidebar({
 
       {/* Versions Drawer */}
       {showVersionsFor && (
-        <div className="fixed inset-0 z-50" onClick={() => setShowVersionsFor(null)}>
-          <div className="absolute inset-0 bg-black/30" />
-          <div className="absolute top-0 right-0 h-full w-96 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-xl flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 font-medium text-sm flex items-center justify-between">
-              <span>Versions • {showVersionsFor}</span>
-              <Button size="sm" variant="outline" onClick={() => { onShowVersions && onShowVersions(showVersionsFor); }}>Open History</Button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-3 space-y-2">
-              {[...Array(5)].map((_, i) => {
-                const date = new Date(Date.now() - i * 3600_000)
-                return (
-                  <div key={i} className="p-2 rounded border border-gray-200 dark:border-gray-700 text-sm flex items-center justify-between">
-                    <div>
-                      <div className="font-medium">{date.toLocaleString()}</div>
-                      <div className="text-xs text-gray-500">v{i + 1} • {Math.round(Math.random()*100)} KB</div>
-                    </div>
-                    <Button size="sm" onClick={() => { /* restore mock */ setShowVersionsFor(null) }}>Restore</Button>
-                  </div>
-                )
-              })}
-            </div>
-            <div className="p-3 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-500">Showing latest 5 versions</div>
-          </div>
-        </div>
+        <VersionsDrawer
+          filePath={showVersionsFor}
+          onClose={() => setShowVersionsFor(null)}
+          onShowVersions={onShowVersions}
+        />
       )}
 
       {/* Create Modal */}

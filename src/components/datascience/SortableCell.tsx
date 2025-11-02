@@ -30,6 +30,8 @@ interface SortableCellProps {
   onAddTag?: (cellId: string) => void
   onSearch?: (cellId: string) => void
   onTitleChange?: (cellId: string, title: string) => void
+  canEdit?: boolean
+  canExecute?: boolean
 }
 
 export function SortableCell(props: SortableCellProps) {
@@ -56,22 +58,25 @@ export function SortableCell(props: SortableCellProps) {
         isDragging && "opacity-50 z-50 shadow-lg scale-105"
       )}
     >
-      {/* Drag Handle */}
-      <div
-        {...attributes}
-        {...listeners}
-        className={cn(
-          "absolute left-0 top-0 w-6 h-full flex items-center justify-center cursor-grab active:cursor-grabbing z-10",
-          "opacity-0 group-hover:opacity-100 transition-opacity",
-          "hover:bg-gray-200 dark:hover:bg-gray-700 rounded-l-md"
-        )}
-      >
-        <GripVertical className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-      </div>
+      {/* Drag Handle - Always visible for drag and drop */}
+      {props.canEdit !== false && (
+        <div
+          {...attributes}
+          {...listeners}
+          className={cn(
+            "absolute left-0 top-0 w-8 h-full flex items-center justify-center cursor-grab active:cursor-grabbing z-10",
+            "opacity-40 group-hover:opacity-100 transition-opacity",
+            "hover:bg-gray-200 dark:hover:bg-gray-700 rounded-l-[5px]"
+          )}
+          title="Drag to reorder cell"
+        >
+          <GripVertical className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+        </div>
+      )}
 
-      {/* Cell Content with left margin for drag handle */}
-      <div className="ml-6">
-        <CellRenderer {...props} />
+      {/* Cell Content - with left margin for drag handle */}
+      <div className={props.canEdit !== false ? "ml-8" : "ml-0"}>
+        <CellRenderer {...props} canEdit={props.canEdit} canExecute={props.canExecute} />
       </div>
     </div>
   )

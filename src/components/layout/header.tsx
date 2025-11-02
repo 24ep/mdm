@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { signOut } from 'next-auth/react'
+import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -12,9 +13,11 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Bell, Search, Settings, LogOut, User as UserIcon } from 'lucide-react'
+import { Bell, Search, Settings, LogOut, User as UserIcon, Moon, Sun, Monitor } from 'lucide-react'
 import { AnimatedIcon } from '@/components/ui/animated-icon'
 import { NotificationBell } from '@/components/notifications/notification-bell'
 import { SystemSettingsModal } from '@/components/settings/SystemSettingsModal'
@@ -32,6 +35,7 @@ export function Header({ user }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const router = useRouter()
+  const { theme, setTheme } = useTheme()
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: '/auth/signin' })
@@ -89,36 +93,30 @@ export function Header({ user }: HeaderProps) {
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link href="/profile">
-                <AnimatedIcon 
-                  icon="User" 
-                  size={16} 
-                  animation="scale" 
-                  trigger="hover"
-                  className="mr-2" 
-                />
-                <span>Profile</span>
+                <UserIcon className="mr-2 h-4 w-4" />
+                <span>Profile Settings</span>
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setShowSettingsModal(true)}>
-              <AnimatedIcon 
-                icon="Settings" 
-                size={16} 
-                animation="rotate" 
-                trigger="hover"
-                className="mr-2" 
-              />
-              <span>System Settings</span>
-            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Theme</DropdownMenuLabel>
+            <DropdownMenuRadioGroup value={theme || 'system'} onValueChange={setTheme}>
+              <DropdownMenuRadioItem value="light">
+                <Sun className="mr-2 h-4 w-4" />
+                <span>Light</span>
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="dark">
+                <Moon className="mr-2 h-4 w-4" />
+                <span>Dark</span>
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="system">
+                <Monitor className="mr-2 h-4 w-4" />
+                <span>System</span>
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut}>
-              <AnimatedIcon 
-                icon="LogOut" 
-                size={16} 
-                animation="scale" 
-                trigger="hover"
-                className="mr-2" 
-              />
-              <span>Log out</span>
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Logout</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

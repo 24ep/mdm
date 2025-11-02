@@ -24,8 +24,8 @@ export async function GET(
         sm.role as user_role
       FROM spaces s
       LEFT JOIN users u ON s.created_by = u.id
-      LEFT JOIN space_members sm ON s.id = sm.space_id AND sm.user_id = $2
-      WHERE s.id = $1 AND s.deleted_at IS NULL
+      LEFT JOIN space_members sm ON s.id = sm.space_id AND sm.user_id = $2::uuid
+      WHERE s.id = $1::uuid AND s.deleted_at IS NULL
     `, [spaceId, session.user.id])
 
     if (space.rows.length === 0) {
@@ -48,7 +48,7 @@ export async function GET(
         u.role as user_system_role
       FROM space_members sm
       LEFT JOIN users u ON sm.user_id = u.id
-      WHERE sm.space_id = $1
+      WHERE sm.space_id = $1::uuid
       ORDER BY sm.role DESC, u.name ASC
     `, [spaceId])
 
@@ -86,7 +86,7 @@ export async function PUT(
     // Check if user has permission to update this space
     const memberCheck = await query(`
       SELECT role FROM space_members 
-      WHERE space_id = $1 AND user_id = $2
+      WHERE space_id = $1::uuid AND user_id = $2::uuid
     `, [spaceId, session.user.id])
 
     if (memberCheck.rows.length === 0 || !['owner', 'admin'].includes(memberCheck.rows[0].role)) {
@@ -106,7 +106,7 @@ export async function PUT(
         features = CASE WHEN $10 THEN COALESCE($11, features) ELSE features END,
         sidebar_config = CASE WHEN $12 THEN COALESCE($13, sidebar_config) ELSE sidebar_config END,
         updated_at = NOW()
-      WHERE id = $1 AND deleted_at IS NULL
+      WHERE id = $1::uuid AND deleted_at IS NULL
       RETURNING *
     `, [spaceId, name?.trim(), description?.trim(), is_default, slug?.trim(), icon ?? null, logo_url ?? null, iconProvided, logoProvided, featuresProvided, features ?? null, sidebarProvided, sidebar_config ?? null])
 
@@ -147,7 +147,7 @@ export async function DELETE(
     await query(`
       UPDATE spaces 
       SET deleted_at = NOW(), updated_at = NOW()
-      WHERE id = $1
+      WHERE id = $1::uuid
     `, [spaceId])
 
     return NextResponse.json({

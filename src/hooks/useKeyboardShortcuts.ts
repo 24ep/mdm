@@ -13,6 +13,9 @@ interface KeyboardShortcutsProps {
   onShowVisualization: () => void
   onShowValidation: () => void
   onShowShortcuts: () => void
+  onFormatQuery?: () => void
+  onShowParameters?: () => void
+  onShowSnippets?: () => void
   onCloseDialogs: () => void
   tabs: any[]
   activeTabId: string
@@ -31,6 +34,9 @@ export function useKeyboardShortcuts({
   onShowVisualization,
   onShowValidation,
   onShowShortcuts,
+  onFormatQuery,
+  onShowParameters,
+  onShowSnippets,
   onCloseDialogs,
   tabs,
   activeTabId
@@ -110,6 +116,24 @@ export function useKeyboardShortcuts({
         e.preventDefault()
         onShowShortcuts()
       }
+
+      // Ctrl/Cmd + Shift + F: Format query
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'F') {
+        e.preventDefault()
+        onFormatQuery?.()
+      }
+
+      // Ctrl/Cmd + Shift + P: Show parameters
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'P') {
+        e.preventDefault()
+        onShowParameters?.()
+      }
+
+      // Ctrl/Cmd + Shift + S: Show snippets
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'S') {
+        e.preventDefault()
+        onShowSnippets?.()
+      }
       
       // Escape: Close dialogs
       if (e.key === 'Escape') {
@@ -132,6 +156,9 @@ export function useKeyboardShortcuts({
     onShowVisualization,
     onShowValidation,
     onShowShortcuts,
+    onFormatQuery,
+    onShowParameters,
+    onShowSnippets,
     onCloseDialogs,
     tabs,
     activeTabId

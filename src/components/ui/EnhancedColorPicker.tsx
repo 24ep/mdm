@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useState, useCallback } from 'react'
-import { SketchPicker, ColorResult } from 'react-color'
+import SketchPicker from 'react-color/es/Sketch'
+import type { ColorResult } from 'react-color'
 import { Button } from './button'
 import { Input } from './input'
 import { Label } from './label'

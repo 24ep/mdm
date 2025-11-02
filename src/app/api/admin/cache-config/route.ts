@@ -6,11 +6,7 @@ const prisma = new PrismaClient()
 export async function GET() {
   try {
     // Get all cache configurations
-    const configs = await prisma.cacheConfig.findMany({
-      include: {
-        instance: true
-      }
-    })
+    const configs = await prisma.cacheConfig.findMany()
 
     // Return the first configuration as the global config
     // In a real implementation, you might have a global config table

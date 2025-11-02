@@ -181,21 +181,38 @@ export async function PUT(
       }
     }
 
-    // Create new schedule if provided
-    if (schedule && trigger_type === 'SCHEDULED') {
-      await query(
-        `INSERT INTO public.workflow_schedules 
-         (workflow_id, schedule_type, schedule_config, start_date, end_date, timezone)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [
-          workflowId,
-          schedule.schedule_type,
-          JSON.stringify(schedule.schedule_config),
-          schedule.start_date,
-          schedule.end_date,
-          schedule.timezone || 'UTC'
-        ]
-      )
+    // Create new schedule if provided (for SCHEDULED workflows) or integration config (for EVENT_BASED)
+    if (schedule) {
+      if (trigger_type === 'SCHEDULED') {
+        // Scheduled workflow with time-based schedule
+        await query(
+          `INSERT INTO public.workflow_schedules 
+           (workflow_id, schedule_type, schedule_config, start_date, end_date, timezone)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [
+            workflowId,
+            schedule.schedule_type,
+            JSON.stringify(schedule.schedule_config || {}),
+            schedule.start_date || null,
+            schedule.end_date || null,
+            schedule.timezone || 'UTC'
+          ]
+        )
+      } else if (trigger_type === 'EVENT_BASED' && schedule.schedule_config?.trigger_on_sync) {
+        // Event-based workflow triggered by data syncs
+        await query(
+          `INSERT INTO public.workflow_schedules 
+           (workflow_id, schedule_type, schedule_config, trigger_on_sync, trigger_on_sync_schedule_id)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [
+            workflowId,
+            'CUSTOM_CRON', // Use as placeholder for event-based
+            JSON.stringify(schedule.schedule_config || {}),
+            true,
+            schedule.schedule_config?.trigger_on_sync_schedule_id || null
+          ]
+        )
+      }
     }
 
     return NextResponse.json({ workflow })

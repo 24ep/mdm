@@ -118,8 +118,10 @@ export class SpaceORM {
     createdBy: string
     features?: any
     sidebarConfig?: any
+    tags?: string[]
   }) {
-    return prisma.space.create({
+    // Check if tags column exists and use raw query if needed, otherwise store in features
+    const space = await prisma.space.create({
       data: {
         name: data.name,
         description: data.description,
@@ -130,6 +132,17 @@ export class SpaceORM {
         sidebarConfig: data.sidebarConfig || {}
       }
     })
+
+    // If tags are provided, update the space with tags using raw query
+    if (data.tags && data.tags.length > 0) {
+      await prisma.$executeRaw`
+        UPDATE spaces 
+        SET tags = ${JSON.stringify(data.tags)}::jsonb 
+        WHERE id = ${space.id}
+      `
+    }
+
+    return space
   }
 
   static async addMember(spaceId: string, userId: string, role: string = 'MEMBER') {

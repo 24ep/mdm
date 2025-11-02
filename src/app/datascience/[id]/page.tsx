@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useSearchParams, useParams } from 'next/navigation'
-import { AdminLayout } from '@/components/admin/AdminLayout'
+import { PlatformLayout } from '@/components/platform/PlatformLayout'
 import { DeepNoteLayoutRefactored } from '@/components/datascience/DeepNoteLayoutRefactored'
 import { getRoleCapabilities, NotebookRole } from '@/components/datascience/mock'
 import { Switch } from '@/components/ui/switch'
@@ -46,7 +46,7 @@ export default function NotebookPage() {
   const effectiveCanEdit = caps.canEdit && editToggle
 
   return (
-    <AdminLayout
+    <PlatformLayout
       activeTab={activeTab}
       onTabChange={setActiveTab}
       selectedSpace={selectedSpace}
@@ -115,6 +115,6 @@ export default function NotebookPage() {
           />
         </div>
       </div>
-    </AdminLayout>
+    </PlatformLayout>
   )
 }

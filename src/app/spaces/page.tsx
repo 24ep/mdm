@@ -61,7 +61,7 @@ export default function SpaceSelectionPage() {
   }
 
   const handleAdminConsole = () => {
-    router.push('/admin')
+    router.push('/')
   }
 
   const handleCreateSpace = async (e: React.FormEvent) => {
@@ -306,7 +306,7 @@ export default function SpaceSelectionPage() {
               <Shield className="h-6 w-6 text-primary" />
               <div className="flex-1">
                 <CardTitle className="text-base flex items-center gap-2">
-                  Admin Console
+                  Unified Data Platform
                   <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">System</span>
                 </CardTitle>
                 <CardDescription>

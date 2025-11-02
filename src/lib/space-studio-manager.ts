@@ -12,6 +12,12 @@ export interface SpacesEditorPage {
   path: string
   order: number
   isActive: boolean
+  hidden?: boolean
+  icon?: string
+  permissions?: {
+    roles?: string[] // e.g., ['owner', 'admin', 'member']
+    userIds?: string[] // specific user IDs
+  }
   createdAt: string
   updatedAt: string
 }

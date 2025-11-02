@@ -66,7 +66,9 @@ import {
   PieChart,
   Hash,
   Info,
-  LineChart
+  LineChart,
+  Code,
+  Download
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -82,8 +84,20 @@ import {
   TableContextMenu,
   DataExplorer,
   ResultsPanel,
+  QueryFormatter,
+  QueryParameters,
+  QueryScheduler,
+  QueryCostEstimator,
+  QueryDryRun,
+  QueryPlan,
+  QuerySnippets,
+  QuerySharing,
+  QueryExportImport,
+  QueryComments,
+  QueryVersionHistory,
 } from '@/components/bigquery'
 import { useKeyboardShortcuts, useSpaces, useDataModels } from '@/hooks'
+import { formatSQL } from '@/lib/sql-formatter'
 
 interface QueryResult {
   id: string
@@ -198,7 +212,18 @@ export function BigQueryInterface() {
   const [showTemplates, setShowTemplates] = useState(false)
   const [showBookmarks, setShowBookmarks] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
+  const [showParameters, setShowParameters] = useState(false)
+  const [showScheduler, setShowScheduler] = useState(false)
+  const [showSnippets, setShowSnippets] = useState(false)
+  const [showCostEstimate, setShowCostEstimate] = useState(false)
+  const [showSharing, setShowSharing] = useState(false)
+  const [showExportImport, setShowExportImport] = useState(false)
+  const [showComments, setShowComments] = useState(false)
+  const [showVersionHistory, setShowVersionHistory] = useState(false)
   const [bookmarkedQueries, setBookmarkedQueries] = useState<Set<string>>(new Set())
+  const [scheduledQueries, setScheduledQueries] = useState<any[]>([])
+  const [queryComments, setQueryComments] = useState<any[]>([])
+  const [queryVersions, setQueryVersions] = useState<any[]>([])
   
   // Query validation
   const { validateQuery } = useQueryValidation()
@@ -450,6 +475,17 @@ export function BigQueryInterface() {
     setContextMenu(prev => ({ ...prev, visible: false }))
   }
 
+  // Format query handler
+  const handleFormatQuery = () => {
+    try {
+      const formatted = formatSQL(query)
+      updateCurrentTabQuery(formatted)
+      toast.success('Query formatted successfully')
+    } catch (error) {
+      toast.error('Failed to format query')
+    }
+  }
+
   // Keyboard shortcuts
   useKeyboardShortcuts({
     onRunQuery: executeQuery,
@@ -464,10 +500,16 @@ export function BigQueryInterface() {
     onShowVisualization: () => { setFooterTab('visualization'); setShowFooter(true) },
     onShowValidation: () => { setFooterTab('validation'); setShowFooter(true) },
     onShowShortcuts: () => setShowShortcuts(true),
+    onFormatQuery: handleFormatQuery,
+    onShowParameters: () => setShowParameters(true),
+    onShowSnippets: () => setShowSnippets(true),
     onCloseDialogs: () => {
       setShowTemplates(false)
       setShowBookmarks(false)
       setShowShortcuts(false)
+      setShowParameters(false)
+      setShowScheduler(false)
+      setShowSnippets(false)
       closeContextMenu()
     },
     tabs,
@@ -839,6 +881,16 @@ export function BigQueryInterface() {
                   <Zap className="h-4 w-4 mr-1" />
                   Shortcuts
                 </Button>
+
+                {/* Query Formatter */}
+                <QueryFormatter 
+                  query={query} 
+                  onQueryChange={updateCurrentTabQuery} 
+                />
+
+                {/* Query Dry Run & Plan */}
+                <QueryDryRun query={query} />
+                <QueryPlan query={query} isVisible={true} />
                 
         </div>
 
@@ -860,8 +912,61 @@ export function BigQueryInterface() {
                       <Copy className="h-4 w-4 mr-2" />
                       Save as Copy
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowScheduler(true)}>
+                      <Clock className="h-4 w-4 mr-2" />
+                      Schedule...
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowParameters(true)}>
+                      <Hash className="h-4 w-4 mr-2" />
+                      Parameters...
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowSharing(true)}>
+                      <Share className="h-4 w-4 mr-2" />
+                      Share...
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowExportImport(true)}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Export/Import...
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowVersionHistory(true)}>
+                      <History className="h-4 w-4 mr-2" />
+                      Version History...
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+
+                {/* Comments Button */}
+                <Button 
+                  size="sm" 
+                  variant={showComments ? "default" : "outline"} 
+                  onClick={() => setShowComments(!showComments)} 
+                  className="h-8 px-3"
+                >
+                  <FileText className="h-4 w-4 mr-1" />
+                  Comments
+                  {queryComments.length > 0 && (
+                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-xs">
+                      {queryComments.length}
+                    </Badge>
+                  )}
+                </Button>
+
+                {/* Additional tools */}
+                <Button size="sm" variant="outline" onClick={() => setShowSnippets(true)} className="h-8 px-3">
+                  <Code className="h-4 w-4 mr-1" />
+                  Snippets
+                </Button>
+
+                {/* Cost Estimator Toggle */}
+                <Button 
+                  size="sm" 
+                  variant={showCostEstimate ? "default" : "outline"} 
+                  onClick={() => setShowCostEstimate(!showCostEstimate)} 
+                  className="h-8 px-3"
+                >
+                  <TrendingUp className="h-4 w-4 mr-1" />
+                  Cost
+                </Button>
                 
                 <Button 
                   size="sm" 
@@ -877,13 +982,21 @@ export function BigQueryInterface() {
               </div>
               
           {/* Main Content Area */}
-          <div className="flex-1 h-full">
+          <div className="flex-1 min-h-0 flex flex-col">
+            {/* Cost Estimator Panel */}
+            {showCostEstimate && (
+              <div className="px-4 py-2 border-b bg-gray-50">
+                <QueryCostEstimator query={query} isVisible={showCostEstimate} />
+              </div>
+            )}
+            
             {currentView === 'editor' ? (
-              <CodeEditor
-                value={query}
-                onChange={updateCurrentTabQuery}
-                language="sql"
-                height="100%"
+              <div className="flex-1 min-h-0">
+                <CodeEditor
+                  value={query}
+                  onChange={updateCurrentTabQuery}
+                  language="sql"
+                  height="100%"
                 placeholder="-- Enter your SQL query here
 SELECT 
   name,
@@ -918,6 +1031,7 @@ LIMIT 100;"
                   enableSelectionHighlight: true
                 }}
               />
+              </div>
             ) : (
               <div className="h-full flex flex-col">
                 {/* Schema Header */}
@@ -1105,6 +1219,100 @@ LIMIT 100;"
       <KeyboardShortcuts
         isOpen={showShortcuts}
         onClose={() => setShowShortcuts(false)}
+      />
+
+      <QueryParameters
+        query={query}
+        onQueryChange={updateCurrentTabQuery}
+        isOpen={showParameters}
+        onClose={() => setShowParameters(false)}
+      />
+
+      <QueryScheduler
+        query={query}
+        queryName={currentTab?.name}
+        isOpen={showScheduler}
+        onClose={() => setShowScheduler(false)}
+        onSchedule={(schedule) => {
+          setScheduledQueries(prev => [...prev, schedule])
+          toast.success(`Query "${schedule.name}" scheduled successfully`)
+        }}
+      />
+
+      <QuerySnippets
+        isOpen={showSnippets}
+        onClose={() => setShowSnippets(false)}
+        onInsertSnippet={updateCurrentTabQuery}
+      />
+
+      <QuerySharing
+        query={query}
+        queryName={currentTab?.name || 'Untitled Query'}
+        isOpen={showSharing}
+        onClose={() => setShowSharing(false)}
+        onShare={(url, settings) => {
+          toast.success(`Query shared: ${url}`)
+        }}
+      />
+
+      <QueryExportImport
+        query={query}
+        queryName={currentTab?.name}
+        isOpen={showExportImport}
+        onClose={() => setShowExportImport(false)}
+        onImport={(importedQuery, metadata) => {
+          updateCurrentTabQuery(importedQuery)
+          if (metadata?.notes) {
+            toast.success(`Query imported with notes: ${metadata.notes}`)
+          }
+        }}
+      />
+
+      <QueryComments
+        query={query}
+        queryId={activeTabId}
+        isOpen={showComments}
+        onClose={() => setShowComments(false)}
+        comments={queryComments}
+        onAddComment={(comment) => {
+          const newComment = {
+            ...comment,
+            id: Date.now().toString(),
+            createdAt: new Date()
+          }
+          setQueryComments(prev => [...prev, newComment])
+        }}
+        onUpdateComment={(commentId, content) => {
+          setQueryComments(prev => prev.map(c => 
+            c.id === commentId ? { ...c, content, updatedAt: new Date() } : c
+          ))
+        }}
+        onDeleteComment={(commentId) => {
+          setQueryComments(prev => prev.filter(c => c.id !== commentId))
+        }}
+        currentUser={{
+          id: 'current-user-id',
+          name: 'Current User',
+          email: 'user@example.com'
+        }}
+      />
+
+      <QueryVersionHistory
+        query={query}
+        queryName={currentTab?.name || 'Untitled Query'}
+        isOpen={showVersionHistory}
+        onClose={() => setShowVersionHistory(false)}
+        versions={queryVersions}
+        onLoadVersion={(version) => {
+          updateCurrentTabQuery(version.query)
+          toast.success(`Loaded version ${version.version}`)
+        }}
+        onRestoreVersion={(version) => {
+          updateCurrentTabQuery(version.query)
+          setQueryVersions(prev => prev.map(v => 
+            v.id === version.id ? { ...v, isCurrent: true } : { ...v, isCurrent: false }
+          ))
+        }}
       />
 
       <TableContextMenu

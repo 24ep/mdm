@@ -400,7 +400,7 @@ export function DragDropCanvas({
       {/* Canvas */}
       <div
         ref={canvasRef}
-        className="relative w-full h-full bg-white rounded-lg border-2 border-dashed border-muted-foreground/25 overflow-hidden"
+        className="relative w-full h-full bg-background rounded-lg border-2 border-dashed border-muted-foreground/25 overflow-hidden"
         onClick={() => onSelectComponent(null)}
       >
         {/* Grid */}

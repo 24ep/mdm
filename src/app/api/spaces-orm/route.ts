@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, description, slug, isDefault = false } = body
+    const { name, description, slug, isDefault = false, tags = [] } = body
 
     if (!name || name.trim().length === 0) {
       return NextResponse.json(
@@ -64,6 +64,7 @@ export async function POST(request: NextRequest) {
       slug: slug?.trim() || name.toLowerCase().replace(/\s+/g, '-'),
       isDefault,
       createdBy: session.user.id,
+      tags: Array.isArray(tags) ? tags : [],
       features: {
         assignments: true,
         bulk_activity: true,

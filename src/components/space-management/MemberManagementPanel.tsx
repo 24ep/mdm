@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { UserInviteInput } from '@/components/ui/user-invite-input'
@@ -30,7 +29,8 @@ import {
   Trash2,
   Mail,
   FileText,
-  BarChart3
+  Folder,
+  Key
 } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import toast from 'react-hot-toast'
@@ -45,7 +45,11 @@ interface Member {
   joined_at: string
   last_active?: string
   is_active: boolean
+  status?: 'invite' | 'enable' | 'disable'
   avatar?: string
+  group?: string
+  group_id?: string
+  permissions?: string[]
 }
 
 interface MemberManagementPanelProps {
@@ -72,10 +76,10 @@ export function MemberManagementPanel({
   const [searchTerm, setSearchTerm] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [groupFilter, setGroupFilter] = useState('all')
   const [selectedMembers, setSelectedMembers] = useState<string[]>([])
   const [showBulkDialog, setShowBulkDialog] = useState(false)
   const [bulkOperation, setBulkOperation] = useState('')
-  const [showAnalytics, setShowAnalytics] = useState(false)
 
   // Filter members based on search and filters
   const filteredMembers = useMemo(() => {
@@ -86,12 +90,14 @@ export function MemberManagementPanel({
       
       const matchesRole = roleFilter === 'all' || member.role === roleFilter
       const matchesStatus = statusFilter === 'all' || 
-        (statusFilter === 'active' && member.is_active) ||
-        (statusFilter === 'inactive' && !member.is_active)
+        (statusFilter === 'invite' && member.status === 'invite') ||
+        (statusFilter === 'enable' && member.is_active) ||
+        (statusFilter === 'disable' && !member.is_active && member.status !== 'invite')
+      const matchesGroup = groupFilter === 'all' || member.group_id === groupFilter || member.group === groupFilter
       
-      return matchesSearch && matchesRole && matchesStatus
+      return matchesSearch && matchesRole && matchesStatus && matchesGroup
     })
-  }, [members, searchTerm, roleFilter, statusFilter])
+  }, [members, searchTerm, roleFilter, statusFilter, groupFilter])
 
   // Member statistics
   const stats = useMemo(() => {
@@ -183,10 +189,12 @@ export function MemberManagementPanel({
     return <AlertTriangle className="h-4 w-4 text-gray-500" />
   }
 
+  const [showInviteDialog, setShowInviteDialog] = useState(false)
+
   return (
     <div className="space-y-6">
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
@@ -220,68 +228,88 @@ export function MemberManagementPanel({
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="w-full space-y-4">
+        {/* Invite Button and Search */}
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-orange-500" />
-              <div>
-                <p className="text-2xl font-bold">{stats.recent}</p>
-                <p className="text-sm text-muted-foreground">Recent Activity</p>
+            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search members..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Select value={groupFilter} onValueChange={setGroupFilter}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="Group" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Groups</SelectItem>
+                    {[...new Set(members.map(m => m.group).filter(Boolean))].map(group => (
+                      <SelectItem key={group} value={group || ''}>{group || 'No Group'}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={roleFilter} onValueChange={setRoleFilter}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="Role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Roles</SelectItem>
+                    <SelectItem value="owner">Owner</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="member">Member</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="invite">Invite</SelectItem>
+                    <SelectItem value="enable">Enable</SelectItem>
+                    <SelectItem value="disable">Disable</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Invite Member
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Invite New Member</DialogTitle>
+                      <DialogDescription>
+                        Invite existing users or send email invitations to new users.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="mt-4">
+                      <UserInviteInput
+                        spaceId={spaceId}
+                        onInvite={async (user, role) => {
+                          await onInvite(user, role)
+                          setShowInviteDialog(false)
+                        }}
+                        disabled={!canManageMembers}
+                      />
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
           </CardContent>
         </Card>
-      </div>
-
-      <Tabs defaultValue="members" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="members">Members</TabsTrigger>
-          <TabsTrigger value="invite">Invite</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="members" className="space-y-4">
-          {/* Search and Filters */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search members..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Select value={roleFilter} onValueChange={setRoleFilter}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder="Role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Roles</SelectItem>
-                      <SelectItem value="owner">Owner</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="member">Member</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Bulk Actions */}
           {selectedMembers.length > 0 && (
@@ -371,10 +399,11 @@ export function MemberManagementPanel({
                         />
                       </th>
                       <th className="p-4 text-left font-medium">Member</th>
+                      <th className="p-4 text-left font-medium">Group</th>
                       <th className="p-4 text-left font-medium">Role</th>
+                      <th className="p-4 text-left font-medium">Permissions</th>
                       <th className="p-4 text-left font-medium">Status</th>
                       <th className="p-4 text-left font-medium">Joined</th>
-                      <th className="p-4 text-left font-medium">Last Active</th>
                       <th className="p-4 text-left font-medium">Actions</th>
                     </tr>
                   </thead>
@@ -402,6 +431,16 @@ export function MemberManagementPanel({
                           </div>
                         </td>
                         <td className="p-4">
+                          <div className="flex items-center gap-2">
+                            <Folder className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">
+                              {member.group || (
+                                <span className="text-muted-foreground italic">No Group</span>
+                              )}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-4">
                           {canManageMembers && member.role !== 'owner' ? (
                             <Select
                               value={member.role}
@@ -422,21 +461,67 @@ export function MemberManagementPanel({
                           )}
                         </td>
                         <td className="p-4">
+                          <div className="flex items-center gap-1 flex-wrap">
+                            {member.permissions && member.permissions.length > 0 ? (
+                              <>
+                                <Key className="h-3 w-3 text-muted-foreground" />
+                                <span className="text-xs text-muted-foreground">
+                                  {member.permissions.length} permission{member.permissions.length !== 1 ? 's' : ''}
+                                </span>
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-6 text-xs">
+                                      View
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="max-w-2xl">
+                                    <DialogHeader>
+                                      <DialogTitle>Permissions for {member.user_name}</DialogTitle>
+                                      <DialogDescription>
+                                        Role: {member.role} | Permissions: {member.permissions.length}
+                                      </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="max-h-96 overflow-y-auto mt-4">
+                                      <div className="space-y-2">
+                                        {member.permissions.map((perm, idx) => (
+                                          <div key={idx} className="flex items-center gap-2 p-2 border rounded">
+                                            <Shield className="h-4 w-4 text-primary" />
+                                            <code className="text-sm">{perm}</code>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </DialogContent>
+                                </Dialog>
+                              </>
+                            ) : (
+                              <span className="text-xs text-muted-foreground italic">No custom permissions</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-4">
                           <div className="flex items-center gap-2">
                             {getStatusIcon(member)}
-                            <span className="text-sm">
-                              {member.is_active ? 'Active' : 'Inactive'}
-                            </span>
+                            <Badge 
+                              variant={
+                                member.is_active ? "default" : 
+                                (member.status === 'invite' ? "secondary" : "outline")
+                              }
+                              className={
+                                member.is_active 
+                                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                                  : member.status === 'invite'
+                                  ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
+                                  : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                              }
+                            >
+                              {member.status === 'invite' ? 'Invite' : 
+                               member.is_active ? 'Enable' : 'Disable'}
+                            </Badge>
                           </div>
                         </td>
                         <td className="p-4 text-sm text-muted-foreground">
                           {new Date(member.joined_at).toLocaleDateString()}
-                        </td>
-                        <td className="p-4 text-sm text-muted-foreground">
-                          {member.last_active ? 
-                            new Date(member.last_active).toLocaleDateString() : 
-                            'Never'
-                          }
                         </td>
                         <td className="p-4">
                           <DropdownMenu>
@@ -475,43 +560,7 @@ export function MemberManagementPanel({
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="invite" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Invite New Members</CardTitle>
-              <CardDescription>
-                Invite existing users or send email invitations to new users.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <UserInviteInput
-                spaceId={spaceId}
-                onInvite={onInvite}
-                disabled={!canManageMembers}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="analytics" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Member Analytics</CardTitle>
-              <CardDescription>
-                Insights about member activity and engagement.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Analytics coming soon...</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      </div>
     </div>
   )
 }

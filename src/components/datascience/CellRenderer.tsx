@@ -18,15 +18,20 @@ import {
   Tag,
   MessageSquare,
   Search,
-  FileCode
+  FileCode,
+  Database
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import CodeMirror from '@uiw/react-codemirror'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { EditorView } from '@codemirror/view'
+import { syntaxHighlighting, HighlightStyle } from '@codemirror/language'
+import { tags } from '@lezer/highlight'
 import { NotebookCell, CellType } from './types'
 import { CellOutput } from './CellOutput'
 import { SQLCell } from './SQLCell'
+import { SQLCellDataSource } from './SQLCellDataSource'
+import { Input } from '@/components/ui/input'
 
 interface CellRendererProps {
   cell: NotebookCell
@@ -88,17 +93,124 @@ export function CellRenderer({
   const [newComment, setNewComment] = useState('')
   const [codeLanguageExtensions, setCodeLanguageExtensions] = useState<any[]>([])
 
+  // Detect language from cell metadata or content
+  const detectLanguage = (cell: NotebookCell): string => {
+    // Check metadata first
+    if (cell.metadata?.language) {
+      return cell.metadata.language.toLowerCase()
+    }
+    
+    // Detect from content patterns
+    const content = cell.content.trim()
+    if (!content) return 'python' // default
+    
+    // Python patterns
+    if (content.includes('import ') || content.includes('def ') || content.includes('print(') || 
+        content.includes('pd.') || content.includes('np.') || content.includes('plt.')) {
+      return 'python'
+    }
+    
+    // JavaScript/TypeScript patterns
+    if (content.includes('const ') || content.includes('let ') || content.includes('function ') ||
+        content.includes('console.log') || content.includes('interface ') || content.includes('type ')) {
+      // Try to distinguish TypeScript from JavaScript
+      if (content.includes('interface ') || content.includes(': string') || content.includes(': number') ||
+          content.includes('type ') && content.includes('=')) {
+        return 'typescript'
+      }
+      return 'javascript'
+    }
+    
+    // R patterns
+    if (content.includes('<-') || content.includes('library(') || content.includes('ggplot(') ||
+        content.includes('function(') && content.includes('{')) {
+      return 'r'
+    }
+    
+    // Default to Python
+    return 'python'
+  }
+
+  // Load Python extension by default for code cells
   useEffect(() => {
     let isMounted = true
-    const dynamicImport = (specifier: string) => (new Function('s', 'return import(s)'))(specifier)
-    const spec = '@codemirror/lang-' + 'python'
-    dynamicImport(spec)
-      .then((mod: any) => {
-        if (isMounted && mod?.python) setCodeLanguageExtensions([mod.python()])
-      })
-      .catch(() => { if (isMounted) setCodeLanguageExtensions([]) })
+    
+    // Only load language extensions for code cells
+    if (cell.type !== 'code') {
+      setCodeLanguageExtensions([])
+      return
+    }
+    
+    const loadLanguageExtension = async () => {
+      try {
+        const dynamicImport = (specifier: string) => (new Function('s', 'return import(s)'))(specifier)
+        const language = detectLanguage(cell)
+        
+        // Map language names to CodeMirror package names
+        const languageMap: Record<string, string> = {
+          'python': 'python',
+          'javascript': 'javascript',
+          'typescript': 'typescript',
+          'r': 'r',
+          'sql': 'sql'
+        }
+        
+        const langPackage = languageMap[language] || 'python'
+        const spec = '@codemirror/lang-' + langPackage
+        
+        // Try to load the language-specific extension
+        const mod = await dynamicImport(spec)
+        
+        if (!isMounted) return
+        
+        let extension: any = null
+        
+        // Different languages export differently
+        if (langPackage === 'python' && mod?.python) {
+          extension = mod.python()
+        } else if (langPackage === 'javascript' && mod?.javascript) {
+          extension = mod.javascript()
+        } else if (langPackage === 'typescript' && mod?.typescript) {
+          extension = mod.typescript()
+        } else if (langPackage === 'r' && mod?.r) {
+          extension = mod.r()
+        } else if (langPackage === 'sql' && mod?.sql) {
+          extension = mod.sql()
+        }
+        
+        if (extension && isMounted) {
+          setCodeLanguageExtensions([extension])
+        } else if (isMounted) {
+          // Fallback to Python if language extension not found
+          try {
+            const pythonMod = await dynamicImport('@codemirror/lang-python')
+            if (isMounted && pythonMod?.python) {
+              setCodeLanguageExtensions([pythonMod.python()])
+            }
+          } catch {
+            if (isMounted) setCodeLanguageExtensions([])
+          }
+        }
+      } catch (error) {
+        // If package doesn't exist, fallback to Python
+        if (isMounted) {
+          try {
+            const dynamicImport = (specifier: string) => (new Function('s', 'return import(s)'))(specifier)
+            const pythonMod = await dynamicImport('@codemirror/lang-python')
+            if (isMounted && pythonMod?.python) {
+              setCodeLanguageExtensions([pythonMod.python()])
+            }
+          } catch {
+            if (isMounted) setCodeLanguageExtensions([])
+          }
+        }
+      }
+    }
+    
+    loadLanguageExtension()
+    
     return () => { isMounted = false }
-  }, [])
+  }, [cell.content, cell.metadata, cell.type])
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -115,49 +227,85 @@ export function CellRenderer({
 
   const renderCodeCell = () => {
     const isDark = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
+    
+    // Light theme highlight style
+    const lightHighlightStyle = HighlightStyle.define([
+      { tag: tags.keyword, color: '#0077aa' },
+      { tag: tags.string, color: '#669900' },
+      { tag: tags.comment, color: '#999988', fontStyle: 'italic' },
+      { tag: tags.number, color: '#990055' },
+      { tag: tags.definition(tags.variableName), color: '#0077aa' },
+      { tag: tags.variableName, color: '#1a1a1a' },
+      { tag: tags.operator, color: '#a67f59' },
+      { tag: tags.typeName, color: '#0077aa' },
+      { tag: tags.propertyName, color: '#0077aa' },
+      { tag: tags.function(tags.variableName), color: '#6f42c1' },
+      { tag: tags.className, color: '#0077aa' },
+      { tag: tags.moduleKeyword, color: '#0077aa' },
+    ])
+    
+    // Light theme that preserves syntax highlighting colors
     const lightEditorTheme = EditorView.theme({
       '&': { backgroundColor: 'transparent' },
       '.cm-scroller': { backgroundColor: 'transparent' },
       '.cm-gutters': { backgroundColor: 'transparent', border: 'none' },
-      '.cm-activeLine, .cm-activeLineGutter': { backgroundColor: 'transparent' },
-      '.cm-content': { fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace', fontSize: '0.9rem' }
+      '.cm-activeLine, .cm-activeLineGutter': { backgroundColor: 'rgba(0, 0, 0, 0.03)' },
+      '.cm-content': { fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace', fontSize: '0.9rem' },
     }, { dark: false })
 
     return (
-      <div className="space-y-0">
-        <div className="border-0">
-          <CodeMirror
-            value={cell.content}
-            height="auto"
-            theme={isDark ? oneDark : undefined}
-            extensions={[
-              EditorView.lineWrapping,
-              EditorView.theme({ 
-                '&': { height: 'auto', minHeight: '160px' },
-                '.cm-scroller': { overflow: 'visible' }
-              }),
-              ...(isDark ? [] : [lightEditorTheme]),
-              ...codeLanguageExtensions
-            ]}
-            basicSetup={{
-              lineNumbers: true,
-              highlightActiveLineGutter: true,
-              highlightActiveLine: true,
-              foldGutter: true,
-              bracketMatching: true
-            }}
-            onChange={(val) => onContentChange(cell.id, val)}
-            className="bg-transparent"
-            style={{ border: 'none', outline: 'none', minHeight: 160 }}
-          />
-        </div>
+      <div className="relative">
+        <CodeMirror
+          value={cell.content}
+          height="auto"
+          theme={undefined}
+          extensions={[
+            ...codeLanguageExtensions, // Language extensions must come first for proper highlighting
+            EditorView.lineWrapping,
+            EditorView.theme({ 
+              '&': { 
+                height: 'auto', 
+                minHeight: '120px',
+                fontSize: '14px',
+                fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+                backgroundColor: 'transparent'
+              },
+              '.cm-scroller': { overflow: 'visible', backgroundColor: 'transparent' },
+              '.cm-content': { padding: '12px 16px', backgroundColor: 'transparent' },
+              '.cm-gutters': { 
+                backgroundColor: 'transparent',
+                border: 'none',
+                paddingLeft: '12px'
+              },
+              '.cm-line': { paddingLeft: '0' },
+              '.cm-editor.cm-focused': { outline: 'none' }
+            }),
+            ...(isDark ? [oneDark] : [lightEditorTheme, syntaxHighlighting(lightHighlightStyle)])
+          ]}
+          basicSetup={{
+            lineNumbers: true,
+            highlightActiveLineGutter: true,
+            highlightActiveLine: true,
+            foldGutter: true,
+            bracketMatching: true,
+            dropCursor: false,
+            allowMultipleSelections: true
+          }}
+          onChange={(val) => onContentChange(cell.id, val)}
+          editable={canEdit}
+          className="bg-transparent"
+          style={{ border: 'none', outline: 'none', minHeight: 120 }}
+        />
 
         {cell.output && showOutput && (
-          <div className="border-t border-gray-200 dark:border-gray-700">
+          <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-b-[5px]">
+            <div className="px-4 py-2 text-xs text-gray-600 dark:text-gray-400 font-mono bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+              Out[{cell.executionCount || index + 1}]:
+            </div>
             <CellOutput 
               output={cell.output}
               executionCount={cell.executionCount || index + 1}
-              className="bg-gray-50 dark:bg-gray-800"
+              className="px-4 py-3"
             />
           </div>
         )}
@@ -167,37 +315,36 @@ export function CellRenderer({
 
   const renderMarkdownCell = () => {
     const rendered = (
-      <div className="p-2">
-        <div className="prose max-w-none dark:prose-invert">
-          <div
-            dangerouslySetInnerHTML={{
-              __html: (cell.content || '')
-                .replace(/\n/g, '<br>')
-                .replace(/# (.*)/g, '<h1 class="text-2xl font-bold mb-4">$1</h1>')
-                .replace(/## (.*)/g, '<h2 class="text-xl font-semibold mb-3">$1</h2>')
-                .replace(/### (.*)/g, '<h3 class="text-lg font-medium mb-2">$1</h3>')
-                .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
-                .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
-                .replace(/`(.*?)`/g, '<code class="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm font-mono">$1</code>')
-            }}
-          />
-        </div>
+      <div className="px-4 py-3 prose prose-sm max-w-none dark:prose-invert">
+        <div
+          dangerouslySetInnerHTML={{
+            __html: (cell.content || '')
+              .replace(/\n/g, '<br>')
+              .replace(/# (.*)/g, '<h1 class="text-2xl font-bold mb-4 mt-4">$1</h1>')
+              .replace(/## (.*)/g, '<h2 class="text-xl font-semibold mb-3 mt-3">$1</h2>')
+              .replace(/### (.*)/g, '<h3 class="text-lg font-medium mb-2 mt-2">$1</h3>')
+              .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
+              .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
+              .replace(/`(.*?)`/g, '<code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-sm font-mono">$1</code>')
+          }}
+        />
       </div>
     )
 
     if (isActive || isSelected) {
       return (
-        <div className="space-y-0">
+        <div className="px-4 py-3">
           <textarea
             value={cell.content}
             onChange={(e) => onContentChange(cell.id, e.target.value)}
             onInput={(e) => { const el = e.currentTarget; el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }}
-            className="w-full p-2 border-0 bg-transparent resize-none focus:outline-none focus:ring-0 placeholder-gray-400 dark:placeholder-gray-500"
-            placeholder="Write your markdown here..."
+            className="w-full border-0 bg-transparent resize-none focus:outline-none focus:ring-0 placeholder-gray-400 dark:placeholder-gray-500 text-sm leading-relaxed"
+            placeholder="Write your markdown here... (supports # headings, **bold**, *italic*, `code`)"
             onFocus={() => onFocus(cell.id)}
             style={{
-              lineHeight: '1.6',
-              minHeight: '160px'
+              lineHeight: '1.7',
+              minHeight: '100px',
+              fontSize: '14px'
             }}
           />
         </div>
@@ -206,25 +353,28 @@ export function CellRenderer({
 
     // Not selected: show rendered output only (empty placeholder if no content)
     return cell.content.trim() ? rendered : (
-      <div className="p-4 text-sm text-gray-400 dark:text-gray-500" onClick={() => onFocus(cell.id)}>
+      <div className="px-4 py-8 text-sm text-gray-400 dark:text-gray-500 text-center" onClick={() => onFocus(cell.id)}>
         Click to add markdown…
       </div>
     )
   }
 
   const renderRawCell = () => (
-    <textarea
-      value={cell.content}
-      onChange={(e) => onContentChange(cell.id, e.target.value)}
-      onInput={(e) => { const el = e.currentTarget; el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }}
-      className="w-full p-4 border-0 bg-transparent resize-none focus:outline-none focus:ring-0 placeholder-gray-400 dark:placeholder-gray-500"
-      placeholder="Raw text content..."
-      onFocus={() => onFocus(cell.id)}
-      style={{ 
-        lineHeight: '1.6',
-        minHeight: '160px'
-      }}
-    />
+    <div className="px-4 py-3">
+      <textarea
+        value={cell.content}
+        onChange={(e) => onContentChange(cell.id, e.target.value)}
+        onInput={(e) => { const el = e.currentTarget; el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }}
+        className="w-full border-0 bg-transparent resize-none focus:outline-none focus:ring-0 placeholder-gray-400 dark:placeholder-gray-500 font-mono text-sm"
+        placeholder="Raw text content..."
+        onFocus={() => onFocus(cell.id)}
+        style={{ 
+          lineHeight: '1.6',
+          minHeight: '100px',
+          fontSize: '14px'
+        }}
+      />
+    </div>
   )
 
   const renderSQLCell = () => {
@@ -243,6 +393,10 @@ export function CellRenderer({
         onConnectionChange={onConnectionChange}
         onFocus={onFocus}
         onSelect={onSelect}
+        onTitleChange={onTitleChange}
+        onExecute={onExecute}
+        canEdit={canEdit}
+        canExecute={canExecute}
       />
     )
   }
@@ -250,43 +404,31 @@ export function CellRenderer({
   return (
     <div
       className={cn(
-        "group relative transition-all duration-200 rounded-md",
-        // Background only for structured cells; free-form for markdown/raw
-        cell.type === 'markdown' || cell.type === 'raw' ? "bg-transparent hover:bg-transparent" : "bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800",
-        // Blue border for active/selected cells
-        "",
-        // Active state background
-        (cell.type === 'markdown' || cell.type === 'raw') ? "" : (isActive ? "bg-blue-50/50 dark:bg-blue-900/20" : ""),
-        // Selected state background
-        (cell.type === 'markdown' || cell.type === 'raw') ? "" : (isSelected ? "bg-blue-100/40 dark:bg-blue-900/30" : ""),
-        // Status-based backgrounds override default
-        (cell.type === 'markdown' || cell.type === 'raw') ? "" : (cell.status === 'running' ? "bg-yellow-50/70 dark:bg-yellow-900/30" : ""),
-        (cell.type === 'markdown' || cell.type === 'raw') ? "" : (cell.status === 'error' ? "bg-red-50/70 dark:bg-red-900/30" : "")
+        "group relative transition-all duration-200",
+        "mx-2 my-2",
+        "rounded-[5px]",
+        // Markdown cells: transparent with border
+        cell.type === 'markdown' || cell.type === 'raw' 
+          ? "bg-transparent border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600" 
+          : // Other cells: light grey background, no border
+            "bg-gray-100 dark:bg-gray-800 border-0",
+        // Active state - blue left border indicator
+        isActive && cell.type !== 'markdown' && cell.type !== 'raw' ? "border-l-4 border-l-blue-500 dark:border-l-blue-400" : "",
+        // Selected state
+        isSelected ? "ring-2 ring-blue-200 dark:ring-blue-800" : "",
+        // Status-based borders
+        cell.status === 'running' && cell.type !== 'markdown' && cell.type !== 'raw' ? "border-l-4 border-l-yellow-500 dark:border-l-yellow-400" : "",
+        cell.status === 'error' && cell.type !== 'markdown' && cell.type !== 'raw' ? "border-l-4 border-l-red-500 dark:border-l-red-400" : "",
+        // Executed cell - green border (when executionCount exists or status is success)
+        (cell.executionCount && !isActive && cell.type !== 'markdown' && cell.type !== 'raw') || (cell.status === 'success' && !isActive && cell.type !== 'markdown' && cell.type !== 'raw') ? "border-l-4 border-l-green-500 dark:border-l-green-400" : ""
       )}
       onClick={() => onFocus(cell.id)}
     >
-      {/* DeepNote-style Cell Container */}
-      <div className="flex">
-        {/* Left Gutter - Cell Number and Controls */}
-        <div className="flex flex-col items-center w-12 py-2 space-y-1">
-          <div className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-            <span className="text-xs font-mono text-gray-500 dark:text-gray-400">
-              {index + 1}
-            </span>
-          </div>
-          <div className="flex flex-col space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={(e) => {
-                e.stopPropagation()
-                onExecute(cell.id)
-              }}
-              disabled={!canExecute || cell.type !== 'code' || cell.status === 'running'}
-              className="h-6 w-6 p-0 hover:bg-blue-100 dark:hover:bg-blue-900"
-            >
-              <Play className="h-3 w-3" />
-            </Button>
+      {/* Cell Controls - Always visible on the right side */}
+      {canEdit && (
+        <div className="absolute right-2 top-2 flex items-center gap-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-1">
+          {/* Move Up Button */}
+          {onMove && (
             <Button
               size="sm"
               variant="ghost"
@@ -294,10 +436,14 @@ export function CellRenderer({
                 e.stopPropagation()
                 onMove(cell.id, 'up')
               }}
-              className="h-6 w-6 p-0 hover:bg-gray-200 dark:hover:bg-gray-700"
+              className="h-7 w-7 p-0 hover:bg-gray-200 dark:hover:bg-gray-700"
+              title="Move up (Ctrl+↑)"
             >
-              <ArrowUp className="h-3 w-3" />
+              <ArrowUp className="h-4 w-4 text-gray-600 dark:text-gray-400" />
             </Button>
+          )}
+          {/* Move Down Button */}
+          {onMove && (
             <Button
               size="sm"
               variant="ghost"
@@ -305,10 +451,14 @@ export function CellRenderer({
                 e.stopPropagation()
                 onMove(cell.id, 'down')
               }}
-              className="h-6 w-6 p-0 hover:bg-gray-200 dark:hover:bg-gray-700"
+              className="h-7 w-7 p-0 hover:bg-gray-200 dark:hover:bg-gray-700"
+              title="Move down (Ctrl+↓)"
             >
-              <ArrowDown className="h-3 w-3" />
+              <ArrowDown className="h-4 w-4 text-gray-600 dark:text-gray-400" />
             </Button>
+          )}
+          {/* Delete Button */}
+          {onDelete && (
             <Button
               size="sm"
               variant="ghost"
@@ -316,48 +466,66 @@ export function CellRenderer({
                 e.stopPropagation()
                 onDelete(cell.id)
               }}
-              className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900"
+              className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900"
+              title="Delete cell (Del)"
             >
-              <Trash2 className="h-3 w-3" />
+              <Trash2 className="h-4 w-4" />
             </Button>
-          </div>
+          )}
         </div>
+      )}
 
-        {/* Cell Content Area */}
+      {/* DeepNote Design: No left gutter, controls in toolbar */}
+      <div className="flex">
+
+        {/* Cell Content Area - DeepNote design */}
         <div className="flex-1 min-w-0">
-          {/* Cell Type Indicator - hidden for free-form markdown/raw */}
-          {cell.type !== 'markdown' && cell.type !== 'raw' && (
-          <div className="flex items-center justify-between px-2 py-1 border-b border-gray-200 dark:border-gray-700">
+          {/* Cell Toolbar - DeepNote style: visible, modern */}
+          {cell.type === 'code' && (
+          <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 rounded-t-[5px]">
             <div className="flex items-center space-x-3">
+              {/* Execution count - inline in toolbar */}
+              <div className={cn(
+                "text-xs font-mono font-medium px-2 py-1 rounded",
+                cell.executionCount 
+                  ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30" 
+                  : "text-gray-400 dark:text-gray-500"
+              )}>
+                {cell.executionCount ? `[${cell.executionCount}]` : 'In [' + (index + 1) + ']'}
+              </div>
               <div className="flex items-center space-x-2">
-                {/* Small icon before type when Python (code) */}
-                {cell.type === 'code' && (
-                  <FileCode className="h-3 w-3 text-gray-500 dark:text-gray-400" />
-                )}
-                <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                <FileCode className="h-3 w-3 text-gray-500 dark:text-gray-400" />
+                <span className="text-xs font-medium uppercase tracking-wide text-gray-600 dark:text-gray-400">
                   {cell.type}
                 </span>
-                {cell.type === 'code' && cell.executionCount && (
-                  <span className="text-xs font-mono text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded">
-                    [{cell.executionCount}]
-                  </span>
-                )}
-                {cell.status !== 'idle' && getStatusIcon(cell.status)}
-                {cell.executionTime && (
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {cell.executionTime}ms
-                  </span>
+                {cell.status !== 'idle' && (
+                  <div className="flex items-center gap-2">
+                    {getStatusIcon(cell.status)}
+                    {cell.executionTime && (
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {cell.executionTime}ms
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
 
-              {/* Editable Title (disabled if no edit) */}
-              <input
-                value={cell.title || ''}
-                placeholder="Untitled"
-                onChange={(e) => onTitleChange && onTitleChange(cell.id, e.target.value)}
-                className="text-sm bg-transparent border-b border-transparent focus:border-blue-400 outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-                disabled={!canEdit}
-              />
+              {/* Cell Title */}
+              {cell.title && (
+                <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
+                  {cell.title}
+                </span>
+              )}
+              {canEdit && onTitleChange && (
+                <input
+                  value={cell.title || ''}
+                  placeholder="Cell title..."
+                  onChange={(e) => onTitleChange(cell.id, e.target.value)}
+                  className="text-sm bg-transparent border-b border-transparent focus:border-blue-400 outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 w-32"
+                  disabled={!canEdit}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              )}
               {cell.tags && cell.tags.length > 0 && (
                 <div className="flex items-center space-x-1">
                   {cell.tags.map((tag, idx) => (
@@ -369,6 +537,22 @@ export function CellRenderer({
               )}
             </div>
             <div className="flex items-center space-x-1">
+              {/* Run Button - in toolbar */}
+              {(cell.type === 'code' || cell.type === 'sql') && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onExecute(cell.id)
+                  }}
+                  disabled={!canExecute || cell.status === 'running'}
+                  className="h-7 w-7 p-0 hover:bg-blue-100 dark:hover:bg-blue-900 rounded-full"
+                  title="Run cell (Ctrl+Enter)"
+                >
+                  <Play className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" fill="currentColor" />
+                </Button>
+              )}
               {onSearch && (
                 <Button
                   size="sm"
@@ -431,6 +615,87 @@ export function CellRenderer({
               )}
             </div>
           </div>
+          )}
+
+          {/* SQL Cell - DeepNote style toolbar */}
+          {cell.type === 'sql' && (
+            <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 rounded-t-[5px]">
+              <div className="flex items-center gap-3 flex-wrap justify-between">
+                <div className="flex items-center gap-3 flex-wrap">
+                  {/* Execution count - inline in toolbar */}
+                  <div className={cn(
+                    "text-xs font-mono font-medium px-2 py-1 rounded",
+                    cell.executionCount 
+                      ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30" 
+                      : "text-gray-400 dark:text-gray-500"
+                  )}>
+                    {cell.executionCount ? `[${cell.executionCount}]` : 'In [' + (index + 1) + ']'}
+                  </div>
+                {/* Cell Type Icon and Title */}
+                <div className="flex items-center gap-2">
+                  <Database className="h-3 w-3 text-blue-500 dark:text-blue-400" />
+                  <span className="text-xs font-medium uppercase tracking-wide text-blue-600 dark:text-blue-400">
+                    sql
+                  </span>
+                  {cell.status !== 'idle' && getStatusIcon(cell.status)}
+                </div>
+                
+                {/* Title Input */}
+                {canEdit && onTitleChange ? (
+                  <input
+                    value={cell.title || ''}
+                    placeholder="Cell title..."
+                    onChange={(e) => onTitleChange(cell.id, e.target.value)}
+                    className="text-sm bg-transparent border-b border-transparent focus:border-blue-400 outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 w-32"
+                    disabled={!canEdit}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : cell.title ? (
+                  <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
+                    {cell.title}
+                  </span>
+                ) : null}
+
+                {/* Variable Name and Data Source - Same Row */}
+                {onVariableNameChange && onConnectionChange && (
+                  <>
+                    <Input
+                      value={cell.sqlVariableName || ''}
+                      onChange={(e) => onVariableNameChange(cell.id, e.target.value)}
+                      placeholder="Variable name"
+                      className="h-7 max-w-32 font-mono text-xs"
+                      disabled={!canEdit}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <SQLCellDataSource 
+                        cell={cell}
+                        onConnectionChange={onConnectionChange}
+                        canEdit={canEdit}
+                      />
+                    </div>
+                  </>
+                )}
+                </div>
+                {/* Controls on the right */}
+                <div className="flex items-center space-x-1">
+                  {/* Run Button */}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onExecute && onExecute(cell.id)
+                    }}
+                    disabled={!canExecute || cell.status === 'running'}
+                    className="h-7 w-7 p-0 hover:bg-blue-100 dark:hover:bg-blue-900 rounded-full"
+                    title="Run cell (Ctrl+Enter)"
+                  >
+                    <Play className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" fill="currentColor" />
+                  </Button>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Cell Content */}

@@ -99,7 +99,7 @@ export default function WorkflowsPage() {
   const [actions, setActions] = useState<WorkflowAction[]>([])
   const [schedule, setSchedule] = useState({
     schedule_type: 'DAILY',
-    schedule_config: {},
+    schedule_config: {} as any,
     start_date: '',
     end_date: '',
     timezone: 'UTC'
@@ -161,6 +161,17 @@ export default function WorkflowsPage() {
     }
   }
 
+  async function loadSyncSchedulesForModel(dataModelId: string) {
+    try {
+      const res = await fetch(`/api/data-sync-schedules?data_model_id=${dataModelId}`)
+      const json = await res.json()
+      setAvailableSyncSchedules(json.schedules || [])
+    } catch (error) {
+      console.error('Error loading sync schedules:', error)
+      setAvailableSyncSchedules([])
+    }
+  }
+
   useEffect(() => {
     loadWorkflows()
     loadDataModels()
@@ -216,6 +227,7 @@ export default function WorkflowsPage() {
       // Load attributes for the data model
       if (json.workflow.data_model_id) {
         await loadModelAttributes(json.workflow.data_model_id)
+        await loadSyncSchedulesForModel(json.workflow.data_model_id)
       }
     } catch (error) {
       console.error('Error loading workflow details:', error)
@@ -233,7 +245,10 @@ export default function WorkflowsPage() {
         ...form,
         conditions,
         actions,
-        schedule: form.trigger_type === 'SCHEDULED' ? schedule : null
+        // Include schedule for SCHEDULED workflows or EVENT_BASED workflows with sync integration
+        schedule: (form.trigger_type === 'SCHEDULED' || 
+                   (form.trigger_type === 'EVENT_BASED' && schedule.schedule_config?.trigger_on_sync)) 
+                 ? schedule : null
       }
       
       const res = await fetch(url, {
@@ -500,7 +515,7 @@ export default function WorkflowsPage() {
             </DialogHeader>
             
             <Tabs defaultValue="basic" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="basic" className="flex items-center gap-2">
                   <Settings className="h-4 w-4" />
                   Basic Info
@@ -516,6 +531,10 @@ export default function WorkflowsPage() {
                 <TabsTrigger value="schedule" className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
                   Schedule
+                </TabsTrigger>
+                <TabsTrigger value="integration" className="flex items-center gap-2">
+                  <Zap className="h-4 w-4" />
+                  Integration
                 </TabsTrigger>
               </TabsList>
               
@@ -537,6 +556,7 @@ export default function WorkflowsPage() {
                       onValueChange={(value) => {
                         setForm({ ...form, data_model_id: value })
                         loadModelAttributes(value)
+                        loadSyncSchedulesForModel(value)
                       }}
                     >
                       <SelectTrigger>
@@ -830,6 +850,105 @@ export default function WorkflowsPage() {
                     Schedule configuration is only available for scheduled workflows.
                   </div>
                 )}
+              </TabsContent>
+
+              <TabsContent value="integration" className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-medium mb-4">Data Sync Integration</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Configure this workflow to automatically trigger after data syncs complete
+                  </p>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="trigger-on-sync"
+                        checked={schedule.schedule_config?.trigger_on_sync || false}
+                        onChange={(e) => setSchedule({
+                          ...schedule,
+                          schedule_config: {
+                            ...schedule.schedule_config,
+                            trigger_on_sync: e.target.checked
+                          }
+                        })}
+                        className="rounded"
+                      />
+                      <Label htmlFor="trigger-on-sync" className="font-normal cursor-pointer">
+                        Trigger this workflow after data syncs complete
+                      </Label>
+                    </div>
+
+                    {schedule.schedule_config?.trigger_on_sync && (
+                      <div className="space-y-3 pl-6 border-l-2">
+                        <div className="space-y-2">
+                          <Label>Trigger Conditions</Label>
+                          <div className="space-y-2">
+                            <label className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                checked={schedule.schedule_config?.trigger_on_sync_success !== false}
+                                onChange={(e) => setSchedule({
+                                  ...schedule,
+                                  schedule_config: {
+                                    ...schedule.schedule_config,
+                                    trigger_on_sync_success: e.target.checked
+                                  }
+                                })}
+                                className="rounded"
+                              />
+                              <span className="text-sm">Trigger on successful sync</span>
+                            </label>
+                            <label className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                checked={schedule.schedule_config?.trigger_on_sync_failure || false}
+                                onChange={(e) => setSchedule({
+                                  ...schedule,
+                                  schedule_config: {
+                                    ...schedule.schedule_config,
+                                    trigger_on_sync_failure: e.target.checked
+                                  }
+                                })}
+                                className="rounded"
+                              />
+                              <span className="text-sm">Trigger on failed sync</span>
+                            </label>
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label>Specific Sync Schedule (Optional)</Label>
+                          <p className="text-xs text-muted-foreground mb-2">
+                            Leave empty to trigger after any sync for this data model, or select a specific sync schedule
+                          </p>
+                          <Select
+                            value={schedule.schedule_config?.trigger_on_sync_schedule_id || ''}
+                            onValueChange={(value) => setSchedule({
+                              ...schedule,
+                              schedule_config: {
+                                ...schedule.schedule_config,
+                                trigger_on_sync_schedule_id: value || null
+                              }
+                            })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="All sync schedules (auto-detect)" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">All sync schedules (auto-detect)</SelectItem>
+                              {availableSyncSchedules.map((sync) => (
+                                <SelectItem key={sync.id} value={sync.id}>
+                                  {sync.name} ({sync.schedule_type})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </TabsContent>
             </Tabs>
             

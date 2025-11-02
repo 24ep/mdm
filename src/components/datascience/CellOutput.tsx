@@ -146,10 +146,16 @@ export function CellOutput({
   )
 
   const renderOutput = () => {
+    // Check for error first (supports both error string and stderr)
     if (output.error) {
       return renderErrorOutput(output.error)
     }
 
+    if (output.stderr) {
+      return renderErrorOutput(output.stderr)
+    }
+
+    // Check for images
     if (output.images && output.images.length > 0) {
       return (
         <div className="space-y-2">
@@ -162,22 +168,53 @@ export function CellOutput({
       )
     }
 
+    // Check for tables
     if (output.tables && output.tables.length > 0) {
       return (
         <div className="space-y-4">
           {output.tables.map((table, index) => (
             <div key={index}>
-              {renderTableOutput(table)}
+              {renderTableOutput(table.data || table)}
             </div>
           ))}
         </div>
       )
     }
 
+    // Check for charts
+    if (output.charts && output.charts.length > 0) {
+      // Charts can be rendered as images or HTML
+      return (
+        <div className="space-y-4">
+          {output.charts.map((chart, index) => (
+            <div key={index} className="border rounded p-4">
+              <div className="text-sm font-medium mb-2">{chart.title}</div>
+              <div className="text-xs text-gray-500">Chart visualization (type: {chart.type})</div>
+            </div>
+          ))}
+        </div>
+      )
+    }
+
+    // Check for HTML output
     if (output.html) {
       return renderHTMLOutput(output.html)
     }
 
+    // Check for stdout (ExecutionResult format)
+    if (output.stdout) {
+      return renderTextOutput(output.stdout)
+    }
+
+    // Check for result (ExecutionResult format)
+    if (output.result !== undefined && output.result !== null) {
+      const resultStr = typeof output.result === 'object' 
+        ? JSON.stringify(output.result, null, 2)
+        : String(output.result)
+      return renderTextOutput(resultStr)
+    }
+
+    // Check for output.output (legacy format)
     if (output.output) {
       return renderTextOutput(output.output)
     }
@@ -185,7 +222,20 @@ export function CellOutput({
     return null
   }
 
-  if (!output || (!output.output && !output.error && !output.images && !output.tables && !output.html)) {
+  // Check if output has any content to display
+  const hasContent = output && (
+    output.error || 
+    output.stderr || 
+    output.stdout || 
+    (output.result !== undefined && output.result !== null) ||
+    output.output || 
+    (output.images && output.images.length > 0) || 
+    (output.tables && output.tables.length > 0) ||
+    (output.charts && output.charts.length > 0) ||
+    output.html
+  )
+
+  if (!hasContent) {
     return null
   }
 

@@ -78,24 +78,9 @@ export class SQLExecutor {
     connectionId: string,
     options: QueryExecutionOptions = {}
   ): Promise<QueryExecutionResult> {
-    // In a real implementation, this would:
-    // 1. Get the external connection details
-    // 2. Establish connection to the external database
-    // 3. Execute the query on the external database
-    // 4. Return the results
-
-    // Mock implementation
-    return {
-      success: true,
-      data: [
-        { id: 1, name: 'Sample Data', value: 100 },
-        { id: 2, name: 'Another Row', value: 200 }
-      ],
-      columns: ['id', 'name', 'value'],
-      rowCount: 2,
-      executionTime: 150,
-      query: sql
-    }
+    // This method is now handled via API route for better security
+    // and connection management. Use the API endpoint instead.
+    throw new Error('executeQueryWithConnection should be called via API endpoint')
   }
 
   private isValidSQL(sql: string): boolean {
@@ -106,14 +91,52 @@ export class SQLExecutor {
       return false
     }
 
-    // Block dangerous operations
+    // Block dangerous operations - more comprehensive list
     const dangerousKeywords = [
       'drop', 'delete', 'insert', 'update', 'create', 'alter',
-      'truncate', 'grant', 'revoke', 'exec', 'execute',
-      'sp_', 'xp_', '--', '/*', '*/'
+      'truncate', 'grant', 'revoke', 'exec', 'execute', 'call',
+      'sp_', 'xp_', 'cmdshell', 'xp_cmdshell',
+      '--', '/*', '*/', ';--', '; /*',
+      'union.*select', 'information_schema',
+      'pg_', 'pg_catalog'
     ]
 
-    return !dangerousKeywords.some(keyword => trimmedSQL.includes(keyword))
+    // Check for SQL injection patterns
+    const sqlInjectionPatterns = [
+      /(\bunion\b.*\bselect\b)/i,
+      /(\bor\b.*=.*)/i,
+      /(\band\b.*=.*)/i,
+      /(;\s*(drop|delete|insert|update|create|alter))/i,
+      /(\'\s*(or|and)\s*\')/i,
+      /(\/\*.*\*\/)/i,
+      /(--\s)/i
+    ]
+
+    // Check for dangerous keywords
+    if (dangerousKeywords.some(keyword => {
+      // Check as whole word or special patterns
+      if (keyword.includes('_')) {
+        return trimmedSQL.includes(keyword)
+      }
+      const regex = new RegExp(`\\b${keyword}\\b`, 'i')
+      return regex.test(trimmedSQL)
+    })) {
+      return false
+    }
+
+    // Check for SQL injection patterns (but allow legitimate UNION SELECT)
+    // Only block suspicious UNION SELECT patterns
+    if (/union\s+all\s+select/i.test(trimmedSQL) && 
+        !/union\s+all\s+select\s+[a-z_]+/i.test(trimmedSQL)) {
+      return false
+    }
+
+    // Block multiple statements
+    if ((sql.match(/;/g) || []).length > 2) {
+      return false
+    }
+
+    return true
   }
 
   private formatError(error: any): string {

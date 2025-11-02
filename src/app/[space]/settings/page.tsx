@@ -17,7 +17,7 @@ import { UserInviteInput } from '@/components/ui/user-invite-input'
 import { MemberManagementPanel } from '@/components/space-management/MemberManagementPanel'
 import { MemberPermissionsPanel } from '@/components/space-management/MemberPermissionsPanel'
 import { MemberAuditLog } from '@/components/space-management/MemberAuditLog'
-import { Building2, Layout, Database, History, Users as UsersIcon, UserCog, UserPlus, Plus, Edit, Trash2, Search, Type, AlertTriangle, FolderPlus, Share2, Folder, FolderOpen, Move, Settings, Palette, Shield, Archive, Trash, MoreVertical, ChevronDown, ChevronRight, ArrowLeft, ExternalLink, Grid3X3 } from 'lucide-react'
+import { Building2, Layout, Database, History, Users as UsersIcon, UserCog, UserPlus, Plus, Edit, Trash2, Search, Type, AlertTriangle, FolderPlus, Share2, Folder, FolderOpen, Move, Settings, Palette, Shield, Archive, Trash, MoreVertical, ChevronDown, ChevronRight, ArrowLeft, ExternalLink, Grid3X3, CheckCircle2, Circle, Lock } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useSpace } from '@/contexts/space-context'
 import { useSession } from 'next-auth/react'
@@ -36,6 +36,18 @@ import { EnhancedAttributeDetailDrawer } from '@/components/attribute-management
 import { getStorageProviderIcon, getStorageProviderLabel } from '@/lib/storage-provider-icons'
 import { DataModelTreeView } from '@/components/data-model/DataModelTreeView'
 import LayoutConfig from '@/components/studio/layout-config'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { SpaceSettingsSidebar } from '@/components/space-management/SpaceSettingsSidebar'
+import { SpaceSettingsHeader } from '@/components/space-management/SpaceSettingsHeader'
+import { DataSyncManagement } from '@/components/data-sync/DataSyncManagement'
+
+function EffectRedirect({ to }: { to: string }) {
+  const router = useRouter()
+  useEffect(() => {
+    router.push(to)
+  }, [router, to])
+  return null
+}
 
 export default function SpaceSettingsPage() {
   const router = useRouter()
@@ -45,7 +57,6 @@ export default function SpaceSettingsPage() {
   const initialTabRaw = (searchParams.get('tab') as string) || 'details'
   const initialTab = allowedTabs.includes(initialTabRaw) ? initialTabRaw : 'details'
   const { spaces, currentSpace, refreshSpaces } = useSpace()
-  const studioMode = (searchParams.get('studio') as string) || null
   const { data: session } = useSession()
 
   // Spaces Editor: pages/templates management for this space
@@ -264,10 +275,11 @@ export default function SpaceSettingsPage() {
   // External Data Source Connection
   const [showDatabaseSelection, setShowDatabaseSelection] = useState(false)
   const [databaseSearch, setDatabaseSearch] = useState('')
-  const [selectedDatabaseType, setSelectedDatabaseType] = useState<'postgres' | 'mysql' | null>(null)
+  const [selectedDatabaseType, setSelectedDatabaseType] = useState<'postgres' | 'mysql' | 'api' | null>(null)
   const [showConnectionForm, setShowConnectionForm] = useState(false)
   const [connectionForm, setConnectionForm] = useState({
     name: '',
+    connection_type: 'database' as 'database' | 'api',
     db_type: 'postgres' as 'postgres' | 'mysql',
     host: '',
     port: '',
@@ -275,7 +287,19 @@ export default function SpaceSettingsPage() {
     username: '',
     password: '',
     schema: '',
-    table: ''
+    table: '',
+    // API fields
+    api_url: '',
+    api_method: 'GET' as 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+    api_headers: {} as Record<string, string>,
+    api_auth_type: 'none' as 'none' | 'bearer' | 'basic' | 'apikey',
+    api_auth_token: '',
+    api_auth_username: '',
+    api_auth_password: '',
+    api_auth_apikey_name: '',
+    api_auth_apikey_value: '',
+    api_body: '',
+    api_response_path: ''
   })
   const [testingConnection, setTestingConnection] = useState(false)
   const [connectionTestResult, setConnectionTestResult] = useState<any>(null)
@@ -485,6 +509,7 @@ export default function SpaceSettingsPage() {
     setSelectedDatabaseType(null)
     setConnectionForm({
       name: '',
+      connection_type: 'database',
       db_type: 'postgres',
       host: '',
       port: '',
@@ -492,7 +517,18 @@ export default function SpaceSettingsPage() {
       username: '',
       password: '',
       schema: '',
-      table: ''
+      table: '',
+      api_url: '',
+      api_method: 'GET',
+      api_headers: {},
+      api_auth_type: 'none',
+      api_auth_token: '',
+      api_auth_username: '',
+      api_auth_password: '',
+      api_auth_apikey_name: '',
+      api_auth_apikey_value: '',
+      api_body: '',
+      api_response_path: ''
     })
   }
 
@@ -515,9 +551,23 @@ export default function SpaceSettingsPage() {
     }
   }
 
-  const handleSelectDatabase = (dbType: 'postgres' | 'mysql') => {
+  const handleSelectDatabase = (dbType: 'postgres' | 'mysql' | 'api') => {
     setSelectedDatabaseType(dbType)
-    setConnectionForm(prev => ({ ...prev, db_type: dbType, port: dbType === 'postgres' ? '5432' : '3306' }))
+    if (dbType === 'api') {
+      setConnectionForm(prev => ({ 
+        ...prev, 
+        connection_type: 'api',
+        api_method: 'GET',
+        api_auth_type: 'none'
+      }))
+    } else {
+      setConnectionForm(prev => ({ 
+        ...prev, 
+        connection_type: 'database',
+        db_type: dbType, 
+        port: dbType === 'postgres' ? '5432' : '3306' 
+      }))
+    }
     setShowDatabaseSelection(false)
     setShowConnectionForm(true)
   }
@@ -529,29 +579,62 @@ export default function SpaceSettingsPage() {
     setConnectionTestResult(null)
     
     try {
-      const res = await fetch('/api/external-connections/test', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          space_id: selectedSpace.id,
-          db_type: connectionForm.db_type,
-          host: connectionForm.host,
-          port: connectionForm.port ? parseInt(connectionForm.port) : undefined,
-          database: connectionForm.database || undefined,
-          username: connectionForm.username || undefined,
-          password: connectionForm.password || undefined
+      if (connectionForm.connection_type === 'api') {
+        // Test API connection
+        const res = await fetch('/api/external-connections/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            space_id: selectedSpace.id,
+            connection_type: 'api',
+            api_url: connectionForm.api_url,
+            api_method: connectionForm.api_method,
+            api_headers: connectionForm.api_headers,
+            api_auth_type: connectionForm.api_auth_type,
+            api_auth_token: connectionForm.api_auth_token,
+            api_auth_username: connectionForm.api_auth_username,
+            api_auth_password: connectionForm.api_auth_password,
+            api_auth_apikey_name: connectionForm.api_auth_apikey_name,
+            api_auth_apikey_value: connectionForm.api_auth_apikey_value,
+            api_body: connectionForm.api_body
+          })
         })
-      })
-      
-      const json = await res.json()
-      if (res.ok && json.ok) {
-        setConnectionTestResult({ success: true, schemas: json.schemas, tablesBySchema: json.tablesBySchema })
-        setConnectionSchemas(json.schemas || [])
-        setConnectionTables(json.tablesBySchema || {})
-        toast.success('Connection test successful')
+        
+        const json = await res.json()
+        if (res.ok && json.success) {
+          setConnectionTestResult({ success: true, data: json.data, sampleResponse: json.sampleResponse })
+          toast.success('API connection test successful')
+        } else {
+          setConnectionTestResult({ success: false, error: json.error || 'API connection failed' })
+          toast.error('API connection test failed')
+        }
       } else {
-        setConnectionTestResult({ success: false, error: json.error || 'Connection failed' })
-        toast.error('Connection test failed')
+        // Test database connection
+        const res = await fetch('/api/external-connections/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            space_id: selectedSpace.id,
+            connection_type: 'database',
+            db_type: connectionForm.db_type,
+            host: connectionForm.host,
+            port: connectionForm.port ? parseInt(connectionForm.port) : undefined,
+            database: connectionForm.database || undefined,
+            username: connectionForm.username || undefined,
+            password: connectionForm.password || undefined
+          })
+        })
+        
+        const json = await res.json()
+        if (res.ok && json.ok) {
+          setConnectionTestResult({ success: true, schemas: json.schemas, tablesBySchema: json.tablesBySchema })
+          setConnectionSchemas(json.schemas || [])
+          setConnectionTables(json.tablesBySchema || {})
+          toast.success('Connection test successful')
+        } else {
+          setConnectionTestResult({ success: false, error: json.error || 'Connection failed' })
+          toast.error('Connection test failed')
+        }
       }
     } catch (error: any) {
       setConnectionTestResult({ success: false, error: error.message || 'Connection test failed' })
@@ -564,32 +647,66 @@ export default function SpaceSettingsPage() {
   const saveExternalConnection = async () => {
     if (!selectedSpace?.id) return
     
-    if (!connectionForm.name || !connectionForm.host || !connectionForm.db_type) {
-      toast.error('Please fill in all required fields')
+    if (!connectionForm.name) {
+      toast.error('Please provide a connection name')
       return
     }
 
-    // For PostgreSQL, schema and table are required. For MySQL, schema might be optional
-    if (!connectionForm.table) {
-      toast.error('Please select a table')
-      return
-    }
+    if (connectionForm.connection_type === 'api') {
+      // Validate API connection
+      if (!connectionForm.api_url) {
+        toast.error('Please provide an API URL')
+        return
+      }
+    } else {
+      // Validate database connection
+      if (!connectionForm.host || !connectionForm.db_type) {
+        toast.error('Please fill in all required fields')
+        return
+      }
 
-    // For PostgreSQL, schema is required. For MySQL, use database name as schema if not provided
-    const schemaToUse = connectionForm.schema || (connectionForm.db_type === 'mysql' ? connectionForm.database : null)
-    if (connectionForm.db_type === 'postgres' && !schemaToUse) {
-      toast.error('Please select a schema')
-      return
+      // For PostgreSQL, schema and table are required. For MySQL, schema might be optional
+      if (!connectionForm.table) {
+        toast.error('Please select a table')
+        return
+      }
+
+      // For PostgreSQL, schema is required. For MySQL, use database name as schema if not provided
+      const schemaToUse = connectionForm.schema || (connectionForm.db_type === 'mysql' ? connectionForm.database : null)
+      if (connectionForm.db_type === 'postgres' && !schemaToUse) {
+        toast.error('Please select a schema')
+        return
+      }
     }
 
     try {
-      // Create external connection
-      const connectionRes = await fetch('/api/external-connections', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      let connectionPayload: any
+      
+      if (connectionForm.connection_type === 'api') {
+        // Create API connection
+        connectionPayload = {
           space_id: selectedSpace.id,
           name: connectionForm.name,
+          connection_type: 'api',
+          db_type: 'api', // Store as 'api' for compatibility
+          api_url: connectionForm.api_url,
+          api_method: connectionForm.api_method,
+          api_headers: connectionForm.api_headers,
+          api_auth_type: connectionForm.api_auth_type,
+          api_auth_token: connectionForm.api_auth_token || null,
+          api_auth_username: connectionForm.api_auth_username || null,
+          api_auth_password: connectionForm.api_auth_password || null,
+          api_auth_apikey_name: connectionForm.api_auth_apikey_name || null,
+          api_auth_apikey_value: connectionForm.api_auth_apikey_value || null,
+          api_body: connectionForm.api_body || null,
+          api_response_path: connectionForm.api_response_path || null
+        }
+      } else {
+        // Create database connection
+        connectionPayload = {
+          space_id: selectedSpace.id,
+          name: connectionForm.name,
+          connection_type: 'database',
           db_type: connectionForm.db_type,
           host: connectionForm.host,
           port: connectionForm.port ? parseInt(connectionForm.port) : (connectionForm.db_type === 'postgres' ? 5432 : 3306),
@@ -597,7 +714,13 @@ export default function SpaceSettingsPage() {
           username: connectionForm.username || null,
           password: connectionForm.password || null,
           options: {}
-        })
+        }
+      }
+
+      const connectionRes = await fetch('/api/external-connections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(connectionPayload)
       })
 
       if (!connectionRes.ok) {
@@ -609,10 +732,20 @@ export default function SpaceSettingsPage() {
       const connectionId = connectionData.connection?.id || connectionData.id
 
       // Create data model linked to external connection
-      const modelRes = await fetch('/api/data-models', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      let modelPayload: any
+      if (connectionForm.connection_type === 'api') {
+        modelPayload = {
+          name: connectionForm.name.toLowerCase().replace(/\s+/g, '_'),
+          display_name: connectionForm.name,
+          description: `External API data source: ${connectionForm.api_url}`,
+          slug: connectionForm.name.toLowerCase().replace(/\s+/g, '_'),
+          space_ids: [selectedSpace.id],
+          source_type: 'EXTERNAL',
+          external_connection_id: connectionId
+        }
+      } else {
+        const schemaToUse = connectionForm.schema || (connectionForm.db_type === 'mysql' ? connectionForm.database : null)
+        modelPayload = {
           name: connectionForm.table || connectionForm.name.toLowerCase().replace(/\s+/g, '_'),
           display_name: connectionForm.name,
           description: `External data source: ${connectionForm.db_type} - ${connectionForm.host}/${connectionForm.database || ''}`,
@@ -622,7 +755,13 @@ export default function SpaceSettingsPage() {
           external_connection_id: connectionId,
           external_schema: schemaToUse || connectionForm.database || null,
           external_table: connectionForm.table
-        })
+        }
+      }
+
+      const modelRes = await fetch('/api/data-models', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(modelPayload)
       })
 
       if (!modelRes.ok) {
@@ -635,6 +774,7 @@ export default function SpaceSettingsPage() {
       setSelectedDataModelType(null)
       setConnectionForm({
         name: '',
+        connection_type: 'database',
         db_type: 'postgres',
         host: '',
         port: '',
@@ -642,7 +782,18 @@ export default function SpaceSettingsPage() {
         username: '',
         password: '',
         schema: '',
-        table: ''
+        table: '',
+        api_url: '',
+        api_method: 'GET',
+        api_headers: {},
+        api_auth_type: 'none',
+        api_auth_token: '',
+        api_auth_username: '',
+        api_auth_password: '',
+        api_auth_apikey_name: '',
+        api_auth_apikey_value: '',
+        api_body: '',
+        api_response_path: ''
       })
       await loadModels()
     } catch (error: any) {
@@ -654,7 +805,8 @@ export default function SpaceSettingsPage() {
   // Database types available
   const databaseTypes = [
     { id: 'postgres', name: 'PostgreSQL', icon: '🐘', description: 'PostgreSQL database' },
-    { id: 'mysql', name: 'MySQL', icon: '🐬', description: 'MySQL database' }
+    { id: 'mysql', name: 'MySQL', icon: '🐬', description: 'MySQL database' },
+    { id: 'api', name: 'API Endpoint', icon: '🌐', description: 'REST API endpoint' }
   ]
 
   const filteredDatabaseTypes = databaseTypes.filter(db => 
@@ -1058,203 +1210,35 @@ export default function SpaceSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header with Space Dropdown */}
-      <div className="border-b bg-card">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4">
-            {/* Header */}
-            <div className="flex items-center gap-3">
-              <Building2 className="h-5 w-5 text-muted-foreground" />
-              <div>
-            <h1 className="text-xl font-bold">Space Settings</h1>
-                <p className="text-sm text-muted-foreground">Configure your workspace</p>
-              </div>
-          </div>
+    <div className="min-h-screen bg-background flex flex-col h-screen">
+      <SpaceSettingsHeader
+        spaceName={selectedSpace?.name || 'Space Settings'}
+        spaceDescription={selectedSpace?.description}
+        isActive={selectedSpace?.is_active}
+        homepage={homepage}
+        spaceSlug={selectedSpace?.slug}
+        spaceId={selectedSpace?.id}
+      />
 
-            <div className="h-6 w-px bg-border" />
-            
-            {/* Space dropdown */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Space:</span>
-              <Select 
-                value={selectedSpace?.id || ''} 
-                onValueChange={(spaceId) => {
-                  const space = spaces.find(s => s.id === spaceId)
-                  if (space) {
-                    router.push(`/${space.slug || space.id}/settings`)
-                  }
-                }}
-              >
-                <SelectTrigger className="w-56">
-                  <div className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4" />
-                    <span className="truncate">{selectedSpace?.name || 'Select Space'}</span>
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  {spaces.map((space: any) => (
-                    <SelectItem key={space.id} value={space.id}>
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4" />
-                        <span className="truncate">{space.name}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Go to Space/Homepage button with open-in-new-tab icon */}
-            <Button
-              variant={homepage ? 'default' : 'outline'}
-              size="sm"
-              disabled={!homepage}
-              onClick={() => {
-                if (!homepage) return
-                const base = `/${selectedSpace?.slug || selectedSpace?.id}`
-                router.push(`${base}${homepage.path}`)
-              }}
-              className="flex items-center gap-2"
-            >
-              <ExternalLink className="h-4 w-4" />
-              {homepage ? 'Go to Space' : 'No homepage'}
-            </Button>
-          </div>
-          
-          {/* Right side actions */}
-          <div className="flex items-center gap-3">
-            {/* Back to Spaces button - moved to right with board icon */}
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => router.push('/spaces')}
-              className="flex items-center gap-2"
-            >
-              <Grid3X3 className="h-4 w-4" />
-              Back to Spaces
-            </Button>
-
-            {/* Account avatar */}
-            <div className="h-8 w-8">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={(session?.user as any)?.image || ''} alt={(session?.user as any)?.name || 'User'} />
-                <AvatarFallback>{((session?.user as any)?.name || 'U').slice(0,1).toUpperCase()}</AvatarFallback>
-              </Avatar>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <Tabs value={tab} onValueChange={setTab} className="flex h-[calc(100vh-73px)]">
-        {/* Left Sidebar */}
-        <div className="w-80 bg-gray-50 dark:bg-gray-900 flex flex-col border-r">
-          <nav className="flex-1 p-4 space-y-0">
-            <TabsList className="w-full flex-col h-auto bg-transparent">
-              <TabsTrigger className="justify-start w-full h-auto p-3 mb-1 data-[state=active]:bg-gray-200 dark:data-[state=active]:bg-gray-800 data-[state=inactive]:hover:bg-gray-100 dark:data-[state=inactive]:hover:bg-gray-800 rounded-lg border-0 border-b-0 data-[state=active]:border-b-0 data-[state=active]:!border-b-0" value="details">
-                <div className="flex items-center space-x-3 w-full">
-                  <Building2 className="h-4 w-4 text-foreground flex-shrink-0" style={{ display: 'block' }} />
-                  <div className="flex flex-col items-start min-w-0 flex-1">
-                    <span className="font-medium">Space Details</span>
-                    <span className="text-xs text-muted-foreground break-words leading-tight">Name, description, and basic info</span>
-                  </div>
-                </div>
-              </TabsTrigger>
-              <TabsTrigger className="justify-start w-full h-auto p-3 mb-1 data-[state=active]:bg-gray-200 dark:data-[state=active]:bg-gray-800 data-[state=inactive]:hover:bg-gray-100 dark:data-[state=inactive]:hover:bg-gray-800 rounded-lg border-0 border-b-0 data-[state=active]:border-b-0 data-[state=active]:!border-b-0" value="space-studio">
-                <div className="flex items-center space-x-3 w-full">
-                  <Layout className="h-4 w-4 text-foreground flex-shrink-0" style={{ display: 'block' }} />
-                  <div className="flex flex-col items-start min-w-0 flex-1">
-                    <span className="font-medium">Space Studio</span>
-                    <span className="text-xs text-muted-foreground break-words leading-tight">Design layout and manage space pages</span>
-                  </div>
-                </div>
-              </TabsTrigger>
-              <TabsTrigger className="justify-start w-full h-auto p-3 mb-1 data-[state=active]:bg-gray-200 dark:data-[state=active]:bg-gray-800 data-[state=inactive]:hover:bg-gray-100 dark:data-[state=inactive]:hover:bg-gray-800 rounded-lg border-0 border-b-0 data-[state=active]:border-b-0 data-[state=active]:!border-b-0" value="members">
-                <div className="flex items-center space-x-3 w-full">
-                  <UsersIcon className="h-4 w-4 text-foreground flex-shrink-0" style={{ display: 'block' }} />
-                  <div className="flex flex-col items-start min-w-0 flex-1">
-                    <span className="font-medium">Members</span>
-                    <span className="text-xs text-muted-foreground break-words leading-tight">Manage team members and permissions</span>
-                  </div>
-                </div>
-              </TabsTrigger>
-              
-              <TabsTrigger className="justify-start w-full h-auto p-3 mb-1 data-[state=active]:bg-gray-200 dark:data-[state=active]:bg-gray-800 data-[state=inactive]:hover:bg-gray-100 dark:data-[state=inactive]:hover:bg-gray-800 rounded-lg border-0 border-b-0 data-[state=active]:border-b-0 data-[state=active]:!border-b-0" value="data-model">
-                <div className="flex items-center space-x-3 w-full">
-                  <Database className="h-4 w-4 text-foreground flex-shrink-0" style={{ display: 'block' }} />
-                  <div className="flex flex-col items-start min-w-0 flex-1">
-                    <span className="font-medium">Data Model</span>
-                    <span className="text-xs text-muted-foreground break-words leading-tight">Define data structure and attributes</span>
-                  </div>
-                </div>
-              </TabsTrigger>
-              <TabsTrigger className="justify-start w-full h-auto p-3 mb-1 data-[state=active]:bg-gray-200 dark:data-[state=active]:bg-gray-800 data-[state=inactive]:hover:bg-gray-100 dark:data-[state=inactive]:hover:bg-gray-800 rounded-lg border-0 border-b-0 data-[state=active]:border-b-0 data-[state=active]:!border-b-0" value="attachments">
-                <div className="flex items-center space-x-3 w-full">
-                  <FolderPlus className="h-4 w-4 text-foreground flex-shrink-0" />
-                  <div className="flex flex-col items-start min-w-0 flex-1">
-                    <span className="font-medium">Attachments</span>
-                    <span className="text-xs text-muted-foreground break-words leading-tight">File storage and management</span>
-                  </div>
-                </div>
-              </TabsTrigger>
-              <TabsTrigger className="justify-start w-full h-auto p-3 mb-1 data-[state=active]:bg-gray-200 dark:data-[state=active]:bg-gray-800 data-[state=inactive]:hover:bg-gray-100 dark:data-[state=inactive]:hover:bg-gray-800 rounded-lg border-0 border-b-0 data-[state=active]:border-b-0 data-[state=active]:!border-b-0" value="restore">
-                <div className="flex items-center space-x-3 w-full">
-                  <Archive className="h-4 w-4 text-foreground flex-shrink-0" />
-                  <div className="flex flex-col items-start min-w-0 flex-1">
-                    <span className="font-medium">Restore</span>
-                    <span className="text-xs text-muted-foreground break-words leading-tight">Backup and restore data</span>
-                  </div>
-                </div>
-              </TabsTrigger>
-              <TabsTrigger className="justify-start w-full h-auto p-3 mb-1 text-red-600 hover:text-red-700 data-[state=active]:bg-red-100 dark:data-[state=active]:bg-red-900/20 data-[state=inactive]:hover:bg-red-50 dark:data-[state=inactive]:hover:bg-red-900/10 rounded-lg border-0 border-b-0 data-[state=active]:border-b-0 data-[state=active]:!border-b-0" value="danger">
-                <div className="flex items-center space-x-3 w-full">
-                  <AlertTriangle className="h-4 w-4 text-current flex-shrink-0" />
-                  <div className="flex flex-col items-start min-w-0 flex-1">
-                    <span className="font-medium">Danger Zone</span>
-                    <span className="text-xs text-muted-foreground break-words leading-tight">Delete space and irreversible actions</span>
-                  </div>
-                </div>
-              </TabsTrigger>
-            </TabsList>
-          </nav>
-        </div>
+      <Tabs value={tab} onValueChange={setTab} className="flex flex-1 overflow-hidden">
+        <SpaceSettingsSidebar
+          activeTab={tab}
+          onTabChange={setTab}
+          showAllTabs={true}
+        />
 
         {/* Main Content Area */}
         <div className="flex-1 overflow-y-auto">
-            <div>
-            <div className="space-y-6">
+            <div className="space-y-6 px-6 pt-6">
               <TabsContent value="details" className="space-y-6 w-full">
-                {/* Space Overview Header */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
-                        <Building2 className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <div>
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{selectedSpace.name}</h2>
-                        <p className="text-gray-600 dark:text-gray-300 mt-1">
-                          {selectedSpace.description || 'No description provided'}
-                        </p>
-                        <div className="flex items-center gap-4 mt-3">
-                          <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                            <Building2 className="h-3 w-3 mr-1" />
-                            Space ID: {selectedSpace.id}
-                          </Badge>
-                          <Badge variant="outline" className="border-0">
-                            <Layout className="h-3 w-3 mr-1" />
-                            URL: /{selectedSpace.slug || selectedSpace.id}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Created</p>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        {selectedSpace.created_at ? new Date(selectedSpace.created_at).toLocaleDateString() : 'Unknown'}
-                      </p>
-                    </div>
-                  </div>
+                {/* Space Detail Header */}
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Space Detail</h2>
+                  {selectedSpace?.description && (
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                      {selectedSpace.description}
+                    </p>
+                  )}
                 </div>
 
                 {/* Details Sub-tabs */}
@@ -1407,15 +1391,40 @@ export default function SpaceSettingsPage() {
               </TabsContent>
 
               <TabsContent value="members" className="space-y-6 w-full">
-                <Tabs defaultValue="management" className="w-full">
+                {/* Members Header */}
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Members</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                    Manage team members, permissions, and access control for this space
+                  </p>
+                </div>
+
+                {/* Members Sub-tabs */}
+                <Tabs defaultValue="members" className="w-full">
                   <TabsList className="flex gap-2 justify-start flex-wrap">
-                    <TabsTrigger value="management" className="justify-start">Management</TabsTrigger>
-                    <TabsTrigger value="permissions" className="justify-start">Permissions</TabsTrigger>
-                    <TabsTrigger value="activity" className="justify-start">Activity</TabsTrigger>
-                    <TabsTrigger value="audit" className="justify-start">Audit Log</TabsTrigger>
+                    <TabsTrigger value="members" className="justify-start flex items-center gap-2">
+                      <UsersIcon className="h-4 w-4" />
+                      Members
+                    </TabsTrigger>
+                    <TabsTrigger value="groups" className="justify-start flex items-center gap-2">
+                      <Folder className="h-4 w-4" />
+                      Groups
+                    </TabsTrigger>
+                    <TabsTrigger value="roles" className="justify-start flex items-center gap-2">
+                      <Shield className="h-4 w-4" />
+                      Roles
+                    </TabsTrigger>
+                    <TabsTrigger value="permissions" className="justify-start flex items-center gap-2">
+                      <Lock className="h-4 w-4" />
+                      Permissions
+                    </TabsTrigger>
+                    <TabsTrigger value="audit" className="justify-start flex items-center gap-2">
+                      <Archive className="h-4 w-4" />
+                      Audit Log
+                    </TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value="management" className="space-y-6">
+                  <TabsContent value="members" className="space-y-6 mt-6">
                     <MemberManagementPanel
                       spaceId={selectedSpace.id}
                       members={members}
@@ -1428,7 +1437,41 @@ export default function SpaceSettingsPage() {
                     />
                   </TabsContent>
 
-                  <TabsContent value="permissions" className="space-y-6">
+                  <TabsContent value="groups" className="space-y-6 mt-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Groups</CardTitle>
+                        <CardDescription>
+                          Manage member groups and group assignments
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Folder className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                          <p>Group management coming soon...</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="roles" className="space-y-6 mt-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Roles</CardTitle>
+                        <CardDescription>
+                          Manage role definitions and role assignments
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Shield className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                          <p>Role management coming soon...</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="permissions" className="space-y-6 mt-6">
                     <MemberPermissionsPanel
                       spaceId={selectedSpace.id}
                       members={members}
@@ -1437,24 +1480,7 @@ export default function SpaceSettingsPage() {
                     />
                   </TabsContent>
 
-                  <TabsContent value="activity" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                        <CardTitle>Member Activity</CardTitle>
-                        <CardDescription>
-                          Track member activity and engagement in this space.
-                        </CardDescription>
-                  </CardHeader>
-                      <CardContent>
-                        <div className="text-center py-8 text-muted-foreground">
-                          <UsersIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                          <p>Activity tracking coming soon...</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-                  <TabsContent value="audit" className="space-y-6">
+                  <TabsContent value="audit" className="space-y-6 mt-6">
                     <MemberAuditLog
                       spaceId={selectedSpace.id}
                       auditLogs={auditLogs}
@@ -1466,20 +1492,11 @@ export default function SpaceSettingsPage() {
 
               
 
-              <TabsContent value="space-studio" className={studioMode === 'layout' ? "space-y-4 w-full" : "space-y-4 w-full p-4"}>
-                {studioMode !== 'layout' && (
-                  <div className="border-b pb-2">
-                    <h2 className="text-lg font-semibold">Space Studio</h2>
-                    <p className="text-sm text-muted-foreground">Configure layout and pages for this space.</p>
-                  </div>
-                )}
-                {studioMode === 'layout' ? (
-                  <LayoutConfig spaceId={currentSpace?.id || ''} />
-                ) : (
-                  <SpaceStudio 
-                    spaceId={currentSpace?.id || ''}
-                  />
-                )}
+              <TabsContent value="space-studio" className="space-y-6 w-full">
+                {/* Redirect to layout selection page */}
+                <EffectRedirect 
+                  to={`/${selectedSpace?.slug || selectedSpace?.id || params.space}/settings/layout`}
+                />
               </TabsContent>
 
               <TabsContent value="data-model" className="space-y-6 w-full">
@@ -2287,7 +2304,7 @@ export default function SpaceSettingsPage() {
                           <div className="flex-1">
                             <div className="font-semibold text-lg">External Data Source</div>
                             <div className="text-sm text-muted-foreground mt-1">
-                              Connect to an external database
+                              Connect to an external database or API endpoint
                             </div>
                           </div>
                         </div>
@@ -2310,9 +2327,9 @@ export default function SpaceSettingsPage() {
                 }}>
                   <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
-                      <DialogTitle>Select Database Type</DialogTitle>
+                      <DialogTitle>Select Data Source Type</DialogTitle>
                       <DialogDescription>
-                        Choose the database type you want to connect to
+                        Choose the data source type you want to connect to
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
@@ -2320,7 +2337,7 @@ export default function SpaceSettingsPage() {
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                         <Input
-                          placeholder="Search databases..."
+                          placeholder="Search data sources..."
                           value={databaseSearch}
                           onChange={(e) => setDatabaseSearch(e.target.value)}
                           className="pl-10"
@@ -2331,13 +2348,13 @@ export default function SpaceSettingsPage() {
                       <div className="space-y-2 max-h-96 overflow-y-auto">
                         {filteredDatabaseTypes.length === 0 ? (
                           <div className="text-center py-8 text-muted-foreground">
-                            No databases found
+                            No data sources found
                           </div>
                         ) : (
                           filteredDatabaseTypes.map((db) => (
                             <button
                               key={db.id}
-                              onClick={() => handleSelectDatabase(db.id as 'postgres' | 'mysql')}
+                              onClick={() => handleSelectDatabase(db.id as 'postgres' | 'mysql' | 'api')}
                               className="w-full p-4 text-left border rounded-lg hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
                             >
                               <div className="flex items-center gap-4">
@@ -2377,7 +2394,9 @@ export default function SpaceSettingsPage() {
                     <DialogHeader>
                       <DialogTitle>Configure External Connection</DialogTitle>
                       <DialogDescription>
-                        Enter connection details for {selectedDatabaseType === 'postgres' ? 'PostgreSQL' : 'MySQL'} database
+                        {connectionForm.connection_type === 'api' 
+                          ? 'Enter API endpoint details'
+                          : `Enter connection details for ${selectedDatabaseType === 'postgres' ? 'PostgreSQL' : selectedDatabaseType === 'mysql' ? 'MySQL' : ''} database`}
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
@@ -2388,72 +2407,226 @@ export default function SpaceSettingsPage() {
                           id="connection-name"
                           value={connectionForm.name}
                           onChange={(e) => setConnectionForm({ ...connectionForm, name: e.target.value })}
-                          placeholder="e.g. Production Database"
+                          placeholder={connectionForm.connection_type === 'api' ? 'e.g. My API Endpoint' : 'e.g. Production Database'}
                           className="mt-1"
                         />
                       </div>
 
-                      {/* Host */}
-                      <div>
-                        <Label htmlFor="host">Host *</Label>
-                        <Input
-                          id="host"
-                          value={connectionForm.host}
-                          onChange={(e) => setConnectionForm({ ...connectionForm, host: e.target.value })}
-                          placeholder="localhost or IP address"
-                          className="mt-1"
-                        />
-                      </div>
+                      {connectionForm.connection_type === 'api' ? (
+                        <>
+                          {/* API URL */}
+                          <div>
+                            <Label htmlFor="api-url">API URL *</Label>
+                            <Input
+                              id="api-url"
+                              value={connectionForm.api_url}
+                              onChange={(e) => setConnectionForm({ ...connectionForm, api_url: e.target.value })}
+                              placeholder="https://api.example.com/endpoint"
+                              className="mt-1"
+                            />
+                          </div>
 
-                      {/* Port */}
-                      <div>
-                        <Label htmlFor="port">Port</Label>
-                        <Input
-                          id="port"
-                          type="number"
-                          value={connectionForm.port}
-                          onChange={(e) => setConnectionForm({ ...connectionForm, port: e.target.value })}
-                          placeholder={connectionForm.db_type === 'postgres' ? '5432' : '3306'}
-                          className="mt-1"
-                        />
-                      </div>
+                          {/* HTTP Method */}
+                          <div>
+                            <Label htmlFor="api-method">HTTP Method</Label>
+                            <Select
+                              value={connectionForm.api_method}
+                              onValueChange={(value) => setConnectionForm({ ...connectionForm, api_method: value as any })}
+                            >
+                              <SelectTrigger className="mt-1">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="GET">GET</SelectItem>
+                                <SelectItem value="POST">POST</SelectItem>
+                                <SelectItem value="PUT">PUT</SelectItem>
+                                <SelectItem value="PATCH">PATCH</SelectItem>
+                                <SelectItem value="DELETE">DELETE</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
 
-                      {/* Database */}
-                      <div>
-                        <Label htmlFor="database">Database</Label>
-                        <Input
-                          id="database"
-                          value={connectionForm.database}
-                          onChange={(e) => setConnectionForm({ ...connectionForm, database: e.target.value })}
-                          placeholder="Database name"
-                          className="mt-1"
-                        />
-                      </div>
+                          {/* Auth Type */}
+                          <div>
+                            <Label htmlFor="api-auth-type">Authentication Type</Label>
+                            <Select
+                              value={connectionForm.api_auth_type}
+                              onValueChange={(value) => setConnectionForm({ ...connectionForm, api_auth_type: value as any })}
+                            >
+                              <SelectTrigger className="mt-1">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">None</SelectItem>
+                                <SelectItem value="bearer">Bearer Token</SelectItem>
+                                <SelectItem value="basic">Basic Auth</SelectItem>
+                                <SelectItem value="apikey">API Key</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
 
-                      {/* Username */}
-                      <div>
-                        <Label htmlFor="username">Username</Label>
-                        <Input
-                          id="username"
-                          value={connectionForm.username}
-                          onChange={(e) => setConnectionForm({ ...connectionForm, username: e.target.value })}
-                          placeholder="Database username"
-                          className="mt-1"
-                        />
-                      </div>
+                          {/* Auth Fields based on type */}
+                          {connectionForm.api_auth_type === 'bearer' && (
+                            <div>
+                              <Label htmlFor="api-auth-token">Bearer Token *</Label>
+                              <Input
+                                id="api-auth-token"
+                                type="password"
+                                value={connectionForm.api_auth_token}
+                                onChange={(e) => setConnectionForm({ ...connectionForm, api_auth_token: e.target.value })}
+                                placeholder="Enter bearer token"
+                                className="mt-1"
+                              />
+                            </div>
+                          )}
 
-                      {/* Password */}
-                      <div>
-                        <Label htmlFor="password">Password</Label>
-                        <Input
-                          id="password"
-                          type="password"
-                          value={connectionForm.password}
-                          onChange={(e) => setConnectionForm({ ...connectionForm, password: e.target.value })}
-                          placeholder="Database password"
-                          className="mt-1"
-                        />
-                      </div>
+                          {connectionForm.api_auth_type === 'basic' && (
+                            <>
+                              <div>
+                                <Label htmlFor="api-auth-username">Username *</Label>
+                                <Input
+                                  id="api-auth-username"
+                                  value={connectionForm.api_auth_username}
+                                  onChange={(e) => setConnectionForm({ ...connectionForm, api_auth_username: e.target.value })}
+                                  placeholder="Username"
+                                  className="mt-1"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="api-auth-password">Password *</Label>
+                                <Input
+                                  id="api-auth-password"
+                                  type="password"
+                                  value={connectionForm.api_auth_password}
+                                  onChange={(e) => setConnectionForm({ ...connectionForm, api_auth_password: e.target.value })}
+                                  placeholder="Password"
+                                  className="mt-1"
+                                />
+                              </div>
+                            </>
+                          )}
+
+                          {connectionForm.api_auth_type === 'apikey' && (
+                            <>
+                              <div>
+                                <Label htmlFor="api-auth-apikey-name">API Key Name/Header *</Label>
+                                <Input
+                                  id="api-auth-apikey-name"
+                                  value={connectionForm.api_auth_apikey_name}
+                                  onChange={(e) => setConnectionForm({ ...connectionForm, api_auth_apikey_name: e.target.value })}
+                                  placeholder="e.g. X-API-Key"
+                                  className="mt-1"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="api-auth-apikey-value">API Key Value *</Label>
+                                <Input
+                                  id="api-auth-apikey-value"
+                                  type="password"
+                                  value={connectionForm.api_auth_apikey_value}
+                                  onChange={(e) => setConnectionForm({ ...connectionForm, api_auth_apikey_value: e.target.value })}
+                                  placeholder="Enter API key"
+                                  className="mt-1"
+                                />
+                              </div>
+                            </>
+                          )}
+
+                          {/* Request Body (for POST, PUT, PATCH) */}
+                          {(connectionForm.api_method === 'POST' || connectionForm.api_method === 'PUT' || connectionForm.api_method === 'PATCH') && (
+                            <div>
+                              <Label htmlFor="api-body">Request Body (JSON)</Label>
+                              <Textarea
+                                id="api-body"
+                                value={connectionForm.api_body}
+                                onChange={(e) => setConnectionForm({ ...connectionForm, api_body: e.target.value })}
+                                placeholder='{"key": "value"}'
+                                className="mt-1 font-mono text-xs"
+                                rows={4}
+                              />
+                            </div>
+                          )}
+
+                          {/* Response Path */}
+                          <div>
+                            <Label htmlFor="api-response-path">Response Data Path (optional)</Label>
+                            <Input
+                              id="api-response-path"
+                              value={connectionForm.api_response_path}
+                              onChange={(e) => setConnectionForm({ ...connectionForm, api_response_path: e.target.value })}
+                              placeholder="e.g. data.items (JSON path to extract data)"
+                              className="mt-1"
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Leave empty to use root response, or specify JSON path (e.g., "data.items" to extract items from data.items)
+                            </p>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          {/* Host */}
+                          <div>
+                            <Label htmlFor="host">Host *</Label>
+                            <Input
+                              id="host"
+                              value={connectionForm.host}
+                              onChange={(e) => setConnectionForm({ ...connectionForm, host: e.target.value })}
+                              placeholder="localhost or IP address"
+                              className="mt-1"
+                            />
+                          </div>
+
+                          {/* Port */}
+                          <div>
+                            <Label htmlFor="port">Port</Label>
+                            <Input
+                              id="port"
+                              type="number"
+                              value={connectionForm.port}
+                              onChange={(e) => setConnectionForm({ ...connectionForm, port: e.target.value })}
+                              placeholder={connectionForm.db_type === 'postgres' ? '5432' : '3306'}
+                              className="mt-1"
+                            />
+                          </div>
+
+                          {/* Database */}
+                          <div>
+                            <Label htmlFor="database">Database</Label>
+                            <Input
+                              id="database"
+                              value={connectionForm.database}
+                              onChange={(e) => setConnectionForm({ ...connectionForm, database: e.target.value })}
+                              placeholder="Database name"
+                              className="mt-1"
+                            />
+                          </div>
+
+                          {/* Username */}
+                          <div>
+                            <Label htmlFor="username">Username</Label>
+                            <Input
+                              id="username"
+                              value={connectionForm.username}
+                              onChange={(e) => setConnectionForm({ ...connectionForm, username: e.target.value })}
+                              placeholder="Database username"
+                              className="mt-1"
+                            />
+                          </div>
+
+                          {/* Password */}
+                          <div>
+                            <Label htmlFor="password">Password</Label>
+                            <Input
+                              id="password"
+                              type="password"
+                              value={connectionForm.password}
+                              onChange={(e) => setConnectionForm({ ...connectionForm, password: e.target.value })}
+                              placeholder="Database password"
+                              className="mt-1"
+                            />
+                          </div>
+                        </>
+                      )}
 
                       {/* Schema and Table Selection (shown after test) */}
                       {connectionTestResult?.success && connectionSchemas.length > 0 && (
@@ -2537,7 +2710,10 @@ export default function SpaceSettingsPage() {
                       <Button
                         variant="outline"
                         onClick={testConnection}
-                        disabled={testingConnection || !connectionForm.host}
+                        disabled={
+                          testingConnection || 
+                          (connectionForm.connection_type === 'api' ? !connectionForm.api_url : !connectionForm.host)
+                        }
                       >
                         {testingConnection ? 'Testing...' : 'Test Connection'}
                       </Button>
@@ -2545,10 +2721,9 @@ export default function SpaceSettingsPage() {
                         onClick={saveExternalConnection}
                         disabled={
                           !connectionForm.name || 
-                          !connectionForm.host || 
-                          !connectionTestResult?.success || 
-                          !connectionForm.table ||
-                          (connectionForm.db_type === 'postgres' && !connectionForm.schema)
+                          (connectionForm.connection_type === 'api' 
+                            ? (!connectionForm.api_url || !connectionTestResult?.success)
+                            : (!connectionForm.host || !connectionTestResult?.success || !connectionForm.table || (connectionForm.db_type === 'postgres' && !connectionForm.schema)))
                         }
                       >
                         Save Connection
@@ -2557,6 +2732,10 @@ export default function SpaceSettingsPage() {
                   </DialogContent>
                 </Dialog>
 
+              </TabsContent>
+
+              <TabsContent value="data-sync" className="space-y-6 w-full">
+                <DataSyncManagement spaceId={selectedSpace?.id || ''} />
               </TabsContent>
 
               <TabsContent value="restore" className="space-y-6 w-full">
@@ -3206,7 +3385,7 @@ export default function SpaceSettingsPage() {
                 </Card>
               </TabsContent>
             </div>
-          </div>
+        </div>
             {/* <style jsx>{`
               
               :global(input:not([class*="border"])) { 
@@ -3224,7 +3403,6 @@ export default function SpaceSettingsPage() {
                 border-bottom: none !important; 
               }
             `}</style> */}
-        </div>
       </Tabs>
 
       {/* Attribute Detail Drawer */}

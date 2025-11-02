@@ -63,7 +63,7 @@ export default function SignInPage() {
         if (result?.error) {
           setError(result.error)
         } else {
-          router.push('/spaces')
+          router.push('/')
         }
       }
     } catch (error) {
@@ -75,7 +75,7 @@ export default function SignInPage() {
 
   const handleGoogleSignIn = async () => {
     try {
-      await signIn('google', { callbackUrl: '/spaces' })
+      await signIn('google', { callbackUrl: '/' })
     } catch (error) {
       setError('An error occurred with Google sign-in.')
     }

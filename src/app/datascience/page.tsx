@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { AdminLayout } from '@/components/admin/AdminLayout'
+import { PlatformLayout } from '@/components/platform/PlatformLayout'
 import { ProjectsList } from '@/components/datascience/ProjectsList'
 
 export default function DataScienceHome() {
@@ -9,13 +9,13 @@ export default function DataScienceHome() {
   const [selectedSpace, setSelectedSpace] = useState<string>('')
 
   return (
-    <AdminLayout
+    <PlatformLayout
       activeTab={activeTab}
       onTabChange={setActiveTab}
       selectedSpace={selectedSpace}
       onSpaceChange={setSelectedSpace}
     >
       {activeTab === 'notebook' && <ProjectsList />}
-    </AdminLayout>
+    </PlatformLayout>
   )
 }

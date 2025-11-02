@@ -4,13 +4,13 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { AdminLayout } from '@/components/admin/AdminLayout'
+import { PlatformLayout } from '@/components/platform/PlatformLayout'
 
 export default function SimpleAdminPage() {
   const [activeTab, setActiveTab] = useState('dashboard')
 
   return (
-    <AdminLayout>
+    <PlatformLayout>
       <div className="p-6">
         <h1 className="text-2xl font-bold mb-6">Simple Admin Console</h1>
         
@@ -43,6 +43,6 @@ export default function SimpleAdminPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </AdminLayout>
+    </PlatformLayout>
   )
 }

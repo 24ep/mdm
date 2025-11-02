@@ -47,8 +47,8 @@ export default function SpaceSignInPage() {
       if (result?.error) {
         setError(result.error)
       } else {
-        // On success, send them into the space
-        router.push(`/${params.space}/dashboard`)
+        // On success, send to homepage
+        router.push('/')
       }
     } catch {
       setError('An error occurred. Please try again.')
@@ -104,7 +104,7 @@ export default function SpaceSignInPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Button variant="outline" className="w-full" onClick={() => signIn('google', { callbackUrl: `/${params.space}/dashboard` })} disabled={isLoading}>
+              <Button variant="outline" className="w-full" onClick={() => signIn('google', { callbackUrl: '/' })} disabled={isLoading}>
                 Google
               </Button>
             </div>

@@ -35,10 +35,11 @@ import toast from 'react-hot-toast'
 
 interface VersionControlProps {
   notebookId?: string
-  onCommit?: (commit: Commit) => void
+  notebookData?: any // Current notebook data for versioning
+  onCommit?: (commit: Commit) => Promise<any> | any // Should return notebook data to save
   onBranch?: (branch: Branch) => void
   onMerge?: (merge: Merge) => void
-  onRevert?: (version: Version) => void
+  onRevert?: (version: Version) => void // Should restore notebook to this version
   onExport?: (version: Version, format: string) => void
 }
 
@@ -112,7 +113,8 @@ interface DiffChange {
 }
 
 export function VersionControl({ 
-  notebookId = 'notebook-1',
+  notebookId,
+  notebookData,
   onCommit,
   onBranch,
   onMerge,
@@ -133,134 +135,201 @@ export function VersionControl({
   const [diff, setDiff] = useState<Diff | null>(null)
 
   useEffect(() => {
-    // Initialize with mock data
-    setVersions([
-      {
-        id: 'v1',
-        commitId: 'a1b2c3d',
-        message: 'Initial notebook setup',
-        author: 'John Doe',
-        authorEmail: 'john@example.com',
-        timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-        changes: [
-          { type: 'added', file: 'notebook.ipynb', linesAdded: 50, linesDeleted: 0 }
-        ],
-        branch: 'main',
-        tags: ['v1.0.0'],
-        isCurrent: false
-      },
-      {
-        id: 'v2',
-        commitId: 'e4f5g6h',
-        message: 'Added data visualization',
-        author: 'John Doe',
-        authorEmail: 'john@example.com',
-        timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-        changes: [
-          { type: 'modified', file: 'notebook.ipynb', linesAdded: 25, linesDeleted: 5 },
-          { type: 'added', file: 'charts.py', linesAdded: 30, linesDeleted: 0 }
-        ],
-        branch: 'main',
-        tags: [],
-        isCurrent: false
-      },
-      {
-        id: 'v3',
-        commitId: 'i7j8k9l',
-        message: 'Fixed data preprocessing bug',
-        author: 'Jane Smith',
-        authorEmail: 'jane@example.com',
-        timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-        changes: [
-          { type: 'modified', file: 'notebook.ipynb', linesAdded: 10, linesDeleted: 8 }
-        ],
-        branch: 'main',
-        tags: ['v1.1.0'],
-        isCurrent: true
-      }
-    ])
+    if (!notebookId) return
 
-    setBranches([
-      {
-        name: 'main',
-        description: 'Main development branch',
-        isCurrent: true,
-        lastCommit: 'i7j8k9l',
-        lastCommitDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-        ahead: 0,
-        behind: 0
-      },
-      {
-        name: 'feature/ml-pipeline',
-        description: 'Machine learning pipeline implementation',
-        isCurrent: false,
-        lastCommit: 'm1n2o3p',
-        lastCommitDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-        ahead: 3,
-        behind: 1
-      },
-      {
-        name: 'feature/data-viz',
-        description: 'Advanced data visualization features',
-        isCurrent: false,
-        lastCommit: 'q4r5s6t',
-        lastCommitDate: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
-        ahead: 2,
-        behind: 2
-      }
-    ])
+    // Fetch versions from API
+    const fetchVersions = async () => {
+      try {
+        const response = await fetch(`/api/notebooks/${encodeURIComponent(notebookId)}/versions`)
+        if (!response.ok) {
+          throw new Error('Failed to fetch versions')
+        }
 
-    setUncommittedChanges([
-      {
-        type: 'modified',
-        file: 'notebook.ipynb',
-        linesAdded: 15,
-        linesDeleted: 3
-      },
-      {
-        type: 'added',
-        file: 'utils.py',
-        linesAdded: 20,
-        linesDeleted: 0
-      }
-    ])
-  }, [])
+        const data = await response.json()
+        if (data.success && data.versions) {
+          // Transform API versions to component format
+          const transformedVersions: Version[] = data.versions.map((v: any) => ({
+            id: v.id,
+            commitId: v.id.substring(0, 7), // Short commit ID
+            message: v.commit_message || 'No message',
+            author: v.author || 'Unknown',
+            authorEmail: v.author_email || '',
+            timestamp: new Date(v.created_at),
+            changes: v.change_summary
+              ? [
+                  ...(v.change_summary.files_added || []).map((f: string) => ({
+                    type: 'added' as const,
+                    file: f,
+                    linesAdded: v.change_summary.lines_added || 0,
+                    linesDeleted: 0
+                  })),
+                  ...(v.change_summary.files_modified || []).map((f: string) => ({
+                    type: 'modified' as const,
+                    file: f,
+                    linesAdded: v.change_summary.lines_added || 0,
+                    linesDeleted: v.change_summary.lines_deleted || 0
+                  })),
+                  ...(v.change_summary.files_deleted || []).map((f: string) => ({
+                    type: 'deleted' as const,
+                    file: f,
+                    linesAdded: 0,
+                    linesDeleted: v.change_summary.lines_deleted || 0
+                  }))
+                ]
+              : [{ type: 'modified' as const, file: 'notebook.ipynb', linesAdded: 0, linesDeleted: 0 }],
+            branch: v.branch_name || 'main',
+            tags: v.tags || [],
+            isCurrent: v.is_current || false
+          }))
 
-  const handleCommit = () => {
+          setVersions(transformedVersions)
+
+          // Extract unique branches from versions
+          const branchMap = new Map<string, Branch>()
+          transformedVersions.forEach((v) => {
+            if (!branchMap.has(v.branch)) {
+              branchMap.set(v.branch, {
+                name: v.branch,
+                description: '',
+                isCurrent: v.isCurrent,
+                lastCommit: v.commitId,
+                lastCommitDate: v.timestamp,
+                ahead: 0,
+                behind: 0
+              })
+            }
+          })
+          setBranches(Array.from(branchMap.values()))
+          setCurrentBranch(
+            transformedVersions.find((v) => v.isCurrent)?.branch || 'main'
+          )
+        }
+      } catch (error) {
+        console.error('Error fetching versions:', error)
+        toast.error('Failed to load version history')
+      }
+    }
+
+    fetchVersions()
+  }, [notebookId])
+
+  const handleCommit = async () => {
     if (!commitMessage.trim()) {
       toast.error('Please enter a commit message')
       return
     }
 
-    const commit: Commit = {
-      id: `commit-${Date.now()}`,
-      message: commitMessage,
-      description: commitDescription,
-      author: 'Current User',
-      timestamp: new Date(),
-      changes: uncommittedChanges,
-      branch: currentBranch
+    if (!notebookId) {
+      toast.error('Notebook ID is required')
+      return
     }
 
-    const newVersion: Version = {
-      id: `v${versions.length + 1}`,
-      commitId: commit.id.substring(0, 7),
-      message: commit.message,
-      author: commit.author,
-      authorEmail: 'current@example.com',
-      timestamp: commit.timestamp,
-      changes: commit.changes,
-      branch: commit.branch,
-      tags: [],
-      isCurrent: true
-    }
+    try {
+      // Calculate change summary
+      const changeSummary = {
+        files_added: uncommittedChanges.filter((c) => c.type === 'added').map((c) => c.file),
+        files_modified: uncommittedChanges.filter((c) => c.type === 'modified').map((c) => c.file),
+        files_deleted: uncommittedChanges.filter((c) => c.type === 'deleted').map((c) => c.file),
+        lines_added: uncommittedChanges.reduce((sum, c) => sum + c.linesAdded, 0),
+        lines_deleted: uncommittedChanges.reduce((sum, c) => sum + c.linesDeleted, 0)
+      }
 
-    setVersions(prev => prev.map(v => ({ ...v, isCurrent: false })).concat(newVersion))
-    setUncommittedChanges([])
-    setCommitMessage('')
-    setCommitDescription('')
-    onCommit?.(commit)
-    toast.success('Changes committed successfully')
+      // Get notebook data from props or callback
+      let dataToSave = notebookData
+      
+      if (onCommit) {
+        const commit: Commit = {
+          id: `commit-${Date.now()}`,
+          message: commitMessage,
+          description: commitDescription,
+          author: 'Current User',
+          timestamp: new Date(),
+          changes: uncommittedChanges,
+          branch: currentBranch
+        }
+        
+        const result = await onCommit(commit)
+        if (result) {
+          dataToSave = result
+        }
+      }
+
+      if (!dataToSave) {
+        toast.error('Notebook data is required for versioning')
+        return
+      }
+
+      // Create version via API
+      const response = await fetch(`/api/notebooks/${encodeURIComponent(notebookId)}/versions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          notebook_data: notebookData,
+          commit_message: commitMessage,
+          commit_description: commitDescription,
+          branch_name: currentBranch,
+          tags: [],
+          change_summary: changeSummary,
+          is_current: true
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to create version')
+      }
+
+      const data = await response.json()
+
+      // Refresh versions list
+      const versionsResponse = await fetch(`/api/notebooks/${encodeURIComponent(notebookId)}/versions`)
+      if (versionsResponse.ok) {
+        const versionsData = await versionsResponse.json()
+        if (versionsData.success && versionsData.versions) {
+          const transformedVersions: Version[] = versionsData.versions.map((v: any) => ({
+            id: v.id,
+            commitId: v.id.substring(0, 7),
+            message: v.commit_message || 'No message',
+            author: v.author || 'Unknown',
+            authorEmail: v.author_email || '',
+            timestamp: new Date(v.created_at),
+            changes: v.change_summary
+              ? [
+                  ...(v.change_summary.files_added || []).map((f: string) => ({
+                    type: 'added' as const,
+                    file: f,
+                    linesAdded: v.change_summary.lines_added || 0,
+                    linesDeleted: 0
+                  })),
+                  ...(v.change_summary.files_modified || []).map((f: string) => ({
+                    type: 'modified' as const,
+                    file: f,
+                    linesAdded: v.change_summary.lines_added || 0,
+                    linesDeleted: v.change_summary.lines_deleted || 0
+                  })),
+                  ...(v.change_summary.files_deleted || []).map((f: string) => ({
+                    type: 'deleted' as const,
+                    file: f,
+                    linesAdded: 0,
+                    linesDeleted: v.change_summary.lines_deleted || 0
+                  }))
+                ]
+              : [{ type: 'modified' as const, file: 'notebook.ipynb', linesAdded: 0, linesDeleted: 0 }],
+            branch: v.branch_name || 'main',
+            tags: v.tags || [],
+            isCurrent: v.is_current || false
+          }))
+          setVersions(transformedVersions)
+        }
+      }
+
+      setUncommittedChanges([])
+      setCommitMessage('')
+      setCommitDescription('')
+      toast.success('Changes committed successfully')
+    } catch (error: any) {
+      console.error('Error committing version:', error)
+      toast.error('Failed to commit changes')
+    }
   }
 
   const handleCreateBranch = () => {
@@ -292,9 +361,57 @@ export function VersionControl({
     toast.success(`Switched to branch '${branchName}'`)
   }
 
-  const handleRevert = (version: Version) => {
-    onRevert?.(version)
-    toast.success(`Reverted to version ${version.commitId}`)
+  const handleRevert = async (version: Version) => {
+    if (!notebookId) {
+      toast.error('Notebook ID is required')
+      return
+    }
+
+    try {
+      // Restore version via API
+      const response = await fetch(
+        `/api/notebooks/${encodeURIComponent(notebookId)}/versions/${version.id}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to restore version')
+      }
+
+      const data = await response.json()
+
+      // Call onRevert callback with restored version data
+      onRevert?.(version)
+
+      // Refresh versions list
+      const versionsResponse = await fetch(`/api/notebooks/${encodeURIComponent(notebookId)}/versions`)
+      if (versionsResponse.ok) {
+        const versionsData = await versionsResponse.json()
+        if (versionsData.success && versionsData.versions) {
+          const transformedVersions: Version[] = versionsData.versions.map((v: any) => ({
+            id: v.id,
+            commitId: v.id.substring(0, 7),
+            message: v.commit_message || 'No message',
+            author: v.author || 'Unknown',
+            authorEmail: v.author_email || '',
+            timestamp: new Date(v.created_at),
+            changes: v.change_summary ? [] : [],
+            branch: v.branch_name || 'main',
+            tags: v.tags || [],
+            isCurrent: v.is_current || false
+          }))
+          setVersions(transformedVersions)
+        }
+      }
+
+      toast.success(`Reverted to version ${version.commitId}`)
+    } catch (error: any) {
+      console.error('Error reverting version:', error)
+      toast.error('Failed to revert version')
+    }
   }
 
   const handleExport = (version: Version, format: string) => {
@@ -302,19 +419,100 @@ export function VersionControl({
     toast.success(`Exported version ${version.commitId} as ${format}`)
   }
 
-  const handleShowDiff = (version: Version) => {
-    setSelectedVersion(version.id)
-    setDiff({
-      file: 'notebook.ipynb',
-      oldContent: 'Previous version content...',
-      newContent: 'Current version content...',
-      changes: [
-        { type: 'added', newLine: 1, content: '+ New line added' },
-        { type: 'deleted', oldLine: 2, content: '- Old line removed' },
-        { type: 'modified', oldLine: 3, newLine: 3, content: '~ Modified line' }
-      ]
-    })
-    setShowDiff(true)
+  const handleShowDiff = async (version: Version) => {
+    if (!notebookId) {
+      toast.error('Notebook ID is required')
+      return
+    }
+
+    try {
+      // Get current version ID
+      const currentVersion = versions.find((v) => v.isCurrent)
+      if (!currentVersion) {
+        toast.error('Current version not found')
+        return
+      }
+
+      // Fetch diff from API
+      const response = await fetch(`/api/notebooks/${encodeURIComponent(notebookId)}/versions/diff`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          notebook_id: notebookId,
+          version1_id: version.id,
+          version2_id: currentVersion.id
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch diff')
+      }
+
+      const data = await response.json()
+      if (data.success && data.diff) {
+        const diffData = data.diff
+
+        // Transform diff to display format
+        const diffChanges: DiffChange[] = []
+
+        // Add cell changes
+        diffData.changes.cells_added.forEach((cell: any) => {
+          diffChanges.push({
+            type: 'added',
+            newLine: 1,
+            content: `+ Added cell (${cell.type}): ${(cell.content || '').substring(0, 50)}...`
+          })
+        })
+
+        diffData.changes.cells_deleted.forEach((cell: any) => {
+          diffChanges.push({
+            type: 'deleted',
+            oldLine: 1,
+            content: `- Deleted cell (${cell.type}): ${(cell.content || '').substring(0, 50)}...`
+          })
+        })
+
+        diffData.changes.cells_modified.forEach((change: any) => {
+          if (change.type === 'content') {
+            diffChanges.push({
+              type: 'modified',
+              oldLine: 1,
+              newLine: 1,
+              content: `~ Modified cell content`
+            })
+          }
+        })
+
+        setDiff({
+          file: 'notebook.ipynb',
+          oldContent: `Version ${diffData.version1.version_number}`,
+          newContent: `Version ${diffData.version2.version_number}`,
+          changes: diffChanges.length > 0 ? diffChanges : [
+            { type: 'modified', oldLine: 1, newLine: 1, content: 'No changes detected' }
+          ]
+        })
+
+        setSelectedVersion(version.id)
+        setShowDiff(true)
+      }
+    } catch (error: any) {
+      console.error('Error fetching diff:', error)
+      toast.error('Failed to load diff')
+      
+      // Fallback to mock diff
+      setSelectedVersion(version.id)
+      setDiff({
+        file: 'notebook.ipynb',
+        oldContent: 'Previous version content...',
+        newContent: 'Current version content...',
+        changes: [
+          { type: 'added', newLine: 1, content: '+ New line added' },
+          { type: 'deleted', oldLine: 2, content: '- Old line removed' },
+          { type: 'modified', oldLine: 3, newLine: 3, content: '~ Modified line' }
+        ]
+      })
+      setShowDiff(true)
+    }
   }
 
   const getChangeIcon = (type: string) => {
@@ -620,26 +818,45 @@ export function VersionControl({
 
       {/* Diff Modal */}
       {showDiff && diff && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-4xl max-h-[80vh] overflow-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowDiff(false)}>
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-4xl max-h-[80vh] overflow-auto w-full mx-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Diff: {diff.file}</h3>
+              <div>
+                <h3 className="text-lg font-semibold">Diff: {diff.file}</h3>
+                <div className="text-sm text-gray-500 mt-1">
+                  {diff.oldContent} → {diff.newContent}
+                </div>
+              </div>
               <Button variant="ghost" onClick={() => setShowDiff(false)}>
                 ×
               </Button>
             </div>
-            <div className="space-y-2">
-              {diff.changes.map((change, index) => (
-                <div key={index} className={`flex items-center space-x-2 p-2 rounded ${getChangeColor(change.type)}`}>
-                  <span className="font-mono text-sm w-8">
-                    {change.oldLine || change.newLine || ''}
-                  </span>
-                  <span className="font-mono text-sm">
-                    {change.type === 'added' ? '+' : change.type === 'deleted' ? '-' : '~'}
-                  </span>
-                  <span className="font-mono text-sm">{change.content}</span>
+            <div className="space-y-1 max-h-[60vh] overflow-y-auto">
+              {diff.changes.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No changes detected between versions
                 </div>
-              ))}
+              ) : (
+                diff.changes.map((change, index) => (
+                  <div key={index} className={`flex items-start space-x-2 p-2 rounded text-sm ${getChangeColor(change.type)}`}>
+                    <span className="font-mono text-xs w-12 text-gray-500">
+                      {change.oldLine || ''}
+                    </span>
+                    <span className="font-mono text-xs w-12 text-gray-500">
+                      {change.newLine || ''}
+                    </span>
+                    <span className="font-mono text-xs w-4">
+                      {change.type === 'added' ? '+' : change.type === 'deleted' ? '-' : '~'}
+                    </span>
+                    <span className="font-mono text-xs flex-1 break-words">{change.content}</span>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+              <Button variant="outline" onClick={() => setShowDiff(false)}>
+                Close
+              </Button>
             </div>
           </div>
         </div>

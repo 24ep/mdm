@@ -67,17 +67,15 @@ const getMenuItems = (
   }
 
 
-  if (flags?.workflows !== false) {
-    items.push({ title: 'Automation', icon: Workflow, children: [
-      { title: 'Workflows', href: `/${spaceId}/workflows`, icon: Workflow },
-    ] })
-  }
+  // Always show Automation/Workflows menu
+  items.push({ title: 'Automation', icon: Workflow, children: [
+    { title: 'Workflows', href: `/${spaceId}/workflows`, icon: Workflow },
+  ] })
 
   const otherChildren: MenuItem[] = []
   if (flags?.bulk_activity !== false) {
     otherChildren.push({ title: 'Bulk Activity', href: `/${spaceId}/import-export`, icon: Download })
   }
-  otherChildren.push({ title: 'Space Settings', href: `/${spaceId}/settings`, icon: Settings })
   otherChildren.push({ title: 'System Settings', href: `/settings`, icon: Settings })
   items.push({ title: 'Others', icon: Settings, children: otherChildren })
 

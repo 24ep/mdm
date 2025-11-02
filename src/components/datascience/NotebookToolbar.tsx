@@ -88,7 +88,11 @@ import {
   Users,
   File,
   Folder,
-  FolderOpen
+  FolderOpen,
+  RotateCw,
+  Replace,
+  GitMerge,
+  ToggleLeft
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -123,6 +127,15 @@ interface NotebookToolbarProps {
   onToggleToolbarPosition?: () => void
   showFileOps?: boolean
   showViewControls?: boolean
+  // New handlers
+  onUndo?: () => void
+  onRedo?: () => void
+  onFind?: () => void
+  onReplace?: () => void
+  onMergeCells?: () => void
+  onSplitCell?: () => void
+  onToggleCellType?: () => void
+  canEdit?: boolean
 }
 
 export function NotebookToolbar({
@@ -150,7 +163,15 @@ export function NotebookToolbar({
   toolbarPosition = 'top',
   onToggleToolbarPosition,
   showFileOps = true,
-  showViewControls = true
+  showViewControls = true,
+  onUndo,
+  onRedo,
+  onFind,
+  onReplace,
+  onMergeCells,
+  onSplitCell,
+  onToggleCellType,
+  canEdit = true
 }: NotebookToolbarProps) {
   const [showAddMenu, setShowAddMenu] = useState(false)
   const [showKernelMenu, setShowKernelMenu] = useState(false)
@@ -252,6 +273,98 @@ export function NotebookToolbar({
               Clear
             </Button>
           </div>
+
+          {/* Edit Operations */}
+          {canEdit && (
+            <div className="flex items-center gap-1 border-r border-gray-200 pr-2 mr-2">
+              {onUndo && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onUndo}
+                  className="h-8 w-8 p-0"
+                  title="Undo (Ctrl+Z)"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              )}
+              {onRedo && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onRedo}
+                  className="h-8 w-8 p-0"
+                  title="Redo (Ctrl+Shift+Z)"
+                >
+                  <RotateCw className="h-4 w-4" />
+                </Button>
+              )}
+              {onFind && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onFind}
+                  className="h-8 w-8 p-0"
+                  title="Find (Ctrl+F)"
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
+              )}
+              {onReplace && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onReplace}
+                  className="h-8 w-8 p-0"
+                  title="Replace (Ctrl+H)"
+                >
+                  <Replace className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* Cell Operations */}
+          {canEdit && (
+            <div className="flex items-center gap-1 border-r border-gray-200 pr-2 mr-2">
+              {onMergeCells && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onMergeCells}
+                  className="h-8 px-3"
+                  title="Merge selected cells (Ctrl+J)"
+                >
+                  <GitMerge className="h-4 w-4 mr-1" />
+                  Merge
+                </Button>
+              )}
+              {onSplitCell && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onSplitCell}
+                  className="h-8 px-3"
+                  title="Split cell (Ctrl+S)"
+                >
+                  <SplitSquareHorizontal className="h-4 w-4 mr-1" />
+                  Split
+                </Button>
+              )}
+              {onToggleCellType && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onToggleCellType}
+                  className="h-8 px-3"
+                  title="Toggle cell type (Ctrl+Y)"
+                >
+                  <ToggleLeft className="h-4 w-4 mr-1" />
+                  Toggle Type
+                </Button>
+              )}
+            </div>
+          )}
 
           {/* Add Cell Menu removed per request */}
 

@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (spaceId) {
-      whereConditions.push(`u.id IN (SELECT user_id FROM space_members WHERE space_id = $${paramIndex})`)
+      whereConditions.push(`u.id IN (SELECT user_id FROM space_members WHERE space_id = $${paramIndex}::uuid)`)
       queryParams.push(spaceId)
       paramIndex++
     }

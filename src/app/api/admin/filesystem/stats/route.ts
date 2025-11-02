@@ -34,13 +34,13 @@ export async function GET() {
         free: 1000000 - (spaceAttachments.length + attachmentFiles.length)
       },
       mountPoint: '/storage',
-      fileSystem: 'ext4',
+      storageType: 'ext4',
       readOnly: false
     }
 
     return NextResponse.json({ stats })
   } catch (error) {
-    console.error('Error fetching file system stats:', error)
+    console.error('Error fetching storage stats:', error)
     return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 })
   }
 }

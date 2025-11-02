@@ -1,0 +1,187 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { query } from '@/lib/db'
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { rows } = await query(
+      `SELECT 
+        ds.*,
+        ec.name as connection_name,
+        ec.connection_type,
+        dm.display_name as data_model_name
+       FROM public.data_sync_schedules ds
+       LEFT JOIN public.external_connections ec ON ec.id = ds.external_connection_id
+       LEFT JOIN public.data_models dm ON dm.id = ds.data_model_id
+       WHERE ds.id = $1 AND ds.deleted_at IS NULL`,
+      [params.id]
+    )
+
+    if (rows.length === 0) {
+      return NextResponse.json({ error: 'Sync schedule not found' }, { status: 404 })
+    }
+
+    // Check access
+    const { rows: access } = await query(
+      'SELECT 1 FROM space_members WHERE space_id = $1 AND user_id = $2',
+      [rows[0].space_id, session.user.id]
+    )
+    if (access.length === 0) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+    return NextResponse.json({ schedule: rows[0] })
+  } catch (error) {
+    console.error('GET /data-sync-schedules/[id] error', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const body = await request.json()
+    const { ...updates } = body
+
+    // Get existing schedule to check access
+    const { rows: existing } = await query(
+      'SELECT space_id FROM public.data_sync_schedules WHERE id = $1',
+      [params.id]
+    )
+
+    if (existing.length === 0) {
+      return NextResponse.json({ error: 'Sync schedule not found' }, { status: 404 })
+    }
+
+    // Check access
+    const { rows: access } = await query(
+      'SELECT 1 FROM space_members WHERE space_id = $1 AND user_id = $2',
+      [existing[0].space_id, session.user.id]
+    )
+    if (access.length === 0) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+    // Build update query
+    const fields: string[] = []
+    const values: any[] = []
+    let idx = 1
+
+    for (const [key, value] of Object.entries(updates)) {
+      if (key === 'schedule_config' || key === 'data_mapping') {
+        fields.push(`${key} = $${idx++}`)
+        values.push(value ? JSON.stringify(value) : null)
+      } else if (key === 'notification_emails' && Array.isArray(value)) {
+        fields.push(`${key} = $${idx++}`)
+        values.push(value)
+      } else if (value !== undefined) {
+        fields.push(`${key} = $${idx++}`)
+        values.push(value)
+      }
+    }
+
+    if (fields.length === 0) {
+      return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
+    }
+
+    // Recalculate next_run_at if schedule changed
+    if (updates.schedule_type || updates.schedule_config) {
+      const scheduleType = updates.schedule_type || existing[0].schedule_type
+      const scheduleConfig = updates.schedule_config || existing[0].schedule_config
+      const nextRunAt = calculateNextRunTime(scheduleType, scheduleConfig)
+      if (nextRunAt) {
+        fields.push(`next_run_at = $${idx++}`)
+        values.push(nextRunAt)
+      }
+    }
+
+    fields.push(`updated_at = NOW()`)
+    values.push(params.id)
+
+    const { rows } = await query(
+      `UPDATE public.data_sync_schedules 
+       SET ${fields.join(', ')}
+       WHERE id = $${idx}
+       RETURNING *`,
+      values
+    )
+
+    return NextResponse.json({ schedule: rows[0] })
+  } catch (error) {
+    console.error('PUT /data-sync-schedules/[id] error', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    // Get existing schedule to check access
+    const { rows: existing } = await query(
+      'SELECT space_id FROM public.data_sync_schedules WHERE id = $1',
+      [params.id]
+    )
+
+    if (existing.length === 0) {
+      return NextResponse.json({ error: 'Sync schedule not found' }, { status: 404 })
+    }
+
+    // Check access
+    const { rows: access } = await query(
+      'SELECT 1 FROM space_members WHERE space_id = $1 AND user_id = $2',
+      [existing[0].space_id, session.user.id]
+    )
+    if (access.length === 0) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+    await query(
+      `UPDATE public.data_sync_schedules 
+       SET deleted_at = NOW()
+       WHERE id = $1`,
+      [params.id]
+    )
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('DELETE /data-sync-schedules/[id] error', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+function calculateNextRunTime(scheduleType: string, scheduleConfig: any): Date | null {
+  if (scheduleType === 'MANUAL') return null
+
+  const now = new Date()
+  const next = new Date(now)
+
+  switch (scheduleType) {
+    case 'HOURLY':
+      next.setHours(next.getHours() + 1, 0, 0, 0)
+      break
+    case 'DAILY':
+      next.setDate(next.getDate() + 1)
+      next.setHours(scheduleConfig?.hour || 0, scheduleConfig?.minute || 0, 0, 0)
+      break
+    case 'WEEKLY':
+      next.setDate(next.getDate() + 7)
+      next.setHours(scheduleConfig?.hour || 0, scheduleConfig?.minute || 0, 0, 0)
+      break
+    default:
+      return null
+  }
+
+  return next
+}
+

@@ -23,7 +23,7 @@ export async function GET(
     // Check if user has access to this space
     const memberCheck = await query(`
       SELECT role FROM space_members 
-      WHERE space_id = $1 AND user_id = $2
+      WHERE space_id = $1::uuid AND user_id = $2::uuid
     `, [spaceId, session.user.id])
 
     if (memberCheck.rows.length === 0) {
@@ -31,7 +31,7 @@ export async function GET(
     }
 
     // Build query conditions
-    let whereConditions = ['al.space_id = $1']
+    let whereConditions = ['al.space_id = $1::uuid']
     let queryParams = [spaceId]
     let paramIndex = 2
 
@@ -115,7 +115,7 @@ export async function POST(
         user_agent, 
         created_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+      VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7, NOW())
       RETURNING id
     `, [
       spaceId,

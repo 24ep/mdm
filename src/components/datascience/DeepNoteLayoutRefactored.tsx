@@ -9,6 +9,8 @@ import { NotebookToolbar } from './NotebookToolbar'
 import { NotebookSidebar } from './NotebookSidebar'
 import { CellRenderer } from './CellRenderer'
 import { SortableCell } from './SortableCell'
+import { ErrorBoundary } from './ErrorBoundary'
+import { FindReplaceModal } from './FindReplaceModal'
 import { DeepNoteLayoutProps } from './types'
 import { cn } from '@/lib/utils'
 import { 
@@ -20,11 +22,24 @@ import {
   Database,
   Upload,
   Download,
-  PanelLeft
+  PanelLeft,
+  Eye,
+  Edit,
+  Lock,
+  RotateCcw,
+  RotateCw,
+  Search,
+  Replace,
+  GitMerge,
+  SplitSquareHorizontal,
+  ToggleLeft,
+  ChevronDown
 } from 'lucide-react'
 import { CSVEditor } from './CSVEditor'
 import { MarkdownFileEditor } from './MarkdownFileEditor'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   DndContext,
   closestCenter,
@@ -61,8 +76,19 @@ export function DeepNoteLayoutRefactored({
   // State management
   const [state, actions] = useNotebookState(initialNotebook)
   const [openedFile, setOpenedFile] = useState<{ name: string; type: 'ipynb' | 'csv' | 'md' | 'other' } | null>(null)
+  const [viewMode, setViewMode] = useState<'edit' | 'view'>('edit') // View/Edit mode toggle
+  const [showFindReplace, setShowFindReplace] = useState(false)
+  const [findReplaceState, setFindReplaceState] = useState({
+    searchText: '',
+    replaceText: '',
+    matchCount: 0,
+    currentMatch: 0
+  })
   const { kernels, currentKernel, setCurrentKernel } = useKernelInitialization()
   const { notebookRef, cellRefs, scrollToCell, focusCell } = useNotebookRefs()
+  
+  // Effective edit permission: respect both prop and view mode
+  const effectiveCanEdit = canEdit && viewMode === 'edit'
   
   // Auto-save functionality
   useAutoSave(state.notebook, onSave)
@@ -170,11 +196,61 @@ export function DeepNoteLayoutRefactored({
     onToggleOutput: handlers.toggleOutput,
     onToggleSidebar: () => actions.setShowSidebar(!state.showSidebar),
     onToggleVariables: () => actions.setShowVariables(!state.showVariables),
-    onFind: handlers.find,
-    onReplace: handlers.replace,
+    onFind: () => setShowFindReplace(true),
+    onReplace: () => setShowFindReplace(true),
     onUndo: handlers.undo,
     onRedo: handlers.redo
   });
+
+  // Wrapper functions for Find/Replace modal
+  const handleFind = (searchText: string) => {
+    handlers.find(searchText)
+    // Update state with match info
+    const matches: Array<{ cellId: string; index: number }> = []
+    state.notebook.cells.forEach(cell => {
+      const content = cell.type === 'sql' ? (cell.sqlQuery || cell.content) : cell.content
+      let index = -1
+      let startIndex = 0
+      while ((index = content.toLowerCase().indexOf(searchText.toLowerCase(), startIndex)) !== -1) {
+        matches.push({ cellId: cell.id, index })
+        startIndex = index + 1
+      }
+    })
+    setFindReplaceState({
+      searchText,
+      replaceText: findReplaceState.replaceText,
+      matchCount: matches.length,
+      currentMatch: matches.length > 0 ? 1 : 0
+    })
+  }
+
+  const handleReplace = (searchText: string, replaceText: string) => {
+    handlers.replace(searchText, replaceText)
+  }
+
+  const handleReplaceAll = (searchText: string, replaceText: string) => {
+    handlers.replace(searchText, replaceText, true)
+  }
+
+  const handleFindNext = () => {
+    // Find next match logic
+    const currentMatches = findReplaceState.matchCount
+    if (currentMatches > 0) {
+      const nextMatch = (findReplaceState.currentMatch % currentMatches) + 1
+      setFindReplaceState(prev => ({ ...prev, currentMatch: nextMatch }))
+      handlers.find(findReplaceState.searchText)
+    }
+  }
+
+  const handleFindPrevious = () => {
+    // Find previous match logic
+    const currentMatches = findReplaceState.matchCount
+    if (currentMatches > 0) {
+      const prevMatch = findReplaceState.currentMatch <= 1 ? currentMatches : findReplaceState.currentMatch - 1
+      setFindReplaceState(prev => ({ ...prev, currentMatch: prevMatch }))
+      handlers.find(findReplaceState.searchText)
+    }
+  }
 
   return (
     <div className={cn(
@@ -216,9 +292,10 @@ export function DeepNoteLayoutRefactored({
               <div className="flex-1 flex flex-col min-h-0 bg-white dark:bg-gray-900 relative border border-gray-200 dark:border-gray-700 shadow-sm m-0">
                 {/* Folder toolbar removed from notebook; shown on projects page instead */}
                 {/* Notebook toolbar row (only when a notebook is selected) */}
-                {(!openedFile || openedFile.type === 'ipynb') && (
-                  <div className="px-2 py-1 border-b border-gray-200 dark:border-gray-700">
-                    <NotebookToolbar
+            {(!openedFile || openedFile.type === 'ipynb') && (
+              <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex items-center justify-between">
+                    <div className="flex-1">
+                      <NotebookToolbar
                       toolbarPosition="top"
                       onToggleToolbarPosition={() => {}}
                       notebook={state.notebook}
@@ -231,20 +308,75 @@ export function DeepNoteLayoutRefactored({
                       showViewControls={false}
                       onExecuteAll={canExecute ? handlers.executeAllCells : (() => {})}
                       onStopExecution={canExecute ? handlers.handleInterrupt : (() => {})}
-                      onClearOutputs={canEdit ? handlers.clearAllOutputs : (() => {})}
-                      onSave={canEdit ? handlers.handleSave : (() => {})}
+                      onClearOutputs={effectiveCanEdit ? handlers.clearAllOutputs : (() => {})}
+                      onSave={effectiveCanEdit ? handlers.handleSave : (() => {})}
                       onExport={enableExport ? handlers.handleExport : (() => {})}
                       onImport={handlers.handleImport}
                       onToggleSidebar={() => actions.setShowSidebar(!state.showSidebar)}
                       onToggleVariables={() => actions.setShowVariables(!state.showVariables)}
                       onToggleSettings={() => actions.setShowSettings(true)}
-                      onAddCell={canEdit ? handlers.createNewCell : (() => {})}
+                      onAddCell={effectiveCanEdit ? handlers.createNewCell : (() => {})}
                       onShowTemplates={handlers.handleShowTemplates}
                       onRunSelected={canExecute ? handlers.handleRunSelected : (() => {})}
                       onInterrupt={canExecute ? handlers.handleInterrupt : (() => {})}
                       onRestart={canExecute ? handlers.handleRestart : (() => {})}
                       onShutdown={canExecute ? handlers.handleShutdown : (() => {})}
-                    />
+                      onUndo={effectiveCanEdit ? handlers.undo : undefined}
+                      onRedo={effectiveCanEdit ? handlers.redo : undefined}
+                      onFind={() => setShowFindReplace(true)}
+                      onReplace={() => setShowFindReplace(true)}
+                      onMergeCells={effectiveCanEdit ? handlers.mergeCells : undefined}
+                      onSplitCell={effectiveCanEdit && state.activeCellId ? () => handlers.splitCell(state.activeCellId!) : undefined}
+                      onToggleCellType={effectiveCanEdit && state.activeCellId ? () => handlers.toggleCellType(state.activeCellId!) : undefined}
+                      canEdit={effectiveCanEdit}
+                      />
+                    </div>
+                    {/* View/Edit Mode Toggle */}
+                    {canEdit && (
+                      <div className="flex items-center gap-2 ml-4">
+                        <Badge 
+                          variant={viewMode === 'view' ? 'secondary' : 'default'}
+                          className="text-xs"
+                        >
+                          {viewMode === 'view' ? (
+                            <>
+                              <Eye className="h-3 w-3 mr-1" />
+                              View Mode
+                            </>
+                          ) : (
+                            <>
+                              <Edit className="h-3 w-3 mr-1" />
+                              Edit Mode
+                            </>
+                          )}
+                        </Badge>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setViewMode(viewMode === 'edit' ? 'view' : 'edit')}
+                          className="h-7 px-2 text-xs"
+                          title={viewMode === 'edit' ? 'Switch to View Mode' : 'Switch to Edit Mode'}
+                        >
+                          {viewMode === 'edit' ? (
+                            <>
+                              <Eye className="h-3 w-3 mr-1" />
+                              View
+                            </>
+                          ) : (
+                            <>
+                              <Edit className="h-3 w-3 mr-1" />
+                              Edit
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                    {!canEdit && (
+                      <Badge variant="secondary" className="text-xs ml-4">
+                        <Lock className="h-3 w-3 mr-1" />
+                        Read Only
+                      </Badge>
+                    )}
                   </div>
                 )}
                 <div 
@@ -257,7 +389,18 @@ export function DeepNoteLayoutRefactored({
                     }
                   }}
                 >
-            {openedFile && openedFile.type !== 'ipynb' ? (
+            {!openedFile && !initialNotebook ? (
+              // Blank placeholder when no file selected
+              <div className="flex items-center justify-center h-full bg-gray-50 dark:bg-gray-800">
+                <div className="text-center max-w-md">
+                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <FileCode className="h-8 w-8 text-gray-400 dark:text-gray-500" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No file selected</h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-6">Select a notebook file from the sidebar to get started</p>
+                </div>
+              </div>
+            ) : openedFile && openedFile.type !== 'ipynb' ? (
               // File viewers
               <div className="max-w-5xl mx-auto py-4 px-2">
                 {openedFile.type === 'csv' && (
@@ -291,22 +434,38 @@ export function DeepNoteLayoutRefactored({
                 </div>
               </div>
             ) : (
-              <div className="max-w-4xl mx-auto py-8">
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragStart={handleDragStart}
-                  onDragEnd={handleDragEnd}
-                >
-                  <SortableContext
-                    items={state.notebook.cells.map(cell => cell.id)}
-                    strategy={verticalListSortingStrategy}
+              <ErrorBoundary
+                onError={(error, errorInfo) => {
+                  console.error('Notebook error:', error, errorInfo)
+                  // TODO: Send to error tracking service (e.g., Sentry)
+                }}
+              >
+                <div className="max-w-5xl mx-auto py-8 px-6">
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
                   >
-                  <div className="space-y-0">
-                      {state.notebook.cells.map((cell, index) => (
-                        <div key={cell.id} className="group">
-                          <SortableCell
-                            cell={cell}
+                    <SortableContext
+                      items={state.notebook.cells.map(cell => cell.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                    <div className="space-y-4">
+                        {state.notebook.cells.map((cell, index) => (
+                          <ErrorBoundary
+                            key={`error-boundary-${cell.id}`}
+                            fallback={
+                              <div className="p-4 m-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded">
+                                <p className="text-sm text-red-800 dark:text-red-200">
+                                  Error rendering cell {index + 1}. You can delete it or try again.
+                                </p>
+                              </div>
+                            }
+                          >
+                            <div className="group">
+                              <SortableCell
+                                cell={cell}
                             index={index}
                             isActive={state.activeCellId === cell.id}
                             isSelected={state.selectedCellIds.has(cell.id)}
@@ -336,121 +495,108 @@ export function DeepNoteLayoutRefactored({
                             onAddTag={handlers.handleAddTag}
                             onSearch={handlers.handleSearchCell}
                             onTitleChange={handlers.handleRenameCellTitle}
+                            canEdit={effectiveCanEdit}
+                            canExecute={canExecute}
                           />
                           
-                          {/* Add Cell Button Between Cells */}
-                          <div className="flex items-center justify-center py-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <div className="flex items-center space-x-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1 shadow-sm">
+                          {/* Insert Cell Buttons - Always visible below each cell */}
+                          {effectiveCanEdit && (
+                          <div className="flex items-center justify-center py-2">
+                            <div className="flex items-center gap-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-[5px] px-2 py-1.5 shadow-sm">
+                              <span className="text-xs text-gray-500 dark:text-gray-400 mr-1">Insert:</span>
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => handlers.createNewCell('code', 'below', cell.id)}
-                                className="h-7 px-2 text-xs text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+                                className="h-8 px-3 text-xs text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
+                                title="Insert code cell"
                               >
-                                <Code className="h-3 w-3 mr-1" />
+                                <Code className="h-4 w-4 mr-1" />
                                 Code
                               </Button>
-                              <div className="w-px h-4 bg-gray-200 dark:bg-gray-700"></div>
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => handlers.createNewCell('markdown', 'below', cell.id)}
-                                className="h-7 px-2 text-xs text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400"
+                                className="h-8 px-3 text-xs text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded"
+                                title="Insert markdown cell"
                               >
-                                <FileText className="h-3 w-3 mr-1" />
+                                <FileText className="h-4 w-4 mr-1" />
                                 Markdown
                               </Button>
-                              <div className="w-px h-4 bg-gray-200 dark:bg-gray-700"></div>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handlers.createNewCell('raw', 'below', cell.id)}
-                                className="h-7 px-2 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-400"
-                              >
-                                <FileText className="h-3 w-3 mr-1" />
-                                Raw
-                              </Button>
-                              <div className="w-px h-4 bg-gray-200 dark:bg-gray-700"></div>
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => handlers.createNewCell('sql', 'below', cell.id)}
-                                className="h-7 px-2 text-xs text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+                                className="h-8 px-3 text-xs text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
+                                title="Insert SQL cell"
                               >
-                                <Database className="h-3 w-3 mr-1" />
+                                <Database className="h-4 w-4 mr-1" />
                                 SQL
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handlers.createNewCell('raw', 'below', cell.id)}
+                                className="h-8 px-3 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded"
+                                title="Insert raw cell"
+                              >
+                                <FileText className="h-4 w-4 mr-1" />
+                                Raw
                               </Button>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                          )}
+                            </div>
+                          </ErrorBoundary>
+                        ))}
                     </div>
                   </SortableContext>
                   
                   {/* Drag overlay removed for stability */}
                 </DndContext>
-                  
-                  {/* Add Cell Button at the End */}
-                  <div className="flex items-center justify-center py-6">
-                    <div className="flex items-center space-x-3 bg-white dark:bg-gray-900 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 hover:border-blue-400 dark:hover:border-blue-500 transition-colors">
-                      <Button
-                        size="sm"
-                        onClick={() => handlers.createNewCell('code')}
-                        className="h-9 px-4 text-sm bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        <Code className="h-4 w-4 mr-2" />
-                        Add Code Cell
-                      </Button>
-                      <div className="w-px h-5 bg-gray-300 dark:bg-gray-600"></div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handlers.createNewCell('markdown')}
-                        className="h-9 px-4 text-sm border-purple-300 dark:border-purple-600 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
-                      >
-                        <FileText className="h-4 w-4 mr-2" />
-                        Add Markdown
-                      </Button>
-                      <div className="w-px h-5 bg-gray-300 dark:bg-gray-600"></div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handlers.createNewCell('raw')}
-                        className="h-9 px-4 text-sm border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
-                      >
-                        <FileText className="h-4 w-4 mr-2" />
-                        Add Raw Cell
-                      </Button>
-                      <div className="w-px h-5 bg-gray-300 dark:bg-gray-600"></div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handlers.createNewCell('sql')}
-                        className="h-9 px-4 text-sm border-blue-300 dark:border-blue-600 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                      >
-                        <Database className="h-4 w-4 mr-2" />
-                        Add SQL Cell
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+              </div>
+              </ErrorBoundary>
             )
           }
             </div>
           </div>
         </div>
 
-      {/* Footer Status Bar (not fixed to avoid overlaying admin sidebar) */}
+      {/* Footer Status Bar - DeepNote style */}
       <div className="bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-2">
         <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
           <div className="flex items-center space-x-6">
+            {/* Kernel Dropdown - DeepNote style: no border, no background, just arrow */}
             <div className="flex items-center space-x-2">
               <div className={cn(
                 "w-2 h-2 rounded-full",
                 state.kernelStatus === 'idle' ? "bg-green-500" : 
                 state.kernelStatus === 'busy' ? "bg-yellow-500" : "bg-red-500"
               )}></div>
-              <span>Kernel: {state.currentKernel?.name || 'No kernel'}</span>
+              <Select
+                value={currentKernel?.id || ''}
+                onValueChange={(value) => {
+                  const kernel = kernels.find(k => k.id === value)
+                  if (kernel) setCurrentKernel(kernel)
+                }}
+              >
+                <SelectTrigger className="h-auto p-0 border-0 bg-transparent shadow-none focus:ring-0 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
+                  <SelectValue>
+                    <span className="flex items-center gap-1">
+                      <span>{state.currentKernel?.name || 'No kernel'}</span>
+                      <ChevronDown className="h-3 w-3 ml-1" />
+                    </span>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {kernels.map((kernel) => (
+                    <SelectItem key={kernel.id} value={kernel.id}>
+                      {kernel.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <span>Cells: {state.notebook.cells.length}</span>
             <span>Executed: {state.executionCount}</span>
@@ -477,6 +623,21 @@ export function DeepNoteLayoutRefactored({
           onClose={() => actions.setShowTemplates(false)}
         />
       )}
+
+      {/* Find/Replace Modal */}
+      <FindReplaceModal
+        open={showFindReplace}
+        onOpenChange={setShowFindReplace}
+        onFind={handleFind}
+        onReplace={handleReplace}
+        onReplaceAll={handleReplaceAll}
+        onFindNext={handleFindNext}
+        onFindPrevious={handleFindPrevious}
+        matchCount={findReplaceState.matchCount}
+        currentMatch={findReplaceState.currentMatch}
+        initialSearchText={findReplaceState.searchText}
+        initialReplaceText={findReplaceState.replaceText}
+      />
     </div>
   )
 }

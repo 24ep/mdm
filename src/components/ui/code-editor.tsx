@@ -802,8 +802,9 @@ ORDER BY date DESC;`,
 
   const showLineNumbers = options.showLineNumbers !== false
 
+  const isFullHeight = height === '100%'
   return (
-    <div className={`w-full ${className} overflow-hidden`}>
+    <div className={`w-full ${isFullHeight ? 'h-full flex flex-col' : ''} ${className} overflow-hidden`}>
       {/* Editor Header */}
       <div className={`flex items-center justify-between px-3 py-2 text-xs border-b ${
         theme === 'dark' 
@@ -901,7 +902,7 @@ ORDER BY date DESC;`,
         </div>
       )}
 
-      <div className="flex">
+      <div className={`flex ${isFullHeight ? 'flex-1 min-h-0' : ''}`}>
         {/* Line Numbers */}
         {showLineNumbers && (
           <div 
@@ -910,11 +911,11 @@ ORDER BY date DESC;`,
               theme === 'dark' 
                 ? 'bg-gray-900 border-r border-gray-700 text-gray-500' 
                 : 'bg-gray-50 border-r border-gray-200 text-gray-500'
-            } px-2 py-3 text-xs select-none overflow-hidden`}
+            } px-2 py-3 text-xs select-none ${isFullHeight ? 'overflow-y-auto' : 'overflow-hidden'}`}
             style={{ 
               fontFamily: getFontFamily(),
               fontSize: getFontSize(),
-              minHeight: height,
+              ...(isFullHeight ? {} : { minHeight: height }),
               width: '50px'
             }}
           >
@@ -940,10 +941,10 @@ ORDER BY date DESC;`,
         )}
         
         {/* Code Editor */}
-        <div className="flex-1 relative">
+        <div className={`flex-1 relative ${isFullHeight ? 'min-h-0' : ''}`}>
           {/* Syntax Highlighting Overlay */}
           <div 
-            className={`absolute inset-0 pointer-events-none p-0 overflow-hidden ${
+            className={`absolute inset-0 pointer-events-none p-0 ${isFullHeight ? 'overflow-y-auto' : 'overflow-hidden'} ${
               theme === 'dark' 
                 ? 'bg-gray-900' 
                 : 'bg-white'
@@ -951,7 +952,7 @@ ORDER BY date DESC;`,
             style={{
               fontFamily: getFontFamily(),
               fontSize: getFontSize(),
-              minHeight: height,
+              ...(isFullHeight ? {} : { minHeight: height }),
               lineHeight: '1.5',
               whiteSpace: 'pre-wrap',
               wordWrap: options.wordWrap ? 'break-word' : 'normal'
@@ -1091,7 +1092,7 @@ ORDER BY date DESC;`,
             onMouseUp={handleSelectionChange}
             placeholder={placeholder}
             readOnly={readOnly}
-            className={`w-full resize-none border-0 focus:ring-0 focus:outline-none p-0 relative z-10 ${
+            className={`w-full h-full resize-none border-0 focus:ring-0 focus:outline-none p-0 relative z-10 ${
               theme === 'dark' 
                 ? 'bg-transparent text-transparent placeholder-gray-500 caret-white' 
                 : 'bg-transparent text-transparent placeholder-gray-400 caret-gray-900'
@@ -1099,7 +1100,7 @@ ORDER BY date DESC;`,
             style={{
               fontFamily: getFontFamily(),
               fontSize: getFontSize(),
-              minHeight: height,
+              ...(isFullHeight ? { height: '100%' } : { minHeight: height }),
               tabSize: getTabSize(),
               wordWrap: options.wordWrap ? 'break-word' : 'normal',
               lineHeight: '1.5'
