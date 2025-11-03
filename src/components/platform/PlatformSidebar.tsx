@@ -310,7 +310,7 @@ export function PlatformSidebar({
                       className={cn(
                           "w-full justify-center h-10 transition-colors duration-150",
                           (selectedGroup === groupId || (groupId === 'data-management' && activeTab === 'space-selection'))
-                          ? "bg-gray-200 text-gray-900 rounded-md" 
+                           ? "bg-gray-200 text-gray-900 rounded-sm" 
                           : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-none"
                       )}
                       onClick={() => handleGroupClick(groupId)}
@@ -341,7 +341,7 @@ export function PlatformSidebar({
                       className={cn(
                         "w-full justify-start text-sm font-medium h-10 px-4 transition-colors duration-150",
                           (selectedGroup === groupId || (groupId === 'data-management' && activeTab === 'space-selection'))
-                          ? "bg-gray-200 text-gray-900 rounded-md" 
+                          ? "bg-gray-200 text-gray-900 rounded-sm" 
                           : "text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-none"
                       )}
                       onClick={() => handleGroupClick(groupId)}
@@ -406,7 +406,7 @@ export function PlatformSidebar({
                             className={cn(
                               "w-full justify-start text-sm h-9 px-4 transition-colors duration-150",
                               activeTab === tab.id 
-                                ? "bg-gray-200 text-gray-900 rounded-md" 
+                                ? "bg-gray-200 text-gray-900 rounded-sm" 
                                 : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-none"
                             )}
                             onClick={() => handleTabClick(tab.id)}
@@ -434,7 +434,7 @@ export function PlatformSidebar({
                             className={cn(
                               "w-full justify-start text-sm h-9 px-4 transition-colors duration-150",
                               activeTab === tab.id 
-                                ? "bg-gray-200 text-gray-900 rounded-md" 
+                                ? "bg-gray-200 text-gray-900 rounded-sm" 
                                 : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-none"
                             )}
                             onClick={() => handleTabClick(tab.id)}
@@ -462,7 +462,7 @@ export function PlatformSidebar({
                             className={cn(
                               "w-full justify-start text-sm h-9 px-4 transition-colors duration-150",
                               activeTab === tab.id 
-                                ? "bg-gray-200 text-gray-900 rounded-md" 
+                                ? "bg-gray-200 text-gray-900 rounded-sm" 
                                 : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-none"
                             )}
                             onClick={() => handleTabClick(tab.id)}
@@ -518,7 +518,7 @@ export function PlatformSidebar({
                     className={cn(
                       "w-full justify-start text-sm h-9 px-4 transition-colors duration-150",
                       activeTab === tab.id 
-                        ? "bg-gray-200 text-gray-900 rounded-md" 
+                        ? "bg-gray-200 text-gray-900 rounded-sm" 
                         : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-none"
                     )}
                     onClick={() => handleTabClick(tab.id)}

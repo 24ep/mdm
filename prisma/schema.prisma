@@ -68,8 +68,8 @@ model Space {
 
 model SpaceMember {
   id      String @id @default(uuid()) @db.Uuid
-  spaceId String @map("space_id")
-  userId  String @map("user_id")
+  spaceId String @map("space_id") @db.Uuid
+  userId  String @map("user_id") @db.Uuid
   role    String @default("MEMBER")
 
   // Relations
@@ -333,8 +333,8 @@ model DataModel {
 
 model DataModelSpace {
   id          String @id @default(uuid()) @db.Uuid
-  dataModelId String @map("data_model_id")
-  spaceId     String @map("space_id")
+  dataModelId String @map("data_model_id") @db.Uuid
+  spaceId     String @map("space_id") @db.Uuid
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -379,7 +379,7 @@ model Attribute {
   // External connection support
   externalColumn String? @map("external_column")
   
-  dataModelId     String   @map("data_model_id")
+  dataModelId     String   @map("data_model_id") @db.Uuid
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
@@ -392,7 +392,7 @@ model Attribute {
 
 model ExternalConnection {
   id        String   @id @default(uuid()) @db.Uuid
-  spaceId   String   @map("space_id")
+  spaceId   String   @map("space_id") @db.Uuid
   name      String
   dbType    String   @map("db_type") // 'postgres' | 'mysql'
   host      String
@@ -431,8 +431,8 @@ model Team {
 
 model TeamMember {
   id     String @id @default(uuid()) @db.Uuid
-  teamId String @map("team_id")
-  userId String @map("user_id")
+  teamId String @map("team_id") @db.Uuid
+  userId String @map("user_id") @db.Uuid
   role   String @default("member")
 
   // Relations
@@ -459,8 +459,8 @@ model Permission {
 
 model TeamPermission {
   id           String @id @default(uuid()) @db.Uuid
-  teamId       String @map("team_id")
-  permissionId String @map("permission_id")
+  teamId       String @map("team_id") @db.Uuid
+  permissionId String @map("permission_id") @db.Uuid
 
   // Relations
   team       Team       @relation("TeamPermissions", fields: [teamId], references: [id], onDelete: Cascade)
@@ -483,8 +483,8 @@ model Role {
 
 model RolePermission {
   id           String @id @default(uuid()) @db.Uuid
-  roleId       String @map("role_id")
-  permissionId String @map("permission_id")
+  roleId       String @map("role_id") @db.Uuid
+  permissionId String @map("permission_id") @db.Uuid
 
   // Relations
   role       Role       @relation("RolePermissions", fields: [roleId], references: [id], onDelete: Cascade)
@@ -501,7 +501,7 @@ model RolePermission {
 // Legacy DataRecord model for backward compatibility
 model DataRecord {
   id        String   @id @default(uuid()) @db.Uuid
-  dataModelId String @map("data_model_id")
+  dataModelId String @map("data_model_id") @db.Uuid
   createdBy  String   @map("created_by") @db.Uuid
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
@@ -518,8 +518,8 @@ model DataRecord {
 // Legacy DataRecordValue model for backward compatibility
 model DataRecordValue {
   id        String @id @default(uuid()) @db.Uuid
-  dataRecordId String @map("data_record_id")
-  attributeId  String @map("attribute_id")
+  dataRecordId String @map("data_record_id") @db.Uuid
+  attributeId  String @map("attribute_id") @db.Uuid
   value     String?
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -534,7 +534,7 @@ model DataRecordValue {
 
 model Notification {
   id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @map("user_id")
+  userId    String   @map("user_id") @db.Uuid
   type      String
   title     String
   message   String
@@ -566,7 +566,7 @@ model SystemSetting {
 
 model SpaceAttachmentStorage {
   id        String   @id @default(uuid()) @db.Uuid
-  spaceId   String   @map("space_id")
+  spaceId   String   @map("space_id") @db.Uuid
   fileName  String   @map("file_name")
   filePath  String   @map("file_path")
   fileSize  Int      @map("file_size")
@@ -613,7 +613,7 @@ model CacheInstance {
 
 model CacheKey {
   id           String   @id @default(uuid()) @db.Uuid
-  instanceId   String   @map("instance_id")
+  instanceId   String   @map("instance_id") @db.Uuid
   key          String
   value        String
   type         String   @default("string")
@@ -634,7 +634,7 @@ model CacheKey {
 
 model CacheStats {
   id              String   @id @default(uuid()) @db.Uuid
-  instanceId      String   @map("instance_id")
+  instanceId      String   @map("instance_id") @db.Uuid
   totalKeys       Int      @default(0) @map("total_keys")
   memoryUsage     BigInt   @default(0) @map("memory_usage")
   hitRate         Float    @default(0) @map("hit_rate")
@@ -657,7 +657,7 @@ model CacheStats {
 
 model CacheConfig {
   id            String   @id @default(uuid()) @db.Uuid
-  instanceId    String   @map("instance_id")
+  instanceId    String   @map("instance_id") @db.Uuid
   maxMemory     String   @map("max_memory")
   evictionPolicy String  @map("eviction_policy")
   ttl           Int      @default(3600)

@@ -88,7 +88,7 @@ const SidebarItemComponent = memo(function SidebarItemComponent({
         <TabsTrigger
           value={item.id}
           onClick={onClick}
-          className={`justify-start w-full h-9 px-2.5 py-1.5 rounded-md border-0 text-sm transition-colors cursor-pointer ${
+          className={`justify-start w-full h-9 px-2.5 py-1.5 rounded-sm border-0 text-sm transition-colors cursor-pointer ${
             isActive
               ? 'bg-gray-200 dark:bg-gray-700'
               : 'hover:bg-gray-50 dark:hover:bg-gray-800'

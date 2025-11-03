@@ -60,6 +60,29 @@ async function createComprehensiveDataModels() {
 
       customerSpace = spaceResult.rows[0]
       console.log(`✅ Created Customer Data space: ${customerSpace.name} (ID: ${customerSpace.id})`)
+      
+      // Add admin user as ADMIN member of the space
+      await client.query(`
+        INSERT INTO public.space_members (id, space_id, user_id, role)
+        VALUES (gen_random_uuid(), $1, $2, 'ADMIN')
+        ON CONFLICT (space_id, user_id) DO NOTHING
+      `, [customerSpace.id, adminUser.id])
+      console.log(`✅ Added admin user as member of the space`)
+    } else {
+      // Ensure admin user is a member even if space already exists
+      const memberCheck = await client.query(`
+        SELECT 1 FROM public.space_members 
+        WHERE space_id = $1 AND user_id = $2
+      `, [customerSpace.id, adminUser.id])
+      
+      if (memberCheck.rows.length === 0) {
+        await client.query(`
+          INSERT INTO public.space_members (id, space_id, user_id, role)
+          VALUES (gen_random_uuid(), $1, $2, 'ADMIN')
+          ON CONFLICT (space_id, user_id) DO NOTHING
+        `, [customerSpace.id, adminUser.id])
+        console.log(`✅ Added admin user as member of existing space`)
+      }
     }
 
     // Define comprehensive data models
