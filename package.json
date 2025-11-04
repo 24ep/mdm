@@ -13,6 +13,8 @@
     "db:studio": "prisma studio",
     "db:seed": "node scripts/seed-database.js",
     "migrate:notifications": "node scripts/run-migration.js supabase/migrations/019_notification_system.sql",
+    "migrate:uuid-indexes": "node scripts/run-migration.js postgrest/migrations/054_add_uuid_text_function_indexes.sql",
+    "migrate:all": "node scripts/apply-all-migrations.js",
     "create-admin": "node scripts/create-admin-user.js",
     "create-manager": "node scripts/create-manager-user.js",
     "upgrade-user": "node scripts/upgrade-user-role.js",

@@ -43,6 +43,9 @@ export const WidgetRenderer = React.memo(function WidgetRenderer({ widget, isMob
   // console.log('WidgetRenderer props:', props)
   
   // Use data source hook for API/database/data-model sources
+  // Only enable auto-refresh if explicitly set and refreshInterval > 0
+  const shouldAutoRefresh = props.autoRefresh === true && props.refreshInterval && props.refreshInterval > 0
+  
   const { data: fetchedData, loading: dataLoading, error: dataError } = useDataSource({
     dataSource: props.dataSource || 'sample',
     apiUrl: props.apiUrl,
@@ -53,7 +56,7 @@ export const WidgetRenderer = React.memo(function WidgetRenderer({ widget, isMob
     dataModelId: props.dataModelId,
     spaceId: spaceId,
     sampleData: props.sampleData || [],
-    autoRefresh: props.autoRefresh || false,
+    autoRefresh: shouldAutoRefresh, // Only true if explicitly enabled
     refreshInterval: props.refreshInterval || 0
   })
   
@@ -1170,8 +1173,14 @@ export const WidgetRenderer = React.memo(function WidgetRenderer({ widget, isMob
       )
     }
     
+    // For table charts, only need columns (measures) - dimensions (rows) are optional
+    const isTableChart = chartType === 'table' || chartType === 'TABLE' || widget.type.includes('table')
+    const canRenderChart = isTableChart 
+      ? (isValidData && measures.length > 0)  // Table only needs columns (measures)
+      : (isValidData && hasDimensions && hasMeasures)  // Other charts need both
+    
     // If we have data configured, render the actual chart
-    if (isValidData && hasDimensions && hasMeasures) {
+    if (canRenderChart) {
       // Map widget chart types to ChartRenderer chart types
       const chartTypeMap: Record<string, string> = {
         'bar': 'BAR',

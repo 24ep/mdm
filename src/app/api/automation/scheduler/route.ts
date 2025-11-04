@@ -179,7 +179,7 @@ async function checkWorkflowSchedule(workflow: any): Promise<boolean> {
     case 'ONCE':
       const { rows: executions } = await query(
         `SELECT COUNT(*) as count FROM public.workflow_executions 
-         WHERE workflow_id = $1 AND execution_type = 'SCHEDULED'`,
+         WHERE workflow_id = $1::uuid::uuid AND execution_type = 'SCHEDULED'`,
         [workflow.id]
       )
       return parseInt(executions[0].count) === 0
@@ -188,7 +188,7 @@ async function checkWorkflowSchedule(workflow: any): Promise<boolean> {
       const today = new Date().toISOString().split('T')[0]
       const { rows: dailyExecutions } = await query(
         `SELECT COUNT(*) as count FROM public.workflow_executions 
-         WHERE workflow_id = $1 
+         WHERE workflow_id = $1::uuid 
            AND execution_type = 'SCHEDULED'
            AND DATE(started_at) = $2`,
         [workflow.id, today]
@@ -198,7 +198,7 @@ async function checkWorkflowSchedule(workflow: any): Promise<boolean> {
     case 'WEEKLY':
       const { rows: weeklyExecutions } = await query(
         `SELECT COUNT(*) as count FROM public.workflow_executions 
-         WHERE workflow_id = $1 
+         WHERE workflow_id = $1::uuid 
            AND execution_type = 'SCHEDULED'
            AND started_at >= date_trunc('week', NOW())`,
         [workflow.id]
@@ -208,7 +208,7 @@ async function checkWorkflowSchedule(workflow: any): Promise<boolean> {
     case 'MONTHLY':
       const { rows: monthlyExecutions } = await query(
         `SELECT COUNT(*) as count FROM public.workflow_executions 
-         WHERE workflow_id = $1 
+         WHERE workflow_id = $1::uuid 
            AND execution_type = 'SCHEDULED'
            AND started_at >= date_trunc('month', NOW())`,
         [workflow.id]
@@ -237,7 +237,7 @@ async function triggerWorkflowsForDataModel(dataModelId: string): Promise<void> 
       `SELECT w.id, w.name
        FROM public.workflows w
        JOIN public.workflow_schedules ws ON w.id = ws.workflow_id
-       WHERE w.data_model_id = $1
+       WHERE w.data_model_id = $1::uuid
          AND w.is_active = true
          AND w.status = 'ACTIVE'
          AND w.trigger_type = 'EVENT_BASED'

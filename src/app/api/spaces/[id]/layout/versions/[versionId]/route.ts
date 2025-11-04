@@ -23,7 +23,7 @@ export async function GET(
       `SELECT s.id, s.name
        FROM spaces s
        JOIN space_members sm ON s.id = sm.space_id
-       WHERE s.id = $1 AND sm.user_id = $2 AND sm.role IN ('owner', 'admin', 'member')`,
+       WHERE s.id = $1::uuid AND sm.user_id = $2::uuid AND sm.role IN ('owner', 'admin', 'member')`,
       [spaceId, userId]
     )
 
@@ -46,7 +46,7 @@ export async function GET(
         u.email as created_by_email
        FROM layout_versions lv
        LEFT JOIN users u ON lv.created_by = u.id
-       WHERE lv.id = $1 AND lv.space_id = $2`,
+       WHERE lv.id = $1::uuid AND lv.space_id = $2::uuid`,
       [versionId, spaceId]
     )
 
@@ -84,7 +84,7 @@ export async function DELETE(
       `SELECT s.id, s.name
        FROM spaces s
        JOIN space_members sm ON s.id = sm.space_id
-       WHERE s.id = $1 AND sm.user_id = $2 AND sm.role IN ('owner', 'admin')`,
+       WHERE s.id = $1::uuid AND sm.user_id = $2::uuid AND sm.role IN ('owner', 'admin')`,
       [spaceId, userId]
     )
 
@@ -94,7 +94,7 @@ export async function DELETE(
 
     // Prevent deleting current version
     const versionResult = await query(
-      'SELECT is_current FROM layout_versions WHERE id = $1 AND space_id = $2',
+      'SELECT is_current FROM layout_versions WHERE id = $1::uuid AND space_id = $2::uuid',
       [versionId, spaceId]
     )
 
@@ -108,7 +108,7 @@ export async function DELETE(
 
     // Delete the version
     await query(
-      'DELETE FROM layout_versions WHERE id = $1 AND space_id = $2',
+      'DELETE FROM layout_versions WHERE id = $1::uuid AND space_id = $2::uuid',
       [versionId, spaceId]
     )
 

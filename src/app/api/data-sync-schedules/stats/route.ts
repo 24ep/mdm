@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
          COUNT(*) FILTER (WHERE is_active = true) as active,
          COUNT(*) FILTER (WHERE last_run_status = 'RUNNING') as running
        FROM public.data_sync_schedules
-       WHERE space_id = $1 AND deleted_at IS NULL`,
+       WHERE space_id = $1::uuid AND deleted_at IS NULL`,
       [spaceId]
     )
 
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
          COALESCE(AVG(duration_ms), 0) as avg_duration
        FROM public.data_sync_executions
        WHERE sync_schedule_id IN (
-         SELECT id FROM public.data_sync_schedules WHERE space_id = $1 AND deleted_at IS NULL
+         SELECT id FROM public.data_sync_schedules WHERE space_id = $1::uuid AND deleted_at IS NULL
        )
        AND started_at >= CURRENT_DATE`,
       [spaceId]

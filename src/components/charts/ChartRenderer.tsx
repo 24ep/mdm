@@ -53,6 +53,7 @@ import {
   X as XIcon,
   Check as CheckIcon
 } from 'lucide-react'
+import { getTableColumns, hasValidTableColumns } from './chartUtils'
 
 interface ChartData {
   [key: string]: any
@@ -1030,7 +1031,21 @@ export function ChartRenderer({
         }
 
         case 'TABLE':
-          const columns = dimensions.length > 0 ? dimensions : Object.keys(chartData[0] || {})
+          // For table charts, use common function to get selected columns
+          // measures contains the columns (from chartDimensions.columns) - required
+          // dimensions contains the rows (from chartDimensions.rows) - optional, but should also be shown as columns
+          const columns = getTableColumns(measures, dimensions)
+          
+          // If no columns selected, show empty state
+          if (!hasValidTableColumns(columns)) {
+            return (
+              <div className="w-full h-full bg-white flex items-center justify-center p-4">
+                <div className="text-center text-sm text-gray-500">
+                  No columns selected. Please configure columns in chart settings.
+                </div>
+              </div>
+            )
+          }
 
           return (
             <div className="w-full h-full bg-white overflow-hidden">

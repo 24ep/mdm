@@ -106,14 +106,14 @@ export class WorkflowExecutor {
       const { rows } = await query(
         `SELECT dr.id 
          FROM public.data_records dr
-         WHERE dr.data_model_id = $1 AND dr.is_active = true`,
+         WHERE dr.data_model_id = $1::uuid AND dr.is_active = true`,
         [this.dataModelId]
       )
       return rows
     }
 
     // Build dynamic query based on conditions
-    let whereClause = 'dr.data_model_id = $1 AND dr.is_active = true'
+    let whereClause = 'dr.data_model_id = $1::uuid AND dr.is_active = true'
     let params: any[] = [this.dataModelId]
     let paramIndex = 2
 

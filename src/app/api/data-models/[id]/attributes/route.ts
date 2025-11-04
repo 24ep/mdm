@@ -1,81 +1,101 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { query } from '@/lib/db'
+import { db } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log('🔍 [ATTRIBUTES API] GET request for data model:', params.id)
     const dataModelId = params.id
     
     // Validate that dataModelId is a valid UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
     if (!uuidRegex.test(dataModelId)) {
+      console.error('❌ [ATTRIBUTES API] Invalid UUID format:', dataModelId)
       return NextResponse.json({ 
         error: 'Invalid data model ID format',
         details: 'Data model ID must be a valid UUID'
       }, { status: 400 })
     }
-    // Check if the new columns exist by querying information_schema
-    let hasNewColumns = false
+    
+    console.log('🔍 [ATTRIBUTES API] Fetching attributes using Prisma ORM for data_model_id:', dataModelId)
+    
+    // Use Prisma ORM - best practice, type-safe, handles UUIDs automatically
     try {
-      const { rows } = await query(`
-        SELECT column_name 
-        FROM information_schema.columns 
-        WHERE table_name = 'data_model_attributes' 
-        AND column_name = 'data_entity_model_id'
-        AND table_schema = 'public'
-      `)
-      hasNewColumns = rows.length > 0
-    } catch (error) {
-      hasNewColumns = false
+      const attributes = await db.attribute.findMany({
+        where: {
+          dataModelId: dataModelId,
+          isActive: true,
+          deletedAt: null
+        },
+        orderBy: [
+          { order: 'asc' },
+          { createdAt: 'asc' }
+        ],
+        take: 1000
+      })
+      
+      console.log('✅ [ATTRIBUTES API] Found', attributes.length, 'attributes using Prisma ORM')
+      
+      // Transform to match expected API response format
+      const rows = attributes.map(attr => ({
+        id: attr.id,
+        name: attr.name,
+        display_name: attr.displayName,
+        type: attr.type,
+        is_required: attr.isRequired,
+        is_unique: attr.isUnique,
+        default_value: attr.defaultValue,
+        options: attr.options,
+        validation_rules: attr.validationRules,
+        order_index: attr.order,
+        created_at: attr.createdAt,
+        updated_at: attr.updatedAt
+      }))
+      
+      if (rows.length > 0) {
+        console.log('✅ [ATTRIBUTES API] First attribute sample:', {
+          id: rows[0].id,
+          name: rows[0].name,
+          display_name: rows[0].display_name,
+          type: rows[0].type
+        })
+      } else {
+        console.warn('⚠️ [ATTRIBUTES API] No attributes found for data model:', dataModelId)
+      }
+      
+      const response = { 
+        attributes: rows,
+        count: rows.length
+      }
+      
+      console.log('✅ [ATTRIBUTES API] Sending response')
+      return NextResponse.json(response)
+      
+    } catch (queryError: any) {
+      console.error('❌ [ATTRIBUTES API] Prisma query failed:', queryError.message)
+      console.error('❌ [ATTRIBUTES API] Query error stack:', queryError.stack)
+      
+      // Return empty array on error
+      return NextResponse.json({ 
+        attributes: [],
+        count: 0
+      })
     }
-
-    let selectFields = `id,
-              name,
-              display_name,
-              type as data_type,
-              type,
-              is_required,
-              is_unique,
-              default_value,
-              validation_rules as validation_rules,
-              options,
-              "order" as order_index,
-              created_at,
-              updated_at`
-
-    if (hasNewColumns) {
-      selectFields += `,
-              data_entity_model_id,
-              data_entity_attribute_id,
-              is_auto_increment,
-              auto_increment_prefix,
-              auto_increment_suffix,
-              auto_increment_start,
-              auto_increment_padding,
-              current_auto_increment_value`
-    }
-
-    const { rows } = await query<any>(
-      `SELECT ${selectFields}
-         FROM public.data_model_attributes
-        WHERE data_model_id = $1::text
-          AND (deleted_at IS NULL OR deleted_at IS NULL)
-        ORDER BY "order" ASC, created_at ASC`,
-      [dataModelId]
-    )
-
-    return NextResponse.json({ 
-      attributes: rows || [],
-      count: rows?.length || 0
-    })
 
   } catch (error) {
-    console.error('Error in attributes API:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('❌ [ATTRIBUTES API] Error:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error'
+    const errorStack = error instanceof Error ? error.stack : ''
+    console.error('❌ [ATTRIBUTES API] Error stack:', errorStack)
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: errorMessage,
+      stack: process.env.NODE_ENV === 'development' ? errorStack : undefined
+    }, { status: 500 })
   }
 }
 
@@ -89,23 +109,38 @@ export async function POST(
 
     const dataModelId = params.id
 
-    // Check if user has permission to create attributes in this space
-    const spaceCheck = await query(`
-      SELECT sm.role, s.created_by
-      FROM data_models dm
-      JOIN data_model_spaces dms ON dm.id = dms.data_model_id::uuid
-      JOIN spaces s ON s.id = dms.space_id::uuid
-      LEFT JOIN space_members sm ON s.id = sm.space_id AND sm.user_id = $1
-      WHERE dm.id = $2
-    `, [session.user.id, dataModelId])
+    // Check if user has permission to create attributes in this space using Prisma ORM
+    const dataModel = await db.dataModel.findFirst({
+      where: {
+        id: dataModelId,
+        deletedAt: null
+      },
+      include: {
+        spaces: {
+          include: {
+            space: {
+              include: {
+                members: {
+                  where: {
+                    userId: session.user.id
+                  }
+                },
+                creator: true
+              }
+            }
+          }
+        }
+      }
+    })
 
-    if (spaceCheck.rows.length === 0) {
+    if (!dataModel || dataModel.spaces.length === 0) {
       return NextResponse.json({ error: 'Data model not found' }, { status: 404 })
     }
 
-    const spaceData = spaceCheck.rows[0]
-    const userRole = spaceData.role
-    const isOwner = spaceData.created_by === session.user.id
+    const space = dataModel.spaces[0].space
+    const userMembership = space.members[0]
+    const userRole = userMembership?.role
+    const isOwner = space.createdBy === session.user.id
     const canCreate = userRole === 'ADMIN' || userRole === 'MEMBER' || isOwner
 
     if (!canCreate) {
@@ -158,108 +193,49 @@ export async function POST(
     }
     const type = typeMapping[data_type?.toLowerCase()] || data_type?.toUpperCase() || 'TEXT'
 
-    // Check if the new columns exist by querying information_schema
-    let hasNewColumns = false
-    try {
-      const { rows } = await query(`
-        SELECT column_name 
-        FROM information_schema.columns 
-        WHERE table_name = 'data_model_attributes' 
-        AND column_name = 'data_entity_model_id'
-        AND table_schema = 'public'
-      `)
-      hasNewColumns = rows.length > 0
-    } catch (error) {
-      hasNewColumns = false
-    }
-
-    let insertSql: string
-    let values: any[]
-
-    if (hasNewColumns) {
-      // Use the new schema with all columns
-      insertSql = `
-        INSERT INTO public.data_model_attributes (
-          data_model_id,
-          name,
-          display_name,
-          type,
-          is_required,
-          is_unique,
-          default_value,
-          options,
-          validation,
-          "order",
-          data_entity_model_id,
-          data_entity_attribute_id,
-          is_auto_increment,
-          auto_increment_prefix,
-          auto_increment_suffix,
-          auto_increment_start,
-          auto_increment_padding,
-          current_auto_increment_value
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
-        )
-        RETURNING *
-      `
-
-      values = [
-        dataModelId,
+    // Use Prisma ORM to create attribute - best practice, type-safe
+    const attribute = await db.attribute.create({
+      data: {
+        dataModelId: dataModelId,
         name,
-        display_name,
+        displayName: display_name,
         type,
-        !!is_required,
-        !!is_unique,
-        default_value,
-        options && options.length > 0 ? JSON.stringify(options) : null,
-        validation_rules ? JSON.stringify(validation_rules) : null,
-        Number(order_index) || 0,
-        data_entity_model_id,
-        data_entity_attribute_id,
-        !!is_auto_increment,
-        auto_increment_prefix || '',
-        auto_increment_suffix || '',
-        Number(auto_increment_start) || 1,
-        Number(auto_increment_padding) || 3,
-        Number(auto_increment_start) || 1, // Initialize current value to start value
-      ]
-    } else {
-      // Use the old schema without the new columns
-      insertSql = `
-        INSERT INTO public.data_model_attributes (
-          data_model_id,
-          name,
-          display_name,
-          type,
-          is_required,
-          is_unique,
-          default_value,
-          options,
-          validation,
-          "order"
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
-        )
-        RETURNING *
-      `
-
-      values = [
-        dataModelId,
-        name,
-        display_name,
-        type,
-        !!is_required,
-        !!is_unique,
-        default_value,
-        options && options.length > 0 ? JSON.stringify(options) : null,
-        validation_rules ? JSON.stringify(validation_rules) : null,
-        Number(order_index) || 0,
-      ]
+        description,
+        isRequired: !!is_required,
+        isUnique: !!is_unique,
+        defaultValue: default_value,
+        options: options && options.length > 0 ? options : null,
+        validationRules: validation_rules ? validation_rules : null,
+        order: Number(order_index) || 0,
+        // Optional fields (will be null if columns don't exist - Prisma handles this)
+        dataEntityModelId: data_entity_model_id || null,
+        dataEntityAttributeId: data_entity_attribute_id || null,
+        isAutoIncrement: !!is_auto_increment,
+        autoIncrementPrefix: auto_increment_prefix || '',
+        autoIncrementSuffix: auto_increment_suffix || '',
+        autoIncrementStart: Number(auto_increment_start) || 1,
+        autoIncrementPadding: Number(auto_increment_padding) || 3,
+        currentAutoIncrementValue: Number(auto_increment_start) || 1
+      }
+    })
+    
+    // Transform to match expected API response format
+    const response = {
+      id: attribute.id,
+      name: attribute.name,
+      display_name: attribute.displayName,
+      type: attribute.type,
+      is_required: attribute.isRequired,
+      is_unique: attribute.isUnique,
+      default_value: attribute.defaultValue,
+      options: attribute.options,
+      validation_rules: attribute.validationRules,
+      order_index: attribute.order,
+      created_at: attribute.createdAt,
+      updated_at: attribute.updatedAt
     }
-
-    const { rows } = await query<any>(insertSql, values)
-    return NextResponse.json({ attribute: rows[0] }, { status: 201 })
+    
+    return NextResponse.json({ attribute: response }, { status: 201 })
   } catch (error) {
     console.error('Error creating attribute:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

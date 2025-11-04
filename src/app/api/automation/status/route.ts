@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     if (spaceId) {
       workflowQuery += ` AND w.data_model_id IN (
         SELECT id FROM public.data_models WHERE id IN (
-          SELECT data_model_id FROM public.data_model_spaces WHERE space_id = $1
+          SELECT data_model_id FROM public.data_model_spaces WHERE space_id = $1::uuid
         )
       )`
       workflowParams.push(spaceId)
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
       executionQuery += ` AND workflow_id IN (
         SELECT id FROM public.workflows WHERE data_model_id IN (
           SELECT id FROM public.data_models WHERE id IN (
-            SELECT data_model_id FROM public.data_model_spaces WHERE space_id = $1
+            SELECT data_model_id FROM public.data_model_spaces WHERE space_id = $1::uuid
           )
         )
       )`
@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
 
     if (spaceId) {
       syncExecQuery += ` AND sync_schedule_id IN (
-        SELECT id FROM public.data_sync_schedules WHERE space_id = $1
+        SELECT id FROM public.data_sync_schedules WHERE space_id = $1::uuid
       )`
       syncExecParams.push(spaceId)
     }

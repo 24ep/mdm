@@ -24,7 +24,7 @@ export async function POST(
       `SELECT s.id, s.name
        FROM spaces s
        JOIN space_members sm ON s.id = sm.space_id
-       WHERE s.id = $1 AND sm.user_id = $2 AND sm.role IN ('owner', 'admin', 'member')`,
+       WHERE s.id = $1::uuid AND sm.user_id = $2::uuid AND sm.role IN ('owner', 'admin', 'member')`,
       [spaceId, userId]
     )
 
@@ -41,7 +41,7 @@ export async function POST(
         lv.change_description,
         lv.is_current
        FROM layout_versions lv
-       WHERE lv.id = $1 AND lv.space_id = $2`,
+       WHERE lv.id = $1::uuid AND lv.space_id = $2::uuid`,
       [versionId, spaceId]
     )
 
@@ -55,7 +55,7 @@ export async function POST(
       // Create a new version from the restored one (preserves history)
       // Mark all versions as not current
       await query(
-        'UPDATE layout_versions SET is_current = false WHERE space_id = $1',
+        'UPDATE layout_versions SET is_current = false WHERE space_id = $1::uuid',
         [spaceId]
       )
 
@@ -88,12 +88,12 @@ export async function POST(
     } else {
       // Just mark this version as current (overwrites current)
       await query(
-        'UPDATE layout_versions SET is_current = false WHERE space_id = $1',
+        'UPDATE layout_versions SET is_current = false WHERE space_id = $1::uuid',
         [spaceId]
       )
 
       await query(
-        'UPDATE layout_versions SET is_current = true WHERE id = $1 AND space_id = $2',
+        'UPDATE layout_versions SET is_current = true WHERE id = $1::uuid AND space_id = $2::uuid',
         [versionId, spaceId]
       )
 

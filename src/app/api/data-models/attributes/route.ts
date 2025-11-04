@@ -20,13 +20,13 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
     const listSql = `
       SELECT * FROM public.data_model_attributes
-      WHERE data_model_id = $1 AND is_active = TRUE
+      WHERE data_model_id = $1::uuid AND is_active = TRUE
       ORDER BY "order" ASC
       LIMIT $2 OFFSET $3
     `
     const countSql = `
       SELECT COUNT(*)::int AS total FROM public.data_model_attributes
-      WHERE data_model_id = $1 AND is_active = TRUE
+      WHERE data_model_id = $1::uuid AND is_active = TRUE
     `
     const [{ rows: attributes }, { rows: totals }] = await Promise.all([
       query<any>(listSql, [dataModelId, limit, offset]),
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     const insertSql = `
       INSERT INTO public.data_model_attributes
       (data_model_id, name, display_name, type, is_required, is_unique, default_value, options, validation, "order")
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+      VALUES ($1::uuid,$2,$3,$4,$5,$6,$7,$8,$9,$10)
       RETURNING *
     `
     const { rows } = await query<any>(insertSql, [

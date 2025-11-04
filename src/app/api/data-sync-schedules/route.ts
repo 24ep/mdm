@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
     // Check access
     const { rows: access } = await query(
-      'SELECT 1 FROM space_members WHERE space_id = $1 AND user_id = $2',
+      'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',
       [spaceId, session.user.id]
     )
     if (access.length === 0) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       FROM public.data_sync_schedules ds
       LEFT JOIN public.external_connections ec ON ec.id = ds.external_connection_id
       LEFT JOIN public.data_models dm ON dm.id = ds.data_model_id
-      WHERE ds.space_id = $1 AND ds.deleted_at IS NULL
+      WHERE ds.space_id = $1::uuid AND ds.deleted_at IS NULL
     `
     const params: any[] = [spaceId]
 
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
 
     // Check access
     const { rows: access } = await query(
-      'SELECT 1 FROM space_members WHERE space_id = $1 AND user_id = $2',
+      'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',
       [space_id, session.user.id]
     )
     if (access.length === 0) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

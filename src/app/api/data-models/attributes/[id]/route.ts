@@ -31,7 +31,7 @@ export async function PUT(
     if (!fields.length) return NextResponse.json({})
     
     // Get current data for audit log
-    const currentDataResult = await query('SELECT * FROM data_model_attributes WHERE id = $1', [params.id])
+    const currentDataResult = await query('SELECT * FROM data_model_attributes WHERE id = $1::uuid', [params.id])
     const currentData = currentDataResult.rows[0]
 
     values.push(params.id)
@@ -66,7 +66,7 @@ export async function DELETE(
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    await query('UPDATE public.data_model_attributes SET is_active = FALSE, deleted_at = NOW() WHERE id = $1', [params.id])
+    await query('UPDATE public.data_model_attributes SET is_active = FALSE, deleted_at = NOW() WHERE id = $1::uuid', [params.id])
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error deleting attribute:', error)

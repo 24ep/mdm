@@ -20,7 +20,7 @@ export async function GET(
        FROM public.data_sync_schedules ds
        LEFT JOIN public.external_connections ec ON ec.id = ds.external_connection_id
        LEFT JOIN public.data_models dm ON dm.id = ds.data_model_id
-       WHERE ds.id = $1 AND ds.deleted_at IS NULL`,
+       WHERE ds.id = $1::uuid AND ds.deleted_at IS NULL`,
       [params.id]
     )
 
@@ -30,7 +30,7 @@ export async function GET(
 
     // Check access
     const { rows: access } = await query(
-      'SELECT 1 FROM space_members WHERE space_id = $1 AND user_id = $2',
+      'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',
       [rows[0].space_id, session.user.id]
     )
     if (access.length === 0) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -55,7 +55,7 @@ export async function PUT(
 
     // Get existing schedule to check access
     const { rows: existing } = await query(
-      'SELECT space_id FROM public.data_sync_schedules WHERE id = $1',
+      'SELECT space_id FROM public.data_sync_schedules WHERE id = $1::uuid',
       [params.id]
     )
 
@@ -65,7 +65,7 @@ export async function PUT(
 
     // Check access
     const { rows: access } = await query(
-      'SELECT 1 FROM space_members WHERE space_id = $1 AND user_id = $2',
+      'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',
       [existing[0].space_id, session.user.id]
     )
     if (access.length === 0) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -131,7 +131,7 @@ export async function DELETE(
 
     // Get existing schedule to check access
     const { rows: existing } = await query(
-      'SELECT space_id FROM public.data_sync_schedules WHERE id = $1',
+      'SELECT space_id FROM public.data_sync_schedules WHERE id = $1::uuid',
       [params.id]
     )
 
@@ -141,7 +141,7 @@ export async function DELETE(
 
     // Check access
     const { rows: access } = await query(
-      'SELECT 1 FROM space_members WHERE space_id = $1 AND user_id = $2',
+      'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',
       [existing[0].space_id, session.user.id]
     )
     if (access.length === 0) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -149,7 +149,7 @@ export async function DELETE(
     await query(
       `UPDATE public.data_sync_schedules 
        SET deleted_at = NOW()
-       WHERE id = $1`,
+       WHERE id = $1::uuid`,
       [params.id]
     )
 

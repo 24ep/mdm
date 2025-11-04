@@ -17,7 +17,7 @@ export async function GET(
 
     // Get existing schedule to check access
     const { rows: existing } = await query(
-      'SELECT space_id FROM public.data_sync_schedules WHERE id = $1 AND deleted_at IS NULL',
+      'SELECT space_id FROM public.data_sync_schedules WHERE id = $1::uuid AND deleted_at IS NULL',
       [params.id]
     )
 
@@ -27,7 +27,7 @@ export async function GET(
 
     // Check access
     const { rows: access } = await query(
-      'SELECT 1 FROM space_members WHERE space_id = $1 AND user_id = $2',
+      'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',
       [existing[0].space_id, session.user.id]
     )
     if (access.length === 0) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -35,7 +35,7 @@ export async function GET(
     // Get executions
     const { rows } = await query(
       `SELECT * FROM public.data_sync_executions
-       WHERE sync_schedule_id = $1
+       WHERE sync_schedule_id = $1::uuid
        ORDER BY started_at DESC
        LIMIT $2 OFFSET $3`,
       [params.id, limit, offset]
@@ -44,7 +44,7 @@ export async function GET(
     // Get total count
     const { rows: countRows } = await query(
       `SELECT COUNT(*) as total FROM public.data_sync_executions
-       WHERE sync_schedule_id = $1`,
+       WHERE sync_schedule_id = $1::uuid`,
       [params.id]
     )
 

@@ -19,7 +19,7 @@ export async function GET(
 
     const { rows } = await query(
       `SELECT * FROM public.notebook_schedules
-       WHERE notebook_id = $1 AND id = $2`,
+       WHERE notebook_id = $1::uuid AND id = $2::uuid`,
       [notebookId, scheduleId]
     )
 
@@ -62,7 +62,7 @@ export async function PUT(
     let nextRunAt = null
     if (body.schedule_type || body.schedule_config || body.timezone) {
       const { rows: scheduleRows } = await query(
-        `SELECT schedule_type, schedule_config, timezone FROM public.notebook_schedules WHERE id = $1`,
+        `SELECT schedule_type, schedule_config, timezone FROM public.notebook_schedules WHERE id = $1::uuid`,
         [scheduleId]
       )
       

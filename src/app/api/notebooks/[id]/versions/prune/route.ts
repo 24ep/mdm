@@ -22,7 +22,7 @@ export async function POST(
     const { rows: allVersions } = await query(
       `SELECT id, version_number, is_current
        FROM public.notebook_versions
-       WHERE notebook_id = $1
+       WHERE notebook_id = $1::uuid
        ORDER BY version_number DESC`,
       [notebookId]
     )
@@ -52,7 +52,7 @@ export async function POST(
       const idsToDelete = versionsToDelete.map((v) => v.id)
       await query(
         `DELETE FROM public.notebook_versions
-         WHERE notebook_id = $1 AND id = ANY($2::uuid[])`,
+         WHERE notebook_id = $1::uuid AND id = ANY($2::uuid[])`,
         [notebookId, idsToDelete]
       )
     }

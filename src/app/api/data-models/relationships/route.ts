@@ -34,11 +34,11 @@ export async function GET(request: NextRequest) {
         dma1.referenced_column,
         'one-to-many' as relationship_type
       FROM public.data_model_attributes dma1
-      JOIN public.data_models dm1 ON dm1.id = dma1.data_model_id
-      JOIN public.data_model_spaces dms1 ON dms1.data_model_id = dm1.id
+      JOIN public.data_models dm1 ON dm1.id::uuid = dma1.data_model_id::uuid
+      JOIN public.data_model_spaces dms1 ON dms1.data_model_id::uuid = dm1.id::uuid
       LEFT JOIN public.data_models dm2 ON LOWER(dm2.name) = LOWER(dma1.referenced_table)
-      LEFT JOIN public.data_model_spaces dms2 ON dms2.data_model_id = dm2.id
-      LEFT JOIN public.data_model_attributes dma2 ON dma2.data_model_id = dm2.id 
+      LEFT JOIN public.data_model_spaces dms2 ON dms2.data_model_id::uuid = dm2.id::uuid
+      LEFT JOIN public.data_model_attributes dma2 ON dma2.data_model_id::uuid = dm2.id::uuid 
         AND (LOWER(dma2.name) = LOWER(dma1.referenced_column) OR dma2.is_primary_key = TRUE)
       WHERE dma1.is_foreign_key = TRUE 
         AND dma1.is_active = TRUE

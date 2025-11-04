@@ -22,7 +22,7 @@ export async function GET(
       `SELECT s.id, s.name
        FROM spaces s
        JOIN space_members sm ON s.id = sm.space_id
-       WHERE s.id = $1 AND sm.user_id = $2 AND sm.role IN ('owner', 'admin', 'member')`,
+       WHERE s.id = $1::uuid AND sm.user_id = $2::uuid AND sm.role IN ('owner', 'admin', 'member')`,
       [spaceId, userId]
     )
 
@@ -45,7 +45,7 @@ export async function GET(
         u.email as created_by_email
        FROM layout_versions lv
        LEFT JOIN users u ON lv.created_by = u.id
-       WHERE lv.space_id = $1
+       WHERE lv.space_id = $1::uuid
        ORDER BY lv.version_number DESC`,
       [spaceId]
     )
@@ -85,7 +85,7 @@ export async function POST(
       `SELECT s.id, s.name
        FROM spaces s
        JOIN space_members sm ON s.id = sm.space_id
-       WHERE s.id = $1 AND sm.user_id = $2 AND sm.role IN ('owner', 'admin', 'member')`,
+       WHERE s.id = $1::uuid AND sm.user_id = $2::uuid AND sm.role IN ('owner', 'admin', 'member')`,
       [spaceId, userId]
     )
 
@@ -102,7 +102,7 @@ export async function POST(
 
     // Mark all other versions as not current
     await query(
-      'UPDATE layout_versions SET is_current = false WHERE space_id = $1',
+      'UPDATE layout_versions SET is_current = false WHERE space_id = $1::uuid',
       [spaceId]
     )
 

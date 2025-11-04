@@ -14,14 +14,14 @@ export async function GET(request: NextRequest) {
 
     // Check access
     const { rows: access } = await query(
-      'SELECT 1 FROM space_members WHERE space_id = $1 AND user_id = $2',
+      'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',
       [spaceId, session.user.id]
     )
     if (access.length === 0) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { rows } = await query(
       `SELECT * FROM public.external_connections 
-       WHERE space_id = $1 AND deleted_at IS NULL
+       WHERE space_id = $1::uuid AND deleted_at IS NULL
        ORDER BY created_at DESC`,
       [spaceId]
     )
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { rows: access } = await query(
-      'SELECT 1 FROM space_members WHERE space_id = $1 AND user_id = $2',
+      'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',
       [space_id, session.user.id]
     )
     if (access.length === 0) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -112,7 +112,7 @@ export async function PUT(request: NextRequest) {
     if (!id || !space_id) return NextResponse.json({ error: 'id and space_id are required' }, { status: 400 })
 
     const { rows: access } = await query(
-      'SELECT 1 FROM space_members WHERE space_id = $1 AND user_id = $2',
+      'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',
       [space_id, session.user.id]
     )
     if (access.length === 0) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -150,14 +150,14 @@ export async function DELETE(request: NextRequest) {
     if (!id || !spaceId) return NextResponse.json({ error: 'id and space_id are required' }, { status: 400 })
 
     const { rows: access } = await query(
-      'SELECT 1 FROM space_members WHERE space_id = $1 AND user_id = $2',
+      'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',
       [spaceId, session.user.id]
     )
     if (access.length === 0) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     await query(
       `UPDATE public.external_connections SET deleted_at = NOW()
-       WHERE id = $1`,
+       WHERE id = $1::uuid`,
       [id]
     )
     return NextResponse.json({ success: true })

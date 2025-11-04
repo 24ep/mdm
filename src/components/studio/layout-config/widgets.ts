@@ -1,4 +1,4 @@
-import { BarChart3, LineChart, PieChart, AreaChart, TrendingUp, Grid, Square, CreditCard, Table as TableIcon, Image, Video, Calendar, Map, Gauge, Target, Circle, Type, Rectangle, Triangle, Hexagon, Frame, Link2, FileText, Box, Filter, ListFilter, Search, SlidersHorizontal, ToggleLeft, CheckSquare, ChevronDown, Hash, User, Tag, Bell, MessageSquare, Columns, List, Clock, Star, QrCode, MoreHorizontal, ChevronsRight } from 'lucide-react'
+import { BarChart3, LineChart, PieChart, AreaChart, TrendingUp, Grid, Square, CreditCard, Table as TableIcon, Image, Video, Calendar, Map, Gauge, Target, Circle, Type, Triangle, Hexagon, Frame, Link2, FileText, Box, Filter, ListFilter, Search, SlidersHorizontal, ToggleLeft, CheckSquare, ChevronDown, Hash, User, Tag, Bell, MessageSquare, Columns, List, Clock, Star, QrCode, MoreHorizontal, ChevronsRight } from 'lucide-react'
 
 export const widgetsPalette = [
   // Charts (merged Power BI and Basic Charts)
@@ -27,8 +27,8 @@ export const widgetsPalette = [
   { type: 'image', label: 'Image', icon: Image, category: 'UI Elements' },
   { type: 'video', label: 'Video', icon: Video, category: 'UI Elements' },
   { type: 'iframe', label: 'Iframe', icon: Frame, category: 'UI Elements' },
-  { type: 'shape', label: 'Shape', icon: Rectangle, category: 'UI Elements' },
-  { type: 'rectangle', label: 'Rectangle', icon: Rectangle, category: 'UI Elements' },
+  { type: 'shape', label: 'Shape', icon: Square, category: 'UI Elements' },
+  { type: 'rectangle', label: 'Rectangle', icon: Square, category: 'UI Elements' },
   { type: 'circle', label: 'Circle', icon: Circle, category: 'UI Elements' },
   { type: 'triangle', label: 'Triangle', icon: Triangle, category: 'UI Elements' },
   { type: 'hexagon', label: 'Hexagon', icon: Hexagon, category: 'UI Elements' },

@@ -16,7 +16,7 @@ export async function GET(
       SELECT s.id, s.name, s.slug, dms.created_at
       FROM spaces s
       JOIN data_model_spaces dms ON dms.space_id = s.id
-      WHERE dms.data_model_id = $1 AND s.deleted_at IS NULL
+      WHERE dms.data_model_id = $1::uuid AND s.deleted_at IS NULL
       ORDER BY s.name
     `, [params.id])
 
@@ -47,7 +47,7 @@ export async function PUT(
     if (space_ids.length > 0) {
       const placeholders = space_ids.map((_, i) => `$${i + 1}`).join(',')
       const { rows: spaceAccess } = await query(
-        `SELECT space_id, role FROM space_members WHERE space_id IN (${placeholders}) AND user_id = $${space_ids.length + 1}`,
+        `SELECT space_id, role FROM space_members WHERE space_id IN (${placeholders}) AND user_id = $${space_ids.length + 1}::uuid`,
         [...space_ids, session.user.id]
       )
 
@@ -58,14 +58,14 @@ export async function PUT(
 
     // Remove all existing associations
     await query(
-      'DELETE FROM data_model_spaces WHERE data_model_id = $1',
+      'DELETE FROM data_model_spaces WHERE data_model_id = $1::uuid',
       [params.id]
     )
 
     // Add new associations
     for (const spaceId of space_ids) {
       await query(
-        'INSERT INTO data_model_spaces (data_model_id, space_id, created_by) VALUES ($1, $2, $3)',
+        'INSERT INTO data_model_spaces (data_model_id, space_id, created_by) VALUES ($1::uuid, $2::uuid, $3::uuid)',
         [params.id, spaceId, session.user.id]
       )
     }

@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
              , ec.id as conn_id, ec.db_type, ec.host, ec.port, ec.database, ec.username, ec.password, ec.options
        FROM public.data_models dm
        LEFT JOIN public.external_connections ec ON ec.id = dm.external_connection_id AND ec.deleted_at IS NULL AND ec.is_active = TRUE
-       WHERE dm.id = $1 AND dm.deleted_at IS NULL`,
+       WHERE dm.id = $1::uuid AND dm.deleted_at IS NULL`,
       [dataModelId]
     )
     const model = modelRows[0]
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
     if (model.source_type === 'EXTERNAL' && model.conn_id && model.external_table) {
       // Load attribute mappings
       const { rows: attrs } = await query<{ name: string; external_column: string | null }>(
-        `SELECT name, external_column FROM public.data_model_attributes WHERE data_model_id = $1 AND deleted_at IS NULL ORDER BY "order" ASC` as any,
+        `SELECT name, external_column FROM public.data_model_attributes WHERE data_model_id = $1::uuid AND deleted_at IS NULL ORDER BY "order" ASC` as any,
         [dataModelId]
       )
 
@@ -181,7 +181,7 @@ export async function GET(request: NextRequest) {
     }
 
     // INTERNAL: Build dynamic query with filters
-    let whereConditions = ['dr.data_model_id = $1', 'dr.is_active = TRUE']
+    let whereConditions = ['dr.data_model_id = $1::uuid', 'dr.is_active = TRUE']
     let params: any[] = [dataModelId]
     let paramIndex = 2
     
@@ -360,7 +360,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { rows: fullRows } = await query<any>(
-      'SELECT * FROM public.data_records WHERE id = $1',
+      'SELECT * FROM public.data_records WHERE id = $1::uuid',
       [record.id]
     )
     return NextResponse.json({ record: fullRows[0] }, { status: 201 })

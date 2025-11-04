@@ -25,7 +25,7 @@ export async function GET(
        FROM public.workflows w
        LEFT JOIN public.data_models dm ON w.data_model_id = dm.id
        LEFT JOIN public.users u ON w.created_by = u.id
-       WHERE w.id = $1`,
+       WHERE w.id = $1::uuid`,
       [workflowId]
     )
 
@@ -44,7 +44,7 @@ export async function GET(
         dma.type as attribute_type
        FROM public.workflow_conditions wc
        JOIN public.data_model_attributes dma ON wc.attribute_id = dma.id
-       WHERE wc.workflow_id = $1
+       WHERE wc.workflow_id = $1::uuid
        ORDER BY wc.condition_order`,
       [workflowId]
     )
@@ -61,7 +61,7 @@ export async function GET(
        FROM public.workflow_actions wa
        JOIN public.data_model_attributes dma ON wa.target_attribute_id = dma.id
        LEFT JOIN public.data_model_attributes source_dma ON wa.source_attribute_id = source_dma.id
-       WHERE wa.workflow_id = $1
+       WHERE wa.workflow_id = $1::uuid
        ORDER BY wa.action_order`,
       [workflowId]
     )
@@ -69,7 +69,7 @@ export async function GET(
     // Get schedule
     const { rows: scheduleRows } = await query(
       `SELECT * FROM public.workflow_schedules 
-       WHERE workflow_id = $1 AND is_active = true`,
+       WHERE workflow_id = $1::uuid AND is_active = true`,
       [workflowId]
     )
 
@@ -79,7 +79,7 @@ export async function GET(
         id, execution_type, status, started_at, completed_at,
         records_processed, records_updated, error_message
        FROM public.workflow_executions 
-       WHERE workflow_id = $1
+       WHERE workflow_id = $1::uuid
        ORDER BY started_at DESC
        LIMIT 10`,
       [workflowId]
@@ -137,9 +137,9 @@ export async function PUT(
     const workflow = workflowRows[0]
 
     // Delete existing conditions and actions
-    await query('DELETE FROM public.workflow_conditions WHERE workflow_id = $1', [workflowId])
-    await query('DELETE FROM public.workflow_actions WHERE workflow_id = $1', [workflowId])
-    await query('DELETE FROM public.workflow_schedules WHERE workflow_id = $1', [workflowId])
+    await query('DELETE FROM public.workflow_conditions WHERE workflow_id = $1::uuid', [workflowId])
+    await query('DELETE FROM public.workflow_actions WHERE workflow_id = $1::uuid', [workflowId])
+    await query('DELETE FROM public.workflow_schedules WHERE workflow_id = $1::uuid', [workflowId])
 
     // Create new conditions
     if (conditions.length > 0) {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Attribute, DataModel } from './chartDataSourceTypes'
 
 export function useDataModels(spaceId?: string) {
@@ -50,38 +50,101 @@ export function useDataModels(spaceId?: string) {
 export function useAttributes(selectedModelId: string | undefined, spaceId?: string) {
   const [attributes, setAttributes] = useState<Attribute[]>([])
   const [loading, setLoading] = useState(false)
+  const loadingRef = useRef(false)
+  const lastModelIdRef = useRef<string | undefined>(undefined)
 
   useEffect(() => {
-    if (!selectedModelId) return
+    if (!selectedModelId) {
+      setAttributes([])
+      setLoading(false)
+      loadingRef.current = false
+      lastModelIdRef.current = undefined
+      return
+    }
     
-    setLoading(true)
+    // Skip if already loading the same model
+    if (loadingRef.current && lastModelIdRef.current === selectedModelId) {
+      console.log('⏸️ [useAttributes] Already loading model:', selectedModelId)
+      return
+    }
+    
+    // Skip if this is the same model we just loaded (check only if we have attributes)
+    if (lastModelIdRef.current === selectedModelId && !loadingRef.current && attributes.length > 0) {
+      console.log('⏸️ [useAttributes] Model already loaded, skipping:', selectedModelId)
+      return
+    }
+    
+    let cancelled = false
+    let abortController: AbortController | null = null
+    
     const loadAttributes = async () => {
+      loadingRef.current = true
+      lastModelIdRef.current = selectedModelId
+      setLoading(true)
+      
       try {
-        const response = await fetch(`/api/data-models/${selectedModelId}/attributes`)
+        console.log('🔍 [useAttributes] Fetching attributes for model:', selectedModelId)
+        
+        // Create new abort controller for this request
+        abortController = new AbortController()
+        const timeoutId = setTimeout(() => abortController?.abort(), 10000) // 10 second timeout
+        
+        const response = await fetch(`/api/data-models/${selectedModelId}/attributes`, {
+          signal: abortController.signal
+        })
+        
+        clearTimeout(timeoutId)
+        
+        if (cancelled) return
+        
         if (response.ok) {
           const data = await response.json()
+          console.log('🔍 [useAttributes] Raw response:', data)
           const attrs = data.attributes || data.data || (Array.isArray(data) ? data : [])
           const attrsArray = Array.isArray(attrs) ? attrs : []
+          
+          if (cancelled) return
+          
           setAttributes(attrsArray)
-          console.log('Loaded attributes:', attrsArray.length, 'for model:', selectedModelId, attrsArray)
+          console.log('✅ [useAttributes] Loaded attributes:', attrsArray.length, 'for model:', selectedModelId)
           if (attrsArray.length === 0) {
-            console.warn('No attributes loaded. Response:', data)
+            console.warn('⚠️ [useAttributes] No attributes loaded. Response:', data)
           }
         } else {
           const errorText = await response.text()
-          console.error('Failed to load attributes:', response.status, response.statusText, errorText)
+          console.error('❌ [useAttributes] Failed to load attributes:', response.status, response.statusText, errorText)
+          if (!cancelled) {
+            setAttributes([])
+          }
+        }
+      } catch (error: any) {
+        if (error.name === 'AbortError') {
+          console.error('⏱️ [useAttributes] Request timeout after 10 seconds')
+        } else {
+          console.error('❌ [useAttributes] Failed to load attributes:', error)
+        }
+        if (!cancelled) {
           setAttributes([])
         }
-      } catch (error) {
-        console.error('Failed to load attributes:', error)
-        setAttributes([])
       } finally {
-        setLoading(false)
+        if (!cancelled) {
+          setLoading(false)
+          loadingRef.current = false
+        }
       }
     }
     
     loadAttributes()
-  }, [selectedModelId, spaceId])
+    
+    return () => {
+      cancelled = true
+      loadingRef.current = false
+      if (abortController) {
+        abortController.abort()
+      }
+      setLoading(false)
+    }
+  }, [selectedModelId]) // Only depend on selectedModelId to prevent infinite loops
 
   return { attributes, loading }
 }

@@ -16,7 +16,7 @@ export async function POST(
         auto_increment_padding,
         current_auto_increment_value
       FROM public.data_model_attributes 
-      WHERE id = $1 AND data_model_id = $2 AND is_auto_increment = true
+      WHERE id = $1::uuid AND data_model_id = $2::uuid AND is_auto_increment = true
     `
     
     const { rows: attrRows } = await query<any>(attributeSql, [attrId, dataModelId])
@@ -34,7 +34,7 @@ export async function POST(
     const updateSql = `
       UPDATE public.data_model_attributes 
       SET current_auto_increment_value = $1
-      WHERE id = $2
+      WHERE id = $2::uuid
     `
     
     await query(updateSql, [nextValue, attrId])

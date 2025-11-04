@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Access check
-    const { rows: access } = await query('SELECT 1 FROM space_members WHERE space_id = $1 AND user_id = $2', [space_id, session.user.id])
+    const { rows: access } = await query('SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid', [space_id, session.user.id])
     if (access.length === 0) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     if (connection_type === 'api') {

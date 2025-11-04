@@ -46,14 +46,18 @@ export function ChartDataSourceConfig({
     (widget.properties?.chartDimensionAggregations as Record<string, Record<string, AggregationType>>) || {}
   )
   
-  // Sync selectedModelId with widget properties
+  // Sync selectedModelId with widget properties - use ref to prevent infinite loops
+  const prevModelIdRef = React.useRef<string>('')
   useEffect(() => {
     const modelId = (widget.properties?.dataModelId 
       || (widget.properties as any)?.data_model_id 
       || (widget as any)?.data_config?.data_model_id 
       || (widget as any)?.data_config?.dataModelId 
       || '') as string
-    if (modelId && modelId !== selectedModelId) {
+    
+    // Only update if the model ID actually changed
+    if (modelId && modelId !== selectedModelId && modelId !== prevModelIdRef.current) {
+      prevModelIdRef.current = modelId
       setSelectedModelId(modelId)
     }
   }, [
@@ -61,8 +65,7 @@ export function ChartDataSourceConfig({
     (widget.properties as any)?.data_model_id,
     (widget as any)?.data_config?.data_model_id,
     (widget as any)?.data_config?.dataModelId,
-    selectedModelId,
-  ])
+  ]) // Removed selectedModelId from dependencies to prevent loops
   
   // If models load and none selected, auto-select the only model
   useEffect(() => {

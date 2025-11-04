@@ -19,7 +19,7 @@ export async function GET(
 
     const { rows } = await query(
       `SELECT * FROM public.notebook_versions
-       WHERE notebook_id = $1 AND id = $2`,
+       WHERE notebook_id = $1::uuid AND id = $2::uuid`,
       [notebookId, versionId]
     )
 
@@ -37,7 +37,7 @@ export async function GET(
     let authorEmail = ''
     if (version.created_by) {
       const { rows: userRows } = await query(
-        'SELECT name, email FROM public.users WHERE id = $1',
+        'SELECT name, email FROM public.users WHERE id = $1::uuid',
         [version.created_by]
       )
       if (userRows.length > 0) {
@@ -82,7 +82,7 @@ export async function POST(
     // Get the version to restore
     const { rows } = await query(
       `SELECT * FROM public.notebook_versions
-       WHERE notebook_id = $1 AND id = $2`,
+       WHERE notebook_id = $1::uuid AND id = $2::uuid`,
       [notebookId, versionId]
     )
 
@@ -97,13 +97,13 @@ export async function POST(
 
     // Mark all versions as not current
     await query(
-      'UPDATE public.notebook_versions SET is_current = false WHERE notebook_id = $1',
+      'UPDATE public.notebook_versions SET is_current = false WHERE notebook_id = $1::uuid',
       [notebookId]
     )
 
     // Mark this version as current
     await query(
-      'UPDATE public.notebook_versions SET is_current = true WHERE id = $1',
+      'UPDATE public.notebook_versions SET is_current = true WHERE id = $1::uuid',
       [versionId]
     )
 

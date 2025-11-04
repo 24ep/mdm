@@ -17,7 +17,7 @@ export async function POST(
     // Get datasource configuration
     const { rows: datasources } = await query(`
       SELECT * FROM dashboard_datasources 
-      WHERE id = $1 AND dashboard_id = $2 AND is_active = true
+      WHERE id = $1::uuid AND dashboard_id = $2::uuid AND is_active = true
     `, [params.datasourceId, params.id])
 
     if (datasources.length === 0) {
@@ -37,7 +37,7 @@ export async function POST(
             FROM data_models dm
             JOIN data_model_spaces dms ON dms.data_model_id = dm.id
             JOIN spaces s ON s.id = dms.space_id
-            WHERE dm.id = $1 AND dm.deleted_at IS NULL
+            WHERE dm.id = $1::uuid AND dm.deleted_at IS NULL
           `, [datasource.source_id])
 
           if (dataModel.length > 0) {
@@ -48,7 +48,7 @@ export async function POST(
               SELECT der.*, de.name as entity_name
               FROM data_entity_records der
               JOIN data_entities de ON de.id = der.data_entity_id
-              WHERE de.data_model_id = $1 AND der.deleted_at IS NULL
+              WHERE de.data_model_id = $1::uuid AND der.deleted_at IS NULL
               ORDER BY der.created_at DESC
               LIMIT $2 OFFSET $3
             `, [datasource.source_id, limit, offset])
@@ -58,7 +58,7 @@ export async function POST(
               SELECT COUNT(*)::int as total
               FROM data_entity_records der
               JOIN data_entities de ON de.id = der.data_entity_id
-              WHERE de.data_model_id = $1 AND der.deleted_at IS NULL
+              WHERE de.data_model_id = $1::uuid AND der.deleted_at IS NULL
             `, [datasource.source_id])
 
             data = records
@@ -75,7 +75,7 @@ export async function POST(
             FROM assignments a
             LEFT JOIN users u ON u.id = a.assigned_user_id
             LEFT JOIN companies c ON c.id = a.company_id
-            WHERE a.id = $1 AND a.deleted_at IS NULL
+            WHERE a.id = $1::uuid AND a.deleted_at IS NULL
             LIMIT $2 OFFSET $3
           `, [datasource.source_id, limit, offset])
 
@@ -83,7 +83,7 @@ export async function POST(
           const { rows: countRows } = await query(`
             SELECT COUNT(*)::int as total
             FROM assignments
-            WHERE id = $1 AND deleted_at IS NULL
+            WHERE id = $1::uuid AND deleted_at IS NULL
           `, [datasource.source_id])
 
           data = assignments

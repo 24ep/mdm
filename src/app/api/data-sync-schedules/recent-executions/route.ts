@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
          dse.error_message
        FROM public.data_sync_executions dse
        JOIN public.data_sync_schedules ds ON ds.id = dse.sync_schedule_id
-       WHERE ds.space_id = $1 AND ds.deleted_at IS NULL
+       WHERE ds.space_id = $1::uuid AND ds.deleted_at IS NULL
        ORDER BY dse.started_at DESC
        LIMIT $2`,
       [spaceId, limit]

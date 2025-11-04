@@ -44,7 +44,7 @@ export async function GET(
         created_at,
         updated_at
       FROM public.notebook_schedules
-      WHERE notebook_id = $1
+      WHERE notebook_id = $1::uuid
       ORDER BY created_at DESC`,
       [notebookId]
     )
@@ -54,7 +54,7 @@ export async function GET(
       rows.map(async (schedule) => {
         if (schedule.created_by) {
           const { rows: userRows } = await query(
-            'SELECT name, email FROM public.users WHERE id = $1',
+            'SELECT name, email FROM public.users WHERE id = $1::uuid',
             [schedule.created_by]
           )
           if (userRows.length > 0) {

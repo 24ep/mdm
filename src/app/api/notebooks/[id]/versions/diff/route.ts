@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     const { rows: versions } = await query(
       `SELECT id, version_number, notebook_data, created_at
        FROM public.notebook_versions
-       WHERE notebook_id = $1 AND (id = $2 OR id = $3)
+       WHERE notebook_id = $1::uuid AND (id = $2::uuid OR id = $3::uuid)
        ORDER BY version_number ASC`,
       [notebook_id, version1_id, version2_id]
     )

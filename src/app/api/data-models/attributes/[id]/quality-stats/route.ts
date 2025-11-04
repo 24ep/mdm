@@ -26,7 +26,7 @@ export async function GET(
         dm.id as model_id
       FROM data_model_attributes dma
       JOIN data_models dm ON dma.data_model_id = dm.id
-      WHERE dma.id = $1
+      WHERE dma.id = $1::uuid
     `
 
     const { rows: attributeRows } = await query(attributeQuery, [attributeId])
@@ -44,7 +44,7 @@ export async function GET(
     const totalRecordsQuery = `
       SELECT COUNT(*) as total_records
       FROM data_records dr
-      WHERE dr.data_model_id = $1
+      WHERE dr.data_model_id = $1::uuid
     `
     const { rows: totalRows } = await query(totalRecordsQuery, [attribute.model_id])
     const totalRecords = parseInt(totalRows[0]?.total_records || '0')
@@ -54,8 +54,8 @@ export async function GET(
       SELECT COUNT(*) as non_null_count
       FROM data_records dr
       JOIN data_record_values drv ON dr.id = drv.data_record_id
-      WHERE dr.data_model_id = $1 
-        AND drv.attribute_id = $2 
+      WHERE dr.data_model_id = $1::uuid 
+        AND drv.attribute_id = $2::uuid 
         AND drv.value IS NOT NULL 
         AND drv.value != ''
     `
@@ -70,8 +70,8 @@ export async function GET(
       SELECT COUNT(DISTINCT drv.value) as unique_count
       FROM data_records dr
       JOIN data_record_values drv ON dr.id = drv.data_record_id
-      WHERE dr.data_model_id = $1 
-        AND drv.attribute_id = $2 
+      WHERE dr.data_model_id = $1::uuid 
+        AND drv.attribute_id = $2::uuid 
         AND drv.value IS NOT NULL 
         AND drv.value != ''
     `
@@ -83,7 +83,7 @@ export async function GET(
       SELECT COUNT(*) as recent_changes
       FROM audit_logs al
       WHERE al.entity_type = 'attribute' 
-        AND al.entity_id = $1
+        AND al.entity_id = $1::uuid
         AND al.created_at >= NOW() - INTERVAL '7 days'
     `
     const { rows: recentRows } = await query(recentChangesQuery, [attributeId])
@@ -125,8 +125,8 @@ export async function GET(
         COUNT(CASE WHEN drv.value ~ '^[A-Za-z0-9@._-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$' THEN 1 END) as email_count
       FROM data_records dr
       JOIN data_record_values drv ON dr.id = drv.data_record_id
-      WHERE dr.data_model_id = $1 
-        AND drv.attribute_id = $2 
+      WHERE dr.data_model_id = $1::uuid 
+        AND drv.attribute_id = $2::uuid 
         AND drv.value IS NOT NULL 
         AND drv.value != ''
     `

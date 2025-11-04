@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 
     let whereClause = `
       WHERE dah.sync_schedule_id IN (
-        SELECT id FROM public.data_sync_schedules WHERE space_id = $1 AND deleted_at IS NULL
+        SELECT id FROM public.data_sync_schedules WHERE space_id = $1::uuid AND deleted_at IS NULL
       )
     `
     const params: any[] = [spaceId]

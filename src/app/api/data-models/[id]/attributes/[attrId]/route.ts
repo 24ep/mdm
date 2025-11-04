@@ -14,7 +14,7 @@ export async function GET(
     const { id: dataModelId, attrId } = params
 
     const { rows } = await query(
-      'SELECT * FROM public.data_model_attributes WHERE id = $1 AND data_model_id = $2 AND is_active = TRUE',
+      'SELECT * FROM public.data_model_attributes WHERE id = $1::uuid AND data_model_id = $2::uuid AND is_active = TRUE',
       [attrId, dataModelId]
     )
 
@@ -45,8 +45,8 @@ export async function PUT(
       FROM data_models dm
       JOIN data_model_spaces dms ON dm.id = dms.data_model_id
       JOIN spaces s ON dms.space_id = s.id
-      LEFT JOIN space_members sm ON s.id = sm.space_id AND sm.user_id = $1
-      WHERE dm.id = $2
+      LEFT JOIN space_members sm ON s.id = sm.space_id AND sm.user_id = $1::uuid
+      WHERE dm.id = $2::uuid
     `, [session.user.id, dataModelId])
 
     if (spaceCheck.rows.length === 0) {
@@ -99,7 +99,7 @@ export async function PUT(
       SET name = $1, display_name = $2, type = $3, is_required = $4, is_unique = $5,
           is_primary_key = $6, is_foreign_key = $7, referenced_table = $8, referenced_column = $9,
           default_value = $10, options = $11, validation = $12, "order" = $13, updated_at = NOW()
-      WHERE id = $14 AND data_model_id = $15 AND is_active = TRUE
+      WHERE id = $14::uuid AND data_model_id = $15::uuid AND is_active = TRUE
       RETURNING *
     `
     
@@ -148,8 +148,8 @@ export async function DELETE(
       FROM data_models dm
       JOIN data_model_spaces dms ON dm.id = dms.data_model_id
       JOIN spaces s ON dms.space_id = s.id
-      LEFT JOIN space_members sm ON s.id = sm.space_id AND sm.user_id = $1
-      WHERE dm.id = $2
+      LEFT JOIN space_members sm ON s.id = sm.space_id AND sm.user_id = $1::uuid
+      WHERE dm.id = $2::uuid
     `, [session.user.id, dataModelId])
 
     if (spaceCheck.rows.length === 0) {
@@ -166,7 +166,7 @@ export async function DELETE(
     }
 
     const { rows } = await query(
-      'UPDATE public.data_model_attributes SET is_active = FALSE, deleted_at = NOW() WHERE id = $1 AND data_model_id = $2 RETURNING *',
+      'UPDATE public.data_model_attributes SET is_active = FALSE, deleted_at = NOW() WHERE id = $1::uuid AND data_model_id = $2::uuid RETURNING *',
       [attrId, dataModelId]
     )
 

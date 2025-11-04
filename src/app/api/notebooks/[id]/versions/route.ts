@@ -32,7 +32,7 @@ export async function GET(
         updated_at,
         is_current
       FROM public.notebook_versions
-      WHERE notebook_id = $1
+      WHERE notebook_id = $1::uuid
       ORDER BY version_number DESC
       LIMIT 100`,
       [notebookId]
@@ -43,7 +43,7 @@ export async function GET(
       rows.map(async (version) => {
         if (version.created_by) {
           const { rows: userRows } = await query(
-            'SELECT name, email FROM public.users WHERE id = $1',
+            'SELECT name, email FROM public.users WHERE id = $1::uuid',
             [version.created_by]
           )
           if (userRows.length > 0) {
@@ -138,7 +138,7 @@ export async function POST(
     // If this is the current version, mark others as not current
     if (is_current) {
       await query(
-        'UPDATE public.notebook_versions SET is_current = false WHERE notebook_id = $1 AND id != $2',
+        'UPDATE public.notebook_versions SET is_current = false WHERE notebook_id = $1::uuid AND id != $2::uuid',
         [notebookId, insertRows[0].id]
       )
     }

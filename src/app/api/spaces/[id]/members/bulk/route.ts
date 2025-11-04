@@ -24,7 +24,7 @@ export async function POST(
     // Check if current user has permission to manage members
     const memberCheck = await query(`
       SELECT role FROM space_members 
-      WHERE space_id = $1 AND user_id = $2
+      WHERE space_id = $1::uuid AND user_id = $2::uuid
     `, [spaceId, session.user.id])
 
     if (memberCheck.rows.length === 0 || !['owner', 'admin'].includes(memberCheck.rows[0].role)) {
@@ -43,7 +43,7 @@ export async function POST(
         const updateResult = await query(`
           UPDATE space_members 
           SET role = $1, updated_at = NOW()
-          WHERE space_id = $2 AND user_id = ANY($3::uuid[])
+          WHERE space_id = $2::uuid AND user_id = ANY($3::uuid[])
           RETURNING user_id, role
         `, [data.role, spaceId, userIds])
         
@@ -58,7 +58,7 @@ export async function POST(
         // Remove selected users from space
         const removeResult = await query(`
           DELETE FROM space_members 
-          WHERE space_id = $1 AND user_id = ANY($2::uuid[])
+          WHERE space_id = $1::uuid AND user_id = ANY($2::uuid[])
           RETURNING user_id
         `, [spaceId, userIds])
         
@@ -73,7 +73,7 @@ export async function POST(
         const activateResult = await query(`
           UPDATE space_members 
           SET is_active = true, updated_at = NOW()
-          WHERE space_id = $1 AND user_id = ANY($2::uuid[])
+          WHERE space_id = $1::uuid AND user_id = ANY($2::uuid[])
           RETURNING user_id
         `, [spaceId, userIds])
         
@@ -88,7 +88,7 @@ export async function POST(
         const deactivateResult = await query(`
           UPDATE space_members 
           SET is_active = false, updated_at = NOW()
-          WHERE space_id = $1 AND user_id = ANY($2::uuid[])
+          WHERE space_id = $1::uuid AND user_id = ANY($2::uuid[])
           RETURNING user_id
         `, [spaceId, userIds])
         
@@ -110,7 +110,7 @@ export async function POST(
             u.last_sign_in_at
           FROM space_members sm
           LEFT JOIN users u ON sm.user_id = u.id
-          WHERE sm.space_id = $1 AND sm.user_id = ANY($2::uuid[])
+          WHERE sm.space_id = $1::uuid AND sm.user_id = ANY($2::uuid[])
           ORDER BY u.name ASC
         `, [spaceId, userIds])
         
