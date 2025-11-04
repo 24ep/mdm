@@ -72,13 +72,22 @@ export function SQLCell({
       setSelectedDataModelId(cell.sqlConnection)
     }
   }, [cell.sqlConnection])
+  
   const lightEditorTheme = EditorView.theme({
-    '&': { backgroundColor: 'transparent' },
-    '.cm-scroller': { backgroundColor: 'transparent' },
-    '.cm-gutters': { backgroundColor: 'transparent', border: 'none' },
-    '.cm-activeLine, .cm-activeLineGutter': { backgroundColor: 'transparent' },
+    '&': { backgroundColor: '#f3f4f6' }, // light grey background
+    '.cm-scroller': { backgroundColor: '#f3f4f6' },
+    '.cm-gutters': { backgroundColor: '#f3f4f6', border: 'none' },
+    '.cm-activeLine, .cm-activeLineGutter': { backgroundColor: 'rgba(0, 0, 0, 0.03)' },
     '.cm-content': { fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace', fontSize: '0.9rem' }
   }, { dark: false })
+  
+  const darkEditorTheme = EditorView.theme({
+    '&': { backgroundColor: '#1f2937' }, // dark grey background
+    '.cm-scroller': { backgroundColor: '#1f2937' },
+    '.cm-gutters': { backgroundColor: '#1f2937', border: 'none' },
+    '.cm-activeLine, .cm-activeLineGutter': { backgroundColor: 'rgba(255, 255, 255, 0.05)' },
+    '.cm-content': { fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace', fontSize: '0.9rem' }
+  }, { dark: true })
 
   useEffect(() => {
     let isMounted = true
@@ -122,24 +131,48 @@ export function SQLCell({
           extensions={[
             ...languageExtensions, // Language extension first for syntax highlighting
             EditorView.lineWrapping,
+            EditorView.editable.of(canEdit),
             EditorView.theme({ 
               '&': { 
-                height: 'auto', 
-                minHeight: '120px', 
+                height: 'auto',
+                minHeight: '150px', // Minimum 5 rows: 5 * 21px (line height) + padding
                 fontSize: '14px',
                 fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-                backgroundColor: 'transparent'
+                backgroundColor: isDark ? '#1f2937' : '#f3f4f6', // light grey background
+                border: 'none',
+                outline: 'none'
               },
-              '.cm-scroller': { overflow: 'auto', maxHeight: '400px', backgroundColor: 'transparent' },
-              '.cm-content': { padding: '12px 16px', backgroundColor: 'transparent' },
+              '.cm-scroller': { 
+                overflow: 'auto', 
+                backgroundColor: isDark ? '#1f2937' : '#f3f4f6',
+                border: 'none'
+              },
+              '.cm-content': { 
+                padding: '12px 16px', 
+                backgroundColor: isDark ? '#1f2937' : '#f3f4f6',
+                cursor: canEdit ? 'text' : 'default'
+              },
               '.cm-gutters': { 
-                backgroundColor: 'transparent',
+                backgroundColor: isDark ? '#1f2937' : '#f3f4f6',
                 border: 'none',
                 paddingLeft: '12px'
               },
-              '.cm-editor.cm-focused': { outline: 'none' }
+              '.cm-editor.cm-focused': { outline: 'none', border: 'none' },
+              '.cm-editor': { border: 'none', outline: 'none' }
             }),
-            ...(isDark ? [oneDark] : [lightEditorTheme, syntaxHighlighting(HighlightStyle.define([
+            ...(isDark ? [darkEditorTheme, syntaxHighlighting(HighlightStyle.define([
+              { tag: tags.keyword, color: '#0077aa' },
+              { tag: tags.string, color: '#669900' },
+              { tag: tags.comment, color: '#999988', fontStyle: 'italic' },
+              { tag: tags.number, color: '#990055' },
+              { tag: tags.definition(tags.variableName), color: '#0077aa' },
+              { tag: tags.variableName, color: '#1a1a1a' },
+              { tag: tags.operator, color: '#a67f59' },
+              { tag: tags.typeName, color: '#0077aa' },
+              { tag: tags.propertyName, color: '#0077aa' },
+              { tag: tags.function(tags.variableName), color: '#6f42c1' },
+              { tag: tags.className, color: '#0077aa' },
+            ]))] : [lightEditorTheme, syntaxHighlighting(HighlightStyle.define([
               { tag: tags.keyword, color: '#0077aa' },
               { tag: tags.string, color: '#669900' },
               { tag: tags.comment, color: '#999988', fontStyle: 'italic' },
@@ -158,12 +191,27 @@ export function SQLCell({
             highlightActiveLineGutter: true,
             highlightActiveLine: true,
             foldGutter: true,
-            bracketMatching: true
+            bracketMatching: true,
+            closeBrackets: true,
+            autocompletion: true,
+            searchKeymap: true,
+            history: true,
+            indentOnInput: true,
+            defaultKeymap: true,
+            historyKeymap: true,
+            foldKeymap: true,
+            allowMultipleSelections: true,
+            rectangularSelection: true,
+            tabSize: 2
           }}
-          onChange={(val) => onContentChange(cell.id, val)}
+          onChange={(val) => {
+            if (canEdit) {
+              onContentChange(cell.id, val)
+            }
+          }}
           editable={canEdit}
-          className="w-full border-0 bg-transparent"
-          style={{ minHeight: 100 }}
+          className={isDark ? "w-full border-0 bg-gray-800" : "w-full border-0 bg-gray-100"}
+          style={{ minHeight: '150px', border: 'none', outline: 'none', pointerEvents: canEdit ? 'auto' : 'none' }}
           placeholder="SELECT * FROM table_name WHERE condition;"
           onFocus={() => onFocus(cell.id)}
         />
@@ -198,7 +246,7 @@ export function SQLCell({
                       e.stopPropagation()
                       setShowOutput(false)
                     }}
-                    className="h-6 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                    className="h-6 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 rounded-[10%]"
                   >
                     <EyeOff className="h-3 w-3 mr-1" />
                     Hide Result
@@ -259,7 +307,7 @@ export function SQLCell({
                   e.stopPropagation()
                   setShowOutput(true)
                 }}
-                className="h-6 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                className="h-6 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 rounded-[10%]"
               >
                 <Eye className="h-3 w-3 mr-1" />
                 Show Result

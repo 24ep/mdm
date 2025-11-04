@@ -75,120 +75,89 @@ export function FillSection({
   }
 
   return (
-    <div className="space-y-2 py-4 border-b">
-      <div className="flex items-center justify-between px-4">
-        <Label className="text-xs font-semibold">Fill</Label>
-        <div className="flex items-center gap-1">
-          <div 
-            className="w-5 h-5 flex items-center justify-center cursor-pointer hover:bg-muted rounded"
-            onClick={handleAdd}
-            title="Add Fill"
+    <div className="space-y-2 px-4 pb-3 border-b">
+      {/* Fill Color and Opacity - Always visible */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <ColorPickerPopover
+            value={effectiveBackgroundColor}
+            onChange={(color) => updateProperty('backgroundColor', color)}
+            allowImageVideo={true}
           >
-            <Plus className="h-3 w-3" />
-          </div>
-          <div 
-            className="w-5 h-5 flex items-center justify-center cursor-pointer hover:bg-muted rounded"
-            onClick={handleToggleVisibility}
-            title="Toggle Visibility"
-          >
-            <Eye className="h-3 w-3" />
-          </div>
-          <div 
-            className="w-5 h-5 flex items-center justify-center cursor-pointer hover:bg-muted rounded"
-            onClick={handleRemove}
-            title="Remove Fill"
-          >
-            <Minus className="h-3 w-3" />
-          </div>
+            <button
+              type="button"
+              className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+              style={{
+                backgroundColor: effectiveBackgroundColor.startsWith('#') || effectiveBackgroundColor.startsWith('rgb') 
+                  ? effectiveBackgroundColor 
+                  : effectiveBackgroundColor.startsWith('linear-gradient') || effectiveBackgroundColor.startsWith('radial-gradient')
+                  ? 'transparent'
+                  : effectiveBackgroundColor.startsWith('url(')
+                  ? 'transparent'
+                  : '#f6f6f6',
+                border: 'none',
+                outline: 'none',
+                backgroundImage: effectiveBackgroundColor.startsWith('linear-gradient') || effectiveBackgroundColor.startsWith('radial-gradient')
+                  ? effectiveBackgroundColor
+                  : effectiveBackgroundColor.startsWith('url(')
+                  ? effectiveBackgroundColor
+                  : 'none',
+                backgroundSize: effectiveBackgroundColor.startsWith('url(') ? 'cover' : 'auto'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </ColorPickerPopover>
+          <Input
+            type="text"
+            value={effectiveBackgroundColor}
+            onChange={(e) => updateProperty('backgroundColor', e.target.value)}
+            className="h-7 text-xs pl-7"
+            placeholder="#f6f6f6"
+          />
+          {!isBgColorGlobal && globalStyle && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5 p-0"
+              onClick={() => resetProperty('backgroundColor')}
+              title="Reset to global style"
+            >
+              <RotateCcw className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+        <div className="relative">
+          <Eye className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none z-10" />
+          <Input
+            type="number"
+            value={Math.round(fillOpacity * 100)}
+            onChange={(e) => {
+              const value = parseInt(e.target.value) || 0
+              const clampedValue = Math.max(0, Math.min(100, value))
+              updateProperty('fillOpacity', clampedValue / 100)
+            }}
+            min={0}
+            max={100}
+            className="h-7 text-xs w-20 pl-7 pr-10"
+            placeholder="100"
+          />
+          <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
+          {!isOpacityGlobal && globalStyle && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5 p-0"
+              onClick={() => {
+                resetProperty('fillOpacity')
+                resetProperty('opacity')
+              }}
+              title="Reset to global style"
+            >
+              <RotateCcw className="h-3 w-3" />
+            </Button>
+          )}
         </div>
       </div>
-
-      {/* Fill Color and Opacity */}
-      {showFill && (
-        <div className="px-4">
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <ColorPickerPopover
-                value={effectiveBackgroundColor}
-                onChange={(color) => updateProperty('backgroundColor', color)}
-                allowImageVideo={true}
-              >
-                <button
-                  type="button"
-                  className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                  style={{
-                    backgroundColor: effectiveBackgroundColor.startsWith('#') || effectiveBackgroundColor.startsWith('rgb') 
-                      ? effectiveBackgroundColor 
-                      : effectiveBackgroundColor.startsWith('linear-gradient') || effectiveBackgroundColor.startsWith('radial-gradient')
-                      ? 'transparent'
-                      : effectiveBackgroundColor.startsWith('url(')
-                      ? 'transparent'
-                      : '#f6f6f6',
-                    border: 'none',
-                    outline: 'none',
-                    backgroundImage: effectiveBackgroundColor.startsWith('linear-gradient') || effectiveBackgroundColor.startsWith('radial-gradient')
-                      ? effectiveBackgroundColor
-                      : effectiveBackgroundColor.startsWith('url(')
-                      ? effectiveBackgroundColor
-                      : 'none',
-                    backgroundSize: effectiveBackgroundColor.startsWith('url(') ? 'cover' : 'auto'
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </ColorPickerPopover>
-              <Input
-                type="text"
-                value={effectiveBackgroundColor}
-                onChange={(e) => updateProperty('backgroundColor', e.target.value)}
-                className="h-7 text-xs pl-7"
-                placeholder="#f6f6f6"
-              />
-              {!isBgColorGlobal && globalStyle && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5 p-0"
-                  onClick={() => resetProperty('backgroundColor')}
-                  title="Reset to global style"
-                >
-                  <RotateCcw className="h-3 w-3" />
-                </Button>
-              )}
-            </div>
-            <div className="relative">
-              <Eye className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none z-10" />
-              <Input
-                type="number"
-                value={Math.round(fillOpacity * 100)}
-                onChange={(e) => {
-                  const value = parseInt(e.target.value) || 0
-                  const clampedValue = Math.max(0, Math.min(100, value))
-                  updateProperty('fillOpacity', clampedValue / 100)
-                }}
-                min={0}
-                max={100}
-                className="h-7 text-xs w-20 pl-7 pr-10"
-                placeholder="100"
-              />
-              <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
-              {!isOpacityGlobal && globalStyle && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5 p-0"
-                  onClick={() => {
-                    resetProperty('fillOpacity')
-                    resetProperty('opacity')
-                  }}
-                  title="Reset to global style"
-                >
-                  <RotateCcw className="h-3 w-3" />
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

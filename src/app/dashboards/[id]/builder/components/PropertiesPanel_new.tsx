@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch'
 import { Slider } from '@/components/ui/slider'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Trash2, Database } from 'lucide-react'
+import { Plus, Trash2, Database, Hash, Calendar as CalendarIcon, Type as TypeIcon } from 'lucide-react'
 import { DashboardElement, DataSource } from '../hooks/useDashboardState'
 import { IconPicker } from './IconPicker'
 import ReactDOM from 'react-dom'
@@ -38,6 +38,27 @@ export function PropertiesPanel({
 }: PropertiesPanelProps) {
   const [availableFields, setAvailableFields] = React.useState<Array<{ name: string; type?: string }>>([])
   const selectedModelId = selectedElement?.data_config?.data_model_id || ''
+
+  const getTypeBadgeClass = (type?: string) => {
+    const t = (type || '').toLowerCase()
+    if (t.includes('int') || t.includes('num') || t.includes('dec') || t.includes('float') || t.includes('double')) {
+      return 'bg-amber-100 text-amber-800'
+    }
+    if (t.includes('date') || t.includes('time')) {
+      return 'bg-emerald-100 text-emerald-800'
+    }
+    if (t.includes('bool')) {
+      return 'bg-purple-100 text-purple-800'
+    }
+    return 'bg-gray-100 text-gray-700'
+  }
+
+  const getAttributeIcon = (type?: string) => {
+    const t = (type || '').toLowerCase()
+    if (t.includes('int') || t.includes('num') || t.includes('dec') || t.includes('float') || t.includes('double')) return Hash
+    if (t.includes('date') || t.includes('time')) return CalendarIcon
+    return TypeIcon
+  }
 
   React.useEffect(() => {
     let cancelled = false
@@ -141,27 +162,36 @@ export function PropertiesPanel({
                 <div className="space-y-2">
                   {(selectedElement.data_config?.dimensions || []).map((dim, idx) => (
                     <div key={idx} className="flex items-center gap-2">
-                      <Input
-                        value={dim}
-                        onChange={(e) => {
+                      <Select
+                        value={dim || ''}
+                        onValueChange={(value) => {
                           const newDims = [...(selectedElement.data_config?.dimensions || [])]
-                          newDims[idx] = e.target.value
+                          newDims[idx] = value
                           onUpdateElement(selectedElement.id, {
                             data_config: { ...selectedElement.data_config, dimensions: newDims }
                           })
                         }}
-                        placeholder="Column name"
-                        onDrop={(e) => {
-                          e.preventDefault()
-                          const fieldName = e.dataTransfer.getData('text/plain')
-                          const newDims = [...(selectedElement.data_config?.dimensions || [])]
-                          newDims[idx] = fieldName
-                          onUpdateElement(selectedElement.id, {
-                            data_config: { ...selectedElement.data_config, dimensions: newDims }
-                          })
-                        }}
-                        onDragOver={(e) => e.preventDefault()}
-                      />
+                      >
+                        <SelectTrigger className="h-8 text-xs flex-1">
+                          <SelectValue placeholder="Select column" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableFields.map((f) => {
+                            const Icon = getAttributeIcon(f.type)
+                            return (
+                              <SelectItem key={f.name} value={f.name}>
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                                    <span className="truncate">{f.name}</span>
+                                  </div>
+                                  <span className={`px-1.5 py-0.5 rounded text-[10px] ${getTypeBadgeClass(f.type)}`}>{f.type || 'text'}</span>
+                                </div>
+                              </SelectItem>
+                            )
+                          })}
+                        </SelectContent>
+                      </Select>
                       <Button
                         size="sm"
                         variant="outline"
@@ -195,39 +225,61 @@ export function PropertiesPanel({
               <>
                 <div>
                   <Label>Category</Label>
-                  <Input
+                  <Select
                     value={selectedElement.data_config?.dimensions?.[0] || ''}
-                    onChange={(e) => onUpdateElement(selectedElement.id, {
-                      data_config: { ...selectedElement.data_config, dimensions: [e.target.value] }
+                    onValueChange={(value) => onUpdateElement(selectedElement.id, {
+                      data_config: { ...selectedElement.data_config, dimensions: [value] }
                     })}
-                    placeholder="Category field"
-                    onDrop={(e) => {
-                      e.preventDefault()
-                      const fieldName = e.dataTransfer.getData('text/plain')
-                      onUpdateElement(selectedElement.id, {
-                        data_config: { ...selectedElement.data_config, dimensions: [fieldName] }
-                      })
-                    }}
-                    onDragOver={(e) => e.preventDefault()}
-                  />
+                  >
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Select category field" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableFields.map((f) => {
+                        const Icon = getAttributeIcon(f.type)
+                        return (
+                          <SelectItem key={f.name} value={f.name}>
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                                <span className="truncate">{f.name}</span>
+                              </div>
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] ${getTypeBadgeClass(f.type)}`}>{f.type || 'text'}</span>
+                            </div>
+                          </SelectItem>
+                        )
+                      })}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label>Value</Label>
-                  <Input
+                  <Select
                     value={selectedElement.data_config?.measures?.[0] || ''}
-                    onChange={(e) => onUpdateElement(selectedElement.id, {
-                      data_config: { ...selectedElement.data_config, measures: [e.target.value] }
+                    onValueChange={(value) => onUpdateElement(selectedElement.id, {
+                      data_config: { ...selectedElement.data_config, measures: [value] }
                     })}
-                    placeholder="Value field"
-                    onDrop={(e) => {
-                      e.preventDefault()
-                      const fieldName = e.dataTransfer.getData('text/plain')
-                      onUpdateElement(selectedElement.id, {
-                        data_config: { ...selectedElement.data_config, measures: [fieldName] }
-                      })
-                    }}
-                    onDragOver={(e) => e.preventDefault()}
-                  />
+                  >
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Select value field" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableFields.map((f) => {
+                        const Icon = getAttributeIcon(f.type)
+                        return (
+                          <SelectItem key={f.name} value={f.name}>
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                                <span className="truncate">{f.name}</span>
+                              </div>
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] ${getTypeBadgeClass(f.type)}`}>{f.type || 'text'}</span>
+                            </div>
+                          </SelectItem>
+                        )
+                      })}
+                    </SelectContent>
+                  </Select>
                 </div>
               </>
             ) : (
@@ -237,27 +289,36 @@ export function PropertiesPanel({
                   <div className="space-y-2">
                     {(selectedElement.data_config?.dimensions || []).map((dim, idx) => (
                       <div key={idx} className="flex items-center gap-2">
-                        <Input
-                          value={dim}
-                          onChange={(e) => {
+                        <Select
+                          value={dim || ''}
+                          onValueChange={(value) => {
                             const newDims = [...(selectedElement.data_config?.dimensions || [])]
-                            newDims[idx] = e.target.value
+                            newDims[idx] = value
                             onUpdateElement(selectedElement.id, {
                               data_config: { ...selectedElement.data_config, dimensions: newDims }
                             })
                           }}
-                          placeholder="Dimension field"
-                          onDrop={(e) => {
-                            e.preventDefault()
-                            const fieldName = e.dataTransfer.getData('text/plain')
-                            const newDims = [...(selectedElement.data_config?.dimensions || [])]
-                            newDims[idx] = fieldName
-                            onUpdateElement(selectedElement.id, {
-                              data_config: { ...selectedElement.data_config, dimensions: newDims }
-                            })
-                          }}
-                          onDragOver={(e) => e.preventDefault()}
-                        />
+                        >
+                          <SelectTrigger className="h-8 text-xs flex-1">
+                            <SelectValue placeholder="Select dimension" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableFields.map((f) => {
+                              const Icon = getAttributeIcon(f.type)
+                              return (
+                                <SelectItem key={f.name} value={f.name}>
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                                      <span className="truncate">{f.name}</span>
+                                    </div>
+                                    <span className={`px-1.5 py-0.5 rounded text-[10px] ${getTypeBadgeClass(f.type)}`}>{f.type || 'text'}</span>
+                                  </div>
+                                </SelectItem>
+                              )
+                            })}
+                          </SelectContent>
+                        </Select>
                         <Button
                           size="sm"
                           variant="outline"
@@ -292,27 +353,36 @@ export function PropertiesPanel({
                   <div className="space-y-2">
                     {(selectedElement.data_config?.measures || []).map((measure, idx) => (
                       <div key={idx} className="flex items-center gap-2">
-                        <Input
-                          value={measure}
-                          onChange={(e) => {
+                        <Select
+                          value={measure || ''}
+                          onValueChange={(value) => {
                             const newMeasures = [...(selectedElement.data_config?.measures || [])]
-                            newMeasures[idx] = e.target.value
+                            newMeasures[idx] = value
                             onUpdateElement(selectedElement.id, {
                               data_config: { ...selectedElement.data_config, measures: newMeasures }
                             })
                           }}
-                          placeholder="Measure field"
-                          onDrop={(e) => {
-                            e.preventDefault()
-                            const fieldName = e.dataTransfer.getData('text/plain')
-                            const newMeasures = [...(selectedElement.data_config?.measures || [])]
-                            newMeasures[idx] = fieldName
-                            onUpdateElement(selectedElement.id, {
-                              data_config: { ...selectedElement.data_config, measures: newMeasures }
-                            })
-                          }}
-                          onDragOver={(e) => e.preventDefault()}
-                        />
+                        >
+                          <SelectTrigger className="h-8 text-xs flex-1">
+                            <SelectValue placeholder="Select measure" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableFields.map((f) => {
+                              const Icon = getAttributeIcon(f.type)
+                              return (
+                                <SelectItem key={f.name} value={f.name}>
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                                      <span className="truncate">{f.name}</span>
+                                    </div>
+                                    <span className={`px-1.5 py-0.5 rounded text-[10px] ${getTypeBadgeClass(f.type)}`}>{f.type || 'text'}</span>
+                                  </div>
+                                </SelectItem>
+                              )
+                            })}
+                          </SelectContent>
+                        </Select>
                         <Button
                           size="sm"
                           variant="outline"

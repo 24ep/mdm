@@ -76,7 +76,12 @@ export function LookerStudioDataSource({
   spaceId,
 }: LookerStudioDataSourceProps) {
   const [dataModels, setDataModels] = useState<DataModel[]>([])
-  const [selectedModelId, setSelectedModelId] = useState<string>(widget.properties?.dataModelId || '')
+  const initialModelId = (widget.properties?.dataModelId 
+    || (widget.properties as any)?.data_model_id 
+    || (widget as any)?.data_config?.data_model_id 
+    || (widget as any)?.data_config?.dataModelId 
+    || '') as string
+  const [selectedModelId, setSelectedModelId] = useState<string>(initialModelId)
   const [attributes, setAttributes] = useState<Attribute[]>([])
   const [loadingAttributes, setLoadingAttributes] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -162,15 +167,49 @@ export function LookerStudioDataSource({
     loadAttributes()
   }, [selectedModelId])
 
-  // Update widget when model changes
+  // Update widget when model changes (mirror snake_case and camelCase)
   useEffect(() => {
-    if (selectedModelId && selectedModelId !== widget.properties?.dataModelId) {
-      updateProperty('dataModelId', selectedModelId)
-      updateProperty('dataSource', 'data-model')
-      updateProperty('dimensions', [])
-      updateProperty('measures', [])
+    if (selectedModelId && selectedModelId !== (widget.properties?.dataModelId || (widget.properties as any)?.data_model_id)) {
+      setPlacedWidgets(prev => prev.map(w => 
+        w.id === selectedWidgetId
+          ? {
+              ...w,
+              properties: {
+                ...w.properties,
+                dataModelId: selectedModelId,
+                // @ts-ignore legacy
+                data_model_id: selectedModelId,
+                dataSource: 'data-model',
+                dimensions: [],
+                measures: [],
+              },
+            }
+          : w
+      ))
     }
-  }, [selectedModelId, widget.properties?.dataModelId, updateProperty])
+  }, [selectedModelId, selectedWidgetId, setPlacedWidgets, widget.properties])
+
+  // Auto-select only model if exactly one
+  useEffect(() => {
+    if (!selectedModelId && dataModels.length === 1) {
+      const only = dataModels[0]
+      const modelId = (only as any).id || (only as any)._id || String(only)
+      setSelectedModelId(modelId)
+      setPlacedWidgets(prev => prev.map(w => 
+        w.id === selectedWidgetId
+          ? {
+              ...w,
+              properties: { 
+                ...w.properties, 
+                dataModelId: modelId, 
+                // @ts-ignore legacy
+                data_model_id: modelId 
+              }
+            }
+          : w
+      ))
+    }
+  }, [dataModels, selectedModelId, selectedWidgetId, setPlacedWidgets])
 
   const filteredAttributes = useMemo(() => {
     if (!searchQuery.trim()) return attributes
@@ -390,7 +429,10 @@ export function LookerStudioDataSource({
                         }}
                       >
                         <Icon className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                        <span className="flex-1 truncate">{attr.display_name || attr.name}</span>
+                    <span className="flex-1 truncate">{attr.display_name || attr.name}</span>
+                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200">
+                      {attr.type || 'text'}
+                    </span>
                         {isDim && (
                           <Badge variant="outline" className="h-4 px-1 text-[10px]">Dim</Badge>
                         )}
@@ -663,7 +705,12 @@ export function LookerStudioDataSource({
                               <SelectContent>
                                 {attributes.map(attr => (
                                   <SelectItem key={attr.id} value={attr.name}>
-                                    {attr.display_name || attr.name}
+                                    <div className="flex items-center justify-between gap-2">
+                                      <span className="truncate">{attr.display_name || attr.name}</span>
+                                      <span className="px-1.5 py-0.5 rounded text-[10px] bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200">
+                                        {attr.type || 'text'}
+                                      </span>
+                                    </div>
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -765,7 +812,12 @@ export function LookerStudioDataSource({
                               <SelectContent>
                                 {attributes.map(attr => (
                                   <SelectItem key={attr.id} value={attr.name}>
-                                    {attr.display_name || attr.name}
+                                    <div className="flex items-center justify-between gap-2">
+                                      <span className="truncate">{attr.display_name || attr.name}</span>
+                                      <span className="px-1.5 py-0.5 rounded text-[10px] bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200">
+                                        {attr.type || 'text'}
+                                      </span>
+                                    </div>
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -830,7 +882,12 @@ export function LookerStudioDataSource({
                               .filter(attr => attr.type.toLowerCase().includes('date'))
                               .map(attr => (
                                 <SelectItem key={attr.id} value={attr.name}>
-                                  {attr.display_name || attr.name}
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="truncate">{attr.display_name || attr.name}</span>
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200">
+                                      {attr.type || 'date'}
+                                    </span>
+                                  </div>
                                 </SelectItem>
                               ))}
                           </SelectContent>

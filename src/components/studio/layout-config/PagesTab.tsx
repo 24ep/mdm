@@ -3,7 +3,7 @@
 import React, { useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Plus, FileIcon, Minus, Tag, Type, Heading, Image } from 'lucide-react'
+import { Plus, FileIcon, Minus, Tag, Type, Heading, Image, Badge } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { SpacesEditorManager, SpacesEditorPage } from '@/lib/space-studio-manager'
 import { UnifiedPage } from './types'
@@ -14,6 +14,7 @@ import { LabelItem } from './LabelItem'
 import { TextItem } from './TextItem'
 import { HeaderItem } from './HeaderItem'
 import { ImageItem } from './ImageItem'
+import { BadgeItem } from './BadgeItem'
 import { PageListItem } from './PageListItem'
 import { SortablePageItem } from './SortablePageItem'
 import {
@@ -224,6 +225,20 @@ export function PagesTab({
               <Image className="mr-2 h-4 w-4" />
               <span>Image Logo</span>
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => {
+              const newBadge: UnifiedPage = {
+                id: `badge-${Date.now()}`,
+                name: 'Badge',
+                type: 'badge',
+                badgeText: 'New',
+                badgeColor: '#ef4444',
+              }
+              setAllPages((prev) => [...prev, newBadge])
+              toast.success('Badge added')
+            }}>
+              <Badge className="mr-2 h-4 w-4" />
+              <span>Badge</span>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -248,6 +263,7 @@ export function PagesTab({
                 const isText = page.type === 'text'
                 const isHeader = page.type === 'header'
                 const isImage = page.type === 'image'
+                const isBadge = page.type === 'badge'
                 
                 // Render separator
                 if (isSeparator) {
@@ -322,6 +338,23 @@ export function PagesTab({
                   return (
                     <SortablePageItem key={page.id} page={page} index={idx}>
                       <ImageItem
+                        page={page}
+                        index={idx}
+                        isMobileViewport={isMobileViewport}
+                        allPages={allPages}
+                        pages={pages}
+                        handlePageReorder={handlePageReorder}
+                        setAllPages={setAllPages}
+                      />
+                    </SortablePageItem>
+                  )
+                }
+                
+                // Render badge
+                if (isBadge) {
+                  return (
+                    <SortablePageItem key={page.id} page={page} index={idx}>
+                      <BadgeItem
                         page={page}
                         index={idx}
                         isMobileViewport={isMobileViewport}

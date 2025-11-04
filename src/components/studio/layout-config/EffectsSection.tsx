@@ -79,138 +79,29 @@ export function EffectsSection({
   }
 
   return (
-    <div className="space-y-2 py-4">
-      <div className="flex items-center justify-between px-4">
-        <Label className="text-xs font-semibold">Effects</Label>
-        <div className="flex items-center gap-1">
-          <div 
-            className="w-5 h-5 flex items-center justify-center cursor-pointer hover:bg-muted rounded"
-            onClick={handleAdd}
-            title="Add Effect"
-          >
-            <Plus className="h-3 w-3" />
-          </div>
-          <div 
-            className="w-5 h-5 flex items-center justify-center cursor-pointer hover:bg-muted rounded"
-            onClick={handleToggleVisibility}
-            title="Toggle Visibility"
-          >
-            <Eye className="h-3 w-3" />
-          </div>
-          <div 
-            className="w-5 h-5 flex items-center justify-center cursor-pointer hover:bg-muted rounded"
-            onClick={handleRemove}
-            title="Remove Effect"
-          >
-            <Minus className="h-3 w-3" />
-          </div>
-        </div>
-      </div>
-
-      {effectiveShadow ? (
-        <div className="space-y-2 px-4">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 w-7 p-0 flex-shrink-0 bg-gray-200 hover:bg-gray-300 rounded-[4px] mr-1"
-              onClick={() => updateProperty('shadow', false)}
-              title="Toggle Shadow"
-            >
-              <SquareWithShadow className={`h-4 w-4 ${effectiveShadow ? 'opacity-100' : 'opacity-50'}`} />
-            </Button>
-            <div className="flex-1 flex items-center gap-1">
-              <Select
-                value={shadowType}
-                onValueChange={(value) => updateProperty('shadowType', value)}
-              >
-                <SelectTrigger className="h-7 text-xs flex-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="drop-shadow">Drop Shadow</SelectItem>
-                  <SelectItem value="inner-shadow">Inner Shadow</SelectItem>
-                  <SelectItem value="glow">Glow</SelectItem>
-                </SelectContent>
-              </Select>
-              {!isShadowGlobal && globalStyle && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 w-7 p-0"
-                  onClick={() => resetProperty('shadow')}
-                  title="Reset to global style"
-                >
-                  <RotateCcw className="h-3 w-3" />
-                </Button>
-              )}
-            </div>
-          </div>
-          
-          {/* Shadow Properties */}
-          <div className="grid grid-cols-2 gap-2 pl-7">
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">X</Label>
-              <Input
-                type="number"
-                value={widget.properties?.shadowX || 0}
-                onChange={(e) => updateProperty('shadowX', parseInt(e.target.value) || 0)}
-                className="h-7 text-xs"
-                placeholder="0"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Y</Label>
-              <Input
-                type="number"
-                value={widget.properties?.shadowY || 0}
-                onChange={(e) => updateProperty('shadowY', parseInt(e.target.value) || 0)}
-                className="h-7 text-xs"
-                placeholder="0"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Blur</Label>
-              <Input
-                type="number"
-                value={widget.properties?.shadowBlur || 4}
-                onChange={(e) => updateProperty('shadowBlur', parseInt(e.target.value) || 4)}
-                className="h-7 text-xs"
-                placeholder="4"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Spread</Label>
-              <Input
-                type="number"
-                value={widget.properties?.shadowSpread || 0}
-                onChange={(e) => updateProperty('shadowSpread', parseInt(e.target.value) || 0)}
-                className="h-7 text-xs"
-                placeholder="0"
-              />
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="flex items-center gap-2 px-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 w-7 p-0 flex-shrink-0 bg-gray-200 hover:bg-gray-300 rounded-[4px] mr-1"
-            onClick={() => updateProperty('shadow', true)}
-            title="Toggle Shadow"
-          >
-            <SquareWithShadow className={`h-4 w-4 ${effectiveShadow ? 'opacity-100' : 'opacity-50'}`} />
-          </Button>
+    <div className="space-y-2 px-4 pb-3">
+      <div className="flex items-center gap-2 mb-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 w-7 p-0 flex-shrink-0 bg-gray-200 hover:bg-gray-300 rounded-[4px]"
+          onClick={() => updateProperty('shadow', !effectiveShadow)}
+          title="Toggle Shadow"
+        >
+          <SquareWithShadow className={`h-4 w-4 ${effectiveShadow ? 'opacity-100' : 'opacity-50'}`} />
+        </Button>
+        <div className="flex-1 flex items-center gap-1">
           <Select
             value={shadowType}
             onValueChange={(value) => {
-              updateProperty('shadow', true)
+              if (!effectiveShadow) {
+                updateProperty('shadow', true)
+              }
               updateProperty('shadowType', value)
             }}
           >
             <SelectTrigger className="h-7 text-xs flex-1">
-              <SelectValue placeholder="Drop shadow" />
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="drop-shadow">Drop Shadow</SelectItem>
@@ -218,6 +109,63 @@ export function EffectsSection({
               <SelectItem value="glow">Glow</SelectItem>
             </SelectContent>
           </Select>
+          {effectiveShadow && !isShadowGlobal && globalStyle && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0"
+              onClick={() => resetProperty('shadow')}
+              title="Reset to global style"
+            >
+              <RotateCcw className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+      </div>
+      
+      {/* Shadow Properties - Always visible */}
+      {effectiveShadow && (
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">X</Label>
+            <Input
+              type="number"
+              value={widget.properties?.shadowX || 0}
+              onChange={(e) => updateProperty('shadowX', parseInt(e.target.value) || 0)}
+              className="h-7 text-xs"
+              placeholder="0"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Y</Label>
+            <Input
+              type="number"
+              value={widget.properties?.shadowY || 0}
+              onChange={(e) => updateProperty('shadowY', parseInt(e.target.value) || 0)}
+              className="h-7 text-xs"
+              placeholder="0"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Blur</Label>
+            <Input
+              type="number"
+              value={widget.properties?.shadowBlur || 4}
+              onChange={(e) => updateProperty('shadowBlur', parseInt(e.target.value) || 4)}
+              className="h-7 text-xs"
+              placeholder="4"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Spread</Label>
+            <Input
+              type="number"
+              value={widget.properties?.shadowSpread || 0}
+              onChange={(e) => updateProperty('shadowSpread', parseInt(e.target.value) || 0)}
+              className="h-7 text-xs"
+              placeholder="0"
+            />
+          </div>
         </div>
       )}
     </div>

@@ -64,7 +64,7 @@ export type GlobalStyleConfig = {
 export type UnifiedPage = { 
   id: string
   name: string
-  type: 'built-in' | 'custom' | 'separator' | 'label' | 'text' | 'header' | 'image'
+  type: 'built-in' | 'custom' | 'separator' | 'label' | 'text' | 'header' | 'image' | 'badge'
   icon?: React.ComponentType<{ className?: string }>
   page?: SpacesEditorPage
   label?: string // For label type
@@ -72,6 +72,8 @@ export type UnifiedPage = {
   headerText?: string // For header type
   imageUrl?: string // For image type
   imageAlt?: string // For image type
+  badgeText?: string // For badge type
+  badgeColor?: string // For badge type
   sidebarPosition?: 'top' | 'bottom' // For pages in sidebar
   backgroundColor?: string // For page background color
 }

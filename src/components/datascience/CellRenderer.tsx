@@ -246,12 +246,21 @@ export function CellRenderer({
     
     // Light theme that preserves syntax highlighting colors
     const lightEditorTheme = EditorView.theme({
-      '&': { backgroundColor: 'transparent' },
-      '.cm-scroller': { backgroundColor: 'transparent' },
-      '.cm-gutters': { backgroundColor: 'transparent', border: 'none' },
+      '&': { backgroundColor: '#f3f4f6' }, // light grey background
+      '.cm-scroller': { backgroundColor: '#f3f4f6' },
+      '.cm-gutters': { backgroundColor: '#f3f4f6', border: 'none' },
       '.cm-activeLine, .cm-activeLineGutter': { backgroundColor: 'rgba(0, 0, 0, 0.03)' },
       '.cm-content': { fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace', fontSize: '0.9rem' },
     }, { dark: false })
+    
+    // Dark theme for code editor
+    const darkEditorTheme = EditorView.theme({
+      '&': { backgroundColor: '#1f2937' }, // dark grey background
+      '.cm-scroller': { backgroundColor: '#1f2937' },
+      '.cm-gutters': { backgroundColor: '#1f2937', border: 'none' },
+      '.cm-activeLine, .cm-activeLineGutter': { backgroundColor: 'rgba(255, 255, 255, 0.05)' },
+      '.cm-content': { fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace', fontSize: '0.9rem' },
+    }, { dark: true })
 
     return (
       <div className="relative">
@@ -262,25 +271,37 @@ export function CellRenderer({
           extensions={[
             ...codeLanguageExtensions, // Language extensions must come first for proper highlighting
             EditorView.lineWrapping,
+            EditorView.editable.of(canEdit),
             EditorView.theme({ 
               '&': { 
-                height: 'auto', 
-                minHeight: '120px',
+                height: 'auto',
+                minHeight: '150px', // Minimum 5 rows: 5 * 21px (line height) + padding
                 fontSize: '14px',
                 fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-                backgroundColor: 'transparent'
+                backgroundColor: isDark ? '#1f2937' : '#f3f4f6', // light grey background
+                border: 'none',
+                outline: 'none'
               },
-              '.cm-scroller': { overflow: 'visible', backgroundColor: 'transparent' },
-              '.cm-content': { padding: '12px 16px', backgroundColor: 'transparent' },
+              '.cm-scroller': { 
+                overflow: 'auto', 
+                backgroundColor: isDark ? '#1f2937' : '#f3f4f6',
+                border: 'none'
+              },
+              '.cm-content': { 
+                padding: '12px 16px', 
+                backgroundColor: isDark ? '#1f2937' : '#f3f4f6',
+                cursor: canEdit ? 'text' : 'default'
+              },
               '.cm-gutters': { 
-                backgroundColor: 'transparent',
+                backgroundColor: isDark ? '#1f2937' : '#f3f4f6',
                 border: 'none',
                 paddingLeft: '12px'
               },
               '.cm-line': { paddingLeft: '0' },
-              '.cm-editor.cm-focused': { outline: 'none' }
+              '.cm-editor.cm-focused': { outline: 'none', border: 'none' },
+              '.cm-editor': { border: 'none', outline: 'none' }
             }),
-            ...(isDark ? [oneDark] : [lightEditorTheme, syntaxHighlighting(lightHighlightStyle)])
+            ...(isDark ? [darkEditorTheme, syntaxHighlighting(lightHighlightStyle)] : [lightEditorTheme, syntaxHighlighting(lightHighlightStyle)])
           ]}
           basicSetup={{
             lineNumbers: true,
@@ -288,13 +309,26 @@ export function CellRenderer({
             highlightActiveLine: true,
             foldGutter: true,
             bracketMatching: true,
-            dropCursor: false,
-            allowMultipleSelections: true
+            closeBrackets: true,
+            autocompletion: true,
+            searchKeymap: true,
+            history: true,
+            indentOnInput: true,
+            defaultKeymap: true,
+            historyKeymap: true,
+            foldKeymap: true,
+            allowMultipleSelections: true,
+            rectangularSelection: true,
+            tabSize: 4
           }}
-          onChange={(val) => onContentChange(cell.id, val)}
+          onChange={(val) => {
+            if (canEdit) {
+              onContentChange(cell.id, val)
+            }
+          }}
           editable={canEdit}
-          className="bg-transparent"
-          style={{ border: 'none', outline: 'none', minHeight: 120 }}
+          className={isDark ? "bg-gray-800" : "bg-gray-100"}
+          style={{ border: 'none', outline: 'none', minHeight: '150px', pointerEvents: canEdit ? 'auto' : 'none' }}
         />
 
         {cell.output && showOutput && (
@@ -314,18 +348,55 @@ export function CellRenderer({
   }
 
   const renderMarkdownCell = () => {
+    // Best practice: Enhanced markdown rendering with proper escaping
+    const renderMarkdown = (content: string) => {
+      if (!content) return ''
+      
+      // Escape HTML to prevent XSS
+      const escapeHtml = (text: string) => {
+        const div = document.createElement('div')
+        div.textContent = text
+        return div.innerHTML
+      }
+      
+      let html = escapeHtml(content)
+      
+      // Best practice: Support common markdown patterns
+      // Headers
+      html = html.replace(/^# (.*)$/gm, '<h1 class="text-2xl font-bold mb-4 mt-4">$1</h1>')
+      html = html.replace(/^## (.*)$/gm, '<h2 class="text-xl font-semibold mb-3 mt-3">$1</h2>')
+      html = html.replace(/^### (.*)$/gm, '<h3 class="text-lg font-medium mb-2 mt-2">$1</h3>')
+      html = html.replace(/^#### (.*)$/gm, '<h4 class="text-base font-medium mb-2 mt-2">$1</h4>')
+      
+      // Bold and italic (order matters - do bold first)
+      html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
+      html = html.replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
+      
+      // Inline code
+      html = html.replace(/`([^`]+)`/g, '<code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-sm font-mono text-blue-600 dark:text-blue-400">$1</code>')
+      
+      // Code blocks (triple backticks)
+      html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre class="bg-gray-100 dark:bg-gray-800 p-3 rounded text-sm font-mono overflow-x-auto my-2"><code>$2</code></pre>')
+      
+      // Links
+      html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-600 dark:text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">$1</a>')
+      
+      // Lists (basic support)
+      html = html.replace(/^\- (.*)$/gm, '<li class="ml-4">$1</li>')
+      html = html.replace(/^(\d+)\. (.*)$/gm, '<li class="ml-4">$2</li>')
+      
+      // Line breaks
+      html = html.replace(/\n\n/g, '</p><p class="mb-2">')
+      html = html.replace(/\n/g, '<br>')
+      
+      return `<div class="markdown-content"><p class="mb-2">${html}</p></div>`
+    }
+    
     const rendered = (
       <div className="px-4 py-3 prose prose-sm max-w-none dark:prose-invert">
         <div
           dangerouslySetInnerHTML={{
-            __html: (cell.content || '')
-              .replace(/\n/g, '<br>')
-              .replace(/# (.*)/g, '<h1 class="text-2xl font-bold mb-4 mt-4">$1</h1>')
-              .replace(/## (.*)/g, '<h2 class="text-xl font-semibold mb-3 mt-3">$1</h2>')
-              .replace(/### (.*)/g, '<h3 class="text-lg font-medium mb-2 mt-2">$1</h3>')
-              .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
-              .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
-              .replace(/`(.*?)`/g, '<code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-sm font-mono">$1</code>')
+            __html: renderMarkdown(cell.content || '')
           }}
         />
       </div>
@@ -412,15 +483,12 @@ export function CellRenderer({
           ? "bg-transparent border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600" 
           : // Other cells: light grey background, no border
             "bg-gray-100 dark:bg-gray-800 border-0",
-        // Active state - blue left border indicator
-        isActive && cell.type !== 'markdown' && cell.type !== 'raw' ? "border-l-4 border-l-blue-500 dark:border-l-blue-400" : "",
+        // No left color indicators
+        "",
         // Selected state
         isSelected ? "ring-2 ring-blue-200 dark:ring-blue-800" : "",
-        // Status-based borders
-        cell.status === 'running' && cell.type !== 'markdown' && cell.type !== 'raw' ? "border-l-4 border-l-yellow-500 dark:border-l-yellow-400" : "",
-        cell.status === 'error' && cell.type !== 'markdown' && cell.type !== 'raw' ? "border-l-4 border-l-red-500 dark:border-l-red-400" : "",
-        // Executed cell - green border (when executionCount exists or status is success)
-        (cell.executionCount && !isActive && cell.type !== 'markdown' && cell.type !== 'raw') || (cell.status === 'success' && !isActive && cell.type !== 'markdown' && cell.type !== 'raw') ? "border-l-4 border-l-green-500 dark:border-l-green-400" : ""
+        // Remove status-based left borders
+        ""
       )}
       onClick={() => onFocus(cell.id)}
     >

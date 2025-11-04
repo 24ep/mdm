@@ -106,6 +106,72 @@ export function ChartRenderer({
     }
   }
 
+  // Helper to format attribute label with type (e.g., "Sales [number]")
+  const formatLabelWithType = (attrName: string, dimKey?: string): string => {
+    if (!config?.chartDimensionsEffectiveTypes || !attrName) return attrName
+    
+    // Try to find the type in any dimension
+    let effectiveType: string | undefined
+    if (dimKey && config.chartDimensionsEffectiveTypes[dimKey]?.[attrName]) {
+      effectiveType = config.chartDimensionsEffectiveTypes[dimKey][attrName]
+    } else {
+      // Search all dimensions for this attribute
+      for (const dim of Object.keys(config.chartDimensionsEffectiveTypes)) {
+        if (config.chartDimensionsEffectiveTypes[dim]?.[attrName]) {
+          effectiveType = config.chartDimensionsEffectiveTypes[dim][attrName]
+          break
+        }
+      }
+    }
+    
+    if (effectiveType) {
+      return `${attrName} [${effectiveType}]`
+    }
+    return attrName
+  }
+
+  // Number formatting function
+  const formatNumber = (value: number | string): string => {
+    if (value === null || value === undefined || value === '') return ''
+    
+    const num = typeof value === 'string' ? parseFloat(value) : value
+    if (isNaN(num)) return String(value)
+
+    const formatConfig = config?.numberFormat
+    if (!formatConfig || formatConfig.type === 'auto') {
+      return String(num)
+    }
+
+    const decimals = formatConfig.decimalPlaces ?? 2
+    const useSeparator = formatConfig.thousandsSeparator ?? true
+    
+    let formatted: string
+    
+    switch (formatConfig.type) {
+      case 'currency':
+        formatted = num.toFixed(decimals)
+        if (useSeparator) {
+          formatted = formatted.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+        }
+        return `${formatConfig.currencySymbol || '$'}${formatted}`
+      
+      case 'percentage':
+        formatted = (num * 100).toFixed(decimals)
+        return `${formatted}%`
+      
+      case 'scientific':
+        return num.toExponential(decimals)
+      
+      case 'number':
+      default:
+        formatted = num.toFixed(decimals)
+        if (useSeparator) {
+          formatted = formatted.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+        }
+        return formatted
+    }
+  }
+
   const renderChart = () => {
     // Use sample data if no real data is provided
     const chartData = data && data.length > 0 ? data : (() => {
@@ -168,7 +234,7 @@ export function ChartRenderer({
               <XAxis dataKey={dimensions[0] || 'name'} />
               <YAxis />
               <Tooltip />
-              <Legend />
+              <Legend formatter={(value) => formatLabelWithType(value)} />
               {measures.map((m, i) => (
                 <Bar key={m} dataKey={m} stackId="a" fill={COLORS[i % COLORS.length]} />
               ))}
@@ -184,7 +250,7 @@ export function ChartRenderer({
               <XAxis dataKey={dimensions[0] || 'name'} />
               <YAxis />
               <Tooltip />
-              <Legend />
+              <Legend formatter={(value) => formatLabelWithType(value)} />
               {measures.map((m, i) => (
                 <Bar key={m} dataKey={m} fill={COLORS[i % COLORS.length]} />
               ))}
@@ -200,7 +266,7 @@ export function ChartRenderer({
               <XAxis dataKey={dimensions[0] || 'name'} />
               <YAxis />
               <Tooltip />
-              <Legend />
+              <Legend formatter={(value) => formatLabelWithType(value)} />
               {measures[0] && <Bar dataKey={measures[0]} fill={COLORS[0]} />}
               {measures[1] && <Line dataKey={measures[1]} stroke={COLORS[1]} strokeWidth={2} />}
               {measures[2] && <Area dataKey={measures[2]} fill={COLORS[2]} stroke={COLORS[2]} fillOpacity={0.5} />}
@@ -213,16 +279,44 @@ export function ChartRenderer({
           <div className="w-full h-full bg-white overflow-hidden">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart {...commonProps}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey={dimensions[0] || 'name'} tick={{ fontSize: 12, fontFamily: 'Roboto, sans-serif' }} />
-                <YAxis tick={{ fontSize: 12, fontFamily: 'Roboto, sans-serif' }} />
-                <Tooltip contentStyle={{ fontFamily: 'Roboto, sans-serif', fontSize: '12px' }} />
-                <Legend wrapperStyle={{ fontFamily: 'Roboto, sans-serif', fontSize: '12px' }} />
+                {(config?.xAxis?.showGrid ?? config?.showGrid ?? true) && (
+                  <CartesianGrid strokeDasharray={config?.grid?.dash ?? '3 3'} stroke={config?.grid?.color ?? '#f0f0f0'} />
+                )}
+                <XAxis 
+                  dataKey={dimensions[0] || 'name'} 
+                  hide={config?.xAxis?.show === false}
+                  tick={{ fontSize: config?.xAxis?.tickFontSize ?? 12, fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fill: config?.xAxis?.tickColor }}
+                  label={config?.xAxis?.title ? { value: config?.xAxis?.title, position: 'insideBottom', offset: -5, style: { fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.xAxis?.titleFontSize ?? 12) + 'px', fill: config?.xAxis?.titleColor } } : undefined}
+                />
+                <YAxis 
+                  hide={config?.yAxis?.show === false}
+                  domain={config?.yAxis?.min !== undefined || config?.yAxis?.max !== undefined 
+                    ? [config?.yAxis?.min ?? 'dataMin', config?.yAxis?.max ?? 'dataMax']
+                    : undefined}
+                  tick={{ 
+                    fontSize: config?.yAxis?.tickFontSize ?? 12, 
+                    fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', 
+                    fill: config?.yAxis?.tickColor 
+                  }}
+                  tickFormatter={(value) => formatNumber(value)}
+                  label={config?.yAxis?.title ? { value: config?.yAxis?.title, angle: -90, position: 'insideLeft', style: { fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.yAxis?.titleFontSize ?? 12) + 'px', fill: config?.yAxis?.titleColor } } : undefined}
+                />
+                <Tooltip 
+                  contentStyle={{ fontFamily: config?.tooltip?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.tooltip?.fontSize ?? 12) + 'px' }}
+                  formatter={(value: any) => formatNumber(value)}
+                />
+                {(config?.legend?.show ?? config?.showLegend ?? true) && (
+                  <Legend 
+                    wrapperStyle={{ fontFamily: config?.legend?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.legend?.fontSize ?? 12) + 'px', color: config?.legend?.color }}
+                    formatter={(value) => formatLabelWithType(value)}
+                  />
+                )}
               {measures.map((measure, index) => (
                 <Bar
                   key={measure}
                   dataKey={measure}
-                  fill={COLORS[index % COLORS.length]}
+                  fill={(config?.series?.[measure]?.color) || COLORS[index % COLORS.length]}
+                  barSize={config?.series?.[measure]?.barSize}
                   onClick={handleDataPointClick}
                 />
               ))}
@@ -236,19 +330,46 @@ export function ChartRenderer({
           <div className="w-full h-full bg-white overflow-hidden">
             <ResponsiveContainer width="100%" height="100%">
             <LineChart {...commonProps}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey={dimensions[0] || 'name'} tick={{ fontSize: 12, fontFamily: 'Roboto, sans-serif' }} />
-                <YAxis tick={{ fontSize: 12, fontFamily: 'Roboto, sans-serif' }} />
-                <Tooltip contentStyle={{ fontFamily: 'Roboto, sans-serif', fontSize: '12px' }} />
-                <Legend wrapperStyle={{ fontFamily: 'Roboto, sans-serif', fontSize: '12px' }} />
+                {(config?.xAxis?.showGrid ?? config?.showGrid ?? true) && (
+                  <CartesianGrid strokeDasharray={config?.grid?.dash ?? '3 3'} stroke={config?.grid?.color ?? '#f0f0f0'} />
+                )}
+                <XAxis 
+                  dataKey={dimensions[0] || 'name'} 
+                  hide={config?.xAxis?.show === false}
+                  tick={{ fontSize: config?.xAxis?.tickFontSize ?? 12, fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fill: config?.xAxis?.tickColor }}
+                  label={config?.xAxis?.title ? { value: config?.xAxis?.title, position: 'insideBottom', offset: -5, style: { fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.xAxis?.titleFontSize ?? 12) + 'px', fill: config?.xAxis?.titleColor } } : undefined}
+                />
+                <YAxis 
+                  hide={config?.yAxis?.show === false}
+                  domain={config?.yAxis?.min !== undefined || config?.yAxis?.max !== undefined 
+                    ? [config?.yAxis?.min ?? 'dataMin', config?.yAxis?.max ?? 'dataMax']
+                    : undefined}
+                  tick={{ 
+                    fontSize: config?.yAxis?.tickFontSize ?? 12, 
+                    fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', 
+                    fill: config?.yAxis?.tickColor 
+                  }}
+                  tickFormatter={(value) => formatNumber(value)}
+                  label={config?.yAxis?.title ? { value: config?.yAxis?.title, angle: -90, position: 'insideLeft', style: { fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.yAxis?.titleFontSize ?? 12) + 'px', fill: config?.yAxis?.titleColor } } : undefined}
+                />
+                <Tooltip 
+                  contentStyle={{ fontFamily: config?.tooltip?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.tooltip?.fontSize ?? 12) + 'px' }}
+                  formatter={(value: any) => formatNumber(value)}
+                />
+                {(config?.legend?.show ?? config?.showLegend ?? true) && (
+                  <Legend 
+                    wrapperStyle={{ fontFamily: config?.legend?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.legend?.fontSize ?? 12) + 'px', color: config?.legend?.color }}
+                    formatter={(value) => formatLabelWithType(value)}
+                  />
+                )}
               {measures.map((measure, index) => (
                 <Line
                   key={measure}
                   type="monotone"
                   dataKey={measure}
-                  stroke={COLORS[index % COLORS.length]}
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
+                  stroke={(config?.series?.[measure]?.color) || COLORS[index % COLORS.length]}
+                  strokeWidth={config?.series?.[measure]?.strokeWidth || 2}
+                  dot={config?.series?.[measure]?.showDots === false ? false : { r: config?.series?.[measure]?.dotRadius || 4 }}
                   onClick={(e: any) => {/* noop or custom */}}
                 />
               ))}
@@ -265,15 +386,16 @@ export function ChartRenderer({
                 data={data}
                 cx="50%"
                 cy="50%"
-                labelLine={false}
-                label={({ name, percent }: any) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
-                outerRadius={80}
+                labelLine={config?.dataLabels?.showLine ?? false}
+                label={config?.dataLabels?.show !== false ? ({ name, percent }: any) => `${name} ${((percent || 0) * 100).toFixed(0)}%` : false}
+                outerRadius={config?.pie?.outerRadius || 80}
+                innerRadius={0}
                 fill="#8884d8"
                 dataKey={measures[0] || 'value'}
                 onClick={(e: any) => {/* noop or custom */}}
               >
                 {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell key={`cell-${index}`} fill={(config?.series?.colors?.[index]) || COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
               <Tooltip />
@@ -702,16 +824,16 @@ export function ChartRenderer({
                 data={data}
                 cx="50%"
                 cy="50%"
-                labelLine={false}
-                label={({ name, percent }: any) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
-                outerRadius={80}
-                innerRadius={40}
+                labelLine={config?.dataLabels?.showLine ?? false}
+                label={config?.dataLabels?.show !== false ? ({ name, percent }: any) => `${name} ${((percent || 0) * 100).toFixed(0)}%` : false}
+                outerRadius={config?.pie?.outerRadius || 80}
+                innerRadius={config?.pie?.innerRadius || 40}
                 fill="#8884d8"
                 dataKey={measures[0] || 'value'}
                 onClick={(e: any) => {/* noop or custom */}}
               >
                 {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell key={`cell-${index}`} fill={(config?.series?.colors?.[index]) || COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
               <Tooltip />
@@ -927,27 +1049,56 @@ export function ChartRenderer({
 
       case 'AREA':
         return (
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart {...commonProps}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={dimensions[0] || 'name'} />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              {measures.map((measure, index) => (
-                <Area
-                  key={measure}
-                  type="monotone"
-                  dataKey={measure}
-                  stackId="1"
-                  stroke={COLORS[index % COLORS.length]}
-                  fill={COLORS[index % COLORS.length]}
-                  fillOpacity={0.6}
-                  onClick={(e: any) => {/* noop or custom */}}
+          <div className="w-full h-full bg-white overflow-hidden">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart {...commonProps}>
+                {(config?.xAxis?.showGrid ?? config?.showGrid ?? true) && (
+                  <CartesianGrid strokeDasharray={config?.grid?.dash ?? '3 3'} stroke={config?.grid?.color ?? '#f0f0f0'} />
+                )}
+                <XAxis 
+                  dataKey={dimensions[0] || 'name'} 
+                  hide={config?.xAxis?.show === false}
+                  tick={{ fontSize: config?.xAxis?.tickFontSize ?? 12, fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fill: config?.xAxis?.tickColor }}
+                  label={config?.xAxis?.title ? { value: config?.xAxis?.title, position: 'insideBottom', offset: -5, style: { fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.xAxis?.titleFontSize ?? 12) + 'px', fill: config?.xAxis?.titleColor } } : undefined}
                 />
-              ))}
-            </AreaChart>
-          </ResponsiveContainer>
+                <YAxis 
+                  hide={config?.yAxis?.show === false}
+                  domain={config?.yAxis?.min !== undefined || config?.yAxis?.max !== undefined 
+                    ? [config?.yAxis?.min ?? 'dataMin', config?.yAxis?.max ?? 'dataMax']
+                    : undefined}
+                  tick={{ 
+                    fontSize: config?.yAxis?.tickFontSize ?? 12, 
+                    fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', 
+                    fill: config?.yAxis?.tickColor 
+                  }}
+                  tickFormatter={(value) => formatNumber(value)}
+                  label={config?.yAxis?.title ? { value: config?.yAxis?.title, angle: -90, position: 'insideLeft', style: { fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.yAxis?.titleFontSize ?? 12) + 'px', fill: config?.yAxis?.titleColor } } : undefined}
+                />
+                <Tooltip 
+                  contentStyle={{ fontFamily: config?.tooltip?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.tooltip?.fontSize ?? 12) + 'px' }}
+                  formatter={(value: any) => formatNumber(value)}
+                />
+                {(config?.legend?.show ?? config?.showLegend ?? true) && (
+                  <Legend 
+                    wrapperStyle={{ fontFamily: config?.legend?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.legend?.fontSize ?? 12) + 'px', color: config?.legend?.color }}
+                    formatter={(value) => formatLabelWithType(value)}
+                  />
+                )}
+                {measures.map((measure, index) => (
+                  <Area
+                    key={measure}
+                    type="monotone"
+                    dataKey={measure}
+                    stackId="1"
+                    stroke={(config?.series?.[measure]?.color) || COLORS[index % COLORS.length]}
+                    fill={(config?.series?.[measure]?.color) || COLORS[index % COLORS.length]}
+                    fillOpacity={config?.series?.[measure]?.fillOpacity || 0.6}
+                    onClick={(e: any) => {/* noop or custom */}}
+                  />
+                ))}
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         )
 
       case 'SCATTER':

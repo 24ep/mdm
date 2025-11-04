@@ -274,10 +274,39 @@ export function Preview({
                     )}
                     <div className={`${isMobile ? 'p-2' : 'p-4'} space-y-1`}>
                       {(() => {
-                        const visibleMenuItems: Array<{ label: string; id: string; icon?: React.ComponentType<{ className?: string }> }> = []
+                        const sidebarItems: Array<{ 
+                          type: 'page' | 'separator' | 'badge'
+                          label?: string
+                          id: string
+                          icon?: React.ComponentType<{ className?: string }>
+                          badgeText?: string
+                          badgeColor?: string
+                        }> = []
                         const menuItems = componentConfigs.sidebar.menuItems || {}
                         
+                        // Build sidebar items including separators and badges
                         allPages.forEach(unifiedPage => {
+                          // Always include separators
+                          if (unifiedPage.type === 'separator') {
+                            sidebarItems.push({
+                              type: 'separator',
+                              id: unifiedPage.id
+                            })
+                            return
+                          }
+                          
+                          // Always include badges
+                          if (unifiedPage.type === 'badge') {
+                            sidebarItems.push({
+                              type: 'badge',
+                              id: unifiedPage.id,
+                              badgeText: unifiedPage.badgeText,
+                              badgeColor: unifiedPage.badgeColor
+                            })
+                            return
+                          }
+                          
+                          // For pages, check visibility
                           const isBuiltIn = unifiedPage.type === 'built-in'
                           const menuKey = isBuiltIn ? getMenuItemKey(unifiedPage.id) : unifiedPage.id
                           
@@ -298,7 +327,8 @@ export function Preview({
                                 }
                               }
                               
-                              visibleMenuItems.push({
+                              sidebarItems.push({
+                                type: 'page',
                                 label: isBuiltIn 
                                   ? builtInPagesMap[unifiedPage.id]?.name || unifiedPage.name
                                   : (unifiedPage.page?.displayName || unifiedPage.page?.name || unifiedPage.name || 'Untitled Page'),
@@ -309,7 +339,36 @@ export function Preview({
                           }
                         })
                         
-                        if (visibleMenuItems.length === 0) {
+                        // Filter out separators at the start/end and consecutive separators
+                        // Only keep separators that are between visible pages
+                        // Badges are always shown
+                        const filteredItems = sidebarItems.filter((item, idx) => {
+                          // Badges are always shown
+                          if (item.type === 'badge') {
+                            return true
+                          }
+                          
+                          if (item.type === 'separator') {
+                            // Don't show separator if it's the first or last item
+                            if (idx === 0 || idx === sidebarItems.length - 1) {
+                              return false
+                            }
+                            // Don't show separator if previous or next item is also a separator
+                            const prevItem = sidebarItems[idx - 1]
+                            const nextItem = sidebarItems[idx + 1]
+                            if (prevItem?.type === 'separator' || nextItem?.type === 'separator') {
+                              return false
+                            }
+                            // Only show separator if there's a visible page before and after it
+                            if (prevItem?.type === 'page' && nextItem?.type === 'page') {
+                              return true
+                            }
+                            return false
+                          }
+                          return true
+                        })
+                        
+                        if (filteredItems.length === 0) {
                           return (
                             <div className={`${isMobile ? 'py-3' : 'py-4'} text-center`}>
                               <div className={`text-xs text-gray-400 italic`}>
@@ -319,7 +378,37 @@ export function Preview({
                           )
                         }
                         
-                        return visibleMenuItems.map((item, idx) => {
+                        return filteredItems.map((item, idx) => {
+                          // Render separator as actual line
+                          if (item.type === 'separator') {
+                            return (
+                              <div 
+                                key={item.id}
+                                className="my-2"
+                              >
+                                <div className="h-px bg-border" />
+                              </div>
+                            )
+                          }
+                          
+                          // Render badge
+                          if (item.type === 'badge') {
+                            return (
+                              <div 
+                                key={item.id}
+                                className="flex items-center justify-center my-2"
+                              >
+                                <div
+                                  className="px-2 py-0.5 rounded-full text-xs font-medium text-white"
+                                  style={{ backgroundColor: item.badgeColor || '#ef4444' }}
+                                >
+                                  {item.badgeText || 'New'}
+                                </div>
+                              </div>
+                            )
+                          }
+                          
+                          // Render page item
                           const Icon = item.icon || FileIcon
                           const isActive = selectedPageId === item.id || (selectedPageId === null && idx === 0)
                           return (

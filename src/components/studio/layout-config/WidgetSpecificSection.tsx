@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
-import { ChevronDown } from 'lucide-react'
+import { BarChart3 } from 'lucide-react'
 import { PlacedWidget } from './widgets'
+import { ChartConfigurationSection } from './ChartConfigurationSection'
 
 interface WidgetSpecificSectionProps {
   widget: PlacedWidget
@@ -42,117 +43,81 @@ export function WidgetSpecificSection({
   }
 
   const getSectionTitle = () => {
-    if (widget.type.includes('chart')) return 'Chart Settings'
-    if (widget.type.includes('table')) return 'Table Settings'
-    if (widget.type === 'text') return 'Text Settings'
-    if (widget.type === 'image') return 'Image Settings'
-    if (widget.type === 'video') return 'Video Settings'
-    if (widget.type === 'iframe') return 'Iframe Settings'
-    if (widget.type === 'link') return 'Link Settings'
-    if (widget.type === 'button') return 'Button Settings'
-    return 'Widget Settings'
+    if (widget.type.includes('chart')) return 'Chart style'
+    if (widget.type.includes('table')) return 'Table style'
+    if (widget.type === 'text') return 'Text style'
+    if (widget.type === 'image') return 'Image style'
+    if (widget.type === 'video') return 'Video style'
+    if (widget.type === 'iframe') return 'Iframe style'
+    if (widget.type === 'link') return 'Link style'
+    if (widget.type === 'button') return 'Button style'
+    return 'Widget style'
   }
 
-  // Determine if this is chart, UI element, or filter group
-  const isChart = widget.type.includes('chart')
-  const isUIElement = widget.type.includes('table') || widget.type === 'text' || widget.type === 'image' || widget.type === 'video' || widget.type === 'iframe' || widget.type === 'link' || widget.type === 'button' || widget.type === 'card' || widget.type === 'scorecard' || widget.type === 'time-series' || widget.type === 'pivot-table'
-  const isFilterGroup = widget.type.includes('filter')
-  
-  const shouldUseSpecialStyle = isChart || isUIElement || isFilterGroup
-
   return (
-    <AccordionItem value="widget-specific" className={shouldUseSpecialStyle ? "border-0" : "border-0"}>
-      <div className={shouldUseSpecialStyle ? "border-l border-gray-300" : ""}>
-        <AccordionTrigger 
-          className={`text-xs font-semibold py-2 px-4 ${shouldUseSpecialStyle ? 'bg-transparent hover:bg-transparent border-0 no-underline' : ''}`}
-          showCustomChevron={shouldUseSpecialStyle}
-        >
-          <span className="flex-1 text-left">{getSectionTitle()}</span>
-          {shouldUseSpecialStyle && <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 ml-auto" />}
-        </AccordionTrigger>
-        <AccordionContent className="px-4">
-        <div className="space-y-3">
-          {widget.type.includes('chart') && (
-            <>
-              <div className="space-y-1">
-                <Label className="text-xs">Title</Label>
-                <Input
-                  value={widget.properties?.title || ''}
-                  onChange={(e) => updateProperty('title', e.target.value)}
-                  placeholder="Chart Title"
-                  className="h-7 text-xs"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Chart Type</Label>
-                <Select
-                  value={widget.properties?.chartType || widget.type}
-                  onValueChange={(value) => updateProperty('chartType', value)}
-                >
-                  <SelectTrigger className="h-7 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="bar">Bar</SelectItem>
-                    <SelectItem value="line">Line</SelectItem>
-                    <SelectItem value="area">Area</SelectItem>
-                    <SelectItem value="pie">Pie</SelectItem>
-                    <SelectItem value="donut">Donut</SelectItem>
-                    <SelectItem value="scatter">Scatter</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center justify-between">
-                <Label className="text-xs">Show Legend</Label>
-                <Switch
-                  checked={widget.properties?.showLegend ?? true}
-                  onCheckedChange={(checked) => updateProperty('showLegend', checked)}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label className="text-xs">Show Grid</Label>
-                <Switch
-                  checked={widget.properties?.showGrid ?? true}
-                  onCheckedChange={(checked) => updateProperty('showGrid', checked)}
-                />
-              </div>
-            </>
-          )}
-
-          {widget.type.includes('table') && (
-            <>
-              <div className="flex items-center justify-between">
-                <Label className="text-xs">Show Header</Label>
-                <Switch
-                  checked={widget.properties?.showHeader ?? true}
-                  onCheckedChange={(checked) => updateProperty('showHeader', checked)}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label className="text-xs">Striped Rows</Label>
-                <Switch
-                  checked={widget.properties?.stripedRows ?? false}
-                  onCheckedChange={(checked) => updateProperty('stripedRows', checked)}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label className="text-xs">Pagination</Label>
-                <Switch
-                  checked={widget.properties?.pagination ?? false}
-                  onCheckedChange={(checked) => updateProperty('pagination', checked)}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Rows Per Page</Label>
-                <Input
-                  type="number"
-                  value={widget.properties?.rowsPerPage || 10}
-                  onChange={(e) => updateProperty('rowsPerPage', parseInt(e.target.value) || 10)}
-                  className="h-7 text-xs"
-                />
-              </div>
-            </>
-          )}
+    <AccordionItem value="widget-specific" className="border-0">
+      <AccordionTrigger className="text-xs font-semibold py-2 px-4 hover:no-underline">
+        <div className="flex items-center gap-2 flex-1">
+          <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
+          <span>{getSectionTitle()}</span>
+        </div>
+      </AccordionTrigger>
+      <AccordionContent className="px-0 pt-2">
+        {widget.type.includes('chart') ? (
+          <ChartConfigurationSection
+            widget={widget}
+            selectedWidgetId={selectedWidgetId}
+            setPlacedWidgets={setPlacedWidgets}
+          />
+        ) : (
+          <div className="px-4 pb-3 space-y-3">
+              {widget.type.includes('table') && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-xs font-medium">Show header</Label>
+                      <p className="text-xs text-muted-foreground">Display table header row</p>
+                    </div>
+                    <Switch
+                      checked={widget.properties?.showHeader ?? true}
+                      onCheckedChange={(checked) => updateProperty('showHeader', checked)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-xs font-medium">Striped rows</Label>
+                      <p className="text-xs text-muted-foreground">Alternating row colors</p>
+                    </div>
+                    <Switch
+                      checked={widget.properties?.stripedRows ?? false}
+                      onCheckedChange={(checked) => updateProperty('stripedRows', checked)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-xs font-medium">Pagination</Label>
+                      <p className="text-xs text-muted-foreground">Enable pagination</p>
+                    </div>
+                    <Switch
+                      checked={widget.properties?.pagination ?? false}
+                      onCheckedChange={(checked) => updateProperty('pagination', checked)}
+                    />
+                  </div>
+                  {widget.properties?.pagination && (
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium">Rows per page</Label>
+                      <Input
+                        type="number"
+                        value={widget.properties?.rowsPerPage || 10}
+                        onChange={(e) => updateProperty('rowsPerPage', parseInt(e.target.value) || 10)}
+                        className="h-7 text-xs"
+                        min="5"
+                        max="100"
+                      />
+                    </div>
+                  )}
+                </>
+              )}
 
           {widget.type === 'text' && (
             <div className="space-y-1">
@@ -333,9 +298,9 @@ export function WidgetSpecificSection({
               </div>
             </>
           )}
-        </div>
-        </AccordionContent>
-      </div>
+          </div>
+        )}
+      </AccordionContent>
     </AccordionItem>
   )
 }
