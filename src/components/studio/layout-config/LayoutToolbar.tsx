@@ -148,13 +148,13 @@ export function LayoutToolbar({
           {/* View Grid Dropdown */}
           <Select value={showGrid ? 'on' : 'off'} onValueChange={(value) => setShowGrid(value === 'on')}>
             <SelectTrigger className={`${isMobileViewport ? 'h-10 w-full' : 'h-8 px-3'} ${showGrid ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700' : ''}`}>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 whitespace-nowrap">
                 {showGrid ? (
                   <Eye className={isMobileViewport ? "h-5 w-5" : "h-4 w-4"} />
                 ) : (
                   <EyeOff className={isMobileViewport ? "h-5 w-5" : "h-4 w-4"} />
                 )}
-                <span className={isMobileViewport ? "text-sm" : "text-xs"}>View Grid</span>
+                <span className={`${isMobileViewport ? 'text-sm' : 'text-xs'} whitespace-nowrap`}>View Grid</span>
               </div>
             </SelectTrigger>
             <SelectContent>

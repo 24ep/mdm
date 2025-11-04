@@ -18,7 +18,8 @@
     "upgrade-user": "node scripts/upgrade-user-role.js",
     "check-db": "node scripts/check-db-and-create-user.js",
     "init-default-space": "node scripts/ensure-default-space.js",
-    "migrate-to-spaces": "node scripts/migrate-existing-data-to-default-space.js"
+    "migrate-to-spaces": "node scripts/migrate-existing-data-to-default-space.js",
+    "setup:remote": "node scripts/setup-remote-server.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.913.0",

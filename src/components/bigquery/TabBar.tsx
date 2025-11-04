@@ -31,9 +31,9 @@ export function TabBar({
         {tabs.map((tab) => (
           <div
             key={tab.id}
-            className={`flex items-center gap-2 px-3 py-2 text-sm border-b-2 cursor-pointer ${
+            className={`flex items-center gap-2 px-3 py-3 text-sm border-b-[3px] cursor-pointer ${
               tab.id === activeTabId
-                ? 'border-blue-500 text-blue-600 bg-blue-50'
+                ? 'border-black text-black'
                 : 'border-transparent text-gray-600 hover:text-gray-900'
             }`}
             onClick={() => onTabChange(tab.id)}

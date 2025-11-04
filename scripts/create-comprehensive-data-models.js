@@ -68,8 +68,10 @@ async function createComprehensiveDataModels() {
         ON CONFLICT (space_id, user_id) DO NOTHING
       `, [customerSpace.id, adminUser.id])
       console.log(`✅ Added admin user as member of the space`)
-    } else {
-      // Ensure admin user is a member even if space already exists
+    }
+
+    // Ensure admin user is a member when space already exists
+    if (spaceCheckResult.rows.length > 0) {
       const memberCheck = await client.query(`
         SELECT 1 FROM public.space_members 
         WHERE space_id = $1 AND user_id = $2

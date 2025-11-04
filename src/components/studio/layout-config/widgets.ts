@@ -1,4 +1,4 @@
-import { BarChart3, LineChart, PieChart, AreaChart, TrendingUp, Grid, Square, CreditCard, Table as TableIcon, Image, Video, Calendar, Map, Gauge, Target, Circle, Type, Rectangle, Triangle, Hexagon, Frame, Link2, FileText, Box, Filter, ListFilter, Search, SlidersHorizontal, ToggleLeft, CheckSquare, ChevronDown, Hash } from 'lucide-react'
+import { BarChart3, LineChart, PieChart, AreaChart, TrendingUp, Grid, Square, CreditCard, Table as TableIcon, Image, Video, Calendar, Map, Gauge, Target, Circle, Type, Rectangle, Triangle, Hexagon, Frame, Link2, FileText, Box, Filter, ListFilter, Search, SlidersHorizontal, ToggleLeft, CheckSquare, ChevronDown, Hash, User, Tag, Bell, MessageSquare, Columns, List, Clock, Star, QrCode, MoreHorizontal, ChevronsRight } from 'lucide-react'
 
 export const widgetsPalette = [
   // Charts (merged Power BI and Basic Charts)
@@ -40,6 +40,34 @@ export const widgetsPalette = [
   { type: 'map', label: 'Map', icon: Map, category: 'UI Elements' },
   { type: 'html', label: 'HTML', icon: FileText, category: 'UI Elements' },
   { type: 'embed', label: 'Embed', icon: Frame, category: 'UI Elements' },
+  // Data / KPI & Progress
+  { type: 'kpi', label: 'KPI / Stat', icon: TrendingUp, category: 'UI Elements' },
+  { type: 'progress', label: 'Progress', icon: Circle, category: 'UI Elements' },
+  { type: 'progress-circular', label: 'Progress (Circular)', icon: Circle, category: 'UI Elements' },
+  // Navigation / structure
+  { type: 'tabs', label: 'Tabs', icon: MoreHorizontal, category: 'UI Elements' },
+  { type: 'accordion', label: 'Accordion', icon: List, category: 'UI Elements' },
+  { type: 'breadcrumbs', label: 'Breadcrumbs', icon: ChevronsRight, category: 'UI Elements' },
+  { type: 'pagination', label: 'Pagination', icon: MoreHorizontal, category: 'UI Elements' },
+  { type: 'stepper', label: 'Stepper', icon: Hash, category: 'UI Elements' },
+  // Feedback / overlays
+  { type: 'modal', label: 'Modal/Dialog', icon: Square, category: 'UI Elements' },
+  { type: 'drawer', label: 'Drawer/Sheet', icon: Columns, category: 'UI Elements' },
+  { type: 'tooltip', label: 'Tooltip', icon: MessageSquare, category: 'UI Elements' },
+  { type: 'toast', label: 'Toast/Notification', icon: Bell, category: 'UI Elements' },
+  { type: 'badge', label: 'Badge/Chip', icon: Tag, category: 'UI Elements' },
+  // Lists and boards
+  { type: 'list', label: 'List', icon: List, category: 'UI Elements' },
+  { type: 'timeline', label: 'Timeline', icon: Clock, category: 'UI Elements' },
+  { type: 'kanban', label: 'Kanban Board', icon: Columns, category: 'UI Elements' },
+  // Inputs (non-filter)
+  { type: 'toggle', label: 'Toggle', icon: ToggleLeft, category: 'UI Elements' },
+  { type: 'radio-group', label: 'Radio Group', icon: Circle, category: 'UI Elements' },
+  // Media / utility
+  { type: 'avatar', label: 'Avatar', icon: User, category: 'UI Elements' },
+  { type: 'icon', label: 'Icon', icon: Star, category: 'UI Elements' },
+  { type: 'qr', label: 'QR Code', icon: QrCode, category: 'UI Elements' },
+  { type: 'rating', label: 'Rating', icon: Star, category: 'UI Elements' },
   // Filters
   { type: 'text-filter', label: 'Text Filter', icon: Search, category: 'Filters' },
   { type: 'number-filter', label: 'Number Filter', icon: Hash, category: 'Filters' },

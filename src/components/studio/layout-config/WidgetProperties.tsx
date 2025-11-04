@@ -17,6 +17,9 @@ import { EffectsSection } from './EffectsSection'
 import { DataSourceSection } from './DataSourceSection'
 import { WidgetSpecificSection } from './WidgetSpecificSection'
 import { OtherPropertiesSection } from './OtherPropertiesSection'
+import { HeaderSection } from './HeaderSection'
+import { TextSection } from './TextSection'
+import { SpacingSection } from './SpacingSection'
 
 interface WidgetPropertiesProps {
   widget: PlacedWidget
@@ -82,7 +85,7 @@ export function WidgetProperties({
 
         {needsDataSource && (
           <TabsContent value="datasource" className="mt-0 overflow-visible">
-            <Accordion type="multiple" defaultValue={['datasource']} className="w-full overflow-visible">
+            <Accordion type="single" collapsible defaultValue={'datasource'} className="w-full overflow-visible">
               <DataSourceSection
                 widget={widget}
                 selectedWidgetId={selectedWidgetId}
@@ -94,7 +97,30 @@ export function WidgetProperties({
         )}
 
         <TabsContent value="properties" className="mt-0">
-          <Accordion type="multiple" defaultValue={widget.type.includes('chart') ? ['chart-style', 'background', 'title'] : ['general', 'background', 'border']} className="w-full">
+          <Accordion 
+            type="single" 
+            collapsible 
+            defaultValue={widget.type.includes('chart') ? 'chart-style' : (widget.type === 'text' ? 'text' : 'layout')} 
+            className="w-full"
+          >
+            {/* Text-specific section (replaces Header) */}
+            {widget.type === 'text' && (
+              <AccordionItem value="text" className="border-0">
+                <AccordionTrigger className="text-xs font-semibold py-2 px-4 hover:no-underline">
+                  <div className="flex items-center gap-2 flex-1">
+                    <Settings className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span>Text</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-0 pt-2">
+                  <TextSection
+                    widget={widget}
+                    selectedWidgetId={selectedWidgetId}
+                    setPlacedWidgets={setPlacedWidgets}
+                  />
+                </AccordionContent>
+              </AccordionItem>
+            )}
             {/* Chart Style - Only for charts (Chart type, Series, etc.) */}
             {widget.type.includes('chart') && (
               <WidgetSpecificSection
@@ -104,22 +130,18 @@ export function WidgetProperties({
               />
             )}
 
-            {/* General Properties - Position, Layout, etc. - Available for all widgets */}
-            <AccordionItem value="general" className="border-0">
+            
+
+            {/* Layout - standalone group */}
+            <AccordionItem value="layout" className="border-0">
               <AccordionTrigger className="text-xs font-semibold py-2 px-4 hover:no-underline">
                 <div className="flex items-center gap-2 flex-1">
                   <Settings className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span>General</span>
+                  <span>Layout</span>
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-0 pt-2">
                 <div className="space-y-0">
-                  <PositionSection
-                    widget={widget}
-                    selectedWidgetId={selectedWidgetId}
-                    setPlacedWidgets={setPlacedWidgets}
-                  />
-                  
                   <LayoutSection
                     widget={widget}
                     selectedWidgetId={selectedWidgetId}
@@ -129,7 +151,7 @@ export function WidgetProperties({
               </AccordionContent>
             </AccordionItem>
 
-            {/* Background - Looker Studio style */}
+            {/* Background */}
             <AccordionItem value="background" className="border-0">
               <AccordionTrigger className="text-xs font-semibold py-2 px-4 hover:no-underline">
                 <div className="flex items-center gap-2 flex-1">
@@ -145,7 +167,20 @@ export function WidgetProperties({
                     setPlacedWidgets={setPlacedWidgets}
                     globalStyle={componentStyle}
                   />
-                  
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Appearance */}
+            <AccordionItem value="appearance" className="border-0">
+              <AccordionTrigger className="text-xs font-semibold py-2 px-4 hover:no-underline">
+                <div className="flex items-center gap-2 flex-1">
+                  <Square className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span>Appearance</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-0 pt-2">
+                <div className="space-y-0">
                   <AppearanceSection
                     widget={widget}
                     selectedWidgetId={selectedWidgetId}
@@ -153,6 +188,23 @@ export function WidgetProperties({
                     globalStyle={componentStyle}
                   />
                 </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Spacing */}
+            <AccordionItem value="spacing" className="border-0">
+              <AccordionTrigger className="text-xs font-semibold py-2 px-4 hover:no-underline">
+                <div className="flex items-center gap-2 flex-1">
+                  <Settings className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span>Spacing</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-0 pt-2">
+                <SpacingSection
+                  widget={widget}
+                  selectedWidgetId={selectedWidgetId}
+                  setPlacedWidgets={setPlacedWidgets}
+                />
               </AccordionContent>
             </AccordionItem>
 
@@ -176,12 +228,12 @@ export function WidgetProperties({
               </AccordionContent>
             </AccordionItem>
 
-            {/* Effects - Looker Studio style (Shadows, etc.) */}
+            {/* Shadow */}
             <AccordionItem value="effects" className="border-0">
               <AccordionTrigger className="text-xs font-semibold py-2 px-4 hover:no-underline">
                 <div className="flex items-center gap-2 flex-1">
                   <Layers className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span>Effects</span>
+                  <span>Shadow</span>
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-0 pt-2">
@@ -204,6 +256,25 @@ export function WidgetProperties({
                 setPlacedWidgets={setPlacedWidgets}
               />
             )}
+
+            {/* Position - moved to bottom, just above Other */}
+            <AccordionItem value="position" className="border-0">
+              <AccordionTrigger className="text-xs font-semibold py-2 px-4 hover:no-underline">
+                <div className="flex items-center gap-2 flex-1">
+                  <Settings className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span>Position</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-0 pt-2">
+                <div className="space-y-0">
+                  <PositionSection
+                    widget={widget}
+                    selectedWidgetId={selectedWidgetId}
+                    setPlacedWidgets={setPlacedWidgets}
+                  />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
 
             {/* Other Properties - Moved to bottom */}
             <AccordionItem value="other" className="border-0">

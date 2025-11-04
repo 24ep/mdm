@@ -152,8 +152,11 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
   useEffect(() => {
     let mounted = true
     ;(async () => {
-      // First, apply preset if initialLayoutName is provided
-      if (initialLayoutName && layoutPresets[initialLayoutName]) {
+      // Determine if initialLayoutName corresponds to a preset
+      const hasPreset = !!(initialLayoutName && layoutPresets[initialLayoutName])
+
+      // First, apply preset if initialLayoutName matches a preset
+      if (hasPreset) {
         const preset = layoutPresets[initialLayoutName]
         if (mounted) {
           setComponentConfigs((prev) => {
@@ -173,7 +176,8 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
       
       try {
         const saved = await SpacesEditorManager.getLayoutConfig(spaceId)
-        if (saved && mounted && !initialLayoutName) {
+        // Load saved config when no preset is being applied
+        if (saved && mounted && !hasPreset) {
           setComponentConfigs((prev) => ({ ...prev, ...saved }))
           const name = (saved && (saved.name || saved.title || saved.meta?.name)) || null
           if (name) setLayoutName(name as string)
@@ -327,10 +331,14 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
         }
       }))
       
-      // Create a map for quick lookup
+      // Include special items (separator/label/text/header/image/badge) from current allPages
+      const specialItems = allPages.filter(p => !['built-in','custom'].includes(p.type))
+      
+      // Create a map for quick lookup (built-in + custom + specials)
       const allPagesMap = new Map<string, UnifiedPage>()
       builtInPagesList.forEach(p => allPagesMap.set(p.id, p))
       customPagesWithIcons.forEach(p => allPagesMap.set(p.id, p))
+      specialItems.forEach(p => allPagesMap.set(p.id, p))
       
       // If we have a stored page order, use it; otherwise, use default order
       const currentOrder = pageOrderRef.current
@@ -348,8 +356,8 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
           }
         })
         
-        // Then, add any new pages not in the order (separators, labels, etc., or newly created pages)
-        const allExistingPages = builtInPagesList.concat(customPagesWithIcons)
+        // Then, add any new items not in the order (including specials)
+        const allExistingPages = builtInPagesList.concat(customPagesWithIcons, specialItems)
         allExistingPages.forEach((page: UnifiedPage) => {
           if (!seenIds.has(page.id)) {
             orderedPages.push(page)
@@ -358,8 +366,8 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
         
         setAllPages(orderedPages)
       } else {
-        // Initial load: use default order but store it
-        const defaultOrder = builtInPagesList.concat(customPagesWithIcons)
+        // Initial load: use default order (include specials if already present) and store it
+        const defaultOrder = builtInPagesList.concat(customPagesWithIcons, specialItems)
         setAllPages(defaultOrder)
         const defaultOrderIds = defaultOrder.map(p => p.id)
         setPageOrder(defaultOrderIds)

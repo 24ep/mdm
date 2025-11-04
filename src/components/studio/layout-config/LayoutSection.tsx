@@ -18,9 +18,18 @@ export function LayoutSection({
   setPlacedWidgets,
 }: LayoutSectionProps) {
   const [aspectRatioLocked, setAspectRatioLocked] = React.useState(false)
+  const ratioRef = React.useRef<number>(
+    Math.max(0.0001, (widget.width || 200) / (widget.height || 150))
+  )
+
+  const updateSize = (next: { width?: number; height?: number }) => {
+    setPlacedWidgets(prev => prev.map(w =>
+      w.id === selectedWidgetId ? { ...w, ...next } : w
+    ))
+  }
 
   return (
-    <div className="space-y-2 py-4 border-b ">
+    <div className="space-y-2 py-4 ">
       <Label className="text-xs font-semibold px-4">Layout</Label>
       
       {/* Width/Height */}
@@ -32,9 +41,12 @@ export function LayoutSection({
             value={widget.width || 200}
             onChange={(e) => {
               const newWidth = parseInt(e.target.value) || 200
-              setPlacedWidgets(prev => prev.map(w => 
-                w.id === selectedWidgetId ? { ...w, width: newWidth } : w
-              ))
+              if (aspectRatioLocked) {
+                const newHeight = Math.max(1, Math.round(newWidth / ratioRef.current))
+                updateSize({ width: newWidth, height: newHeight })
+              } else {
+                updateSize({ width: newWidth })
+              }
             }}
             className="h-7 text-xs pl-6"
           />
@@ -47,15 +59,26 @@ export function LayoutSection({
               value={widget.height || 150}
               onChange={(e) => {
                 const newHeight = parseInt(e.target.value) || 150
-                setPlacedWidgets(prev => prev.map(w => 
-                  w.id === selectedWidgetId ? { ...w, height: newHeight } : w
-                ))
+                if (aspectRatioLocked) {
+                  const newWidth = Math.max(1, Math.round(newHeight * ratioRef.current))
+                  updateSize({ width: newWidth, height: newHeight })
+                } else {
+                  updateSize({ height: newHeight })
+                }
               }}
               className="h-7 text-xs flex-1 pl-6"
             />
             <div 
               className={`flex items-center justify-center w-7 h-7 border rounded cursor-pointer hover:bg-muted ${aspectRatioLocked ? 'bg-muted' : ''}`}
-              onClick={() => setAspectRatioLocked(!aspectRatioLocked)}
+              onClick={() => {
+                const next = !aspectRatioLocked
+                if (next) {
+                  const w = widget.width || 200
+                  const h = widget.height || 150
+                  ratioRef.current = Math.max(0.0001, w / h)
+                }
+                setAspectRatioLocked(next)
+              }}
             >
               <Link className={`h-3.5 w-3.5 ${aspectRatioLocked ? 'text-primary' : 'text-muted-foreground'}`} />
             </div>

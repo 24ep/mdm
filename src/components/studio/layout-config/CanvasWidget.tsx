@@ -316,22 +316,60 @@ export function CanvasWidget({
               resizeStateRef={resizeStateRef}
             />
           )}
-          {!['spacer', 'divider', 'rectangle', 'circle', 'triangle', 'hexagon'].includes(widget.type) && 
-           widget.properties?.showTitle !== false && (
-            <div className={`${isMobile ? 'px-2 py-1' : 'px-3 py-2'} bg-muted border-b flex items-center gap-2`}>
-              <Icon className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} text-muted-foreground`} />
-              <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium text-foreground flex-1 truncate`}>
-                {widgetDef?.label || widget.type}
-              </span>
-              {isSelected && (
-                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-              )}
-            </div>
-          )}
+          {/* Removed legacy canvas header bar to avoid duplicate headers; element header is now configurable via properties and rendered by the widget itself */}
           <div className="flex-1 overflow-hidden" style={{
             borderRadius: widget.properties?.borderRadius ? `${widget.properties.borderRadius}px` : undefined,
           }}>
-            <WidgetRenderer widget={widget} isMobile={isMobile} spaceId={spaceId} />
+            {widget.type === 'text' ? (
+              <div className="w-full h-full flex items-center p-2" onMouseDown={(e) => e.stopPropagation()}>
+                {/* Optional text icon */}
+                {widget.properties?.textIconEnabled && (() => {
+                  const size = Number(widget.properties?.textFontSize ?? widget.properties?.fontSize ?? 14)
+                  const color = String(widget.properties?.textIconColor || '#111827')
+                  const iconName = String(widget.properties?.textIcon || 'star')
+                  const map: Record<string, React.ReactNode> = {
+                    star: <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" style={{ color }}><path d="M12 .587l3.668 7.431L24 9.748l-6 5.847L19.335 24 12 19.897 4.665 24 6 15.595 0 9.748l8.332-1.73z"/></svg>,
+                    home: <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" style={{ color }}><path d="M12 3l10 9h-3v9h-6v-6H11v6H5v-9H2z"/></svg>,
+                    settings: <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" style={{ color }}><path d="M19.14,12.94a7.14,7.14,0,1,1-7.14-7.14A7.14,7.14,0,0,1,19.14,12.94Z"/></svg>,
+                    user: <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" style={{ color }}><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-5 0-9 2.5-9 5v3h18v-3C21 16.5 17 14 12 14z"/></svg>,
+                    bell: <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" style={{ color }}><path d="M12 24a2.4 2.4 0 0 0 2.4-2.4H9.6A2.4 2.4 0 0 0 12 24zm6-6v-5.4a6 6 0 1 0-12 0V18L4 19.2V20.4H20V19.2z"/></svg>,
+                  }
+                  return <div className="mr-2 flex items-center" aria-hidden>{map[iconName] || map.star}</div>
+                })()}
+                <div
+                  contentEditable
+                  suppressContentEditableWarning
+                  className="w-full outline-none"
+                  style={{
+                    fontFamily: String(widget.properties?.textFontFamily || widget.properties?.fontFamily || 'inherit'),
+                    fontSize: widget.properties?.textFontSize
+                      ? `${widget.properties.textFontSize}px`
+                      : (widget.properties?.fontSize ? `${widget.properties.fontSize}px` : undefined),
+                    fontWeight: String(widget.properties?.textFontWeight || widget.properties?.fontWeight || 'normal') as any,
+                    fontStyle: String(widget.properties?.textFontStyle || widget.properties?.fontStyle || 'normal') as any,
+                    color: String(widget.properties?.textColor || '#000000'),
+                    textAlign: String(widget.properties?.textAlign || 'left') as any,
+                    width: '100%'
+                  }}
+                  onInput={(e) => {
+                    const value = (e.currentTarget.textContent || '').replace(/\u00A0/g, ' ').trim()
+                    setPlacedWidgets(prev => prev.map(w => 
+                      w.id === widget.id
+                        ? { ...w, properties: { ...w.properties, text: value } }
+                        : w
+                    ))
+                  }}
+                  onKeyDown={(e) => {
+                    // Prevent canvas shortcuts while editing
+                    e.stopPropagation()
+                  }}
+                >
+                  {String(widget.properties?.text || 'Text')}
+                </div>
+              </div>
+            ) : (
+              <WidgetRenderer widget={widget} isMobile={isMobile} spaceId={spaceId} />
+            )}
           </div>
         </div>
       )}

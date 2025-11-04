@@ -75,10 +75,10 @@ export function FillSection({
   }
 
   return (
-    <div className="space-y-2 px-4 pb-3 border-b">
+    <div className="space-y-2 px-4 pb-3">
       {/* Fill Color and Opacity - Always visible */}
       <div className="flex items-center gap-2">
-        <div className="relative flex-1">
+        <div className="relative basis-2/5 min-w-0">
           <ColorPickerPopover
             value={effectiveBackgroundColor}
             onChange={(color) => updateProperty('backgroundColor', color)}
@@ -111,7 +111,7 @@ export function FillSection({
             type="text"
             value={effectiveBackgroundColor}
             onChange={(e) => updateProperty('backgroundColor', e.target.value)}
-            className="h-7 text-xs pl-7"
+            className="h-7 text-xs pl-7 w-full"
             placeholder="#f6f6f6"
           />
           {!isBgColorGlobal && globalStyle && (
@@ -126,7 +126,7 @@ export function FillSection({
             </Button>
           )}
         </div>
-        <div className="relative">
+        <div className="relative basis-3/5 min-w-0">
           <Eye className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none z-10" />
           <Input
             type="number"
@@ -138,7 +138,7 @@ export function FillSection({
             }}
             min={0}
             max={100}
-            className="h-7 text-xs w-20 pl-7 pr-10"
+            className="h-7 text-xs pl-7 pr-10 w-full"
             placeholder="100"
           />
           <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>

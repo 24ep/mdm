@@ -41,7 +41,7 @@ export function SortablePageItem({ page, index, children }: SortablePageItemProp
       <div
         {...attributes}
         {...listeners}
-        className="absolute left-0 top-0 bottom-0 flex items-center justify-center cursor-grab active:cursor-grabbing z-10 px-1 hover:bg-muted rounded"
+        className="absolute left-0 top-0 bottom-0 flex items-center justify-center cursor-grab active:cursor-grabbing z-10 px-1 hover:bg-muted rounded w-6"
         onMouseDown={(e) => {
           // Only allow drag from the handle
           e.stopPropagation()

@@ -278,29 +278,49 @@ export function ChartRenderer({
         return (
           <div className="w-full h-full bg-white overflow-hidden">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart {...commonProps}>
+              <BarChart {...commonProps} layout={config?.bar?.orientation === 'horizontal' ? 'horizontal' : undefined}>
                 {(config?.xAxis?.showGrid ?? config?.showGrid ?? true) && (
                   <CartesianGrid strokeDasharray={config?.grid?.dash ?? '3 3'} stroke={config?.grid?.color ?? '#f0f0f0'} />
                 )}
-                <XAxis 
-                  dataKey={dimensions[0] || 'name'} 
-                  hide={config?.xAxis?.show === false}
-                  tick={{ fontSize: config?.xAxis?.tickFontSize ?? 12, fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fill: config?.xAxis?.tickColor }}
-                  label={config?.xAxis?.title ? { value: config?.xAxis?.title, position: 'insideBottom', offset: -5, style: { fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.xAxis?.titleFontSize ?? 12) + 'px', fill: config?.xAxis?.titleColor } } : undefined}
-                />
-                <YAxis 
-                  hide={config?.yAxis?.show === false}
-                  domain={config?.yAxis?.min !== undefined || config?.yAxis?.max !== undefined 
-                    ? [config?.yAxis?.min ?? 'dataMin', config?.yAxis?.max ?? 'dataMax']
-                    : undefined}
-                  tick={{ 
-                    fontSize: config?.yAxis?.tickFontSize ?? 12, 
-                    fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', 
-                    fill: config?.yAxis?.tickColor 
-                  }}
-                  tickFormatter={(value) => formatNumber(value)}
-                  label={config?.yAxis?.title ? { value: config?.yAxis?.title, angle: -90, position: 'insideLeft', style: { fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.yAxis?.titleFontSize ?? 12) + 'px', fill: config?.yAxis?.titleColor } } : undefined}
-                />
+                {config?.bar?.orientation === 'horizontal' ? (
+                  <>
+                    <XAxis 
+                      type="number"
+                      hide={config?.xAxis?.show === false}
+                      tick={{ fontSize: config?.xAxis?.tickFontSize ?? 12, fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fill: config?.xAxis?.tickColor }}
+                      label={config?.xAxis?.title ? { value: config?.xAxis?.title, position: 'insideBottom', offset: -5, style: { fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.xAxis?.titleFontSize ?? 12) + 'px', fill: config?.xAxis?.titleColor } } : undefined}
+                    />
+                    <YAxis 
+                      type="category"
+                      dataKey={dimensions[0] || 'name'}
+                      hide={config?.yAxis?.show === false}
+                      tick={{ fontSize: config?.yAxis?.tickFontSize ?? 12, fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', fill: config?.yAxis?.tickColor }}
+                      label={config?.yAxis?.title ? { value: config?.yAxis?.title, angle: 0, position: 'insideLeft', style: { fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.yAxis?.titleFontSize ?? 12) + 'px', fill: config?.yAxis?.titleColor } } : undefined}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <XAxis 
+                      dataKey={dimensions[0] || 'name'} 
+                      hide={config?.xAxis?.show === false}
+                      tick={{ fontSize: config?.xAxis?.tickFontSize ?? 12, fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fill: config?.xAxis?.tickColor }}
+                      label={config?.xAxis?.title ? { value: config?.xAxis?.title, position: 'insideBottom', offset: -5, style: { fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.xAxis?.titleFontSize ?? 12) + 'px', fill: config?.xAxis?.titleColor } } : undefined}
+                    />
+                    <YAxis 
+                      hide={config?.yAxis?.show === false}
+                      domain={config?.yAxis?.min !== undefined || config?.yAxis?.max !== undefined 
+                        ? [config?.yAxis?.min ?? 'dataMin', config?.yAxis?.max ?? 'dataMax']
+                        : undefined}
+                      tick={{ 
+                        fontSize: config?.yAxis?.tickFontSize ?? 12, 
+                        fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', 
+                        fill: config?.yAxis?.tickColor 
+                      }}
+                      tickFormatter={(value) => formatNumber(value)}
+                      label={config?.yAxis?.title ? { value: config?.yAxis?.title, angle: -90, position: 'insideLeft', style: { fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.yAxis?.titleFontSize ?? 12) + 'px', fill: config?.yAxis?.titleColor } } : undefined}
+                    />
+                  </>
+                )}
                 <Tooltip 
                   contentStyle={{ fontFamily: config?.tooltip?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.tooltip?.fontSize ?? 12) + 'px' }}
                   formatter={(value: any) => formatNumber(value)}
@@ -309,6 +329,9 @@ export function ChartRenderer({
                   <Legend 
                     wrapperStyle={{ fontFamily: config?.legend?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.legend?.fontSize ?? 12) + 'px', color: config?.legend?.color }}
                     formatter={(value) => formatLabelWithType(value)}
+                    verticalAlign={(config?.legend?.position === 'top' || config?.legend?.position === 'bottom') ? config?.legend?.position : 'top'}
+                    align={(config?.legend?.position === 'left' || config?.legend?.position === 'right') ? config?.legend?.position : 'center'}
+                    layout={(config?.legend?.position === 'left' || config?.legend?.position === 'right') ? 'vertical' : 'horizontal'}
                   />
                 )}
               {measures.map((measure, index) => (
@@ -317,6 +340,7 @@ export function ChartRenderer({
                   dataKey={measure}
                   fill={(config?.series?.[measure]?.color) || COLORS[index % COLORS.length]}
                   barSize={config?.series?.[measure]?.barSize}
+                  stackId={config?.bar?.mode === 'stacked' ? 'a' : undefined}
                   onClick={handleDataPointClick}
                 />
               ))}
@@ -360,12 +384,15 @@ export function ChartRenderer({
                   <Legend 
                     wrapperStyle={{ fontFamily: config?.legend?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.legend?.fontSize ?? 12) + 'px', color: config?.legend?.color }}
                     formatter={(value) => formatLabelWithType(value)}
+                    verticalAlign={(config?.legend?.position === 'top' || config?.legend?.position === 'bottom') ? config?.legend?.position : 'top'}
+                    align={(config?.legend?.position === 'left' || config?.legend?.position === 'right') ? config?.legend?.position : 'center'}
+                    layout={(config?.legend?.position === 'left' || config?.legend?.position === 'right') ? 'vertical' : 'horizontal'}
                   />
                 )}
               {measures.map((measure, index) => (
                 <Line
                   key={measure}
-                  type="monotone"
+                  type={(config?.line?.curve === 'linear') ? 'linear' : 'monotone'}
                   dataKey={measure}
                   stroke={(config?.series?.[measure]?.color) || COLORS[index % COLORS.length]}
                   strokeWidth={config?.series?.[measure]?.strokeWidth || 2}
@@ -1082,12 +1109,15 @@ export function ChartRenderer({
                   <Legend 
                     wrapperStyle={{ fontFamily: config?.legend?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.legend?.fontSize ?? 12) + 'px', color: config?.legend?.color }}
                     formatter={(value) => formatLabelWithType(value)}
+                    verticalAlign={(config?.legend?.position === 'top' || config?.legend?.position === 'bottom') ? config?.legend?.position : 'top'}
+                    align={(config?.legend?.position === 'left' || config?.legend?.position === 'right') ? config?.legend?.position : 'center'}
+                    layout={(config?.legend?.position === 'left' || config?.legend?.position === 'right') ? 'vertical' : 'horizontal'}
                   />
                 )}
                 {measures.map((measure, index) => (
                   <Area
                     key={measure}
-                    type="monotone"
+                    type={(config?.line?.curve === 'linear') ? 'linear' : 'monotone'}
                     dataKey={measure}
                     stackId="1"
                     stroke={(config?.series?.[measure]?.color) || COLORS[index % COLORS.length]}

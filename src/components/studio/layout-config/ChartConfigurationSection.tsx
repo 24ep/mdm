@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import { AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Separator } from '@/components/ui/separator'
 import { BarChart3, Type, Layout, Eye, Tag, MoveVertical, Square, Box, Layers, Grid3x3, HelpCircle, Palette, DollarSign, TrendingUp } from 'lucide-react'
 import { PlacedWidget } from './widgets'
@@ -39,7 +39,7 @@ export function ChartConfigurationSection({
   const seriesStyles = widget.properties?.seriesStyles || {}
 
   return (
-    <Accordion type="multiple" defaultValue={['chart-style', 'title']} className="w-full">
+    <>
       {/* Chart Style - Looker Studio style (Chart type) */}
       <AccordionItem value="chart-style" className="border-0">
         <AccordionTrigger className="text-xs font-semibold py-2 px-4 hover:no-underline">
@@ -77,6 +77,60 @@ export function ChartConfigurationSection({
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Common options for chart subtypes */}
+            {chartType === 'bar' && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium">Bar mode</Label>
+                  <Select
+                    value={widget.properties?.barMode || 'grouped'}
+                    onValueChange={(value) => updateProperty('barMode', value)}
+                  >
+                    <SelectTrigger className="h-7 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="grouped">Grouped</SelectItem>
+                      <SelectItem value="stacked">Stacked</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium">Orientation</Label>
+                  <Select
+                    value={widget.properties?.barOrientation || 'vertical'}
+                    onValueChange={(value) => updateProperty('barOrientation', value)}
+                  >
+                    <SelectTrigger className="h-7 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="vertical">Vertical</SelectItem>
+                      <SelectItem value="horizontal">Horizontal</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            {chartType === 'line' || chartType === 'area' ? (
+              <div className="space-y-1">
+                <Label className="text-xs font-medium">Curve</Label>
+                <Select
+                  value={widget.properties?.lineCurve || 'monotone'}
+                  onValueChange={(value) => updateProperty('lineCurve', value)}
+                >
+                  <SelectTrigger className="h-7 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="monotone">Smooth</SelectItem>
+                    <SelectItem value="linear">Straight</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
           </div>
         </AccordionContent>
       </AccordionItem>
@@ -373,6 +427,23 @@ export function ChartConfigurationSection({
               <>
                 <Separator />
                 <div className="space-y-3 pt-1">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Position</Label>
+                    <Select
+                      value={widget.properties?.legendPosition || 'bottom'}
+                      onValueChange={(value) => updateProperty('legendPosition', value)}
+                    >
+                      <SelectTrigger className="h-7 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="top">Top</SelectItem>
+                        <SelectItem value="right">Right</SelectItem>
+                        <SelectItem value="bottom">Bottom</SelectItem>
+                        <SelectItem value="left">Left</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <Label className="text-xs font-medium">Font Size</Label>
@@ -931,7 +1002,7 @@ export function ChartConfigurationSection({
           </AccordionContent>
         </AccordionItem>
       )}
-    </Accordion>
+    </>
   )
 }
 

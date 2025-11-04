@@ -3,7 +3,7 @@
 import React, { useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Plus, FileIcon, Minus, Tag, Type, Heading, Image, Badge } from 'lucide-react'
+import { Plus, FileIcon, Minus, Tag, Type, Heading, Image, Badge, Folder } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { SpacesEditorManager, SpacesEditorPage } from '@/lib/space-studio-manager'
 import { UnifiedPage } from './types'
@@ -17,15 +17,8 @@ import { ImageItem } from './ImageItem'
 import { BadgeItem } from './BadgeItem'
 import { PageListItem } from './PageListItem'
 import { SortablePageItem } from './SortablePageItem'
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core'
+import { GroupItem } from './GroupItem'
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, useDroppable } from '@dnd-kit/core'
 import {
   SortableContext,
   sortableKeyboardCoordinates,
@@ -93,6 +86,10 @@ export function PagesTab({
     }
   }, [spaceId, setPages])
 
+  // Droppable zones for top/bottom alignment switching
+  const { setNodeRef: setTopZoneRef, isOver: isOverTop } = useDroppable({ id: 'zone-top' })
+  const { setNodeRef: setBottomZoneRef, isOver: isOverBottom } = useDroppable({ id: 'zone-bottom' })
+
   // Drag and drop sensors
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -113,6 +110,66 @@ export function PagesTab({
       return
     }
 
+    // Move to alignment zones by dropping on zone containers
+    if (over.id === 'zone-top' || over.id === 'zone-bottom') {
+      const toBottom = over.id === 'zone-bottom'
+      const draggedIndex = allPages.findIndex(p => p.id === active.id)
+      if (draggedIndex !== -1) {
+        const dragged = allPages[draggedIndex]
+        setAllPages(prev => {
+          // Remove from any group children and root
+          const stripFromGroups = (arr: UnifiedPage[]) => arr.map(p => {
+            if ((p as any).type === 'group' && Array.isArray((p as any).children)) {
+              return { ...p, children: (p as any).children.filter((c: any) => c.id !== dragged.id) } as any
+            }
+            return p
+          })
+          let next = stripFromGroups(prev)
+          next = next.filter(p => p.id !== dragged.id)
+          // Split zones and push item to end of destination zone
+          const tops = next.filter((p: any) => p.sidebarPosition !== 'bottom')
+          const bottoms = next.filter((p: any) => p.sidebarPosition === 'bottom')
+          const updated: any = { ...dragged }
+          if (toBottom) updated.sidebarPosition = 'bottom'; else delete updated.sidebarPosition
+          if (toBottom) bottoms.push(updated); else tops.push(updated)
+          return [...tops, ...bottoms]
+        })
+      }
+      return
+    }
+
+    // Handle drop into group container
+    if (String(over.id).startsWith('group-drop-')) {
+      const groupId = String(over.id).replace('group-drop-', '')
+      const draggedIndex = allPages.findIndex(p => p.id === active.id)
+      if (draggedIndex === -1) return
+      const draggedItem = allPages[draggedIndex]
+      // Do not allow groups inside groups for now
+      if ((draggedItem as any).type === 'group') return
+      setAllPages(prev => {
+        // Remove from any existing group children first
+        const removeFromGroups = (pagesArr: UnifiedPage[]) => pagesArr.map(p => {
+          if ((p as any).type === 'group' && Array.isArray((p as any).children)) {
+            return { ...p, children: (p as any).children.filter((c: any) => c.id !== draggedItem.id) } as any
+          }
+          return p
+        })
+        let next = removeFromGroups(prev)
+        // Remove from root list
+        next = next.filter(p => p.id !== draggedItem.id)
+        // Add to target group children
+        next = next.map(p => {
+          if (p.id === groupId) {
+            const children = ([...((p as any).children || []), draggedItem]) as UnifiedPage[]
+            return { ...p, children } as any
+          }
+          return p
+        })
+        return next
+      })
+      return
+    }
+
     const oldIndex = allPages.findIndex((page) => page.id === active.id)
     const newIndex = allPages.findIndex((page) => page.id === over.id)
 
@@ -128,6 +185,7 @@ export function PagesTab({
     <div className="mb-4 px-4">
       <div className="flex items-center justify-between mb-2">
         <div className={`${isMobileViewport ? 'text-base' : 'text-sm'} font-semibold`}>Pages</div>
+        {/* Add menu for overall header -> targets top by default */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button size={isMobileViewport ? "default" : "sm"} variant="outline">
@@ -139,105 +197,42 @@ export function PagesTab({
               try {
                 const newPage = await SpacesEditorManager.createPage(spaceId, { name: `page-${Date.now()}`, displayName: 'New Page' })
                 setPages((prev) => [newPage, ...prev])
-                // Add new page to the end of allPages to maintain order
-                setAllPages((prev) => {
-                  const updated = [...prev, {
-                    id: newPage.id,
-                    name: newPage.displayName || newPage.name,
-                    type: 'custom',
-                    page: newPage,
-                  }]
-                  return updated
-                })
+                setAllPages((prev) => [...prev, { id: newPage.id, name: newPage.displayName || newPage.name, type: 'custom', page: newPage } as any])
                 setSelectedComponent('canvas')
                 setSelectedPageId(newPage.id)
                 toast.success('Page created')
-              } catch (e) { 
-                toast.error('Failed to create page')
-                console.error(e) 
-              }
+              } catch (e) { toast.error('Failed to create page'); console.error(e) }
             }}>
               <FileIcon className="mr-2 h-4 w-4" />
               <span>Page</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => {
-              const newSeparator: UnifiedPage = {
-                id: `separator-${Date.now()}`,
-                name: 'Separator',
-                type: 'separator',
-              }
-              setAllPages((prev) => [...prev, newSeparator])
-              toast.success('Separator added')
-            }}>
+            <DropdownMenuItem onClick={() => { setAllPages((prev) => [...prev, { id: `separator-${Date.now()}`, name: 'Separator', type: 'separator' } as any]); toast.success('Separator added') }}>
               <Minus className="mr-2 h-4 w-4" />
               <span>Separator</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => {
-              const newLabel: UnifiedPage = {
-                id: `label-${Date.now()}`,
-                name: 'Label',
-                type: 'label',
-                label: 'New Label',
-              }
-              setAllPages((prev) => [...prev, newLabel])
-              toast.success('Label added')
-            }}>
+            <DropdownMenuItem onClick={() => { setAllPages((prev) => [...prev, { id: `label-${Date.now()}`, name: 'Label', type: 'label', label: 'New Label' } as any]); toast.success('Label added') }}>
               <Tag className="mr-2 h-4 w-4" />
               <span>Label</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => {
-              const newText: UnifiedPage = {
-                id: `text-${Date.now()}`,
-                name: 'Text',
-                type: 'text',
-                text: 'Text',
-              }
-              setAllPages((prev) => [...prev, newText])
-              toast.success('Text added')
-            }}>
+            <DropdownMenuItem onClick={() => { setAllPages((prev) => [...prev, { id: `text-${Date.now()}`, name: 'Text', type: 'text', text: 'Text' } as any]); toast.success('Text added') }}>
               <Type className="mr-2 h-4 w-4" />
               <span>Text</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => {
-              const newHeader: UnifiedPage = {
-                id: `header-${Date.now()}`,
-                name: 'Header',
-                type: 'header',
-                headerText: 'Header',
-              }
-              setAllPages((prev) => [...prev, newHeader])
-              toast.success('Header added')
-            }}>
+            <DropdownMenuItem onClick={() => { setAllPages((prev) => [...prev, { id: `header-${Date.now()}`, name: 'Header', type: 'header', headerText: 'Header' } as any]); toast.success('Header added') }}>
               <Heading className="mr-2 h-4 w-4" />
               <span>Header</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => {
-              const newImage: UnifiedPage = {
-                id: `image-${Date.now()}`,
-                name: 'Logo',
-                type: 'image',
-                imageUrl: '',
-                imageAlt: 'Logo',
-              }
-              setAllPages((prev) => [...prev, newImage])
-              toast.success('Image added')
-            }}>
+            <DropdownMenuItem onClick={() => { setAllPages((prev) => [...prev, { id: `image-${Date.now()}`, name: 'Logo', type: 'image', imageUrl: '', imageAlt: 'Logo' } as any]); toast.success('Image added') }}>
               <Image className="mr-2 h-4 w-4" />
               <span>Image Logo</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => {
-              const newBadge: UnifiedPage = {
-                id: `badge-${Date.now()}`,
-                name: 'Badge',
-                type: 'badge',
-                badgeText: 'New',
-                badgeColor: '#ef4444',
-              }
-              setAllPages((prev) => [...prev, newBadge])
-              toast.success('Badge added')
-            }}>
+            <DropdownMenuItem onClick={() => { setAllPages((prev) => [...prev, { id: `badge-${Date.now()}`, name: 'Badge', type: 'badge', badgeText: 'New', badgeColor: '#ef4444' } as any]); toast.success('Badge added') }}>
               <Badge className="mr-2 h-4 w-4" />
               <span>Badge</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => { setAllPages((prev) => [...prev, { id: `group-${Date.now()}`, name: 'Group', type: 'group', children: [] } as any]); toast.success('Group added') }}>
+              <Folder className="mr-2 h-4 w-4" />
+              <span>Group</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -252,18 +247,68 @@ export function PagesTab({
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
         >
-          <SortableContext
-            items={allPages.map(p => p.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            <div className={`${isMobileViewport ? 'space-y-2' : 'space-y-1'}`}>
-              {allPages.map((page, idx) => {
+          {/* Split into two alignment zones */}
+          {(() => {
+            const topItems = allPages.filter(p => (p as any).sidebarPosition !== 'bottom')
+            const bottomItems = allPages.filter(p => (p as any).sidebarPosition === 'bottom')
+            return (
+              <div className="space-y-4">
+                {/* Top alignment */}
+                <div>
+                  {/* Drop here to move to Top alignment */}
+                  <div
+                    ref={setTopZoneRef}
+                    className={`h-6 mb-1 rounded-md ${isOverTop ? 'bg-blue-500/10 border border-primary' : 'border border-dashed border-transparent hover:border-muted'}`}
+                    title="Drop here to move to Top alignment"
+                  />
+                  <div className={`${isMobileViewport ? 'text-xs' : 'text-[11px]'} font-semibold text-muted-foreground mb-1`}>Top alignment</div>
+                  <SortableContext items={topItems.map(p => p.id)} strategy={verticalListSortingStrategy}>
+                    <div className={`${isMobileViewport ? 'space-y-2' : 'space-y-1'}`}>
+                      {topItems.map((page) => {
+                        const idx = allPages.findIndex(ap => ap.id === page.id)
                 const isSeparator = page.type === 'separator'
                 const isLabel = page.type === 'label'
                 const isText = page.type === 'text'
                 const isHeader = page.type === 'header'
                 const isImage = page.type === 'image'
                 const isBadge = page.type === 'badge'
+                const isGroup = (page as any).type === 'group'
+                if (isGroup) {
+                  return (
+                    <GroupItem
+                      key={page.id}
+                      page={page as any}
+                      index={idx}
+                      isMobileViewport={isMobileViewport}
+                      allPages={allPages}
+                      pages={pages}
+                      setAllPages={setAllPages}
+                      setPages={setPages}
+                      spaceId={spaceId}
+                      selectedPageId={selectedPageId}
+                      allIcons={allIcons}
+                      reactIcons={reactIcons}
+                      iconPickerOpen={iconPickerOpen}
+                      colorPickerOpen={colorPickerOpen}
+                      sidebarPositionOpen={sidebarPositionOpen}
+                      handlePageReorder={handlePageReorder}
+                      handleIconUpdate={handleIconUpdate}
+                      isPageVisibleInSidebar={isPageVisibleInSidebar}
+                      updateSidebarMenuItem={updateSidebarMenuItem}
+                      updateCustomPageSidebarVisibility={updateCustomPageSidebarVisibility}
+                      setSelectedPageId={setSelectedPageId}
+                      setSelectedComponent={setSelectedComponent}
+                      setSelectedPageForPermissions={setSelectedPageForPermissions}
+                      setPermissionsRoles={setPermissionsRoles}
+                      setPermissionsUserIds={setPermissionsUserIds}
+                      setPermissionsDialogOpen={setPermissionsDialogOpen}
+                      setComponentSettingsOpen={setComponentSettingsOpen}
+                      setIconPickerOpen={setIconPickerOpen}
+                      setColorPickerOpen={setColorPickerOpen}
+                      setSidebarPositionOpen={setSidebarPositionOpen}
+                    />
+                  )
+                }
                 
                 // Render separator
                 if (isSeparator) {
@@ -403,9 +448,201 @@ export function PagesTab({
                     />
                   </SortablePageItem>
                 )
-              })}
-            </div>
-          </SortableContext>
+                      })}
+                    </div>
+                  </SortableContext>
+                </div>
+
+                {/* Bottom alignment */}
+                <div>
+                  {/* Drop here to move to Bottom alignment */}
+                  <div
+                    ref={setBottomZoneRef}
+                    className={`h-6 mb-1 rounded-md ${isOverBottom ? 'bg-blue-500/10 border border-primary' : 'border border-dashed border-transparent hover:border-muted'}`}
+                    title="Drop here to move to Bottom alignment"
+                  />
+                  <div className={`${isMobileViewport ? 'text-xs' : 'text-[11px]'} font-semibold text-muted-foreground mb-1`}>Bottom alignment</div>
+                  <SortableContext items={bottomItems.map(p => p.id)} strategy={verticalListSortingStrategy}>
+                    <div className={`${isMobileViewport ? 'space-y-2' : 'space-y-1'}`}>
+                      {bottomItems.map((page) => {
+                        const idx = allPages.findIndex(ap => ap.id === page.id)
+                        const isSeparator = page.type === 'separator'
+                        const isLabel = page.type === 'label'
+                        const isText = page.type === 'text'
+                        const isHeader = page.type === 'header'
+                        const isImage = page.type === 'image'
+                        const isBadge = page.type === 'badge'
+                        const isGroup = (page as any).type === 'group'
+                        
+                        if (isGroup) {
+                          return (
+                            <GroupItem
+                              key={page.id}
+                              page={page as any}
+                              index={idx}
+                              isMobileViewport={isMobileViewport}
+                              allPages={allPages}
+                              pages={pages}
+                              setAllPages={setAllPages}
+                              setPages={setPages}
+                              spaceId={spaceId}
+                              selectedPageId={selectedPageId}
+                              allIcons={allIcons}
+                              reactIcons={reactIcons}
+                              iconPickerOpen={iconPickerOpen}
+                              colorPickerOpen={colorPickerOpen}
+                              sidebarPositionOpen={sidebarPositionOpen}
+                              handlePageReorder={handlePageReorder}
+                              handleIconUpdate={handleIconUpdate}
+                              isPageVisibleInSidebar={isPageVisibleInSidebar}
+                              updateSidebarMenuItem={updateSidebarMenuItem}
+                              updateCustomPageSidebarVisibility={updateCustomPageSidebarVisibility}
+                              setSelectedPageId={setSelectedPageId}
+                              setSelectedComponent={setSelectedComponent}
+                              setSelectedPageForPermissions={setSelectedPageForPermissions}
+                              setPermissionsRoles={setPermissionsRoles}
+                              setPermissionsUserIds={setPermissionsUserIds}
+                              setPermissionsDialogOpen={setPermissionsDialogOpen}
+                              setComponentSettingsOpen={setComponentSettingsOpen}
+                              setIconPickerOpen={setIconPickerOpen}
+                              setColorPickerOpen={setColorPickerOpen}
+                              setSidebarPositionOpen={setSidebarPositionOpen}
+                            />
+                          )
+                        }
+                        
+                        if (isSeparator) {
+                          return (
+                            <SortablePageItem key={page.id} page={page} index={idx}>
+                              <SeparatorItem
+                                page={page}
+                                index={idx}
+                                isMobileViewport={isMobileViewport}
+                                allPages={allPages}
+                                pages={pages}
+                                handlePageReorder={handlePageReorder}
+                                setAllPages={setAllPages}
+                              />
+                            </SortablePageItem>
+                          )
+                        }
+                        if (isLabel) {
+                          return (
+                            <SortablePageItem key={page.id} page={page} index={idx}>
+                              <LabelItem
+                                page={page}
+                                index={idx}
+                                isMobileViewport={isMobileViewport}
+                                allPages={allPages}
+                                pages={pages}
+                                handlePageReorder={handlePageReorder}
+                                setAllPages={setAllPages}
+                              />
+                            </SortablePageItem>
+                          )
+                        }
+                        if (isText) {
+                          return (
+                            <SortablePageItem key={page.id} page={page} index={idx}>
+                              <TextItem
+                                page={page}
+                                index={idx}
+                                isMobileViewport={isMobileViewport}
+                                allPages={allPages}
+                                pages={pages}
+                                handlePageReorder={handlePageReorder}
+                                setAllPages={setAllPages}
+                              />
+                            </SortablePageItem>
+                          )
+                        }
+                        if (isHeader) {
+                          return (
+                            <SortablePageItem key={page.id} page={page} index={idx}>
+                              <HeaderItem
+                                page={page}
+                                index={idx}
+                                isMobileViewport={isMobileViewport}
+                                allPages={allPages}
+                                pages={pages}
+                                handlePageReorder={handlePageReorder}
+                                setAllPages={setAllPages}
+                              />
+                            </SortablePageItem>
+                          )
+                        }
+                        if (isImage) {
+                          return (
+                            <SortablePageItem key={page.id} page={page} index={idx}>
+                              <ImageItem
+                                page={page}
+                                index={idx}
+                                isMobileViewport={isMobileViewport}
+                                allPages={allPages}
+                                pages={pages}
+                                handlePageReorder={handlePageReorder}
+                                setAllPages={setAllPages}
+                              />
+                            </SortablePageItem>
+                          )
+                        }
+                        if (isBadge) {
+                          return (
+                            <SortablePageItem key={page.id} page={page} index={idx}>
+                              <BadgeItem
+                                page={page}
+                                index={idx}
+                                isMobileViewport={isMobileViewport}
+                                allPages={allPages}
+                                pages={pages}
+                                handlePageReorder={handlePageReorder}
+                                setAllPages={setAllPages}
+                              />
+                            </SortablePageItem>
+                          )
+                        }
+                        return (
+                          <SortablePageItem key={page.id} page={page} index={idx}>
+                            <PageListItem
+                              page={page}
+                              index={idx}
+                              isMobileViewport={isMobileViewport}
+                              spaceId={spaceId}
+                              selectedPageId={selectedPageId}
+                              allPages={allPages}
+                              pages={pages}
+                              allIcons={allIcons}
+                              reactIcons={reactIcons}
+                              iconPickerOpen={iconPickerOpen}
+                              colorPickerOpen={colorPickerOpen}
+                              sidebarPositionOpen={sidebarPositionOpen}
+                              handlePageReorder={handlePageReorder}
+                              handleIconUpdate={handleIconUpdate}
+                              isPageVisibleInSidebar={isPageVisibleInSidebar}
+                              updateSidebarMenuItem={updateSidebarMenuItem}
+                              updateCustomPageSidebarVisibility={updateCustomPageSidebarVisibility}
+                              setPages={setPages}
+                              setAllPages={setAllPages}
+                              setSelectedPageId={setSelectedPageId}
+                              setSelectedComponent={setSelectedComponent}
+                              setSelectedPageForPermissions={setSelectedPageForPermissions}
+                              setPermissionsRoles={setPermissionsRoles}
+                              setPermissionsUserIds={setPermissionsUserIds}
+                              setPermissionsDialogOpen={setPermissionsDialogOpen}
+                              setComponentSettingsOpen={setComponentSettingsOpen}
+                              setIconPickerOpen={setIconPickerOpen}
+                              setColorPickerOpen={setColorPickerOpen}
+                              setSidebarPositionOpen={setSidebarPositionOpen}
+                            />
+                          </SortablePageItem>
+                        )
+                      })}
+                    </div>
+                  </SortableContext>
+                </div>
+              </div>
+            )
+          })()}
         </DndContext>
       )}
       

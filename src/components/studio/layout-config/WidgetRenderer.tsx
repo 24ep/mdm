@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react'
 import { PlacedWidget } from './widgets'
-import { BarChart3, LineChart, PieChart, AreaChart, Table as TableIcon, Image as ImageIcon, Video as VideoIcon, Type, Link2, Calendar, Map, Loader2, Target, Gauge, TrendingUp, Grid, Circle } from 'lucide-react'
+import { BarChart3, LineChart, PieChart, AreaChart, Table as TableIcon, Image as ImageIcon, Video as VideoIcon, Type, Link2, Calendar, Map, Loader2, Target, Gauge, TrendingUp, Grid, Circle, Star, Home, Settings as SettingsIcon } from 'lucide-react'
 import { ChartRenderer } from '@/components/charts/ChartRenderer'
 import { ChartErrorBoundary } from './ChartErrorBoundary'
 import { useDataSource } from './useDataSource'
@@ -18,6 +18,26 @@ interface WidgetRendererProps {
 
 export const WidgetRenderer = React.memo(function WidgetRenderer({ widget, isMobile = false, spaceId }: WidgetRendererProps) {
   const props = widget.properties || {}
+  // Dynamically load Google Font if a custom Google font is specified
+  React.useEffect(() => {
+    const family = String(props.googleFontFamily || '')
+    const useCustom = String(props.fontFamily) === '__custom_google__' && family.trim().length > 0
+    if (!useCustom) return
+    const encoded = family.trim().replace(/\s+/g, '+')
+    // Request selected weight and a few common ones to avoid flashes when changing weight
+    const weights = String(props.fontWeight || '400')
+    const href = `https://fonts.googleapis.com/css2?family=${encoded}:wght@${weights};400;500;600;700&display=swap`
+    // Avoid duplicate link tags
+    const id = `gf-${encoded}`
+    if (!document.getElementById(id)) {
+      const link = document.createElement('link')
+      link.id = id
+      link.rel = 'stylesheet'
+      link.href = href
+      document.head.appendChild(link)
+    }
+  }, [props.fontFamily, props.googleFontFamily, props.fontWeight])
+
   
   // Debug: Log when properties change (remove in production)
   // console.log('WidgetRenderer props:', props)
@@ -80,22 +100,72 @@ export const WidgetRenderer = React.memo(function WidgetRenderer({ widget, isMob
     return undefined
   }
   
+  // Compute box shadow from properties
+  const computeBoxShadow = (): string | undefined => {
+    if (!props.shadow) return 'none'
+    const x = Number(props.shadowX ?? 0)
+    const y = Number(props.shadowY ?? 0)
+    const blur = Number(props.shadowBlur ?? 4)
+    const spread = Number(props.shadowSpread ?? 0)
+    const colorHex = String(props.shadowColor || '#000000')
+    const opacity = Number(props.shadowOpacity ?? 0.25)
+    const toRgba = (hex: string, alpha: number) => {
+      const h = hex.replace('#', '')
+      const bigint = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16)
+      const r = (bigint >> 16) & 255
+      const g = (bigint >> 8) & 255
+      const b = bigint & 255
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`
+    }
+    const color = colorHex.startsWith('#') ? toRgba(colorHex, opacity) : colorHex
+    return `${x}px ${y}px ${blur}px ${spread}px ${color}`
+  }
+
+  // Compute padding from number or per-side object
+  const computePadding = (): string | undefined => {
+    const p = props.padding
+    if (p === undefined) return undefined
+    if (typeof p === 'number') return `${p}px`
+    try {
+      const top = Number((p as any).top ?? 0)
+      const right = Number((p as any).right ?? 0)
+      const bottom = Number((p as any).bottom ?? 0)
+      const left = Number((p as any).left ?? 0)
+      return `${top}px ${right}px ${bottom}px ${left}px`
+    } catch {
+      return undefined
+    }
+  }
+
   const style: React.CSSProperties = {
     backgroundColor: (props.showBackground !== false && props.backgroundColor) ? props.backgroundColor : 'transparent',
     color: props.textColor || '#000000',
-    fontFamily: props.fontFamily || 'inherit',
+    fontFamily: (String(props.fontFamily) === '__custom_google__' && props.googleFontFamily)
+      ? String(props.googleFontFamily)
+      : (props.fontFamily || 'inherit'),
     fontSize: props.fontSize ? `${props.fontSize}px` : undefined,
     fontWeight: props.fontWeight || 'normal',
+    fontStyle: props.fontStyle || 'normal',
     textAlign: props.textAlign || 'left',
     borderTop: borderColor && borderSides.top ? `${borderWidth}px ${borderStyle} ${borderColor}` : 'none',
     borderRight: borderColor && borderSides.right ? `${borderWidth}px ${borderStyle} ${borderColor}` : 'none',
     borderBottom: borderColor && borderSides.bottom ? `${borderWidth}px ${borderStyle} ${borderColor}` : 'none',
     borderLeft: borderColor && borderSides.left ? `${borderWidth}px ${borderStyle} ${borderColor}` : 'none',
     borderRadius: getBorderRadius(),
-    padding: props.padding ? `${props.padding}px` : undefined,
+    padding: computePadding(),
     margin: props.margin ? `${props.margin}px` : undefined,
     opacity: props.opacity !== undefined ? props.opacity : 1,
-    boxShadow: props.shadow ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
+    boxShadow: computeBoxShadow(),
+    transform: (() => {
+      const r = Number(props.rotation || 0)
+      const flipX = (props.flipX || props.flipHorizontal) ? -1 : 1
+      const flipY = (props.flipY || props.flipVertical) ? -1 : 1
+      const parts = [] as string[]
+      if (flipX !== 1 || flipY !== 1) parts.push(`scale(${flipX}, ${flipY})`)
+      if (r) parts.push(`rotate(${r}deg)`)
+      return parts.length ? parts.join(' ') : undefined
+    })(),
+    transformOrigin: (props.rotation || props.flipX || props.flipY || props.flipHorizontal || props.flipVertical) ? 'center center' : undefined,
   }
 
   // Text Widget
@@ -410,7 +480,42 @@ export const WidgetRenderer = React.memo(function WidgetRenderer({ widget, isMob
           
           if (pivotedData.length > 0 && columnHeaders.length > 0) {
             return (
-              <div className="w-full h-full overflow-auto p-2" style={style}>
+              <div className="w-full h-full flex flex-col" style={style}>
+                {(props.showElementHeaderBar ?? false) && (
+                  <div
+                    className="w-full flex items-center gap-2 px-3 py-2 shrink-0"
+                    style={{
+                      background: props.headerBackgroundColor || 'transparent',
+                      justifyContent: (props.titleAlign || 'left') === 'center' ? 'center' : (props.titleAlign || 'left') === 'right' ? 'flex-end' : 'flex-start',
+                    }}
+                  >
+                    {props.headerIcon && props.headerIcon !== 'none' && (() => {
+                      const iconSize = 14
+                      const iconColor = props.titleColor || style.color || '#111827'
+                      const map: Record<string, React.ReactNode> = {
+                        star: <Star size={iconSize} style={{ color: iconColor }} />,
+                        home: <Home size={iconSize} style={{ color: iconColor }} />,
+                        settings: <SettingsIcon size={iconSize} style={{ color: iconColor }} />,
+                        table: <TableIcon size={iconSize} style={{ color: iconColor }} />,
+                        bar: <BarChart3 size={iconSize} style={{ color: iconColor }} />,
+                        line: <LineChart size={iconSize} style={{ color: iconColor }} />,
+                        area: <AreaChart size={iconSize} style={{ color: iconColor }} />, 
+                      }
+                      return map[String(props.headerIcon).toLowerCase()] || null
+                    })()}
+                    <div
+                      className="truncate"
+                      style={{
+                        fontSize: props.titleFontSize ? `${props.titleFontSize}px` : undefined,
+                        color: props.titleColor || style.color,
+                        fontWeight: props.titleFontWeight || 600,
+                      }}
+                    >
+                      {props.title || ''}
+                    </div>
+                  </div>
+                )}
+                <div className="flex-1 overflow-auto p-2">
                 <table className="w-full border-collapse">
                   {showHeader && (
                     <thead>
@@ -472,6 +577,7 @@ export const WidgetRenderer = React.memo(function WidgetRenderer({ widget, isMob
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
             )
           }
@@ -480,7 +586,28 @@ export const WidgetRenderer = React.memo(function WidgetRenderer({ widget, isMob
           const allAttrs = [...rowAttrs, ...valueAttrs].filter(Boolean)
           if (allAttrs.length > 0) {
             return (
-              <div className="w-full h-full overflow-auto p-2" style={style}>
+              <div className="w-full h-full flex flex-col" style={style}>
+                {(props.showElementHeaderBar ?? false) && (
+                  <div
+                    className="w-full flex items-center gap-2 px-3 py-2 shrink-0"
+                    style={{
+                      background: props.headerBackgroundColor || 'transparent',
+                      justifyContent: (props.titleAlign || 'left') === 'center' ? 'center' : (props.titleAlign || 'left') === 'right' ? 'flex-end' : 'flex-start',
+                    }}
+                  >
+                    <div
+                      className="truncate"
+                      style={{
+                        fontSize: props.titleFontSize ? `${props.titleFontSize}px` : undefined,
+                        color: props.titleColor || style.color,
+                        fontWeight: props.titleFontWeight || 600,
+                      }}
+                    >
+                      {props.title || ''}
+                    </div>
+                  </div>
+                )}
+                <div className="flex-1 overflow-auto p-2">
                 <table className="w-full border-collapse">
                   {showHeader && (
                     <thead>
@@ -521,6 +648,7 @@ export const WidgetRenderer = React.memo(function WidgetRenderer({ widget, isMob
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
             )
           }
@@ -534,7 +662,28 @@ export const WidgetRenderer = React.memo(function WidgetRenderer({ widget, isMob
       
       if (displayColumns.length > 0) {
         return (
-          <div className="w-full h-full overflow-auto p-2" style={style}>
+          <div className="w-full h-full flex flex-col" style={style}>
+            {(props.showElementHeaderBar ?? false) && (
+              <div
+                className="w-full flex items-center gap-2 px-3 py-2 shrink-0"
+                style={{
+                  background: props.headerBackgroundColor || 'transparent',
+                  justifyContent: (props.titleAlign || 'left') === 'center' ? 'center' : (props.titleAlign || 'left') === 'right' ? 'flex-end' : 'flex-start',
+                }}
+              >
+                <div
+                  className="truncate"
+                  style={{
+                    fontSize: props.titleFontSize ? `${props.titleFontSize}px` : undefined,
+                    color: props.titleColor || style.color,
+                    fontWeight: props.titleFontWeight || 600,
+                  }}
+                >
+                  {props.title || ''}
+                </div>
+              </div>
+            )}
+            <div className="flex-1 overflow-auto p-2">
             <table className="w-full border-collapse">
               {showHeader && (
                 <thead>
@@ -559,6 +708,7 @@ export const WidgetRenderer = React.memo(function WidgetRenderer({ widget, isMob
                 </tr>
               </tbody>
             </table>
+            </div>
           </div>
         )
       }
@@ -566,7 +716,28 @@ export const WidgetRenderer = React.memo(function WidgetRenderer({ widget, isMob
     
     // Show placeholder if no columns configured
     return (
-      <div className="w-full h-full overflow-auto p-2" style={style}>
+      <div className="w-full h-full flex flex-col" style={style}>
+        {(props.showElementHeaderBar ?? false) && (
+          <div
+            className="w-full flex items-center gap-2 px-3 py-2 shrink-0"
+            style={{
+              background: props.headerBackgroundColor || 'transparent',
+              justifyContent: (props.titleAlign || 'left') === 'center' ? 'center' : (props.titleAlign || 'left') === 'right' ? 'flex-end' : 'flex-start',
+            }}
+          >
+            <div
+              className="truncate"
+              style={{
+                fontSize: props.titleFontSize ? `${props.titleFontSize}px` : undefined,
+                color: props.titleColor || style.color,
+                fontWeight: props.titleFontWeight || 600,
+              }}
+            >
+              {props.title || ''}
+            </div>
+          </div>
+        )}
+        <div className="flex-1 overflow-auto p-2">
         <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
           <TableIcon className="h-8 w-8 mb-2" />
           <div className="text-xs text-center">
@@ -577,6 +748,7 @@ export const WidgetRenderer = React.memo(function WidgetRenderer({ widget, isMob
               Debug: chartDimensions = {JSON.stringify(chartDimensions)}
             </div>
           )}
+        </div>
         </div>
       </div>
     )
@@ -1086,7 +1258,8 @@ export const WidgetRenderer = React.memo(function WidgetRenderer({ widget, isMob
                   show: props.showLegend ?? true, 
                   fontSize: props.legendFontSize ?? 12, 
                   fontFamily: props.legendFontFamily ?? 'Roboto', 
-                  color: props.legendColor ?? '#111827' 
+                    color: props.legendColor ?? '#111827',
+                    position: props.legendPosition || 'bottom'
                 },
                 showLegend: props.showLegend ?? true,
                 // Grid configuration
@@ -1140,6 +1313,14 @@ export const WidgetRenderer = React.memo(function WidgetRenderer({ widget, isMob
                   show: props.showLabels ?? true, 
                   showLine: props.showLabelLines ?? false 
                 },
+                  // Bar/Line extra configuration
+                  bar: {
+                    mode: props.barMode || 'grouped',
+                    orientation: props.barOrientation || 'vertical'
+                  },
+                  line: {
+                    curve: props.lineCurve || 'monotone'
+                  },
                 // Series styles (per measure)
                 series: props.seriesStyles || {}
               }}

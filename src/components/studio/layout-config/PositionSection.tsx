@@ -27,7 +27,7 @@ export function PositionSection({
   }
 
   return (
-    <div className="space-y-2 pb-4 border-b ">
+    <div className="space-y-2 pb-4 ">
       <Label className="text-xs font-semibold px-4">Position</Label>
       
       {/* X/Y Coordinates */}

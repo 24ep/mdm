@@ -9,6 +9,9 @@ import { Layout, Plus, Edit } from 'lucide-react'
 import { useSpace } from '@/contexts/space-context'
 import { SpaceSettingsSidebar } from '@/components/space-management/SpaceSettingsSidebar'
 import { SpaceSettingsHeader } from '@/components/space-management/SpaceSettingsHeader'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { SpacesEditorManager } from '@/lib/space-studio-manager'
 
 const defaultLayouts = [
   {
@@ -47,6 +50,9 @@ export default function LayoutSelectionPage() {
   const { currentSpace, spaces } = useSpace()
   const [adminTemplates, setAdminTemplates] = useState<LayoutTemplate[]>([])
   const [loading, setLoading] = useState(true)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [proposedName, setProposedName] = useState('Customer Layout 1')
+  const [creating, setCreating] = useState(false)
 
   const selectedSpace = useMemo(() => {
     return spaces.find((s: any) => s.id === params.space || s.slug === params.space) || currentSpace
@@ -86,9 +92,24 @@ export default function LayoutSelectionPage() {
   }, [adminTemplates, selectedSpace, params.space])
 
   const handleCreateNewLayout = () => {
-    // Navigate to a new layout creation page or open a dialog
-    // For now, navigate to blank layout
-    router.push(`/${spaceSlug}/settings/layout/blank`)
+    // Open name dialog with a default proposal
+    ;(async () => {
+      const cfg = await SpacesEditorManager.getLayoutConfig(spaceSlug)
+      let base = 'Customer Layout'
+      let num = 1
+      if (cfg?.name && typeof cfg.name === 'string') {
+        const m = String(cfg.name).match(/^(.*?)(\s(\d+))?$/)
+        if (m) {
+          base = (m[1] || 'Customer Layout').trim() || 'Customer Layout'
+          if (m[3]) {
+            const n = parseInt(m[3])
+            if (!Number.isNaN(n)) num = n + 1
+          }
+        }
+      }
+      setProposedName(`${base} ${num}`)
+      setCreateOpen(true)
+    })()
   }
 
   if (loading) {
@@ -182,6 +203,41 @@ export default function LayoutSelectionPage() {
                   </div>
                 </CardHeader>
               </Card>
+
+          {/* Create Layout Dialog */}
+          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create layout</DialogTitle>
+                <DialogDescription>Set a name for your new layout.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-2">
+                <label className="text-xs font-medium">Layout name</label>
+                <Input value={proposedName} onChange={(e) => setProposedName(e.target.value)} />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
+                <Button
+                  onClick={async () => {
+                    if (!proposedName.trim()) return
+                    setCreating(true)
+                    try {
+                      // Create the record immediately
+                      await SpacesEditorManager.saveLayoutConfig(spaceSlug, { name: proposedName.trim() })
+                      setCreateOpen(false)
+                      // Navigate to layout config page using the chosen name as the route param
+                      router.push(`/${spaceSlug}/settings/layout/${encodeURIComponent(proposedName.trim())}`)
+                    } finally {
+                      setCreating(false)
+                    }
+                  }}
+                  disabled={creating}
+                >
+                  {creating ? 'Creating...' : 'Create'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
             </div>
           </TabsContent>
         </div>

@@ -54,6 +54,19 @@ export function WidgetSpecificSection({
     return 'Widget style'
   }
 
+  if (widget.type.includes('chart')) {
+    // For chart widgets, render the chart configuration sections directly
+    return (
+      <>
+        <ChartConfigurationSection
+          widget={widget}
+          selectedWidgetId={selectedWidgetId}
+          setPlacedWidgets={setPlacedWidgets}
+        />
+      </>
+    )
+  }
+
   return (
     <AccordionItem value="widget-specific" className="border-0">
       <AccordionTrigger className="text-xs font-semibold py-2 px-4 hover:no-underline">
@@ -63,14 +76,7 @@ export function WidgetSpecificSection({
         </div>
       </AccordionTrigger>
       <AccordionContent className="px-0 pt-2">
-        {widget.type.includes('chart') ? (
-          <ChartConfigurationSection
-            widget={widget}
-            selectedWidgetId={selectedWidgetId}
-            setPlacedWidgets={setPlacedWidgets}
-          />
-        ) : (
-          <div className="px-4 pb-3 space-y-3">
+        <div className="px-4 pb-3 space-y-3">
               {widget.type.includes('table') && (
                 <>
                   <div className="flex items-center justify-between">
@@ -298,8 +304,7 @@ export function WidgetSpecificSection({
               </div>
             </>
           )}
-          </div>
-        )}
+        </div>
       </AccordionContent>
     </AccordionItem>
   )

@@ -19,7 +19,8 @@ async function createCustomerDataModel() {
     // Get the first admin user to be the creator
     const userResult = await client.query(`
       SELECT * FROM public.users 
-      WHERE role IN ('SUPER_ADMIN', 'ADMIN') AND is_active = true 
+      WHERE role IN ('SUPER_ADMIN', 'ADMIN')
+      ORDER BY created_at DESC
       LIMIT 1
     `)
 
@@ -60,32 +61,44 @@ async function createCustomerDataModel() {
       console.log(`✅ Created Customer Data space: ${customerSpace.name} (ID: ${customerSpace.id})`)
     }
 
-    // Check if customer model already exists
+    // Check if customer model already exists (by name)
     const modelCheckResult = await client.query(`
       SELECT * FROM public.data_models 
-      WHERE name = 'customer' AND space_id = $1
-    `, [customerSpace.id])
+      WHERE name = 'customer'
+    `)
 
     let customerModel
     if (modelCheckResult.rows.length > 0) {
       customerModel = modelCheckResult.rows[0]
-      console.log(`📋 Customer model already exists: ${customerModel.display_name}`)
+      console.log(`📋 Customer model already exists: ${customerModel.display_name || customerModel.name}`)
     } else {
-      // Create the customer data model
+      // Create the customer data model (no space_id column)
       const modelResult = await client.query(`
-        INSERT INTO public.data_models (name, display_name, description, space_id, created_by)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO public.data_models (id, name, description, created_by, updated_at)
+        VALUES (gen_random_uuid(), $1, $2, $3, NOW())
         RETURNING *
       `, [
         'customer',
-        'Customer',
         'Customer information and contact details',
-        customerSpace.id,
         adminUser.id
       ])
 
       customerModel = modelResult.rows[0]
-      console.log(`✅ Created customer model: ${customerModel.display_name} (ID: ${customerModel.id})`)
+      console.log(`✅ Created customer model: ${customerModel.name} (ID: ${customerModel.id})`)
+    }
+
+    // Ensure model is linked to the space in data_model_spaces
+    const dmsCheck = await client.query(`
+      SELECT 1 FROM public.data_model_spaces 
+      WHERE data_model_id = $1 AND space_id = $2
+    `, [customerModel.id, customerSpace.id])
+
+    if (dmsCheck.rows.length === 0) {
+      await client.query(`
+        INSERT INTO public.data_model_spaces (id, data_model_id, space_id, created_at, updated_at)
+        VALUES (gen_random_uuid(), $1, $2, NOW(), NOW())
+      `, [customerModel.id, customerSpace.id])
+      console.log(`✅ Linked model to space via data_model_spaces`)
     }
 
     // Create customer attributes

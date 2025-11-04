@@ -76,6 +76,15 @@ export function StrokeSection({
     })
   }
 
+  const setBorderSides = (sides: Partial<Record<'top' | 'right' | 'bottom' | 'left', boolean>>) => {
+    updateProperty('borderSides', {
+      top: sides.top ?? false,
+      right: sides.right ?? false,
+      bottom: sides.bottom ?? false,
+      left: sides.left ?? false,
+    })
+  }
+
   const isBorderColorGlobal = isUsingGlobalStyle(
     widget.properties?.borderColor,
     globalStyle,
@@ -108,7 +117,7 @@ export function StrokeSection({
   }
 
   return (
-    <div className="space-y-2 px-4 pb-3 border-b">
+    <div className="space-y-2 px-4 pb-3">
       {/* Show/Hide Border Toggle */}
       <div className="flex items-center justify-between mb-2">
         <Label className="text-xs font-medium">Show border</Label>
@@ -119,7 +128,7 @@ export function StrokeSection({
       </div>
 
       {/* Stroke Color */}
-      <div className="relative mb-2">
+      <div className="relative mb-2 w-28">
         <ColorPickerPopover
           value={effectiveBorderColor}
           onChange={(color) => updateProperty('borderColor', color)}
@@ -165,7 +174,15 @@ export function StrokeSection({
 
       {/* Border Sides */}
       <div className="mb-2">
-        <Label className="text-xs text-muted-foreground mb-2 block">Sides</Label>
+        <div className="flex items-center justify-between mb-2">
+          <Label className="text-xs text-muted-foreground">Sides</Label>
+          <div className="flex items-center gap-1">
+            <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={() => setBorderSides({ top: true, right: true, bottom: true, left: true })}>All</Button>
+            <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={() => setBorderSides({})}>None</Button>
+            <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={() => setBorderSides({ top: true, bottom: true })}>H</Button>
+            <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={() => setBorderSides({ left: true, right: true })}>V</Button>
+          </div>
+        </div>
         <div className="flex items-center justify-center gap-1">
           <Button
             type="button"
@@ -247,12 +264,83 @@ export function StrokeSection({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="solid">Solid</SelectItem>
-              <SelectItem value="dashed">Dashed</SelectItem>
-              <SelectItem value="dotted">Dotted</SelectItem>
-              <SelectItem value="double">Double</SelectItem>
+              <SelectItem value="none">
+                <div className="flex items-center gap-2">
+                  <span className="w-8 h-px bg-transparent" />
+                  <span>None</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="solid">
+                <div className="flex items-center gap-2">
+                  <span className="w-8 h-px bg-current" />
+                  <span>Solid</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="dashed">
+                <div className="flex items-center gap-2">
+                  <span className="w-8 h-0 border-t border-dashed border-current" />
+                  <span>Dashed</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="dotted">
+                <div className="flex items-center gap-2">
+                  <span className="w-8 h-0 border-t border-dotted border-current" />
+                  <span>Dotted</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="double">
+                <div className="flex items-center gap-2">
+                  <span className="w-8 h-0 border-t-4 border-b-0 border-current" style={{ boxShadow: '0 -3px 0 0 currentColor inset' as any }} />
+                  <span>Double</span>
+                </div>
+              </SelectItem>
             </SelectContent>
           </Select>
+        </div>
+      </div>
+
+      {/* Corner Radius (uniform) */}
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-1 col-span-2">
+          <Label className="text-xs text-muted-foreground">Corner Radius</Label>
+          <div className="grid grid-cols-2 gap-2">
+            <Input
+              type="number"
+              value={typeof widget.properties?.borderRadius === 'number' ? widget.properties.borderRadius : (widget.properties?.borderRadius?.topLeft?.value ?? 0)}
+              onChange={(e) => {
+                const val = parseFloat(e.target.value) || 0
+                const unit = (typeof widget.properties?.borderRadius === 'object' && widget.properties?.borderRadius?.topLeft?.unit) || 'px'
+                updateProperty('borderRadius', {
+                  topLeft: { value: val, unit },
+                  topRight: { value: val, unit },
+                  bottomRight: { value: val, unit },
+                  bottomLeft: { value: val, unit },
+                })
+              }}
+              className="h-7 text-xs"
+              placeholder="0"
+            />
+            <Select
+              value={typeof widget.properties?.borderRadius === 'object' ? (widget.properties?.borderRadius?.topLeft?.unit || 'px') : 'px'}
+              onValueChange={(unit: 'px' | '%') => {
+                const val = typeof widget.properties?.borderRadius === 'number' ? widget.properties.borderRadius : (widget.properties?.borderRadius?.topLeft?.value ?? 0)
+                updateProperty('borderRadius', {
+                  topLeft: { value: val, unit },
+                  topRight: { value: val, unit },
+                  bottomRight: { value: val, unit },
+                  bottomLeft: { value: val, unit },
+                })
+              }}
+            >
+              <SelectTrigger className="h-7 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="px">px</SelectItem>
+                <SelectItem value="%">%</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
     </div>

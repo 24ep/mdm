@@ -303,17 +303,62 @@ export function Canvas({
           }
           
           const widgetDef = widgetsPalette.find((w: any) => w.type === widgetType)
-          const defaultSize = widgetDef?.type.includes('chart') 
-            ? { width: 400, height: 300 }
-            : widgetDef?.type.includes('table')
-            ? { width: 500, height: 400 }
-            : { width: 300, height: 200 }
+          
+          const getDefaultSize = (type: string): { width: number; height: number } => {
+            const t = type.toLowerCase()
+            // Charts
+            if (t.includes('bar-chart') || t.includes('line-chart') || t.includes('area-chart') || t.includes('scatter-chart') || t.includes('radar-chart') || t.includes('gauge-chart') || t.includes('funnel-chart') || t.includes('waterfall-chart') || t.includes('treemap-chart') || t.includes('heatmap-chart') || t.includes('bubble-chart') || t.includes('combo-chart')) {
+              return { width: 560, height: 360 }
+            }
+            if (t.includes('pie-chart') || t.includes('donut-chart')) {
+              return { width: 420, height: 360 }
+            }
+            if (t === 'time-series') {
+              return { width: 640, height: 360 }
+            }
+            // Tables
+            if (t === 'table' || t === 'pivot-table') {
+              return { width: 720, height: 420 }
+            }
+            // Media
+            if (t === 'image') return { width: 320, height: 240 }
+            if (t === 'video') return { width: 480, height: 270 } // 16:9
+            if (t === 'html' || t === 'iframe' || t === 'embed') return { width: 480, height: 360 }
+            // Map/Calendar
+            if (t === 'map') return { width: 640, height: 400 }
+            if (t === 'calendar') return { width: 400, height: 320 }
+            // Simple elements
+            if (t === 'text') return { width: 320, height: 80 }
+            if (t === 'button') return { width: 160, height: 48 }
+            if (t === 'link') return { width: 200, height: 40 }
+            if (t === 'divider') return { width: 600, height: 2 }
+            if (t === 'spacer') return { width: 200, height: 100 }
+            // Shapes
+            if (t === 'rectangle' || t === 'shape') return { width: 200, height: 150 }
+            if (t === 'circle') return { width: 150, height: 150 }
+            if (t === 'triangle' || t === 'hexagon' || t === 'star') return { width: 180, height: 160 }
+            // Filters
+            if (t.includes('-filter')) {
+              if (t.startsWith('text-') || t.startsWith('search-')) return { width: 240, height: 40 }
+              if (t.startsWith('number-')) return { width: 200, height: 40 }
+              if (t.startsWith('date-')) return { width: 240, height: 40 }
+              if (t.startsWith('dropdown-') || t.startsWith('select-')) return { width: 220, height: 40 }
+              if (t.startsWith('checkbox-')) return { width: 200, height: 32 }
+              if (t.startsWith('slider-') || t.startsWith('range-')) return { width: 300, height: 48 }
+            }
+            // Fallbacks
+            if (widgetDef?.type?.includes('chart')) return { width: 560, height: 360 }
+            if (widgetDef?.type?.includes('table')) return { width: 720, height: 420 }
+            return { width: 300, height: 200 }
+          }
+          
+          const defaultSize = getDefaultSize(widgetType)
           
           let finalWidth = defaultSize.width
           let finalHeight = defaultSize.height
           if (canvasMode === 'grid') {
-            finalWidth = Math.round(defaultSize.width / gridSize) * gridSize
-            finalHeight = Math.round(defaultSize.height / gridSize) * gridSize
+            finalWidth = Math.max(gridSize, Math.round(defaultSize.width / gridSize) * gridSize)
+            finalHeight = Math.max(gridSize, Math.round(defaultSize.height / gridSize) * gridSize)
           }
           
           const boundedX = Math.min(x, rect.width - finalWidth)
@@ -491,101 +536,7 @@ export function Canvas({
         )
       })}
 
-      {/* Floating Toolbar - appears when widget is selected */}
-      {selectedWidgetId && selectedWidgetNonNull && selectedRect && selectedWidgets.length > 0 && (
-        <FloatingToolbar
-          selectedWidget={selectedWidgetNonNull}
-          selectedWidgets={selectedWidgets}
-          placedWidgets={placedWidgets}
-          onUpdateWidget={handleUpdateWidget}
-          onBulkUpdate={handleBulkUpdate}
-          onDelete={handleDelete}
-          onDuplicate={handleDuplicate}
-          onLock={() => {
-            setPlacedWidgets(prev => prev.map(w => 
-              w.id === selectedWidgetId
-                ? { ...w, properties: { ...w.properties, locked: true } }
-                : w
-            ))
-          }}
-          onUnlock={() => {
-            setPlacedWidgets(prev => prev.map(w => 
-              w.id === selectedWidgetId
-                ? { ...w, properties: { ...w.properties, locked: false } }
-                : w
-            ))
-          }}
-          onHide={() => {
-            setPlacedWidgets(prev => prev.map(w => 
-              w.id === selectedWidgetId
-                ? { ...w, properties: { ...w.properties, hidden: true } }
-                : w
-            ))
-          }}
-          onShow={() => {
-            setPlacedWidgets(prev => prev.map(w => 
-              w.id === selectedWidgetId
-                ? { ...w, properties: { ...w.properties, hidden: false } }
-                : w
-            ))
-          }}
-          onBringToFront={() => {
-            const currentPageWidgets = placedWidgets.filter(w => w.pageId === selectedWidgetNonNull.pageId)
-            const maxZ = Math.max(...currentPageWidgets.map(w => w.properties?.zIndex || 0), 0)
-            setPlacedWidgets(prev => prev.map(w => 
-              w.id === selectedWidgetId
-                ? { ...w, properties: { ...w.properties, zIndex: maxZ + 1 } }
-                : w
-            ))
-          }}
-          onSendToBack={() => {
-            const currentPageWidgets = placedWidgets.filter(w => w.pageId === selectedWidgetNonNull.pageId)
-            const minZ = Math.min(...currentPageWidgets.map(w => w.properties?.zIndex || 0), 0)
-            setPlacedWidgets(prev => prev.map(w => 
-              w.id === selectedWidgetId
-                ? { ...w, properties: { ...w.properties, zIndex: minZ - 1 } }
-                : w
-            ))
-          }}
-          onBringForward={() => {
-            const currentZ = selectedWidgetNonNull.properties?.zIndex || 0
-            const currentPageWidgets = placedWidgets.filter(w => w.pageId === selectedWidgetNonNull.pageId)
-            const nextZ = Math.min(...currentPageWidgets
-              .filter(w => (w.properties?.zIndex || 0) > currentZ)
-              .map(w => w.properties?.zIndex || 0))
-            if (nextZ !== Infinity) {
-              setPlacedWidgets(prev => prev.map(w => {
-                if (w.id === selectedWidgetId) {
-                  return { ...w, properties: { ...w.properties, zIndex: nextZ } }
-                } else if ((w.properties?.zIndex || 0) === nextZ) {
-                  return { ...w, properties: { ...w.properties, zIndex: currentZ } }
-                }
-                return w
-              }))
-            }
-          }}
-          onSendBackward={() => {
-            const currentZ = selectedWidgetNonNull.properties?.zIndex || 0
-            const currentPageWidgets = placedWidgets.filter(w => w.pageId === selectedWidgetNonNull.pageId)
-            const prevZ = Math.max(...currentPageWidgets
-              .filter(w => (w.properties?.zIndex || 0) < currentZ)
-              .map(w => w.properties?.zIndex || 0))
-            if (prevZ !== -Infinity) {
-              setPlacedWidgets(prev => prev.map(w => {
-                if (w.id === selectedWidgetId) {
-                  return { ...w, properties: { ...w.properties, zIndex: prevZ } }
-                } else if ((w.properties?.zIndex || 0) === prevZ) {
-                  return { ...w, properties: { ...w.properties, zIndex: currentZ } }
-                }
-                return w
-              }))
-            }
-          }}
-          selectedRect={selectedRect}
-          zoom={100}
-          onOpenProperties={handleOpenProperties}
-        />
-      )}
+      {/* Floating Toolbar removed per request */}
     </div>
   )
 }

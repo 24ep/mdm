@@ -339,35 +339,9 @@ export function Preview({
                           }
                         })
                         
-                        // Filter out separators at the start/end and consecutive separators
-                        // Only keep separators that are between visible pages
-                        // Badges are always shown
-                        const filteredItems = sidebarItems.filter((item, idx) => {
-                          // Badges are always shown
-                          if (item.type === 'badge') {
-                            return true
-                          }
-                          
-                          if (item.type === 'separator') {
-                            // Don't show separator if it's the first or last item
-                            if (idx === 0 || idx === sidebarItems.length - 1) {
-                              return false
-                            }
-                            // Don't show separator if previous or next item is also a separator
-                            const prevItem = sidebarItems[idx - 1]
-                            const nextItem = sidebarItems[idx + 1]
-                            if (prevItem?.type === 'separator' || nextItem?.type === 'separator') {
-                              return false
-                            }
-                            // Only show separator if there's a visible page before and after it
-                            if (prevItem?.type === 'page' && nextItem?.type === 'page') {
-                              return true
-                            }
-                            return false
-                          }
-                          return true
-                        })
-                        
+                        // Show all items including separators and badges
+                        const filteredItems = sidebarItems
+
                         if (filteredItems.length === 0) {
                           return (
                             <div className={`${isMobile ? 'py-3' : 'py-4'} text-center`}>
@@ -381,12 +355,23 @@ export function Preview({
                         return filteredItems.map((item, idx) => {
                           // Render separator as actual line
                           if (item.type === 'separator') {
+                            const sep = allPages.find(p => p.id === item.id)
+                            const color = (sep as any)?.separatorColor || 'var(--border)'
+                            const weight = Number((sep as any)?.separatorWeight ?? 1)
+                            const margin = Number((sep as any)?.separatorMargin ?? 8)
+                            const marginX = Number((sep as any)?.separatorMarginX ?? 0)
+                            const padding = Number((sep as any)?.separatorPadding ?? 0)
+                            const paddingX = Number((sep as any)?.separatorPaddingX ?? 0)
+                            const isImgOrGrad = (v: string) => v?.startsWith('linear-gradient') || v?.startsWith('radial-gradient') || v?.startsWith('url(')
+                            const styleLine: React.CSSProperties = isImgOrGrad(String(color))
+                              ? { height: `${Math.max(1, weight)}px`, backgroundImage: String(color) }
+                              : { height: `${Math.max(1, weight)}px`, backgroundColor: String(color) }
                             return (
                               <div 
                                 key={item.id}
-                                className="my-2"
+                                style={{ marginTop: margin, marginBottom: margin, marginLeft: marginX, marginRight: marginX, paddingTop: padding, paddingBottom: padding, paddingLeft: paddingX, paddingRight: paddingX }}
                               >
-                                <div className="h-px bg-border" />
+                                <div style={styleLine} />
                               </div>
                             )
                           }

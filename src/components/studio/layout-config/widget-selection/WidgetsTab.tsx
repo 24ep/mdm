@@ -1,8 +1,7 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { ChevronDown, ChevronRight, Box } from 'lucide-react'
 import { widgetsPalette } from '../widgets'
 import { WidgetItem } from './WidgetItem'
 import { useDragHandler } from './useDragHandler'
@@ -10,108 +9,93 @@ import { useDragHandler } from './useDragHandler'
 interface WidgetsTabProps {
   searchQuery: string
   onClose: () => void
+  categoryFilter?: 'all' | 'dashboard' | 'ui' | 'filters' | 'shapes' | 'media' | 'charts' | 'tables' | 'utilities'
 }
 
-export function WidgetsTab({ searchQuery, onClose }: WidgetsTabProps) {
-  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
+export function WidgetsTab({ searchQuery, onClose, categoryFilter = 'all' }: WidgetsTabProps) {
   const { handleDragStart, handleDragEnd } = useDragHandler(onClose)
   
-  const categories = Array.from(new Set(widgetsPalette.map(w => w.category)))
+  // Filter widgets based on search (flat list)
+  const filteredWidgets = useMemo(() => {
+    if (!searchQuery.trim()) return widgetsPalette
+    const query = searchQuery.toLowerCase().trim()
+    return widgetsPalette.filter(w =>
+      w.label.toLowerCase().includes(query) ||
+      w.type.toLowerCase().includes(query) ||
+      (w.category || '').toLowerCase().includes(query)
+    )
+  }, [searchQuery])
   
-  // Get category icon (first widget icon from that category)
-  const getCategoryIcon = (category: string) => {
-    const firstWidget = widgetsPalette.find(w => w.category === category)
-    return firstWidget?.icon || Box
-  }
-  
-  const getCategoryWidgets = (category: string) => {
-    return widgetsPalette.filter(w => w.category === category)
-  }
-  
-  // Filter widgets based on search
-  const filteredWidgetsByCategory = useMemo(() => {
-    const result: Record<string, Array<typeof widgetsPalette[number]>> = {}
-    
-    categories.forEach(category => {
-      let widgets = getCategoryWidgets(category)
-      
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase().trim()
-        widgets = widgets.filter(w => 
-          w.label.toLowerCase().includes(query) || 
-          w.type.toLowerCase().includes(query) ||
-          w.category.toLowerCase().includes(query)
-        )
-      }
-      
-      if (widgets.length > 0) {
-        result[category] = widgets
-      }
-    })
-    
+  // Best-practice groups (no accordion; simple headers + grids)
+  const groups: Array<{ title: string; items: typeof widgetsPalette }>= useMemo(() => {
+    const items = filteredWidgets
+    const match = (predicate: (t: string) => boolean) => (w: any) => predicate(String(w.type || '').toLowerCase())
+    const by = (list: any[], pred: (w: any) => boolean) => list.filter(pred)
+    const notBy = (list: any[], pred: (w: any) => boolean) => list.filter(w => !pred(w))
+
+    const isChart = (t: string) => t.endsWith('-chart') || t === 'time-series'
+    const isTable = (t: string) => t === 'table' || t === 'pivot-table'
+    const isFilter = (t: string) => t.includes('-filter')
+    const isMedia = (t: string) => t === 'image' || t === 'video' || t === 'html' || t === 'iframe' || t === 'embed'
+    const isShape = (t: string) => ['rectangle', 'circle', 'triangle', 'hexagon', 'shape', 'star'].includes(t)
+    const isUI = (t: string) => ['text', 'button', 'link', 'divider', 'spacer', 'card', 'container'].includes(t)
+    const isOther = (t: string) => !isChart(t) && !isTable(t) && !isFilter(t) && !isMedia(t) && !isShape(t) && !isUI(t)
+
+    // No "Common" section; use full filtered list for category grouping
+    const remainingAfterCommon = items
+
+    const charts = by(remainingAfterCommon, match(isChart))
+    const tables = by(remainingAfterCommon, match(isTable))
+    const filters = by(remainingAfterCommon, match(isFilter))
+    const media = by(remainingAfterCommon, match(isMedia))
+    const shapes = by(remainingAfterCommon, match(isShape))
+    const ui = by(remainingAfterCommon, match(isUI))
+    const other = by(remainingAfterCommon, match(isOther))
+
+    const result: Array<{ title: string; items: typeof widgetsPalette }>= []
+    const push = (title: string, items: any[]) => { if (items.length) result.push({ title, items }) }
+
+    // Determine which groups to display based on categoryFilter
+    const wants = (name: string) => categoryFilter === 'all' ||
+      (categoryFilter === 'dashboard' && ['Charts', 'Tables', 'UI Elements'].includes(name)) ||
+      (categoryFilter === 'charts' && name === 'Charts') ||
+      (categoryFilter === 'tables' && name === 'Tables') ||
+      (categoryFilter === 'filters' && name === 'Filters') ||
+      (categoryFilter === 'media' && name === 'Media') ||
+      (categoryFilter === 'ui' && name === 'UI Elements') ||
+      (categoryFilter === 'shapes' && name === 'Shapes') ||
+      (categoryFilter === 'utilities' && name === 'Utilities')
+
+    if (charts.length && wants('Charts')) push('Charts', charts)
+    if (tables.length && wants('Tables')) push('Tables', tables)
+    if (filters.length && wants('Filters')) push('Filters', filters)
+    if (media.length && wants('Media')) push('Media', media)
+    if (ui.length && wants('UI Elements')) push('UI Elements', ui)
+    if (shapes.length && wants('Shapes')) push('Shapes', shapes)
+    if (other.length && wants('Utilities')) push('Utilities', other)
     return result
-  }, [searchQuery, categories])
-  
-  const toggleCategory = (category: string) => {
-    setCollapsedCategories(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(category)) {
-        newSet.delete(category)
-      } else {
-        newSet.add(category)
-      }
-      return newSet
-    })
-  }
+  }, [filteredWidgets, searchQuery, categoryFilter])
   
   return (
     <ScrollArea className="h-full">
-      <div className="p-4 space-y-4">
-        {Object.entries(filteredWidgetsByCategory).map(([category, widgets]) => {
-          const CategoryIcon = getCategoryIcon(category)
-          const isCollapsed = collapsedCategories.has(category)
-          
-          return (
-            <div key={category} className="border rounded-lg">
-              {/* Category Header */}
-              <button
-                onClick={() => toggleCategory(category)}
-                className="w-full flex items-center justify-between p-3 bg-muted/50 hover:bg-muted transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  {isCollapsed ? (
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                  )}
-                  <CategoryIcon className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-semibold text-sm">{category}</span>
-                  <span className="text-xs text-muted-foreground">
-                    ({widgets.length})
-                  </span>
-                </div>
-              </button>
-              
-              {/* Widgets Grid */}
-              {!isCollapsed && (
-                <div className="p-3">
-                  <div className="grid grid-cols-3 gap-2">
-                    {widgets.map(w => (
-                      <WidgetItem
-                        key={w.type}
-                        widget={w}
-                        onDragStart={handleDragStart}
-                        onDragEnd={handleDragEnd}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
+      <div className="p-4 space-y-6">
+        {groups.map(group => (
+          <div key={group.title} className="space-y-2">
+            <div className="text-xs font-semibold text-muted-foreground px-1">{group.title}</div>
+            <div className="grid grid-cols-3 gap-2">
+              {group.items.map(w => (
+                <WidgetItem
+                  key={`${group.title}-${w.type}`}
+                  widget={w}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
+                />
+              ))}
             </div>
-          )
-        })}
-        
-        {Object.keys(filteredWidgetsByCategory).length === 0 && (
+          </div>
+        ))}
+
+        {groups.length === 0 && (
           <div className="text-center py-8 text-sm text-muted-foreground">
             No widgets found matching "{searchQuery}"
           </div>

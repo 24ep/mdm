@@ -123,7 +123,7 @@ export function EffectsSection({
         </div>
       </div>
       
-      {/* Shadow Properties - Always visible */}
+      {/* Shadow Properties */}
       {effectiveShadow && (
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
@@ -164,6 +164,30 @@ export function EffectsSection({
               onChange={(e) => updateProperty('shadowSpread', parseInt(e.target.value) || 0)}
               className="h-7 text-xs"
               placeholder="0"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Color</Label>
+            <Input
+              type="color"
+              value={widget.properties?.shadowColor || '#000000'}
+              onChange={(e) => updateProperty('shadowColor', e.target.value)}
+              className="h-7 text-xs p-0 cursor-pointer"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Opacity (%)</Label>
+            <Input
+              type="number"
+              value={widget.properties?.shadowOpacity !== undefined ? Math.round((widget.properties.shadowOpacity as number) * 100) : 25}
+              onChange={(e) => {
+                const v = Math.max(0, Math.min(100, parseInt(e.target.value) || 0))
+                updateProperty('shadowOpacity', v / 100)
+              }}
+              className="h-7 text-xs w-40"
+              placeholder="25"
+              min={0}
+              max={100}
             />
           </div>
         </div>
