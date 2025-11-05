@@ -1,11 +1,13 @@
 import React from 'react'
-import { Plus, X, Check } from 'lucide-react'
+import { Plus, X, Check, Paintbrush, GripVertical } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import { Calendar as CalendarIcon, Hash, Type as TypeIcon } from 'lucide-react'
 import { Attribute } from './chartDataSourceTypes'
 import { getAttributeIcon, getTypeBadgeClass, getEffectiveType } from './chartDataSourceUtils'
 import { AggregationType } from './ChartDataSourceConfig'
+import { ColorPickerPopover } from './ColorPickerPopover'
 
 interface AttributeDropZoneProps {
   dimKey: string
@@ -23,6 +25,10 @@ interface AttributeDropZoneProps {
   onDimensionValueChange: (dimKey: string, value: string) => void
   attributeTypeOverrides: Record<string, Record<string, string>>
   onTypeOverride: (dimKey: string, attrName: string, nextType: string) => void
+  attributeTypeSettings?: Record<string, any>
+  onTypeSettingChange?: (dimKey: string, attrName: string, partial: Record<string, any>) => void
+  attributeDisplayNames?: Record<string, string>
+  onDisplayNameChange?: (dimKey: string, attrName: string, alias: string) => void
   isValueMetric?: boolean
   attributeAggregations?: Record<string, AggregationType>
   onAggregationChange?: (dimKey: string, attrName: string, aggregation: AggregationType) => void
@@ -48,8 +54,501 @@ const AGGREGATION_OPTIONS: { value: AggregationType; label: string }[] = [
   { value: 'COUNT_DISTINCT', label: 'Count Distinct' },
   { value: 'MIN', label: 'Min' },
   { value: 'MAX', label: 'Max' },
+  { value: 'MEDIAN', label: 'Median' },
+  { value: 'STDDEV', label: 'Std Dev' },
+  { value: 'VARIANCE', label: 'Variance' },
   { value: 'NONE', label: 'None' },
 ]
+
+function AggregationBadge({
+  value,
+  onChange,
+}: {
+  value: AggregationType
+  onChange: (v: AggregationType) => void
+}) {
+  const btnRef = React.useRef<HTMLButtonElement | null>(null)
+  const [panelWidth, setPanelWidth] = React.useState<number | undefined>(undefined)
+  const label = (AGGREGATION_OPTIONS.find(o => o.value === value)?.label || value).toUpperCase()
+
+  return (
+    <Popover
+      onOpenChange={(open) => {
+        if (open && btnRef.current) {
+          setPanelWidth(btnRef.current.offsetWidth)
+        }
+      }}
+    >
+      <PopoverTrigger asChild>
+        <button
+          ref={btnRef}
+          type="button"
+          className="inline-flex items-center rounded-[2px] px-1 py-0.5 text-[9px] leading-none text-muted-foreground bg-muted cursor-pointer hover:bg-muted/80"
+          title="Change aggregation"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {label}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="z-[10001] p-1 whitespace-nowrap"
+        align="start"
+        sideOffset={6}
+        style={{ minWidth: panelWidth, width: 'max-content' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex flex-col gap-0.5">
+          {AGGREGATION_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              className="w-full text-left text-[11px] px-2 py-1 rounded hover:bg-accent hover:text-accent-foreground"
+              onClick={() => onChange(opt.value)}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+type Granularity = 'AUTO' | 'YEAR' | 'QUARTER' | 'MONTH' | 'WEEK' | 'DAY' | 'HOUR' | 'MINUTE' | 'SECOND'
+function GranularityBadge({ value, onChange }: { value: Granularity; onChange: (v: Granularity) => void }) {
+  const btnRef = React.useRef<HTMLButtonElement | null>(null)
+  const [panelWidth, setPanelWidth] = React.useState<number | undefined>(undefined)
+  return (
+    <Popover onOpenChange={(open) => { if (open && btnRef.current) setPanelWidth(btnRef.current.offsetWidth) }}>
+      <PopoverTrigger asChild>
+        <button
+          ref={btnRef}
+          type="button"
+          className="ml-1 inline-flex items-center rounded-[2px] px-1 py-0.5 text-[9px] leading-none text-muted-foreground bg-muted hover:bg-muted/80"
+          onClick={(e) => e.stopPropagation()}
+          title="Change date granularity"
+        >
+          {String(value).toUpperCase()}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="z-[10001] p-1 whitespace-nowrap" align="start" sideOffset={6} style={{ minWidth: panelWidth, width: 'max-content' }} onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-col gap-0.5">
+          {(['AUTO','YEAR','QUARTER','MONTH','WEEK','DAY','HOUR','MINUTE','SECOND'] as Granularity[]).map(opt => (
+            <button key={opt} className="w-full text-left text-[11px] px-2 py-1 rounded hover:bg-accent hover:text-accent-foreground" onClick={() => onChange(opt)}>
+              {opt}
+            </button>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+type Bins = 'AUTO' | 'NONE' | 5 | 10 | 20 | 50
+function BucketBadge({ value, onChange }: { value: Bins; onChange: (v: Bins) => void }) {
+  const btnRef = React.useRef<HTMLButtonElement | null>(null)
+  const [panelWidth, setPanelWidth] = React.useState<number | undefined>(undefined)
+  const label = typeof value === 'number' ? `${value} BINS` : value
+  return (
+    <Popover onOpenChange={(open) => { if (open && btnRef.current) setPanelWidth(btnRef.current.offsetWidth) }}>
+      <PopoverTrigger asChild>
+        <button
+          ref={btnRef}
+          type="button"
+          className="ml-1 inline-flex items-center rounded-[2px] px-1 py-0.5 text-[9px] leading-none text-muted-foreground bg-muted hover:bg-muted/80"
+          onClick={(e) => e.stopPropagation()}
+          title="Change number buckets"
+        >
+          {String(label).toUpperCase()}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="z-[10001] p-1 whitespace-nowrap" align="start" sideOffset={6} style={{ minWidth: panelWidth, width: 'max-content' }} onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-col gap-0.5">
+          {(['AUTO','NONE',5,10,20,50] as Bins[]).map(opt => (
+            <button key={String(opt)} className="w-full text-left text-[11px] px-2 py-1 rounded hover:bg-accent hover:text-accent-foreground" onClick={() => onChange(opt)}>
+              {typeof opt === 'number' ? `${opt} bins` : opt}
+            </button>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+function AttributeSettingsPopover({
+  dimKey,
+  attrName,
+  currentType,
+  isValueMetric,
+  currentAggregation,
+  typeSettings,
+  onTypeChange,
+  onAggregationChange,
+  onTypeSettingChange,
+  children,
+}: {
+  dimKey: string
+  attrName: string
+  currentType: string
+  isValueMetric: boolean
+  currentAggregation?: AggregationType
+  typeSettings?: any
+  onTypeChange: (t: string) => void
+  onAggregationChange?: (agg: AggregationType) => void
+  onTypeSettingChange?: (partial: Record<string, any>) => void
+  children: React.ReactNode
+}) {
+  const triggerRef = React.useRef<HTMLDivElement | null>(null)
+  const [panelWidth, setPanelWidth] = React.useState<number | undefined>(undefined)
+  const openChanged = (open: boolean) => { if (open && triggerRef.current) setPanelWidth(triggerRef.current.offsetWidth) }
+  const effSettings = typeSettings || {}
+  return (
+    <Popover onOpenChange={openChanged}>
+      <PopoverTrigger asChild>
+        <div ref={triggerRef} onClick={(e) => e.stopPropagation()}>{children}</div>
+      </PopoverTrigger>
+      <PopoverContent className="z-[10002] p-2 whitespace-nowrap min-w-40" align="start" sideOffset={6} style={{ minWidth: panelWidth, width: 'max-content' }} onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-col gap-2 text-[11px]">
+          <div className="flex items-center gap-2 justify-between">
+            <span className="text-muted-foreground">Display type</span>
+            <select
+              className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
+              value={currentType}
+              onChange={(e) => onTypeChange(e.target.value)}
+            >
+              {['text','number','percent','currency','date','datetime','time','boolean','geo','url','email','image','json'].map(t => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+          {currentType==='number' && (
+            <div className="flex items-center gap-2 justify-between">
+              <span className="text-muted-foreground">Format</span>
+              <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" value={effSettings.format || 'auto'} onChange={(e) => onTypeSettingChange && onTypeSettingChange({ format: e.target.value })}>
+                <option value="auto">Auto</option>
+                <option value="number">Number</option>
+                <option value="percent">Percent</option>
+                <option value="currency">Currency</option>
+              </select>
+            </div>
+          )}
+          {(currentType==='date'||currentType==='datetime'||currentType==='time') && (
+            <div className="flex items-center gap-2 justify-between">
+              <span className="text-muted-foreground">Granularity</span>
+              <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" value={effSettings.granularity || 'AUTO'} onChange={(e) => onTypeSettingChange && onTypeSettingChange({ granularity: e.target.value })}>
+                {(['AUTO','YEAR','QUARTER','MONTH','WEEK','DAY','HOUR','MINUTE','SECOND'] as const).map(g => <option key={g} value={g}>{g}</option>)}
+              </select>
+            </div>
+          )}
+          {currentType==='number' && (
+            <div className="flex items-center gap-2 justify-between">
+              <span className="text-muted-foreground">Running</span>
+              <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" value={effSettings.running || 'none'} onChange={(e) => onTypeSettingChange && onTypeSettingChange({ running: e.target.value })}>
+                <option value="none">None</option>
+                <option value="running_total">Running total</option>
+              </select>
+            </div>
+          )}
+          {currentType==='number' && (
+            <div className="flex items-center gap-2 justify-between">
+              <span className="text-muted-foreground">Comparison</span>
+              <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" value={effSettings.comparison || 'none'} onChange={(e) => onTypeSettingChange && onTypeSettingChange({ comparison: e.target.value })}>
+                <option value="none">None</option>
+                <option value="yoy">Year over Year</option>
+                <option value="mom">Month over Month</option>
+                <option value="wow">Week over Week</option>
+              </select>
+            </div>
+          )}
+          {isValueMetric && onAggregationChange && (
+            <div className="flex items-center gap-2 justify-between">
+              <span className="text-muted-foreground">Aggregation</span>
+              <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" value={currentAggregation || 'SUM'} onChange={(e) => onAggregationChange(e.target.value as AggregationType)}>
+                {AGGREGATION_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+function AttributeStylePopover({
+  dimKey,
+  attrName,
+  isValueMetric,
+  currentStyle,
+  onChange,
+  children,
+}: {
+  dimKey: string
+  attrName: string
+  isValueMetric: boolean
+  currentStyle?: any
+  onChange?: (partial: Record<string, any>) => void
+  children: React.ReactNode
+}) {
+  // Helper to determine if text should be light or dark based on background color
+  const getTextColor = (hexColor: string): string => {
+    if (!hexColor || hexColor === 'transparent') return '#000000'
+    const hex = hexColor.replace('#', '')
+    const r = parseInt(hex.substring(0, 2), 16)
+    const g = parseInt(hex.substring(2, 4), 16)
+    const b = parseInt(hex.substring(4, 6), 16)
+    // Calculate relative luminance
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+    return luminance > 0.5 ? '#000000' : '#ffffff'
+  }
+
+  // Helper to check if color has transparency
+  const hasTransparency = (color: string): boolean => {
+    if (!color || color === 'transparent') return true
+    if (color.startsWith('rgba')) {
+      const match = color.match(/rgba\([^)]+,\s*([\d.]+)\)/)
+      if (match) {
+        const alpha = parseFloat(match[1])
+        return alpha < 1
+      }
+    }
+    return false
+  }
+
+  // Helper to get swatch style with checkerboard background for transparency
+  const getSwatchStyle = (color: string): React.CSSProperties => {
+    const baseStyle: React.CSSProperties = {
+      border: 'none',
+      outline: 'none',
+      backgroundColor: color || '#ffffff'
+    }
+    
+    if (hasTransparency(color)) {
+      // Checkerboard pattern for transparency
+      baseStyle.backgroundImage = `
+        linear-gradient(45deg, #d0d0d0 25%, transparent 25%),
+        linear-gradient(-45deg, #d0d0d0 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #d0d0d0 75%),
+        linear-gradient(-45deg, transparent 75%, #d0d0d0 75%)
+      `
+      baseStyle.backgroundSize = '8px 8px'
+      baseStyle.backgroundPosition = '0 0, 0 4px, 4px -4px, -4px 0px'
+      // Keep the actual color as an overlay
+      baseStyle.backgroundColor = color
+    }
+    
+    return baseStyle
+  }
+
+  const triggerRef = React.useRef<HTMLDivElement | null>(null)
+  const [panelWidth, setPanelWidth] = React.useState<number | undefined>(undefined)
+  const openChanged = (open: boolean) => { if (open && triggerRef.current) setPanelWidth(triggerRef.current.offsetWidth) }
+  const style = currentStyle || {}
+  return (
+    <Popover onOpenChange={openChanged}>
+      <PopoverTrigger asChild>
+        <div ref={triggerRef} onClick={(e) => e.stopPropagation()}>{children}</div>
+      </PopoverTrigger>
+      <PopoverContent className="z-[10002] p-2 whitespace-nowrap min-w-40" align="start" sideOffset={6} style={{ minWidth: panelWidth, width: 'max-content' }} onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-col gap-2 text-[11px]">
+          <div className="flex items-center gap-2 justify-between">
+            <span className="text-muted-foreground">Wrap text</span>
+            <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" value={String(style.wrapText ?? 'off')} onChange={(e) => onChange && onChange({ wrapText: e.target.value })}>
+              <option value="off">Off</option>
+              <option value="on">On</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-2 justify-between">
+            <span className="text-muted-foreground">Font size</span>
+            <div className="relative w-32">
+              <input type="number" className="w-32 rounded-[2px] px-2 py-1 pr-8 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" min={8} max={32} value={Number(style.fontSize ?? 12)} onChange={(e) => onChange && onChange({ fontSize: parseInt(e.target.value) || 12 })} />
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 justify-between">
+            <span className="text-muted-foreground">Font color</span>
+            <div className="relative w-32">
+              <ColorPickerPopover
+                value={style.color || '#111827'}
+                onChange={(color) => onChange && onChange({ color })}
+                allowImageVideo={false}
+              >
+                <button
+                  type="button"
+                  className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+                  style={getSwatchStyle(style.color || '#111827')}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </ColorPickerPopover>
+              <Input
+                type="text"
+                value={style.color || '#111827'}
+                onChange={(e) => onChange && onChange({ color: e.target.value })}
+                className="h-7 text-xs pl-7 w-full rounded-[2px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2 justify-between">
+            <span className="text-muted-foreground">Background</span>
+            <div className="flex items-center gap-1">
+              <div className="relative w-32">
+                <ColorPickerPopover
+                  value={style.background || '#ffffff'}
+                  onChange={(color) => onChange && onChange({ background: color })}
+                  allowImageVideo={false}
+                >
+                  <button
+                    type="button"
+                    className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+                    style={getSwatchStyle(style.background || '#ffffff')}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </ColorPickerPopover>
+                <Input
+                  type="text"
+                  value={style.background || '#ffffff'}
+                  onChange={(e) => onChange && onChange({ background: e.target.value })}
+                  className="h-7 text-xs pl-7 w-full rounded-[2px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
+                />
+              </div>
+              <label className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                <input type="checkbox" checked={!!style.useRowBackground} onChange={(e) => onChange && onChange({ useRowBackground: e.target.checked })} /> use row bg
+              </label>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 justify-between">
+            <span className="text-muted-foreground">Badge</span>
+            <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" value={String(style.badge ?? 'none')} onChange={(e) => onChange && onChange({ badge: e.target.value })}>
+              <option value="none">None</option>
+              <option value="pill">Pill</option>
+              <option value="tag">Tag</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-2 justify-between">
+            <span className="text-muted-foreground">Link</span>
+            <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" value={String(style.link ?? 'none')} onChange={(e) => onChange && onChange({ link: e.target.value })}>
+              <option value="none">None</option>
+              <option value="url">URL</option>
+              <option value="email">Email</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-2 justify-between">
+            <span className="text-muted-foreground">Clip overflow</span>
+            <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" value={String(style.clip ?? 'ellipsis')} onChange={(e) => onChange && onChange({ clip: e.target.value })}>
+              <option value="ellipsis">Ellipsis</option>
+              <option value="clip">Clip</option>
+            </select>
+          </div>
+
+          {isValueMetric && (
+            <>
+              <div className="flex items-center gap-2 justify-between">
+                <span className="text-muted-foreground">Value viz</span>
+                <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" value={String(style.valueViz ?? 'none')} onChange={(e) => onChange && onChange({ valueViz: e.target.value })}>
+                  <option value="none">None</option>
+                  <option value="data_bar">Data bar</option>
+                  <option value="color_scale">Color scale</option>
+                  <option value="icon_set">Icon set</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2 justify-between">
+                <span className="text-muted-foreground">Show number</span>
+                <select
+                  className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
+                  value={String(style.valueShowNumber ?? 'on')}
+                  onChange={(e) => onChange && onChange({ valueShowNumber: e.target.value === 'on' })}
+                >
+                  <option value="on">On</option>
+                  <option value="off">Off</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2 justify-between">
+                <span className="text-muted-foreground">Color</span>
+                <div className="relative w-32">
+                  <ColorPickerPopover
+                    value={style.valueColor || '#3b82f6'}
+                    onChange={(color) => onChange && onChange({ valueColor: color })}
+                    allowImageVideo={false}
+                  >
+                    <button
+                      type="button"
+                      className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+                      style={getSwatchStyle(style.valueColor || '#3b82f6')}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </ColorPickerPopover>
+                  <Input
+                    type="text"
+                    value={style.valueColor || '#3b82f6'}
+                    onChange={(e) => onChange && onChange({ valueColor: e.target.value })}
+                    className="h-7 text-xs pl-7 w-full rounded-[2px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
+                  />
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+function TypeBadgePopover({
+  currentType,
+  onSelect,
+  Icon,
+  triggerTitle,
+}: {
+  currentType: 'text' | 'number' | 'date' | 'datetime' | 'time' | 'boolean' | 'geo' | 'url' | 'email' | 'image' | 'json' | 'percent' | 'currency'
+  onSelect: (t: 'text' | 'number' | 'date' | 'datetime' | 'time' | 'boolean' | 'geo' | 'url' | 'email' | 'image' | 'json' | 'percent' | 'currency') => void
+  Icon: React.ComponentType<{ className?: string }>
+  triggerTitle: string
+}) {
+  const btnRef = React.useRef<HTMLButtonElement | null>(null)
+  const [panelWidth, setPanelWidth] = React.useState<number | undefined>(undefined)
+  return (
+    <Popover onOpenChange={(open) => { if (open && btnRef.current) setPanelWidth(btnRef.current.offsetWidth) }}>
+      <PopoverTrigger asChild>
+        <button
+          ref={btnRef}
+          type="button"
+          className="p-0.5 rounded hover:bg-blue-200/60 dark:hover:bg-blue-900/50"
+          title={triggerTitle}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Icon className="h-3 w-3 text-muted-foreground" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="z-[10000] p-1 whitespace-nowrap" align="start" sideOffset={6} style={{ minWidth: panelWidth, width: 'max-content' }} onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-col gap-1">
+          {[
+            { key: 'text', label: 'Text', Icon: TypeIcon },
+            { key: 'number', label: 'Number', Icon: Hash },
+            { key: 'percent', label: 'Percent', Icon: Hash },
+            { key: 'currency', label: 'Currency', Icon: Hash },
+            { key: 'date', label: 'Date', Icon: CalendarIcon },
+            { key: 'datetime', label: 'DateTime', Icon: CalendarIcon },
+            { key: 'time', label: 'Time', Icon: CalendarIcon },
+            { key: 'boolean', label: 'Boolean', Icon: TypeIcon },
+            { key: 'geo', label: 'Geography', Icon: TypeIcon },
+            { key: 'url', label: 'URL', Icon: TypeIcon },
+            { key: 'email', label: 'Email', Icon: TypeIcon },
+            { key: 'image', label: 'Image URL', Icon: TypeIcon },
+            { key: 'json', label: 'JSON', Icon: TypeIcon },
+          ].map(opt => (
+            <button
+              key={opt.key}
+              className={`flex items-center gap-2 w-full text-left px-2 py-1 rounded hover:bg-accent hover:text-accent-foreground text-xs ${getTypeBadgeClass(opt.key)}`}
+              onClick={() => onSelect(opt.key as any)}
+            >
+              <opt.Icon className="h-3.5 w-3.5" />
+              <span>{opt.label}</span>
+              {currentType === opt.key && <Check className="ml-auto h-3.5 w-3.5" />}
+            </button>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
 
 export function AttributeDropZone({
   dimKey,
@@ -70,6 +569,10 @@ export function AttributeDropZone({
   isValueMetric = false,
   attributeAggregations = {},
   onAggregationChange,
+  attributeTypeSettings = {},
+  onTypeSettingChange,
+  attributeDisplayNames = {},
+  onDisplayNameChange,
   dragOverDimensions,
   draggingBadge,
   dragOverBadge,
@@ -84,6 +587,13 @@ export function AttributeDropZone({
   openCombobox,
   onOpenChange,
 }: AttributeDropZoneProps) {
+  const [editing, setEditing] = React.useState<{ dimKey: string; attrName: string } | null>(null)
+  const [tempName, setTempName] = React.useState<string>('')
+
+  const getDisplayLabel = (name: string, attr?: Attribute) => attributeDisplayNames[name] || attr?.display_name || name
+  const startEdit = (name: string, currentLabel: string) => { setEditing({ dimKey, attrName: name }); setTempName(currentLabel) }
+  const commitEdit = () => { if (editing && tempName.trim() && onDisplayNameChange) { onDisplayNameChange(editing.dimKey, editing.attrName, tempName.trim()) } setEditing(null); setTempName('') }
+  const cancelEdit = () => { setEditing(null); setTempName('') }
   const getFilteredAttributes = () => {
     const query = searchQuery.toLowerCase().trim()
     if (!query) return attributes
@@ -177,81 +687,126 @@ export function AttributeDropZone({
                         className={`inline-flex items-center gap-1.5 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded text-xs pointer-events-auto cursor-move transition-all w-full ${
                           isDragging ? 'opacity-50 scale-95' : ''
                         } ${
-                          isDragOver ? 'ring-2 ring-blue-500 ring-offset-1' : ''
+                          isDragOver ? 'ring-2 ring-blue-500 ring-offset-1 bg-blue-200 dark:bg-blue-800/50' : ''
                         }`}
                         onClick={(e) => e.stopPropagation()}
                       >
-                        {attr && (
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <button
-                                type="button"
-                                className="p-0.5 rounded hover:bg-blue-200/60 dark:hover:bg-blue-900/50"
-                                title="Change attribute type"
-                              >
-                                <Icon className="h-3 w-3 text-muted-foreground" />
-                              </button>
-                            </PopoverTrigger>
-                            <PopoverContent className="z-[10000] min-w-[220px] w-auto p-1" align="start" sideOffset={6}>
-                              <div className="flex flex-col gap-1">
-                                {[
-                                  { key: 'text', label: 'Text', Icon: TypeIcon },
-                                  { key: 'number', label: 'Number', Icon: Hash },
-                                  { key: 'date', label: 'Date', Icon: CalendarIcon },
-                                ].map(opt => (
-                                  <button
-                                    key={opt.key}
-                                    className={`flex items-center gap-2 w-full text-left px-2 py-1 rounded hover:bg-accent hover:text-accent-foreground text-xs ${getTypeBadgeClass(opt.key)}`}
-                                    onClick={() => onTypeOverride(dimKey, attr.name, opt.key)}
-                                  >
-                                    <opt.Icon className="h-3.5 w-3.5" />
-                                    <span>{opt.label}</span>
-                                    {effectiveType === opt.key && <Check className="ml-auto h-3.5 w-3.5" />}
-                                  </button>
-                                ))}
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-                        )}
-                        <span className="truncate flex-1">
-                          {attr?.display_name || attrName}
-                          {isValueMetric && attributeAggregations[attrName] && (
-                            <span className="ml-1 text-[10px] text-muted-foreground font-normal">
-                              ({AGGREGATION_OPTIONS.find(o => o.value === attributeAggregations[attrName])?.label || attributeAggregations[attrName]})
-                            </span>
-                          )}
-                        </span>
-                        {isValueMetric && attributeAggregations[attrName] && onAggregationChange && (
-                          <Select
-                            value={attributeAggregations[attrName]}
-                            onValueChange={(value) => onAggregationChange(dimKey, attrName, value as AggregationType)}
-                            onOpenChange={(open) => {
-                              if (open) {
-                                // Stop propagation when opening aggregation selector
+                        <GripVertical className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                        {attr && !isValueMetric && (
+                          <AttributeSettingsPopover
+                            dimKey={dimKey}
+                            attrName={attr.name}
+                            currentType={String(effectiveType)}
+                            isValueMetric={isValueMetric}
+                            currentAggregation={attributeAggregations[attrName]}
+                            typeSettings={attributeTypeSettings[attr.name]}
+                            onTypeChange={(t) => {
+                              if (t === 'percent') {
+                                onTypeOverride(dimKey, attr.name, 'number')
+                                onTypeSettingChange && onTypeSettingChange(dimKey, attr.name, { format: 'percent' })
+                              } else if (t === 'currency') {
+                                onTypeOverride(dimKey, attr.name, 'number')
+                                onTypeSettingChange && onTypeSettingChange(dimKey, attr.name, { format: 'currency' })
+                              } else {
+                                onTypeOverride(dimKey, attr.name, t)
                               }
                             }}
+                            onAggregationChange={onAggregationChange ? (agg) => onAggregationChange(dimKey, attr.name, agg) : undefined}
+                            onTypeSettingChange={onTypeSettingChange ? (partial) => onTypeSettingChange(dimKey, attr.name, partial) : undefined}
                           >
-                            <SelectTrigger 
-                              className="h-5 w-24 text-[10px] px-1.5 ml-1"
-                              onClick={(e) => e.stopPropagation()}
+                            <button
+                              type="button"
+                              className="p-0.5 rounded hover:bg-blue-200/60 dark:hover:bg-blue-900/50 flex-shrink-0"
+                              title="Attribute settings"
+                              onMouseDown={(e) => e.stopPropagation()}
                             >
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="z-[10001]" onClick={(e) => e.stopPropagation()}>
-                              {AGGREGATION_OPTIONS.map(opt => (
-                                <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                                  {opt.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                              <Icon className="h-3 w-3 text-muted-foreground" />
+                            </button>
+                          </AttributeSettingsPopover>
+                        )}
+                        {isValueMetric && (
+                          <AttributeSettingsPopover
+                            dimKey={dimKey}
+                            attrName={attrName}
+                            currentType={String(effectiveType)}
+                            isValueMetric={isValueMetric}
+                            currentAggregation={attributeAggregations[attrName]}
+                            typeSettings={attributeTypeSettings[attrName]}
+                            onTypeChange={(t) => {
+                              if (attr) {
+                                if (t === 'percent') {
+                                  onTypeOverride(dimKey, attr.name, 'number')
+                                  onTypeSettingChange && onTypeSettingChange(dimKey, attr.name, { format: 'percent' })
+                                } else if (t === 'currency') {
+                                  onTypeOverride(dimKey, attr.name, 'number')
+                                  onTypeSettingChange && onTypeSettingChange(dimKey, attr.name, { format: 'currency' })
+                                } else {
+                                  onTypeOverride(dimKey, attr.name, t)
+                                }
+                              }
+                            }}
+                            onAggregationChange={onAggregationChange ? (agg) => onAggregationChange(dimKey, attrName, agg) : undefined}
+                            onTypeSettingChange={onTypeSettingChange ? (partial) => onTypeSettingChange(dimKey, attrName, partial) : undefined}
+                          >
+                            <span className="inline-flex items-center rounded-[2px] px-1 py-0.5 text-[9px] leading-none text-muted-foreground bg-muted cursor-pointer hover:bg-muted/80 flex-shrink-0" onMouseDown={(e) => e.stopPropagation()}>
+                              {String((AGGREGATION_OPTIONS.find(o => o.value === attributeAggregations[attrName])?.label || attributeAggregations[attrName]) || 'SUM').toUpperCase()}
+                            </span>
+                          </AttributeSettingsPopover>
+                        )}
+                        {editing && editing.dimKey === dimKey && editing.attrName === attrName ? (
+                          <input
+                            autoFocus
+                            value={tempName}
+                            onChange={(e) => setTempName(e.target.value)}
+                            onBlur={commitEdit}
+                            onKeyDown={(e) => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') cancelEdit() }}
+                            className="flex-1 text-[11px] px-1 py-0.5 rounded border outline-none"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        ) : (
+                          <span
+                            className="truncate flex-1"
+                            title="Double-click to rename"
+                            onDoubleClick={() => startEdit(attrName, getDisplayLabel(attrName, attr))}
+                          >
+                            {getDisplayLabel(attrName, attr)}
+                          </span>
+                        )}
+                        <AttributeStylePopover
+                          dimKey={dimKey}
+                          attrName={attrName}
+                          isValueMetric={isValueMetric}
+                          currentStyle={attributeTypeSettings[attrName]?.style}
+                          onChange={(partial) => onTypeSettingChange && onTypeSettingChange(dimKey, attrName, { style: { ...(attributeTypeSettings[attrName]?.style || {}), ...partial } })}
+                        >
+                          <button
+                            type="button"
+                            className="p-0.5 rounded hover:bg-blue-200/60 dark:hover:bg-blue-900/50 flex-shrink-0"
+                            title="Cell style"
+                            onMouseDown={(e) => e.stopPropagation()}
+                          >
+                            <Paintbrush className="h-3 w-3 text-muted-foreground" />
+                          </button>
+                        </AttributeStylePopover>
+                        {attr && !isValueMetric && ['date','datetime','time'].includes(effectiveType) && (
+                          <GranularityBadge
+                            value={(attributeTypeSettings[attr.name]?.granularity || 'AUTO') as any}
+                            onChange={(v) => onTypeSettingChange && onTypeSettingChange(dimKey, attr.name, { granularity: v })}
+                          />
+                        )}
+                        {attr && !isValueMetric && effectiveType === 'number' && (
+                          <BucketBadge
+                            value={(attributeTypeSettings[attr.name]?.bins || 'AUTO') as any}
+                            onChange={(v) => onTypeSettingChange && onTypeSettingChange(dimKey, attr.name, { bins: v })}
+                          />
                         )}
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
                             onAttributeSelect(dimKey, attrName)
                           }}
-                          className="ml-0.5 hover:bg-blue-200 dark:hover:bg-blue-900/50 rounded p-0.5 transition-colors"
+                          onMouseDown={(e) => e.stopPropagation()}
+                          className="ml-0.5 hover:bg-blue-200 dark:hover:bg-blue-900/50 rounded p-0.5 transition-colors flex-shrink-0"
                           title="Remove attribute"
                         >
                           <X className="h-3 w-3" />
@@ -368,63 +923,110 @@ export function AttributeDropZone({
                   const Icon = attr ? getAttributeIcon(effectiveType) : TypeIcon
                   return (
                     <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded text-xs w-full" data-attribute-badge>
-                      <Popover>
-                        <PopoverTrigger asChild>
+                      {!isValueMetric && (
+                        <AttributeSettingsPopover
+                          dimKey={dimKey}
+                          attrName={attr?.name || singleValue}
+                          currentType={String(effectiveType)}
+                          isValueMetric={isValueMetric}
+                          currentAggregation={attributeAggregations[singleValue]}
+                          typeSettings={attributeTypeSettings[singleValue]}
+                          onTypeChange={(t) => {
+                            const target = attr?.name || singleValue
+                            if (t === 'percent') {
+                              onTypeOverride(dimKey, target, 'number')
+                              onTypeSettingChange && onTypeSettingChange(dimKey, target, { format: 'percent' })
+                            } else if (t === 'currency') {
+                              onTypeOverride(dimKey, target, 'number')
+                              onTypeSettingChange && onTypeSettingChange(dimKey, target, { format: 'currency' })
+                            } else {
+                              onTypeOverride(dimKey, target, t)
+                            }
+                          }}
+                          onAggregationChange={onAggregationChange ? (agg) => onAggregationChange(dimKey, attr?.name || singleValue, agg) : undefined}
+                          onTypeSettingChange={onTypeSettingChange ? (partial) => onTypeSettingChange(dimKey, attr?.name || singleValue, partial) : undefined}
+                        >
                           <button
                             type="button"
                             className="p-0.5 rounded hover:bg-blue-200/60 dark:hover:bg-blue-900/50"
-                            title="Change attribute type"
+                            title="Attribute settings"
                           >
                             <Icon className="h-3 w-3 text-muted-foreground" />
                           </button>
-                        </PopoverTrigger>
-                        <PopoverContent className="z-[10000] min-w-[220px] w-auto p-1" align="start" sideOffset={6}>
-                          <div className="flex flex-col gap-1">
-                            {[
-                              { key: 'text', label: 'Text', Icon: TypeIcon },
-                              { key: 'number', label: 'Number', Icon: Hash },
-                              { key: 'date', label: 'Date', Icon: CalendarIcon },
-                            ].map(opt => (
-                              <button
-                                key={opt.key}
-                                className={`flex items-center gap-2 w-full text-left px-2 py-1 rounded hover:bg-accent hover:text-accent-foreground text-xs ${getTypeBadgeClass(opt.key)}`}
-                                onClick={() => onTypeOverride(dimKey, attr?.name || singleValue, opt.key)}
-                              >
-                                <opt.Icon className="h-3.5 w-3.5" />
-                                <span>{opt.label}</span>
-                                {effectiveType === opt.key && <Check className="ml-auto h-3.5 w-3.5" />}
-                              </button>
-                            ))}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                      <span className="truncate flex-1">
-                        {attr?.display_name || singleValue}
-                        {isValueMetric && attributeAggregations[singleValue] && (
-                          <span className="ml-1 text-[10px] text-muted-foreground font-normal">
-                            ({AGGREGATION_OPTIONS.find(o => o.value === attributeAggregations[singleValue])?.label || attributeAggregations[singleValue]})
-                          </span>
-                        )}
-                      </span>
-                      {isValueMetric && attributeAggregations[singleValue] && onAggregationChange && (
-                        <Select
-                          value={attributeAggregations[singleValue]}
-                          onValueChange={(value) => onAggregationChange(dimKey, singleValue, value as AggregationType)}
+                        </AttributeSettingsPopover>
+                      )}
+                      {isValueMetric && (
+                        <AttributeSettingsPopover
+                          dimKey={dimKey}
+                          attrName={singleValue}
+                          currentType={String(effectiveType)}
+                          isValueMetric={isValueMetric}
+                          currentAggregation={attributeAggregations[singleValue]}
+                          typeSettings={attributeTypeSettings[singleValue]}
+                          onTypeChange={(t) => {
+                            if (t === 'percent') {
+                              onTypeOverride(dimKey, singleValue, 'number')
+                              onTypeSettingChange && onTypeSettingChange(dimKey, singleValue, { format: 'percent' })
+                            } else if (t === 'currency') {
+                              onTypeOverride(dimKey, singleValue, 'number')
+                              onTypeSettingChange && onTypeSettingChange(dimKey, singleValue, { format: 'currency' })
+                            } else {
+                              onTypeOverride(dimKey, singleValue, t)
+                            }
+                          }}
+                          onAggregationChange={onAggregationChange ? (agg) => onAggregationChange(dimKey, singleValue, agg) : undefined}
+                          onTypeSettingChange={onTypeSettingChange ? (partial) => onTypeSettingChange(dimKey, singleValue, partial) : undefined}
                         >
-                          <SelectTrigger 
-                            className="h-5 w-24 text-[10px] px-1.5 ml-1"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="z-[10001]" onClick={(e) => e.stopPropagation()}>
-                            {AGGREGATION_OPTIONS.map(opt => (
-                              <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                                {opt.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          <span className="inline-flex items-center rounded-[2px] px-1 py-0.5 text-[9px] leading-none text-muted-foreground bg-muted cursor-pointer hover:bg-muted/80">
+                            {String((AGGREGATION_OPTIONS.find(o => o.value === attributeAggregations[singleValue])?.label || attributeAggregations[singleValue]) || 'SUM').toUpperCase()}
+                          </span>
+                        </AttributeSettingsPopover>
+                      )}
+                      {editing && editing.dimKey === dimKey && editing.attrName === singleValue ? (
+                        <input
+                          autoFocus
+                          value={tempName}
+                          onChange={(e) => setTempName(e.target.value)}
+                          onBlur={commitEdit}
+                          onKeyDown={(e) => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') cancelEdit() }}
+                          className="flex-1 text-[11px] px-1 py-0.5 rounded border outline-none"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      ) : (
+                        <span
+                          className="truncate flex-1"
+                          title="Double-click to rename"
+                          onDoubleClick={() => startEdit(singleValue, getDisplayLabel(singleValue, attr))}
+                        >
+                          {getDisplayLabel(singleValue, attr)}
+                        </span>
+                      )}
+                      <AttributeStylePopover
+                        dimKey={dimKey}
+                        attrName={singleValue}
+                        isValueMetric={isValueMetric}
+                        currentStyle={attributeTypeSettings[singleValue]?.style}
+                        onChange={(partial) => onTypeSettingChange && onTypeSettingChange(dimKey, singleValue, { style: { ...(attributeTypeSettings[singleValue]?.style || {}), ...partial } })}
+                      >
+                        <button
+                          type="button"
+                          className="p-0.5 rounded hover:bg-blue-200/60 dark:hover:bg-blue-900/50"
+                          title="Cell style"
+                        >
+                          <Paintbrush className="h-3 w-3 text-muted-foreground" />
+                        </button>
+                      </AttributeStylePopover>
+                      {!isValueMetric && ['date','datetime','time'].includes(effectiveType) && (
+                        <GranularityBadge
+                          value={(attributeTypeSettings[singleValue]?.granularity || 'AUTO') as any}
+                          onChange={(v) => onTypeSettingChange && onTypeSettingChange(dimKey, singleValue, { granularity: v })}
+                        />
+                      )}
+                      {!isValueMetric && effectiveType === 'number' && (
+                        <BucketBadge
+                          value={(attributeTypeSettings[singleValue]?.bins || 'AUTO') as any}
+                          onChange={(v) => onTypeSettingChange && onTypeSettingChange(dimKey, singleValue, { bins: v })}
+                        />
                       )}
                       <button
                         onClick={(e) => {

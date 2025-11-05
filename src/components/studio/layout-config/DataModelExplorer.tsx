@@ -1,8 +1,12 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react'
-import { Database, ChevronRight, ChevronDown, Hash, Calendar, Type, DollarSign, TrendingUp } from 'lucide-react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
+import { Database, ChevronRight, ChevronDown, Hash, Calendar, Type, DollarSign, TrendingUp, Plus, X, Search, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
 
 interface DataModel {
   id: string
@@ -25,13 +29,15 @@ interface DataModelExplorerProps {
   selectedDataModelId?: string
   onDataModelSelect?: (modelId: string | null) => void
   className?: string
+  onFieldCreated?: () => void
 }
 
 export function DataModelExplorer({
   spaceId,
   selectedDataModelId,
   onDataModelSelect,
-  className
+  className,
+  onFieldCreated
 }: DataModelExplorerProps) {
   if (!spaceId) return null
   
@@ -40,6 +46,18 @@ export function DataModelExplorer({
   const [attributesMap, setAttributesMap] = useState<Record<string, Attribute[]>>({})
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [showSqlDialog, setShowSqlDialog] = useState(false)
+  const [sqlFieldName, setSqlFieldName] = useState('')
+  const [sqlStatement, setSqlStatement] = useState('')
+  const [sqlCursorPos, setSqlCursorPos] = useState(0)
+  const [attributeSuggestions, setAttributeSuggestions] = useState<Attribute[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [suggestionIndex, setSuggestionIndex] = useState(0)
+  const [attributeSearchQuery, setAttributeSearchQuery] = useState('')
+  const [sqlValidationError, setSqlValidationError] = useState<string | null>(null)
+  const sqlTextareaRef = useRef<HTMLTextAreaElement>(null)
+  const suggestionsRef = useRef<HTMLDivElement>(null)
+  const sqlEditorRef = useRef<HTMLDivElement>(null)
 
   // Load data models for the space
   useEffect(() => {
@@ -109,6 +127,154 @@ export function DataModelExplorer({
       type: 'attribute'
     }))
     e.dataTransfer.effectAllowed = 'move'
+  }
+
+  // Helper to validate SQL
+  const validateSql = (sql: string) => {
+    if (!sql.trim()) {
+      setSqlValidationError(null)
+      return
+    }
+
+    const errors: string[] = []
+    
+    // Check for basic SQL structure
+    const trimmed = sql.trim()
+    if (!trimmed) {
+      setSqlValidationError(null)
+      return
+    }
+
+    // Check for unmatched parentheses
+    const openParens = (sql.match(/\(/g) || []).length
+    const closeParens = (sql.match(/\)/g) || []).length
+    if (openParens !== closeParens) {
+      errors.push('Unmatched parentheses')
+    }
+
+    // Check for unmatched quotes
+    const singleQuotes = (sql.match(/'/g) || []).length
+    const doubleQuotes = (sql.match(/"/g) || []).length
+    if (singleQuotes % 2 !== 0) {
+      errors.push('Unmatched single quotes')
+    }
+    if (doubleQuotes % 2 !== 0) {
+      errors.push('Unmatched double quotes')
+    }
+
+    // Check for potentially dangerous SQL keywords (basic check)
+    const dangerousKeywords = ['DROP', 'DELETE', 'TRUNCATE', 'ALTER', 'CREATE', 'INSERT', 'UPDATE']
+    const upperSql = sql.toUpperCase()
+    if (dangerousKeywords.some(keyword => upperSql.includes(keyword))) {
+      // Only warn if these are standalone keywords (not part of other words)
+      const keywordRegex = new RegExp(`\\b(${dangerousKeywords.join('|')})\\b`, 'i')
+      if (keywordRegex.test(sql)) {
+        errors.push('Potentially dangerous SQL keyword detected')
+      }
+    }
+
+    setSqlValidationError(errors.length > 0 ? errors.join(', ') : null)
+  }
+
+  // Helper to extract plain text from contentEditable (removing badge formatting)
+  const extractPlainTextFromEditor = (html: string): string => {
+    const div = document.createElement('div')
+    div.innerHTML = html
+    return div.textContent || div.innerText || ''
+  }
+
+  // Helper to create attribute badge DOM element
+  const createAttributeBadge = (attr: Attribute, attrName: string): HTMLSpanElement => {
+    const badge = document.createElement('span')
+    badge.className = 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 border border-blue-200 dark:border-blue-700 mr-1'
+    badge.setAttribute('data-attribute', attrName)
+    badge.contentEditable = 'false'
+    
+    // Create icon wrapper
+    const iconWrapper = document.createElement('span')
+    iconWrapper.className = 'inline-flex items-center'
+    badge.appendChild(iconWrapper)
+    
+    // Create text
+    const text = document.createTextNode(attrName)
+    badge.appendChild(text)
+    
+    return badge
+  }
+
+  // Helper to render SQL with badges
+  const renderSqlWithBadges = (sql: string): React.ReactNode => {
+    if (!sql || !selectedDataModelId) {
+      return <span className="text-muted-foreground">SELECT attribute_name * 2 AS calculated_value FROM table...</span>
+    }
+
+    const attrs = attributesMap[selectedDataModelId] || []
+    const attrNames = attrs.map(a => a.name.toLowerCase())
+    const attrMap = new Map(attrs.map(a => [a.name.toLowerCase(), a]))
+    
+    // Split SQL into parts: attributes and other text
+    const parts: Array<{ type: 'text' | 'attribute'; content: string; attr?: Attribute }> = []
+    let lastIndex = 0
+    
+    // Find all attribute names (word boundaries)
+    const words = sql.match(/\b[a-zA-Z_][a-zA-Z0-9_]*\b/g) || []
+    const positions: Array<{ start: number; end: number; attr: Attribute }> = []
+    
+    for (const word of words) {
+      const attr = attrMap.get(word.toLowerCase())
+      if (attr) {
+        const regex = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'g')
+        let match
+        while ((match = regex.exec(sql)) !== null) {
+          positions.push({
+            start: match.index,
+            end: match.index + word.length,
+            attr
+          })
+        }
+      }
+    }
+    
+    // Sort positions by start index
+    positions.sort((a, b) => a.start - b.start)
+    
+    // Build parts array
+    for (const pos of positions) {
+      if (pos.start > lastIndex) {
+        parts.push({ type: 'text', content: sql.substring(lastIndex, pos.start) })
+      }
+      parts.push({ type: 'attribute', content: pos.attr.name, attr: pos.attr })
+      lastIndex = pos.end
+    }
+    
+    if (lastIndex < sql.length) {
+      parts.push({ type: 'text', content: sql.substring(lastIndex) })
+    }
+    
+    if (parts.length === 0) {
+      parts.push({ type: 'text', content: sql })
+    }
+    
+    return (
+      <>
+        {parts.map((part, idx) => {
+          if (part.type === 'attribute' && part.attr) {
+            return (
+              <span
+                key={idx}
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 border border-blue-200 dark:border-blue-700 mr-1"
+                contentEditable={false}
+                data-attribute={part.content}
+              >
+                {getAttributeIcon(part.attr.type)}
+                <span>{part.content}</span>
+              </span>
+            )
+          }
+          return <span key={idx}>{part.content}</span>
+        })}
+      </>
+    )
   }
 
   const getAttributeIcon = (type: string) => {
@@ -287,6 +453,389 @@ export function DataModelExplorer({
           </div>
         )}
       </div>
+
+      {/* Create SQL Field Button */}
+      <div className="p-3 border-t">
+        <Button
+          onClick={() => {
+            if (!selectedDataModelId) {
+              alert('Please select a data model first')
+              return
+            }
+            setShowSqlDialog(true)
+            setSqlFieldName('')
+            setSqlStatement('')
+          }}
+          className="w-full text-xs"
+          size="sm"
+          variant="outline"
+        >
+          <Plus className="h-3 w-3 mr-2" />
+          Create SQL Field
+        </Button>
+      </div>
+
+      {/* SQL Field Creation Dialog */}
+      <Dialog open={showSqlDialog} onOpenChange={setShowSqlDialog}>
+        <DialogContent className="max-w-4xl h-[600px] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Create SQL Field</DialogTitle>
+          </DialogHeader>
+          
+          <div className="flex-1 flex gap-4 overflow-hidden">
+            {/* Left Panel - Attributes */}
+            <div className="w-64 border-r flex flex-col overflow-hidden">
+              <div className="p-2 border-b">
+                <Label className="text-xs font-semibold">Attributes</Label>
+                <p className="text-[10px] text-muted-foreground mt-1">Drag to SQL or click to insert</p>
+              </div>
+              {/* Search */}
+              <div className="p-2 border-b">
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    value={attributeSearchQuery}
+                    onChange={(e) => setAttributeSearchQuery(e.target.value)}
+                    placeholder="Search attributes..."
+                    className="h-7 text-xs pl-7"
+                  />
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                {selectedDataModelId && (() => {
+                  const attrs = attributesMap[selectedDataModelId] || []
+                  const filtered = attributeSearchQuery.trim()
+                    ? attrs.filter(attr =>
+                        attr.name.toLowerCase().includes(attributeSearchQuery.toLowerCase()) ||
+                        attr.display_name.toLowerCase().includes(attributeSearchQuery.toLowerCase())
+                      )
+                    : attrs
+                  return filtered.map((attr) => (
+                  <div
+                    key={attr.id}
+                    draggable={true}
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('text/plain', attr.name)
+                      e.dataTransfer.setData('application/json', JSON.stringify({ attribute: attr, type: 'attribute' }))
+                    }}
+                    onClick={() => {
+                      const textarea = sqlTextareaRef.current
+                      if (textarea) {
+                        const start = textarea.selectionStart
+                        const end = textarea.selectionEnd
+                        const text = sqlStatement
+                        const before = text.substring(0, start)
+                        const after = text.substring(end)
+                        const newText = `${before}${attr.name}${after}`
+                        setSqlStatement(newText)
+                        validateSql(newText)
+                        setTimeout(() => {
+                          textarea.focus()
+                          const newPos = start + attr.name.length
+                          textarea.setSelectionRange(newPos, newPos)
+                        }, 0)
+                      }
+                    }}
+                    className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer group transition-colors bg-white dark:bg-gray-800 border border-transparent hover:border-blue-200 dark:hover:border-blue-800"
+                    title={`Drag or click to insert: ${attr.name}`}
+                  >
+                    {getAttributeIcon(attr.type)}
+                    <span className="text-xs flex-1 text-gray-900 dark:text-gray-100">{attr.display_name || attr.name}</span>
+                    <span className="text-[10px] text-gray-400 opacity-0 group-hover:opacity-100">
+                      {attr.type}
+                    </span>
+                  </div>
+                ))
+                })()}
+              </div>
+            </div>
+
+            {/* Right Panel - SQL Editor */}
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <div className="space-y-2 mb-4">
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium">Field Name</Label>
+                  <Input
+                    value={sqlFieldName}
+                    onChange={(e) => setSqlFieldName(e.target.value)}
+                    placeholder="e.g., calculated_field"
+                    className="h-8 text-xs"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex-1 flex flex-col space-y-2">
+                <Label className="text-xs font-medium">SQL Statement</Label>
+                <div className="relative flex-1 border rounded overflow-hidden">
+                  {/* Visible badge overlay (renders badges) */}
+                  <div
+                    ref={sqlEditorRef}
+                    className="absolute inset-0 w-full h-full p-3 text-xs font-mono pointer-events-none overflow-auto z-0"
+                    style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+                  >
+                    {renderSqlWithBadges(sqlStatement)}
+                  </div>
+                  
+                  {/* Visible textarea for editing (on top, with transparent text so badges show through) */}
+                  <textarea
+                    ref={sqlTextareaRef}
+                    value={sqlStatement}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setSqlStatement(value)
+                      validateSql(value)
+                      const cursorPos = e.target.selectionStart
+                      setSqlCursorPos(cursorPos)
+                      
+                      // Find attribute name being typed
+                      const textBeforeCursor = value.substring(0, cursorPos)
+                      const match = textBeforeCursor.match(/([a-zA-Z_][a-zA-Z0-9_]*)$/)
+                      
+                      if (match && selectedDataModelId) {
+                        const partialName = match[1].toLowerCase()
+                        const attrs = attributesMap[selectedDataModelId] || []
+                        const suggestions = attrs.filter(attr => 
+                          attr.name.toLowerCase().startsWith(partialName) ||
+                          attr.display_name.toLowerCase().startsWith(partialName)
+                        )
+                        if (suggestions.length > 0) {
+                          setAttributeSuggestions(suggestions)
+                          setShowSuggestions(true)
+                          setSuggestionIndex(0)
+                        } else {
+                          setShowSuggestions(false)
+                        }
+                      } else {
+                        setShowSuggestions(false)
+                      }
+                    }}
+                    onSelect={(e) => {
+                      const cursorPos = (e.target as HTMLTextAreaElement).selectionStart
+                      setSqlCursorPos(cursorPos)
+                    }}
+                    onKeyDown={(e) => {
+                      if (showSuggestions && attributeSuggestions.length > 0) {
+                        if (e.key === 'ArrowDown') {
+                          e.preventDefault()
+                          setSuggestionIndex((prev) => (prev + 1) % attributeSuggestions.length)
+                        } else if (e.key === 'ArrowUp') {
+                          e.preventDefault()
+                          setSuggestionIndex((prev) => (prev - 1 + attributeSuggestions.length) % attributeSuggestions.length)
+                        } else if (e.key === 'Enter' || e.key === 'Tab') {
+                          e.preventDefault()
+                          const selected = attributeSuggestions[suggestionIndex]
+                          if (selected) {
+                            const textarea = sqlTextareaRef.current
+                            if (textarea) {
+                              const start = textarea.selectionStart
+                              const text = sqlStatement
+                              const textBeforeCursor = text.substring(0, start)
+                              const match = textBeforeCursor.match(/([a-zA-Z_][a-zA-Z0-9_]*)$/)
+                              if (match) {
+                                const before = text.substring(0, start - match[1].length)
+                                const after = text.substring(start)
+                                const newText = `${before}${selected.name}${after}`
+                                setSqlStatement(newText)
+                                validateSql(newText)
+                                setTimeout(() => {
+                                  textarea.focus()
+                                  const newPos = start - match[1].length + selected.name.length
+                                  textarea.setSelectionRange(newPos, newPos)
+                                }, 0)
+                              }
+                            }
+                            setShowSuggestions(false)
+                          }
+                        } else if (e.key === 'Escape') {
+                          setShowSuggestions(false)
+                        }
+                      }
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault()
+                      const attrName = e.dataTransfer.getData('text/plain')
+                      if (attrName && sqlTextareaRef.current) {
+                        const textarea = sqlTextareaRef.current
+                        const start = textarea.selectionStart
+                        const end = textarea.selectionEnd
+                        const text = sqlStatement
+                        const before = text.substring(0, start)
+                        const after = text.substring(end)
+                        const newText = `${before}${attrName}${after}`
+                        setSqlStatement(newText)
+                        validateSql(newText)
+                        setTimeout(() => {
+                          textarea.focus()
+                          const newPos = start + attrName.length
+                          textarea.setSelectionRange(newPos, newPos)
+                        }, 0)
+                      }
+                    }}
+                    onDragOver={(e) => e.preventDefault()}
+                    className="absolute inset-0 w-full h-full p-3 text-xs font-mono border-0 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none bg-transparent z-10"
+                    style={{ 
+                      whiteSpace: 'pre-wrap', 
+                      wordBreak: 'break-word',
+                      color: 'transparent',
+                      caretColor: 'black'
+                    }}
+                    placeholder={sqlStatement ? '' : 'SELECT attribute_name * 2 AS calculated_value FROM table...'}
+                  />
+                  
+                  {/* Validation Error */}
+                  {sqlValidationError && (
+                    <div className="absolute bottom-0 left-0 right-0 p-2 bg-red-50 dark:bg-red-900/20 border-t border-red-200 dark:border-red-800 flex items-center gap-2">
+                      <AlertCircle className="h-3 w-3 text-red-600 dark:text-red-400 flex-shrink-0" />
+                      <span className="text-[10px] text-red-600 dark:text-red-400">{sqlValidationError}</span>
+                    </div>
+                  )}
+                  
+                  {/* Detected Attributes Preview */}
+                  {selectedDataModelId && sqlStatement && !sqlValidationError && (() => {
+                    const attrs = attributesMap[selectedDataModelId] || []
+                    const attrNames = attrs.map(a => a.name.toLowerCase())
+                    const words = sqlStatement.match(/\b[a-zA-Z_][a-zA-Z0-9_]*\b/g) || []
+                    const detectedAttrs = words.filter(word => attrNames.includes(word.toLowerCase()))
+                    const uniqueDetected = [...new Set(detectedAttrs)]
+                    
+                    if (uniqueDetected.length > 0) {
+                      return (
+                        <div className="absolute bottom-2 left-2 right-2 flex flex-wrap gap-1 p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
+                          <span className="text-[10px] text-gray-600 dark:text-gray-400 mr-1">Detected attributes:</span>
+                          {uniqueDetected.map((attrName, idx) => {
+                            const attr = attrs.find(a => a.name.toLowerCase() === attrName.toLowerCase())
+                            return (
+                              <span
+                                key={idx}
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 border border-blue-200 dark:border-blue-700"
+                              >
+                                {attr && getAttributeIcon(attr.type)}
+                                <span>{attrName}</span>
+                              </span>
+                            )
+                          })}
+                        </div>
+                      )
+                    }
+                    return null
+                  })()}
+                  
+                  {/* Attribute Suggestions */}
+                  {showSuggestions && attributeSuggestions.length > 0 && (
+                    <div
+                      ref={suggestionsRef}
+                      className="absolute z-10 mt-1 bg-white dark:bg-gray-800 border rounded shadow-lg max-h-48 overflow-y-auto"
+                      style={{
+                        top: '100%',
+                        left: 0,
+                        right: 0
+                      }}
+                    >
+                      {attributeSuggestions.map((attr, idx) => (
+                        <div
+                          key={attr.id}
+                          onClick={() => {
+                            const textarea = sqlTextareaRef.current
+                            if (textarea) {
+                              const start = textarea.selectionStart
+                              const text = sqlStatement
+                              const textBeforeCursor = text.substring(0, start)
+                              const match = textBeforeCursor.match(/([a-zA-Z_][a-zA-Z0-9_]*)$/)
+                              if (match) {
+                                const before = text.substring(0, start - match[1].length)
+                                const after = text.substring(start)
+                                const newText = `${before}${attr.name}${after}`
+                                setSqlStatement(newText)
+                                setTimeout(() => {
+                                  textarea.focus()
+                                  const newPos = start - match[1].length + attr.name.length
+                                  textarea.setSelectionRange(newPos, newPos)
+                                }, 0)
+                              }
+                            }
+                            setShowSuggestions(false)
+                          }}
+                          className={cn(
+                            "px-3 py-2 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center gap-2",
+                            idx === suggestionIndex && "bg-blue-100 dark:bg-blue-900/40"
+                          )}
+                        >
+                          {getAttributeIcon(attr.type)}
+                          <span className="text-xs">{attr.display_name || attr.name}</span>
+                          <span className="text-[10px] text-gray-400 ml-auto">{attr.type}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setShowSqlDialog(false)
+                setSqlFieldName('')
+                setSqlStatement('')
+                setShowSuggestions(false)
+                setAttributeSearchQuery('')
+                setSqlValidationError(null)
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={async () => {
+                if (!sqlFieldName.trim() || !sqlStatement.trim()) {
+                  alert('Please enter both field name and SQL statement')
+                  return
+                }
+                if (!selectedDataModelId) {
+                  alert('No data model selected')
+                  return
+                }
+
+                try {
+                  const response = await fetch(`/api/data-models/${selectedDataModelId}/attributes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      name: sqlFieldName,
+                      display_name: sqlFieldName,
+                      type: 'calculated',
+                      sql_expression: sqlStatement,
+                      is_calculated: true
+                    })
+                  })
+
+                  if (!response.ok) throw new Error('Failed to create field')
+
+                  // Reload attributes
+                  if (attributesMap[selectedDataModelId]) {
+                    loadAttributes(selectedDataModelId)
+                  }
+                  
+                  setShowSqlDialog(false)
+                  setSqlFieldName('')
+                  setSqlStatement('')
+                  setShowSuggestions(false)
+                  onFieldCreated?.()
+                } catch (error) {
+                  console.error('Error creating SQL field:', error)
+                  alert('Failed to create SQL field')
+                }
+              }}
+            >
+              Create Field
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

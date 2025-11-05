@@ -103,21 +103,21 @@ export function ResizeHandles({ widget, setIsResizing, resizeStateRef }: ResizeH
         onMouseDown={(e) => handleResizeStart('e', e)}
       />
       
-      {/* Small visible corner handles */}
+      {/* Small visible corner points */}
       <div
-        className="resize-handle absolute top-0 left-0 w-2 h-2 bg-blue-500 border border-blue-700 cursor-nw-resize z-20"
+        className="resize-handle absolute top-0 left-0 w-2 h-2 bg-blue-500 rounded-full cursor-nw-resize z-20"
         onMouseDown={(e) => handleResizeStart('nw', e)}
       />
       <div
-        className="resize-handle absolute top-0 right-0 w-2 h-2 bg-blue-500 border border-blue-700 cursor-ne-resize z-20"
+        className="resize-handle absolute top-0 right-0 w-2 h-2 bg-blue-500 rounded-full cursor-ne-resize z-20"
         onMouseDown={(e) => handleResizeStart('ne', e)}
       />
       <div
-        className="resize-handle absolute bottom-0 left-0 w-2 h-2 bg-blue-500 border border-blue-700 cursor-sw-resize z-20"
+        className="resize-handle absolute bottom-0 left-0 w-2 h-2 bg-blue-500 rounded-full cursor-sw-resize z-20"
         onMouseDown={(e) => handleResizeStart('sw', e)}
       />
       <div
-        className="resize-handle absolute bottom-0 right-0 w-2 h-2 bg-blue-500 border border-blue-700 cursor-se-resize z-20"
+        className="resize-handle absolute bottom-0 right-0 w-2 h-2 bg-blue-500 rounded-full cursor-se-resize z-20"
         onMouseDown={(e) => handleResizeStart('se', e)}
       />
     </>

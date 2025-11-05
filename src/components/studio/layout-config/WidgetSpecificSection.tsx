@@ -54,8 +54,8 @@ export function WidgetSpecificSection({
     return 'Widget style'
   }
 
-  if (widget.type.includes('chart')) {
-    // For chart widgets, render the chart configuration sections directly
+  if (widget.type.includes('chart') || widget.type.includes('table')) {
+    // For chart and table widgets, render the chart configuration sections directly
     return (
       <>
         <ChartConfigurationSection

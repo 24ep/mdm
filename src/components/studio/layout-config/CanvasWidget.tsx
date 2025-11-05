@@ -199,7 +199,7 @@ export function CanvasWidget({
 
   return (
     <div
-      className={`absolute select-none ${isSelected ? 'ring-2 ring-blue-500 ring-offset-2 z-10' : isMultiSelected ? 'ring-2 ring-blue-300 ring-offset-2 z-10' : 'z-0'} ${isDraggingWidget && isSelected ? 'opacity-80 shadow-2xl' : 'opacity-100'} ${isDraggingWidget && isSelected ? 'scale-105' : 'scale-100'}`}
+      className={`absolute select-none ${isSelected ? 'z-10' : isMultiSelected ? 'z-10' : 'z-0'} ${isDraggingWidget && isSelected ? 'opacity-80 shadow-2xl' : 'opacity-100'} ${isDraggingWidget && isSelected ? 'scale-105' : 'scale-100'}`}
       data-widget-id={widget.id}
       draggable={false}
       onMouseDown={handleMouseDown}
@@ -306,7 +306,7 @@ export function CanvasWidget({
           </div>
         </>
       ) : (
-        <div className={`w-full h-full ${isSelected ? 'border-2 border-blue-500 dark:border-blue-400' : ''} rounded-lg shadow-lg overflow-hidden flex flex-col relative`} style={{
+        <div className={`w-full h-full ${isSelected ? 'border border-blue-500/70 dark:border-blue-400/70' : ''} rounded-lg shadow-lg overflow-hidden flex flex-col relative`} style={{
           backgroundColor: widget.properties?.backgroundColor || undefined,
         }}>
           {isSelected && !isLocked && (

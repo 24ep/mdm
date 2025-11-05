@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import { AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Separator } from '@/components/ui/separator'
-import { BarChart3, Type, Layout, Eye, Tag, MoveVertical, Square, Box, Layers, Grid3x3, HelpCircle, Palette, DollarSign, TrendingUp } from 'lucide-react'
+import { BarChart3, Type, Layout, Eye, Tag, MoveVertical, Square, Box, Layers, Grid3x3, HelpCircle, Palette, DollarSign, TrendingUp, Plus } from 'lucide-react'
 import { PlacedWidget } from './widgets'
+import { ColorPickerPopover } from './ColorPickerPopover'
 
 interface ChartConfigurationSectionProps {
   widget: PlacedWidget
@@ -27,6 +28,56 @@ export function ChartConfigurationSection({
         ? { ...w, properties: { ...w.properties, [key]: value } }
         : w
     ))
+  }
+
+  // Helper to determine if text should be light or dark based on background color
+  const getTextColor = (hexColor: string): string => {
+    if (!hexColor || hexColor === 'transparent') return '#000000'
+    const hex = hexColor.replace('#', '')
+    const r = parseInt(hex.substring(0, 2), 16)
+    const g = parseInt(hex.substring(2, 4), 16)
+    const b = parseInt(hex.substring(4, 6), 16)
+    // Calculate relative luminance
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+    return luminance > 0.5 ? '#000000' : '#ffffff'
+  }
+
+  // Helper to check if color has transparency
+  const hasTransparency = (color: string): boolean => {
+    if (!color || color === 'transparent') return true
+    if (color.startsWith('rgba')) {
+      const match = color.match(/rgba\([^)]+,\s*([\d.]+)\)/)
+      if (match) {
+        const alpha = parseFloat(match[1])
+        return alpha < 1
+      }
+    }
+    return false
+  }
+
+  // Helper to get swatch style with checkerboard background for transparency
+  const getSwatchStyle = (color: string): React.CSSProperties => {
+    const baseStyle: React.CSSProperties = {
+      border: 'none',
+      outline: 'none',
+      backgroundColor: color || '#ffffff'
+    }
+    
+    if (hasTransparency(color)) {
+      // Checkerboard pattern for transparency
+      baseStyle.backgroundImage = `
+        linear-gradient(45deg, #d0d0d0 25%, transparent 25%),
+        linear-gradient(-45deg, #d0d0d0 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #d0d0d0 75%),
+        linear-gradient(-45deg, transparent 75%, #d0d0d0 75%)
+      `
+      baseStyle.backgroundSize = '8px 8px'
+      baseStyle.backgroundPosition = '0 0, 0 4px, 4px -4px, -4px 0px'
+      // Keep the actual color as an overlay
+      baseStyle.backgroundColor = color
+    }
+    
+    return baseStyle
   }
 
   const chartType = widget.properties?.chartType || widget.type.replace('-chart', '')
@@ -164,34 +215,67 @@ export function ChartConfigurationSection({
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <Label className="text-xs font-medium">Title Color</Label>
-                      <Input
-                        type="color"
-                        value={widget.properties?.titleColor || '#111827'}
-                        onChange={(e) => updateProperty('titleColor', e.target.value)}
-                        className="h-7 text-xs p-0 cursor-pointer"
-                      />
+                      <div className="relative">
+                        <ColorPickerPopover
+                          value={widget.properties?.titleColor || '#111827'}
+                          onChange={(color) => updateProperty('titleColor', color)}
+                          allowImageVideo={false}
+                        >
+                          <button
+                            type="button"
+                            className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+                            style={getSwatchStyle(widget.properties?.titleColor || '#111827')}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </ColorPickerPopover>
+                        <Input
+                          type="text"
+                          value={widget.properties?.titleColor || '#111827'}
+                          onChange={(e) => updateProperty('titleColor', e.target.value)}
+                          className="h-7 text-xs pl-7 w-full"
+                          placeholder="#111827"
+                        />
+                      </div>
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs font-medium">Font Size</Label>
-                      <Input
-                        type="number"
-                        value={widget.properties?.titleFontSize || 14}
-                        onChange={(e) => updateProperty('titleFontSize', parseInt(e.target.value) || 14)}
-                        className="h-7 text-xs"
-                        min="8"
-                        max="32"
-                      />
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          value={widget.properties?.titleFontSize || 14}
+                          onChange={(e) => updateProperty('titleFontSize', parseInt(e.target.value) || 14)}
+                          className="h-7 text-xs pr-8"
+                          min="8"
+                          max="32"
+                        />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                      </div>
                     </div>
                   </div>
 
                   <div className="space-y-1">
                     <Label className="text-xs font-medium">Header Background</Label>
-                    <Input
-                      type="color"
-                      value={widget.properties?.headerBackgroundColor || '#ffffff'}
-                      onChange={(e) => updateProperty('headerBackgroundColor', e.target.value)}
-                      className="h-7 text-xs p-0 cursor-pointer"
-                    />
+                    <div className="relative">
+                      <ColorPickerPopover
+                        value={widget.properties?.headerBackgroundColor || '#ffffff'}
+                        onChange={(color) => updateProperty('headerBackgroundColor', color)}
+                        allowImageVideo={false}
+                      >
+                        <button
+                          type="button"
+                          className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+                          style={getSwatchStyle(widget.properties?.headerBackgroundColor || '#ffffff')}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </ColorPickerPopover>
+                      <Input
+                        type="text"
+                        value={widget.properties?.headerBackgroundColor || '#ffffff'}
+                        onChange={(e) => updateProperty('headerBackgroundColor', e.target.value)}
+                        className="h-7 text-xs pl-7 w-full"
+                        placeholder="#ffffff"
+                      />
+                    </div>
                   </div>
 
                   <div className="space-y-1">
@@ -268,21 +352,45 @@ export function ChartConfigurationSection({
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-1">
                         <Label className="text-xs font-medium">Color</Label>
-                        <Input
-                          type="color"
-                          value={seriesStyle.color || '#0088FE'}
-                          onChange={(e) => {
-                            const newSeriesStyles = {
-                              ...seriesStyles,
-                              [measure]: {
-                                ...seriesStyle,
-                                color: e.target.value
+                        <div className="relative">
+                          <ColorPickerPopover
+                            value={seriesStyle.color || '#0088FE'}
+                            onChange={(color) => {
+                              const newSeriesStyles = {
+                                ...seriesStyles,
+                                [measure]: {
+                                  ...seriesStyle,
+                                  color: color
+                                }
                               }
-                            }
-                            updateProperty('seriesStyles', newSeriesStyles)
-                          }}
-                          className="h-7 text-xs p-0 cursor-pointer"
-                        />
+                              updateProperty('seriesStyles', newSeriesStyles)
+                            }}
+                            allowImageVideo={false}
+                          >
+                            <button
+                              type="button"
+                              className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+                              style={getSwatchStyle(seriesStyle.color || '#0088FE')}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </ColorPickerPopover>
+                          <Input
+                            type="text"
+                            value={seriesStyle.color || '#0088FE'}
+                            onChange={(e) => {
+                              const newSeriesStyles = {
+                                ...seriesStyles,
+                                [measure]: {
+                                  ...seriesStyle,
+                                  color: e.target.value
+                                }
+                              }
+                              updateProperty('seriesStyles', newSeriesStyles)
+                            }}
+                            className="h-7 text-xs pl-7 w-full"
+                            placeholder="#0088FE"
+                          />
+                        </div>
                       </div>
                       {chartType === 'line' && (
                         <div className="space-y-1">
@@ -309,24 +417,27 @@ export function ChartConfigurationSection({
                       {chartType === 'bar' && (
                         <div className="space-y-1">
                           <Label className="text-xs font-medium">Bar size</Label>
-                          <Input
-                            type="number"
-                            value={seriesStyle.barSize || ''}
-                            onChange={(e) => {
-                              const newSeriesStyles = {
-                                ...seriesStyles,
-                                [measure]: {
-                                  ...seriesStyle,
-                                  barSize: e.target.value ? parseInt(e.target.value) : undefined
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              value={seriesStyle.barSize || ''}
+                              onChange={(e) => {
+                                const newSeriesStyles = {
+                                  ...seriesStyles,
+                                  [measure]: {
+                                    ...seriesStyle,
+                                    barSize: e.target.value ? parseInt(e.target.value) : undefined
+                                  }
                                 }
-                              }
-                              updateProperty('seriesStyles', newSeriesStyles)
-                            }}
-                            placeholder="Auto"
-                            className="h-7 text-xs"
-                            min="10"
-                            max="100"
-                          />
+                                updateProperty('seriesStyles', newSeriesStyles)
+                              }}
+                              placeholder="Auto"
+                              className="h-7 text-xs pr-8"
+                              min="10"
+                              max="100"
+                            />
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -351,23 +462,26 @@ export function ChartConfigurationSection({
                         {seriesStyle.showDots !== false && (
                           <div className="space-y-1">
                             <Label className="text-xs font-medium">Point size</Label>
-                            <Input
-                              type="number"
-                              value={seriesStyle.dotRadius || 4}
-                              onChange={(e) => {
-                                const newSeriesStyles = {
-                                  ...seriesStyles,
-                                  [measure]: {
-                                    ...seriesStyle,
-                                    dotRadius: parseInt(e.target.value) || 4
+                            <div className="relative">
+                              <Input
+                                type="number"
+                                value={seriesStyle.dotRadius || 4}
+                                onChange={(e) => {
+                                  const newSeriesStyles = {
+                                    ...seriesStyles,
+                                    [measure]: {
+                                      ...seriesStyle,
+                                      dotRadius: parseInt(e.target.value) || 4
+                                    }
                                   }
-                                }
-                                updateProperty('seriesStyles', newSeriesStyles)
-                              }}
-                              className="h-7 text-xs"
-                              min="2"
-                              max="12"
-                            />
+                                  updateProperty('seriesStyles', newSeriesStyles)
+                                }}
+                                className="h-7 text-xs pr-8"
+                                min="2"
+                                max="12"
+                              />
+                              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -447,23 +561,41 @@ export function ChartConfigurationSection({
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <Label className="text-xs font-medium">Font Size</Label>
-                      <Input
-                        type="number"
-                        value={widget.properties?.legendFontSize || 12}
-                        onChange={(e) => updateProperty('legendFontSize', parseInt(e.target.value) || 12)}
-                        className="h-7 text-xs"
-                        min="8"
-                        max="24"
-                      />
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          value={widget.properties?.legendFontSize || 12}
+                          onChange={(e) => updateProperty('legendFontSize', parseInt(e.target.value) || 12)}
+                          className="h-7 text-xs pr-8"
+                          min="8"
+                          max="24"
+                        />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                      </div>
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs font-medium">Color</Label>
-                      <Input
-                        type="color"
-                        value={widget.properties?.legendColor || '#111827'}
-                        onChange={(e) => updateProperty('legendColor', e.target.value)}
-                        className="h-7 text-xs p-0 cursor-pointer"
-                      />
+                      <div className="relative">
+                        <ColorPickerPopover
+                          value={widget.properties?.legendColor || '#111827'}
+                          onChange={(color) => updateProperty('legendColor', color)}
+                          allowImageVideo={false}
+                        >
+                            <button
+                              type="button"
+                              className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+                              style={getSwatchStyle(widget.properties?.legendColor || '#111827')}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                        </ColorPickerPopover>
+                        <Input
+                          type="text"
+                          value={widget.properties?.legendColor || '#111827'}
+                          onChange={(e) => updateProperty('legendColor', e.target.value)}
+                          className="h-7 text-xs pl-7 w-full"
+                          placeholder="#111827"
+                        />
+                      </div>
                     </div>
                   </div>
                   <div className="space-y-1">
@@ -561,12 +693,27 @@ export function ChartConfigurationSection({
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label className="text-xs font-medium">Grid color</Label>
-                        <Input
-                          type="color"
-                          value={widget.properties?.gridColor || '#f0f0f0'}
-                          onChange={(e) => updateProperty('gridColor', e.target.value)}
-                          className="h-7 text-xs p-0 cursor-pointer"
-                        />
+                        <div className="relative">
+                          <ColorPickerPopover
+                            value={widget.properties?.gridColor || '#f0f0f0'}
+                            onChange={(color) => updateProperty('gridColor', color)}
+                            allowImageVideo={false}
+                          >
+                            <button
+                              type="button"
+                              className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+                            style={getSwatchStyle(widget.properties?.gridColor || '#f0f0f0')}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </ColorPickerPopover>
+                          <Input
+                            type="text"
+                            value={widget.properties?.gridColor || '#f0f0f0'}
+                            onChange={(e) => updateProperty('gridColor', e.target.value)}
+                            className="h-7 text-xs pl-7 w-full"
+                            placeholder="#f0f0f0"
+                          />
+                        </div>
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs font-medium">Dash pattern</Label>
@@ -593,6 +740,673 @@ export function ChartConfigurationSection({
           </AccordionContent>
         </AccordionItem>
       )}
+
+      {/* Table style */}
+      {(widget.type === 'table' || widget.type === 'pivot-table') && (
+        <AccordionItem value="table-style" className="border-0">
+          <AccordionTrigger className="text-xs font-semibold py-2 px-4 hover:no-underline">
+            <div className="flex items-center gap-2 flex-1">
+              <Grid3x3 className="h-3.5 w-3.5 text-muted-foreground" />
+              <span>Table style</span>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-3">
+            <div className="space-y-4">
+              {/* Header styling */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold">Header</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Background</Label>
+                    <div className="relative">
+                      <ColorPickerPopover
+                        value={widget.properties?.tableHeaderBg || '#f3f4f6'}
+                        onChange={(color) => updateProperty('tableHeaderBg', color)}
+                        allowImageVideo={false}
+                      >
+                        <button
+                          type="button"
+                          className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+                          style={getSwatchStyle(widget.properties?.tableHeaderBg || '#f3f4f6')}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </ColorPickerPopover>
+                      <Input
+                        type="text"
+                        value={widget.properties?.tableHeaderBg || '#f3f4f6'}
+                        onChange={(e) => updateProperty('tableHeaderBg', e.target.value)}
+                        className="h-7 text-xs pl-7 w-full"
+                        placeholder="#f3f4f6"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Text color</Label>
+                    <div className="relative">
+                      <ColorPickerPopover
+                        value={widget.properties?.tableHeaderText || '#111827'}
+                        onChange={(color) => updateProperty('tableHeaderText', color)}
+                        allowImageVideo={false}
+                      >
+                        <button
+                          type="button"
+                          className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+                          style={getSwatchStyle(widget.properties?.tableHeaderText || '#111827')}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </ColorPickerPopover>
+                      <Input
+                        type="text"
+                        value={widget.properties?.tableHeaderText || '#111827'}
+                        onChange={(e) => updateProperty('tableHeaderText', e.target.value)}
+                        className="h-7 text-xs pl-7 w-full"
+                        placeholder="#111827"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Padding</Label>
+                    <div className="relative">
+                      <Input type="number" className="h-7 text-xs pr-8" min="0" max="32" value={widget.properties?.tableHeaderPadding ?? 8} onChange={(e) => updateProperty('tableHeaderPadding', parseInt(e.target.value) || 0)} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Border width</Label>
+                    <div className="relative">
+                      <Input type="number" className="h-7 text-xs pr-8" min="0" max="10" value={widget.properties?.tableHeaderBorderWidth ?? 1} onChange={(e) => updateProperty('tableHeaderBorderWidth', parseInt(e.target.value) || 0)} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Border color</Label>
+                    <div className="relative">
+                      <ColorPickerPopover
+                        value={widget.properties?.tableHeaderBorderColor || '#e5e7eb'}
+                        onChange={(color) => updateProperty('tableHeaderBorderColor', color)}
+                        allowImageVideo={false}
+                      >
+                        <button
+                          type="button"
+                          className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+                          style={getSwatchStyle(widget.properties?.tableHeaderBorderColor || '#e5e7eb')}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </ColorPickerPopover>
+                      <Input
+                        type="text"
+                        value={widget.properties?.tableHeaderBorderColor || '#e5e7eb'}
+                        onChange={(e) => updateProperty('tableHeaderBorderColor', e.target.value)}
+                        className="h-7 text-xs pl-7 w-full"
+                        placeholder="#e5e7eb"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Border radius</Label>
+                    <div className="relative">
+                      <Input type="number" className="h-7 text-xs pr-8" min="0" max="24" value={widget.properties?.tableHeaderBorderRadius ?? 0} onChange={(e) => updateProperty('tableHeaderBorderRadius', parseInt(e.target.value) || 0)} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Margin</Label>
+                    <div className="relative">
+                      <Input type="number" className="h-7 text-xs pr-8" min="0" max="24" value={widget.properties?.tableHeaderMargin ?? 0} onChange={(e) => updateProperty('tableHeaderMargin', parseInt(e.target.value) || 0)} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Row styling */}
+              <div className="space-y-2 border-t pt-3">
+                <Label className="text-xs font-semibold">Row</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Background</Label>
+                    <div className="relative">
+                      <ColorPickerPopover
+                        value={widget.properties?.tableRowBg || '#ffffff'}
+                        onChange={(color) => updateProperty('tableRowBg', color)}
+                        allowImageVideo={false}
+                      >
+                        <button
+                          type="button"
+                          className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+                            style={getSwatchStyle(widget.properties?.tableRowBg || '#ffffff')}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </ColorPickerPopover>
+                      <Input
+                        type="text"
+                        value={widget.properties?.tableRowBg || '#ffffff'}
+                        onChange={(e) => updateProperty('tableRowBg', e.target.value)}
+                        className="h-7 text-xs pl-7 w-full"
+                        placeholder="#ffffff"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Text color</Label>
+                    <div className="relative">
+                      <ColorPickerPopover
+                        value={widget.properties?.tableRowText || '#111827'}
+                        onChange={(color) => updateProperty('tableRowText', color)}
+                        allowImageVideo={false}
+                      >
+                        <button
+                          type="button"
+                          className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+                          style={getSwatchStyle(widget.properties?.tableRowText || '#111827')}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </ColorPickerPopover>
+                      <Input
+                        type="text"
+                        value={widget.properties?.tableRowText || '#111827'}
+                        onChange={(e) => updateProperty('tableRowText', e.target.value)}
+                        className="h-7 text-xs pl-7 w-full"
+                        placeholder="#111827"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Padding</Label>
+                    <div className="relative">
+                      <Input type="number" className="h-7 text-xs pr-8" min="0" max="32" value={widget.properties?.tableRowPadding ?? 4} onChange={(e) => updateProperty('tableRowPadding', parseInt(e.target.value) || 0)} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Margin</Label>
+                    <div className="relative">
+                      <Input type="number" className="h-7 text-xs pr-8" min="0" max="24" value={widget.properties?.tableRowMargin ?? 0} onChange={(e) => updateProperty('tableRowMargin', parseInt(e.target.value) || 0)} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Spacing</Label>
+                    <div className="relative">
+                      <Input type="number" className="h-7 text-xs pr-8" min="0" max="24" value={widget.properties?.tableRowSpacing ?? 0} onChange={(e) => updateProperty('tableRowSpacing', parseInt(e.target.value) || 0)} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Border width</Label>
+                    <div className="relative">
+                      <Input type="number" className="h-7 text-xs pr-8" min="0" max="10" value={widget.properties?.tableRowBorderWidth ?? 1} onChange={(e) => updateProperty('tableRowBorderWidth', parseInt(e.target.value) || 0)} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Border color</Label>
+                    <div className="relative">
+                      <ColorPickerPopover
+                        value={widget.properties?.tableRowBorderColor || '#e5e7eb'}
+                        onChange={(color) => updateProperty('tableRowBorderColor', color)}
+                        allowImageVideo={false}
+                      >
+                        <button
+                          type="button"
+                          className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+                          style={getSwatchStyle(widget.properties?.tableRowBorderColor || '#e5e7eb')}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </ColorPickerPopover>
+                      <Input
+                        type="text"
+                        value={widget.properties?.tableRowBorderColor || '#e5e7eb'}
+                        onChange={(e) => updateProperty('tableRowBorderColor', e.target.value)}
+                        className="h-7 text-xs pl-7 w-full"
+                        placeholder="#e5e7eb"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Border radius</Label>
+                    <div className="relative">
+                      <Input type="number" className="h-7 text-xs pr-8" min="0" max="24" value={widget.properties?.tableRowBorderRadius ?? 0} onChange={(e) => updateProperty('tableRowBorderRadius', parseInt(e.target.value) || 0)} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Column styling */}
+              <div className="space-y-2 border-t pt-3">
+                <Label className="text-xs font-semibold">Column</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Background</Label>
+                    <div className="relative">
+                      <ColorPickerPopover
+                        value={widget.properties?.tableColumnBg || 'transparent'}
+                        onChange={(color) => updateProperty('tableColumnBg', color)}
+                        allowImageVideo={false}
+                      >
+                        <button
+                          type="button"
+                          className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+                            style={getSwatchStyle(widget.properties?.tableColumnBg || 'transparent')}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </ColorPickerPopover>
+                      <Input
+                        type="text"
+                        value={widget.properties?.tableColumnBg || 'transparent'}
+                        onChange={(e) => updateProperty('tableColumnBg', e.target.value)}
+                        className="h-7 text-xs pl-7 w-full"
+                        placeholder="transparent"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Text color</Label>
+                    <div className="relative">
+                      <ColorPickerPopover
+                        value={widget.properties?.tableColumnText || '#111827'}
+                        onChange={(color) => updateProperty('tableColumnText', color)}
+                        allowImageVideo={false}
+                      >
+                        <button
+                          type="button"
+                          className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+                          style={getSwatchStyle(widget.properties?.tableColumnText || '#111827')}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </ColorPickerPopover>
+                      <Input
+                        type="text"
+                        value={widget.properties?.tableColumnText || '#111827'}
+                        onChange={(e) => updateProperty('tableColumnText', e.target.value)}
+                        className="h-7 text-xs pl-7 w-full"
+                        placeholder="#111827"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Padding</Label>
+                    <div className="relative">
+                      <Input type="number" className="h-7 text-xs pr-8" min="0" max="32" value={widget.properties?.tableColumnPadding ?? 4} onChange={(e) => updateProperty('tableColumnPadding', parseInt(e.target.value) || 0)} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Margin</Label>
+                    <div className="relative">
+                      <Input type="number" className="h-7 text-xs pr-8" min="0" max="24" value={widget.properties?.tableColumnMargin ?? 0} onChange={(e) => updateProperty('tableColumnMargin', parseInt(e.target.value) || 0)} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Width</Label>
+                    <div className="relative">
+                      <Input type="number" className="h-7 text-xs pr-8" min="0" placeholder="Auto" value={widget.properties?.tableColumnWidth || ''} onChange={(e) => updateProperty('tableColumnWidth', e.target.value ? parseInt(e.target.value) : undefined)} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Border width</Label>
+                    <div className="relative">
+                      <Input type="number" className="h-7 text-xs pr-8" min="0" max="10" value={widget.properties?.tableColumnBorderWidth ?? 1} onChange={(e) => updateProperty('tableColumnBorderWidth', parseInt(e.target.value) || 0)} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Border color</Label>
+                    <div className="relative">
+                      <ColorPickerPopover
+                        value={widget.properties?.tableColumnBorderColor || '#e5e7eb'}
+                        onChange={(color) => updateProperty('tableColumnBorderColor', color)}
+                        allowImageVideo={false}
+                      >
+                        <button
+                          type="button"
+                          className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+                          style={getSwatchStyle(widget.properties?.tableColumnBorderColor || '#e5e7eb')}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </ColorPickerPopover>
+                      <Input
+                        type="text"
+                        value={widget.properties?.tableColumnBorderColor || '#e5e7eb'}
+                        onChange={(e) => updateProperty('tableColumnBorderColor', e.target.value)}
+                        className="h-7 text-xs pl-7 w-full"
+                        placeholder="#e5e7eb"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Border radius</Label>
+                    <div className="relative">
+                      <Input type="number" className="h-7 text-xs pr-8" min="0" max="24" value={widget.properties?.tableColumnBorderRadius ?? 0} onChange={(e) => updateProperty('tableColumnBorderRadius', parseInt(e.target.value) || 0)} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Cell styling */}
+              <div className="space-y-2 border-t pt-3">
+                <Label className="text-xs font-semibold">Cell</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Padding</Label>
+                    <div className="relative">
+                      <Input type="number" className="h-7 text-xs pr-8" min="0" max="32" value={widget.properties?.tableCellPadding ?? 4} onChange={(e) => updateProperty('tableCellPadding', parseInt(e.target.value) || 0)} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Border width</Label>
+                    <div className="relative">
+                      <Input type="number" className="h-7 text-xs pr-8" min="0" max="10" value={widget.properties?.tableCellBorderWidth ?? 1} onChange={(e) => updateProperty('tableCellBorderWidth', parseInt(e.target.value) || 0)} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Border color</Label>
+                    <div className="relative">
+                      <ColorPickerPopover
+                        value={widget.properties?.tableCellBorderColor || '#e5e7eb'}
+                        onChange={(color) => updateProperty('tableCellBorderColor', color)}
+                        allowImageVideo={false}
+                      >
+                        <button
+                          type="button"
+                          className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+                          style={getSwatchStyle(widget.properties?.tableCellBorderColor || '#e5e7eb')}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </ColorPickerPopover>
+                      <Input
+                        type="text"
+                        value={widget.properties?.tableCellBorderColor || '#e5e7eb'}
+                        onChange={(e) => updateProperty('tableCellBorderColor', e.target.value)}
+                        className="h-7 text-xs pl-7 w-full"
+                        placeholder="#e5e7eb"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Border radius</Label>
+                    <div className="relative">
+                      <Input type="number" className="h-7 text-xs pr-8" min="0" max="24" value={widget.properties?.tableCellBorderRadius ?? 0} onChange={(e) => updateProperty('tableCellBorderRadius', parseInt(e.target.value) || 0)} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Table styling */}
+              <div className="space-y-2 border-t pt-3">
+                <Label className="text-xs font-semibold">Table</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Border radius</Label>
+                    <div className="relative">
+                      <Input type="number" className="h-7 text-xs pr-8" min="0" max="24" value={widget.properties?.tableBorderRadius ?? 0} onChange={(e) => updateProperty('tableBorderRadius', parseInt(e.target.value) || 0)} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Shadow</Label>
+                    <Select value={widget.properties?.tableShadow || 'none'} onValueChange={(v) => updateProperty('tableShadow', v)}>
+                      <SelectTrigger className="h-7 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        <SelectItem value="sm">Small</SelectItem>
+                        <SelectItem value="md">Medium</SelectItem>
+                        <SelectItem value="lg">Large</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      )}
+
+      {/* Conditional formatting */}
+      <AccordionItem value="conditional-formatting" className="border-0">
+        <AccordionTrigger className="text-xs font-semibold py-2 px-4 hover:no-underline">
+          <div className="flex items-center gap-2 flex-1">
+            <Palette className="h-3.5 w-3.5 text-muted-foreground" />
+            <span>Conditional formatting</span>
+          </div>
+        </AccordionTrigger>
+        <AccordionContent className="px-4 pb-3">
+          <div className="space-y-3">
+            <div className="space-y-2">
+              {(widget.properties?.conditionalFormattingRules || []).map((rule: any, index: number) => (
+                <div key={rule.id || index} className="border rounded p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-medium">Rule {index + 1}</Label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const rules = widget.properties?.conditionalFormattingRules || []
+                        updateProperty('conditionalFormattingRules', rules.filter((_: any, i: number) => i !== index))
+                      }}
+                      className="text-xs text-red-500 hover:text-red-700"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs font-medium">Apply to</Label>
+                        <Select
+                          value={rule.applyTo || 'cell'}
+                          onValueChange={(value) => {
+                            const rules = widget.properties?.conditionalFormattingRules || []
+                            const updated = [...rules]
+                            updated[index] = { ...updated[index], applyTo: value }
+                            updateProperty('conditionalFormattingRules', updated)
+                          }}
+                        >
+                          <SelectTrigger className="h-7 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="cell">Cell</SelectItem>
+                            <SelectItem value="row">Row</SelectItem>
+                            <SelectItem value="column">Column</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs font-medium">Attribute</Label>
+                        <Input
+                          value={rule.attribute || ''}
+                          onChange={(e) => {
+                            const rules = widget.properties?.conditionalFormattingRules || []
+                            const updated = [...rules]
+                            updated[index] = { ...updated[index], attribute: e.target.value }
+                            updateProperty('conditionalFormattingRules', updated)
+                          }}
+                          placeholder="Attribute name"
+                          className="h-7 text-xs"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs font-medium">Condition</Label>
+                        <Select
+                          value={rule.condition || 'greater_than'}
+                          onValueChange={(value) => {
+                            const rules = widget.properties?.conditionalFormattingRules || []
+                            const updated = [...rules]
+                            updated[index] = { ...updated[index], condition: value }
+                            updateProperty('conditionalFormattingRules', updated)
+                          }}
+                        >
+                          <SelectTrigger className="h-7 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="greater_than">Greater than</SelectItem>
+                            <SelectItem value="less_than">Less than</SelectItem>
+                            <SelectItem value="equal_to">Equal to</SelectItem>
+                            <SelectItem value="not_equal_to">Not equal to</SelectItem>
+                            <SelectItem value="greater_or_equal">Greater or equal</SelectItem>
+                            <SelectItem value="less_or_equal">Less or equal</SelectItem>
+                            <SelectItem value="between">Between</SelectItem>
+                            <SelectItem value="contains">Contains</SelectItem>
+                            <SelectItem value="not_contains">Not contains</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs font-medium">Value</Label>
+                        <Input
+                          type="text"
+                          value={rule.value || ''}
+                          onChange={(e) => {
+                            const rules = widget.properties?.conditionalFormattingRules || []
+                            const updated = [...rules]
+                            updated[index] = { ...updated[index], value: e.target.value }
+                            updateProperty('conditionalFormattingRules', updated)
+                          }}
+                          placeholder="Value"
+                          className="h-7 text-xs"
+                        />
+                      </div>
+                      {rule.condition === 'between' && (
+                        <div className="space-y-1">
+                          <Label className="text-xs font-medium">Value 2</Label>
+                          <Input
+                            type="text"
+                            value={rule.value2 || ''}
+                            onChange={(e) => {
+                              const rules = widget.properties?.conditionalFormattingRules || []
+                              const updated = [...rules]
+                              updated[index] = { ...updated[index], value2: e.target.value }
+                              updateProperty('conditionalFormattingRules', updated)
+                            }}
+                            placeholder="Value 2"
+                            className="h-7 text-xs"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs font-medium">Background color</Label>
+                        <div className="relative">
+                          <ColorPickerPopover
+                            value={rule.backgroundColor || '#ffffff'}
+                            onChange={(color) => {
+                              const rules = widget.properties?.conditionalFormattingRules || []
+                              const updated = [...rules]
+                              updated[index] = { ...updated[index], backgroundColor: color }
+                              updateProperty('conditionalFormattingRules', updated)
+                            }}
+                            allowImageVideo={false}
+                          >
+                            <button
+                              type="button"
+                              className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+                              style={getSwatchStyle(rule.backgroundColor || '#ffffff')}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </ColorPickerPopover>
+                          <Input
+                            type="text"
+                            value={rule.backgroundColor || '#ffffff'}
+                            onChange={(e) => {
+                              const rules = widget.properties?.conditionalFormattingRules || []
+                              const updated = [...rules]
+                              updated[index] = { ...updated[index], backgroundColor: e.target.value }
+                              updateProperty('conditionalFormattingRules', updated)
+                            }}
+                            className="h-7 text-xs pl-7 w-full"
+                            placeholder="#ffffff"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs font-medium">Text color</Label>
+                        <div className="relative">
+                          <ColorPickerPopover
+                            value={rule.textColor || '#111827'}
+                            onChange={(color) => {
+                              const rules = widget.properties?.conditionalFormattingRules || []
+                              const updated = [...rules]
+                              updated[index] = { ...updated[index], textColor: color }
+                              updateProperty('conditionalFormattingRules', updated)
+                            }}
+                            allowImageVideo={false}
+                          >
+                            <button
+                              type="button"
+                              className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+                              style={getSwatchStyle(rule.textColor || '#111827')}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </ColorPickerPopover>
+                          <Input
+                            type="text"
+                            value={rule.textColor || '#111827'}
+                            onChange={(e) => {
+                              const rules = widget.properties?.conditionalFormattingRules || []
+                              const updated = [...rules]
+                              updated[index] = { ...updated[index], textColor: e.target.value }
+                              updateProperty('conditionalFormattingRules', updated)
+                            }}
+                            className="h-7 text-xs pl-7 w-full"
+                            placeholder="#111827"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  const rules = widget.properties?.conditionalFormattingRules || []
+                  const newRule = {
+                    id: `rule_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    applyTo: 'cell',
+                    attribute: '',
+                    condition: 'greater_than',
+                    value: '',
+                    backgroundColor: '#ffffff',
+                    textColor: '#111827'
+                  }
+                  updateProperty('conditionalFormattingRules', [...rules, newRule])
+                }}
+                className="w-full px-3 py-2 text-xs border rounded hover:bg-accent flex items-center justify-center gap-2"
+              >
+                <Plus className="h-3 w-3" />
+                Add rule
+              </button>
+            </div>
+          </div>
+        </AccordionContent>
+      </AccordionItem>
 
       {/* X-axis - Looker Studio style */}
       {hasAxes && (
@@ -630,46 +1444,82 @@ export function ChartConfigurationSection({
                   <div className="space-y-3 pt-1">
                     <div className="space-y-1">
                       <Label className="text-xs font-medium">Title Font Size</Label>
-                      <Input
-                        type="number"
-                        value={widget.properties?.xAxisTitleFontSize || 12}
-                        onChange={(e) => updateProperty('xAxisTitleFontSize', parseInt(e.target.value) || 12)}
-                        className="h-7 text-xs"
-                        min="8"
-                        max="24"
-                      />
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          value={widget.properties?.xAxisTitleFontSize || 12}
+                          onChange={(e) => updateProperty('xAxisTitleFontSize', parseInt(e.target.value) || 12)}
+                          className="h-7 text-xs pr-8"
+                          min="8"
+                          max="24"
+                        />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                      </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label className="text-xs font-medium">Title Color</Label>
-                        <Input
-                          type="color"
-                          value={widget.properties?.xAxisTitleColor || '#111827'}
-                          onChange={(e) => updateProperty('xAxisTitleColor', e.target.value)}
-                          className="h-7 text-xs p-0 cursor-pointer"
-                        />
+                        <div className="relative">
+                          <ColorPickerPopover
+                            value={widget.properties?.xAxisTitleColor || '#111827'}
+                            onChange={(color) => updateProperty('xAxisTitleColor', color)}
+                            allowImageVideo={false}
+                          >
+                            <button
+                              type="button"
+                              className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+                              style={getSwatchStyle(widget.properties?.xAxisTitleColor || '#111827')}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </ColorPickerPopover>
+                          <Input
+                            type="text"
+                            value={widget.properties?.xAxisTitleColor || '#111827'}
+                            onChange={(e) => updateProperty('xAxisTitleColor', e.target.value)}
+                            className="h-7 text-xs pl-7 w-full"
+                            placeholder="#111827"
+                          />
+                        </div>
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs font-medium">Tick Color</Label>
-                        <Input
-                          type="color"
-                          value={widget.properties?.xAxisTickColor || '#111827'}
-                          onChange={(e) => updateProperty('xAxisTickColor', e.target.value)}
-                          className="h-7 text-xs p-0 cursor-pointer"
-                        />
+                        <div className="relative">
+                          <ColorPickerPopover
+                            value={widget.properties?.xAxisTickColor || '#111827'}
+                            onChange={(color) => updateProperty('xAxisTickColor', color)}
+                            allowImageVideo={false}
+                          >
+                            <button
+                              type="button"
+                              className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+                              style={getSwatchStyle(widget.properties?.xAxisTickColor || '#111827')}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </ColorPickerPopover>
+                          <Input
+                            type="text"
+                            value={widget.properties?.xAxisTickColor || '#111827'}
+                            onChange={(e) => updateProperty('xAxisTickColor', e.target.value)}
+                            className="h-7 text-xs pl-7 w-full"
+                            placeholder="#111827"
+                          />
+                        </div>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label className="text-xs font-medium">Tick Font Size</Label>
-                        <Input
-                          type="number"
-                          value={widget.properties?.xAxisTickFontSize || 12}
-                          onChange={(e) => updateProperty('xAxisTickFontSize', parseInt(e.target.value) || 12)}
-                          className="h-7 text-xs"
-                          min="8"
-                          max="20"
-                        />
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            value={widget.properties?.xAxisTickFontSize || 12}
+                            onChange={(e) => updateProperty('xAxisTickFontSize', parseInt(e.target.value) || 12)}
+                            className="h-7 text-xs pr-8"
+                            min="8"
+                            max="20"
+                          />
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                        </div>
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs font-medium">Font Family</Label>
@@ -756,46 +1606,82 @@ export function ChartConfigurationSection({
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs font-medium">Title Font Size</Label>
-                      <Input
-                        type="number"
-                        value={widget.properties?.yAxisTitleFontSize || 12}
-                        onChange={(e) => updateProperty('yAxisTitleFontSize', parseInt(e.target.value) || 12)}
-                        className="h-7 text-xs"
-                        min="8"
-                        max="24"
-                      />
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          value={widget.properties?.yAxisTitleFontSize || 12}
+                          onChange={(e) => updateProperty('yAxisTitleFontSize', parseInt(e.target.value) || 12)}
+                          className="h-7 text-xs pr-8"
+                          min="8"
+                          max="24"
+                        />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                      </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label className="text-xs font-medium">Title Color</Label>
-                        <Input
-                          type="color"
-                          value={widget.properties?.yAxisTitleColor || '#111827'}
-                          onChange={(e) => updateProperty('yAxisTitleColor', e.target.value)}
-                          className="h-7 text-xs p-0 cursor-pointer"
-                        />
+                        <div className="relative">
+                          <ColorPickerPopover
+                            value={widget.properties?.yAxisTitleColor || '#111827'}
+                            onChange={(color) => updateProperty('yAxisTitleColor', color)}
+                            allowImageVideo={false}
+                          >
+                            <button
+                              type="button"
+                              className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+                              style={getSwatchStyle(widget.properties?.yAxisTitleColor || '#111827')}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </ColorPickerPopover>
+                          <Input
+                            type="text"
+                            value={widget.properties?.yAxisTitleColor || '#111827'}
+                            onChange={(e) => updateProperty('yAxisTitleColor', e.target.value)}
+                            className="h-7 text-xs pl-7 w-full"
+                            placeholder="#111827"
+                          />
+                        </div>
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs font-medium">Tick Color</Label>
-                        <Input
-                          type="color"
-                          value={widget.properties?.yAxisTickColor || '#111827'}
-                          onChange={(e) => updateProperty('yAxisTickColor', e.target.value)}
-                          className="h-7 text-xs p-0 cursor-pointer"
-                        />
+                        <div className="relative">
+                          <ColorPickerPopover
+                            value={widget.properties?.yAxisTickColor || '#111827'}
+                            onChange={(color) => updateProperty('yAxisTickColor', color)}
+                            allowImageVideo={false}
+                          >
+                            <button
+                              type="button"
+                              className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+                              style={getSwatchStyle(widget.properties?.yAxisTickColor || '#111827')}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </ColorPickerPopover>
+                          <Input
+                            type="text"
+                            value={widget.properties?.yAxisTickColor || '#111827'}
+                            onChange={(e) => updateProperty('yAxisTickColor', e.target.value)}
+                            className="h-7 text-xs pl-7 w-full"
+                            placeholder="#111827"
+                          />
+                        </div>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label className="text-xs font-medium">Tick Font Size</Label>
-                        <Input
-                          type="number"
-                          value={widget.properties?.yAxisTickFontSize || 12}
-                          onChange={(e) => updateProperty('yAxisTickFontSize', parseInt(e.target.value) || 12)}
-                          className="h-7 text-xs"
-                          min="8"
-                          max="20"
-                        />
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            value={widget.properties?.yAxisTickFontSize || 12}
+                            onChange={(e) => updateProperty('yAxisTickFontSize', parseInt(e.target.value) || 12)}
+                            className="h-7 text-xs pr-8"
+                            min="8"
+                            max="20"
+                          />
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                        </div>
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs font-medium">Font Family</Label>
@@ -918,14 +1804,17 @@ export function ChartConfigurationSection({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs font-medium">Font Size</Label>
-                <Input
-                  type="number"
-                  value={widget.properties?.tooltipFontSize || 12}
-                  onChange={(e) => updateProperty('tooltipFontSize', parseInt(e.target.value) || 12)}
-                  className="h-7 text-xs"
-                  min="8"
-                  max="20"
-                />
+                <div className="relative">
+                  <Input
+                    type="number"
+                    value={widget.properties?.tooltipFontSize || 12}
+                    onChange={(e) => updateProperty('tooltipFontSize', parseInt(e.target.value) || 12)}
+                    className="h-7 text-xs pr-8"
+                    min="8"
+                    max="20"
+                  />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                </div>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs font-medium">Font Family</Label>

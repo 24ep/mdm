@@ -3,22 +3,97 @@
 import React, { useState, useEffect } from 'react'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Database } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog'
+import { Database, Plus, X, Trash2, Paintbrush } from 'lucide-react'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Input } from '@/components/ui/input'
 import { PlacedWidget } from './widgets'
 import { ChartDataSourceConfigProps, Attribute } from './chartDataSourceTypes'
 import { CHART_DIMENSIONS, isValueMetricDimension } from './chartDimensions'
 import { getEffectiveType } from './chartDataSourceUtils'
 import { useDataModels, useAttributes } from './useChartDataSource'
 import { AttributeDropZone } from './AttributeDropZone'
+import { ColorPickerPopover } from './ColorPickerPopover'
 
 // Aggregation types for value/metric dimensions
-export type AggregationType = 'SUM' | 'AVG' | 'COUNT' | 'COUNT_DISTINCT' | 'MIN' | 'MAX' | 'NONE'
+export type AggregationType = 'SUM' | 'AVG' | 'COUNT' | 'COUNT_DISTINCT' | 'MIN' | 'MAX' | 'MEDIAN' | 'STDDEV' | 'VARIANCE' | 'NONE'
+
+// Filter types
+export type FilterOperator = 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'starts_with' | 'ends_with' | 'greater_than' | 'less_than' | 'greater_or_equal' | 'less_or_equal' | 'is_null' | 'is_not_null'
+export type FilterLogic = 'AND' | 'OR'
+
+export interface FilterCondition {
+  id: string
+  type: 'condition'
+  attribute: string
+  operator: FilterOperator
+  value: string
+}
+
+export interface FilterGroup {
+  id: string
+  type: 'group'
+  logic: FilterLogic
+  items: Array<FilterCondition | FilterGroup>
+}
+
+export type FilterItem = FilterCondition | FilterGroup
 
 export function ChartDataSourceConfig({
   widget,
   setPlacedWidgets,
   spaceId,
 }: ChartDataSourceConfigProps) {
+  // Helper to determine if text should be light or dark based on background color
+  const getTextColor = (hexColor: string): string => {
+    if (!hexColor || hexColor === 'transparent') return '#000000'
+    const hex = hexColor.replace('#', '')
+    const r = parseInt(hex.substring(0, 2), 16)
+    const g = parseInt(hex.substring(2, 4), 16)
+    const b = parseInt(hex.substring(4, 6), 16)
+    // Calculate relative luminance
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+    return luminance > 0.5 ? '#000000' : '#ffffff'
+  }
+
+  // Helper to check if color has transparency
+  const hasTransparency = (color: string): boolean => {
+    if (!color || color === 'transparent') return true
+    if (color.startsWith('rgba')) {
+      const match = color.match(/rgba\([^)]+,\s*([\d.]+)\)/)
+      if (match) {
+        const alpha = parseFloat(match[1])
+        return alpha < 1
+      }
+    }
+    return false
+  }
+
+  // Helper to get swatch style with checkerboard background for transparency
+  const getSwatchStyle = (color: string): React.CSSProperties => {
+    const baseStyle: React.CSSProperties = {
+      border: 'none',
+      outline: 'none',
+      backgroundColor: color || '#ffffff'
+    }
+    
+    if (hasTransparency(color)) {
+      // Checkerboard pattern for transparency
+      baseStyle.backgroundImage = `
+        linear-gradient(45deg, #d0d0d0 25%, transparent 25%),
+        linear-gradient(-45deg, #d0d0d0 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #d0d0d0 75%),
+        linear-gradient(-45deg, transparent 75%, #d0d0d0 75%)
+      `
+      baseStyle.backgroundSize = '8px 8px'
+      baseStyle.backgroundPosition = '0 0, 0 4px, 4px -4px, -4px 0px'
+      // Keep the actual color as an overlay
+      baseStyle.backgroundColor = color
+    }
+    
+    return baseStyle
+  }
+
   const { dataModels, loading: loadingModels } = useDataModels(spaceId)
   
   // Support both camelCase and snake_case for backward compatibility
@@ -40,10 +115,26 @@ export function ChartDataSourceConfig({
   const [attributeTypeOverrides, setAttributeTypeOverrides] = useState<Record<string, Record<string, string>>>(
     (widget.properties?.chartDimensionTypeOverrides as Record<string, Record<string, string>>) || {}
   )
+  // Per-dimension type settings (granularity, buckets, format, etc.)
+  const [attributeTypeSettings, setAttributeTypeSettings] = useState<Record<string, Record<string, any>>>(
+    (widget.properties?.chartDimensionTypeSettings as Record<string, Record<string, any>>) || {}
+  )
+  // Per-dimension display names (aliases) for attributes
+  const [attributeDisplayNames, setAttributeDisplayNames] = useState<Record<string, Record<string, string>>>(
+    (widget.properties?.chartDimensionDisplayNames as Record<string, Record<string, string>>) || {}
+  )
+  // Filters (nested groups/conditions)
+  const [filters, setFilters] = useState<FilterGroup | null>((widget.properties?.rowFilters as FilterGroup) || null)
+  const [isFilterDialogOpen, setIsFilterDialogOpen] = useState<boolean>(false)
   
   // Per-dimension aggregation overrides for value/metric attributes
   const [attributeAggregations, setAttributeAggregations] = useState<Record<string, Record<string, AggregationType>>>(
     (widget.properties?.chartDimensionAggregations as Record<string, Record<string, AggregationType>>) || {}
+  )
+  
+  // Dimension-level styles (for Row, Column, Value dimensions)
+  const [dimensionStyles, setDimensionStyles] = useState<Record<string, any>>(
+    (widget.properties?.chartDimensionStyles as Record<string, any>) || {}
   )
   
   // Sync selectedModelId with widget properties - use ref to prevent infinite loops
@@ -122,6 +213,51 @@ export function ChartDataSourceConfig({
       }
     })
     updateProperty('chartDimensionsEffectiveTypes', result)
+  }
+
+  const setDimensionStyle = (dimKey: string, partial: Record<string, any>) => {
+    setDimensionStyles(prev => {
+      const updated = {
+        ...prev,
+        [dimKey]: {
+          ...(prev[dimKey] || {}),
+          ...partial
+        }
+      }
+      updateProperty('chartDimensionStyles', updated)
+      return updated
+    })
+  }
+
+  const setTypeSetting = (dimKey: string, attrName: string, partial: Record<string, any>) => {
+    setAttributeTypeSettings(prev => {
+      const updated: Record<string, Record<string, any>> = {
+        ...prev,
+        [dimKey]: {
+          ...(prev[dimKey] || {}),
+          [attrName]: {
+            ...(prev[dimKey]?.[attrName] || {}),
+            ...partial,
+          }
+        }
+      }
+      updateProperty('chartDimensionTypeSettings', updated)
+      return updated
+    })
+  }
+
+  const setDisplayName = (dimKey: string, attrName: string, alias: string) => {
+    setAttributeDisplayNames(prev => {
+      const updated: Record<string, Record<string, string>> = {
+        ...prev,
+        [dimKey]: {
+          ...(prev[dimKey] || {}),
+          [attrName]: alias,
+        }
+      }
+      updateProperty('chartDimensionDisplayNames', updated)
+      return updated
+    })
   }
   
   // Get current dimension value
@@ -393,17 +529,207 @@ export function ChartDataSourceConfig({
             <Label className="text-xs font-semibold">Chart Dimensions</Label>
             
             {chartDims.map(dim => {
+              // Special handling for dateRange dimension
+              if (dim.key === 'dateRange') {
+                const dateRangeConfig = (widget.properties?.dateRangeConfig as { attribute?: string; startDate?: string; endDate?: string }) || {}
+                const dateAttrs = attributes.filter(a => {
+                  const type = getEffectiveType(a, attributeTypeOverrides[dim.key]?.[a.name], dim.key)
+                  return type === 'date' || type === 'datetime'
+                })
+                
+                return (
+                  <div key={dim.key} className="space-y-2">
+                    <Label className="text-xs">
+                      {dim.label}
+                      {dim.required && <span className="text-red-500 ml-1">*</span>}
+                    </Label>
+                    <div className="space-y-2">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Date attribute</Label>
+                        <select
+                          className="w-full rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
+                          value={dateRangeConfig.attribute || ''}
+                          onChange={(e) => updateProperty('dateRangeConfig', { ...dateRangeConfig, attribute: e.target.value })}
+                        >
+                          <option value="">Select date attribute</option>
+                          {dateAttrs.map(attr => (
+                            <option key={attr.name} value={attr.name}>{attr.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      {dateRangeConfig.attribute && (
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <Label className="text-[10px] text-muted-foreground">Start date</Label>
+                            <input
+                              type="date"
+                              className="w-full rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
+                              value={dateRangeConfig.startDate || ''}
+                              onChange={(e) => updateProperty('dateRangeConfig', { ...dateRangeConfig, startDate: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-[10px] text-muted-foreground">End date</Label>
+                            <input
+                              type="date"
+                              className="w-full rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
+                              value={dateRangeConfig.endDate || ''}
+                              onChange={(e) => updateProperty('dateRangeConfig', { ...dateRangeConfig, endDate: e.target.value })}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              }
+              
               const currentValue = getDimensionValue(dim.key)
               const isMultiple = dim.multiple || false
               const values = isMultiple ? (Array.isArray(currentValue) ? currentValue : []) : []
               const singleValue = isMultiple ? '' : (typeof currentValue === 'string' ? currentValue : '')
               
+              // Only show painting icon for Row, Column, and Value dimensions
+              const showStyleIcon = dim.key === 'rows' || dim.key === 'columns' || dim.key === 'values'
+              const dimensionStyle = dimensionStyles[dim.key] || {}
+              
               return (
                 <div key={dim.key} className="space-y-2">
-                  <Label className="text-xs">
-                    {dim.label}
-                    {dim.required && <span className="text-red-500 ml-1">*</span>}
-                  </Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs">
+                      {dim.label}
+                      {dim.required && <span className="text-red-500 ml-1">*</span>}
+                    </Label>
+                    {showStyleIcon && (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button
+                            type="button"
+                            className="p-0.5 rounded hover:bg-blue-200/60 dark:hover:bg-blue-900/50 flex-shrink-0"
+                            title={`${dim.label} style`}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Paintbrush className="h-3 w-3 text-muted-foreground" />
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="z-[10002] p-2 whitespace-nowrap min-w-40" align="end" sideOffset={6} style={{ width: 'max-content' }} onClick={(e) => e.stopPropagation()}>
+                          <div className="flex flex-col gap-2 text-[11px]">
+                            <div className="flex items-center gap-2 justify-between">
+                              <span className="text-muted-foreground">Font size</span>
+                              <div className="relative w-32">
+                                <input type="number" className="w-32 rounded-[2px] px-2 py-1 pr-8 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" min={8} max={32} value={Number(dimensionStyle.fontSize ?? 12)} onChange={(e) => setDimensionStyle(dim.key, { fontSize: parseInt(e.target.value) || 12 })} />
+                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 justify-between">
+                              <span className="text-muted-foreground">Font color</span>
+                              <div className="relative w-32">
+                                <ColorPickerPopover
+                                  value={dimensionStyle.fontColor || '#111827'}
+                                  onChange={(color) => setDimensionStyle(dim.key, { fontColor: color })}
+                                  allowImageVideo={false}
+                                >
+                                  <button
+                                    type="button"
+                                    className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+                                    style={getSwatchStyle(dimensionStyle.fontColor || '#111827')}
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                </ColorPickerPopover>
+                                <Input
+                                  type="text"
+                                  value={dimensionStyle.fontColor || '#111827'}
+                                  onChange={(e) => setDimensionStyle(dim.key, { fontColor: e.target.value })}
+                                  className="h-7 text-xs pl-7 w-full rounded-[2px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 justify-between">
+                              <span className="text-muted-foreground">Background</span>
+                              <div className="relative w-32">
+                                <ColorPickerPopover
+                                  value={dimensionStyle.background || '#ffffff'}
+                                  onChange={(color) => setDimensionStyle(dim.key, { background: color })}
+                                  allowImageVideo={false}
+                                >
+                                  <button
+                                    type="button"
+                                    className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+                                    style={getSwatchStyle(dimensionStyle.background || '#ffffff')}
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                </ColorPickerPopover>
+                                <Input
+                                  type="text"
+                                  value={dimensionStyle.background || '#ffffff'}
+                                  onChange={(e) => setDimensionStyle(dim.key, { background: e.target.value })}
+                                  className="h-7 text-xs pl-7 w-full rounded-[2px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 justify-between">
+                              <span className="text-muted-foreground">Padding</span>
+                              <div className="relative w-32">
+                                <input type="number" className="w-32 rounded-[2px] px-2 py-1 pr-8 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" min={0} max={32} value={Number(dimensionStyle.padding ?? 4)} onChange={(e) => setDimensionStyle(dim.key, { padding: parseInt(e.target.value) || 4 })} />
+                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 justify-between">
+                              <span className="text-muted-foreground">Border width</span>
+                              <div className="relative w-32">
+                                <input type="number" className="w-32 rounded-[2px] px-2 py-1 pr-8 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" min={0} max={10} value={Number(dimensionStyle.borderWidth ?? 1)} onChange={(e) => setDimensionStyle(dim.key, { borderWidth: parseInt(e.target.value) || 1 })} />
+                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 justify-between">
+                              <span className="text-muted-foreground">Border color</span>
+                              <div className="relative w-32">
+                                <ColorPickerPopover
+                                  value={dimensionStyle.borderColor || '#e5e7eb'}
+                                  onChange={(color) => setDimensionStyle(dim.key, { borderColor: color })}
+                                  allowImageVideo={false}
+                                >
+                                  <button
+                                    type="button"
+                                    className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
+                                    style={getSwatchStyle(dimensionStyle.borderColor || '#e5e7eb')}
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                </ColorPickerPopover>
+                                <Input
+                                  type="text"
+                                  value={dimensionStyle.borderColor || '#e5e7eb'}
+                                  onChange={(e) => setDimensionStyle(dim.key, { borderColor: e.target.value })}
+                                  className="h-7 text-xs pl-7 w-full rounded-[2px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
+                                />
+                              </div>
+                            </div>
+                            {dim.key === 'values' && (
+                              <>
+                                <div className="flex items-center gap-2 justify-between">
+                                  <span className="text-muted-foreground">Text align</span>
+                                  <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" value={String(dimensionStyle.textAlign ?? 'left')} onChange={(e) => setDimensionStyle(dim.key, { textAlign: e.target.value })}>
+                                    <option value="left">Left</option>
+                                    <option value="center">Center</option>
+                                    <option value="right">Right</option>
+                                  </select>
+                                </div>
+                                <div className="flex items-center gap-2 justify-between">
+                                  <span className="text-muted-foreground">Number format</span>
+                                  <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" value={String(dimensionStyle.numberFormat ?? 'auto')} onChange={(e) => setDimensionStyle(dim.key, { numberFormat: e.target.value })}>
+                                    <option value="auto">Auto</option>
+                                    <option value="number">Number</option>
+                                    <option value="percent">Percent</option>
+                                    <option value="currency">Currency</option>
+                                  </select>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    )}
+                  </div>
                   
                   <AttributeDropZone
                     dimKey={dim.key}
@@ -423,6 +749,10 @@ export function ChartDataSourceConfig({
                     onDimensionValueChange={(dimKey, value) => setDimensionValue(dimKey, value)}
                     attributeTypeOverrides={attributeTypeOverrides}
                     onTypeOverride={setTypeOverride}
+                    attributeTypeSettings={attributeTypeSettings[dim.key] || {}}
+                    onTypeSettingChange={setTypeSetting}
+                    attributeDisplayNames={attributeDisplayNames[dim.key] || {}}
+                    onDisplayNameChange={setDisplayName}
                     isValueMetric={isValueMetricDimension(dim.key)}
                     attributeAggregations={attributeAggregations[dim.key] || {}}
                     onAggregationChange={handleAggregationChange}
@@ -447,6 +777,442 @@ export function ChartDataSourceConfig({
               )
             })}
           </div>
+
+  {/* Sorting */}
+  <div className="space-y-3 border-t pt-3 mt-2">
+    <Label className="text-xs font-semibold">Sorting</Label>
+    {(() => {
+      // Show ALL attributes from the selected data source (clearer UX)
+      const allowedAttrs = attributes
+      return (
+        <div className="space-y-3">
+          {/* Row sort - full row dropzone */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs">Row sort</Label>
+              <select
+                className="rounded-[2px] px-2 py-1 text-[11px] bg-transparent border-0 focus:outline-none focus:ring-0 focus:border-0"
+                value={String(widget.properties?.rowSortOrder || 'ASC')}
+                onChange={(e) => updateProperty('rowSortOrder', e.target.value)}
+              >
+                <option value="ASC">ASC</option>
+                <option value="DESC">DESC</option>
+              </select>
+            </div>
+            <AttributeDropZone
+              dimKey={'rowSort'}
+              dimLabel={'Row sort'}
+              required={false}
+              isMultiple={false}
+              values={[]}
+              singleValue={String((widget.properties?.chartDimensions as Record<string, any>)?.rowSort || '')}
+              attributes={allowedAttrs}
+              selectedModelId={selectedModelId}
+              loading={loading}
+              searchQuery={searchQueries['rowSort'] || ''}
+              onSearchChange={(query) => setSearchQueries(prev => ({ ...prev, ['rowSort']: query }))}
+              onAttributeSelect={(k, name) => setDimensionValue('rowSort', name)}
+              onDimensionValueChange={(k, value) => setDimensionValue('rowSort', value)}
+              attributeTypeOverrides={{}}
+              onTypeOverride={() => {}}
+              attributeTypeSettings={{}}
+              onTypeSettingChange={() => {}}
+              isValueMetric={false}
+              attributeAggregations={{}}
+              onAggregationChange={() => {}}
+              dragOverDimensions={dragOverDimensions}
+              draggingBadge={draggingBadge}
+              dragOverBadge={dragOverBadge}
+              onDragStart={(k,i)=>{}}
+              onDragOver={(k,i)=>{}}
+              onDragLeave={()=>{}}
+              onDrop={()=>{}}
+              onDragEnd={()=>{}}
+              onDragOverZone={()=>{}}
+              onDragLeaveZone={()=>{}}
+              onDropZone={()=>{}}
+              openCombobox={openComboboxes['rowSort'] || false}
+              onOpenChange={(open) => setOpenComboboxes(prev => ({ ...prev, ['rowSort']: open }))}
+            />
+          </div>
+          {/* Column sort - full row dropzone */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs">Column sort</Label>
+              <select
+                className="rounded-[2px] px-2 py-1 text-[11px] bg-transparent border-0 focus:outline-none focus:ring-0 focus:border-0"
+                value={String(widget.properties?.columnSortOrder || 'ASC')}
+                onChange={(e) => updateProperty('columnSortOrder', e.target.value)}
+              >
+                <option value="ASC">ASC</option>
+                <option value="DESC">DESC</option>
+              </select>
+            </div>
+            <AttributeDropZone
+              dimKey={'columnSort'}
+              dimLabel={'Column sort'}
+              required={false}
+              isMultiple={false}
+              values={[]}
+              singleValue={String((widget.properties?.chartDimensions as Record<string, any>)?.columnSort || '')}
+              attributes={allowedAttrs}
+              selectedModelId={selectedModelId}
+              loading={loading}
+              searchQuery={searchQueries['columnSort'] || ''}
+              onSearchChange={(query) => setSearchQueries(prev => ({ ...prev, ['columnSort']: query }))}
+              onAttributeSelect={(k, name) => setDimensionValue('columnSort', name)}
+              onDimensionValueChange={(k, value) => setDimensionValue('columnSort', value)}
+              attributeTypeOverrides={{}}
+              onTypeOverride={() => {}}
+              attributeTypeSettings={{}}
+              onTypeSettingChange={() => {}}
+              isValueMetric={false}
+              attributeAggregations={{}}
+              onAggregationChange={() => {}}
+              dragOverDimensions={dragOverDimensions}
+              draggingBadge={draggingBadge}
+              dragOverBadge={dragOverBadge}
+              onDragStart={(k,i)=>{}}
+              onDragOver={(k,i)=>{}}
+              onDragLeave={()=>{}}
+              onDrop={()=>{}}
+              onDragEnd={()=>{}}
+              onDragOverZone={()=>{}}
+              onDragLeaveZone={()=>{}}
+              onDropZone={()=>{}}
+              openCombobox={openComboboxes['columnSort'] || false}
+              onOpenChange={(open) => setOpenComboboxes(prev => ({ ...prev, ['columnSort']: open }))}
+            />
+          </div>
+        </div>
+      )
+    })()}
+  </div>
+
+  {/* Filters (configured via modal) */}
+  <div className="space-y-3 border-t pt-3 mt-2">
+    <div className="flex items-center justify-between">
+      <Label className="text-xs font-semibold">Filters</Label>
+      <div className="flex items-center gap-2">
+        <span className="text-[11px] text-muted-foreground">
+          {filters ? 'Configured' : 'None'}
+        </span>
+        <button
+          type="button"
+          className="px-2 py-1 text-[11px] rounded-[2px] bg-gray-100 dark:bg-gray-800 border-0 hover:bg-gray-200 dark:hover:bg-gray-700"
+          onClick={() => setIsFilterDialogOpen(true)}
+        >
+          Edit filters
+        </button>
+      </div>
+    </div>
+
+    <Dialog open={isFilterDialogOpen} onOpenChange={setIsFilterDialogOpen}>
+      <DialogContent className="sm:max-w-[720px]">
+        <DialogHeader>
+          <DialogTitle className="text-sm">Configure Filters</DialogTitle>
+        </DialogHeader>
+        {(() => {
+      const dimsObj = (widget.properties?.chartDimensions || {}) as Record<string, any>
+      const selectedSet = new Set<string>([
+        ...([] as string[]).concat(
+          Array.isArray(dimsObj.rows) ? dimsObj.rows : (dimsObj.rows ? [dimsObj.rows] : []),
+          Array.isArray(dimsObj.columns) ? dimsObj.columns : (dimsObj.columns ? [dimsObj.columns] : []),
+          Array.isArray(dimsObj.values) ? dimsObj.values : (dimsObj.values ? [dimsObj.values] : [])
+        )
+      ].filter(Boolean))
+      const allowedAttrs = attributes.filter(a => selectedSet.has(a.name))
+
+      // Use top-level filters state
+
+      const generateId = () => `filter_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+
+      const addCondition = (groupId: string, parentGroup: FilterGroup): FilterGroup => {
+        if (parentGroup.id === groupId) {
+          return {
+            ...parentGroup,
+            items: [...parentGroup.items, {
+              id: generateId(),
+              type: 'condition',
+              attribute: allowedAttrs[0]?.name || '',
+              operator: 'equals',
+              value: ''
+            }]
+          }
+        }
+        return {
+          ...parentGroup,
+          items: parentGroup.items.map(item => 
+            item.type === 'group' ? addCondition(groupId, item) : item
+          )
+        }
+      }
+
+      const addGroup = (groupId: string, parentGroup: FilterGroup): FilterGroup => {
+        if (parentGroup.id === groupId) {
+          return {
+            ...parentGroup,
+            items: [...parentGroup.items, {
+              id: generateId(),
+              type: 'group',
+              logic: 'AND',
+              items: []
+            }]
+          }
+        }
+        return {
+          ...parentGroup,
+          items: parentGroup.items.map(item => 
+            item.type === 'group' ? addGroup(groupId, item) : item
+          )
+        }
+      }
+
+      const removeItem = (itemId: string, parentGroup: FilterGroup): FilterGroup => {
+        return {
+          ...parentGroup,
+          items: parentGroup.items.filter(item => item.id !== itemId).map(item =>
+            item.type === 'group' ? {
+              ...item,
+              items: item.items // Keep nested items, just remove direct children
+            } : item
+          )
+        }
+      }
+
+      const updateItem = (itemId: string, updates: Partial<FilterCondition | FilterGroup>, parentGroup: FilterGroup): FilterGroup => {
+        return {
+          ...parentGroup,
+          items: parentGroup.items.map(item => {
+            if (item.id === itemId) {
+              return { ...item, ...updates }
+            }
+            return item.type === 'group' ? updateItem(itemId, updates, item) : item
+          })
+        }
+      }
+
+      const updateCondition = (itemId: string, field: keyof FilterCondition, value: any, parentGroup: FilterGroup): FilterGroup => {
+        return {
+          ...parentGroup,
+          items: parentGroup.items.map(item => {
+            if (item.id === itemId && item.type === 'condition') {
+              return { ...item, [field]: value }
+            }
+            return item.type === 'group' ? updateCondition(itemId, field, value, item) : item
+          })
+        }
+      }
+
+      const saveFilters = (newFilters: FilterGroup | null) => {
+        setFilters(newFilters)
+        updateProperty('rowFilters', newFilters)
+      }
+
+      const FilterItemComponent: React.FC<{ item: FilterItem; parentGroup: FilterGroup; depth?: number }> = ({ item, parentGroup, depth = 0 }) => {
+        const isCondition = item.type === 'condition'
+        const indent = depth * 16
+
+        if (isCondition) {
+          const cond = item as FilterCondition
+          return (
+            <div className="flex items-center gap-2 py-1" style={{ paddingLeft: `${indent}px` }}>
+              <div className="flex items-center gap-2 flex-1 border rounded-[6px] p-2 bg-gray-50 dark:bg-gray-900">
+                <select
+                  className="min-w-[160px] rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
+                  value={cond.attribute}
+                  onChange={(e) => saveFilters(updateCondition(cond.id, 'attribute', e.target.value, parentGroup))}
+                >
+                  {allowedAttrs.map(attr => (
+                    <option key={attr.name} value={attr.name}>{attr.name}</option>
+                  ))}
+                </select>
+                <select
+                  className="w-36 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
+                  value={cond.operator}
+                  onChange={(e) => saveFilters(updateCondition(cond.id, 'operator', e.target.value, parentGroup))}
+                >
+                  <option value="equals">Equals</option>
+                  <option value="not_equals">Not equals</option>
+                  <option value="contains">Contains</option>
+                  <option value="not_contains">Not contains</option>
+                  <option value="starts_with">Starts with</option>
+                  <option value="ends_with">Ends with</option>
+                  <option value="greater_than">Greater than</option>
+                  <option value="less_than">Less than</option>
+                  <option value="greater_or_equal">Greater or equal</option>
+                  <option value="less_or_equal">Less or equal</option>
+                  <option value="is_null">Is null</option>
+                  <option value="is_not_null">Is not null</option>
+                </select>
+                {!['is_null', 'is_not_null'].includes(cond.operator) && (
+                  <input
+                    type="text"
+                    className="min-w-[160px] rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
+                    value={cond.value}
+                    onChange={(e) => saveFilters(updateCondition(cond.id, 'value', e.target.value, parentGroup))}
+                    placeholder="Value"
+                  />
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => saveFilters(removeItem(cond.id, parentGroup))}
+                className="p-1 hover:bg-red-100 dark:hover:bg-red-900 rounded text-red-600"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          )
+        } else {
+          const group = item as FilterGroup
+          return (
+            <div className="space-y-1" style={{ paddingLeft: `${indent}px` }}>
+              <div className="flex items-center gap-2 border rounded-[6px] p-2 bg-blue-50 dark:bg-blue-900/20">
+                <select
+                  className="w-24 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0 font-semibold"
+                  value={group.logic}
+                  onChange={(e) => saveFilters(updateItem(group.id, { logic: e.target.value as FilterLogic }, parentGroup))}
+                >
+                  <option value="AND">AND</option>
+                  <option value="OR">OR</option>
+                </select>
+                <span className="text-[10px] text-muted-foreground">Group</span>
+                <div className="flex-1" />
+                <button
+                  type="button"
+                  onClick={() => saveFilters(addCondition(group.id, parentGroup))}
+                  className="p-1 hover:bg-blue-100 dark:hover:bg-blue-900 rounded text-blue-600"
+                  title="Add condition"
+                >
+                  <Plus className="h-3 w-3" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => saveFilters(addGroup(group.id, parentGroup))}
+                  className="p-1 hover:bg-blue-100 dark:hover:bg-blue-900 rounded text-blue-600"
+                  title="Add group"
+                >
+                  <Plus className="h-3 w-3" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => saveFilters(removeItem(group.id, parentGroup))}
+                  className="p-1 hover:bg-red-100 dark:hover:bg-red-900 rounded text-red-600"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+              <div className="space-y-1 pl-4">
+                {group.items.length === 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => saveFilters(addCondition(group.id, parentGroup))}
+                    className="flex items-center gap-2 px-2 py-1 text-[10px] text-muted-foreground hover:text-foreground"
+                  >
+                    <Plus className="h-3 w-3" />
+                    Add condition
+                  </button>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground pl-[16px]">
+                      <span className="min-w-[160px]">Attribute</span>
+                      <span className="w-36">Operator</span>
+                      <span className="min-w-[160px]">Value</span>
+                    </div>
+                    {group.items.map((childItem) => (
+                      <FilterItemComponent key={childItem.id} item={childItem} parentGroup={group} depth={depth + 1} />
+                    ))}
+                  </>
+                )}
+              </div>
+            </div>
+          )
+        }
+      }
+
+      if (!filters) {
+        return (
+          <button
+            type="button"
+            onClick={() => {
+              const newGroup: FilterGroup = {
+                id: generateId(),
+                type: 'group',
+                logic: 'AND',
+                items: []
+              }
+              saveFilters(newGroup)
+            }}
+            className="flex items-center gap-2 px-3 py-2 text-xs border rounded hover:bg-accent"
+          >
+            <Plus className="h-3 w-3" />
+            Add filter group
+          </button>
+        )
+      }
+
+      return (
+        <div className="space-y-2">
+          <FilterItemComponent item={filters} parentGroup={filters} depth={0} />
+        </div>
+      )
+    })()}
+        <DialogFooter>
+          <button
+            type="button"
+            className="px-3 py-1.5 text-[12px] rounded-[2px] bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
+            onClick={() => setIsFilterDialogOpen(false)}
+          >
+            Done
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  </div>
+
+  {/* Totals & Subtotals Configuration */}
+  <div className="space-y-3 border-t pt-3 mt-2">
+    <Label className="text-xs font-semibold">Totals & Subtotals</Label>
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs font-normal">Show row totals</Label>
+        <input
+          type="checkbox"
+          checked={widget.properties?.showRowTotals !== false}
+          onChange={(e) => updateProperty('showRowTotals', e.target.checked)}
+          className="cursor-pointer"
+        />
+      </div>
+      <div className="flex items-center justify-between">
+        <Label className="text-xs font-normal">Show row subtotals</Label>
+        <input
+          type="checkbox"
+          checked={widget.properties?.showRowSubtotals !== false}
+          onChange={(e) => updateProperty('showRowSubtotals', e.target.checked)}
+          className="cursor-pointer"
+        />
+      </div>
+      <div className="flex items-center justify-between">
+        <Label className="text-xs font-normal">Show column totals</Label>
+        <input
+          type="checkbox"
+          checked={widget.properties?.showColumnTotals !== false}
+          onChange={(e) => updateProperty('showColumnTotals', e.target.checked)}
+          className="cursor-pointer"
+        />
+      </div>
+      <div className="flex items-center justify-between">
+        <Label className="text-xs font-normal">Show column subtotals</Label>
+        <input
+          type="checkbox"
+          checked={widget.properties?.showColumnSubtotals !== false}
+          onChange={(e) => updateProperty('showColumnSubtotals', e.target.checked)}
+          className="cursor-pointer"
+        />
+      </div>
+    </div>
+  </div>
         </>
       )}
       

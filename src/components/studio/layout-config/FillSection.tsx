@@ -87,23 +87,43 @@ export function FillSection({
             <button
               type="button"
               className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-              style={{
-                backgroundColor: effectiveBackgroundColor.startsWith('#') || effectiveBackgroundColor.startsWith('rgb') 
+              style={(() => {
+                const bgColor = effectiveBackgroundColor.startsWith('#') || effectiveBackgroundColor.startsWith('rgb') 
                   ? effectiveBackgroundColor 
                   : effectiveBackgroundColor.startsWith('linear-gradient') || effectiveBackgroundColor.startsWith('radial-gradient')
                   ? 'transparent'
                   : effectiveBackgroundColor.startsWith('url(')
                   ? 'transparent'
-                  : '#f6f6f6',
-                border: 'none',
-                outline: 'none',
-                backgroundImage: effectiveBackgroundColor.startsWith('linear-gradient') || effectiveBackgroundColor.startsWith('radial-gradient')
-                  ? effectiveBackgroundColor
-                  : effectiveBackgroundColor.startsWith('url(')
-                  ? effectiveBackgroundColor
-                  : 'none',
-                backgroundSize: effectiveBackgroundColor.startsWith('url(') ? 'cover' : 'auto'
-              }}
+                  : '#f6f6f6'
+                
+                const hasTransparency = bgColor.startsWith('rgba') && (() => {
+                  const match = bgColor.match(/rgba\([^)]+,\s*([\d.]+)\)/)
+                  return match && parseFloat(match[1]) < 1
+                })()
+                
+                const style: React.CSSProperties = {
+                  backgroundColor: bgColor,
+                  border: 'none',
+                  outline: 'none',
+                  backgroundImage: effectiveBackgroundColor.startsWith('linear-gradient') || effectiveBackgroundColor.startsWith('radial-gradient')
+                    ? effectiveBackgroundColor
+                    : effectiveBackgroundColor.startsWith('url(')
+                    ? effectiveBackgroundColor
+                    : hasTransparency
+                    ? `linear-gradient(45deg, #d0d0d0 25%, transparent 25%),
+                       linear-gradient(-45deg, #d0d0d0 25%, transparent 25%),
+                       linear-gradient(45deg, transparent 75%, #d0d0d0 75%),
+                       linear-gradient(-45deg, transparent 75%, #d0d0d0 75%)`
+                    : 'none',
+                  backgroundSize: effectiveBackgroundColor.startsWith('url(') 
+                    ? 'cover' 
+                    : hasTransparency
+                    ? '8px 8px'
+                    : 'auto',
+                  backgroundPosition: hasTransparency ? '0 0, 0 4px, 4px -4px, -4px 0px' : undefined
+                }
+                return style
+              })()}
               onClick={(e) => e.stopPropagation()}
             />
           </ColorPickerPopover>

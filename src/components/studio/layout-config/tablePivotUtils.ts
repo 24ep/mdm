@@ -220,15 +220,20 @@ export function getPivotConfig(
 
   if (chartDimensions && typeof chartDimensions === 'object') {
     if (widgetType === 'table') {
+      rowAttrs = Array.isArray(chartDimensions.rows) 
+        ? chartDimensions.rows.filter(Boolean)
+        : chartDimensions.rows 
+          ? [chartDimensions.rows].filter(Boolean)
+          : []
       columnAttrs = Array.isArray(chartDimensions.columns) 
         ? chartDimensions.columns.filter(Boolean)
         : chartDimensions.columns 
           ? [chartDimensions.columns].filter(Boolean)
           : []
-      rowAttrs = Array.isArray(chartDimensions.rows) 
-        ? chartDimensions.rows.filter(Boolean)
-        : chartDimensions.rows 
-          ? [chartDimensions.rows].filter(Boolean)
+      valueAttrs = Array.isArray(chartDimensions.values) 
+        ? chartDimensions.values.filter(Boolean)
+        : chartDimensions.values 
+          ? [chartDimensions.values].filter(Boolean)
           : []
     } else if (widgetType === 'pivot-table') {
       rowAttrs = Array.isArray(chartDimensions.rows) 

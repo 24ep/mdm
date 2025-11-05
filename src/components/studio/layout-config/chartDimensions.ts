@@ -16,16 +16,19 @@ export const CHART_DIMENSIONS: Record<string, ChartDimension[]> = {
     { key: 'x', label: 'X-Axis (Category)', required: true },
     { key: 'y', label: 'Y-Axis (Value)', required: true },
     { key: 'series', label: 'Series (Optional)', required: false },
+    { key: 'dateRange', label: 'Date Range (Optional)', required: false },
   ],
   'line-chart': [
     { key: 'x', label: 'X-Axis (Category)', required: true },
     { key: 'y', label: 'Y-Axis (Value)', required: true },
     { key: 'series', label: 'Series (Optional)', required: false },
+    { key: 'dateRange', label: 'Date Range (Optional)', required: false },
   ],
   'area-chart': [
     { key: 'x', label: 'X-Axis (Category)', required: true },
     { key: 'y', label: 'Y-Axis (Value)', required: true },
     { key: 'series', label: 'Series (Optional)', required: false },
+    { key: 'dateRange', label: 'Date Range (Optional)', required: false },
   ],
   'pie-chart': [
     { key: 'category', label: 'Category', required: true },
@@ -42,8 +45,9 @@ export const CHART_DIMENSIONS: Record<string, ChartDimension[]> = {
     { key: 'color', label: 'Color (Optional)', required: false },
   ],
   'table': [
-    { key: 'columns', label: 'Columns', required: true, multiple: true },
-    { key: 'rows', label: 'Rows (Optional)', required: false, multiple: true },
+    { key: 'rows', label: 'Rows', required: true, multiple: true },
+    { key: 'columns', label: 'Columns (Optional)', required: false, multiple: true },
+    { key: 'values', label: 'Values', required: true, multiple: true },
   ],
   'pivot-table': [
     { key: 'rows', label: 'Rows', required: true, multiple: true },
@@ -86,6 +90,7 @@ export const CHART_DIMENSIONS: Record<string, ChartDimension[]> = {
     { key: 'x', label: 'X-Axis (Category)', required: true },
     { key: 'y', label: 'Y-Axis (Value)', required: true },
     { key: 'series', label: 'Series (Optional)', required: false },
+    { key: 'dateRange', label: 'Date Range (Optional)', required: false },
   ],
 }
 

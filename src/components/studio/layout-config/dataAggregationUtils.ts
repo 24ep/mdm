@@ -116,6 +116,26 @@ function aggregateValue(
     
     case 'AVG':
       return values.reduce((sum, val) => sum + val, 0) / values.length
+
+    case 'MEDIAN': {
+      const sorted = [...values].sort((a, b) => a - b)
+      const mid = Math.floor(sorted.length / 2)
+      if (sorted.length % 2 === 0) {
+        return (sorted[mid - 1] + sorted[mid]) / 2
+      }
+      return sorted[mid]
+    }
+
+    case 'STDDEV': {
+      const mean = values.reduce((sum, v) => sum + v, 0) / values.length
+      const variance = values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / values.length
+      return Math.sqrt(variance)
+    }
+
+    case 'VARIANCE': {
+      const mean = values.reduce((sum, v) => sum + v, 0) / values.length
+      return values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / values.length
+    }
     
     case 'COUNT':
       return rows.length

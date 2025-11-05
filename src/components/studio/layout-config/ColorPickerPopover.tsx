@@ -104,12 +104,54 @@ export function ColorPickerPopover({
     return { type: 'solid', extracted: val }
   }
 
+  // Helper to convert hex to rgba
+  const hexToRgba = (hex: string, alpha: number): string => {
+    const r = parseInt(hex.slice(1, 3), 16)
+    const g = parseInt(hex.slice(3, 5), 16)
+    const b = parseInt(hex.slice(5, 7), 16)
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`
+  }
+
+  // Helper to convert rgba to hex (ignoring alpha)
+  const rgbaToHex = (rgba: string): string => {
+    const match = rgba.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/)
+    if (match) {
+      const r = parseInt(match[1]).toString(16).padStart(2, '0')
+      const g = parseInt(match[2]).toString(16).padStart(2, '0')
+      const b = parseInt(match[3]).toString(16).padStart(2, '0')
+      return `#${r}${g}${b}`
+    }
+    return rgba
+  }
+
+  // Helper to extract opacity from rgba/rgb
+  const extractOpacity = (color: string): number => {
+    if (color.startsWith('rgba')) {
+      const match = color.match(/rgba\([^)]+,\s*([\d.]+)\)/)
+      if (match) return parseFloat(match[1])
+    }
+    return 1 // Default to fully opaque
+  }
+
+  // Helper to extract base color (hex or rgb without alpha)
+  const extractBaseColor = (color: string): string => {
+    if (color.startsWith('rgba')) {
+      return rgbaToHex(color)
+    }
+    if (color.startsWith('rgb')) {
+      return rgbaToHex(color)
+    }
+    return color
+  }
+
   const parsed = parseValue(value)
   // If image/video is not allowed but value is image/video, default to solid
   const initialType = parsed.type
   const safeType = (!allowImageVideo && (initialType === 'image' || initialType === 'video')) ? 'solid' : initialType
   const [colorType, setColorType] = useState<'solid' | 'gradient' | 'pattern' | 'image' | 'video'>(safeType as any)
-  const [solidColor, setSolidColor] = useState(parsed.type === 'solid' ? parsed.extracted : '#ffffff')
+  const baseSolidColor = parsed.type === 'solid' ? extractBaseColor(parsed.extracted) : '#ffffff'
+  const [solidColor, setSolidColor] = useState(baseSolidColor)
+  const [opacity, setOpacity] = useState(parsed.type === 'solid' ? extractOpacity(parsed.extracted) : 1)
   
   // Parse gradient into editable structure
   const parseGradient = (gradStr: string) => {
@@ -213,8 +255,11 @@ export function ColorPickerPopover({
       // If image/video is not allowed, convert to solid color
       if (!allowImageVideo && (parsed.type === 'image' || parsed.type === 'video')) {
         setSolidColor('#ffffff')
+        setOpacity(1)
       } else {
-        setSolidColor(parsed.extracted)
+        const baseColor = extractBaseColor(parsed.extracted)
+        setSolidColor(baseColor)
+        setOpacity(extractOpacity(parsed.extracted))
       }
     }
     if (parsed.type === 'gradient') setGradientConfig(parseGradient(parsed.extracted))
@@ -227,8 +272,26 @@ export function ColorPickerPopover({
 
   const handleSolidColorChange = (color: string) => {
     isInternalUpdateRef.current = true
-    setSolidColor(color)
-    onChange(color)
+    const baseColor = extractBaseColor(color)
+    setSolidColor(baseColor)
+    // Apply current opacity
+    if (opacity < 1) {
+      const rgbaColor = hexToRgba(baseColor, opacity)
+      onChange(rgbaColor)
+    } else {
+      onChange(baseColor)
+    }
+  }
+
+  const handleOpacityChange = (newOpacity: number) => {
+    isInternalUpdateRef.current = true
+    setOpacity(newOpacity)
+    if (newOpacity < 1) {
+      const rgbaColor = hexToRgba(solidColor, newOpacity)
+      onChange(rgbaColor)
+    } else {
+      onChange(solidColor)
+    }
   }
 
   const handleGradientChange = (config: typeof gradientConfig) => {
@@ -390,6 +453,37 @@ export function ColorPickerPopover({
                   onChange={(e) => handleSolidColorChange(e.target.value)}
                   className="h-8 text-xs pl-7"
                   placeholder="#ffffff"
+                />
+              </div>
+            </div>
+
+            {/* Opacity/Transparency Control */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Opacity</Label>
+                <span className="text-xs text-muted-foreground">{Math.round(opacity * 100)}%</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={opacity}
+                  onChange={(e) => handleOpacityChange(parseFloat(e.target.value))}
+                  className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                />
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={Math.round(opacity * 100)}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value) || 0
+                    const clamped = Math.max(0, Math.min(100, val))
+                    handleOpacityChange(clamped / 100)
+                  }}
+                  className="h-7 w-16 text-xs"
                 />
               </div>
             </div>
