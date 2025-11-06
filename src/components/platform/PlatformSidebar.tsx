@@ -194,6 +194,7 @@ export function PlatformSidebar({
       { id: 'bigquery', name: 'BigQuery Interface', icon: Code },
       { id: 'notebook', name: 'Data Science', icon: FileText },
       { id: 'ai-analyst', name: 'AI Analyst', icon: Bot },
+      { id: 'ai-chat-ui', name: 'AI Chat UI', icon: Bot },
       { id: 'knowledge-base', name: 'Knowledge Base', icon: BookOpen },
       { id: 'bi', name: 'BI & Reports', icon: BarChart3 },
       { id: 'storage', name: 'Storage', icon: HardDrive },
@@ -235,6 +236,14 @@ export function PlatformSidebar({
     system: ['health', 'logs', 'database', 'cache'],
     security: ['security', 'performance'],
     integrations: ['settings', 'page-templates', 'export', 'integrations']
+  }
+
+  // Define tool categories for the Tools group
+  const toolSections: Record<string, string[]> = {
+    'AI & Assistants': ['ai-analyst', 'ai-chat-ui'],
+    'Data Tools': ['bigquery', 'storage'],
+    'Knowledge': ['knowledge-base'],
+    'Reporting': ['bi']
   }
 
 
@@ -528,6 +537,38 @@ export function PlatformSidebar({
                   </Button>
                 ))}
                     </div>
+                  </>
+                ) : selectedGroup === 'tools' ? (
+                  // Tools group with category section headers
+                  <>
+                    {Object.entries(toolSections).map(([sectionName, ids], sectionIndex) => (
+                      <div key={sectionName} className="px-4 py-2">
+                        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                          {sectionName}
+                        </div>
+                        {groupedTabs.tools
+                          .filter(tab => ids.includes(tab.id))
+                          .map(tab => (
+                            <Button
+                              key={tab.id}
+                              variant="ghost"
+                              className={cn(
+                                "w-full justify-start text-sm h-9 px-4 transition-colors duration-150",
+                                activeTab === tab.id 
+                                  ? "bg-gray-200 text-gray-900 rounded-sm" 
+                                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-none"
+                              )}
+                              onClick={() => handleTabClick(tab.id)}
+                            >
+                              <tab.icon className="h-4 w-4 mr-3 text-gray-500" />
+                              <span className="truncate">{tab.name}</span>
+                            </Button>
+                          ))}
+                        {sectionIndex < Object.entries(toolSections).length - 1 && (
+                          <div className="border-t border-gray-200 my-2 mx-0" />
+                        )}
+                      </div>
+                    ))}
                   </>
                 ) : (
                   // Other groups - no separators

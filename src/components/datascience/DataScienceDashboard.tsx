@@ -72,71 +72,12 @@ export function DataScienceDashboard({ className }: DataScienceDashboardProps) {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showTemplatesModal, setShowTemplatesModal] = useState(false)
 
-  // Load sample data
+  // Start with empty state; populate via real imports, queries, or APIs
   useEffect(() => {
-    const sample = [
-      { id: 1, name: 'Product A', category: 'Electronics', price: 299.99, sales: 150, rating: 4.5 },
-      { id: 2, name: 'Product B', category: 'Clothing', price: 49.99, sales: 200, rating: 4.2 },
-      { id: 3, name: 'Product C', category: 'Electronics', price: 199.99, sales: 75, rating: 4.8 },
-      { id: 4, name: 'Product D', category: 'Home', price: 89.99, sales: 120, rating: 4.1 },
-      { id: 5, name: 'Product E', category: 'Clothing', price: 29.99, sales: 300, rating: 3.9 }
-    ]
-    
-    setSampleData(sample)
-    setDataColumns(Object.keys(sample[0]))
-    setStats(prev => ({
-      ...prev,
-      totalNotebooks: 12,
-      activeNotebooks: 3,
-      totalQueries: 45,
-      dataSources: 8,
-      visualizations: 23
-    }))
-
-    setRecentActivity([
-      { id: 1, type: 'notebook', action: 'Created', name: 'Sales Analysis', time: '2 hours ago' },
-      { id: 2, type: 'query', action: 'Executed', name: 'SELECT * FROM products', time: '4 hours ago' },
-      { id: 3, type: 'viz', action: 'Generated', name: 'Revenue Chart', time: '6 hours ago' },
-      { id: 4, type: 'data', action: 'Imported', name: 'customer_data.csv', time: '1 day ago' },
-      { id: 5, type: 'ml', action: 'Trained', name: 'Price Prediction Model', time: '2 days ago' }
-    ])
-
-    // Sample notebooks list (replace with real data source when ready)
-    setNotebooks([
-      {
-        id: 'nb-1',
-        name: 'Sales Analysis',
-        description: 'Analyze sales trends and performance',
-        tags: ['sales', 'analysis'],
-        author: 'Data Scientist',
-        updatedAt: new Date(),
-        createdAt: new Date(),
-        cells: [
-          { id: 'c1', type: 'markdown', content: '# Intro', status: 'idle', timestamp: new Date(), metadata: {} },
-          { id: 'c2', type: 'code', content: 'print("Hello")', status: 'idle', timestamp: new Date(), metadata: {} }
-        ]
-      },
-      {
-        id: 'nb-2',
-        name: 'Customer Segmentation',
-        description: 'Clustering customers by behavior',
-        tags: ['ml', 'customers'],
-        author: 'Analyst',
-        updatedAt: new Date(),
-        createdAt: new Date(),
-        cells: []
-      },
-      {
-        id: 'nb-3',
-        name: 'Inventory Forecasting',
-        description: 'Predict inventory levels',
-        tags: ['forecast', 'inventory'],
-        author: 'Ops',
-        updatedAt: new Date(),
-        createdAt: new Date(),
-        cells: []
-      }
-    ])
+    setSampleData([])
+    setDataColumns([])
+    setRecentActivity([])
+    setNotebooks([])
   }, [])
 
   const handleDataImported = (data: any[], metadata: any) => {

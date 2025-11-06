@@ -62,13 +62,15 @@ import {
   User,
   Timer,
   HardDrive,
-  TrendingUp,
+  
   PieChart,
   Hash,
   Info,
   LineChart,
   Code,
-  Download
+  Download,
+  TestTube,
+  MoreVertical
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -87,7 +89,6 @@ import {
   QueryFormatter,
   QueryParameters,
   QueryScheduler,
-  QueryCostEstimator,
   QueryDryRun,
   QueryPlan,
   QuerySnippets,
@@ -215,11 +216,12 @@ export function BigQueryInterface() {
   const [showParameters, setShowParameters] = useState(false)
   const [showScheduler, setShowScheduler] = useState(false)
   const [showSnippets, setShowSnippets] = useState(false)
-  const [showCostEstimate, setShowCostEstimate] = useState(false)
   const [showSharing, setShowSharing] = useState(false)
   const [showExportImport, setShowExportImport] = useState(false)
   const [showComments, setShowComments] = useState(false)
   const [showVersionHistory, setShowVersionHistory] = useState(false)
+  const [showDryRun, setShowDryRun] = useState(false)
+  const [showExplainPlan, setShowExplainPlan] = useState(false)
   const [bookmarkedQueries, setBookmarkedQueries] = useState<Set<string>>(new Set())
   const [scheduledQueries, setScheduledQueries] = useState<any[]>([])
   const [queryComments, setQueryComments] = useState<any[]>([])
@@ -862,36 +864,6 @@ export function BigQueryInterface() {
                   {isExecuting ? 'Running...' : 'Run'}
                 </Button>
                 
-                <Button size="sm" variant="outline" onClick={() => setShowTemplates(true)} className="h-8 px-3">
-                  <FileText className="h-4 w-4 mr-1" />
-                  Templates
-                </Button>
-                
-                <Button size="sm" variant="outline" onClick={() => setShowBookmarks(true)} className="h-8 px-3">
-                  <Bookmark className="h-4 w-4 mr-1" />
-                  Bookmarks
-                  {bookmarkedQueries.size > 0 && (
-                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-xs">
-                      {bookmarkedQueries.size}
-                    </Badge>
-                  )}
-                </Button>
-                
-                <Button size="sm" variant="outline" onClick={() => setShowShortcuts(true)} className="h-8 px-3">
-                  <Zap className="h-4 w-4 mr-1" />
-                  Shortcuts
-                </Button>
-
-                {/* Query Formatter */}
-                <QueryFormatter 
-                  query={query} 
-                  onQueryChange={updateCurrentTabQuery} 
-                />
-
-                {/* Query Dry Run & Plan */}
-                <QueryDryRun query={query} />
-                <QueryPlan query={query} isVisible={true} />
-                
         </div>
 
                   <div className="flex items-center gap-2">
@@ -957,16 +929,6 @@ export function BigQueryInterface() {
                   Snippets
                 </Button>
 
-                {/* Cost Estimator Toggle */}
-                <Button 
-                  size="sm" 
-                  variant={showCostEstimate ? "default" : "outline"} 
-                  onClick={() => setShowCostEstimate(!showCostEstimate)} 
-                  className="h-8 px-3"
-                >
-                  <TrendingUp className="h-4 w-4 mr-1" />
-                  Cost
-                </Button>
                 
                 <Button 
                   size="sm" 
@@ -977,18 +939,60 @@ export function BigQueryInterface() {
                   {showFooter ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   {showFooter ? 'Hide' : 'Show'} Results
                     </Button>
+
+                {/* More (kebab) menu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" variant="outline" className="h-8 px-2">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setShowTemplates(true)}>
+                      <FileText className="h-4 w-4 mr-2" />
+                      Templates
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowBookmarks(true)}>
+                      <Bookmark className="h-4 w-4 mr-2" />
+                      Bookmarks
+                      {bookmarkedQueries.size > 0 && (
+                        <Badge variant="secondary" className="ml-2 h-4 px-1 text-xs">
+                          {bookmarkedQueries.size}
+                        </Badge>
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowShortcuts(true)}>
+                      <Zap className="h-4 w-4 mr-2" />
+                      Shortcuts
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleFormatQuery}>
+                      <Code className="h-4 w-4 mr-2" />
+                      Format
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => {
+                      const compact = query.replace(/\s+/g, ' ').trim()
+                      updateCurrentTabQuery(compact)
+                      toast.success('Query compacted')
+                    }}>
+                      <Code className="h-4 w-4 mr-2" />
+                      Compact
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowDryRun(true)}>
+                      <TestTube className="h-4 w-4 mr-2" />
+                      Dry Run
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowExplainPlan(true)}>
+                      <BarChart3 className="h-4 w-4 mr-2" />
+                      Explain Plan
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                   </div>
                 </div>
               </div>
               
           {/* Main Content Area */}
           <div className="flex-1 min-h-0 flex flex-col">
-            {/* Cost Estimator Panel */}
-            {showCostEstimate && (
-              <div className="px-4 py-2 border-b bg-gray-50">
-                <QueryCostEstimator query={query} isVisible={showCostEstimate} />
-              </div>
-            )}
             
             {currentView === 'editor' ? (
               <div className="flex-1 min-h-0">
@@ -1220,6 +1224,32 @@ LIMIT 100;"
         isOpen={showShortcuts}
         onClose={() => setShowShortcuts(false)}
       />
+
+      {/* Dry Run Dialog */}
+      <Dialog open={showDryRun} onOpenChange={setShowDryRun}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Dry Run</DialogTitle>
+            <DialogDescription>
+              Validate your query and estimate resources without executing it.
+            </DialogDescription>
+          </DialogHeader>
+          <QueryDryRun query={query} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Explain Plan Dialog */}
+      <Dialog open={showExplainPlan} onOpenChange={setShowExplainPlan}>
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Explain Plan</DialogTitle>
+            <DialogDescription>
+              See the execution plan derived from your SQL.
+            </DialogDescription>
+          </DialogHeader>
+          <QueryPlan query={query} isVisible={true} />
+        </DialogContent>
+      </Dialog>
 
       <QueryParameters
         query={query}

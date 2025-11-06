@@ -208,9 +208,11 @@ export function SettingsPanelContent({
 
       <TabsContent value="settings" className="mt-0">
           <SettingsTab
+            spaceId={spaceId}
             isMobileViewport={isMobileViewport}
             componentConfigs={componentConfigs}
             handleComponentConfigUpdate={handleComponentConfigUpdate}
+            pages={pages}
           />
       </TabsContent>
 

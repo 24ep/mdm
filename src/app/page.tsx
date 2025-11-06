@@ -62,6 +62,7 @@ import { BusinessIntelligence } from './admin/components/BusinessIntelligence'
 import { SpaceSelection } from './admin/components/SpaceSelection'
 import { SpaceLayoutsAdmin } from './admin/components/SpaceLayoutsAdmin'
 import { AIAnalyst } from './admin/components/AIAnalyst'
+import { AIChatUI } from './admin/components/AIChatUI'
 import { KernelManagement } from './admin/components/KernelManagement'
 import { DataModelManagement } from './admin/components/DataModelManagement'
 import { SpaceSettingsAdmin } from './admin/components/SpaceSettingsAdmin'
@@ -97,6 +98,7 @@ export default function HomePage() {
         bigquery: { name: 'BigQuery Interface', icon: 'Database', color: '#2563eb' },
         notebook: { name: 'Data Science Notebooks', icon: 'BarChart3', color: '#16a34a' },
         'ai-analyst': { name: 'AI Analyst', icon: 'Bot', color: '#9333ea' },
+        'ai-chat-ui': { name: 'AI Chat UI', icon: 'Bot', color: '#10b981' },
         'knowledge-base': { name: 'Knowledge Base', icon: 'BookOpen', color: '#14b8a6' },
         'space-layouts': { name: 'Space Layouts', icon: 'Layout', color: '#4f46e5' },
         attachments: { name: 'Attachment Manager', icon: 'Paperclip', color: '#ea580c' },
@@ -422,6 +424,7 @@ export default function HomePage() {
         {activeTab === 'notebook' && <ProjectsList />}
         {activeTab === 'kernels' && <KernelManagement />}
         {activeTab === 'ai-analyst' && <AIAnalyst />}
+        {activeTab === 'ai-chat-ui' && <AIChatUI />}
         {activeTab === 'knowledge-base' && <KnowledgeBase />}
         {activeTab === 'integrations' && <IntegrationHub />}
         {activeTab === 'settings' && <SystemSettings />}

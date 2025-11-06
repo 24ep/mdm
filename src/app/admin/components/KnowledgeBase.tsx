@@ -1,12 +1,18 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   FileText,
   Folder,
@@ -28,11 +34,17 @@ import {
   X,
   FilePlus,
   FolderPlus,
-  Home
+  Home,
+  Layout,
+  FileCode,
+  Sparkles,
+  Copy
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import { useSession } from 'next-auth/react'
+import { RichMarkdownEditor } from '@/components/knowledge-base/RichMarkdownEditor'
+import { MarkdownRenderer } from '@/components/knowledge-base/MarkdownRenderer'
 
 interface Document {
   id: string
@@ -45,6 +57,7 @@ interface Document {
   updatedAt: Date
   createdBy: string
   tags?: string[]
+  templateId?: string
 }
 
 interface Folder {
@@ -54,6 +67,204 @@ interface Folder {
   createdAt: Date
   updatedAt: Date
 }
+
+interface DocumentTemplate {
+  id: string
+  name: string
+  description: string
+  content: string
+  icon: any
+}
+
+const DOCUMENT_TEMPLATES: DocumentTemplate[] = [
+  {
+    id: 'blank',
+    name: 'Blank',
+    description: 'Start from scratch',
+    content: '',
+    icon: FileText
+  },
+  {
+    id: 'meeting-notes',
+    name: 'Meeting Notes',
+    description: 'Template for meeting notes',
+    content: `# Meeting Notes
+
+**Date:** [Date]
+**Attendees:** [Names]
+
+## Agenda
+- 
+- 
+- 
+
+## Discussion
+### Topic 1
+- 
+
+### Topic 2
+- 
+
+## Action Items
+- [ ] 
+- [ ] 
+- [ ] 
+
+## Next Steps
+- 
+`,
+    icon: FileText
+  },
+  {
+    id: 'project-plan',
+    name: 'Project Plan',
+    description: 'Template for project planning',
+    content: `# Project Plan
+
+## Overview
+**Project Name:** 
+**Start Date:** 
+**Target Date:** 
+
+## Goals
+- 
+- 
+- 
+
+## Timeline
+### Phase 1: [Name]
+- **Start:** 
+- **End:** 
+- **Deliverables:** 
+  - 
+  - 
+
+### Phase 2: [Name]
+- **Start:** 
+- **End:** 
+- **Deliverables:** 
+  - 
+  - 
+
+## Resources
+- **Team Members:** 
+- **Budget:** 
+- **Tools:** 
+
+## Risks & Mitigation
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+|      |        |            |
+
+## Success Metrics
+- 
+- 
+`,
+    icon: Layout
+  },
+  {
+    id: 'api-docs',
+    name: 'API Documentation',
+    description: 'Template for API docs',
+    content: `# API Documentation
+
+## Endpoint: [Name]
+
+**Method:** \`GET\` / \`POST\` / \`PUT\` / \`DELETE\`
+**URL:** \`/api/v1/endpoint\`
+
+### Description
+[Description of what this endpoint does]
+
+### Request Parameters
+
+#### Headers
+\`\`\`
+Content-Type: application/json
+Authorization: Bearer <token>
+\`\`\`
+
+#### Body
+\`\`\`json
+{
+  "param1": "value1",
+  "param2": "value2"
+}
+\`\`\`
+
+### Response
+
+#### Success (200)
+\`\`\`json
+{
+  "status": "success",
+  "data": {}
+}
+\`\`\`
+
+#### Error (400)
+\`\`\`json
+{
+  "status": "error",
+  "message": "Error description"
+}
+\`\`\`
+
+### Example
+\`\`\`bash
+curl -X POST https://api.example.com/v1/endpoint \\
+  -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer <token>" \\
+  -d '{"param1": "value1"}'
+\`\`\`
+`,
+    icon: FileCode
+  },
+  {
+    id: 'troubleshooting',
+    name: 'Troubleshooting Guide',
+    description: 'Template for troubleshooting docs',
+    content: `# Troubleshooting Guide
+
+## Problem: [Issue Name]
+
+### Symptoms
+- 
+- 
+- 
+
+### Possible Causes
+1. 
+2. 
+3. 
+
+### Solutions
+
+#### Solution 1: [Name]
+**Steps:**
+1. 
+2. 
+3. 
+
+**Expected Result:** 
+
+#### Solution 2: [Name]
+**Steps:**
+1. 
+2. 
+
+**Expected Result:** 
+
+### Prevention
+- 
+- 
+
+### Related Issues
+- 
+`,
+    icon: Sparkles
+  }
+]
 
 interface DocumentNode {
   id: string
@@ -76,12 +287,12 @@ export function KnowledgeBase() {
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null)
   const [showNewDocDialog, setShowNewDocDialog] = useState(false)
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false)
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false)
   const [newDocTitle, setNewDocTitle] = useState('')
   const [newFolderName, setNewFolderName] = useState('')
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('blank')
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
   const [viewMode, setViewMode] = useState<'edit' | 'preview' | 'split'>('split')
-  
-  const editorRef = useRef<HTMLTextAreaElement>(null)
 
   // Load documents and folders from localStorage (or API in production)
   useEffect(() => {
@@ -105,39 +316,37 @@ export function KnowledgeBase() {
         {
           id: 'doc-1',
           title: 'Welcome to Knowledge Base',
-          content: `# Welcome to Knowledge Base
-
-This is your team's knowledge base, similar to Outline. Here you can:
-
-- **Create documents** with rich markdown formatting
-- **Organize** content in folders
-- **Search** across all documents
-- **Share** documents with your team
-
-## Getting Started
-
-1. Create a new document by clicking the **+** button
-2. Use markdown to format your content
-3. Organize documents in folders
-4. Search to quickly find what you need
-
-## Features
-
-### Markdown Support
-- Headers (\`# H1\`, \`## H2\`, etc.)
-- **Bold** and *italic* text
-- Lists (ordered and unordered)
-- Code blocks and inline code
-- Links and images
-- Tables
-- And more!
-
-### Organization
-- Create folders to organize documents
-- Move documents between folders
-- Pin important documents
-
-Enjoy your knowledge base! 🎉`,
+          content: `<h1>Welcome to Knowledge Base</h1>
+<p>This is your team's knowledge base, similar to <strong>Outline</strong>. Here you can:</p>
+<ul>
+<li><strong>Create documents</strong> with rich markdown formatting</li>
+<li><strong>Organize</strong> content in folders</li>
+<li><strong>Search</strong> across all documents</li>
+<li><strong>Share</strong> documents with your team</li>
+</ul>
+<h2>Getting Started</h2>
+<ol>
+<li>Create a new document by clicking the <strong>+</strong> button</li>
+<li>Use markdown to format your content</li>
+<li>Try typing <code>/</code> for slash commands</li>
+<li>Organize documents in folders</li>
+<li>Search to quickly find what you need</li>
+</ol>
+<h2>Features</h2>
+<h3>Rich Markdown Editor</h3>
+<ul>
+<li>Slash commands (type <code>/</code> to see options)</li>
+<li>Full markdown support</li>
+<li>Syntax highlighting for code blocks</li>
+<li>Tables, lists, links, images, and more</li>
+</ul>
+<h3>Organization</h3>
+<ul>
+<li>Create folders to organize documents</li>
+<li>Move documents between folders</li>
+<li>Pin important documents</li>
+</ul>
+<p>Enjoy your knowledge base! 🎉</p>`,
           createdAt: new Date(),
           updatedAt: new Date(),
           createdBy: session?.user?.email || 'system',
@@ -250,16 +459,20 @@ Enjoy your knowledge base! 🎉`,
       return
     }
 
+    const template = DOCUMENT_TEMPLATES.find(t => t.id === selectedTemplate)
+    const content = template?.content || `<h1>${newDocTitle.trim()}</h1>\n<p>Start writing...</p>`
+
     const newDoc: Document = {
       id: `doc-${Date.now()}`,
       title: newDocTitle.trim(),
-      content: `# ${newDocTitle.trim()}\n\nStart writing...`,
+      content,
       folderId: selectedFolder || undefined,
       createdAt: new Date(),
       updatedAt: new Date(),
       createdBy: session?.user?.email || 'system',
       isPinned: false,
-      isPublic: false
+      isPublic: false,
+      templateId: selectedTemplate
     }
 
     setDocuments([...documents, newDoc])
@@ -267,7 +480,9 @@ Enjoy your knowledge base! 🎉`,
     setEditingDocument(newDoc)
     setIsEditing(true)
     setShowNewDocDialog(false)
+    setShowTemplateDialog(false)
     setNewDocTitle('')
+    setSelectedTemplate('blank')
     toast.success('Document created')
   }
 
@@ -335,6 +550,7 @@ Enjoy your knowledge base! 🎉`,
     if (selectedDocument?.id === doc.id) {
       setSelectedDocument(updated)
     }
+    toast.success(doc.isPinned ? 'Unpinned' : 'Pinned')
   }
 
   const handleTogglePublic = (doc: Document) => {
@@ -343,72 +559,44 @@ Enjoy your knowledge base! 🎉`,
     if (selectedDocument?.id === doc.id) {
       setSelectedDocument(updated)
     }
+    toast.success(doc.isPublic ? 'Made private' : 'Made public')
   }
 
-  // Simple markdown renderer
-  const renderMarkdown = (content: string): string => {
-    let html = content
-    
-    // Headers
-    html = html.replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>')
-    html = html.replace(/^## (.*$)/gim, '<h2 class="text-xl font-semibold mt-6 mb-3">$1</h2>')
-    html = html.replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-8 mb-4">$1</h1>')
-    
-    // Bold
-    html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
-    
-    // Italic
-    html = html.replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
-    
-    // Code blocks
-    html = html.replace(/```([\s\S]*?)```/g, '<pre class="bg-gray-100 dark:bg-gray-800 p-3 rounded-md overflow-x-auto my-2"><code class="text-sm font-mono">$1</code></pre>')
-    
-    // Inline code
-    html = html.replace(/`([^`]+)`/g, '<code class="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm font-mono">$1</code>')
-    
-    // Links
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">$1</a>')
-    
-    // Lists
-    html = html.replace(/^\* (.+)$/gim, '<li class="ml-4">$1</li>')
-    html = html.replace(/^- (.+)$/gim, '<li class="ml-4">$1</li>')
-    html = html.replace(/(<li.*<\/li>)/g, '<ul class="list-disc my-2">$1</ul>')
-    
-    // Paragraphs
-    html = html.split('\n\n').map(para => {
-      if (!para.trim()) return ''
-      if (para.startsWith('<') || para.startsWith('#')) return para
-      return `<p class="my-2">${para}</p>`
-    }).join('')
-    
-    // Line breaks
-    html = html.replace(/\n/g, '<br>')
-    
-    return html
+  const handleCopyLink = () => {
+    if (selectedDocument) {
+      const link = `${window.location.origin}/knowledge-base/${selectedDocument.id}`
+      navigator.clipboard.writeText(link)
+      toast.success('Link copied to clipboard')
+    }
   }
 
   const selectedDocContent = editingDocument || selectedDocument
 
   return (
-    <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <div className="border-b bg-white dark:bg-gray-800 px-4 py-3 flex items-center justify-between">
+    <div className="h-full flex flex-col bg-white dark:bg-gray-950">
+      {/* Header - Outline style */}
+      <div className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <BookOpen className="h-5 w-5 text-blue-600" />
-          <h1 className="text-lg font-semibold">Knowledge Base</h1>
+          <BookOpen className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Knowledge Base</h1>
         </div>
         <div className="flex items-center gap-2">
           <Button
             size="sm"
-            variant="outline"
+            variant="ghost"
             onClick={() => setShowNewFolderDialog(true)}
+            className="text-gray-600 dark:text-gray-400"
           >
             <FolderPlus className="h-4 w-4 mr-2" />
             New Folder
           </Button>
           <Button
             size="sm"
-            onClick={() => setShowNewDocDialog(true)}
+            onClick={() => {
+              setShowTemplateDialog(true)
+              setShowNewDocDialog(true)
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
           >
             <Plus className="h-4 w-4 mr-2" />
             New Document
@@ -416,28 +604,28 @@ Enjoy your knowledge base! 🎉`,
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <div className="w-64 border-r bg-white dark:bg-gray-800 flex flex-col">
+      <div className="flex flex-1 overflow-hidden min-h-0">
+        {/* Sidebar - Outline style */}
+        <div className="w-64 border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 flex flex-col min-h-0">
           {/* Search */}
-          <div className="p-3 border-b">
+          <div className="p-3 border-b border-gray-200 dark:border-gray-800">
             <div className="relative">
-              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search documents..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8"
+                className="pl-9 h-9 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
               />
             </div>
           </div>
 
           {/* Document Tree */}
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1 h-full min-h-0">
             <div className="p-2">
               <Button
                 variant="ghost"
-                className="w-full justify-start mb-1"
+                className="w-full justify-start mb-1 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                 onClick={() => {
                   setSelectedFolder(null)
                   setSelectedDocument(null)
@@ -454,7 +642,7 @@ Enjoy your knowledge base! 🎉`,
                     <div>
                       <Button
                         variant="ghost"
-                        className="w-full justify-start"
+                        className="w-full justify-start text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                         onClick={() => {
                           handleToggleFolder(node.id)
                           setSelectedFolder(node.id)
@@ -469,7 +657,7 @@ Enjoy your knowledge base! 🎉`,
                         <span className="flex-1 text-left truncate">{node.name}</span>
                       </Button>
                       {expandedFolders.has(node.id) && node.data && (
-                        <div className="ml-4">
+                        <div className="ml-6">
                           {documents
                             .filter(doc => doc.folderId === node.id)
                             .map(doc => (
@@ -477,13 +665,13 @@ Enjoy your knowledge base! 🎉`,
                                 key={doc.id}
                                 variant="ghost"
                                 className={cn(
-                                  "w-full justify-start text-sm",
-                                  selectedDocument?.id === doc.id && "bg-blue-50 dark:bg-blue-900/20"
+                                  "w-full justify-start text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800",
+                                  selectedDocument?.id === doc.id && "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
                                 )}
                                 onClick={() => {
                                   setSelectedDocument(doc)
-                                  setIsEditing(false)
-                                  setEditingDocument(null)
+                                  setIsEditing(true)
+                                  setEditingDocument(doc)
                                 }}
                               >
                                 <FileText className="h-3 w-3 mr-2" />
@@ -498,13 +686,14 @@ Enjoy your knowledge base! 🎉`,
                     <Button
                       variant="ghost"
                       className={cn(
-                        "w-full justify-start text-sm",
-                        selectedDocument?.id === node.id && "bg-blue-50 dark:bg-blue-900/20"
+                        "w-full justify-start text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800",
+                        selectedDocument?.id === node.id && "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
                       )}
                       onClick={() => {
-                        setSelectedDocument(node.data as Document)
-                        setIsEditing(false)
-                        setEditingDocument(null)
+                        const doc = node.data as Document
+                        setSelectedDocument(doc)
+                        setIsEditing(true)
+                        setEditingDocument(doc)
                       }}
                     >
                       <FileText className="h-4 w-4 mr-2" />
@@ -520,39 +709,61 @@ Enjoy your knowledge base! 🎉`,
           </ScrollArea>
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Main Content - Outline style */}
+        <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-gray-950">
           {selectedDocContent ? (
             <>
               {/* Toolbar */}
-              <div className="border-b bg-white dark:bg-gray-800 px-4 py-2 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <h2 className="font-semibold">{selectedDocContent.title}</h2>
+              <div className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-6 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {isEditing ? (
+                    <Input
+                      value={editingDocument?.title || selectedDocument?.title || ''}
+                      onChange={(e) => {
+                        if (isEditing) {
+                          setEditingDocument(prev => ({
+                            ...(prev || (selectedDocument as Document)),
+                            title: e.target.value
+                          }) as Document)
+                        }
+                      }}
+                      className="h-8 w-[28rem] max-w-full"
+                    />
+                  ) : (
+                    <h2 className="font-semibold text-gray-900 dark:text-white">{selectedDocContent.title}</h2>
+                  )}
                   {selectedDocContent.isPinned && (
                     <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                   )}
                   {selectedDocContent.isPublic ? (
-                    <Unlock className="h-4 w-4 text-green-500" />
+                    <Badge variant="outline" className="text-xs">
+                      <Unlock className="h-3 w-3 mr-1" />
+                      Public
+                    </Badge>
                   ) : (
-                    <Lock className="h-4 w-4 text-gray-400" />
+                    <Badge variant="outline" className="text-xs">
+                      <Lock className="h-3 w-3 mr-1" />
+                      Private
+                    </Badge>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="ghost"
                     onClick={() => {
                       if (viewMode === 'edit') setViewMode('preview')
                       else if (viewMode === 'preview') setViewMode('edit')
                       else setViewMode('edit')
                     }}
+                    className="text-gray-600 dark:text-gray-400"
                   >
                     {viewMode === 'edit' ? <Eye className="h-4 w-4 mr-1" /> : <Edit className="h-4 w-4 mr-1" />}
                     {viewMode === 'edit' ? 'Preview' : 'Edit'}
                   </Button>
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="ghost"
                     onClick={() => {
                       if (viewMode === 'split') {
                         setViewMode('edit')
@@ -560,47 +771,65 @@ Enjoy your knowledge base! 🎉`,
                         setViewMode('split')
                       }
                     }}
+                    className="text-gray-600 dark:text-gray-400"
                   >
+                    <Layout className="h-4 w-4 mr-1" />
                     Split
                   </Button>
+                  <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-1" />
                   {isEditing && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleTogglePin(selectedDocContent as Document)}
-                    >
-                      <Star className={cn(
-                        "h-4 w-4",
-                        selectedDocContent.isPinned && "fill-yellow-400 text-yellow-400"
-                      )} />
-                    </Button>
-                  )}
-                  {isEditing && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleTogglePublic(selectedDocContent as Document)}
-                    >
-                      {selectedDocContent.isPublic ? (
-                        <Unlock className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <Lock className="h-4 w-4" />
-                      )}
-                    </Button>
+                    <>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleTogglePin(selectedDocContent as Document)}
+                        className="text-gray-600 dark:text-gray-400"
+                      >
+                        <Star className={cn(
+                          "h-4 w-4",
+                          selectedDocContent.isPinned && "fill-yellow-400 text-yellow-400"
+                        )} />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleTogglePublic(selectedDocContent as Document)}
+                        className="text-gray-600 dark:text-gray-400"
+                      >
+                        {selectedDocContent.isPublic ? (
+                          <Unlock className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <Lock className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleCopyLink}
+                        className="text-gray-600 dark:text-gray-400"
+                      >
+                        <Share2 className="h-4 w-4" />
+                      </Button>
+                    </>
                   )}
                   {isEditing ? (
-                    <Button size="sm" onClick={handleSaveDocument}>
+                    <Button 
+                      size="sm" 
+                      onClick={handleSaveDocument}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
                       <Save className="h-4 w-4 mr-1" />
                       Save
                     </Button>
                   ) : (
                     <Button
                       size="sm"
-                      variant="outline"
+                      variant="ghost"
                       onClick={() => {
                         setIsEditing(true)
                         setEditingDocument(selectedDocument)
                       }}
+                      className="text-gray-600 dark:text-gray-400"
                     >
                       <Edit className="h-4 w-4 mr-1" />
                       Edit
@@ -608,8 +837,9 @@ Enjoy your knowledge base! 🎉`,
                   )}
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="ghost"
                     onClick={() => handleDeleteDocument(selectedDocContent.id)}
+                    className="text-gray-600 dark:text-gray-400 hover:text-red-600"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -620,51 +850,56 @@ Enjoy your knowledge base! 🎉`,
               <div className="flex-1 overflow-hidden">
                 {(viewMode === 'edit' || viewMode === 'split') && (
                   <div className={cn(
-                    "h-full",
-                    viewMode === 'split' && "w-1/2 border-r"
+                    "h-full border-r border-gray-200 dark:border-gray-800",
+                    viewMode === 'split' && "w-1/2"
                   )}>
-                    <textarea
-                      ref={editorRef}
-                      value={isEditing && editingDocument ? editingDocument.content : selectedDocument?.content || ''}
-                      onChange={(e) => {
+                    <RichMarkdownEditor
+                      content={isEditing && editingDocument ? editingDocument.content : selectedDocument?.content || ''}
+                      onChange={(content) => {
                         if (isEditing && editingDocument) {
                           setEditingDocument({
                             ...editingDocument,
-                            content: e.target.value
+                            content
                           })
                         }
                       }}
-                      className="w-full h-full p-4 font-mono text-sm resize-none focus:outline-none border-0 bg-white dark:bg-gray-900"
-                      placeholder="Start writing in markdown..."
+                      editable={isEditing}
+                      className="h-full bg-white dark:bg-gray-950"
                     />
                   </div>
                 )}
 
                 {(viewMode === 'preview' || viewMode === 'split') && (
                   <div className={cn(
-                    "h-full overflow-auto p-4 prose max-w-none dark:prose-invert",
+                    "h-full overflow-auto bg-white dark:bg-gray-950",
                     viewMode === 'split' && "w-1/2"
                   )}>
-                    <div
-                      dangerouslySetInnerHTML={{
-                        __html: renderMarkdown(
+                    <div className="max-w-4xl mx-auto p-8">
+                      <MarkdownRenderer
+                        content={
                           isEditing && editingDocument
                             ? editingDocument.content
                             : selectedDocument?.content || ''
-                        )
-                      }}
-                    />
+                        }
+                      />
+                    </div>
                   </div>
                 )}
               </div>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <BookOpen className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No document selected</h3>
-                <p className="text-gray-500 mb-4">Select a document from the sidebar or create a new one</p>
-                <Button onClick={() => setShowNewDocDialog(true)}>
+            <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+              <div className="text-center max-w-md">
+                <BookOpen className="h-16 w-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">No document selected</h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-4">Select a document from the sidebar or create a new one</p>
+                <Button 
+                  onClick={() => {
+                    setShowTemplateDialog(true)
+                    setShowNewDocDialog(true)
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Create Document
                 </Button>
@@ -674,28 +909,63 @@ Enjoy your knowledge base! 🎉`,
         </div>
       </div>
 
-      {/* New Document Dialog */}
+      {/* New Document Dialog with Templates */}
       <Dialog open={showNewDocDialog} onOpenChange={setShowNewDocDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Create New Document</DialogTitle>
-            <DialogDescription>Enter a title for your new document</DialogDescription>
+            <DialogDescription>Choose a template or start from scratch</DialogDescription>
           </DialogHeader>
-          <Input
-            placeholder="Document title..."
-            value={newDocTitle}
-            onChange={(e) => setNewDocTitle(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleCreateDocument()
-              }
-            }}
-          />
+          
+          {showTemplateDialog && (
+            <div className="mb-4">
+              <label className="text-sm font-medium mb-2 block">Template</label>
+              <div className="grid grid-cols-2 gap-3">
+                {DOCUMENT_TEMPLATES.map((template) => {
+                  const Icon = template.icon
+                  return (
+                    <button
+                      key={template.id}
+                      onClick={() => setSelectedTemplate(template.id)}
+                      className={cn(
+                        "p-4 border rounded-lg text-left transition-all hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20",
+                        selectedTemplate === template.id && "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                      )}
+                    >
+                      <Icon className="h-5 w-5 mb-2 text-gray-600 dark:text-gray-400" />
+                      <div className="font-medium text-sm">{template.name}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{template.description}</div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+          
+          <div>
+            <label className="text-sm font-medium mb-2 block">Document Title</label>
+            <Input
+              placeholder="Document title..."
+              value={newDocTitle}
+              onChange={(e) => setNewDocTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleCreateDocument()
+                }
+              }}
+            />
+          </div>
+          
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowNewDocDialog(false)}>
+            <Button variant="outline" onClick={() => {
+              setShowNewDocDialog(false)
+              setShowTemplateDialog(false)
+            }}>
               Cancel
             </Button>
-            <Button onClick={handleCreateDocument}>Create</Button>
+            <Button onClick={handleCreateDocument} className="bg-blue-600 hover:bg-blue-700 text-white">
+              Create
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -721,11 +991,12 @@ Enjoy your knowledge base! 🎉`,
             <Button variant="outline" onClick={() => setShowNewFolderDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCreateFolder}>Create</Button>
+            <Button onClick={handleCreateFolder} className="bg-blue-600 hover:bg-blue-700 text-white">
+              Create
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
   )
 }
-

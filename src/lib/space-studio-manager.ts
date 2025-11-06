@@ -22,6 +22,30 @@ export interface SpacesEditorPage {
   updatedAt: string
 }
 
+export interface LoginPageConfig {
+  backgroundType: 'color' | 'image' | 'gradient'
+  backgroundColor?: string
+  backgroundImage?: string
+  gradient?: {
+    from: string
+    to: string
+    angle: number
+  }
+  leftPanelWidth?: string // e.g., "70%"
+  rightPanelWidth?: string // e.g., "30%"
+  cardStyle?: {
+    backgroundColor?: string
+    textColor?: string
+    borderColor?: string
+    borderRadius?: number
+    shadow?: boolean
+  }
+  title?: string
+  description?: string
+  showLogo?: boolean
+  logoUrl?: string
+}
+
 export interface SpacesEditorConfig {
   id: string
   spaceId: string
@@ -41,6 +65,8 @@ export interface SpacesEditorConfig {
     textColor: string
     fontSize: string
   }
+  loginPageConfig?: LoginPageConfig
+  postAuthRedirectPageId?: string // ID of page to redirect to after authentication
   version: string
   createdAt: string
   updatedAt: string
@@ -118,6 +144,28 @@ export class SpacesEditorManager {
         textColor: '#374151',
         fontSize: '14px'
       },
+      loginPageConfig: {
+        backgroundType: 'gradient',
+        backgroundColor: '#1e40af',
+        gradient: {
+          from: '#1e40af',
+          to: '#3b82f6',
+          angle: 135
+        },
+        leftPanelWidth: '70%',
+        rightPanelWidth: '30%',
+        cardStyle: {
+          backgroundColor: '#ffffff',
+          textColor: '#1f2937',
+          borderColor: '#e5e7eb',
+          borderRadius: 8,
+          shadow: true
+        },
+        title: 'Sign in',
+        description: 'Access this workspace',
+        showLogo: false
+      },
+      postAuthRedirectPageId: undefined,
       version: '1.0.0',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()

@@ -114,66 +114,9 @@ export function FileManager({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [newFolderName, setNewFolderName] = useState('')
 
-  // Mock data - replace with actual API calls
+  // Initialize with empty list; integrate real data source via props/API elsewhere
   useEffect(() => {
-    const mockFiles: FileItem[] = [
-      {
-        id: '1',
-        name: 'Data Analysis.ipynb',
-        type: 'file',
-        mimeType: 'application/json',
-        size: 15420,
-        createdAt: new Date('2024-01-15'),
-        updatedAt: new Date('2024-01-20'),
-        isPublic: false,
-        isStarred: true,
-        tags: ['analysis', 'python'],
-        owner: 'Current User',
-        path: '/notebooks/Data Analysis.ipynb'
-      },
-      {
-        id: '2',
-        name: 'Sales Data.csv',
-        type: 'file',
-        mimeType: 'text/csv',
-        size: 256000,
-        createdAt: new Date('2024-01-10'),
-        updatedAt: new Date('2024-01-18'),
-        isPublic: true,
-        isStarred: false,
-        tags: ['data', 'sales'],
-        owner: 'Current User',
-        path: '/data/Sales Data.csv'
-      },
-      {
-        id: '3',
-        name: 'Charts',
-        type: 'folder',
-        size: 0,
-        createdAt: new Date('2024-01-12'),
-        updatedAt: new Date('2024-01-19'),
-        isPublic: false,
-        isStarred: false,
-        tags: ['visualization'],
-        owner: 'Current User',
-        path: '/charts'
-      },
-      {
-        id: '4',
-        name: 'ML Models',
-        type: 'folder',
-        size: 0,
-        createdAt: new Date('2024-01-08'),
-        updatedAt: new Date('2024-01-17'),
-        isPublic: false,
-        isStarred: true,
-        tags: ['ml', 'models'],
-        owner: 'Current User',
-        path: '/models'
-      }
-    ]
-    
-    setFiles(mockFiles)
+    setFiles([])
   }, [])
 
   const getFileIcon = (file: FileItem) => {

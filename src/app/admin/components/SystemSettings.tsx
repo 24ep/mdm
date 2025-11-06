@@ -26,6 +26,7 @@ import {
   AlertCircle
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { SSOConfiguration } from './SSOConfiguration'
 
 interface SystemSettings {
   // General
@@ -117,10 +118,14 @@ export function SystemSettings() {
   const loadSettings = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/admin/system-settings')
+      const response = await fetch('/api/settings')
       if (response.ok) {
         const data = await response.json()
-        setSettings(data.settings || settings)
+        setSettings(prev => ({
+          ...prev,
+          // Expect flat key/value map from API
+          sessionTimeout: data.sessionTimeout ? Number(data.sessionTimeout) : prev.sessionTimeout,
+        }))
       }
     } catch (error) {
       console.error('Error loading settings:', error)
@@ -132,12 +137,16 @@ export function SystemSettings() {
   const saveSettings = async () => {
     setIsSaving(true)
     try {
-      const response = await fetch('/api/admin/system-settings', {
+      const response = await fetch('/api/settings', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(settings),
+        body: JSON.stringify({
+          settings: {
+            sessionTimeout: String(settings.sessionTimeout),
+          }
+        }),
       })
 
       if (response.ok) {
@@ -232,11 +241,12 @@ export function SystemSettings() {
       </div>
 
       <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="database">Database</TabsTrigger>
           <TabsTrigger value="email">Email</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="sso">SSO</TabsTrigger>
           <TabsTrigger value="features">Features</TabsTrigger>
         </TabsList>
 
@@ -513,6 +523,10 @@ export function SystemSettings() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="sso" className="space-y-6">
+          <SSOConfiguration />
         </TabsContent>
 
         <TabsContent value="features" className="space-y-6">

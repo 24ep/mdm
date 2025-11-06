@@ -6,7 +6,13 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token
+      authorized: ({ token }) => {
+        if (!token) return false
+        const exp = (token as any).exp as number | undefined
+        if (!exp) return true // fallback: if no exp set, allow (legacy sessions)
+        const now = Math.floor(Date.now() / 1000)
+        return exp > now
+      }
     },
   }
 )

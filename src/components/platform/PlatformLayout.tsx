@@ -35,7 +35,7 @@ interface PlatformLayoutProps {
 const getGroupForTab = (tab: string): string | null => {
   const groupedTabs: Record<string, string[]> = {
     overview: ['overview', 'analytics'],
-    tools: ['bigquery', 'notebook', 'ai-analyst', 'knowledge-base', 'bi', 'storage'],
+    tools: ['bigquery', 'notebook', 'ai-analyst', 'ai-chat-ui', 'knowledge-base', 'bi', 'storage'],
     system: ['users', 'space-layouts', 'data', 'attachments', 'kernels', 'health', 'logs', 'database', 'cache', 'security', 'performance', 'settings', 'page-templates', 'export', 'integrations'],
     'data-management': ['space-selection']
   }
