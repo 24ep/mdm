@@ -35,7 +35,7 @@ export function TextItem({
   return (
     <div
       key={page.id}
-      className={`flex items-center gap-2 ${isMobileViewport ? 'px-3 py-2' : 'px-4 py-1.5'} rounded-md border hover:bg-muted select-none`}
+      className={`flex items-center gap-2 ${isMobileViewport ? 'px-3 py-2' : 'px-4 py-1.5'} rounded-[10px] border hover:bg-muted select-none`}
     >
       {isEditing ? (
         <>

@@ -40,6 +40,15 @@ interface ChatbotConfig {
   bubbleBorderColor?: string
   bubbleBorderWidth?: string
   bubbleBorderRadius?: string
+  bubblePadding?: string
+  // Message background colors
+  userMessageBackgroundColor?: string
+  botMessageBackgroundColor?: string
+  // Message display options
+  showMessageName?: boolean
+  messageName?: string
+  messageNamePosition?: 'top-of-message' | 'top-of-avatar'
+  showMessageAvatar?: boolean
   messageBoxColor: string
   shadowColor: string
   shadowBlur: string
@@ -55,17 +64,67 @@ interface ChatbotConfig {
   headerBgColor?: string
   headerFontColor?: string
   headerFontFamily?: string
+  headerShowAvatar?: boolean
+  headerBorderEnabled?: boolean
+  headerBorderColor?: string
+  headerPaddingX?: string
+  headerPaddingY?: string
+  // Footer/Input Area
+  footerBgColor?: string
+  footerBorderColor?: string
+  footerBorderWidth?: string
+  footerBorderRadius?: string
+  footerPaddingX?: string
+  footerPaddingY?: string
+  footerInputBgColor?: string
+  footerInputBorderColor?: string
+  footerInputBorderWidth?: string
+  footerInputBorderRadius?: string
+  footerInputFontColor?: string
+  // Send Button
+  sendButtonIcon?: string
+  sendButtonRounded?: boolean
+  sendButtonBgColor?: string
+  sendButtonIconColor?: string
+  sendButtonShadowColor?: string
+  sendButtonShadowBlur?: string
+  // File Upload Layout
+  fileUploadLayout?: 'attach-first' | 'input-first'
   avatarType?: 'icon' | 'image'
   avatarIcon?: string
   avatarIconColor?: string
   avatarBackgroundColor?: string
   avatarImageUrl?: string
+  // Widget styling
+  widgetAvatarStyle?: 'circle' | 'square' | 'circle-with-label'
+  widgetPosition?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | 'bottom-center' | 'top-center'
+  widgetSize?: string
+  widgetBackgroundColor?: string
+  widgetBorderColor?: string
+  widgetBorderWidth?: string
+  widgetBorderRadius?: string
+  widgetShadowColor?: string
+  widgetShadowBlur?: string
+  widgetLabelText?: string
+  widgetLabelColor?: string
+  widgetAnimation?: 'none' | 'fade' | 'slide' | 'bounce'
+  widgetAutoShow?: boolean
+  widgetAutoShowDelay?: number
+  widgetOffsetX?: string
+  widgetOffsetY?: string
+  widgetZIndex?: number
+  showNotificationBadge?: boolean
+  notificationBadgeColor?: string
   // Chat window
   chatWindowWidth?: string
   chatWindowHeight?: string
   chatWindowBorderColor?: string
   chatWindowBorderWidth?: string
   chatWindowBorderRadius?: string
+  chatWindowShadowColor?: string
+  chatWindowShadowBlur?: string
+  // Deployment
+  deploymentType?: 'popover' | 'fullpage' | 'popup-center'
 }
 
 export default function ChatPage() {
@@ -128,6 +187,12 @@ export default function ChatPage() {
         const val = data.value
         if (val === 'popover' || val === 'fullpage' || val === 'popup-center') {
           setPreviewDeploymentType(val)
+          // Reset isOpen state when preview mode changes to show widget button
+          if (val === 'popover' || val === 'popup-center') {
+            setIsOpen(false)
+          } else {
+            setIsOpen(true)
+          }
         }
       }
     }
@@ -135,17 +200,20 @@ export default function ChatPage() {
     return () => window.removeEventListener('message', handler)
   }, [chatbotId])
 
-  // Auto-show for widget
+  // Auto-show for widget (only auto-open, don't auto-close)
   useEffect(() => {
     if (!chatbot) return
-    if (previewDeploymentType === 'fullpage') return
+    if (previewDeploymentType === 'fullpage') {
+      setIsOpen(true) // Full page always shows
+      return
+    }
+    // For popover/popup-center, start closed to show widget button
+    setIsOpen(false)
     const shouldAuto = (chatbot as any).widgetAutoShow !== undefined ? (chatbot as any).widgetAutoShow : true
     if (shouldAuto) {
       const delayMs = ((chatbot as any).widgetAutoShowDelay || 0) * 1000
       const t = setTimeout(() => setIsOpen(true), delayMs)
       return () => clearTimeout(t)
-    } else {
-      setIsOpen(false)
     }
   }, [chatbot, previewDeploymentType])
 
@@ -364,17 +432,58 @@ export default function ChatPage() {
   }
 
   const containerStyle: React.CSSProperties = (() => {
+    const shadowColor = (chatbot as any).chatWindowShadowColor || chatbot.shadowColor || '#000000'
+    const shadowBlur = (chatbot as any).chatWindowShadowBlur || chatbot.shadowBlur || '4px'
+    
     if (previewDeploymentType === 'popover') {
-      return {
+      const x = chatbot as any
+      const pos = (x.widgetPosition || 'bottom-right') as string
+      const offsetX = x.widgetOffsetX || '20px'
+      const offsetY = x.widgetOffsetY || '20px'
+      const widgetSize = parseFloat(x.widgetSize || '60px') || 60
+      const widgetSizePx = typeof x.widgetSize === 'string' && x.widgetSize.includes('px') 
+        ? parseFloat(x.widgetSize) 
+        : widgetSize
+      
+      // Calculate popover position - place it to the right of the widget button
+      const popoverStyle: React.CSSProperties = {
+        position: 'fixed',
         width: (chatbot as any).chatWindowWidth || '380px',
         height: (chatbot as any).chatWindowHeight || '600px',
         border: `${chatbot.chatWindowBorderWidth || chatbot.borderWidth} solid ${chatbot.chatWindowBorderColor || chatbot.borderColor}`,
         borderRadius: chatbot.chatWindowBorderRadius || chatbot.borderRadius,
-        boxShadow: `0 0 ${chatbot.shadowBlur} ${chatbot.shadowColor}`,
+        boxShadow: `0 0 ${shadowBlur} ${shadowColor}`,
         zIndex: (chatbot as any).widgetZIndex || 9999,
-        ...popoverPositionStyle(),
-        backgroundColor: chatbot.messageBoxColor
+        backgroundColor: chatbot.messageBoxColor,
+        overflow: 'hidden'
       }
+      
+      // Position popover relative to widget button
+      if (pos.includes('bottom')) {
+        (popoverStyle as any).bottom = offsetY
+      } else {
+        (popoverStyle as any).top = offsetY
+      }
+      
+      // Place popover to the right of widget button (horizontally adjacent)
+      // Calculate widget button's right edge position
+      if (pos.includes('right')) {
+        // Widget is on right side, popover appears to the left of widget
+        // Position popover so its right edge is at widget's left edge minus gap
+        const rightOffset = `calc(${offsetX} + ${widgetSizePx}px + 10px)`
+        ;(popoverStyle as any).right = rightOffset
+      } else if (pos.includes('left')) {
+        // Widget is on left side, popover appears to the right of widget
+        // Position popover so its left edge is at widget's right edge plus gap
+        const leftOffset = `calc(${offsetX} + ${widgetSizePx}px + 10px)`
+        ;(popoverStyle as any).left = leftOffset
+      } else if (pos.includes('center')) {
+        // For center positions, place popover to the right of widget
+        ;(popoverStyle as any).left = `calc(50% + ${widgetSizePx / 2}px + 10px)`
+        ;(popoverStyle as any).transform = 'translateX(0)'
+      }
+      
+      return popoverStyle
     }
     if (previewDeploymentType === 'popup-center') {
       return {
@@ -384,7 +493,7 @@ export default function ChatPage() {
         height: '80vh',
         border: `${chatbot.chatWindowBorderWidth || chatbot.borderWidth} solid ${chatbot.chatWindowBorderColor || chatbot.borderColor}`,
         borderRadius: chatbot.chatWindowBorderRadius || chatbot.borderRadius,
-        boxShadow: `0 0 ${chatbot.shadowBlur} ${chatbot.shadowColor}`,
+        boxShadow: `0 0 ${shadowBlur} ${shadowColor}`,
         zIndex: 10001,
         position: 'fixed',
         top: '50%',
@@ -392,7 +501,8 @@ export default function ChatPage() {
         transform: 'translate(-50%, -50%)',
         backgroundColor: chatbot.messageBoxColor,
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        overflow: 'hidden'
       }
     }
     // fullpage
@@ -410,11 +520,11 @@ export default function ChatPage() {
     <div style={{ position: 'relative', height: '100%' }}>
       {overlayStyle && shouldShowContainer && <div style={overlayStyle} aria-hidden="true" onClick={() => setIsOpen(false)} />}
       {/* Widget launcher button */}
-      {shouldShowWidgetButton && !shouldShowContainer && (
+      {shouldShowWidgetButton && (
         <button
           type="button"
-          aria-label="Open chat"
-          onClick={() => setIsOpen(true)}
+          aria-label={isOpen ? "Close chat" : "Open chat"}
+          onClick={() => setIsOpen(!isOpen)}
           style={{
             ...popoverPositionStyle(),
             width: (chatbot as any).widgetSize || '60px',
@@ -423,22 +533,27 @@ export default function ChatPage() {
             border: `${(chatbot as any).widgetBorderWidth || '0px'} solid ${(chatbot as any).widgetBorderColor || 'transparent'}`,
             background: (chatbot as any).widgetBackgroundColor || chatbot.primaryColor,
             boxShadow: (chatbot as any).widgetShadowBlur ? `0 0 ${(chatbot as any).widgetShadowBlur} ${(chatbot as any).widgetShadowColor || 'rgba(0,0,0,0.2)'}` : undefined,
-            zIndex: (chatbot as any).widgetZIndex || 9999,
+            zIndex: ((chatbot as any).widgetZIndex || 9999) + 1, // Higher than popover to stay on top
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            cursor: 'pointer'
           }}
         >
-          {(() => {
-            const avatarType = chatbot?.avatarType || 'icon'
-            if (avatarType === 'image' && chatbot?.avatarImageUrl) {
-              return <img src={chatbot.avatarImageUrl} alt="Chat" style={{ width: '60%', height: '60%', borderRadius: '50%', objectFit: 'cover' }} />
-            }
-            const IconName = (chatbot?.avatarIcon || 'Bot') as string
-            const IconComponent = (Icons as any)[IconName] || Bot
-            const iconColor = chatbot?.avatarIconColor || '#ffffff'
-            return <IconComponent className="h-6 w-6" style={{ color: iconColor }} />
-          })()}
+          {isOpen ? (
+            <X className="h-6 w-6" style={{ color: chatbot?.avatarIconColor || '#ffffff' }} />
+          ) : (
+            (() => {
+              const avatarType = chatbot?.avatarType || 'icon'
+              if (avatarType === 'image' && chatbot?.avatarImageUrl) {
+                return <img src={chatbot.avatarImageUrl} alt="Chat" style={{ width: '60%', height: '60%', borderRadius: '50%', objectFit: 'cover' }} />
+              }
+              const IconName = (chatbot?.avatarIcon || 'Bot') as string
+              const IconComponent = (Icons as any)[IconName] || Bot
+              const iconColor = chatbot?.avatarIconColor || '#ffffff'
+              return <IconComponent className="h-6 w-6" style={{ color: iconColor }} />
+            })()
+          )}
         </button>
       )}
 
@@ -469,7 +584,9 @@ export default function ChatPage() {
           borderBottomWidth: (chatbot as any).headerBorderEnabled === false ? 0 : (parseInt((chatbot.borderWidth || '1').toString()) || 1),
           backgroundColor: chatbot.headerBgColor || chatbot.primaryColor,
           color: chatbot.headerFontColor || 'white',
-          fontFamily: chatbot.headerFontFamily || chatbot.fontFamily
+          fontFamily: chatbot.headerFontFamily || chatbot.fontFamily,
+          borderTopLeftRadius: chatbot.chatWindowBorderRadius || chatbot.borderRadius,
+          borderTopRightRadius: chatbot.chatWindowBorderRadius || chatbot.borderRadius
         }}
       >
         {((chatbot as any).headerShowAvatar !== false) && (() => {
@@ -512,49 +629,83 @@ export default function ChatPage() {
       {/* Messages */}
       <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
         <div className="space-y-4">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              {message.role === 'assistant' && (() => {
-                const avatarType = chatbot.avatarType || 'icon'
-                if (avatarType === 'image' && chatbot.avatarImageUrl) {
-                  return (
-                    <img 
-                      src={chatbot.avatarImageUrl} 
-                      alt={chatbot.name}
-                      className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none'
-                      }}
-                    />
-                  )
-                } else {
-                  const IconName = chatbot.avatarIcon || 'Bot'
-                  const IconComponent = (Icons as any)[IconName] || Bot
-                  const iconColor = chatbot.avatarIconColor || '#ffffff'
-                  const bgColor = chatbot.avatarBackgroundColor || chatbot.primaryColor || '#3b82f6'
-                  return (
-                    <div 
-                      className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: bgColor }}
-                    >
-                      <IconComponent className="h-5 w-5" style={{ color: iconColor }} />
+          {messages.map((message) => {
+            const showAvatar = chatbot.showMessageAvatar !== undefined ? chatbot.showMessageAvatar : true
+            const showName = chatbot.showMessageName !== undefined ? chatbot.showMessageName : false
+            const namePosition = chatbot.messageNamePosition || 'top-of-message'
+            const displayName = chatbot.messageName || chatbot.headerTitle || chatbot.name || 'Assistant'
+            
+            return (
+              <div key={message.id} className={message.role === 'user' ? 'flex flex-col items-end' : 'flex flex-col items-start'}>
+                {/* Message Name - Top of Message */}
+                {showName && message.role === 'assistant' && namePosition === 'top-of-message' && (
+                  <div className="mb-1 px-1">
+                    <span className="text-xs font-medium" style={{ color: chatbot.fontColor || '#000000' }}>
+                      {displayName}
+                    </span>
+                  </div>
+                )}
+                
+                <div className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  {/* Avatar with Name on Top */}
+                  {message.role === 'assistant' && showAvatar && (
+                    <div className="flex flex-col items-center">
+                      {/* Message Name - Top of Avatar */}
+                      {showName && namePosition === 'top-of-avatar' && (
+                        <div className="mb-1">
+                          <span className="text-xs font-medium" style={{ color: chatbot.fontColor || '#000000' }}>
+                            {displayName}
+                          </span>
+                        </div>
+                      )}
+                      {(() => {
+                        const avatarType = chatbot.avatarType || 'icon'
+                        if (avatarType === 'image' && chatbot.avatarImageUrl) {
+                          return (
+                            <img 
+                              src={chatbot.avatarImageUrl} 
+                              alt={chatbot.name}
+                              className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none'
+                              }}
+                            />
+                          )
+                        } else {
+                          const IconName = chatbot.avatarIcon || 'Bot'
+                          const IconComponent = (Icons as any)[IconName] || Bot
+                          const iconColor = chatbot.avatarIconColor || '#ffffff'
+                          const bgColor = chatbot.avatarBackgroundColor || chatbot.primaryColor || '#3b82f6'
+                          return (
+                            <div 
+                              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                              style={{ backgroundColor: bgColor }}
+                            >
+                              <IconComponent className="h-5 w-5" style={{ color: iconColor }} />
+                            </div>
+                          )
+                        }
+                      })()}
                     </div>
-                  )
-                }
-              })()}
-              <div
-                className={`max-w-[80%] rounded-lg p-3 ${
+                  )}
+                  {message.role === 'assistant' && !showAvatar && showName && namePosition === 'top-of-avatar' && (
+                    <div className="mb-1">
+                      <span className="text-xs font-medium" style={{ color: chatbot.fontColor || '#000000' }}>
+                        {displayName}
+                      </span>
+                    </div>
+                  )}
+                  <div
+                className={`max-w-[80%] rounded-lg ${
                   message.role === 'user'
                     ? 'rounded-br-none'
                     : 'rounded-bl-none'
                 }`}
                 style={{
+                  padding: (chatbot as any).bubblePadding || '12px',
                   backgroundColor: message.role === 'user' 
-                    ? chatbot.primaryColor 
-                    : '#f3f4f6',
+                    ? (chatbot.userMessageBackgroundColor || chatbot.primaryColor)
+                    : (chatbot.botMessageBackgroundColor || '#f3f4f6'),
                   color: message.role === 'user' ? 'white' : chatbot.fontColor,
                   borderColor: chatbot.bubbleBorderColor || chatbot.borderColor,
                   borderWidth: chatbot.bubbleBorderWidth || chatbot.borderWidth,
@@ -618,16 +769,18 @@ export default function ChatPage() {
                   {message.timestamp.toLocaleTimeString()}
                 </div>
               </div>
-              {message.role === 'user' && (
-                <div 
-                  className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: '#e5e7eb' }}
-                >
-                  <User className="h-5 w-5" style={{ color: chatbot.fontColor }} />
+                  {message.role === 'user' && showAvatar && (
+                    <div 
+                      className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: '#e5e7eb' }}
+                    >
+                      <User className="h-5 w-5" style={{ color: chatbot.fontColor }} />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
+              </div>
+            )
+          })}
           {isLoading && (
             <div className="flex gap-3 justify-start items-center">
               {(() => {
@@ -771,49 +924,106 @@ export default function ChatPage() {
       )}
 
       {/* Input Area */}
-      <form onSubmit={handleSubmit} className="p-4 border-t" style={{ borderColor: chatbot.borderColor, borderWidth: chatbot.borderWidth }}>
+      <form 
+        onSubmit={handleSubmit} 
+        style={{ 
+          paddingLeft: (chatbot as any).footerPaddingX || chatbot.headerPaddingX || '16px',
+          paddingRight: (chatbot as any).footerPaddingX || chatbot.headerPaddingX || '16px',
+          paddingTop: (chatbot as any).footerPaddingY || chatbot.headerPaddingY || '16px',
+          paddingBottom: (chatbot as any).footerPaddingY || chatbot.headerPaddingY || '16px',
+          borderTopColor: (chatbot as any).footerBorderColor || chatbot.borderColor,
+          borderTopWidth: (chatbot as any).footerBorderWidth || chatbot.borderWidth,
+          borderBottomLeftRadius: (chatbot as any).footerBorderRadius || chatbot.chatWindowBorderRadius || chatbot.borderRadius,
+          borderBottomRightRadius: (chatbot as any).footerBorderRadius || chatbot.chatWindowBorderRadius || chatbot.borderRadius,
+          backgroundColor: (chatbot as any).footerBgColor || chatbot.messageBoxColor
+        }}
+      >
         <div className="flex gap-2">
-          {chatbot.enableFileUpload && (
-            <>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*,video/*"
-                multiple
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => fileInputRef.current?.click()}
+          {(() => {
+            const fileUploadLayout = (chatbot as any).fileUploadLayout || 'attach-first'
+            const attachButton = chatbot.enableFileUpload ? (
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,video/*"
+                  multiple
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isLoading}
+                >
+                  <Paperclip className="h-4 w-4" />
+                </Button>
+              </>
+            ) : null
+
+            const inputField = (
+              <Input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Type your message..."
                 disabled={isLoading}
+                className="flex-1"
+                style={{
+                  fontFamily: chatbot.fontFamily,
+                  fontSize: chatbot.fontSize,
+                  color: (chatbot as any).footerInputFontColor || chatbot.fontColor,
+                  backgroundColor: (chatbot as any).footerInputBgColor || chatbot.messageBoxColor,
+                  borderColor: (chatbot as any).footerInputBorderColor || chatbot.borderColor,
+                  borderWidth: (chatbot as any).footerInputBorderWidth || chatbot.borderWidth,
+                  borderRadius: (chatbot as any).footerInputBorderRadius || chatbot.borderRadius,
+                }}
+              />
+            )
+
+            const sendButtonIconName = (chatbot as any).sendButtonIcon || 'Send'
+            const SendIconComponent = (Icons as any)[sendButtonIconName] || Send
+            const sendButtonRounded = (chatbot as any).sendButtonRounded !== undefined ? (chatbot as any).sendButtonRounded : false
+            const sendButtonBgColor = (chatbot as any).sendButtonBgColor || chatbot.primaryColor
+            const sendButtonIconColor = (chatbot as any).sendButtonIconColor || '#ffffff'
+            const sendButtonShadowColor = (chatbot as any).sendButtonShadowColor || '#000000'
+            const sendButtonShadowBlur = (chatbot as any).sendButtonShadowBlur || '0px'
+            
+            const sendButton = (
+              <Button
+                type="submit"
+                disabled={(!input.trim() && attachments.length === 0) || isLoading}
+                style={{
+                  backgroundColor: sendButtonBgColor,
+                  borderRadius: sendButtonRounded ? '50%' : undefined,
+                  boxShadow: sendButtonShadowBlur !== '0px' ? `0 0 ${sendButtonShadowBlur} ${sendButtonShadowColor}` : undefined,
+                }}
               >
-                <Paperclip className="h-4 w-4" />
+                <SendIconComponent className="h-4 w-4" style={{ color: sendButtonIconColor }} />
               </Button>
-            </>
-          )}
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type your message..."
-            disabled={isLoading}
-            className="flex-1"
-            style={{
-              fontFamily: chatbot.fontFamily,
-              fontSize: chatbot.fontSize,
-              color: chatbot.fontColor,
-              borderColor: chatbot.borderColor,
-            }}
-          />
-          <Button
-            type="submit"
-            disabled={(!input.trim() && attachments.length === 0) || isLoading}
-            style={{ backgroundColor: chatbot.primaryColor }}
-          >
-            <Send className="h-4 w-4" />
-          </Button>
+            )
+
+            // Render based on layout
+            if (fileUploadLayout === 'input-first') {
+              return (
+                <>
+                  {inputField}
+                  {attachButton}
+                  {sendButton}
+                </>
+              )
+            } else {
+              // attach-first (default)
+              return (
+                <>
+                  {attachButton}
+                  {inputField}
+                  {sendButton}
+                </>
+              )
+            }
+          })()}
         </div>
       </form>
           </div>

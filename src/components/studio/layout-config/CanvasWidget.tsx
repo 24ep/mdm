@@ -294,6 +294,10 @@ export function CanvasWidget({
 
       {isFilter ? (
         <>
+          {/* Selected border indicator - square on top of border */}
+          {isSelected && (
+            <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 bg-blue-500 dark:bg-blue-400 border-2 border-white dark:border-gray-900 z-30" />
+          )}
           {isSelected && !isLocked && (
             <ResizeHandles
               widget={widget}
@@ -309,6 +313,10 @@ export function CanvasWidget({
         <div className={`w-full h-full ${isSelected ? 'border border-blue-500/70 dark:border-blue-400/70' : ''} rounded-lg shadow-lg overflow-hidden flex flex-col relative`} style={{
           backgroundColor: widget.properties?.backgroundColor || undefined,
         }}>
+          {/* Selected border indicator - square on top of border */}
+          {isSelected && (
+            <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 bg-blue-500 dark:bg-blue-400 border-2 border-white dark:border-gray-900 z-30" />
+          )}
           {isSelected && !isLocked && (
             <ResizeHandles
               widget={widget}

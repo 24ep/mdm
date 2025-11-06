@@ -6,7 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreVertical, Trash } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ColorPickerPopover } from './ColorPickerPopover'
+import { ColorInput } from './ColorInput'
 import toast from 'react-hot-toast'
 import { UnifiedPage } from './types'
 import { SpacesEditorPage } from '@/lib/space-studio-manager'
@@ -46,44 +46,16 @@ export function SeparatorItem({
           <div className="p-2 space-y-2">
             <div className="space-y-1">
               <Label className="text-xs">Line color</Label>
-              <div className="relative w-28">
-                <ColorPickerPopover
-                  value={(page as any).separatorColor || '#dedede'}
-                  onChange={(color) => {
-                    setAllPages(prev => prev.map(p => p.id === page.id ? { ...p, separatorColor: color } as any : p))
-                  }}
-                  allowImageVideo={true}
-                >
-                  <button
-                    type="button"
-                    className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                    style={{
-                      backgroundColor: String((page as any).separatorColor || '').startsWith('#') || String((page as any).separatorColor || '').startsWith('rgb')
-                        ? ((page as any).separatorColor || '#dedede') as string
-                        : (String((page as any).separatorColor || '').startsWith('linear-gradient') || String((page as any).separatorColor || '').startsWith('radial-gradient') || String((page as any).separatorColor || '').startsWith('url('))
-                        ? 'transparent'
-                        : '#dedede',
-                      border: 'none',
-                      outline: 'none',
-                      backgroundImage: (String((page as any).separatorColor || '').startsWith('linear-gradient') || String((page as any).separatorColor || '').startsWith('radial-gradient') || String((page as any).separatorColor || '').startsWith('url('))
-                        ? ((page as any).separatorColor as string)
-                        : 'none',
-                      backgroundSize: String((page as any).separatorColor || '').startsWith('url(') ? 'cover' : 'auto'
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </ColorPickerPopover>
-                <Input
-                  type="text"
-                  value={(page as any).separatorColor || '#dedede'}
-                  onChange={(e) => {
-                    const val = e.target.value
-                    setAllPages(prev => prev.map(p => p.id === page.id ? { ...p, separatorColor: val } as any : p))
-                  }}
-                  className="h-7 text-xs pl-7"
-                  placeholder="#dedede"
-                />
-              </div>
+              <ColorInput
+                value={(page as any).separatorColor || '#dedede'}
+                onChange={(color) => {
+                  setAllPages(prev => prev.map(p => p.id === page.id ? { ...p, separatorColor: color } as any : p))
+                }}
+                allowImageVideo={true}
+                className="relative w-28"
+                placeholder="#dedede"
+                inputClassName="h-7 text-xs pl-7"
+              />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">

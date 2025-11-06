@@ -9,6 +9,7 @@ import { Plus, Eye, Minus, RotateCcw } from 'lucide-react'
 import { PlacedWidget } from './widgets'
 import { ComponentStyle } from './types'
 import { isUsingGlobalStyle } from './globalStyleUtils'
+import { ColorInput } from './ColorInput'
 
 // Custom square with shadow icon
 const SquareWithShadow = ({ className }: { className?: string }) => (
@@ -168,11 +169,13 @@ export function EffectsSection({
           </div>
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Color</Label>
-            <Input
-              type="color"
+            <ColorInput
               value={widget.properties?.shadowColor || '#000000'}
-              onChange={(e) => updateProperty('shadowColor', e.target.value)}
-              className="h-7 text-xs p-0 cursor-pointer"
+              onChange={(color) => updateProperty('shadowColor', color)}
+              allowImageVideo={false}
+              className="relative"
+              placeholder="#000000"
+              inputClassName="h-7 text-xs pl-7"
             />
           </div>
           <div className="space-y-1">

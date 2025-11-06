@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ChevronDown, PanelTop, PanelLeft, PanelBottom } from 'lucide-react'
 import { ComponentConfig } from './types'
+import { ColorInput } from './ColorInput'
 
 interface ComponentSettingsDialogProps {
   open: boolean
@@ -66,11 +67,25 @@ export function ComponentSettingsDialog({
                   </div>
                   <div>
                     <Label className={isMobileViewport ? "text-sm" : "text-xs"}>Background</Label>
-                    <Input type="color" className={isMobileViewport ? "h-10" : "h-8"} value={componentConfigs.top?.backgroundColor || '#ffffff'} onChange={(e) => handleComponentConfigUpdate('top', { backgroundColor: e.target.value })} />
+                    <ColorInput
+                      value={componentConfigs.top?.backgroundColor || '#ffffff'}
+                      onChange={(color) => handleComponentConfigUpdate('top', { backgroundColor: color })}
+                      allowImageVideo={false}
+                      className="relative"
+                      placeholder="#ffffff"
+                      inputClassName={isMobileViewport ? "h-10 text-xs pl-7" : "h-8 text-xs pl-7"}
+                    />
                   </div>
                   <div>
                     <Label className={isMobileViewport ? "text-sm" : "text-xs"}>Text Color</Label>
-                    <Input type="color" className={isMobileViewport ? "h-10" : "h-8"} value={componentConfigs.top?.textColor || '#374151'} onChange={(e) => handleComponentConfigUpdate('top', { textColor: e.target.value })} />
+                    <ColorInput
+                      value={componentConfigs.top?.textColor || '#374151'}
+                      onChange={(color) => handleComponentConfigUpdate('top', { textColor: color })}
+                      allowImageVideo={false}
+                      className="relative"
+                      placeholder="#374151"
+                      inputClassName={isMobileViewport ? "h-10 text-xs pl-7" : "h-8 text-xs pl-7"}
+                    />
                   </div>
                   <div>
                     <Label className={isMobileViewport ? "text-sm" : "text-xs"}>Position</Label>
@@ -129,11 +144,25 @@ export function ComponentSettingsDialog({
                   </div>
                   <div>
                     <Label className={isMobileViewport ? "text-sm" : "text-xs"}>Background</Label>
-                    <Input type="color" className={isMobileViewport ? "h-10" : "h-8"} value={componentConfigs.sidebar.backgroundColor || '#ffffff'} onChange={(e) => handleComponentConfigUpdate('sidebar', { backgroundColor: e.target.value })} />
+                    <ColorInput
+                      value={componentConfigs.sidebar.backgroundColor || '#ffffff'}
+                      onChange={(color) => handleComponentConfigUpdate('sidebar', { backgroundColor: color })}
+                      allowImageVideo={false}
+                      className="relative"
+                      placeholder="#ffffff"
+                      inputClassName={isMobileViewport ? "h-10 text-xs pl-7" : "h-8 text-xs pl-7"}
+                    />
                   </div>
                   <div>
                     <Label className={isMobileViewport ? "text-sm" : "text-xs"}>Text Color</Label>
-                    <Input type="color" className={isMobileViewport ? "h-10" : "h-8"} value={componentConfigs.sidebar.textColor || '#374151'} onChange={(e) => handleComponentConfigUpdate('sidebar', { textColor: e.target.value })} />
+                    <ColorInput
+                      value={componentConfigs.sidebar.textColor || '#374151'}
+                      onChange={(color) => handleComponentConfigUpdate('sidebar', { textColor: color })}
+                      allowImageVideo={false}
+                      className="relative"
+                      placeholder="#374151"
+                      inputClassName={isMobileViewport ? "h-10 text-xs pl-7" : "h-8 text-xs pl-7"}
+                    />
                   </div>
                 </div>
               </div>
@@ -172,11 +201,25 @@ export function ComponentSettingsDialog({
                   </div>
                   <div>
                     <Label className={isMobileViewport ? "text-sm" : "text-xs"}>Background</Label>
-                    <Input type="color" className={isMobileViewport ? "h-10" : "h-8"} value={componentConfigs.footer?.backgroundColor || '#f9fafb'} onChange={(e) => handleComponentConfigUpdate('footer', { backgroundColor: e.target.value })} />
+                    <ColorInput
+                      value={componentConfigs.footer?.backgroundColor || '#f9fafb'}
+                      onChange={(color) => handleComponentConfigUpdate('footer', { backgroundColor: color })}
+                      allowImageVideo={false}
+                      className="relative"
+                      placeholder="#f9fafb"
+                      inputClassName={isMobileViewport ? "h-10 text-xs pl-7" : "h-8 text-xs pl-7"}
+                    />
                   </div>
                   <div>
                     <Label className={isMobileViewport ? "text-sm" : "text-xs"}>Text Color</Label>
-                    <Input type="color" className={isMobileViewport ? "h-10" : "h-8"} value={componentConfigs.footer?.textColor || '#6b7280'} onChange={(e) => handleComponentConfigUpdate('footer', { textColor: e.target.value })} />
+                    <ColorInput
+                      value={componentConfigs.footer?.textColor || '#6b7280'}
+                      onChange={(color) => handleComponentConfigUpdate('footer', { textColor: color })}
+                      allowImageVideo={false}
+                      className="relative"
+                      placeholder="#6b7280"
+                      inputClassName={isMobileViewport ? "h-10 text-xs pl-7" : "h-8 text-xs pl-7"}
+                    />
                   </div>
                 </div>
               </div>

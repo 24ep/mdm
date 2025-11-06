@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { ComponentConfig } from './types'
+import { ColorInput } from './ColorInput'
 
 interface ComponentPropertiesProps {
   config: ComponentConfig
@@ -70,47 +71,27 @@ export function ComponentProperties({
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
             <Label className="text-xs">Background</Label>
-            <div className="relative">
-              <Input
-                type="color"
-                value={config.backgroundColor || '#ffffff'}
-                onChange={(e) => {
-                  handleComponentConfigUpdate(selectedComponent, { backgroundColor: e.target.value })
-                }}
-                className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 p-0 border-0 cursor-pointer rounded-none"
-                style={{ appearance: 'none', WebkitAppearance: 'none', border: 'none', outline: 'none' }}
-              />
-              <Input
-                type="text"
-                value={config.backgroundColor || '#ffffff'}
-                onChange={(e) => {
-                  handleComponentConfigUpdate(selectedComponent, { backgroundColor: e.target.value })
-                }}
-                className="h-7 text-xs pl-7"
-              />
-            </div>
+            <ColorInput
+              value={config.backgroundColor || '#ffffff'}
+              onChange={(color) => {
+                handleComponentConfigUpdate(selectedComponent, { backgroundColor: color })
+              }}
+              allowImageVideo={false}
+              className="relative"
+              inputClassName="h-7 text-xs pl-7"
+            />
           </div>
           <div className="space-y-1">
             <Label className="text-xs">Text</Label>
-            <div className="relative">
-              <Input
-                type="color"
-                value={config.textColor || '#374151'}
-                onChange={(e) => {
-                  handleComponentConfigUpdate(selectedComponent, { textColor: e.target.value })
-                }}
-                className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 p-0 border-0 cursor-pointer rounded-none"
-                style={{ appearance: 'none', WebkitAppearance: 'none', border: 'none', outline: 'none' }}
-              />
-              <Input
-                type="text"
-                value={config.textColor || '#374151'}
-                onChange={(e) => {
-                  handleComponentConfigUpdate(selectedComponent, { textColor: e.target.value })
-                }}
-                className="h-7 text-xs pl-7"
-              />
-            </div>
+            <ColorInput
+              value={config.textColor || '#374151'}
+              onChange={(color) => {
+                handleComponentConfigUpdate(selectedComponent, { textColor: color })
+              }}
+              allowImageVideo={false}
+              className="relative"
+              inputClassName="h-7 text-xs pl-7"
+            />
           </div>
         </div>
       </div>

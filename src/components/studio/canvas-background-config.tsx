@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { ColorPicker } from '@/components/ui/color-swatch'
+import { ColorInput } from './layout-config/ColorInput'
 import { 
   Palette, 
   Image, 
@@ -154,9 +154,13 @@ export function CanvasBackgroundConfig({ background, onUpdate }: CanvasBackgroun
             <CardTitle className="text-sm">Background Color</CardTitle>
           </CardHeader>
           <CardContent>
-            <ColorPicker
+            <ColorInput
               value={background.color}
               onChange={(color) => onUpdate({ ...background, color })}
+              allowImageVideo={false}
+              className="relative"
+              placeholder="#ffffff"
+              inputClassName="h-8 text-xs pl-7"
             />
           </CardContent>
         </Card>

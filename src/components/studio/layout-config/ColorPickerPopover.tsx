@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { Upload, Video, Image, Grid3x3, Play, Droplet, Sliders, Layers, Plus, Trash2, Move, Minus, GripVertical, Hash, Sparkles, Circle } from 'lucide-react'
+import { Upload, Video, Image, Grid3x3, Play, Droplet, Sliders, Layers, Plus, Trash2, Move, Minus, GripVertical, Hash, Sparkles, Circle, Copy, Check, Eye, Star } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface ColorPickerPopoverProps {
@@ -25,6 +25,32 @@ export function ColorPickerPopover({
   allowImageVideo = false,
 }: ColorPickerPopoverProps) {
   const [open, setOpen] = useState(false)
+  const [copied, setCopied] = useState(false)
+  
+  // Recent colors stored in localStorage
+  const RECENT_COLORS_KEY = 'color-picker-recent-colors'
+  const FAVORITE_COLORS_KEY = 'color-picker-favorite-colors'
+  const MAX_RECENT_COLORS = 8
+  
+  const getRecentColors = (): string[] => {
+    if (typeof window === 'undefined') return []
+    try {
+      const stored = localStorage.getItem(RECENT_COLORS_KEY)
+      return stored ? JSON.parse(stored) : []
+    } catch {
+      return []
+    }
+  }
+  
+  const getFavoriteColors = (): string[] => {
+    if (typeof window === 'undefined') return []
+    try {
+      const stored = localStorage.getItem(FAVORITE_COLORS_KEY)
+      return stored ? JSON.parse(stored) : []
+    } catch {
+      return []
+    }
+  }
   
   // Pattern definitions with icons and CSS
   const patterns = [
@@ -124,6 +150,64 @@ export function ColorPickerPopover({
     return rgba
   }
 
+  // Helper to convert hex to RGB
+  const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : null
+  }
+
+  // Helper to convert RGB to HSL
+  const rgbToHsl = (r: number, g: number, b: number): { h: number; s: number; l: number } => {
+    r /= 255
+    g /= 255
+    b /= 255
+    const max = Math.max(r, g, b)
+    const min = Math.min(r, g, b)
+    let h = 0, s = 0
+    const l = (max + min) / 2
+
+    if (max !== min) {
+      const d = max - min
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+      switch (max) {
+        case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break
+        case g: h = ((b - r) / d + 2) / 6; break
+        case b: h = ((r - g) / d + 4) / 6; break
+      }
+    }
+
+    return {
+      h: Math.round(h * 360),
+      s: Math.round(s * 100),
+      l: Math.round(l * 100)
+    }
+  }
+
+  // Get color in different formats
+  const getColorFormats = () => {
+    const baseColor = extractBaseColor(solidColor)
+    const rgb = hexToRgb(baseColor)
+    if (!rgb) return { hex: baseColor, rgb: '', hsl: '' }
+    
+    const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b)
+    const rgbStr = opacity < 1 
+      ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity.toFixed(2)})`
+      : `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`
+    const hslStr = opacity < 1
+      ? `hsla(${hsl.h}, ${hsl.s}%, ${hsl.l}%, ${opacity.toFixed(2)})`
+      : `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`
+    
+    return {
+      hex: opacity < 1 ? hexToRgba(baseColor, opacity) : baseColor,
+      rgb: rgbStr,
+      hsl: hslStr
+    }
+  }
+
   // Helper to extract opacity from rgba/rgb
   const extractOpacity = (color: string): number => {
     if (color.startsWith('rgba')) {
@@ -145,6 +229,104 @@ export function ColorPickerPopover({
   }
 
   const parsed = parseValue(value)
+  
+  // Recent colors functions (must be after extractBaseColor is defined)
+  const addToRecentColors = (color: string) => {
+    // Only add solid colors (hex/rgb) to recent colors, not gradients/patterns
+    if (color.startsWith('#') || color.startsWith('rgb')) {
+      const baseColor = extractBaseColor(color)
+      // Use functional update to avoid stale closure
+      setRecentColors((prevColors) => {
+        const updated = [baseColor, ...prevColors.filter(c => c !== baseColor)].slice(0, MAX_RECENT_COLORS)
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem(RECENT_COLORS_KEY, JSON.stringify(updated))
+          } catch {
+            // Ignore localStorage errors
+          }
+        }
+        return updated
+      })
+    }
+  }
+  
+  const handleColorChange = (color: string) => {
+    onChange(color)
+    addToRecentColors(color)
+  }
+  
+  const copyColorToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(value)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea')
+      textArea.value = value
+      textArea.style.position = 'fixed'
+      textArea.style.opacity = '0'
+      document.body.appendChild(textArea)
+      textArea.select()
+      try {
+        document.execCommand('copy')
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      } catch {
+        // Ignore copy errors
+      }
+      document.body.removeChild(textArea)
+    }
+  }
+  
+  // Toggle favorite color
+  const toggleFavorite = (color: string) => {
+    const baseColor = extractBaseColor(color)
+    const isFavorite = favoriteColors.includes(baseColor)
+    const updated = isFavorite
+      ? favoriteColors.filter(c => c !== baseColor)
+      : [...favoriteColors, baseColor].slice(0, 12) // Max 12 favorites
+    
+    setFavoriteColors(updated)
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(FAVORITE_COLORS_KEY, JSON.stringify(updated))
+      } catch {
+        // Ignore localStorage errors
+      }
+    }
+  }
+  
+  const isFavorite = (color: string): boolean => {
+    const baseColor = extractBaseColor(color)
+    return favoriteColors.includes(baseColor)
+  }
+  
+  // Eye dropper tool
+  const startEyeDropper = async () => {
+    if (!('EyeDropper' in window)) {
+      // Fallback: show message or use alternative method
+      alert('Eye dropper is not supported in your browser. Please use Chrome, Edge, or Safari 18+')
+      return
+    }
+    
+    try {
+      setIsPickingColor(true)
+      // @ts-ignore - EyeDropper API
+      const eyeDropper = new EyeDropper()
+      const result = await eyeDropper.open()
+      if (result.sRGBHex) {
+        handleSolidColorChange(result.sRGBHex)
+      }
+    } catch (err) {
+      // User cancelled or error occurred
+      if (err instanceof Error && err.name !== 'AbortError') {
+        console.error('Eye dropper error:', err)
+      }
+    } finally {
+      setIsPickingColor(false)
+    }
+  }
   // If image/video is not allowed but value is image/video, default to solid
   const initialType = parsed.type
   const safeType = (!allowImageVideo && (initialType === 'image' || initialType === 'video')) ? 'solid' : initialType
@@ -152,6 +334,23 @@ export function ColorPickerPopover({
   const baseSolidColor = parsed.type === 'solid' ? extractBaseColor(parsed.extracted) : '#ffffff'
   const [solidColor, setSolidColor] = useState(baseSolidColor)
   const [opacity, setOpacity] = useState(parsed.type === 'solid' ? extractOpacity(parsed.extracted) : 1)
+  const [recentColors, setRecentColors] = useState<string[]>(getRecentColors())
+  const [favoriteColors, setFavoriteColors] = useState<string[]>(getFavoriteColors())
+  const [showColorFormats, setShowColorFormats] = useState(false)
+  const [isPickingColor, setIsPickingColor] = useState(false)
+  // Default to 'recent' if available, otherwise 'quick'
+  const [selectedColorSet, setSelectedColorSet] = useState<string>(
+    recentColors.length > 0 ? 'recent' : 'quick'
+  )
+
+  // Auto-switch to valid set if current becomes unavailable
+  React.useEffect(() => {
+    if (selectedColorSet === 'recent' && recentColors.length === 0) {
+      setSelectedColorSet('quick')
+    } else if (selectedColorSet === 'favorites' && favoriteColors.length === 0) {
+      setSelectedColorSet('quick')
+    }
+  }, [selectedColorSet, recentColors.length, favoriteColors.length])
   
   // Parse gradient into editable structure
   const parseGradient = (gradStr: string) => {
@@ -229,6 +428,33 @@ export function ColorPickerPopover({
   const [videoUrl, setVideoUrl] = useState(parsed.type === 'video' ? parsed.extracted : '')
   const isInternalUpdateRef = React.useRef(false)
   
+  // Preset color palettes
+  const colorPalettes: Record<string, string[]> = {
+    'Material Design': [
+      '#F44336', '#E91E63', '#9C27B0', '#673AB7', '#3F51B5',
+      '#2196F3', '#03A9F4', '#00BCD4', '#009688', '#4CAF50',
+      '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800',
+      '#FF5722', '#795548', '#9E9E9E', '#607D8B', '#000000', '#FFFFFF'
+    ],
+    'Tailwind': [
+      '#EF4444', '#F97316', '#F59E0B', '#EAB308', '#84CC16',
+      '#22C55E', '#10B981', '#14B8A6', '#06B6D4', '#0EA5E9',
+      '#3B82F6', '#6366F1', '#8B5CF6', '#A855F7', '#D946EF',
+      '#EC4899', '#F43F5E', '#6B7280', '#64748B', '#000000', '#FFFFFF'
+    ],
+    'Pastel': [
+      '#FFB3BA', '#FFDFBA', '#FFFFBA', '#BAFFC9', '#BAE1FF',
+      '#E0BBE4', '#FEC8D8', '#FFDFD3', '#D5F4E6', '#F0E6FF',
+      '#FFE5F1', '#E8F5E9', '#FFF3E0', '#E1F5FE', '#F3E5F5',
+      '#FFE0B2', '#C5E1A5', '#B2EBF2', '#F8BBD0', '#FFFFFF'
+    ],
+    'Grayscale': [
+      '#000000', '#1A1A1A', '#333333', '#4D4D4D', '#666666',
+      '#808080', '#999999', '#B3B3B3', '#CCCCCC', '#E6E6E6',
+      '#FFFFFF'
+    ]
+  }
+  
   // Build gradient string from config
   const buildGradientString = (config: typeof gradientConfig) => {
     const stopsStr = config.stops.map(s => `${s.color} ${s.position}%`).join(', ')
@@ -277,9 +503,9 @@ export function ColorPickerPopover({
     // Apply current opacity
     if (opacity < 1) {
       const rgbaColor = hexToRgba(baseColor, opacity)
-      onChange(rgbaColor)
+      handleColorChange(rgbaColor)
     } else {
-      onChange(baseColor)
+      handleColorChange(baseColor)
     }
   }
 
@@ -288,16 +514,16 @@ export function ColorPickerPopover({
     setOpacity(newOpacity)
     if (newOpacity < 1) {
       const rgbaColor = hexToRgba(solidColor, newOpacity)
-      onChange(rgbaColor)
+      handleColorChange(rgbaColor)
     } else {
-      onChange(solidColor)
+      handleColorChange(solidColor)
     }
   }
 
   const handleGradientChange = (config: typeof gradientConfig) => {
     isInternalUpdateRef.current = true
     setGradientConfig(config)
-    onChange(buildGradientString(config))
+    handleColorChange(buildGradientString(config))
   }
   
   const addGradientStop = () => {
@@ -330,21 +556,21 @@ export function ColorPickerPopover({
     const selectedPattern = patterns.find((p: typeof patterns[0]) => p.id === patternId) || patterns[0]
     setPatternValue(selectedPattern.id)
     // Store the pattern ID, parent can use it to generate the CSS
-    onChange(`pattern(${selectedPattern.id})`)
+    handleColorChange(`pattern(${selectedPattern.id})`)
   }
 
   const handleImageChange = (url: string) => {
     isInternalUpdateRef.current = true
     setImageUrl(url)
     const finalUrl = url.startsWith('http') || url.startsWith('data:') ? `url(${url})` : url
-    onChange(finalUrl)
+    handleColorChange(finalUrl)
   }
 
   const handleVideoChange = (url: string) => {
     isInternalUpdateRef.current = true
     setVideoUrl(url)
     const finalUrl = url.startsWith('http') || url.startsWith('data:') ? `video(${url})` : url
-    onChange(finalUrl)
+    handleColorChange(finalUrl)
   }
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -406,39 +632,184 @@ export function ColorPickerPopover({
           </TabsList>
 
           <TabsContent value="solid" className="p-4 space-y-2 mt-0">
-            {/* Color Swatch Grid */}
+            {/* Color Set Selector */}
             <div className="space-y-1">
-              <Label className="text-xs">Quick Colors</Label>
-              <div className="grid grid-cols-8 gap-1.5">
-                {[
-                  '#000000', '#ffffff', '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e',
-                  '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7',
-                  '#d946ef', '#ec4899', '#f43f5e', '#6b7280', '#64748b', '#71717a', '#737373', '#78716c',
-                  '#1e40af', '#dc2626', '#16a34a', '#ca8a04', '#9333ea', '#ea580c', '#0891b2', '#be123c'
-                ].map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => handleSolidColorChange(color)}
-                    className={`h-6 w-6 rounded border-2 transition-all hover:scale-110 ${
-                      solidColor.toLowerCase() === color.toLowerCase()
-                        ? 'border-blue-500 ring-2 ring-blue-500/20'
-                        : 'border-gray-300 hover:border-gray-400'
-                    }`}
-                    style={{ backgroundColor: color }}
-                    title={color}
-                  >
-                    {solidColor.toLowerCase() === color.toLowerCase() && (
-                      <div className="w-2 h-2 bg-white rounded-full mx-auto shadow-sm" />
-                    )}
-                  </button>
-                ))}
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Color Set</Label>
+                <Select value={selectedColorSet} onValueChange={setSelectedColorSet}>
+                  <SelectTrigger className="h-7 text-xs w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="quick">Quick Colors</SelectItem>
+                    {recentColors.length > 0 && <SelectItem value="recent">Recent Colors</SelectItem>}
+                    {favoriteColors.length > 0 && <SelectItem value="favorites">Favorites</SelectItem>}
+                    {Object.keys(colorPalettes).map((name) => (
+                      <SelectItem key={name} value={name.toLowerCase().replace(/\s+/g, '-')}>
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+
+              {/* Quick Colors */}
+              {selectedColorSet === 'quick' && (
+                <div className="grid grid-cols-8 gap-1.5">
+                  {[
+                    '#000000', '#ffffff', '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e',
+                    '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7',
+                    '#d946ef', '#ec4899', '#f43f5e', '#6b7280', '#64748b', '#71717a', '#737373', '#78716c',
+                    '#1e40af', '#dc2626', '#16a34a', '#ca8a04', '#9333ea', '#ea580c', '#0891b2', '#be123c'
+                  ].map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => handleSolidColorChange(color)}
+                      className={`h-6 w-6 rounded border-2 transition-all hover:scale-110 ${
+                        solidColor.toLowerCase() === color.toLowerCase()
+                          ? 'border-blue-500 ring-2 ring-blue-500/20'
+                          : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                      style={{ backgroundColor: color }}
+                      title={color}
+                    >
+                      {solidColor.toLowerCase() === color.toLowerCase() && (
+                        <div className="w-2 h-2 bg-white rounded-full mx-auto shadow-sm" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Recent Colors */}
+              {selectedColorSet === 'recent' && recentColors.length > 0 && (
+                <div className="grid grid-cols-8 gap-1.5">
+                  {recentColors.map((color, index) => (
+                    <button
+                      key={`recent-${color}-${index}`}
+                      type="button"
+                      onClick={() => handleSolidColorChange(color)}
+                      className={`h-6 w-6 rounded border-2 transition-all hover:scale-110 ${
+                        solidColor.toLowerCase() === color.toLowerCase()
+                          ? 'border-blue-500 ring-2 ring-blue-500/20'
+                          : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                      style={{ backgroundColor: color }}
+                      title={color}
+                    >
+                      {solidColor.toLowerCase() === color.toLowerCase() && (
+                        <div className="w-2 h-2 bg-white rounded-full mx-auto shadow-sm" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Favorite Colors */}
+              {selectedColorSet === 'favorites' && favoriteColors.length > 0 && (
+                <div className="grid grid-cols-8 gap-1.5">
+                  {favoriteColors.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => handleSolidColorChange(color)}
+                      className={`h-6 w-6 rounded border-2 transition-all hover:scale-110 relative ${
+                        solidColor.toLowerCase() === color.toLowerCase()
+                          ? 'border-blue-500 ring-2 ring-blue-500/20'
+                          : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                      style={{ backgroundColor: color }}
+                      title={color}
+                    >
+                      {solidColor.toLowerCase() === color.toLowerCase() && (
+                        <div className="w-2 h-2 bg-white rounded-full mx-auto shadow-sm" />
+                      )}
+                      <Star className="absolute -top-1 -right-1 h-3 w-3 fill-yellow-400 text-yellow-400" />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Preset Palettes */}
+              {Object.entries(colorPalettes).map(([name, colors]) => {
+                const paletteKey = name.toLowerCase().replace(/\s+/g, '-')
+                if (selectedColorSet === paletteKey) {
+                  return (
+                    <div key={name} className="grid grid-cols-10 gap-1">
+                      {colors.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => handleSolidColorChange(color)}
+                          className={`h-5 w-5 rounded border transition-all hover:scale-110 ${
+                            solidColor.toLowerCase() === color.toLowerCase()
+                              ? 'border-blue-500 ring-1 ring-blue-500/50'
+                              : 'border-gray-300 hover:border-gray-400'
+                          }`}
+                          style={{ backgroundColor: color }}
+                          title={color}
+                        />
+                      ))}
+                    </div>
+                  )
+                }
+                return null
+              })}
             </div>
 
             {/* Custom Color Input */}
             <div className="space-y-1">
-              <Label className="text-xs">Custom Color</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Custom Color</Label>
+                <div className="flex items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-1.5 text-xs"
+                    onClick={startEyeDropper}
+                    disabled={isPickingColor || !('EyeDropper' in window)}
+                    title="Pick color from screen (Eye dropper)"
+                  >
+                    <Eye className={`h-3 w-3 ${isPickingColor ? 'animate-pulse' : ''}`} />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-1.5 text-xs"
+                    onClick={() => toggleFavorite(solidColor)}
+                    title={isFavorite(solidColor) ? 'Remove from favorites' : 'Add to favorites'}
+                  >
+                    <Star className={`h-3 w-3 ${isFavorite(solidColor) ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-1.5 text-xs"
+                    onClick={() => setShowColorFormats(!showColorFormats)}
+                    title="Show color formats"
+                  >
+                    {showColorFormats ? 'Hide' : 'Formats'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-1.5 text-xs"
+                    onClick={copyColorToClipboard}
+                    title="Copy color value"
+                  >
+                    {copied ? (
+                      <Check className="h-3 w-3" />
+                    ) : (
+                      <Copy className="h-3 w-3" />
+                    )}
+                  </Button>
+                </div>
+              </div>
               <div className="relative">
                 <Input
                   type="color"
@@ -455,6 +826,31 @@ export function ColorPickerPopover({
                   placeholder="#ffffff"
                 />
               </div>
+              
+              {/* Color Format Display */}
+              {showColorFormats && (
+                <div className="space-y-1 pt-1 border-t">
+                  {(() => {
+                    const formats = getColorFormats()
+                    return (
+                      <>
+                        <div className="flex items-center justify-between text-[10px]">
+                          <span className="text-muted-foreground">HEX:</span>
+                          <code className="font-mono text-[10px]">{formats.hex}</code>
+                        </div>
+                        <div className="flex items-center justify-between text-[10px]">
+                          <span className="text-muted-foreground">RGB:</span>
+                          <code className="font-mono text-[10px]">{formats.rgb}</code>
+                        </div>
+                        <div className="flex items-center justify-between text-[10px]">
+                          <span className="text-muted-foreground">HSL:</span>
+                          <code className="font-mono text-[10px]">{formats.hsl}</code>
+                        </div>
+                      </>
+                    )
+                  })()}
+                </div>
+              )}
             </div>
 
             {/* Opacity/Transparency Control */}

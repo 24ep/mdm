@@ -49,7 +49,7 @@ export function Header({ selectedSpace, spaces, onSpaceChange }: HeaderProps) {
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <Database className="h-6 w-6 text-blue-600" />
-            <h1 className="text-xl font-semibold text-gray-900">BigQuery Interface</h1>
+            <h1 className="text-xl font-semibold text-gray-900">SQL Query</h1>
           </div>
           
           {/* Space Selection Dropdown */}

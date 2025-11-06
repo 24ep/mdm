@@ -28,6 +28,12 @@ export interface NotebookCell {
   isCollapsed?: boolean
   isSelected?: boolean
   isExecuting?: boolean
+  isBookmarked?: boolean
+  executionHistory?: Array<{
+    timestamp: Date
+    executionTime?: number
+    status: 'success' | 'error'
+  }>
 }
 
 export interface Notebook {
@@ -109,6 +115,9 @@ export interface NotebookState {
   kernels: any[]
   variables: Variable[]
   files: FileItem[]
+  showBookmarks: boolean
+  showTableOfContents: boolean
+  showSnippets: boolean
 }
 
 export interface NotebookActions {
@@ -135,4 +144,24 @@ export interface NotebookActions {
   setKernels: (kernels: any[]) => void
   setVariables: (variables: Variable[]) => void
   setFiles: (files: FileItem[]) => void
+  setShowBookmarks: (show: boolean) => void
+  setShowTableOfContents: (show: boolean) => void
+  setShowSnippets: (show: boolean) => void
+}
+
+export interface CodeSnippet {
+  id: string
+  name: string
+  description: string
+  code: string
+  language: string
+  category: string
+  tags: string[]
+}
+
+export interface TableOfContentsItem {
+  cellId: string
+  title: string
+  level: number
+  index: number
 }

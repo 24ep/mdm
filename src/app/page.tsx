@@ -32,7 +32,8 @@ import {
   Bot,
   Layout,
   BookOpen,
-  Building2
+  Building2,
+  Kanban
 } from 'lucide-react'
 import { addRecentItem, getRecentItems, type RecentItem } from '@/lib/recent-items'
 import { PlatformLayout } from '@/components/platform/PlatformLayout'
@@ -66,6 +67,11 @@ import { AIChatUI } from './admin/components/AIChatUI'
 import { KernelManagement } from './admin/components/KernelManagement'
 import { DataModelManagement } from './admin/components/DataModelManagement'
 import { SpaceSettingsAdmin } from './admin/components/SpaceSettingsAdmin'
+import { ChangeRequests } from './admin/components/ChangeRequests'
+import { SQLLinting } from './admin/components/SQLLinting'
+import { SchemaMigrations } from './admin/components/SchemaMigrations'
+import { DataMasking } from './admin/components/DataMasking'
+import { ProjectsManagement } from './admin/components/ProjectsManagement'
 
 export default function HomePage() {
   const router = useRouter()
@@ -95,7 +101,7 @@ export default function HomePage() {
   useEffect(() => {
     if (activeTab && activeTab !== 'overview') {
       const tabConfig = {
-        bigquery: { name: 'BigQuery Interface', icon: 'Database', color: '#2563eb' },
+        bigquery: { name: 'SQL Query', icon: 'Database', color: '#2563eb' },
         notebook: { name: 'Data Science Notebooks', icon: 'BarChart3', color: '#16a34a' },
         'ai-analyst': { name: 'AI Analyst', icon: 'Bot', color: '#9333ea' },
         'ai-chat-ui': { name: 'AI Chat UI', icon: 'Bot', color: '#10b981' },
@@ -106,6 +112,7 @@ export default function HomePage() {
         'space-settings': { name: 'Space Settings', icon: 'Building2', color: '#0891b2' },
         settings: { name: 'System Settings', icon: 'Settings', color: '#6b7280' },
         analytics: { name: 'Analytics', icon: 'BarChart3', color: '#3b82f6' },
+        projects: { name: 'Project Management', icon: 'Kanban', color: '#8b5cf6' },
       }[activeTab]
 
       if (tabConfig) {
@@ -160,6 +167,7 @@ export default function HomePage() {
       Building2,
       Settings,
       Monitor,
+      Kanban,
     }
     return iconMap[iconName || 'Monitor'] || Monitor
   }
@@ -238,13 +246,13 @@ export default function HomePage() {
                   <Database className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <CardTitle className="text-lg">BigQuery Interface</CardTitle>
+                  <CardTitle className="text-lg">SQL Query</CardTitle>
                   <CardDescription>Query data across all spaces</CardDescription>
                 </div>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Google BigQuery-like interface for cross-space data analysis
+                  SQL query interface for cross-space data analysis
                 </p>
               </CardContent>
             </Card>
@@ -385,6 +393,23 @@ export default function HomePage() {
                 </p>
               </CardContent>
             </Card>
+
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('projects')}>
+              <CardHeader className="flex flex-row items-center gap-3">
+                <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/20">
+                  <Kanban className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Project Management</CardTitle>
+                  <CardDescription>ClickUp-style ticket and project management</CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Manage tickets, projects, and tasks with multiple views
+                </p>
+              </CardContent>
+            </Card>
             </div>
           </div>
         )}
@@ -413,6 +438,10 @@ export default function HomePage() {
         {activeTab === 'health' && <SystemHealthDashboard />}
         {activeTab === 'logs' && <LogManagement />}
         {activeTab === 'database' && <DatabaseManagement />}
+        {activeTab === 'change-requests' && <ChangeRequests />}
+        {activeTab === 'sql-linting' && <SQLLinting />}
+        {activeTab === 'schema-migrations' && <SchemaMigrations />}
+        {activeTab === 'data-masking' && <DataMasking />}
         {activeTab === 'cache' && <CacheManagement />}
         {activeTab === 'storage' && <StorageManagement />}
         {activeTab === 'bi' && <BusinessIntelligence />}
@@ -430,6 +459,7 @@ export default function HomePage() {
         {activeTab === 'settings' && <SystemSettings />}
         {activeTab === 'space-layouts' && <SpaceLayoutsAdmin />}
         {activeTab === 'page-templates' && <PageTemplatesAdmin />}
+        {activeTab === 'projects' && <ProjectsManagement />}
       </div>
     </PlatformLayout>
   )

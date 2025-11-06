@@ -231,7 +231,9 @@ export async function GET(request: NextRequest) {
     // Create chat window
     var chatWindow = document.createElement('div');
     chatWindow.id = 'chatbot-window-' + chatbotId;
-    chatWindow.style.cssText = 'position: fixed; ' + chatWindowPositionMobile + ' width: ' + chatWindowWidth + '; height: ' + chatWindowHeight + '; background: ' + (chatbot.messageBoxColor || '#ffffff') + '; border-radius: ' + chatWindowBorderRadius + '; box-shadow: 0 0 ' + (chatbot.shadowBlur || '4px') + ' ' + (chatbot.shadowColor || '#000000') + '; border: ' + (chatbot.borderWidth || '1px') + ' solid ' + (chatbot.borderColor || '#e5e7eb') + '; font-family: ' + (chatbot.fontFamily || 'Inter') + '; font-size: ' + (chatbot.fontSize || '14px') + '; color: ' + (chatbot.fontColor || '#000000') + '; display: none; flex-direction: column; z-index: ' + (widgetConfig.zIndex + 1) + '; transition: opacity 0.3s ease, transform 0.3s ease; opacity: 0; transform: scale(0.9);';
+    var chatWindowShadowColor = chatbot.chatWindowShadowColor || chatbot.shadowColor || '#000000';
+    var chatWindowShadowBlur = chatbot.chatWindowShadowBlur || chatbot.shadowBlur || '4px';
+    chatWindow.style.cssText = 'position: fixed; ' + chatWindowPositionMobile + ' width: ' + chatWindowWidth + '; height: ' + chatWindowHeight + '; background: ' + (chatbot.messageBoxColor || '#ffffff') + '; border-radius: ' + chatWindowBorderRadius + '; box-shadow: 0 0 ' + chatWindowShadowBlur + ' ' + chatWindowShadowColor + '; border: ' + (chatbot.borderWidth || '1px') + ' solid ' + (chatbot.borderColor || '#e5e7eb') + '; font-family: ' + (chatbot.fontFamily || 'Inter') + '; font-size: ' + (chatbot.fontSize || '14px') + '; color: ' + (chatbot.fontColor || '#000000') + '; display: none; flex-direction: column; z-index: ' + (widgetConfig.zIndex + 1) + '; transition: opacity 0.3s ease, transform 0.3s ease; opacity: 0; transform: scale(0.9);';
     
     // Create header for chat window
     var header = document.createElement('div');

@@ -114,6 +114,45 @@ export const computePadding = (padding?: WidgetStyleProps['padding']): string | 
   }
 }
 
+// Pattern definitions (matching ColorPickerPopover)
+const patterns = [
+  {
+    id: 'dots',
+    css: 'radial-gradient(circle, #000 1px, transparent 1px)',
+    size: '20px 20px'
+  },
+  {
+    id: 'diagonal-lines',
+    css: 'repeating-linear-gradient(45deg, transparent, transparent 10px, #000 10px, #000 20px)',
+    size: '20px 20px'
+  },
+  {
+    id: 'horizontal-stripes',
+    css: 'repeating-linear-gradient(0deg, transparent, transparent 10px, #000 10px, #000 20px)',
+    size: '20px 20px'
+  },
+  {
+    id: 'vertical-stripes',
+    css: 'repeating-linear-gradient(90deg, transparent, transparent 10px, #000 10px, #000 20px)',
+    size: '20px 20px'
+  },
+  {
+    id: 'grid',
+    css: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)',
+    size: '20px 20px'
+  },
+  {
+    id: 'checkerboard',
+    css: 'conic-gradient(#000 25%, transparent 0%, transparent 50%, #000 0%, #000 75%, transparent 0%)',
+    size: '20px 20px'
+  },
+  {
+    id: 'crosshatch',
+    css: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px), repeating-linear-gradient(45deg, transparent, transparent 10px, #000 10px, #000 20px)',
+    size: '20px 20px'
+  }
+]
+
 /**
  * Helper to get background style (supports solid, gradient, pattern, image, video)
  */
@@ -124,7 +163,28 @@ export const getBackgroundStyle = (props: WidgetStyleProps): React.CSSProperties
   const bg = props.backgroundColor
   const fillOpacity = props.fillOpacity !== undefined ? props.fillOpacity : 1
   
-  // Check if it's a gradient, pattern, or image URL
+  // Handle patterns - convert pattern(id) to CSS
+  if (bg.startsWith('pattern(')) {
+    const match = bg.match(/pattern\(([^)]+)\)/)
+    if (match) {
+      const patternId = match[1]
+      const pattern = patterns.find(p => p.id === patternId)
+      if (pattern) {
+        const bgStyle: React.CSSProperties = {
+          backgroundImage: pattern.css,
+          backgroundSize: pattern.size,
+          backgroundColor: '#ffffff'
+        }
+        // Apply opacity if needed
+        if (fillOpacity < 1) {
+          bgStyle.opacity = fillOpacity
+        }
+        return bgStyle
+      }
+    }
+  }
+  
+  // Check if it's a gradient or image URL
   if (bg.startsWith('linear-gradient') || bg.startsWith('radial-gradient') || bg.startsWith('url(')) {
     const bgStyle: React.CSSProperties = { 
       background: bg, 

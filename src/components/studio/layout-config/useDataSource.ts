@@ -14,6 +14,7 @@ interface UseDataSourceOptions {
   sampleData?: any[]
   autoRefresh?: boolean
   refreshInterval?: number
+  limit?: number
 }
 
 interface UseDataSourceResult {
@@ -35,7 +36,8 @@ export function useDataSource(options: UseDataSourceOptions): UseDataSourceResul
     spaceId,
     sampleData = [],
     autoRefresh = false,
-    refreshInterval = 30000
+    refreshInterval = 30000,
+    limit
   } = options
 
   const [data, setData] = useState<any[]>([])
@@ -120,12 +122,17 @@ export function useDataSource(options: UseDataSourceOptions): UseDataSourceResul
       const result = await response.json()
       
       // Handle different response formats
-      const fetchedData = Array.isArray(result) 
+      let fetchedData = Array.isArray(result) 
         ? result 
         : result.data || result.results || result.items || []
 
       if (!Array.isArray(fetchedData)) {
         throw new Error('API response must be an array or contain a data/results/items array')
+      }
+
+      // Apply limit if specified
+      if (limit && limit > 0 && fetchedData.length > limit) {
+        fetchedData = fetchedData.slice(0, limit)
       }
 
       // Compare with existing data - only update UI if data changed
@@ -147,7 +154,7 @@ export function useDataSource(options: UseDataSourceOptions): UseDataSourceResul
       setLoading(false)
       loadingRef.current = false
     }
-  }, [apiUrl, apiMethod, apiHeaders, dataEquals])
+  }, [apiUrl, apiMethod, apiHeaders, dataEquals, limit])
 
   const fetchDatabaseData = useCallback(async () => {
     if (!sqlQuery) {
@@ -179,7 +186,12 @@ export function useDataSource(options: UseDataSourceOptions): UseDataSourceResul
       }
 
       const result = await response.json()
-      const fetchedData = Array.isArray(result.data) ? result.data : result.rows || []
+      let fetchedData = Array.isArray(result.data) ? result.data : result.rows || []
+
+      // Apply limit if specified
+      if (limit && limit > 0 && fetchedData.length > limit) {
+        fetchedData = fetchedData.slice(0, limit)
+      }
 
       // Compare with existing data - only update UI if data changed
       const currentData = dataRef.current
@@ -200,7 +212,7 @@ export function useDataSource(options: UseDataSourceOptions): UseDataSourceResul
       setLoading(false)
       loadingRef.current = false
     }
-  }, [sqlQuery, dbConnection, dataEquals])
+  }, [sqlQuery, dbConnection, dataEquals, limit])
 
   const fetchDataModelData = useCallback(async () => {
     if (!dataModelId) {
@@ -223,7 +235,7 @@ export function useDataSource(options: UseDataSourceOptions): UseDataSourceResul
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          limit: 10000,
+          limit: limit && limit > 0 ? limit : 10000,
           offset: 0
         })
       })
@@ -253,7 +265,12 @@ export function useDataSource(options: UseDataSourceOptions): UseDataSourceResul
       }
 
       const result = await response.json()
-      const fetchedData = Array.isArray(result.data) ? result.data : (Array.isArray(result.rows) ? result.rows : [])
+      let fetchedData = Array.isArray(result.data) ? result.data : (Array.isArray(result.rows) ? result.rows : [])
+      
+      // Apply limit if specified (in case API didn't respect it)
+      if (limit && limit > 0 && fetchedData.length > limit) {
+        fetchedData = fetchedData.slice(0, limit)
+      }
       
       // Compare with existing data - only update UI if data changed
       const currentData = dataRef.current
@@ -296,7 +313,7 @@ export function useDataSource(options: UseDataSourceOptions): UseDataSourceResul
       setLoading(false)
       loadingRef.current = false
     }
-  }, [dataModelId, dataEquals])
+  }, [dataModelId, dataEquals, limit])
 
   const fetchData = useCallback(async () => {
     const cacheKey = getCacheKey()

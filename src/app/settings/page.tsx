@@ -15,7 +15,6 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { MultiSelect } from '@/components/ui/multi-select'
 import { Combobox } from '@/components/ui/combobox'
-import { ColorPicker } from '@/components/ui/color-picker'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -54,7 +53,8 @@ import {
   Settings,
   Key
 } from 'lucide-react'
-import { ColorPicker, ColorSwatch } from '@/components/ui/color-swatch'
+import { ColorSwatch } from '@/components/ui/color-swatch'
+import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 import IconPicker from '@/components/ui/icon-picker'
 import IconPickerPopover from '@/components/ui/icon-picker-popover'
 import { AnimatedIcon } from '@/components/ui/animated-icon'
@@ -1109,11 +1109,17 @@ export default function SettingsPage() {
 
                   {/* Background Color */}
                   {sidebarSettings.backgroundType === 'color' && (
-                    <ColorPicker
-                      label="Background Color"
-                      value={sidebarSettings.backgroundColor}
-                      onChange={(color) => updateSidebarSettings({ backgroundColor: color })}
-                    />
+                    <div className="space-y-2">
+                      <Label>Background Color</Label>
+                      <ColorInput
+                        value={sidebarSettings.backgroundColor}
+                        onChange={(color) => updateSidebarSettings({ backgroundColor: color })}
+                        allowImageVideo={false}
+                        className="relative"
+                        placeholder="#ffffff"
+                        inputClassName="h-8 text-xs pl-7"
+                      />
+                    </div>
                   )}
 
                   {/* Background Image */}
@@ -1154,11 +1160,17 @@ export default function SettingsPage() {
                   )}
 
                   {/* Font Color */}
-                  <ColorPicker
-                    label="Font Color"
-                    value={sidebarSettings.fontColor}
-                    onChange={(color) => updateSidebarSettings({ fontColor: color })}
-                  />
+                  <div className="space-y-2">
+                    <Label>Font Color</Label>
+                    <ColorInput
+                      value={sidebarSettings.fontColor}
+                      onChange={(color) => updateSidebarSettings({ fontColor: color })}
+                      allowImageVideo={false}
+                      className="relative"
+                      placeholder="#000000"
+                      inputClassName="h-8 text-xs pl-7"
+                    />
+                  </div>
 
                   
 
@@ -2678,9 +2690,13 @@ export default function SettingsPage() {
                                                 <div className="flex-1 flex items-center gap-3">
                                                   {/* Color Swatch */}
                                                   <div className="flex items-center gap-2">
-                                                    <ColorPicker
+                                                    <ColorInput
                                                       value={option.color}
                                                       onChange={(color) => updateAttributeOption(index, 'color', color)}
+                                                      allowImageVideo={false}
+                                                      className="relative"
+                                                      placeholder="#000000"
+                                                      inputClassName="h-8 text-xs pl-7"
                                                     />
                                                   </div>
                                                   

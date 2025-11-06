@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent } from '@/components/ui/popover'
 import toast from 'react-hot-toast'
 import { SpacesEditorManager, SpacesEditorPage } from '@/lib/space-studio-manager'
+import { ColorInput } from './ColorInput'
 
 interface BackgroundColorPickerProps {
   spaceId: string
@@ -69,60 +70,36 @@ export function BackgroundColorPicker({
             
             <div className="space-y-1">
               <Label className="text-xs">Custom Color</Label>
-              <div className="flex gap-2">
-                <Input
-                  type="color"
-                  value={backgroundColor}
-                  onChange={(e) => {
-                    const color = e.target.value
-                    setPages((prev) => prev.map((x) => x.id === page.id ? { ...x, backgroundColor: color } as any : x))
-                  }}
-                  className="h-8 w-16 p-0 border cursor-pointer"
-                />
-                <Input
-                  type="text"
-                  value={backgroundColor}
-                  onChange={(e) => {
-                    const color = e.target.value
-                    if (/^#[0-9A-F]{6}$/i.test(color) || color === '') {
-                      setPages((prev) => prev.map((x) => x.id === page.id ? { ...x, backgroundColor: color || '#ffffff' } as any : x))
-                    }
-                  }}
-                  onBlur={async (e) => {
-                    const color = e.target.value || '#ffffff'
-                    try {
-                      await SpacesEditorManager.updatePage(spaceId, page.id, { backgroundColor: color } as any)
-                      toast.success('Background color updated')
-                      onOpenChange(false)
-                    } catch (err) {
-                      toast.error('Failed to update background color')
-                      console.error(err)
-                    }
-                  }}
-                  placeholder="#ffffff"
-                  className="h-8 flex-1 text-xs"
-                />
-              </div>
+              <ColorInput
+                value={backgroundColor}
+                onChange={(color) => {
+                  setPages((prev) => prev.map((x) => x.id === page.id ? { ...x, backgroundColor: color } as any : x))
+                }}
+                allowImageVideo={false}
+                className="relative"
+                placeholder="#ffffff"
+                inputClassName="h-8 text-xs pl-7"
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={async (e) => {
+                  e.stopPropagation()
+                  const color = backgroundColor
+                  try {
+                    await SpacesEditorManager.updatePage(spaceId, page.id, { backgroundColor: color } as any)
+                    toast.success('Background color updated')
+                    onOpenChange(false)
+                  } catch (err) {
+                    toast.error('Failed to update background color')
+                    console.error(err)
+                  }
+                }}
+                className="w-full h-8 text-xs mt-2"
+              >
+                Apply
+              </Button>
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={async (e) => {
-                e.stopPropagation()
-                const color = backgroundColor
-                try {
-                  await SpacesEditorManager.updatePage(spaceId, page.id, { backgroundColor: color } as any)
-                  toast.success('Background color updated')
-                  onOpenChange(false)
-                } catch (err) {
-                  toast.error('Failed to update background color')
-                  console.error(err)
-                }
-              }}
-              className="w-full h-8 text-xs"
-            >
-              Apply
-            </Button>
           </div>
         </div>
       </PopoverContent>

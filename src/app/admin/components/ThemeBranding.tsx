@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 import { 
   Palette, 
   Upload, 
@@ -477,49 +478,31 @@ export function ThemeBranding() {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="primary">Primary Color</Label>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            id="primary"
-                            type="color"
-                            value={newTheme.colors.primary}
-                            onChange={(e) => setNewTheme({
-                              ...newTheme,
-                              colors: { ...newTheme.colors, primary: e.target.value }
-                            })}
-                            className="w-16 h-10"
-                          />
-                          <Input
-                            value={newTheme.colors.primary}
-                            onChange={(e) => setNewTheme({
-                              ...newTheme,
-                              colors: { ...newTheme.colors, primary: e.target.value }
-                            })}
-                            placeholder="#3b82f6"
-                          />
-                        </div>
+                        <ColorInput
+                          value={newTheme.colors.primary}
+                          onChange={(color) => setNewTheme({
+                            ...newTheme,
+                            colors: { ...newTheme.colors, primary: color }
+                          })}
+                          allowImageVideo={false}
+                          className="relative"
+                          placeholder="#3b82f6"
+                          inputClassName="h-10 text-xs pl-7"
+                        />
                       </div>
                       <div>
                         <Label htmlFor="secondary">Secondary Color</Label>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            id="secondary"
-                            type="color"
-                            value={newTheme.colors.secondary}
-                            onChange={(e) => setNewTheme({
-                              ...newTheme,
-                              colors: { ...newTheme.colors, secondary: e.target.value }
-                            })}
-                            className="w-16 h-10"
-                          />
-                          <Input
-                            value={newTheme.colors.secondary}
-                            onChange={(e) => setNewTheme({
-                              ...newTheme,
-                              colors: { ...newTheme.colors, secondary: e.target.value }
-                            })}
-                            placeholder="#64748b"
-                          />
-                        </div>
+                        <ColorInput
+                          value={newTheme.colors.secondary}
+                          onChange={(color) => setNewTheme({
+                            ...newTheme,
+                            colors: { ...newTheme.colors, secondary: color }
+                          })}
+                          allowImageVideo={false}
+                          className="relative"
+                          placeholder="#64748b"
+                          inputClassName="h-10 text-xs pl-7"
+                        />
                       </div>
                     </div>
                   </TabsContent>
@@ -797,32 +780,20 @@ export function ThemeBranding() {
                     {Object.entries(selectedTheme.colors).map(([key, value]) => (
                       <div key={key}>
                         <Label htmlFor={key} className="capitalize">{key}</Label>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            id={key}
-                            type="color"
-                            value={value}
-                            onChange={(e) => {
-                              const updatedTheme = {
-                                ...selectedTheme,
-                                colors: { ...selectedTheme.colors, [key]: e.target.value }
-                              }
-                              setSelectedTheme(updatedTheme)
-                            }}
-                            className="w-16 h-10"
-                          />
-                          <Input
-                            value={value}
-                            onChange={(e) => {
-                              const updatedTheme = {
-                                ...selectedTheme,
-                                colors: { ...selectedTheme.colors, [key]: e.target.value }
-                              }
-                              setSelectedTheme(updatedTheme)
-                            }}
-                            placeholder="#000000"
-                          />
-                        </div>
+                        <ColorInput
+                          value={value}
+                          onChange={(color) => {
+                            const updatedTheme = {
+                              ...selectedTheme,
+                              colors: { ...selectedTheme.colors, [key]: color }
+                            }
+                            setSelectedTheme(updatedTheme)
+                          }}
+                          allowImageVideo={false}
+                          className="relative"
+                          placeholder="#000000"
+                          inputClassName="h-10 text-xs pl-7"
+                        />
                       </div>
                     ))}
                   </div>

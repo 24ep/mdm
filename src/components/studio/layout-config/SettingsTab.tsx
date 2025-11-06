@@ -12,6 +12,7 @@ import { GlobalComponentStyles } from './GlobalComponentStyles'
 import { SpacesEditorManager, LoginPageConfig, SpacesEditorPage } from '@/lib/space-studio-manager'
 import toast from 'react-hot-toast'
 import { Separator } from '@/components/ui/separator'
+import { ColorInput } from './ColorInput'
 
 interface SettingsTabProps {
   spaceId: string
@@ -381,25 +382,14 @@ export function SettingsTab({
             {/* Primary Color */}
             <div>
               <Label className={isMobileViewport ? "text-sm" : "text-xs"}>Primary Color</Label>
-              <div className="relative mt-1">
-                <Input 
-                  type="color" 
-                  className={`absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 p-0 border-0 cursor-pointer rounded-none`}
-                  style={{ appearance: 'none', WebkitAppearance: 'none', border: 'none', outline: 'none' }}
-                  value={globalStyle?.primaryColor || '#3b82f6'} 
-                  onChange={(e) => handleGlobalStyleUpdate({ primaryColor: e.target.value })} 
-                />
-                <Input
-                  type="text"
-                  className={isMobileViewport ? "h-10 flex-1 pl-7" : "h-8 flex-1 text-xs pl-7"}
+              <div className="mt-1">
+                <ColorInput
                   value={globalStyle?.primaryColor || '#3b82f6'}
-                  onChange={(e) => {
-                    const value = e.target.value
-                    if (/^#[0-9A-F]{6}$/i.test(value) || value === '') {
-                      handleGlobalStyleUpdate({ primaryColor: value || '#3b82f6' })
-                    }
-                  }}
+                  onChange={(color) => handleGlobalStyleUpdate({ primaryColor: color })}
+                  allowImageVideo={false}
+                  className="relative"
                   placeholder="#3b82f6"
+                  inputClassName={isMobileViewport ? "h-10 flex-1 pl-7" : "h-8 flex-1 text-xs pl-7"}
                 />
               </div>
             </div>
@@ -420,12 +410,16 @@ export function SettingsTab({
             
             <div>
               <Label className={isMobileViewport ? "text-sm" : "text-xs"}>Background Color</Label>
-              <Input 
-                type="color" 
-                className={isMobileViewport ? "h-10" : "h-8"} 
-                value={globalStyle?.backgroundColor || '#ffffff'} 
-                onChange={(e) => handleGlobalStyleUpdate({ backgroundColor: e.target.value })} 
-              />
+              <div className="mt-1">
+                <ColorInput
+                  value={globalStyle?.backgroundColor || '#ffffff'}
+                  onChange={(color) => handleGlobalStyleUpdate({ backgroundColor: color })}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="#ffffff"
+                  inputClassName={isMobileViewport ? "h-10 text-xs pl-7" : "h-8 text-xs pl-7"}
+                />
+              </div>
             </div>
             
             <div>
@@ -535,19 +529,14 @@ export function SettingsTab({
            {currentLoginConfig.backgroundType === 'color' && (
              <div>
                <Label className={isMobileViewport ? "text-sm" : "text-xs"}>Background Color</Label>
-               <div className="flex items-center gap-2 mt-1">
-                 <Input
-                   type="color"
-                   className={isMobileViewport ? "h-10 w-20" : "h-8 w-16"}
+               <div className="mt-1">
+                 <ColorInput
                    value={currentLoginConfig.backgroundColor || '#1e40af'}
-                   onChange={(e) => setLoginPageConfig({ ...currentLoginConfig, backgroundColor: e.target.value } as LoginPageConfig)}
-                 />
-                 <Input
-                   type="text"
-                   className={isMobileViewport ? "h-10 flex-1" : "h-8 flex-1 text-xs"}
-                   value={currentLoginConfig.backgroundColor || '#1e40af'}
-                   onChange={(e) => setLoginPageConfig({ ...currentLoginConfig, backgroundColor: e.target.value } as LoginPageConfig)}
+                   onChange={(color) => setLoginPageConfig({ ...currentLoginConfig, backgroundColor: color } as LoginPageConfig)}
+                   allowImageVideo={false}
+                   className="relative"
                    placeholder="#1e40af"
+                   inputClassName={isMobileViewport ? "h-10 flex-1 text-xs pl-7" : "h-8 flex-1 text-xs pl-7"}
                  />
                </div>
              </div>
@@ -558,47 +547,33 @@ export function SettingsTab({
              <>
                <div>
                  <Label className={isMobileViewport ? "text-sm" : "text-xs"}>Gradient From</Label>
-                 <div className="flex items-center gap-2 mt-1">
-                   <Input
-                     type="color"
-                     className={isMobileViewport ? "h-10 w-20" : "h-8 w-16"}
+                 <div className="mt-1">
+                   <ColorInput
                      value={currentLoginConfig.gradient?.from || '#1e40af'}
-                     onChange={(e) => setLoginPageConfig({
+                     onChange={(color) => setLoginPageConfig({
                        ...currentLoginConfig,
-                       gradient: { ...currentLoginConfig.gradient, from: e.target.value, to: currentLoginConfig.gradient?.to || '#3b82f6', angle: currentLoginConfig.gradient?.angle || 135 }
+                       gradient: { ...currentLoginConfig.gradient, from: color, to: currentLoginConfig.gradient?.to || '#3b82f6', angle: currentLoginConfig.gradient?.angle || 135 }
                      } as LoginPageConfig)}
-                   />
-                   <Input
-                     type="text"
-                     className={isMobileViewport ? "h-10 flex-1" : "h-8 flex-1 text-xs"}
-                     value={currentLoginConfig.gradient?.from || '#1e40af'}
-                     onChange={(e) => setLoginPageConfig({
-                       ...currentLoginConfig,
-                       gradient: { ...currentLoginConfig.gradient, from: e.target.value, to: currentLoginConfig.gradient?.to || '#3b82f6', angle: currentLoginConfig.gradient?.angle || 135 }
-                     } as LoginPageConfig)}
+                     allowImageVideo={false}
+                     className="relative"
+                     placeholder="#1e40af"
+                     inputClassName={isMobileViewport ? "h-10 flex-1 text-xs pl-7" : "h-8 flex-1 text-xs pl-7"}
                    />
                  </div>
                </div>
                <div>
                  <Label className={isMobileViewport ? "text-sm" : "text-xs"}>Gradient To</Label>
-                 <div className="flex items-center gap-2 mt-1">
-                   <Input
-                     type="color"
-                     className={isMobileViewport ? "h-10 w-20" : "h-8 w-16"}
+                 <div className="mt-1">
+                   <ColorInput
                      value={currentLoginConfig.gradient?.to || '#3b82f6'}
-                     onChange={(e) => setLoginPageConfig({
+                     onChange={(color) => setLoginPageConfig({
                        ...currentLoginConfig,
-                       gradient: { ...currentLoginConfig.gradient, from: currentLoginConfig.gradient?.from || '#1e40af', to: e.target.value, angle: currentLoginConfig.gradient?.angle || 135 }
+                       gradient: { ...currentLoginConfig.gradient, from: currentLoginConfig.gradient?.from || '#1e40af', to: color, angle: currentLoginConfig.gradient?.angle || 135 }
                      } as LoginPageConfig)}
-                   />
-                   <Input
-                     type="text"
-                     className={isMobileViewport ? "h-10 flex-1" : "h-8 flex-1 text-xs"}
-                     value={currentLoginConfig.gradient?.to || '#3b82f6'}
-                     onChange={(e) => setLoginPageConfig({
-                       ...currentLoginConfig,
-                       gradient: { ...currentLoginConfig.gradient, from: currentLoginConfig.gradient?.from || '#1e40af', to: e.target.value, angle: currentLoginConfig.gradient?.angle || 135 }
-                     } as LoginPageConfig)}
+                     allowImageVideo={false}
+                     className="relative"
+                     placeholder="#3b82f6"
+                     inputClassName={isMobileViewport ? "h-10 flex-1 text-xs pl-7" : "h-8 flex-1 text-xs pl-7"}
                    />
                  </div>
                </div>
@@ -664,27 +639,35 @@ export function SettingsTab({
              <div className="grid grid-cols-2 gap-2">
                <div>
                  <Label className={isMobileViewport ? "text-xs" : "text-[10px]"}>{isMobileViewport ? "Card Background" : "Card BG"}</Label>
-                 <Input
-                   type="color"
-                   className={isMobileViewport ? "h-10 mt-1" : "h-8 mt-1"}
-                   value={currentLoginConfig.cardStyle?.backgroundColor || '#ffffff'}
-                   onChange={(e) => setLoginPageConfig({
-                     ...currentLoginConfig,
-                     cardStyle: { ...currentLoginConfig.cardStyle, backgroundColor: e.target.value }
-                   } as LoginPageConfig)}
-                 />
+                 <div className="mt-1">
+                   <ColorInput
+                     value={currentLoginConfig.cardStyle?.backgroundColor || '#ffffff'}
+                     onChange={(color) => setLoginPageConfig({
+                       ...currentLoginConfig,
+                       cardStyle: { ...currentLoginConfig.cardStyle, backgroundColor: color }
+                     } as LoginPageConfig)}
+                     allowImageVideo={false}
+                     className="relative"
+                     placeholder="#ffffff"
+                     inputClassName={isMobileViewport ? "h-10 text-xs pl-7" : "h-8 text-xs pl-7"}
+                   />
+                 </div>
                </div>
                <div>
                  <Label className={isMobileViewport ? "text-xs" : "text-[10px]"}>{isMobileViewport ? "Card Text" : "Text"}</Label>
-                 <Input
-                   type="color"
-                   className={isMobileViewport ? "h-10 mt-1" : "h-8 mt-1"}
-                   value={currentLoginConfig.cardStyle?.textColor || '#1f2937'}
-                   onChange={(e) => setLoginPageConfig({
-                     ...currentLoginConfig,
-                     cardStyle: { ...currentLoginConfig.cardStyle, textColor: e.target.value }
-                   } as LoginPageConfig)}
-                 />
+                 <div className="mt-1">
+                   <ColorInput
+                     value={currentLoginConfig.cardStyle?.textColor || '#1f2937'}
+                     onChange={(color) => setLoginPageConfig({
+                       ...currentLoginConfig,
+                       cardStyle: { ...currentLoginConfig.cardStyle, textColor: color }
+                     } as LoginPageConfig)}
+                     allowImageVideo={false}
+                     className="relative"
+                     placeholder="#1f2937"
+                     inputClassName={isMobileViewport ? "h-10 text-xs pl-7" : "h-8 text-xs pl-7"}
+                   />
+                 </div>
                </div>
              </div>
              <div>

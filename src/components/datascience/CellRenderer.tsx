@@ -19,7 +19,11 @@ import {
   MessageSquare,
   Search,
   FileCode,
-  Database
+  Database,
+  Bookmark,
+  ChevronDown,
+  ChevronUp,
+  History
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import CodeMirror from '@uiw/react-codemirror'
@@ -56,6 +60,8 @@ interface CellRendererProps {
   onAddTag?: (cellId: string) => void
   onSearch?: (cellId: string) => void
   onTitleChange?: (cellId: string, title: string) => void
+  onToggleBookmark?: (cellId: string) => void
+  onToggleCollapse?: (cellId: string) => void
   canEdit?: boolean
   canExecute?: boolean
 }
@@ -81,9 +87,10 @@ export function CellRenderer({
   onSplit,
   onAddComment,
   onAddTag,
-  onSearch
-  ,
+  onSearch,
   onTitleChange,
+  onToggleBookmark,
+  onToggleCollapse,
   canEdit = true,
   canExecute = true
 }: CellRendererProps) {
@@ -280,26 +287,29 @@ export function CellRenderer({
                 fontFamily: 'Menlo, Monaco, "Courier New", monospace',
                 backgroundColor: isDark ? '#1f2937' : '#f3f4f6', // light grey background
                 border: 'none',
-                outline: 'none'
+                outline: 'none',
+                borderRadius: '0px' // Match table widget: 0px border radius
               },
               '.cm-scroller': { 
                 overflow: 'auto', 
                 backgroundColor: isDark ? '#1f2937' : '#f3f4f6',
-                border: 'none'
+                border: 'none',
+                borderRadius: '0px'
               },
               '.cm-content': { 
-                padding: '12px 16px', 
+                padding: '4px', // Match table widget: 4px padding
                 backgroundColor: isDark ? '#1f2937' : '#f3f4f6',
                 cursor: canEdit ? 'text' : 'default'
               },
               '.cm-gutters': { 
                 backgroundColor: isDark ? '#1f2937' : '#f3f4f6',
                 border: 'none',
-                paddingLeft: '12px'
+                paddingLeft: '4px', // Match table widget: 4px padding
+                borderRadius: '0px'
               },
               '.cm-line': { paddingLeft: '0' },
               '.cm-editor.cm-focused': { outline: 'none', border: 'none' },
-              '.cm-editor': { border: 'none', outline: 'none' }
+              '.cm-editor': { border: 'none', outline: 'none', borderRadius: '0px' }
             }),
             ...(isDark ? [darkEditorTheme, syntaxHighlighting(lightHighlightStyle)] : [lightEditorTheme, syntaxHighlighting(lightHighlightStyle)])
           ]}
@@ -328,19 +338,20 @@ export function CellRenderer({
           }}
           editable={canEdit}
           className={isDark ? "bg-gray-800" : "bg-gray-100"}
-          style={{ border: 'none', outline: 'none', minHeight: '150px', pointerEvents: canEdit ? 'auto' : 'none' }}
+          style={{ border: 'none', outline: 'none', minHeight: '150px', pointerEvents: canEdit ? 'auto' : 'none', borderRadius: '0px' }}
         />
 
         {cell.output && showOutput && (
-          <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-b-[5px]">
-            <div className="px-4 py-2 text-xs text-gray-600 dark:text-gray-400 font-mono bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+          <div className="border-t border-[#e5e7eb] dark:border-gray-700 bg-gray-50 dark:bg-gray-800" style={{ borderWidth: '1px', borderStyle: 'solid', borderRadius: '0px' }}>
+            <div className="px-4 py-2 text-xs text-gray-600 dark:text-gray-400 font-mono bg-gray-100 dark:bg-gray-800 border-b border-[#e5e7eb] dark:border-gray-700" style={{ borderWidth: '1px', borderStyle: 'solid' }}>
               Out[{cell.executionCount || index + 1}]:
             </div>
-            <CellOutput 
-              output={cell.output}
-              executionCount={cell.executionCount || index + 1}
-              className="px-4 py-3"
-            />
+            <div style={{ padding: '4px' }}>
+              <CellOutput 
+                output={cell.output}
+                executionCount={cell.executionCount || index + 1}
+              />
+            </div>
           </div>
         )}
       </div>
@@ -393,7 +404,7 @@ export function CellRenderer({
     }
     
     const rendered = (
-      <div className="px-4 py-3 prose prose-sm max-w-none dark:prose-invert">
+      <div className="prose prose-sm max-w-none dark:prose-invert" style={{ padding: '4px' }}>
         <div
           dangerouslySetInnerHTML={{
             __html: renderMarkdown(cell.content || '')
@@ -404,7 +415,7 @@ export function CellRenderer({
 
     if (isActive || isSelected) {
       return (
-        <div className="px-4 py-3">
+        <div style={{ padding: '4px' }}>
           <textarea
             value={cell.content}
             onChange={(e) => onContentChange(cell.id, e.target.value)}
@@ -415,7 +426,8 @@ export function CellRenderer({
             style={{
               lineHeight: '1.7',
               minHeight: '100px',
-              fontSize: '14px'
+              fontSize: '14px',
+              padding: '4px' // Match table widget: 4px padding
             }}
           />
         </div>
@@ -424,14 +436,14 @@ export function CellRenderer({
 
     // Not selected: show rendered output only (empty placeholder if no content)
     return cell.content.trim() ? rendered : (
-      <div className="px-4 py-8 text-sm text-gray-400 dark:text-gray-500 text-center" onClick={() => onFocus(cell.id)}>
+      <div className="text-sm text-gray-400 dark:text-gray-500 text-center" style={{ padding: '4px' }} onClick={() => onFocus(cell.id)}>
         Click to add markdown…
       </div>
     )
   }
 
   const renderRawCell = () => (
-    <div className="px-4 py-3">
+    <div style={{ padding: '4px' }}>
       <textarea
         value={cell.content}
         onChange={(e) => onContentChange(cell.id, e.target.value)}
@@ -442,7 +454,8 @@ export function CellRenderer({
         style={{ 
           lineHeight: '1.6',
           minHeight: '100px',
-          fontSize: '14px'
+          fontSize: '14px',
+          padding: '4px' // Match table widget: 4px padding
         }}
       />
     </div>
@@ -477,19 +490,21 @@ export function CellRenderer({
       className={cn(
         "group relative transition-all duration-200",
         "mx-2 my-2",
-        "rounded-[5px]",
-        // Markdown cells: transparent with border
+        // Match table widget cell design: 0px border radius, 1px solid border, 4px padding
+        "rounded-none",
+        // All cells: white/transparent background with 1px solid border
         cell.type === 'markdown' || cell.type === 'raw' 
-          ? "bg-transparent border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600" 
-          : // Other cells: light grey background, no border
-            "bg-gray-100 dark:bg-gray-800 border-0",
-        // No left color indicators
-        "",
+          ? "bg-transparent border border-[#e5e7eb] dark:border-gray-700" 
+          : // Code/SQL cells: light grey background with border
+            "bg-gray-100 dark:bg-gray-800 border border-[#e5e7eb] dark:border-gray-700",
         // Selected state
         isSelected ? "ring-2 ring-blue-200 dark:ring-blue-800" : "",
-        // Remove status-based left borders
-        ""
       )}
+      style={{
+        borderWidth: '1px',
+        borderStyle: 'solid',
+        borderRadius: '0px',
+      }}
       onClick={() => onFocus(cell.id)}
     >
       {/* Cell Controls - Always visible on the right side */}
@@ -548,9 +563,9 @@ export function CellRenderer({
 
         {/* Cell Content Area - DeepNote design */}
         <div className="flex-1 min-w-0">
-          {/* Cell Toolbar - DeepNote style: visible, modern */}
+          {/* Cell Toolbar - Match table widget design */}
           {cell.type === 'code' && (
-          <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 rounded-t-[5px]">
+          <div className="flex items-center justify-between px-4 py-2 border-b border-[#e5e7eb] dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50" style={{ borderWidth: '1px', borderStyle: 'solid', borderRadius: '0px' }}>
             <div className="flex items-center space-x-3">
               {/* Execution count - inline in toolbar */}
               <div className={cn(
@@ -605,6 +620,60 @@ export function CellRenderer({
               )}
             </div>
             <div className="flex items-center space-x-1">
+              {/* Bookmark Button */}
+              {onToggleBookmark && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onToggleBookmark(cell.id)
+                  }}
+                  className={cn(
+                    "h-7 w-7 p-0",
+                    cell.isBookmarked 
+                      ? "text-yellow-500 hover:text-yellow-600" 
+                      : "text-gray-400 hover:text-gray-600"
+                  )}
+                  title={cell.isBookmarked ? "Remove bookmark" : "Bookmark cell"}
+                >
+                  <Bookmark className={cn("h-3.5 w-3.5", cell.isBookmarked && "fill-current")} />
+                </Button>
+              )}
+              {/* Collapse Button */}
+              {onToggleCollapse && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onToggleCollapse(cell.id)
+                  }}
+                  className="h-7 w-7 p-0 text-gray-400 hover:text-gray-600"
+                  title={cell.isCollapsed ? "Expand cell" : "Collapse cell"}
+                >
+                  {cell.isCollapsed ? (
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  ) : (
+                    <ChevronUp className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+              )}
+              {/* Execution History Button */}
+              {cell.executionHistory && cell.executionHistory.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    // Show execution history tooltip or modal
+                  }}
+                  className="h-7 w-7 p-0 text-gray-400 hover:text-gray-600"
+                  title={`Execution history (${cell.executionHistory.length} executions)`}
+                >
+                  <History className="h-3.5 w-3.5" />
+                </Button>
+              )}
               {/* Run Button - in toolbar */}
               {(cell.type === 'code' || cell.type === 'sql') && (
                 <Button
@@ -685,9 +754,9 @@ export function CellRenderer({
           </div>
           )}
 
-          {/* SQL Cell - DeepNote style toolbar */}
+          {/* SQL Cell - Match table widget design */}
           {cell.type === 'sql' && (
-            <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 rounded-t-[5px]">
+            <div className="px-4 py-2 border-b border-[#e5e7eb] dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50" style={{ borderWidth: '1px', borderStyle: 'solid', borderRadius: '0px' }}>
               <div className="flex items-center gap-3 flex-wrap justify-between">
                 <div className="flex items-center gap-3 flex-wrap">
                   {/* Execution count - inline in toolbar */}
@@ -768,11 +837,19 @@ export function CellRenderer({
 
           {/* Cell Content */}
           <div className={cell.type === 'code' ? '' : ''}>
-            {cell.type === 'code' ? renderCodeCell() : 
-             cell.type === 'markdown' ? renderMarkdownCell() : 
-             cell.type === 'sql' ? renderSQLCell() :
-             /* Treat RAW like Markdown */
-             renderMarkdownCell()}
+            {cell.isCollapsed ? (
+              <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400 italic text-center">
+                Cell content collapsed. Click the expand button to view.
+              </div>
+            ) : (
+              <>
+                {cell.type === 'code' ? renderCodeCell() : 
+                 cell.type === 'markdown' ? renderMarkdownCell() : 
+                 cell.type === 'sql' ? renderSQLCell() :
+                 /* Treat RAW like Markdown */
+                 renderMarkdownCell()}
+              </>
+            )}
           </div>
 
       {/* Comments Drawer */}

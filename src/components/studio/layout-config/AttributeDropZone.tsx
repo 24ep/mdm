@@ -7,7 +7,7 @@ import { Calendar as CalendarIcon, Hash, Type as TypeIcon } from 'lucide-react'
 import { Attribute } from './chartDataSourceTypes'
 import { getAttributeIcon, getTypeBadgeClass, getEffectiveType } from './chartDataSourceUtils'
 import { AggregationType } from './ChartDataSourceConfig'
-import { ColorPickerPopover } from './ColorPickerPopover'
+import { ColorInput } from './ColorInput'
 
 interface AttributeDropZoneProps {
   dimKey: string
@@ -365,50 +365,20 @@ function AttributeStylePopover({
           </div>
           <div className="flex items-center gap-2 justify-between">
             <span className="text-muted-foreground">Font color</span>
-            <div className="relative w-32">
-              <ColorPickerPopover
-                value={style.color || '#111827'}
-                onChange={(color) => onChange && onChange({ color })}
-                allowImageVideo={false}
-              >
-                <button
-                  type="button"
-                  className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                  style={getSwatchStyle(style.color || '#111827')}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </ColorPickerPopover>
-              <Input
-                type="text"
-                value={style.color || '#111827'}
-                onChange={(e) => onChange && onChange({ color: e.target.value })}
-                className="h-7 text-xs pl-7 w-full rounded-[2px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
-              />
-            </div>
+            <ColorInput
+              value={style.color || '#111827'}
+              onChange={(color) => onChange && onChange({ color })}
+              allowImageVideo={false}
+            />
           </div>
           <div className="flex items-center gap-2 justify-between">
             <span className="text-muted-foreground">Background</span>
             <div className="flex items-center gap-1">
-              <div className="relative w-32">
-                <ColorPickerPopover
-                  value={style.background || '#ffffff'}
-                  onChange={(color) => onChange && onChange({ background: color })}
-                  allowImageVideo={false}
-                >
-                  <button
-                    type="button"
-                    className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                    style={getSwatchStyle(style.background || '#ffffff')}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </ColorPickerPopover>
-                <Input
-                  type="text"
-                  value={style.background || '#ffffff'}
-                  onChange={(e) => onChange && onChange({ background: e.target.value })}
-                  className="h-7 text-xs pl-7 w-full rounded-[2px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
-                />
-              </div>
+              <ColorInput
+                value={style.background || '#ffffff'}
+                onChange={(color) => onChange && onChange({ background: color })}
+                allowImageVideo={false}
+              />
               <label className="flex items-center gap-1 text-[10px] text-muted-foreground">
                 <input type="checkbox" checked={!!style.useRowBackground} onChange={(e) => onChange && onChange({ useRowBackground: e.target.checked })} /> use row bg
               </label>
@@ -462,26 +432,11 @@ function AttributeStylePopover({
               </div>
               <div className="flex items-center gap-2 justify-between">
                 <span className="text-muted-foreground">Color</span>
-                <div className="relative w-32">
-                  <ColorPickerPopover
-                    value={style.valueColor || '#3b82f6'}
-                    onChange={(color) => onChange && onChange({ valueColor: color })}
-                    allowImageVideo={false}
-                  >
-                    <button
-                      type="button"
-                      className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                      style={getSwatchStyle(style.valueColor || '#3b82f6')}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </ColorPickerPopover>
-                  <Input
-                    type="text"
-                    value={style.valueColor || '#3b82f6'}
-                    onChange={(e) => onChange && onChange({ valueColor: e.target.value })}
-                    className="h-7 text-xs pl-7 w-full rounded-[2px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
-                  />
-                </div>
+                <ColorInput
+                  value={style.valueColor || '#3b82f6'}
+                  onChange={(color) => onChange && onChange({ valueColor: color })}
+                  allowImageVideo={false}
+                />
               </div>
             </>
           )}

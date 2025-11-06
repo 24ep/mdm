@@ -44,6 +44,9 @@ export function useNotebookState(initialNotebook?: Notebook): [NotebookState, No
   const [currentTheme, setCurrentTheme] = useState<'light' | 'dark' | 'auto'>('light')
   const [showVariables, setShowVariables] = useState(true)
   const [showOutput, setShowOutput] = useState(true)
+  const [showBookmarks, setShowBookmarks] = useState(false)
+  const [showTableOfContents, setShowTableOfContents] = useState(false)
+  const [showSnippets, setShowSnippets] = useState(false)
   const [kernelStatus, setKernelStatus] = useState<'idle' | 'busy' | 'error'>('idle')
   const [executionCount, setExecutionCount] = useState(0)
   const [currentKernel, setCurrentKernel] = useState<Kernel | null>(null)
@@ -81,6 +84,9 @@ export function useNotebookState(initialNotebook?: Notebook): [NotebookState, No
     currentTheme,
     showVariables,
     showOutput,
+    showBookmarks,
+    showTableOfContents,
+    showSnippets,
     kernelStatus,
     executionCount,
     currentKernel,
@@ -106,6 +112,9 @@ export function useNotebookState(initialNotebook?: Notebook): [NotebookState, No
     currentTheme,
     showVariables,
     showOutput,
+    showBookmarks,
+    showTableOfContents,
+    showSnippets,
     kernelStatus,
     executionCount,
     currentKernel,
@@ -133,6 +142,9 @@ export function useNotebookState(initialNotebook?: Notebook): [NotebookState, No
     setCurrentTheme,
     setShowVariables,
     setShowOutput,
+    setShowBookmarks,
+    setShowTableOfContents,
+    setShowSnippets,
     setKernelStatus,
     setExecutionCount,
     setCurrentKernel,
@@ -158,6 +170,9 @@ export function useNotebookState(initialNotebook?: Notebook): [NotebookState, No
     setCurrentTheme,
     setShowVariables,
     setShowOutput,
+    setShowBookmarks,
+    setShowTableOfContents,
+    setShowSnippets,
     setKernelStatus,
     setExecutionCount,
     setCurrentKernel,

@@ -70,7 +70,8 @@ import {
   Code,
   Download,
   TestTube,
-  MoreVertical
+  MoreVertical,
+  Activity
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -99,6 +100,8 @@ import {
 } from '@/components/bigquery'
 import { useKeyboardShortcuts, useSpaces, useDataModels } from '@/hooks'
 import { formatSQL } from '@/lib/sql-formatter'
+import { QueryPlanViewer } from '@/components/bigquery/QueryPlanViewer'
+import { QueryPerformanceDashboard } from '@/components/bigquery/QueryPerformanceDashboard'
 
 interface QueryResult {
   id: string
@@ -202,7 +205,7 @@ export function BigQueryInterface() {
   })
   
   // Footer tabs
-  const [footerTab, setFooterTab] = useState<'results' | 'history' | 'visualization' | 'validation'>('results')
+  const [footerTab, setFooterTab] = useState<'results' | 'history' | 'visualization' | 'validation' | 'statistics'>('results')
   const [showFooter, setShowFooter] = useState(true)
   const [footerHeight, setFooterHeight] = useState(320)
   const [isResizing, setIsResizing] = useState(false)
@@ -222,6 +225,7 @@ export function BigQueryInterface() {
   const [showVersionHistory, setShowVersionHistory] = useState(false)
   const [showDryRun, setShowDryRun] = useState(false)
   const [showExplainPlan, setShowExplainPlan] = useState(false)
+  const [showPerformanceDashboard, setShowPerformanceDashboard] = useState(false)
   const [bookmarkedQueries, setBookmarkedQueries] = useState<Set<string>>(new Set())
   const [scheduledQueries, setScheduledQueries] = useState<any[]>([])
   const [queryComments, setQueryComments] = useState<any[]>([])
@@ -985,6 +989,10 @@ export function BigQueryInterface() {
                       <BarChart3 className="h-4 w-4 mr-2" />
                       Explain Plan
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowPerformanceDashboard(true)}>
+                      <Activity className="h-4 w-4 mr-2" />
+                      Performance Dashboard
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
                   </div>
@@ -1240,14 +1248,23 @@ LIMIT 100;"
 
       {/* Explain Plan Dialog */}
       <Dialog open={showExplainPlan} onOpenChange={setShowExplainPlan}>
-        <DialogContent className="sm:max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Explain Plan</DialogTitle>
-            <DialogDescription>
-              See the execution plan derived from your SQL.
-            </DialogDescription>
-          </DialogHeader>
-          <QueryPlan query={query} isVisible={true} />
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+          <QueryPlanViewer 
+            query={query} 
+            onClose={() => setShowExplainPlan(false)} 
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Performance Dashboard Dialog */}
+      <Dialog open={showPerformanceDashboard} onOpenChange={setShowPerformanceDashboard}>
+        <DialogContent className="sm:max-w-6xl max-h-[90vh] overflow-y-auto">
+          <QueryPerformanceDashboard
+            onQueryClick={(query) => {
+              updateCurrentTabQuery(query)
+              setShowPerformanceDashboard(false)
+            }}
+          />
         </DialogContent>
       </Dialog>
 

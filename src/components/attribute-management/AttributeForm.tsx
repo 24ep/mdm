@@ -300,9 +300,13 @@ export function AttributeForm({ initialData, onSubmit, onCancel, loading = false
                 <div key={index} className="flex items-center gap-3 p-3 border rounded-lg">
                   {/* Color Swatch */}
                   <div className="flex items-center gap-2">
-                    <ColorPicker
+                    <ColorInput
                       value={option.color || '#3B82F6'}
                       onChange={(color) => handleOptionChange(index, 'color', color)}
+                      allowImageVideo={false}
+                      className="relative"
+                      placeholder="#3B82F6"
+                      inputClassName="h-8 text-xs pl-7"
                     />
                   </div>
                   

@@ -135,6 +135,11 @@ interface NotebookToolbarProps {
   onMergeCells?: () => void
   onSplitCell?: () => void
   onToggleCellType?: () => void
+  onShowBookmarks?: () => void
+  onShowTableOfContents?: () => void
+  onShowSnippets?: () => void
+  onExportToPDF?: () => void
+  onExportToHTML?: () => void
   canEdit?: boolean
 }
 
@@ -171,6 +176,11 @@ export function NotebookToolbar({
   onMergeCells,
   onSplitCell,
   onToggleCellType,
+  onShowBookmarks,
+  onShowTableOfContents,
+  onShowSnippets,
+  onExportToPDF,
+  onExportToHTML,
   canEdit = true
 }: NotebookToolbarProps) {
   const [showAddMenu, setShowAddMenu] = useState(false)
@@ -441,6 +451,42 @@ export function NotebookToolbar({
               >
                 <Database className="h-4 w-4" />
               </Button>
+              
+              {onShowBookmarks && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onShowBookmarks}
+                  className="h-8 w-8 p-0"
+                  title="Bookmarks"
+                >
+                  <Bookmark className="h-4 w-4" />
+                </Button>
+              )}
+              
+              {onShowTableOfContents && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onShowTableOfContents}
+                  className="h-8 w-8 p-0"
+                  title="Table of Contents"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              )}
+              
+              {onShowSnippets && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onShowSnippets}
+                  className="h-8 w-8 p-0"
+                  title="Code Snippets"
+                >
+                  <Code className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           )}
 
@@ -460,9 +506,34 @@ export function NotebookToolbar({
                 variant="outline"
                 onClick={onExport}
                 className="h-8 w-8 p-0"
+                title="Export Notebook"
               >
                 <Download className="h-4 w-4" />
               </Button>
+              
+              {onExportToPDF && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onExportToPDF}
+                  className="h-8 w-8 p-0"
+                  title="Export to PDF"
+                >
+                  <FileText className="h-4 w-4" />
+                </Button>
+              )}
+              
+              {onExportToHTML && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onExportToHTML}
+                  className="h-8 w-8 p-0"
+                  title="Export to HTML"
+                >
+                  <Globe className="h-4 w-4" />
+                </Button>
+              )}
               
               <Button
                 size="sm"

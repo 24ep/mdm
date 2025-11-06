@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { ScrollableList } from '@/components/ui/scrollable-list'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { ColorPicker } from '@/components/ui/color-picker'
+import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 import { 
   Database, 
   Type, 
@@ -727,7 +727,7 @@ export function AttributeDetailDrawer({
                         <div key={index} className="flex items-center gap-3 p-3 border rounded-lg">
                           {/* Color Swatch */}
                           <div className="flex items-center gap-2">
-                            <ColorPicker
+                            <ColorInput
                               value={editingOption === index ? editingOptionData.color : option.color || '#3B82F6'}
                               onChange={(color) => {
                                 if (editingOption === index) {
@@ -739,6 +739,10 @@ export function AttributeDetailDrawer({
                                   onSave({ ...attribute, options: updatedOptions })
                                 }
                               }}
+                              allowImageVideo={false}
+                              className="relative"
+                              placeholder="#3B82F6"
+                              inputClassName="h-8 text-xs pl-7"
                             />
                           </div>
                           
@@ -842,9 +846,13 @@ export function AttributeDetailDrawer({
                         <div className="flex items-center gap-3 p-3 border-2 border-dashed border-blue-300 bg-blue-50 rounded-lg">
                           {/* Color Swatch */}
                           <div className="flex items-center gap-2">
-                            <ColorPicker
+                            <ColorInput
                               value={newOption.color}
                               onChange={(color) => setNewOption({ ...newOption, color })}
+                              allowImageVideo={false}
+                              className="relative"
+                              placeholder="#3B82F6"
+                              inputClassName="h-8 text-xs pl-7"
                             />
                           </div>
                         

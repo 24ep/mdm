@@ -13,7 +13,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { ColorPicker } from '@/components/ui/color-picker'
+import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import { 
   Database, 
@@ -649,10 +649,14 @@ export function EnhancedAttributeDetailDrawer({
                           <div key={index} className="flex items-center gap-3 p-3 border rounded-lg">
                             {/* Color Swatch */}
                             <div className="flex items-center gap-2">
-                              <ColorPicker
+                              <ColorInput
                                 value={option.color || '#3B82F6'}
                                 onChange={(color) => handleOptionChange(index, 'color', color)}
+                                allowImageVideo={false}
                                 disabled={!permissions.canEdit}
+                                className="relative"
+                                placeholder="#3B82F6"
+                                inputClassName="h-8 text-xs pl-7"
                               />
                             </div>
                             
@@ -699,9 +703,13 @@ export function EnhancedAttributeDetailDrawer({
                             <div className="flex items-center gap-3">
                               {/* Color Swatch */}
                               <div className="flex items-center gap-2">
-                                <ColorPicker
+                                <ColorInput
                                   value={newOption.color}
                                   onChange={(color) => setNewOption({ ...newOption, color })}
+                                  allowImageVideo={false}
+                                  className="relative"
+                                  placeholder="#3B82F6"
+                                  inputClassName="h-8 text-xs pl-7"
                                 />
                               </div>
                               

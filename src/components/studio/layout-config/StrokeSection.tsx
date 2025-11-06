@@ -10,7 +10,7 @@ import { Plus, Eye, Minus, RotateCcw, ChevronUp, ChevronRight, ChevronDown, Chev
 import { PlacedWidget } from './widgets'
 import { ComponentStyle } from './types'
 import { getEffectiveStyle, isUsingGlobalStyle } from './globalStyleUtils'
-import { ColorPickerPopover } from './ColorPickerPopover'
+import { ColorInput } from './ColorInput'
 
 interface StrokeSectionProps {
   widget: PlacedWidget
@@ -129,35 +129,13 @@ export function StrokeSection({
 
       {/* Stroke Color */}
       <div className="relative mb-2 w-28">
-        <ColorPickerPopover
+        <ColorInput
           value={effectiveBorderColor}
           onChange={(color) => updateProperty('borderColor', color)}
           allowImageVideo={false}
-        >
-          <button
-            type="button"
-            className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-            style={{
-              backgroundColor: effectiveBorderColor.startsWith('#') || effectiveBorderColor.startsWith('rgb') 
-                ? effectiveBorderColor 
-                : effectiveBorderColor.startsWith('linear-gradient') || effectiveBorderColor.startsWith('radial-gradient')
-                ? 'transparent'
-                : '#e5e7eb',
-              border: 'none',
-              outline: 'none',
-              backgroundImage: effectiveBorderColor.startsWith('linear-gradient') || effectiveBorderColor.startsWith('radial-gradient')
-                ? effectiveBorderColor
-                : 'none',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          />
-        </ColorPickerPopover>
-        <Input
-          type="text"
-          value={effectiveBorderColor}
-          onChange={(e) => updateProperty('borderColor', e.target.value)}
-          className="h-7 text-xs pl-7"
+          className="relative"
           placeholder="#e5e7eb"
+          inputClassName="h-7 text-xs pl-7"
         />
         {!isBorderColorGlobal && globalStyle && (
           <Button

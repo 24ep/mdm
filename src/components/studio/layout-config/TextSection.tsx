@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { ColorPickerPopover } from './ColorPickerPopover'
+import { ColorInput } from './ColorInput'
 import { PlacedWidget } from './widgets'
 import { Star, Home, Settings as SettingsIcon, User, Bell } from 'lucide-react'
 
@@ -55,26 +55,13 @@ export function TextSection({ widget, selectedWidgetId, setPlacedWidgets }: Text
           </div>
           <div className="space-y-1">
             <Label className="text-xs">Icon color</Label>
-            <div className="relative w-28">
-              <ColorPickerPopover
-                value={String(props.textIconColor || '#111827')}
-                onChange={(c) => update('textIconColor', c)}
-                allowImageVideo={false}
-              >
-                <button
-                  type="button"
-                  className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                  style={{ backgroundColor: String(props.textIconColor || '#111827'), border: 'none', outline: 'none' }}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </ColorPickerPopover>
-              <Input
-                type="text"
-                value={String(props.textIconColor || '#111827')}
-                onChange={(e) => update('textIconColor', e.target.value)}
-                className="h-7 text-xs pl-7"
-              />
-            </div>
+            <ColorInput
+              value={String(props.textIconColor || '#111827')}
+              onChange={(c) => update('textIconColor', c)}
+              allowImageVideo={false}
+              className="relative w-28"
+              inputClassName="h-7 text-xs pl-7"
+            />
           </div>
         </>
       )}
@@ -140,16 +127,13 @@ export function TextSection({ widget, selectedWidgetId, setPlacedWidgets }: Text
         </div>
         <div className="space-y-1 col-span-2">
           <Label className="text-xs">Text color</Label>
-          <div className="relative w-28">
-            <ColorPickerPopover
-              value={String(props.textColor || '#000000')}
-              onChange={(c) => update('textColor', c)}
-              allowImageVideo={false}
-            >
-              <button type="button" className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10" style={{ backgroundColor: String(props.textColor || '#000000'), border: 'none', outline: 'none' }} onClick={(e) => e.stopPropagation()} />
-            </ColorPickerPopover>
-            <Input type="text" value={String(props.textColor || '#000000')} onChange={(e) => update('textColor', e.target.value)} className="h-7 text-xs pl-7" />
-          </div>
+          <ColorInput
+            value={String(props.textColor || '#000000')}
+            onChange={(c) => update('textColor', c)}
+            allowImageVideo={false}
+            className="relative w-28"
+            inputClassName="h-7 text-xs pl-7"
+          />
         </div>
       </div>
     </div>

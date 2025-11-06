@@ -13,7 +13,7 @@ import { CHART_DIMENSIONS, isValueMetricDimension } from './chartDimensions'
 import { getEffectiveType } from './chartDataSourceUtils'
 import { useDataModels, useAttributes } from './useChartDataSource'
 import { AttributeDropZone } from './AttributeDropZone'
-import { ColorPickerPopover } from './ColorPickerPopover'
+import { ColorInput } from './ColorInput'
 
 // Aggregation types for value/metric dimensions
 export type AggregationType = 'SUM' | 'AVG' | 'COUNT' | 'COUNT_DISTINCT' | 'MIN' | 'MAX' | 'MEDIAN' | 'STDDEV' | 'VARIANCE' | 'NONE'
@@ -521,6 +521,27 @@ export function ChartDataSourceConfig({
           <div className="text-xs text-red-500 mt-1">Space ID is required to load data models</div>
         )}
       </div>
+
+      {/* Data Limit Control */}
+      <div className="space-y-2 border-t pt-3">
+        <Label className="text-xs font-semibold">Data Limit</Label>
+        <div className="space-y-1">
+          <p className="text-xs text-muted-foreground">
+            Maximum number of records to fetch (leave empty for no limit)
+          </p>
+          <Input
+            type="number"
+            value={widget.properties?.dataLimit || ''}
+            onChange={(e) => {
+              const value = e.target.value
+              updateProperty('dataLimit', value ? parseInt(value) || undefined : undefined)
+            }}
+            placeholder="No limit"
+            className="h-8 text-xs"
+            min="1"
+          />
+        </div>
+      </div>
       
       {/* Chart Dimensions */}
       {selectedModelId && (
@@ -623,49 +644,19 @@ export function ChartDataSourceConfig({
                             </div>
                             <div className="flex items-center gap-2 justify-between">
                               <span className="text-muted-foreground">Font color</span>
-                              <div className="relative w-32">
-                                <ColorPickerPopover
-                                  value={dimensionStyle.fontColor || '#111827'}
-                                  onChange={(color) => setDimensionStyle(dim.key, { fontColor: color })}
-                                  allowImageVideo={false}
-                                >
-                                  <button
-                                    type="button"
-                                    className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                                    style={getSwatchStyle(dimensionStyle.fontColor || '#111827')}
-                                    onClick={(e) => e.stopPropagation()}
-                                  />
-                                </ColorPickerPopover>
-                                <Input
-                                  type="text"
-                                  value={dimensionStyle.fontColor || '#111827'}
-                                  onChange={(e) => setDimensionStyle(dim.key, { fontColor: e.target.value })}
-                                  className="h-7 text-xs pl-7 w-full rounded-[2px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
-                                />
-                              </div>
+                              <ColorInput
+                                value={dimensionStyle.fontColor || '#111827'}
+                                onChange={(color) => setDimensionStyle(dim.key, { fontColor: color })}
+                                allowImageVideo={false}
+                              />
                             </div>
                             <div className="flex items-center gap-2 justify-between">
                               <span className="text-muted-foreground">Background</span>
-                              <div className="relative w-32">
-                                <ColorPickerPopover
-                                  value={dimensionStyle.background || '#ffffff'}
-                                  onChange={(color) => setDimensionStyle(dim.key, { background: color })}
-                                  allowImageVideo={false}
-                                >
-                                  <button
-                                    type="button"
-                                    className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                                    style={getSwatchStyle(dimensionStyle.background || '#ffffff')}
-                                    onClick={(e) => e.stopPropagation()}
-                                  />
-                                </ColorPickerPopover>
-                                <Input
-                                  type="text"
-                                  value={dimensionStyle.background || '#ffffff'}
-                                  onChange={(e) => setDimensionStyle(dim.key, { background: e.target.value })}
-                                  className="h-7 text-xs pl-7 w-full rounded-[2px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
-                                />
-                              </div>
+                              <ColorInput
+                                value={dimensionStyle.background || '#ffffff'}
+                                onChange={(color) => setDimensionStyle(dim.key, { background: color })}
+                                allowImageVideo={false}
+                              />
                             </div>
                             <div className="flex items-center gap-2 justify-between">
                               <span className="text-muted-foreground">Padding</span>
@@ -683,26 +674,11 @@ export function ChartDataSourceConfig({
                             </div>
                             <div className="flex items-center gap-2 justify-between">
                               <span className="text-muted-foreground">Border color</span>
-                              <div className="relative w-32">
-                                <ColorPickerPopover
-                                  value={dimensionStyle.borderColor || '#e5e7eb'}
-                                  onChange={(color) => setDimensionStyle(dim.key, { borderColor: color })}
-                                  allowImageVideo={false}
-                                >
-                                  <button
-                                    type="button"
-                                    className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                                    style={getSwatchStyle(dimensionStyle.borderColor || '#e5e7eb')}
-                                    onClick={(e) => e.stopPropagation()}
-                                  />
-                                </ColorPickerPopover>
-                                <Input
-                                  type="text"
-                                  value={dimensionStyle.borderColor || '#e5e7eb'}
-                                  onChange={(e) => setDimensionStyle(dim.key, { borderColor: e.target.value })}
-                                  className="h-7 text-xs pl-7 w-full rounded-[2px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
-                                />
-                              </div>
+                              <ColorInput
+                                value={dimensionStyle.borderColor || '#e5e7eb'}
+                                onChange={(color) => setDimensionStyle(dim.key, { borderColor: color })}
+                                allowImageVideo={false}
+                              />
                             </div>
                             {dim.key === 'values' && (
                               <>

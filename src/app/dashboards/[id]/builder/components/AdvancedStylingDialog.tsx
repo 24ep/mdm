@@ -24,6 +24,7 @@ import {
   Grid3X3
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 
 interface Theme {
   id: string
@@ -290,22 +291,17 @@ export function AdvancedStylingDialog({
     }
   }
 
-  const ColorInput = ({ label, colorKey, value }: { label: string; colorKey: keyof Theme['colors']; value: string }) => (
+  const ColorInputField = ({ label, colorKey, value }: { label: string; colorKey: keyof Theme['colors']; value: string }) => (
     <div className="space-y-2">
       <Label className="text-sm font-medium">{label}</Label>
-      <div className="flex space-x-2">
-        <Input
-          type="color"
-          value={value}
-          onChange={(e) => handleColorChange(colorKey, e.target.value)}
-          className="w-12 h-10"
-        />
-        <Input
-          value={value}
-          onChange={(e) => handleColorChange(colorKey, e.target.value)}
-          className="flex-1 font-mono text-sm"
-        />
-      </div>
+      <ColorInput
+        value={value}
+        onChange={(color) => handleColorChange(colorKey, color)}
+        allowImageVideo={false}
+        className="relative"
+        placeholder="#000000"
+        inputClassName="flex-1 font-mono text-sm pl-7"
+      />
     </div>
   )
 
@@ -382,26 +378,26 @@ export function AdvancedStylingDialog({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <h4 className="font-medium">Primary Colors</h4>
-                  <ColorInput label="Primary" colorKey="primary" value={theme.colors.primary} />
-                  <ColorInput label="Secondary" colorKey="secondary" value={theme.colors.secondary} />
-                  <ColorInput label="Accent" colorKey="accent" value={theme.colors.accent} />
+                  <ColorInputField label="Primary" colorKey="primary" value={theme.colors.primary} />
+                  <ColorInputField label="Secondary" colorKey="secondary" value={theme.colors.secondary} />
+                  <ColorInputField label="Accent" colorKey="accent" value={theme.colors.accent} />
                 </div>
                 <div className="space-y-4">
                   <h4 className="font-medium">Background Colors</h4>
-                  <ColorInput label="Background" colorKey="background" value={theme.colors.background} />
-                  <ColorInput label="Surface" colorKey="surface" value={theme.colors.surface} />
-                  <ColorInput label="Border" colorKey="border" value={theme.colors.border} />
+                  <ColorInputField label="Background" colorKey="background" value={theme.colors.background} />
+                  <ColorInputField label="Surface" colorKey="surface" value={theme.colors.surface} />
+                  <ColorInputField label="Border" colorKey="border" value={theme.colors.border} />
                 </div>
                 <div className="space-y-4">
                   <h4 className="font-medium">Text Colors</h4>
-                  <ColorInput label="Text" colorKey="text" value={theme.colors.text} />
-                  <ColorInput label="Text Secondary" colorKey="textSecondary" value={theme.colors.textSecondary} />
+                  <ColorInputField label="Text" colorKey="text" value={theme.colors.text} />
+                  <ColorInputField label="Text Secondary" colorKey="textSecondary" value={theme.colors.textSecondary} />
                 </div>
                 <div className="space-y-4">
                   <h4 className="font-medium">Status Colors</h4>
-                  <ColorInput label="Success" colorKey="success" value={theme.colors.success} />
-                  <ColorInput label="Warning" colorKey="warning" value={theme.colors.warning} />
-                  <ColorInput label="Error" colorKey="error" value={theme.colors.error} />
+                  <ColorInputField label="Success" colorKey="success" value={theme.colors.success} />
+                  <ColorInputField label="Warning" colorKey="warning" value={theme.colors.warning} />
+                  <ColorInputField label="Error" colorKey="error" value={theme.colors.error} />
                 </div>
               </div>
             </TabsContent>

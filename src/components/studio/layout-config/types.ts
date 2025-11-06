@@ -64,7 +64,7 @@ export type GlobalStyleConfig = {
 export type UnifiedPage = { 
   id: string
   name: string
-  type: 'built-in' | 'custom' | 'separator' | 'label' | 'text' | 'header' | 'image' | 'badge'
+  type: 'built-in' | 'custom' | 'separator' | 'label' | 'text' | 'header' | 'image' | 'badge' | 'login'
   icon?: React.ComponentType<{ className?: string }>
   page?: SpacesEditorPage
   label?: string // For label type

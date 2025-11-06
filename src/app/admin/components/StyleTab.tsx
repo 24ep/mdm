@@ -6,8 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { useMemo, useState } from 'react'
-import { ColorPickerPopover } from '@/components/studio/layout-config/ColorPickerPopover'
 import * as Icons from 'lucide-react'
+import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 
 interface ChatbotVersion {
   id: string
@@ -38,6 +38,15 @@ interface Chatbot {
   bubbleBorderColor?: string
   bubbleBorderWidth?: string
   bubbleBorderRadius?: string
+  bubblePadding?: string
+  // Message background colors
+  userMessageBackgroundColor?: string
+  botMessageBackgroundColor?: string
+  // Message display options
+  showMessageName?: boolean
+  messageName?: string
+  messageNamePosition?: 'top-of-message' | 'top-of-avatar'
+  showMessageAvatar?: boolean
   messageBoxColor: string
   shadowColor: string
   shadowBlur: string
@@ -72,6 +81,9 @@ interface Chatbot {
   chatWindowBorderColor?: string
   chatWindowBorderWidth?: string
   chatWindowBorderRadius?: string
+  // Chat window shadow
+  chatWindowShadowColor?: string
+  chatWindowShadowBlur?: string
   typingIndicatorStyle?: 'spinner' | 'dots' | 'pulse' | 'bounce'
   typingIndicatorColor?: string
   headerTitle?: string
@@ -85,6 +97,27 @@ interface Chatbot {
   headerBorderColor?: string
   headerPaddingX?: string
   headerPaddingY?: string
+  // Footer/Input Area
+  footerBgColor?: string
+  footerBorderColor?: string
+  footerBorderWidth?: string
+  footerBorderRadius?: string
+  footerPaddingX?: string
+  footerPaddingY?: string
+  footerInputBgColor?: string
+  footerInputBorderColor?: string
+  footerInputBorderWidth?: string
+  footerInputBorderRadius?: string
+  footerInputFontColor?: string
+  // Send Button
+  sendButtonIcon?: string
+  sendButtonRounded?: boolean
+  sendButtonBgColor?: string
+  sendButtonIconColor?: string
+  sendButtonShadowColor?: string
+  sendButtonShadowBlur?: string
+  // File Upload Layout
+  fileUploadLayout?: 'attach-first' | 'input-first'
   avatarType?: 'icon' | 'image'
   avatarIcon?: string
   avatarIconColor?: string
@@ -105,14 +138,31 @@ export function StyleTab({
   setFormData: React.Dispatch<React.SetStateAction<Partial<Chatbot>>>
 }) {
   useMemo(() => {}, [formData])
-  const [accordionValue, setAccordionValue] = useState<string>('brand')
-  const getSwatchStyle = (color: string | undefined): React.CSSProperties => {
-    const value = color || 'transparent'
-    const isGradient = typeof value === 'string' && value.includes('gradient')
-    return isGradient
-      ? { backgroundImage: value as string, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 2 }
-      : { backgroundColor: value as string, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 2 }
+  const [accordionValue, setAccordionValue] = useState<string>('chat-window')
+  
+  // Extract hex color from value (for color input which only accepts hex)
+  const extractHexColor = (value: string | undefined): string => {
+    if (!value) return '#000000'
+    // If it's already a hex color, return it
+    if (/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(value)) {
+      return value
+    }
+    // If it's a gradient or other format, try to extract first hex color
+    const hexMatch = value.match(/#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})/i)
+    return hexMatch ? hexMatch[0] : '#000000'
   }
+  
+  // Extract numeric value from string (removes px, %, etc.)
+  const extractNumericValue = (value: string | undefined): string => {
+    if (!value) return ''
+    const v = String(value).trim()
+    if (v === '') return ''
+    // Extract number part
+    const match = v.match(/^-?\d+(\.\d+)?/)
+    return match ? match[0] : ''
+  }
+
+
   const ensurePx = (value: string): string => {
     if (value == null) return ''
     const v = String(value).trim()
@@ -122,177 +172,153 @@ export function StyleTab({
     return v
   }
   return (
-    <Accordion type="single" collapsible value={accordionValue} onValueChange={setAccordionValue} className="space-y-2">
-      {/* Brand & Typography */}
-      <AccordionItem value="brand" className="border rounded-lg px-4">
+    <Accordion type="single" collapsible value={accordionValue} onValueChange={setAccordionValue} className="space-y-0">
+      {/* Chat Window */}
+      <AccordionItem value="chat-window" className="border-b px-4">
         <AccordionTrigger className="text-lg font-semibold hover:no-underline">
-          Brand & Typography
+          Chat Window
         </AccordionTrigger>
         <AccordionContent className="pt-4 pb-6">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Primary Color</Label>
-            <div className="relative">
-              <ColorPickerPopover value={formData.primaryColor || '#3b82f6'} onChange={(v) => setFormData({ ...formData, primaryColor: v })} allowImageVideo={false}>
-                <button type="button" className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10" style={getSwatchStyle(formData.primaryColor || '#3b82f6')} onClick={(e) => e.stopPropagation()} />
-              </ColorPickerPopover>
-              <Input type="text" value={formData.primaryColor} onChange={(e) => setFormData({ ...formData, primaryColor: e.target.value })} className="pl-7" placeholder="#3b82f6 or css gradient" />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label>Font Color</Label>
-            <div className="relative">
-              <ColorPickerPopover value={formData.fontColor || '#000000'} onChange={(v) => setFormData({ ...formData, fontColor: v })} allowImageVideo={false}>
-                <button type="button" className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10" style={getSwatchStyle(formData.fontColor || '#000000')} onClick={(e) => e.stopPropagation()} />
-              </ColorPickerPopover>
-              <Input type="text" value={formData.fontColor} onChange={(e) => setFormData({ ...formData, fontColor: e.target.value })} className="pl-7" placeholder="#000000 or css gradient" />
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 mt-4">
-          <div className="space-y-2">
-            <Label>Font Family</Label>
-            <Select
-              value={formData.fontFamily}
-              onValueChange={(v) => setFormData({ ...formData, fontFamily: v })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Inter">Inter</SelectItem>
-                <SelectItem value="Roboto">Roboto</SelectItem>
-                <SelectItem value="Open Sans">Open Sans</SelectItem>
-                <SelectItem value="Lato">Lato</SelectItem>
-                <SelectItem value="Montserrat">Montserrat</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Font Size</Label>
-            <Input
-              value={formData.fontSize}
-              onChange={(e) => setFormData({ ...formData, fontSize: ensurePx(e.target.value) })}
-              placeholder="14px"
-            />
-          </div>
-        </div>
-        </AccordionContent>
-      </AccordionItem>
-
-      {/* Surfaces & Borders */}
-      <AccordionItem value="surfaces" className="border rounded-lg px-4">
-        <AccordionTrigger className="text-lg font-semibold hover:no-underline">
-          Surfaces & Borders
-        </AccordionTrigger>
-        <AccordionContent className="pt-4 pb-6">
-        <div className="grid grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <Label>Border Color</Label>
-            <div className="relative">
-              <ColorPickerPopover value={formData.borderColor || '#e5e7eb'} onChange={(v) => setFormData({ ...formData, borderColor: v })} allowImageVideo={false}>
-                <button type="button" className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10" style={getSwatchStyle(formData.borderColor || '#e5e7eb')} onClick={(e) => e.stopPropagation()} />
-              </ColorPickerPopover>
-              <Input type="text" value={formData.borderColor} onChange={(e) => setFormData({ ...formData, borderColor: e.target.value })} className="pl-7" placeholder="#e5e7eb or css gradient" />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label>Border Width</Label>
-            <Input
-              value={formData.borderWidth}
-              onChange={(e) => setFormData({ ...formData, borderWidth: ensurePx(e.target.value) })}
-              placeholder="1px"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Border Radius</Label>
-            <Input
-              value={formData.borderRadius}
-              onChange={(e) => setFormData({ ...formData, borderRadius: ensurePx(e.target.value) })}
-              placeholder="8px"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 mt-4">
-          <div className="space-y-2">
-            <Label>Message Box Color</Label>
-            <div className="relative">
-              <ColorPickerPopover value={formData.messageBoxColor || '#ffffff'} onChange={(v) => setFormData({ ...formData, messageBoxColor: v })} allowImageVideo={false}>
-                <button type="button" className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10" style={getSwatchStyle(formData.messageBoxColor || '#ffffff')} onClick={(e) => e.stopPropagation()} />
-              </ColorPickerPopover>
-              <Input type="text" value={formData.messageBoxColor} onChange={(e) => setFormData({ ...formData, messageBoxColor: e.target.value })} className="pl-7" placeholder="#ffffff or css gradient" />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label>Logo URL</Label>
-            <Input
-              value={formData.logo}
-              onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
-              placeholder="https://example.com/logo.png"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 mt-4">
-          <div className="space-y-2">
-            <Label>Shadow Color</Label>
-            <div className="relative">
-              <ColorPickerPopover value={formData.shadowColor || '#000000'} onChange={(v) => setFormData({ ...formData, shadowColor: v })} allowImageVideo={false}>
-                <button type="button" className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10" style={getSwatchStyle(formData.shadowColor || '#000000')} onClick={(e) => e.stopPropagation()} />
-              </ColorPickerPopover>
-              <Input type="text" value={formData.shadowColor} onChange={(e) => setFormData({ ...formData, shadowColor: e.target.value })} className="pl-7" placeholder="#000000 or css gradient" />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label>Shadow Blur</Label>
-            <Input
-              value={formData.shadowBlur}
-              onChange={(e) => setFormData({ ...formData, shadowBlur: ensurePx(e.target.value) })}
-              placeholder="4px"
-            />
-          </div>
-        </div>
-
-        {/* Message Bubble Border */}
-        <div className="border-t pt-4 mt-4">
-          <h4 className="text-md font-semibold mb-4">Message Bubble Border</h4>
-          <div className="grid grid-cols-3 gap-4">
+        {/* Window Size */}
+        <div className="mb-4">
+          <h4 className="text-md font-semibold mb-4">Size</h4>
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Bubble Border Color</Label>
+              <Label>Width</Label>
               <div className="relative">
-                <ColorPickerPopover value={formData.bubbleBorderColor || formData.borderColor || '#e5e7eb'} onChange={(v) => setFormData({ ...formData, bubbleBorderColor: v })} allowImageVideo={false}>
-                  <button type="button" className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10" style={getSwatchStyle(formData.bubbleBorderColor || formData.borderColor || '#e5e7eb')} onClick={(e) => e.stopPropagation()} />
-                </ColorPickerPopover>
-                <Input type="text" value={formData.bubbleBorderColor} onChange={(e) => setFormData({ ...formData, bubbleBorderColor: e.target.value })} className="pl-7" placeholder="#e5e7eb or css gradient" />
+                <Input
+                  type="number"
+                  value={extractNumericValue(formData.chatWindowWidth)}
+                  onChange={(e) => setFormData({ ...formData, chatWindowWidth: ensurePx(e.target.value) })}
+                  placeholder="380"
+                  className="pr-8"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Bubble Border Width</Label>
-              <Input
-                value={formData.bubbleBorderWidth || formData.borderWidth}
-                onChange={(e) => setFormData({ ...formData, bubbleBorderWidth: ensurePx(e.target.value) })}
-                placeholder="1px"
+              <Label>Height</Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={extractNumericValue(formData.chatWindowHeight)}
+                  onChange={(e) => setFormData({ ...formData, chatWindowHeight: ensurePx(e.target.value) })}
+                  placeholder="600"
+                  className="pr-8"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Background & Colors */}
+        <div className="border-t pt-4 mb-4">
+          <h4 className="text-md font-semibold mb-4">Background & Colors</h4>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Background Color</Label>
+              <ColorInput
+                value={formData.messageBoxColor || '#ffffff'}
+                onChange={(color) => setFormData({ ...formData, messageBoxColor: color })}
+                allowImageVideo={false}
+                className="relative"
+                placeholder="#ffffff"
+                inputClassName="h-7 text-xs pl-7 w-full"
               />
             </div>
             <div className="space-y-2">
-              <Label>Bubble Border Radius</Label>
+              <Label>Logo URL</Label>
               <Input
-                value={formData.bubbleBorderRadius || formData.borderRadius}
-                onChange={(e) => setFormData({ ...formData, bubbleBorderRadius: ensurePx(e.target.value) })}
-                placeholder="8px"
+                value={formData.logo}
+                onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
+                placeholder="https://example.com/logo.png"
               />
+            </div>
+          </div>
+        </div>
+
+        {/* Borders */}
+        <div className="border-t pt-4 mb-4">
+          <h4 className="text-md font-semibold mb-4">Borders</h4>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Border Color</Label>
+              <ColorInput
+                value={formData.chatWindowBorderColor || formData.borderColor || '#e5e7eb'}
+                onChange={(color) => setFormData({ ...formData, chatWindowBorderColor: color })}
+                allowImageVideo={false}
+                className="relative"
+                placeholder="#e5e7eb"
+                inputClassName="h-7 text-xs pl-7 w-full"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Border Width</Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={extractNumericValue(formData.chatWindowBorderWidth || formData.borderWidth)}
+                  onChange={(e) => setFormData({ ...formData, chatWindowBorderWidth: ensurePx(e.target.value) })}
+                  placeholder="1"
+                  className="pr-8"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Border Radius</Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={extractNumericValue(formData.chatWindowBorderRadius || formData.borderRadius)}
+                  onChange={(e) => setFormData({ ...formData, chatWindowBorderRadius: ensurePx(e.target.value) })}
+                  placeholder="8"
+                  className="pr-8"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Shadow */}
+        <div className="border-t pt-4">
+          <h4 className="text-md font-semibold mb-4">Shadow</h4>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Shadow Color</Label>
+              <ColorInput
+                value={formData.chatWindowShadowColor || formData.shadowColor || '#000000'}
+                onChange={(color) => setFormData({ ...formData, chatWindowShadowColor: color })}
+                allowImageVideo={false}
+                className="relative"
+                placeholder="#000000"
+                inputClassName="h-7 text-xs pl-7 w-full"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Shadow Blur</Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={extractNumericValue(formData.chatWindowShadowBlur || formData.shadowBlur)}
+                  onChange={(e) => setFormData({ ...formData, chatWindowShadowBlur: ensurePx(e.target.value) })}
+                  placeholder="4"
+                  className="pr-8"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+              </div>
             </div>
           </div>
         </div>
         </AccordionContent>
       </AccordionItem>
 
-      {/* Widget Styling (Popover) */}
-      <AccordionItem value="widget" className="border rounded-lg px-4">
+      {/* Widget Button */}
+      <AccordionItem value="widget" className="border-b px-4">
         <AccordionTrigger className="text-lg font-semibold hover:no-underline">
-          Widget Styling (Popover)
+          Widget Button
         </AccordionTrigger>
         <AccordionContent className="pt-4 pb-6">
 
@@ -337,68 +363,102 @@ export function StyleTab({
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div className="space-y-2">
             <Label>Widget Size</Label>
-            <Input
-              value={formData.widgetSize}
-              onChange={(e) => setFormData({ ...formData, widgetSize: ensurePx(e.target.value) })}
-              placeholder="60px"
-            />
+            <div className="relative">
+              <Input
+                type="number"
+                value={extractNumericValue(formData.widgetSize)}
+                onChange={(e) => setFormData({ ...formData, widgetSize: ensurePx(e.target.value) })}
+                placeholder="60"
+                className="pr-8"
+              />
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+            </div>
           </div>
           <div className="space-y-2">
             <Label>Widget Background Color</Label>
-            <div className="relative">
-              <ColorPickerPopover value={formData.widgetBackgroundColor || '#3b82f6'} onChange={(v) => setFormData({ ...formData, widgetBackgroundColor: v })} allowImageVideo={false}>
-                <button type="button" className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10" style={getSwatchStyle(formData.widgetBackgroundColor || '#3b82f6')} onClick={(e) => e.stopPropagation()} />
-              </ColorPickerPopover>
-              <Input type="text" value={formData.widgetBackgroundColor} onChange={(e) => setFormData({ ...formData, widgetBackgroundColor: e.target.value })} className="pl-7" placeholder="#3b82f6 or css gradient" />
-            </div>
+            <ColorInput
+              value={formData.widgetBackgroundColor || '#3b82f6'}
+              onChange={(color) => setFormData({ ...formData, widgetBackgroundColor: color })}
+              allowImageVideo={false}
+              className="relative"
+              placeholder="#3b82f6"
+              inputClassName="h-7 text-xs pl-7 w-full"
+            />
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-4 mb-4">
           <div className="space-y-2">
             <Label>Widget Border Color</Label>
-            <div className="relative">
-              <ColorPickerPopover value={formData.widgetBorderColor || '#ffffff'} onChange={(v) => setFormData({ ...formData, widgetBorderColor: v })} allowImageVideo={false}>
-                <button type="button" className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10" style={getSwatchStyle(formData.widgetBorderColor || '#ffffff')} onClick={(e) => e.stopPropagation()} />
-              </ColorPickerPopover>
-              <Input type="text" value={formData.widgetBorderColor} onChange={(e) => setFormData({ ...formData, widgetBorderColor: e.target.value })} className="pl-7" placeholder="#ffffff or css gradient" />
-            </div>
+            <ColorInput
+              value={formData.widgetBorderColor || '#ffffff'}
+              onChange={(color) => setFormData({ ...formData, widgetBorderColor: color })}
+              allowImageVideo={false}
+              className="relative"
+              placeholder="#ffffff"
+              inputClassName="h-7 text-xs pl-7 w-full"
+            />
           </div>
           <div className="space-y-2">
             <Label>Widget Border Width</Label>
-            <Input
-              value={formData.widgetBorderWidth}
-              onChange={(e) => setFormData({ ...formData, widgetBorderWidth: ensurePx(e.target.value) })}
-              placeholder="2px"
-            />
+            <div className="relative">
+              <Input
+                type="number"
+                value={extractNumericValue(formData.widgetBorderWidth)}
+                onChange={(e) => setFormData({ ...formData, widgetBorderWidth: ensurePx(e.target.value) })}
+                placeholder="2"
+                className="pr-8"
+              />
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+            </div>
           </div>
           <div className="space-y-2">
             <Label>Widget Border Radius</Label>
-            <Input
-              value={formData.widgetBorderRadius}
-              onChange={(e) => setFormData({ ...formData, widgetBorderRadius: ensurePx(e.target.value) })}
-              placeholder="50%"
-            />
+            {formData.widgetBorderRadius && formData.widgetBorderRadius.includes('%') ? (
+              <Input
+                value={formData.widgetBorderRadius}
+                onChange={(e) => setFormData({ ...formData, widgetBorderRadius: e.target.value })}
+                placeholder="50%"
+              />
+            ) : (
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={extractNumericValue(formData.widgetBorderRadius)}
+                  onChange={(e) => setFormData({ ...formData, widgetBorderRadius: ensurePx(e.target.value) })}
+                  placeholder="50"
+                  className="pr-8"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+              </div>
+            )}
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div className="space-y-2">
             <Label>Widget Shadow Color</Label>
-            <div className="relative">
-              <ColorPickerPopover value={formData.widgetShadowColor || '#000000'} onChange={(v) => setFormData({ ...formData, widgetShadowColor: v })} allowImageVideo={false}>
-                <button type="button" className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10" style={getSwatchStyle(formData.widgetShadowColor || '#000000')} onClick={(e) => e.stopPropagation()} />
-              </ColorPickerPopover>
-              <Input type="text" value={formData.widgetShadowColor} onChange={(e) => setFormData({ ...formData, widgetShadowColor: e.target.value })} className="pl-7" placeholder="#000000 or css gradient" />
-            </div>
+            <ColorInput
+              value={formData.widgetShadowColor || '#000000'}
+              onChange={(color) => setFormData({ ...formData, widgetShadowColor: color })}
+              allowImageVideo={false}
+              className="relative"
+              placeholder="#000000"
+              inputClassName="h-7 text-xs pl-7 w-full"
+            />
           </div>
           <div className="space-y-2">
             <Label>Widget Shadow Blur</Label>
-            <Input
-              value={formData.widgetShadowBlur}
-              onChange={(e) => setFormData({ ...formData, widgetShadowBlur: ensurePx(e.target.value) })}
-              placeholder="8px"
-            />
+            <div className="relative">
+              <Input
+                type="number"
+                value={extractNumericValue(formData.widgetShadowBlur)}
+                onChange={(e) => setFormData({ ...formData, widgetShadowBlur: ensurePx(e.target.value) })}
+                placeholder="8"
+                className="pr-8"
+              />
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+            </div>
           </div>
         </div>
 
@@ -414,11 +474,18 @@ export function StyleTab({
             </div>
             <div className="space-y-2">
               <Label>Widget Label Color</Label>
-              <div className="relative">
-                <ColorPickerPopover value={formData.widgetLabelColor || '#ffffff'} onChange={(v) => setFormData({ ...formData, widgetLabelColor: v })} allowImageVideo={false}>
-                  <button type="button" className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10" style={getSwatchStyle(formData.widgetLabelColor || '#ffffff')} onClick={(e) => e.stopPropagation()} />
-                </ColorPickerPopover>
-                <Input value={formData.widgetLabelColor} onChange={(e) => setFormData({ ...formData, widgetLabelColor: e.target.value })} className="pl-7" placeholder="#ffffff or css gradient" />
+              <div className="flex items-center gap-2">
+                <Input
+                  type="color"
+                  value={extractHexColor(formData.widgetLabelColor || '#ffffff')}
+                  onChange={(e) => setFormData({ ...formData, widgetLabelColor: e.target.value })}
+                  className="w-16 h-10"
+                />
+                <Input
+                  value={formData.widgetLabelColor || '#ffffff'}
+                  onChange={(e) => setFormData({ ...formData, widgetLabelColor: e.target.value })}
+                  placeholder="#ffffff"
+                />
               </div>
             </div>
           </div>
@@ -484,19 +551,29 @@ export function StyleTab({
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div className="space-y-2">
               <Label>Horizontal Offset</Label>
-              <Input
-                value={formData.widgetOffsetX}
-                onChange={(e) => setFormData({ ...formData, widgetOffsetX: ensurePx(e.target.value) })}
-                placeholder="20px"
-              />
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={extractNumericValue(formData.widgetOffsetX)}
+                  onChange={(e) => setFormData({ ...formData, widgetOffsetX: ensurePx(e.target.value) })}
+                  placeholder="20"
+                  className="pr-8"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Vertical Offset</Label>
-              <Input
-                value={formData.widgetOffsetY}
-                onChange={(e) => setFormData({ ...formData, widgetOffsetY: ensurePx(e.target.value) })}
-                placeholder="20px"
-              />
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={extractNumericValue(formData.widgetOffsetY)}
+                  onChange={(e) => setFormData({ ...formData, widgetOffsetY: ensurePx(e.target.value) })}
+                  placeholder="20"
+                  className="pr-8"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+              </div>
             </div>
           </div>
 
@@ -515,10 +592,14 @@ export function StyleTab({
             <div className="space-y-2 mb-4">
               <Label>Notification Badge Color</Label>
               <div className="relative">
-                <ColorPickerPopover value={formData.notificationBadgeColor || '#ef4444'} onChange={(v) => setFormData({ ...formData, notificationBadgeColor: v })} allowImageVideo={false}>
-                  <button type="button" className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10" style={getSwatchStyle(formData.notificationBadgeColor || '#ef4444')} onClick={(e) => e.stopPropagation()} />
-                </ColorPickerPopover>
-                <Input value={formData.notificationBadgeColor} onChange={(e) => setFormData({ ...formData, notificationBadgeColor: e.target.value })} className="pl-7" placeholder="#ef4444 or css gradient" />
+                <ColorInput
+                  value={formData.notificationBadgeColor || '#ef4444'}
+                  onChange={(color) => setFormData({ ...formData, notificationBadgeColor: color })}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="#ef4444"
+                  inputClassName="h-7 text-xs pl-7 w-full"
+                />
               </div>
             </div>
           )}
@@ -545,63 +626,175 @@ export function StyleTab({
             <div className="space-y-2">
               <Label>Typing Indicator Color</Label>
               <div className="relative">
-                <ColorPickerPopover value={formData.typingIndicatorColor || '#6b7280'} onChange={(v) => setFormData({ ...formData, typingIndicatorColor: v })} allowImageVideo={false}>
-                  <button type="button" className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10" style={getSwatchStyle(formData.typingIndicatorColor || '#6b7280')} onClick={(e) => e.stopPropagation()} />
-                </ColorPickerPopover>
-                <Input type="text" value={formData.typingIndicatorColor} onChange={(e) => setFormData({ ...formData, typingIndicatorColor: e.target.value })} className="pl-7" placeholder="#6b7280 or css gradient" />
+                <ColorInput
+                  value={formData.typingIndicatorColor || '#6b7280'}
+                  onChange={(color) => setFormData({ ...formData, typingIndicatorColor: color })}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="#6b7280"
+                  inputClassName="h-7 text-xs pl-7 w-full"
+                />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Chat Window Size */}
-        <div className="border-t pt-4 mt-4">
-          <h4 className="text-md font-semibold mb-4">Chat Window Size</h4>
+        </AccordionContent>
+      </AccordionItem>
+
+      {/* Messages */}
+      <AccordionItem value="messages" className="border-b px-4">
+        <AccordionTrigger className="text-lg font-semibold hover:no-underline">
+          Messages
+        </AccordionTrigger>
+        <AccordionContent className="pt-4 pb-6">
+        {/* Message Background Colors */}
+        <div className="mb-4">
+          <h4 className="text-md font-semibold mb-4">Message Background Colors</h4>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Window Width</Label>
-              <Input
-                value={formData.chatWindowWidth}
-                onChange={(e) => setFormData({ ...formData, chatWindowWidth: ensurePx(e.target.value) })}
-                placeholder="380px"
+              <Label>User Message Background</Label>
+              <ColorInput
+                value={formData.userMessageBackgroundColor || formData.primaryColor || '#3b82f6'}
+                onChange={(color) => setFormData({ ...formData, userMessageBackgroundColor: color })}
+                allowImageVideo={false}
+                className="relative"
+                placeholder="#3b82f6"
+                inputClassName="h-7 text-xs pl-7 w-full"
               />
             </div>
             <div className="space-y-2">
-              <Label>Window Height</Label>
-              <Input
-                value={formData.chatWindowHeight}
-                onChange={(e) => setFormData({ ...formData, chatWindowHeight: ensurePx(e.target.value) })}
-                placeholder="600px"
+              <Label>Bot Message Background</Label>
+              <ColorInput
+                value={formData.botMessageBackgroundColor || '#f3f4f6'}
+                onChange={(color) => setFormData({ ...formData, botMessageBackgroundColor: color })}
+                allowImageVideo={false}
+                className="relative"
+                placeholder="#f3f4f6"
+                inputClassName="h-7 text-xs pl-7 w-full"
               />
             </div>
           </div>
+        </div>
 
-          {/* Chat Window Border */}
-          <div className="grid grid-cols-3 gap-4 mt-4">
+        {/* Message Display Options */}
+        <div className="border-t pt-4 mb-4">
+          <h4 className="text-md font-semibold mb-4">Message Display Options</h4>
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Show Message Name</Label>
+                <p className="text-xs text-muted-foreground">Display name above messages</p>
+              </div>
+              <Switch
+                checked={formData.showMessageName !== undefined ? formData.showMessageName : false}
+                onCheckedChange={(checked) => setFormData({ ...formData, showMessageName: checked })}
+              />
+            </div>
+
+            {formData.showMessageName && (
+              <>
+                <div className="space-y-2">
+                  <Label>Message Name</Label>
+                  <Input
+                    value={formData.messageName || ''}
+                    onChange={(e) => setFormData({ ...formData, messageName: e.target.value })}
+                    placeholder="Leave empty to use chatbot name"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    If empty, will use chatbot name or header title
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Message Name Position</Label>
+                  <Select
+                    value={formData.messageNamePosition || 'top-of-message'}
+                    onValueChange={(v: 'top-of-message' | 'top-of-avatar') => setFormData({ ...formData, messageNamePosition: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="top-of-message">Top of Message</SelectItem>
+                      <SelectItem value="top-of-avatar">Top of Avatar</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Choose where to display the message name
+                  </p>
+                </div>
+              </>
+            )}
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Show Message Avatar</Label>
+                <p className="text-xs text-muted-foreground">Display avatar before messages</p>
+              </div>
+              <Switch
+                checked={formData.showMessageAvatar !== undefined ? formData.showMessageAvatar : true}
+                onCheckedChange={(checked) => setFormData({ ...formData, showMessageAvatar: checked })}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Bubble Borders */}
+        <div className="border-t pt-4">
+          <h4 className="text-md font-semibold mb-4">Bubble Borders</h4>
+          <div className="grid grid-cols-4 gap-4">
             <div className="space-y-2">
-              <Label>Window Border Color</Label>
+              <Label>Bubble Border Color</Label>
               <div className="relative">
-                <ColorPickerPopover value={formData.chatWindowBorderColor || formData.borderColor || '#e5e7eb'} onChange={(v) => setFormData({ ...formData, chatWindowBorderColor: v })} allowImageVideo={false}>
-                  <button type="button" className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10" style={getSwatchStyle(formData.chatWindowBorderColor || formData.borderColor || '#e5e7eb')} onClick={(e) => e.stopPropagation()} />
-                </ColorPickerPopover>
-                <Input type="text" value={formData.chatWindowBorderColor} onChange={(e) => setFormData({ ...formData, chatWindowBorderColor: e.target.value })} className="pl-7" placeholder="#e5e7eb or css gradient" />
+                <ColorInput
+                  value={formData.bubbleBorderColor || formData.borderColor || '#e5e7eb'}
+                  onChange={(color) => setFormData({ ...formData, bubbleBorderColor: color })}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="#e5e7eb"
+                  inputClassName="h-7 text-xs pl-7 w-full"
+                />
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Window Border Width</Label>
-              <Input
-                value={formData.chatWindowBorderWidth || formData.borderWidth}
-                onChange={(e) => setFormData({ ...formData, chatWindowBorderWidth: ensurePx(e.target.value) })}
-                placeholder="1px"
-              />
+              <Label>Bubble Border Width</Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={extractNumericValue(formData.bubbleBorderWidth || formData.borderWidth)}
+                  onChange={(e) => setFormData({ ...formData, bubbleBorderWidth: ensurePx(e.target.value) })}
+                  placeholder="1"
+                  className="pr-8"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+              </div>
             </div>
             <div className="space-y-2">
-              <Label>Window Border Radius</Label>
-              <Input
-                value={formData.chatWindowBorderRadius || formData.borderRadius}
-                onChange={(e) => setFormData({ ...formData, chatWindowBorderRadius: ensurePx(e.target.value) })}
-                placeholder="8px"
-              />
+              <Label>Bubble Border Radius</Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={extractNumericValue(formData.bubbleBorderRadius || formData.borderRadius)}
+                  onChange={(e) => setFormData({ ...formData, bubbleBorderRadius: ensurePx(e.target.value) })}
+                  placeholder="8"
+                  className="pr-8"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Bubble Padding</Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={extractNumericValue(formData.bubblePadding || '12px')}
+                  onChange={(e) => setFormData({ ...formData, bubblePadding: ensurePx(e.target.value) })}
+                  placeholder="12"
+                  className="pr-8"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+              </div>
             </div>
           </div>
         </div>
@@ -609,7 +802,7 @@ export function StyleTab({
       </AccordionItem>
 
       {/* Header */}
-      <AccordionItem value="header" className="border rounded-lg px-4">
+      <AccordionItem value="header" className="border-b px-4">
         <AccordionTrigger className="text-lg font-semibold hover:no-underline">
           Header
         </AccordionTrigger>
@@ -621,6 +814,7 @@ export function StyleTab({
               value={formData.headerTitle || ''}
               onChange={(e) => setFormData({ ...formData, headerTitle: e.target.value })}
               placeholder="Assistant name or title"
+              className="bg-transparent border-none shadow-none focus-visible:ring-0"
             />
           </div>
           <div className="space-y-2">
@@ -683,19 +877,27 @@ export function StyleTab({
           <div className="space-y-2">
             <Label>Header Background</Label>
             <div className="relative">
-              <ColorPickerPopover value={formData.headerBgColor || '#3b82f6'} onChange={(v) => setFormData({ ...formData, headerBgColor: v })} allowImageVideo={false}>
-                <button type="button" className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10" style={getSwatchStyle(formData.headerBgColor || '#3b82f6')} onClick={(e) => e.stopPropagation()} />
-              </ColorPickerPopover>
-              <Input type="text" value={formData.headerBgColor} onChange={(e) => setFormData({ ...formData, headerBgColor: e.target.value })} className="pl-7" placeholder="#3b82f6 or css gradient" />
+              <ColorInput
+                value={formData.headerBgColor || '#3b82f6'}
+                onChange={(color) => setFormData({ ...formData, headerBgColor: color })}
+                allowImageVideo={false}
+                className="relative"
+                placeholder="#3b82f6"
+                inputClassName="h-7 text-xs pl-7 w-full"
+              />
             </div>
           </div>
           <div className="space-y-2">
             <Label>Header Font Color</Label>
             <div className="relative">
-              <ColorPickerPopover value={formData.headerFontColor || '#ffffff'} onChange={(v) => setFormData({ ...formData, headerFontColor: v })} allowImageVideo={false}>
-                <button type="button" className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10" style={getSwatchStyle(formData.headerFontColor || '#ffffff')} onClick={(e) => e.stopPropagation()} />
-              </ColorPickerPopover>
-              <Input type="text" value={formData.headerFontColor} onChange={(e) => setFormData({ ...formData, headerFontColor: e.target.value })} className="pl-7" placeholder="#ffffff or css gradient" />
+              <ColorInput
+                value={formData.headerFontColor || '#ffffff'}
+                onChange={(color) => setFormData({ ...formData, headerFontColor: color })}
+                allowImageVideo={false}
+                className="relative"
+                placeholder="#ffffff"
+                inputClassName="h-7 text-xs pl-7 w-full"
+              />
             </div>
           </div>
         </div>
@@ -722,26 +924,324 @@ export function StyleTab({
           <div className="space-y-2">
             <Label>Header Border Color</Label>
             <div className="relative">
-              <ColorPickerPopover value={formData.headerBorderColor || '#e5e7eb'} onChange={(v) => setFormData({ ...formData, headerBorderColor: v })} allowImageVideo={false}>
-                <button type="button" className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10" style={getSwatchStyle(formData.headerBorderColor || '#e5e7eb')} onClick={(e) => e.stopPropagation()} />
-              </ColorPickerPopover>
-              <Input type="text" value={formData.headerBorderColor} onChange={(e) => setFormData({ ...formData, headerBorderColor: e.target.value })} className="pl-7" placeholder="#e5e7eb or css gradient" />
+              <ColorInput
+                value={formData.headerBorderColor || '#e5e7eb'}
+                onChange={(color) => setFormData({ ...formData, headerBorderColor: color })}
+                allowImageVideo={false}
+                className="relative"
+                placeholder="#e5e7eb"
+                inputClassName="h-7 text-xs pl-7 w-full"
+              />
             </div>
           </div>
           <div className="space-y-2">
             <Label>Header Padding X</Label>
-            <Input value={formData.headerPaddingX || '16px'} onChange={(e) => setFormData({ ...formData, headerPaddingX: ensurePx(e.target.value) })} placeholder="16px" />
+            <div className="relative">
+              <Input
+                type="number"
+                value={extractNumericValue(formData.headerPaddingX || '16px')}
+                onChange={(e) => setFormData({ ...formData, headerPaddingX: ensurePx(e.target.value) })}
+                placeholder="16"
+                className="pr-8"
+              />
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+            </div>
           </div>
           <div className="space-y-2">
             <Label>Header Padding Y</Label>
-            <Input value={formData.headerPaddingY || '16px'} onChange={(e) => setFormData({ ...formData, headerPaddingY: ensurePx(e.target.value) })} placeholder="16px" />
+            <div className="relative">
+              <Input
+                type="number"
+                value={extractNumericValue(formData.headerPaddingY || '16px')}
+                onChange={(e) => setFormData({ ...formData, headerPaddingY: ensurePx(e.target.value) })}
+                placeholder="16"
+                className="pr-8"
+              />
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+            </div>
+          </div>
+        </div>
+        </AccordionContent>
+      </AccordionItem>
+
+      {/* Footer/Input Area */}
+      <AccordionItem value="footer" className="border-b px-4">
+        <AccordionTrigger className="text-lg font-semibold hover:no-underline">
+          Footer/Input Area
+        </AccordionTrigger>
+        <AccordionContent className="pt-4 pb-6">
+        {/* Footer Background & Padding */}
+        <div className="mb-4">
+          <h4 className="text-md font-semibold mb-4">Footer Background & Padding</h4>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Footer Background Color</Label>
+              <ColorInput
+                value={formData.footerBgColor || formData.messageBoxColor || '#ffffff'}
+                onChange={(color) => setFormData({ ...formData, footerBgColor: color })}
+                allowImageVideo={false}
+                className="relative"
+                placeholder="#ffffff"
+                inputClassName="h-7 text-xs pl-7 w-full"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Footer Padding X</Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={extractNumericValue(formData.footerPaddingX || '16px')}
+                  onChange={(e) => setFormData({ ...formData, footerPaddingX: ensurePx(e.target.value) })}
+                  placeholder="16"
+                  className="pr-8"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Footer Padding Y</Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={extractNumericValue(formData.footerPaddingY || '16px')}
+                  onChange={(e) => setFormData({ ...formData, footerPaddingY: ensurePx(e.target.value) })}
+                  placeholder="16"
+                  className="pr-8"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Borders */}
+        <div className="border-t pt-4 mb-4">
+          <h4 className="text-md font-semibold mb-4">Footer Borders</h4>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Footer Border Color</Label>
+              <ColorInput
+                value={formData.footerBorderColor || formData.borderColor || '#e5e7eb'}
+                onChange={(color) => setFormData({ ...formData, footerBorderColor: color })}
+                allowImageVideo={false}
+                className="relative"
+                placeholder="#e5e7eb"
+                inputClassName="h-7 text-xs pl-7 w-full"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Footer Border Width</Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={extractNumericValue(formData.footerBorderWidth || formData.borderWidth)}
+                  onChange={(e) => setFormData({ ...formData, footerBorderWidth: ensurePx(e.target.value) })}
+                  placeholder="1"
+                  className="pr-8"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Footer Border Radius</Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={extractNumericValue(formData.footerBorderRadius || '0px')}
+                  onChange={(e) => setFormData({ ...formData, footerBorderRadius: ensurePx(e.target.value) })}
+                  placeholder="0"
+                  className="pr-8"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Input Field Styling */}
+        <div className="border-t pt-4">
+          <h4 className="text-md font-semibold mb-4">Input Field Styling</h4>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="space-y-2">
+              <Label>Input Background Color</Label>
+              <ColorInput
+                value={formData.footerInputBgColor || formData.messageBoxColor || '#ffffff'}
+                onChange={(color) => setFormData({ ...formData, footerInputBgColor: color })}
+                allowImageVideo={false}
+                className="relative"
+                placeholder="#ffffff"
+                inputClassName="h-7 text-xs pl-7 w-full"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Input Font Color</Label>
+              <ColorInput
+                value={formData.footerInputFontColor || formData.fontColor || '#000000'}
+                onChange={(color) => setFormData({ ...formData, footerInputFontColor: color })}
+                allowImageVideo={false}
+                className="relative"
+                placeholder="#000000"
+                inputClassName="h-7 text-xs pl-7 w-full"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Input Border Color</Label>
+              <ColorInput
+                value={formData.footerInputBorderColor || formData.borderColor || '#e5e7eb'}
+                onChange={(color) => setFormData({ ...formData, footerInputBorderColor: color })}
+                allowImageVideo={false}
+                className="relative"
+                placeholder="#e5e7eb"
+                inputClassName="h-7 text-xs pl-7 w-full"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Input Border Width</Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={extractNumericValue(formData.footerInputBorderWidth || formData.borderWidth)}
+                  onChange={(e) => setFormData({ ...formData, footerInputBorderWidth: ensurePx(e.target.value) })}
+                  placeholder="1"
+                  className="pr-8"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Input Border Radius</Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={extractNumericValue(formData.footerInputBorderRadius || formData.borderRadius)}
+                  onChange={(e) => setFormData({ ...formData, footerInputBorderRadius: ensurePx(e.target.value) })}
+                  placeholder="8"
+                  className="pr-8"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Send Button Styling */}
+        <div className="border-t pt-4 mb-4">
+          <h4 className="text-md font-semibold mb-4">Send Button Styling</h4>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="space-y-2">
+              <Label>Send Button Icon</Label>
+              <Select
+                value={formData.sendButtonIcon || 'Send'}
+                onValueChange={(v) => setFormData({ ...formData, sendButtonIcon: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  {['Send', 'ArrowRight', 'PaperPlane', 'Zap', 'Check', 'ArrowUp', 'ChevronRight'].map((iconName) => {
+                    const IconComponent = (Icons as any)[iconName] || Icons.Send
+                    return (
+                      <SelectItem key={iconName} value={iconName}>
+                        <div className="flex items-center gap-2">
+                          <IconComponent className="h-4 w-4" />
+                          <span>{iconName}</span>
+                        </div>
+                      </SelectItem>
+                    )
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Send Button Background Color</Label>
+              <ColorInput
+                value={formData.sendButtonBgColor || formData.primaryColor || '#3b82f6'}
+                onChange={(color) => setFormData({ ...formData, sendButtonBgColor: color })}
+                allowImageVideo={false}
+                className="relative"
+                placeholder="#3b82f6"
+                inputClassName="h-7 text-xs pl-7 w-full"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Send Button Icon Color</Label>
+              <ColorInput
+                value={formData.sendButtonIconColor || '#ffffff'}
+                onChange={(color) => setFormData({ ...formData, sendButtonIconColor: color })}
+                allowImageVideo={false}
+                className="relative"
+                placeholder="#ffffff"
+                inputClassName="h-7 text-xs pl-7 w-full"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Rounded Button</Label>
+                <p className="text-xs text-muted-foreground">Make send button fully rounded</p>
+              </div>
+              <Switch
+                checked={formData.sendButtonRounded !== undefined ? formData.sendButtonRounded : false}
+                onCheckedChange={(checked) => setFormData({ ...formData, sendButtonRounded: checked })}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Send Button Shadow Color</Label>
+              <ColorInput
+                value={formData.sendButtonShadowColor || '#000000'}
+                onChange={(color) => setFormData({ ...formData, sendButtonShadowColor: color })}
+                allowImageVideo={false}
+                className="relative"
+                placeholder="#000000"
+                inputClassName="h-7 text-xs pl-7 w-full"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Send Button Shadow Blur</Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={extractNumericValue(formData.sendButtonShadowBlur || '0px')}
+                  onChange={(e) => setFormData({ ...formData, sendButtonShadowBlur: ensurePx(e.target.value) })}
+                  placeholder="0"
+                  className="pr-8"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* File Upload Layout */}
+        <div className="border-t pt-4">
+          <h4 className="text-md font-semibold mb-4">File Upload Layout</h4>
+          <div className="space-y-2">
+            <Label>Button Order</Label>
+            <Select
+              value={formData.fileUploadLayout || 'attach-first'}
+              onValueChange={(v: 'attach-first' | 'input-first') => setFormData({ ...formData, fileUploadLayout: v })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="attach-first">[Attach] [Input] [Send]</SelectItem>
+                <SelectItem value="input-first">[Input] [Attach] [Send]</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Choose the order of attach button, input field, and send button
+            </p>
           </div>
         </div>
         </AccordionContent>
       </AccordionItem>
 
       {/* Avatar */}
-      <AccordionItem value="avatar" className="border rounded-lg px-4">
+      <AccordionItem value="avatar" className="border-b px-4">
         <AccordionTrigger className="text-lg font-semibold hover:no-underline">
           Avatar
         </AccordionTrigger>
@@ -792,20 +1292,34 @@ export function StyleTab({
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Icon Color</Label>
-                  <div className="relative">
-                    <ColorPickerPopover value={formData.avatarIconColor || '#ffffff'} onChange={(v) => setFormData({ ...formData, avatarIconColor: v })} allowImageVideo={false}>
-                      <button type="button" className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10" style={getSwatchStyle(formData.avatarIconColor || '#ffffff')} onClick={(e) => e.stopPropagation()} />
-                    </ColorPickerPopover>
-                    <Input type="text" value={formData.avatarIconColor} onChange={(e) => setFormData({ ...formData, avatarIconColor: e.target.value })} className="pl-7" placeholder="#ffffff or css gradient" />
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="color"
+                      value={extractHexColor(formData.avatarIconColor || '#ffffff')}
+                      onChange={(e) => setFormData({ ...formData, avatarIconColor: e.target.value })}
+                      className="w-16 h-10"
+                    />
+                    <Input
+                      value={formData.avatarIconColor || '#ffffff'}
+                      onChange={(e) => setFormData({ ...formData, avatarIconColor: e.target.value })}
+                      placeholder="#ffffff"
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Background Color</Label>
-                  <div className="relative">
-                    <ColorPickerPopover value={formData.avatarBackgroundColor || '#3b82f6'} onChange={(v) => setFormData({ ...formData, avatarBackgroundColor: v })} allowImageVideo={false}>
-                      <button type="button" className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10" style={getSwatchStyle(formData.avatarBackgroundColor || '#3b82f6')} onClick={(e) => e.stopPropagation()} />
-                    </ColorPickerPopover>
-                    <Input type="text" value={formData.avatarBackgroundColor} onChange={(e) => setFormData({ ...formData, avatarBackgroundColor: e.target.value })} className="pl-7" placeholder="#3b82f6 or css gradient" />
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="color"
+                      value={extractHexColor(formData.avatarBackgroundColor || '#3b82f6')}
+                      onChange={(e) => setFormData({ ...formData, avatarBackgroundColor: e.target.value })}
+                      className="w-16 h-10"
+                    />
+                    <Input
+                      value={formData.avatarBackgroundColor || '#3b82f6'}
+                      onChange={(e) => setFormData({ ...formData, avatarBackgroundColor: e.target.value })}
+                      placeholder="#3b82f6"
+                    />
                   </div>
                 </div>
               </div>

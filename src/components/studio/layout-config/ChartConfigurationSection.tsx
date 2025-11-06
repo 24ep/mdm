@@ -9,7 +9,7 @@ import { AccordionContent, AccordionItem, AccordionTrigger } from '@/components/
 import { Separator } from '@/components/ui/separator'
 import { BarChart3, Type, Layout, Eye, Tag, MoveVertical, Square, Box, Layers, Grid3x3, HelpCircle, Palette, DollarSign, TrendingUp, Plus } from 'lucide-react'
 import { PlacedWidget } from './widgets'
-import { ColorPickerPopover } from './ColorPickerPopover'
+import { ColorInput } from './ColorInput'
 
 interface ChartConfigurationSectionProps {
   widget: PlacedWidget
@@ -215,27 +215,14 @@ export function ChartConfigurationSection({
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <Label className="text-xs font-medium">Title Color</Label>
-                      <div className="relative">
-                        <ColorPickerPopover
-                          value={widget.properties?.titleColor || '#111827'}
-                          onChange={(color) => updateProperty('titleColor', color)}
-                          allowImageVideo={false}
-                        >
-                          <button
-                            type="button"
-                            className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                            style={getSwatchStyle(widget.properties?.titleColor || '#111827')}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </ColorPickerPopover>
-                        <Input
-                          type="text"
-                          value={widget.properties?.titleColor || '#111827'}
-                          onChange={(e) => updateProperty('titleColor', e.target.value)}
-                          className="h-7 text-xs pl-7 w-full"
-                          placeholder="#111827"
-                        />
-                      </div>
+                      <ColorInput
+                        value={widget.properties?.titleColor || '#111827'}
+                        onChange={(color) => updateProperty('titleColor', color)}
+                        allowImageVideo={false}
+                        className="relative"
+                        placeholder="#111827"
+                        inputClassName="h-7 text-xs pl-7 w-full"
+                      />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs font-medium">Font Size</Label>
@@ -255,27 +242,14 @@ export function ChartConfigurationSection({
 
                   <div className="space-y-1">
                     <Label className="text-xs font-medium">Header Background</Label>
-                    <div className="relative">
-                      <ColorPickerPopover
-                        value={widget.properties?.headerBackgroundColor || '#ffffff'}
-                        onChange={(color) => updateProperty('headerBackgroundColor', color)}
-                        allowImageVideo={false}
-                      >
-                        <button
-                          type="button"
-                          className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                          style={getSwatchStyle(widget.properties?.headerBackgroundColor || '#ffffff')}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </ColorPickerPopover>
-                      <Input
-                        type="text"
-                        value={widget.properties?.headerBackgroundColor || '#ffffff'}
-                        onChange={(e) => updateProperty('headerBackgroundColor', e.target.value)}
-                        className="h-7 text-xs pl-7 w-full"
-                        placeholder="#ffffff"
-                      />
-                    </div>
+                    <ColorInput
+                      value={widget.properties?.headerBackgroundColor || '#ffffff'}
+                      onChange={(color) => updateProperty('headerBackgroundColor', color)}
+                      allowImageVideo={false}
+                      className="relative"
+                      placeholder="#ffffff"
+                      inputClassName="h-7 text-xs pl-7 w-full"
+                    />
                   </div>
 
                   <div className="space-y-1">
@@ -352,45 +326,23 @@ export function ChartConfigurationSection({
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-1">
                         <Label className="text-xs font-medium">Color</Label>
-                        <div className="relative">
-                          <ColorPickerPopover
-                            value={seriesStyle.color || '#0088FE'}
-                            onChange={(color) => {
-                              const newSeriesStyles = {
-                                ...seriesStyles,
-                                [measure]: {
-                                  ...seriesStyle,
-                                  color: color
-                                }
+                        <ColorInput
+                          value={seriesStyle.color || '#0088FE'}
+                          onChange={(color) => {
+                            const newSeriesStyles = {
+                              ...seriesStyles,
+                              [measure]: {
+                                ...seriesStyle,
+                                color: color
                               }
-                              updateProperty('seriesStyles', newSeriesStyles)
-                            }}
-                            allowImageVideo={false}
-                          >
-                            <button
-                              type="button"
-                              className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                              style={getSwatchStyle(seriesStyle.color || '#0088FE')}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                          </ColorPickerPopover>
-                          <Input
-                            type="text"
-                            value={seriesStyle.color || '#0088FE'}
-                            onChange={(e) => {
-                              const newSeriesStyles = {
-                                ...seriesStyles,
-                                [measure]: {
-                                  ...seriesStyle,
-                                  color: e.target.value
-                                }
-                              }
-                              updateProperty('seriesStyles', newSeriesStyles)
-                            }}
-                            className="h-7 text-xs pl-7 w-full"
-                            placeholder="#0088FE"
-                          />
-                        </div>
+                            }
+                            updateProperty('seriesStyles', newSeriesStyles)
+                          }}
+                          allowImageVideo={false}
+                          className="relative"
+                          placeholder="#0088FE"
+                          inputClassName="h-7 text-xs pl-7 w-full"
+                        />
                       </div>
                       {chartType === 'line' && (
                         <div className="space-y-1">
@@ -575,27 +527,14 @@ export function ChartConfigurationSection({
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs font-medium">Color</Label>
-                      <div className="relative">
-                        <ColorPickerPopover
-                          value={widget.properties?.legendColor || '#111827'}
-                          onChange={(color) => updateProperty('legendColor', color)}
-                          allowImageVideo={false}
-                        >
-                            <button
-                              type="button"
-                              className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                              style={getSwatchStyle(widget.properties?.legendColor || '#111827')}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                        </ColorPickerPopover>
-                        <Input
-                          type="text"
-                          value={widget.properties?.legendColor || '#111827'}
-                          onChange={(e) => updateProperty('legendColor', e.target.value)}
-                          className="h-7 text-xs pl-7 w-full"
-                          placeholder="#111827"
-                        />
-                      </div>
+                      <ColorInput
+                        value={widget.properties?.legendColor || '#111827'}
+                        onChange={(color) => updateProperty('legendColor', color)}
+                        allowImageVideo={false}
+                        className="relative"
+                        placeholder="#111827"
+                        inputClassName="h-7 text-xs pl-7 w-full"
+                      />
                     </div>
                   </div>
                   <div className="space-y-1">
@@ -693,27 +632,14 @@ export function ChartConfigurationSection({
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label className="text-xs font-medium">Grid color</Label>
-                        <div className="relative">
-                          <ColorPickerPopover
-                            value={widget.properties?.gridColor || '#f0f0f0'}
-                            onChange={(color) => updateProperty('gridColor', color)}
-                            allowImageVideo={false}
-                          >
-                            <button
-                              type="button"
-                              className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                            style={getSwatchStyle(widget.properties?.gridColor || '#f0f0f0')}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                          </ColorPickerPopover>
-                          <Input
-                            type="text"
-                            value={widget.properties?.gridColor || '#f0f0f0'}
-                            onChange={(e) => updateProperty('gridColor', e.target.value)}
-                            className="h-7 text-xs pl-7 w-full"
-                            placeholder="#f0f0f0"
-                          />
-                        </div>
+                        <ColorInput
+                          value={widget.properties?.gridColor || '#f0f0f0'}
+                          onChange={(color) => updateProperty('gridColor', color)}
+                          allowImageVideo={false}
+                          className="relative"
+                          placeholder="#f0f0f0"
+                          inputClassName="h-7 text-xs pl-7 w-full"
+                        />
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs font-medium">Dash pattern</Label>
@@ -758,51 +684,25 @@ export function ChartConfigurationSection({
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs font-medium">Background</Label>
-                    <div className="relative">
-                      <ColorPickerPopover
-                        value={widget.properties?.tableHeaderBg || '#f3f4f6'}
-                        onChange={(color) => updateProperty('tableHeaderBg', color)}
-                        allowImageVideo={false}
-                      >
-                        <button
-                          type="button"
-                          className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                          style={getSwatchStyle(widget.properties?.tableHeaderBg || '#f3f4f6')}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </ColorPickerPopover>
-                      <Input
-                        type="text"
-                        value={widget.properties?.tableHeaderBg || '#f3f4f6'}
-                        onChange={(e) => updateProperty('tableHeaderBg', e.target.value)}
-                        className="h-7 text-xs pl-7 w-full"
-                        placeholder="#f3f4f6"
-                      />
-                    </div>
+                    <ColorInput
+                      value={widget.properties?.tableHeaderBg || '#f3f4f6'}
+                      onChange={(color) => updateProperty('tableHeaderBg', color)}
+                      allowImageVideo={false}
+                      className="relative"
+                      placeholder="#f3f4f6"
+                      inputClassName="h-7 text-xs pl-7 w-full"
+                    />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs font-medium">Text color</Label>
-                    <div className="relative">
-                      <ColorPickerPopover
-                        value={widget.properties?.tableHeaderText || '#111827'}
-                        onChange={(color) => updateProperty('tableHeaderText', color)}
-                        allowImageVideo={false}
-                      >
-                        <button
-                          type="button"
-                          className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                          style={getSwatchStyle(widget.properties?.tableHeaderText || '#111827')}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </ColorPickerPopover>
-                      <Input
-                        type="text"
-                        value={widget.properties?.tableHeaderText || '#111827'}
-                        onChange={(e) => updateProperty('tableHeaderText', e.target.value)}
-                        className="h-7 text-xs pl-7 w-full"
-                        placeholder="#111827"
-                      />
-                    </div>
+                    <ColorInput
+                      value={widget.properties?.tableHeaderText || '#111827'}
+                      onChange={(color) => updateProperty('tableHeaderText', color)}
+                      allowImageVideo={false}
+                      className="relative"
+                      placeholder="#111827"
+                      inputClassName="h-7 text-xs pl-7 w-full"
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
@@ -822,27 +722,14 @@ export function ChartConfigurationSection({
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs font-medium">Border color</Label>
-                    <div className="relative">
-                      <ColorPickerPopover
-                        value={widget.properties?.tableHeaderBorderColor || '#e5e7eb'}
-                        onChange={(color) => updateProperty('tableHeaderBorderColor', color)}
-                        allowImageVideo={false}
-                      >
-                        <button
-                          type="button"
-                          className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                          style={getSwatchStyle(widget.properties?.tableHeaderBorderColor || '#e5e7eb')}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </ColorPickerPopover>
-                      <Input
-                        type="text"
-                        value={widget.properties?.tableHeaderBorderColor || '#e5e7eb'}
-                        onChange={(e) => updateProperty('tableHeaderBorderColor', e.target.value)}
-                        className="h-7 text-xs pl-7 w-full"
-                        placeholder="#e5e7eb"
-                      />
-                    </div>
+                    <ColorInput
+                      value={widget.properties?.tableHeaderBorderColor || '#e5e7eb'}
+                      onChange={(color) => updateProperty('tableHeaderBorderColor', color)}
+                      allowImageVideo={false}
+                      className="relative"
+                      placeholder="#e5e7eb"
+                      inputClassName="h-7 text-xs pl-7 w-full"
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -869,51 +756,25 @@ export function ChartConfigurationSection({
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs font-medium">Background</Label>
-                    <div className="relative">
-                      <ColorPickerPopover
-                        value={widget.properties?.tableRowBg || '#ffffff'}
-                        onChange={(color) => updateProperty('tableRowBg', color)}
-                        allowImageVideo={false}
-                      >
-                        <button
-                          type="button"
-                          className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                            style={getSwatchStyle(widget.properties?.tableRowBg || '#ffffff')}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </ColorPickerPopover>
-                      <Input
-                        type="text"
-                        value={widget.properties?.tableRowBg || '#ffffff'}
-                        onChange={(e) => updateProperty('tableRowBg', e.target.value)}
-                        className="h-7 text-xs pl-7 w-full"
-                        placeholder="#ffffff"
-                      />
-                    </div>
+                    <ColorInput
+                      value={widget.properties?.tableRowBg || '#ffffff'}
+                      onChange={(color) => updateProperty('tableRowBg', color)}
+                      allowImageVideo={false}
+                      className="relative"
+                      placeholder="#ffffff"
+                      inputClassName="h-7 text-xs pl-7 w-full"
+                    />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs font-medium">Text color</Label>
-                    <div className="relative">
-                      <ColorPickerPopover
-                        value={widget.properties?.tableRowText || '#111827'}
-                        onChange={(color) => updateProperty('tableRowText', color)}
-                        allowImageVideo={false}
-                      >
-                        <button
-                          type="button"
-                          className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                          style={getSwatchStyle(widget.properties?.tableRowText || '#111827')}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </ColorPickerPopover>
-                      <Input
-                        type="text"
-                        value={widget.properties?.tableRowText || '#111827'}
-                        onChange={(e) => updateProperty('tableRowText', e.target.value)}
-                        className="h-7 text-xs pl-7 w-full"
-                        placeholder="#111827"
-                      />
-                    </div>
+                    <ColorInput
+                      value={widget.properties?.tableRowText || '#111827'}
+                      onChange={(color) => updateProperty('tableRowText', color)}
+                      allowImageVideo={false}
+                      className="relative"
+                      placeholder="#111827"
+                      inputClassName="h-7 text-xs pl-7 w-full"
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
@@ -949,27 +810,14 @@ export function ChartConfigurationSection({
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs font-medium">Border color</Label>
-                    <div className="relative">
-                      <ColorPickerPopover
-                        value={widget.properties?.tableRowBorderColor || '#e5e7eb'}
-                        onChange={(color) => updateProperty('tableRowBorderColor', color)}
-                        allowImageVideo={false}
-                      >
-                        <button
-                          type="button"
-                          className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                          style={getSwatchStyle(widget.properties?.tableRowBorderColor || '#e5e7eb')}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </ColorPickerPopover>
-                      <Input
-                        type="text"
-                        value={widget.properties?.tableRowBorderColor || '#e5e7eb'}
-                        onChange={(e) => updateProperty('tableRowBorderColor', e.target.value)}
-                        className="h-7 text-xs pl-7 w-full"
-                        placeholder="#e5e7eb"
-                      />
-                    </div>
+                    <ColorInput
+                      value={widget.properties?.tableRowBorderColor || '#e5e7eb'}
+                      onChange={(color) => updateProperty('tableRowBorderColor', color)}
+                      allowImageVideo={false}
+                      className="relative"
+                      placeholder="#e5e7eb"
+                      inputClassName="h-7 text-xs pl-7 w-full"
+                    />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs font-medium">Border radius</Label>
@@ -987,51 +835,25 @@ export function ChartConfigurationSection({
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs font-medium">Background</Label>
-                    <div className="relative">
-                      <ColorPickerPopover
-                        value={widget.properties?.tableColumnBg || 'transparent'}
-                        onChange={(color) => updateProperty('tableColumnBg', color)}
-                        allowImageVideo={false}
-                      >
-                        <button
-                          type="button"
-                          className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                            style={getSwatchStyle(widget.properties?.tableColumnBg || 'transparent')}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </ColorPickerPopover>
-                      <Input
-                        type="text"
-                        value={widget.properties?.tableColumnBg || 'transparent'}
-                        onChange={(e) => updateProperty('tableColumnBg', e.target.value)}
-                        className="h-7 text-xs pl-7 w-full"
-                        placeholder="transparent"
-                      />
-                    </div>
+                    <ColorInput
+                      value={widget.properties?.tableColumnBg || 'transparent'}
+                      onChange={(color) => updateProperty('tableColumnBg', color)}
+                      allowImageVideo={false}
+                      className="relative"
+                      placeholder="transparent"
+                      inputClassName="h-7 text-xs pl-7 w-full"
+                    />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs font-medium">Text color</Label>
-                    <div className="relative">
-                      <ColorPickerPopover
-                        value={widget.properties?.tableColumnText || '#111827'}
-                        onChange={(color) => updateProperty('tableColumnText', color)}
-                        allowImageVideo={false}
-                      >
-                        <button
-                          type="button"
-                          className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                          style={getSwatchStyle(widget.properties?.tableColumnText || '#111827')}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </ColorPickerPopover>
-                      <Input
-                        type="text"
-                        value={widget.properties?.tableColumnText || '#111827'}
-                        onChange={(e) => updateProperty('tableColumnText', e.target.value)}
-                        className="h-7 text-xs pl-7 w-full"
-                        placeholder="#111827"
-                      />
-                    </div>
+                    <ColorInput
+                      value={widget.properties?.tableColumnText || '#111827'}
+                      onChange={(color) => updateProperty('tableColumnText', color)}
+                      allowImageVideo={false}
+                      className="relative"
+                      placeholder="#111827"
+                      inputClassName="h-7 text-xs pl-7 w-full"
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
@@ -1067,27 +889,14 @@ export function ChartConfigurationSection({
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs font-medium">Border color</Label>
-                    <div className="relative">
-                      <ColorPickerPopover
-                        value={widget.properties?.tableColumnBorderColor || '#e5e7eb'}
-                        onChange={(color) => updateProperty('tableColumnBorderColor', color)}
-                        allowImageVideo={false}
-                      >
-                        <button
-                          type="button"
-                          className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                          style={getSwatchStyle(widget.properties?.tableColumnBorderColor || '#e5e7eb')}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </ColorPickerPopover>
-                      <Input
-                        type="text"
-                        value={widget.properties?.tableColumnBorderColor || '#e5e7eb'}
-                        onChange={(e) => updateProperty('tableColumnBorderColor', e.target.value)}
-                        className="h-7 text-xs pl-7 w-full"
-                        placeholder="#e5e7eb"
-                      />
-                    </div>
+                    <ColorInput
+                      value={widget.properties?.tableColumnBorderColor || '#e5e7eb'}
+                      onChange={(color) => updateProperty('tableColumnBorderColor', color)}
+                      allowImageVideo={false}
+                      className="relative"
+                      placeholder="#e5e7eb"
+                      inputClassName="h-7 text-xs pl-7 w-full"
+                    />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs font-medium">Border radius</Label>
@@ -1121,27 +930,14 @@ export function ChartConfigurationSection({
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs font-medium">Border color</Label>
-                    <div className="relative">
-                      <ColorPickerPopover
-                        value={widget.properties?.tableCellBorderColor || '#e5e7eb'}
-                        onChange={(color) => updateProperty('tableCellBorderColor', color)}
-                        allowImageVideo={false}
-                      >
-                        <button
-                          type="button"
-                          className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                          style={getSwatchStyle(widget.properties?.tableCellBorderColor || '#e5e7eb')}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </ColorPickerPopover>
-                      <Input
-                        type="text"
-                        value={widget.properties?.tableCellBorderColor || '#e5e7eb'}
-                        onChange={(e) => updateProperty('tableCellBorderColor', e.target.value)}
-                        className="h-7 text-xs pl-7 w-full"
-                        placeholder="#e5e7eb"
-                      />
-                    </div>
+                    <ColorInput
+                      value={widget.properties?.tableCellBorderColor || '#e5e7eb'}
+                      onChange={(color) => updateProperty('tableCellBorderColor', color)}
+                      allowImageVideo={false}
+                      className="relative"
+                      placeholder="#e5e7eb"
+                      inputClassName="h-7 text-xs pl-7 w-full"
+                    />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs font-medium">Border radius</Label>
@@ -1313,71 +1109,35 @@ export function ChartConfigurationSection({
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-1">
                         <Label className="text-xs font-medium">Background color</Label>
-                        <div className="relative">
-                          <ColorPickerPopover
-                            value={rule.backgroundColor || '#ffffff'}
-                            onChange={(color) => {
-                              const rules = widget.properties?.conditionalFormattingRules || []
-                              const updated = [...rules]
-                              updated[index] = { ...updated[index], backgroundColor: color }
-                              updateProperty('conditionalFormattingRules', updated)
-                            }}
-                            allowImageVideo={false}
-                          >
-                            <button
-                              type="button"
-                              className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                              style={getSwatchStyle(rule.backgroundColor || '#ffffff')}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                          </ColorPickerPopover>
-                          <Input
-                            type="text"
-                            value={rule.backgroundColor || '#ffffff'}
-                            onChange={(e) => {
-                              const rules = widget.properties?.conditionalFormattingRules || []
-                              const updated = [...rules]
-                              updated[index] = { ...updated[index], backgroundColor: e.target.value }
-                              updateProperty('conditionalFormattingRules', updated)
-                            }}
-                            className="h-7 text-xs pl-7 w-full"
-                            placeholder="#ffffff"
-                          />
-                        </div>
+                        <ColorInput
+                          value={rule.backgroundColor || '#ffffff'}
+                          onChange={(color) => {
+                            const rules = widget.properties?.conditionalFormattingRules || []
+                            const updated = [...rules]
+                            updated[index] = { ...updated[index], backgroundColor: color }
+                            updateProperty('conditionalFormattingRules', updated)
+                          }}
+                          allowImageVideo={false}
+                          className="relative"
+                          placeholder="#ffffff"
+                          inputClassName="h-7 text-xs pl-7 w-full"
+                        />
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs font-medium">Text color</Label>
-                        <div className="relative">
-                          <ColorPickerPopover
-                            value={rule.textColor || '#111827'}
-                            onChange={(color) => {
-                              const rules = widget.properties?.conditionalFormattingRules || []
-                              const updated = [...rules]
-                              updated[index] = { ...updated[index], textColor: color }
-                              updateProperty('conditionalFormattingRules', updated)
-                            }}
-                            allowImageVideo={false}
-                          >
-                            <button
-                              type="button"
-                              className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                              style={getSwatchStyle(rule.textColor || '#111827')}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                          </ColorPickerPopover>
-                          <Input
-                            type="text"
-                            value={rule.textColor || '#111827'}
-                            onChange={(e) => {
-                              const rules = widget.properties?.conditionalFormattingRules || []
-                              const updated = [...rules]
-                              updated[index] = { ...updated[index], textColor: e.target.value }
-                              updateProperty('conditionalFormattingRules', updated)
-                            }}
-                            className="h-7 text-xs pl-7 w-full"
-                            placeholder="#111827"
-                          />
-                        </div>
+                        <ColorInput
+                          value={rule.textColor || '#111827'}
+                          onChange={(color) => {
+                            const rules = widget.properties?.conditionalFormattingRules || []
+                            const updated = [...rules]
+                            updated[index] = { ...updated[index], textColor: color }
+                            updateProperty('conditionalFormattingRules', updated)
+                          }}
+                          allowImageVideo={false}
+                          className="relative"
+                          placeholder="#111827"
+                          inputClassName="h-7 text-xs pl-7 w-full"
+                        />
                       </div>
                     </div>
                   </div>
@@ -1459,51 +1219,25 @@ export function ChartConfigurationSection({
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label className="text-xs font-medium">Title Color</Label>
-                        <div className="relative">
-                          <ColorPickerPopover
-                            value={widget.properties?.xAxisTitleColor || '#111827'}
-                            onChange={(color) => updateProperty('xAxisTitleColor', color)}
-                            allowImageVideo={false}
-                          >
-                            <button
-                              type="button"
-                              className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                              style={getSwatchStyle(widget.properties?.xAxisTitleColor || '#111827')}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                          </ColorPickerPopover>
-                          <Input
-                            type="text"
-                            value={widget.properties?.xAxisTitleColor || '#111827'}
-                            onChange={(e) => updateProperty('xAxisTitleColor', e.target.value)}
-                            className="h-7 text-xs pl-7 w-full"
-                            placeholder="#111827"
-                          />
-                        </div>
+                        <ColorInput
+                          value={widget.properties?.xAxisTitleColor || '#111827'}
+                          onChange={(color) => updateProperty('xAxisTitleColor', color)}
+                          allowImageVideo={false}
+                          className="relative"
+                          placeholder="#111827"
+                          inputClassName="h-7 text-xs pl-7 w-full"
+                        />
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs font-medium">Tick Color</Label>
-                        <div className="relative">
-                          <ColorPickerPopover
-                            value={widget.properties?.xAxisTickColor || '#111827'}
-                            onChange={(color) => updateProperty('xAxisTickColor', color)}
-                            allowImageVideo={false}
-                          >
-                            <button
-                              type="button"
-                              className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                              style={getSwatchStyle(widget.properties?.xAxisTickColor || '#111827')}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                          </ColorPickerPopover>
-                          <Input
-                            type="text"
-                            value={widget.properties?.xAxisTickColor || '#111827'}
-                            onChange={(e) => updateProperty('xAxisTickColor', e.target.value)}
-                            className="h-7 text-xs pl-7 w-full"
-                            placeholder="#111827"
-                          />
-                        </div>
+                        <ColorInput
+                          value={widget.properties?.xAxisTickColor || '#111827'}
+                          onChange={(color) => updateProperty('xAxisTickColor', color)}
+                          allowImageVideo={false}
+                          className="relative"
+                          placeholder="#111827"
+                          inputClassName="h-7 text-xs pl-7 w-full"
+                        />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
@@ -1621,51 +1355,25 @@ export function ChartConfigurationSection({
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label className="text-xs font-medium">Title Color</Label>
-                        <div className="relative">
-                          <ColorPickerPopover
-                            value={widget.properties?.yAxisTitleColor || '#111827'}
-                            onChange={(color) => updateProperty('yAxisTitleColor', color)}
-                            allowImageVideo={false}
-                          >
-                            <button
-                              type="button"
-                              className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                              style={getSwatchStyle(widget.properties?.yAxisTitleColor || '#111827')}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                          </ColorPickerPopover>
-                          <Input
-                            type="text"
-                            value={widget.properties?.yAxisTitleColor || '#111827'}
-                            onChange={(e) => updateProperty('yAxisTitleColor', e.target.value)}
-                            className="h-7 text-xs pl-7 w-full"
-                            placeholder="#111827"
-                          />
-                        </div>
+                        <ColorInput
+                          value={widget.properties?.yAxisTitleColor || '#111827'}
+                          onChange={(color) => updateProperty('yAxisTitleColor', color)}
+                          allowImageVideo={false}
+                          className="relative"
+                          placeholder="#111827"
+                          inputClassName="h-7 text-xs pl-7 w-full"
+                        />
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs font-medium">Tick Color</Label>
-                        <div className="relative">
-                          <ColorPickerPopover
-                            value={widget.properties?.yAxisTickColor || '#111827'}
-                            onChange={(color) => updateProperty('yAxisTickColor', color)}
-                            allowImageVideo={false}
-                          >
-                            <button
-                              type="button"
-                              className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                              style={getSwatchStyle(widget.properties?.yAxisTickColor || '#111827')}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                          </ColorPickerPopover>
-                          <Input
-                            type="text"
-                            value={widget.properties?.yAxisTickColor || '#111827'}
-                            onChange={(e) => updateProperty('yAxisTickColor', e.target.value)}
-                            className="h-7 text-xs pl-7 w-full"
-                            placeholder="#111827"
-                          />
-                        </div>
+                        <ColorInput
+                          value={widget.properties?.yAxisTickColor || '#111827'}
+                          onChange={(color) => updateProperty('yAxisTickColor', color)}
+                          allowImageVideo={false}
+                          className="relative"
+                          placeholder="#111827"
+                          inputClassName="h-7 text-xs pl-7 w-full"
+                        />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">

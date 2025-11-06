@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { ComponentStyle, GlobalStyleConfig } from './types'
+import { ColorInput } from './ColorInput'
 
 interface ComponentStyleEditorProps {
   componentType: 'input' | 'select' | 'button' | 'tabs' | 'card' | 'table' | 'modal' | 'tooltip'
@@ -27,43 +28,27 @@ function ComponentStyleEditor({ componentType, style, onUpdate, isMobileViewport
       {/* Background Color */}
       <div className="space-y-1">
         <Label className="text-xs text-muted-foreground">Background</Label>
-        <div className="relative">
-          <Input
-            type="color"
-            value={style?.backgroundColor || '#ffffff'}
-            onChange={(e) => updateStyle('backgroundColor', e.target.value)}
-            className={`absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 p-0 border-0 cursor-pointer rounded-none`}
-            style={{ appearance: 'none', WebkitAppearance: 'none', border: 'none', outline: 'none' }}
-          />
-          <Input
-            type="text"
-            value={style?.backgroundColor || '#ffffff'}
-            onChange={(e) => updateStyle('backgroundColor', e.target.value)}
-            className={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs pl-7`}
-            placeholder="#ffffff"
-          />
-        </div>
+        <ColorInput
+          value={style?.backgroundColor || '#ffffff'}
+          onChange={(color) => updateStyle('backgroundColor', color)}
+          allowImageVideo={false}
+          className="relative"
+          placeholder="#ffffff"
+          inputClassName={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs pl-7`}
+        />
       </div>
 
       {/* Text Color */}
       <div className="space-y-1">
         <Label className="text-xs text-muted-foreground">Text Color</Label>
-        <div className="relative">
-          <Input
-            type="color"
-            value={style?.textColor || '#000000'}
-            onChange={(e) => updateStyle('textColor', e.target.value)}
-            className={`absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 p-0 border-0 cursor-pointer rounded-none`}
-            style={{ appearance: 'none', WebkitAppearance: 'none', border: 'none', outline: 'none' }}
-          />
-          <Input
-            type="text"
-            value={style?.textColor || '#000000'}
-            onChange={(e) => updateStyle('textColor', e.target.value)}
-            className={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs pl-7`}
-            placeholder="#000000"
-          />
-        </div>
+        <ColorInput
+          value={style?.textColor || '#000000'}
+          onChange={(color) => updateStyle('textColor', color)}
+          allowImageVideo={false}
+          className="relative"
+          placeholder="#000000"
+          inputClassName={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs pl-7`}
+        />
       </div>
 
       {/* Border */}
@@ -93,22 +78,14 @@ function ComponentStyleEditor({ componentType, style, onUpdate, isMobileViewport
       {/* Border Color */}
       <div className="space-y-1">
         <Label className="text-xs text-muted-foreground">Border Color</Label>
-        <div className="relative">
-          <Input
-            type="color"
-            value={style?.borderColor || '#e5e7eb'}
-            onChange={(e) => updateStyle('borderColor', e.target.value)}
-            className={`absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 p-0 border-0 cursor-pointer rounded-none`}
-            style={{ appearance: 'none', WebkitAppearance: 'none', border: 'none', outline: 'none' }}
-          />
-          <Input
-            type="text"
-            value={style?.borderColor || '#e5e7eb'}
-            onChange={(e) => updateStyle('borderColor', e.target.value)}
-            className={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs pl-7`}
-            placeholder="#e5e7eb"
-          />
-        </div>
+        <ColorInput
+          value={style?.borderColor || '#e5e7eb'}
+          onChange={(color) => updateStyle('borderColor', color)}
+          allowImageVideo={false}
+          className="relative"
+          placeholder="#e5e7eb"
+          inputClassName={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs pl-7`}
+        />
       </div>
 
       {/* Spacing */}

@@ -58,7 +58,8 @@ export const WidgetRenderer = React.memo(function WidgetRenderer({ widget, isMob
     spaceId: spaceId,
     sampleData: props.sampleData || [],
     autoRefresh: shouldAutoRefresh, // Only true if explicitly enabled
-    refreshInterval: props.refreshInterval || 0
+    refreshInterval: props.refreshInterval || 0,
+    limit: props.dataLimit && props.dataLimit > 0 ? props.dataLimit : undefined
   })
   
   // Determine which data to use

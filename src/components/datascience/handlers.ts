@@ -79,6 +79,12 @@ export interface NotebookHandlers {
   handleAddTag: (cellId: string) => void
   handleSearchCell: (cellId: string) => void
   handleRenameCellTitle: (cellId: string, title: string) => void
+  // New feature handlers
+  toggleBookmark: (cellId: string) => void
+  exportToPDF: () => void
+  exportToHTML: () => void
+  insertSnippet: (snippet: any) => void
+  toggleCellCollapse: (cellId: string) => void
 }
 
 export function createNotebookHandlers(
@@ -1252,6 +1258,226 @@ export function createNotebookHandlers(
     }
   }
 
+  // Toggle bookmark for a cell
+  const toggleBookmark = (cellId: string) => {
+    setNotebook(prev => ({
+      ...prev,
+      cells: prev.cells.map(cell =>
+        cell.id === cellId
+          ? { ...cell, isBookmarked: !cell.isBookmarked }
+          : cell
+      )
+    }))
+    const cell = notebook.cells.find(c => c.id === cellId)
+    if (cell) {
+      toast.success(cell.isBookmarked ? 'Bookmark removed' : 'Cell bookmarked')
+    }
+  }
+
+  // Toggle cell collapse
+  const toggleCellCollapse = (cellId: string) => {
+    setNotebook(prev => ({
+      ...prev,
+      cells: prev.cells.map(cell =>
+        cell.id === cellId
+          ? { ...cell, isCollapsed: !cell.isCollapsed }
+          : cell
+      )
+    }))
+  }
+
+  // Insert code snippet
+  const insertSnippet = (snippet: any) => {
+    if (!activeCellId) {
+      toast.error('Please select a cell first')
+      return
+    }
+    const cell = notebook.cells.find(c => c.id === activeCellId)
+    if (cell) {
+      const newContent = cell.content + (cell.content ? '\n' : '') + snippet.code
+      updateCellContent(activeCellId, newContent)
+      toast.success(`Snippet "${snippet.name}" inserted`)
+    }
+  }
+
+  // Export to PDF
+  const exportToPDF = async () => {
+    try {
+      // Create HTML content
+      const htmlContent = generateHTMLExport(notebook)
+      
+      // Use browser print to PDF
+      const printWindow = window.open('', '_blank')
+      if (printWindow) {
+        printWindow.document.write(htmlContent)
+        printWindow.document.close()
+        printWindow.onload = () => {
+          printWindow.print()
+        }
+      }
+      toast.success('PDF export initiated')
+    } catch (error: any) {
+      toast.error(`PDF export failed: ${error.message}`)
+    }
+  }
+
+  // Export to HTML
+  const exportToHTML = () => {
+    try {
+      const htmlContent = generateHTMLExport(notebook)
+      const blob = new Blob([htmlContent], { type: 'text/html' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${notebook.name || 'notebook'}.html`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      toast.success('HTML exported successfully')
+    } catch (error: any) {
+      toast.error(`HTML export failed: ${error.message}`)
+    }
+  }
+
+  // Helper function to generate HTML export
+  const generateHTMLExport = (notebook: Notebook): string => {
+    const cellsHTML = notebook.cells.map((cell, index) => {
+      const cellType = cell.type.toUpperCase()
+      const content = cell.content || ''
+      const output = cell.output ? JSON.stringify(cell.output, null, 2) : ''
+      const status = cell.status || 'idle'
+      const title = cell.title ? `<h3>${cell.title}</h3>` : ''
+      
+      return `
+        <div class="cell cell-${cell.type}" style="margin: 20px 0; padding: 15px; border: 1px solid #e5e7eb; border-radius: 4px;">
+          ${title}
+          <div class="cell-header" style="background: #f3f4f6; padding: 8px; margin-bottom: 10px; font-weight: bold;">
+            Cell ${index + 1} - ${cellType} [${status}]
+          </div>
+          <div class="cell-content" style="background: #f9fafb; padding: 10px; margin-bottom: 10px; font-family: monospace; white-space: pre-wrap;">
+            ${escapeHtml(content)}
+          </div>
+          ${output ? `
+            <div class="cell-output" style="background: #f0f9ff; padding: 10px; border-left: 3px solid #3b82f6;">
+              <strong>Output:</strong>
+              <pre style="margin-top: 8px; white-space: pre-wrap;">${escapeHtml(output)}</pre>
+            </div>
+          ` : ''}
+        </div>
+      `
+    }).join('')
+
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>${notebook.name || 'Notebook'}</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; }
+            .notebook-header { border-bottom: 2px solid #e5e7eb; padding-bottom: 20px; margin-bottom: 30px; }
+            .notebook-title { font-size: 2em; font-weight: bold; margin-bottom: 10px; }
+            .notebook-description { color: #6b7280; }
+            .notebook-meta { color: #9ca3af; font-size: 0.9em; margin-top: 10px; }
+            @media print { .cell { page-break-inside: avoid; } }
+          </style>
+        </head>
+        <body>
+          <div class="notebook-header">
+            <div class="notebook-title">${escapeHtml(notebook.name || 'Untitled Notebook')}</div>
+            <div class="notebook-description">${escapeHtml(notebook.description || '')}</div>
+            <div class="notebook-meta">
+              Created: ${notebook.createdAt.toLocaleString()} | 
+              Updated: ${notebook.updatedAt.toLocaleString()} | 
+              Cells: ${notebook.cells.length}
+            </div>
+          </div>
+          ${cellsHTML}
+        </body>
+      </html>
+    `
+  }
+
+  const escapeHtml = (text: string): string => {
+    const div = document.createElement('div')
+    div.textContent = text
+    return div.innerHTML
+  }
+
+  // Update executeCell to track execution history
+  const executeCellWithHistory = async (cellId: string) => {
+    const startTime = Date.now()
+    const cell = notebook.cells.find(c => c.id === cellId)
+    if (!cell) return
+
+    // Update cell to track execution
+    setNotebook(prev => ({
+      ...prev,
+      cells: prev.cells.map(c =>
+        c.id === cellId
+          ? {
+              ...c,
+              status: 'running',
+              isExecuting: true
+            }
+          : c
+      )
+    }))
+
+    try {
+      await executeCell(cellId)
+      const executionTime = Date.now() - startTime
+      
+      // Add to execution history
+      setNotebook(prev => ({
+        ...prev,
+        cells: prev.cells.map(c =>
+          c.id === cellId
+            ? {
+                ...c,
+                executionHistory: [
+                  ...(c.executionHistory || []),
+                  {
+                    timestamp: new Date(),
+                    executionTime,
+                    status: 'success' as const
+                  }
+                ].slice(-10) // Keep last 10 executions
+              }
+            : c
+        )
+      }))
+    } catch (error) {
+      const executionTime = Date.now() - startTime
+      setNotebook(prev => ({
+        ...prev,
+        cells: prev.cells.map(c =>
+          c.id === cellId
+            ? {
+                ...c,
+                executionHistory: [
+                  ...(c.executionHistory || []),
+                  {
+                    timestamp: new Date(),
+                    executionTime,
+                    status: 'error' as const
+                  }
+                ].slice(-10)
+              }
+            : c
+        )
+      }))
+    } finally {
+      setNotebook(prev => ({
+        ...prev,
+        cells: prev.cells.map(c =>
+          c.id === cellId ? { ...c, isExecuting: false } : c
+        )
+      }))
+    }
+  }
+
   return {
     createNewCell: createNewCellHandler,
     deleteCell,
@@ -1300,6 +1526,11 @@ export function createNotebookHandlers(
     handleAddComment,
     handleAddTag,
     handleSearchCell,
-    handleRenameCellTitle
+    handleRenameCellTitle,
+    toggleBookmark,
+    exportToPDF,
+    exportToHTML,
+    insertSnippet,
+    toggleCellCollapse
   }
 }

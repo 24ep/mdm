@@ -28,7 +28,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } f
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import IconPickerPopover from '@/components/ui/icon-picker-popover'
-import { ColorPicker } from '@/components/ui/color-swatch'
+import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 import { AttributeDetailDrawer } from '@/components/data-models/AttributeDetailDrawer'
 import { AttributeManagementPanel } from '@/components/attribute-management/AttributeManagementPanel'
 import { DraggableAttributeList } from '@/components/attribute-management/DraggableAttributeList'
@@ -1593,7 +1593,14 @@ export default function SpaceSettingsPage() {
                             </div>
                             <div>
                               <Label>Primary Color</Label>
-                              <ColorPicker value={modelPrimaryColor} onChange={setModelPrimaryColor} />
+                              <ColorInput
+                                value={modelPrimaryColor}
+                                onChange={(color) => setModelPrimaryColor(color)}
+                                allowImageVideo={false}
+                                className="relative"
+                                placeholder="#3b82f6"
+                                inputClassName="h-8 text-xs pl-7"
+                              />
                             </div>
                           </div>
                           <div>

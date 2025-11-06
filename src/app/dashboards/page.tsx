@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 import { 
   Plus, 
   Search, 
@@ -551,11 +552,13 @@ export default function DashboardsPage() {
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="background_color">Background Color</Label>
-                  <Input
-                    id="background_color"
-                    type="color"
+                  <ColorInput
                     value={createForm.background_color}
-                    onChange={(e) => setCreateForm({ ...createForm, background_color: e.target.value })}
+                    onChange={(color) => setCreateForm({ ...createForm, background_color: color })}
+                    allowImageVideo={false}
+                    className="relative"
+                    placeholder="#ffffff"
+                    inputClassName="h-10 text-xs pl-7"
                   />
                 </div>
                 <div>

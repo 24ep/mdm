@@ -1,6 +1,14 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import CodeMirror from '@uiw/react-codemirror'
+import { sql } from '@codemirror/lang-sql'
+import { autocompletion } from '@codemirror/autocomplete'
+import { EditorView } from '@codemirror/view'
+import { oneDark } from '@codemirror/theme-one-dark'
+import { syntaxHighlighting, HighlightStyle } from '@codemirror/language'
+import { tags } from '@lezer/highlight'
+import { createSQLAutocomplete, fetchDatabaseSchema } from '@/lib/sql-autocomplete'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css'
 import 'highlight.js/styles/github-dark.css'
@@ -50,6 +58,160 @@ export function CodeEditor({
   options = {},
   className = ''
 }: CodeEditorProps) {
+  const [dbSchema, setDbSchema] = useState<any>(null)
+  const [sqlAutocomplete, setSqlAutocomplete] = useState<any>(null)
+  
+  // For SQL language, use CodeMirror with proper autocomplete
+  const isSQL = language.toLowerCase() === 'sql'
+  
+  // Fetch database schema for SQL autocomplete
+  useEffect(() => {
+    if (isSQL && options.enableAutoComplete !== false) {
+      fetchDatabaseSchema().then(schema => {
+        setDbSchema(schema)
+        const autocomplete = createSQLAutocomplete(schema, 'postgresql')
+        setSqlAutocomplete(autocomplete)
+      }).catch(err => {
+        console.error('Failed to load database schema:', err)
+      })
+    }
+  }, [isSQL, options.enableAutoComplete])
+
+  // Memoize SQL extensions to avoid recreating them on every render
+  const sqlExtensions = useMemo(() => {
+    if (!isSQL) return []
+    
+    // Check if sql function is available
+    if (typeof sql !== 'function') {
+      console.warn('SQL extension not available, falling back to basic editor')
+      return [
+        EditorView.lineWrapping,
+        EditorView.theme({
+          '&': {
+            fontSize: options.fontSize || 14,
+            fontFamily: options.fontFamily || 'Monaco, Menlo, "Ubuntu Mono", monospace',
+            height: height === '100%' ? '100%' : undefined,
+            minHeight: height === '100%' ? undefined : height
+          },
+          '.cm-content': {
+            padding: '8px',
+            minHeight: height === '100%' ? '100%' : height
+          },
+          '.cm-scroller': {
+            overflow: 'auto'
+          }
+        })
+      ]
+    }
+    
+    try {
+      const sqlExtension = sql({ dialect: 'postgresql', upperCaseKeywords: true })
+      
+      // Define syntax highlighting styles
+      const highlightStyle = HighlightStyle.define([
+        { tag: tags.keyword, color: '#0077aa', fontWeight: 'bold' },
+        { tag: tags.string, color: '#669900' },
+        { tag: tags.comment, color: '#999988', fontStyle: 'italic' },
+        { tag: tags.number, color: '#990055' },
+        { tag: tags.definition(tags.variableName), color: '#0077aa' },
+        { tag: tags.variableName, color: theme === 'dark' ? '#e6e6e6' : '#1a1a1a' },
+        { tag: tags.operator, color: '#a67f59' },
+        { tag: tags.typeName, color: '#0077aa' },
+        { tag: tags.propertyName, color: '#0077aa' },
+        { tag: tags.function(tags.variableName), color: '#6f42c1' },
+        { tag: tags.className, color: '#0077aa' },
+      ])
+      
+      // Configure autocomplete - always include it
+      // If we have custom autocomplete, use it; otherwise use default SQL autocomplete
+      const autocompleteExtension = sqlAutocomplete 
+        ? autocompletion({ 
+            override: [sqlAutocomplete],
+            activateOnTyping: true,
+            maxRenderedOptions: 10,
+            defaultKeymap: true
+          })
+        : autocompletion({
+            activateOnTyping: true,
+            maxRenderedOptions: 10,
+            defaultKeymap: true
+          })
+      
+      return [
+        sqlExtension, // Language extension first for syntax highlighting
+        autocompleteExtension, // Autocomplete extension
+        syntaxHighlighting(highlightStyle), // Explicit syntax highlighting
+        EditorView.lineWrapping,
+        EditorView.theme({
+          '&': {
+            fontSize: options.fontSize || 14,
+            fontFamily: options.fontFamily || 'Monaco, Menlo, "Ubuntu Mono", monospace',
+            height: height === '100%' ? '100%' : undefined,
+            minHeight: height === '100%' ? undefined : height
+          },
+          '.cm-content': {
+            padding: '8px',
+            minHeight: height === '100%' ? '100%' : height
+          },
+          '.cm-scroller': {
+            overflow: 'auto'
+          }
+        })
+      ]
+    } catch (error) {
+      console.error('Error initializing SQL extensions:', error)
+      return [
+        EditorView.lineWrapping,
+        EditorView.theme({
+          '&': {
+            fontSize: options.fontSize || 14,
+            fontFamily: options.fontFamily || 'Monaco, Menlo, "Ubuntu Mono", monospace',
+            height: height === '100%' ? '100%' : undefined,
+            minHeight: height === '100%' ? undefined : height
+          },
+          '.cm-content': {
+            padding: '8px',
+            minHeight: height === '100%' ? '100%' : height
+          },
+          '.cm-scroller': {
+            overflow: 'auto'
+          }
+        })
+      ]
+    }
+  }, [isSQL, sqlAutocomplete, options.fontSize, options.fontFamily, height, theme])
+
+  // If SQL language, use CodeMirror with proper autocomplete
+  if (isSQL) {
+    return (
+      <div className={`w-full ${className}`} style={{ height }}>
+        <CodeMirror
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          readOnly={readOnly}
+          height={height}
+          theme={theme === 'dark' ? oneDark : undefined}
+          extensions={sqlExtensions}
+          basicSetup={{
+            lineNumbers: options.showLineNumbers !== false,
+            highlightActiveLine: true,
+            bracketMatching: options.enableBracketMatching !== false,
+            closeBrackets: true,
+            autocompletion: options.enableAutoComplete !== false,
+            searchKeymap: true,
+            history: true,
+            indentOnInput: true,
+            defaultKeymap: true,
+            foldGutter: options.enableCodeFolding !== false,
+            tabSize: options.tabSize || 2
+          }}
+        />
+      </div>
+    )
+  }
+
+  // For other languages, use the existing custom implementation
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const lineNumbersRef = useRef<HTMLDivElement>(null)
   const [lineNumbers, setLineNumbers] = useState<string[]>([])

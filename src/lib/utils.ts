@@ -14,3 +14,11 @@ export function formatTimeAgo(date: Date): string {
   if (seconds < 604800) return `${Math.floor(seconds / 86400)} days ago`
   return date.toLocaleDateString()
 }
+
+// Format duration in milliseconds to human-readable string
+export function formatDuration(ms: number): string {
+  if (ms < 1000) return `${Math.round(ms)}ms`
+  if (ms < 60000) return `${(ms / 1000).toFixed(2)}s`
+  if (ms < 3600000) return `${Math.floor(ms / 60000)}m ${Math.floor((ms % 60000) / 1000)}s`
+  return `${Math.floor(ms / 3600000)}h ${Math.floor((ms % 3600000) / 60000)}m`
+}

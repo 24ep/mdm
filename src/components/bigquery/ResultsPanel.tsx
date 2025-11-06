@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Table, History, BarChart3, Download, AlertCircle, ChevronDown, FileText } from 'lucide-react'
+import { Table, History, BarChart3, Download, AlertCircle, ChevronDown, FileText, BarChart } from 'lucide-react'
 import { QueryHistory } from './QueryHistory'
 import { ChartRenderer } from '@/components/charts/ChartRenderer'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label'
 import { EnhancedResultsTable } from './EnhancedResultsTable'
 import { ValidationPanel } from './ValidationPanel'
 import { ChartControls } from './ChartControls'
+import { ResultStatisticsPanel } from './ResultStatisticsPanel'
 
 interface QueryResult {
   id: string
@@ -31,8 +32,8 @@ interface ResultsPanelProps {
   showFooter: boolean
   footerHeight: number
   isResizing: boolean
-  footerTab: 'results' | 'history' | 'visualization' | 'validation'
-  onFooterTabChange: (tab: 'results' | 'history' | 'visualization' | 'validation') => void
+  footerTab: 'results' | 'history' | 'visualization' | 'validation' | 'statistics'
+  onFooterTabChange: (tab: 'results' | 'history' | 'visualization' | 'validation' | 'statistics') => void
   currentResult: QueryResult | null
   queryHistory: QueryResult[]
   onLoadQuery: (query: string) => void
@@ -244,6 +245,10 @@ export function ResultsPanel({
                   </span>
                 )}
               </TabsTrigger>
+              <TabsTrigger value="statistics" className="flex items-center gap-2 px-3 py-1 text-sm">
+                <BarChart className="h-4 w-4" />
+                Statistics
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -352,6 +357,14 @@ export function ResultsPanel({
             <ValidationPanel
               validation={validation}
               onJumpToLine={onJumpToLine}
+            />
+          </div>
+        )}
+        {footerTab === 'statistics' && currentResult && (
+          <div className="h-full p-4">
+            <ResultStatisticsPanel
+              currentResult={currentResult}
+              isOpen={true}
             />
           </div>
         )}

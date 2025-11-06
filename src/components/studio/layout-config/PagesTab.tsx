@@ -18,6 +18,7 @@ import { BadgeItem } from './BadgeItem'
 import { PageListItem } from './PageListItem'
 import { SortablePageItem } from './SortablePageItem'
 import { GroupItem } from './GroupItem'
+import { LoginPageItem } from './LoginPageItem'
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, useDroppable } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -116,6 +117,16 @@ export function PagesTab({
       const draggedIndex = allPages.findIndex(p => p.id === active.id)
       if (draggedIndex !== -1) {
         const dragged = allPages[draggedIndex]
+        // Persist the change to backend if it's a custom page
+        if (dragged.type === 'custom' && dragged.page) {
+          try {
+            await SpacesEditorManager.updatePage(spaceId, dragged.page.id, { sidebarPosition: toBottom ? 'bottom' : undefined } as any)
+          } catch (err) {
+            console.error('Failed to update page sidebar position:', err)
+            toast.error('Failed to update page alignment')
+            return
+          }
+        }
         setAllPages(prev => {
           // Remove from any group children and root
           const stripFromGroups = (arr: UnifiedPage[]) => arr.map(p => {
@@ -134,6 +145,7 @@ export function PagesTab({
           if (toBottom) bottoms.push(updated); else tops.push(updated)
           return [...tops, ...bottoms]
         })
+        toast.success(`Page moved to ${toBottom ? 'bottom' : 'top'} alignment`)
       }
       return
     }
@@ -238,6 +250,18 @@ export function PagesTab({
         </DropdownMenu>
       </div>
       
+      {/* Login Page - Always at the top */}
+      <div className={`${isMobileViewport ? 'mb-4' : 'mb-3'}`}>
+        <LoginPageItem
+          page={{ id: 'login-page', name: 'Login Page', type: 'login' }}
+          index={-1}
+          isMobileViewport={isMobileViewport}
+          spaceId={spaceId}
+          selectedPageId={selectedPageId}
+          setSelectedPageId={setSelectedPageId}
+        />
+      </div>
+
       {/* Unified Pages List with Drag & Drop */}
       {allPages.length === 0 ? (
         <div className={`${isMobileViewport ? 'text-sm' : 'text-xs'} text-muted-foreground`}>No pages</div>
@@ -249,8 +273,8 @@ export function PagesTab({
         >
           {/* Split into two alignment zones */}
           {(() => {
-            const topItems = allPages.filter(p => (p as any).sidebarPosition !== 'bottom')
-            const bottomItems = allPages.filter(p => (p as any).sidebarPosition === 'bottom')
+            const topItems = allPages.filter(p => (p as any).sidebarPosition !== 'bottom' && p.type !== 'login')
+            const bottomItems = allPages.filter(p => (p as any).sidebarPosition === 'bottom' && p.type !== 'login')
             return (
               <div className="space-y-4">
                 {/* Top alignment */}
@@ -258,9 +282,13 @@ export function PagesTab({
                   {/* Drop here to move to Top alignment */}
                   <div
                     ref={setTopZoneRef}
-                    className={`h-6 mb-1 rounded-md ${isOverTop ? 'bg-blue-500/10 border border-primary' : 'border border-dashed border-transparent hover:border-muted'}`}
+                    className={`min-h-[48px] mb-2 rounded-md flex items-center justify-center transition-colors ${isOverTop ? 'bg-blue-500/20 border-2 border-blue-500' : 'border-2 border-dashed border-transparent hover:border-muted-foreground/50 bg-muted/30'}`}
                     title="Drop here to move to Top alignment"
-                  />
+                  >
+                    <span className={`text-xs text-muted-foreground ${isOverTop ? 'text-blue-600 dark:text-blue-400 font-medium' : ''}`}>
+                      {isOverTop ? 'Drop to move to top' : 'Drop here for top alignment'}
+                    </span>
+                  </div>
                   <div className={`${isMobileViewport ? 'text-xs' : 'text-[11px]'} font-semibold text-muted-foreground mb-1`}>Top alignment</div>
                   <SortableContext items={topItems.map(p => p.id)} strategy={verticalListSortingStrategy}>
                     <div className={`${isMobileViewport ? 'space-y-2' : 'space-y-1'}`}>
@@ -458,9 +486,13 @@ export function PagesTab({
                   {/* Drop here to move to Bottom alignment */}
                   <div
                     ref={setBottomZoneRef}
-                    className={`h-6 mb-1 rounded-md ${isOverBottom ? 'bg-blue-500/10 border border-primary' : 'border border-dashed border-transparent hover:border-muted'}`}
+                    className={`min-h-[48px] mb-2 rounded-md flex items-center justify-center transition-colors ${isOverBottom ? 'bg-blue-500/20 border-2 border-blue-500' : 'border-2 border-dashed border-transparent hover:border-muted-foreground/50 bg-muted/30'}`}
                     title="Drop here to move to Bottom alignment"
-                  />
+                  >
+                    <span className={`text-xs text-muted-foreground ${isOverBottom ? 'text-blue-600 dark:text-blue-400 font-medium' : ''}`}>
+                      {isOverBottom ? 'Drop to move to bottom' : 'Drop here for bottom alignment'}
+                    </span>
+                  </div>
                   <div className={`${isMobileViewport ? 'text-xs' : 'text-[11px]'} font-semibold text-muted-foreground mb-1`}>Bottom alignment</div>
                   <SortableContext items={bottomItems.map(p => p.id)} strategy={verticalListSortingStrategy}>
                     <div className={`${isMobileViewport ? 'space-y-2' : 'space-y-1'}`}>

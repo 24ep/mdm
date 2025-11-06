@@ -9,10 +9,13 @@ import {
   EyeOff
 } from 'lucide-react'
 import CodeMirror from '@uiw/react-codemirror'
+import { sql } from '@codemirror/lang-sql'
+import { autocompletion } from '@codemirror/autocomplete'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { EditorView } from '@codemirror/view'
 import { syntaxHighlighting, HighlightStyle } from '@codemirror/language'
 import { tags } from '@lezer/highlight'
+import { createSQLAutocomplete, fetchDatabaseSchema } from '@/lib/sql-autocomplete'
 import { NotebookCell } from './types'
 import { useSpaces } from '@/hooks/useSpaces'
 import { useDataModels } from '@/hooks/useDataModels'
@@ -48,6 +51,7 @@ export function SQLCell({
 }: SQLCellProps) {
   const [showOutput, setShowOutput] = useState(true)
   const [languageExtensions, setLanguageExtensions] = useState<any[]>([])
+  const [sqlAutocomplete, setSqlAutocomplete] = useState<any>(null)
   const [selectedSpaceId, setSelectedSpaceId] = useState<string>('')
   const [selectedDataModelId, setSelectedDataModelId] = useState<string>('')
   const isDark = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
@@ -55,6 +59,16 @@ export function SQLCell({
   // Fetch spaces and data models
   const { spaces, loading: spacesLoading } = useSpaces()
   const { dataModels, loading: modelsLoading } = useDataModels(selectedSpaceId)
+
+  // Load SQL autocomplete with database schema
+  useEffect(() => {
+    fetchDatabaseSchema(selectedSpaceId || undefined).then(schema => {
+      const autocomplete = createSQLAutocomplete(schema, 'postgresql')
+      setSqlAutocomplete(autocomplete)
+    }).catch(err => {
+      console.error('Failed to load database schema for autocomplete:', err)
+    })
+  }, [selectedSpaceId])
   
   // Initialize space from cell metadata or use first space
   useEffect(() => {
@@ -90,16 +104,12 @@ export function SQLCell({
   }, { dark: true })
 
   useEffect(() => {
-    let isMounted = true
-    const dynamicImport = (specifier: string) => (new Function('s', 'return import(s)'))(specifier)
-    const spec = '@codemirror/lang-' + 'sql'
-    dynamicImport(spec)
-      .then((mod: any) => {
-        if (isMounted && mod?.sql) setLanguageExtensions([mod.sql()])
-      })
-      .catch(() => { if (isMounted) setLanguageExtensions([]) })
-    return () => { isMounted = false }
-  }, [])
+    // Use SQL language extension with autocomplete
+    setLanguageExtensions([
+      sql({ dialect: 'postgresql', upperCaseKeywords: true }),
+      ...(sqlAutocomplete ? [autocompletion({ override: [sqlAutocomplete] })] : [])
+    ])
+  }, [sqlAutocomplete])
 
   // Handle space and data model changes
   const handleSpaceChange = (spaceId: string) => {
@@ -123,7 +133,7 @@ export function SQLCell({
   // The variable name and datasource are now in the CellRenderer toolbar
   return (
     <div className="space-y-2">
-      <div className="px-4 py-3">
+      <div style={{ padding: '4px' }}>
         <CodeMirror
           value={cell.sqlQuery || cell.content || ''}
           height="auto"
@@ -140,25 +150,28 @@ export function SQLCell({
                 fontFamily: 'Menlo, Monaco, "Courier New", monospace',
                 backgroundColor: isDark ? '#1f2937' : '#f3f4f6', // light grey background
                 border: 'none',
-                outline: 'none'
+                outline: 'none',
+                borderRadius: '0px' // Match table widget: 0px border radius
               },
               '.cm-scroller': { 
                 overflow: 'auto', 
                 backgroundColor: isDark ? '#1f2937' : '#f3f4f6',
-                border: 'none'
+                border: 'none',
+                borderRadius: '0px'
               },
               '.cm-content': { 
-                padding: '12px 16px', 
+                padding: '4px', // Match table widget: 4px padding
                 backgroundColor: isDark ? '#1f2937' : '#f3f4f6',
                 cursor: canEdit ? 'text' : 'default'
               },
               '.cm-gutters': { 
                 backgroundColor: isDark ? '#1f2937' : '#f3f4f6',
                 border: 'none',
-                paddingLeft: '12px'
+                paddingLeft: '4px', // Match table widget: 4px padding
+                borderRadius: '0px'
               },
               '.cm-editor.cm-focused': { outline: 'none', border: 'none' },
-              '.cm-editor': { border: 'none', outline: 'none' }
+              '.cm-editor': { border: 'none', outline: 'none', borderRadius: '0px' }
             }),
             ...(isDark ? [darkEditorTheme, syntaxHighlighting(HighlightStyle.define([
               { tag: tags.keyword, color: '#0077aa' },
@@ -211,7 +224,7 @@ export function SQLCell({
           }}
           editable={canEdit}
           className={isDark ? "w-full border-0 bg-gray-800" : "w-full border-0 bg-gray-100"}
-          style={{ minHeight: '150px', border: 'none', outline: 'none', pointerEvents: canEdit ? 'auto' : 'none' }}
+          style={{ minHeight: '150px', border: 'none', outline: 'none', pointerEvents: canEdit ? 'auto' : 'none', borderRadius: '0px' }}
           placeholder="SELECT * FROM table_name WHERE condition;"
           onFocus={() => onFocus(cell.id)}
         />
@@ -219,16 +232,16 @@ export function SQLCell({
 
       {/* Info message */}
       {cell.sqlVariableName && cell.sqlQuery && (
-        <div className="px-4 pb-2 text-xs text-gray-500 dark:text-gray-400 italic">
+        <div className="text-xs text-gray-500 dark:text-gray-400 italic" style={{ padding: '4px' }}>
           Result will be saved as DataFrame: <code className="text-blue-600 dark:text-blue-400 font-mono bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded">{cell.sqlVariableName}</code>
         </div>
       )}
 
       {/* Query Result Output */}
       {cell.output && (
-        <div className="border-t border-gray-200 dark:border-gray-700">
+        <div className="border-t border-[#e5e7eb] dark:border-gray-700" style={{ borderWidth: '1px', borderStyle: 'solid' }}>
           {showOutput ? (
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-md p-4">
+            <div className="bg-gray-50 dark:bg-gray-800" style={{ padding: '4px', borderRadius: '0px' }}>
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Result

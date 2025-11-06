@@ -36,7 +36,7 @@ const getGroupForTab = (tab: string): string | null => {
   const groupedTabs: Record<string, string[]> = {
     overview: ['overview', 'analytics'],
     tools: ['bigquery', 'notebook', 'ai-analyst', 'ai-chat-ui', 'knowledge-base', 'bi', 'storage'],
-    system: ['users', 'space-layouts', 'data', 'attachments', 'kernels', 'health', 'logs', 'database', 'cache', 'security', 'performance', 'settings', 'page-templates', 'export', 'integrations'],
+    system: ['users', 'space-layouts', 'data', 'attachments', 'kernels', 'health', 'logs', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache', 'security', 'performance', 'settings', 'page-templates', 'export', 'integrations'],
     'data-management': ['space-selection']
   }
   

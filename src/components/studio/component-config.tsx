@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
-import { ColorPicker } from '@/components/ui/color-swatch'
+import { ColorInput } from './layout-config/ColorInput'
 import { 
   Database, 
   Palette, 
@@ -373,25 +373,37 @@ export function ComponentConfig({ component, onUpdate }: ComponentConfigProps) {
       <div className="space-y-4">
         <div>
           <Label htmlFor="background-color">Background Color</Label>
-          <ColorPicker
+          <ColorInput
             value={style.backgroundColor || '#ffffff'}
-            onChange={(value) => handleStyleUpdate('backgroundColor', value)}
+            onChange={(color) => handleStyleUpdate('backgroundColor', color)}
+            allowImageVideo={false}
+            className="relative"
+            placeholder="#ffffff"
+            inputClassName="h-8 text-xs pl-7"
           />
         </div>
 
         <div>
           <Label htmlFor="text-color">Text Color</Label>
-          <ColorPicker
+          <ColorInput
             value={style.color || '#000000'}
-            onChange={(value) => handleStyleUpdate('color', value)}
+            onChange={(color) => handleStyleUpdate('color', color)}
+            allowImageVideo={false}
+            className="relative"
+            placeholder="#000000"
+            inputClassName="h-8 text-xs pl-7"
           />
         </div>
 
         <div>
           <Label htmlFor="border-color">Border Color</Label>
-          <ColorPicker
+          <ColorInput
             value={style.borderColor || '#e5e7eb'}
-            onChange={(value) => handleStyleUpdate('borderColor', value)}
+            onChange={(color) => handleStyleUpdate('borderColor', color)}
+            allowImageVideo={false}
+            className="relative"
+            placeholder="#e5e7eb"
+            inputClassName="h-8 text-xs pl-7"
           />
         </div>
 

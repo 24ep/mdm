@@ -33,7 +33,13 @@ import {
   Layout,
   FolderKanban,
   FlaskConical,
-  BookOpen
+  BookOpen,
+  GitBranch,
+  CheckCircle2,
+  FileCode,
+  ShieldCheck,
+  History,
+  Kanban
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -101,7 +107,7 @@ export function PlatformSidebar({
     },
     {
       id: 'bigquery',
-      name: 'BigQuery Interface',
+      name: 'SQL Query',
       icon: Code,
       description: 'SQL query interface'
     },
@@ -166,6 +172,30 @@ export function PlatformSidebar({
       description: 'Database management'
     },
     {
+      id: 'change-requests',
+      name: 'Change Requests',
+      icon: GitBranch,
+      description: 'Database change approval workflows'
+    },
+    {
+      id: 'sql-linting',
+      name: 'SQL Linting',
+      icon: CheckCircle2,
+      description: 'SQL review and linting system'
+    },
+    {
+      id: 'schema-migrations',
+      name: 'Schema Migrations',
+      icon: FileCode,
+      description: 'Schema migration management'
+    },
+    {
+      id: 'data-masking',
+      name: 'Data Masking',
+      icon: ShieldCheck,
+      description: 'Data masking and security'
+    },
+    {
       id: 'cache',
       name: 'Cache',
       icon: Zap,
@@ -183,6 +213,12 @@ export function PlatformSidebar({
       icon: BarChart3,
       description: 'Business intelligence'
     },
+    {
+      id: 'projects',
+      name: 'Project Management',
+      icon: Kanban,
+      description: 'Ticket and project management'
+    },
   ]
 
   const groupedTabs = {
@@ -191,11 +227,12 @@ export function PlatformSidebar({
       { id: 'analytics', name: 'Analytics', icon: BarChart3 }
     ],
     tools: [
-      { id: 'bigquery', name: 'BigQuery Interface', icon: Code },
+      { id: 'bigquery', name: 'SQL Query', icon: Code },
       { id: 'notebook', name: 'Data Science', icon: FileText },
       { id: 'ai-analyst', name: 'AI Analyst', icon: Bot },
       { id: 'ai-chat-ui', name: 'AI Chat UI', icon: Bot },
       { id: 'knowledge-base', name: 'Knowledge Base', icon: BookOpen },
+      { id: 'projects', name: 'Project Management', icon: Kanban },
       { id: 'bi', name: 'BI & Reports', icon: BarChart3 },
       { id: 'storage', name: 'Storage', icon: HardDrive },
     ],
@@ -208,6 +245,10 @@ export function PlatformSidebar({
       { id: 'health', name: 'System Health', icon: Heart },
       { id: 'logs', name: 'Logs', icon: FileTextIcon },
       { id: 'database', name: 'Database', icon: DatabaseIcon },
+      { id: 'change-requests', name: 'Change Requests', icon: GitBranch },
+      { id: 'sql-linting', name: 'SQL Linting', icon: CheckCircle2 },
+      { id: 'schema-migrations', name: 'Schema Migrations', icon: FileCode },
+      { id: 'data-masking', name: 'Data Masking', icon: ShieldCheck },
       { id: 'cache', name: 'Cache', icon: Zap },
       { id: 'security', name: 'Security', icon: Shield },
       { id: 'performance', name: 'Performance', icon: Activity },
@@ -233,7 +274,7 @@ export function PlatformSidebar({
   const groupSections: Record<string, string[]> = {
     management: ['users', 'space-layouts', 'data', 'attachments'],
     kernels: ['kernels'],
-    system: ['health', 'logs', 'database', 'cache'],
+    system: ['health', 'logs', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache'],
     security: ['security', 'performance'],
     integrations: ['settings', 'page-templates', 'export', 'integrations']
   }
@@ -243,6 +284,7 @@ export function PlatformSidebar({
     'AI & Assistants': ['ai-analyst', 'ai-chat-ui'],
     'Data Tools': ['bigquery', 'storage'],
     'Knowledge': ['knowledge-base'],
+    'Project Management': ['projects'],
     'Reporting': ['bi']
   }
 

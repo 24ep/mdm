@@ -11,6 +11,9 @@ import { CellRenderer } from './CellRenderer'
 import { SortableCell } from './SortableCell'
 import { ErrorBoundary } from './ErrorBoundary'
 import { FindReplaceModal } from './FindReplaceModal'
+import { BookmarksPanel } from './BookmarksPanel'
+import { TableOfContents } from './TableOfContents'
+import { CodeSnippetsPanel } from './CodeSnippetsPanel'
 import { DeepNoteLayoutProps } from './types'
 import { cn } from '@/lib/utils'
 import { 
@@ -328,6 +331,11 @@ export function DeepNoteLayoutRefactored({
                       onMergeCells={effectiveCanEdit ? handlers.mergeCells : undefined}
                       onSplitCell={effectiveCanEdit && state.activeCellId ? () => handlers.splitCell(state.activeCellId!) : undefined}
                       onToggleCellType={effectiveCanEdit && state.activeCellId ? () => handlers.toggleCellType(state.activeCellId!) : undefined}
+                      onShowBookmarks={() => actions.setShowBookmarks(!state.showBookmarks)}
+                      onShowTableOfContents={() => actions.setShowTableOfContents(!state.showTableOfContents)}
+                      onShowSnippets={() => actions.setShowSnippets(!state.showSnippets)}
+                      onExportToPDF={handlers.exportToPDF}
+                      onExportToHTML={handlers.exportToHTML}
                       canEdit={effectiveCanEdit}
                       />
                     </div>
@@ -495,6 +503,8 @@ export function DeepNoteLayoutRefactored({
                             onAddTag={handlers.handleAddTag}
                             onSearch={handlers.handleSearchCell}
                             onTitleChange={handlers.handleRenameCellTitle}
+                            onToggleBookmark={handlers.toggleBookmark}
+                            onToggleCollapse={handlers.toggleCellCollapse}
                             canEdit={effectiveCanEdit}
                             canExecute={canExecute}
                           />
@@ -638,6 +648,45 @@ export function DeepNoteLayoutRefactored({
         initialSearchText={findReplaceState.searchText}
         initialReplaceText={findReplaceState.replaceText}
       />
+
+      {/* Bookmarks Panel */}
+      {state.showBookmarks && (
+        <div className="fixed right-0 top-0 h-full z-40">
+          <BookmarksPanel
+            cells={state.notebook.cells}
+            onNavigateToCell={(cellId) => {
+              actions.setActiveCellId(cellId)
+              scrollToCell(cellId)
+            }}
+            onToggleBookmark={handlers.toggleBookmark}
+            onClose={() => actions.setShowBookmarks(false)}
+          />
+        </div>
+      )}
+
+      {/* Table of Contents Panel */}
+      {state.showTableOfContents && (
+        <div className="fixed right-0 top-0 h-full z-40">
+          <TableOfContents
+            cells={state.notebook.cells}
+            onNavigateToCell={(cellId) => {
+              actions.setActiveCellId(cellId)
+              scrollToCell(cellId)
+            }}
+            onClose={() => actions.setShowTableOfContents(false)}
+          />
+        </div>
+      )}
+
+      {/* Code Snippets Panel */}
+      {state.showSnippets && (
+        <div className="fixed right-0 top-0 h-full z-40">
+          <CodeSnippetsPanel
+            onInsertSnippet={handlers.insertSnippet}
+            onClose={() => actions.setShowSnippets(false)}
+          />
+        </div>
+      )}
     </div>
   )
 }

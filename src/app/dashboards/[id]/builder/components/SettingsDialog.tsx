@@ -8,6 +8,7 @@ import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from 'sonner'
+import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 
 interface DashboardSettings {
   name: string
@@ -147,19 +148,14 @@ export function SettingsDialog({ open, onOpenChange, dashboard, onSaveSettings }
           <TabsContent value="appearance" className="space-y-4">
             <div>
               <Label>Background Color</Label>
-              <div className="flex space-x-2">
-                <Input
-                  type="color"
-                  value={settings.background_color}
-                  onChange={(e) => setSettings({ ...settings, background_color: e.target.value })}
-                  className="w-16 h-10"
-                />
-                <Input
-                  value={settings.background_color}
-                  onChange={(e) => setSettings({ ...settings, background_color: e.target.value })}
-                  placeholder="#ffffff"
-                />
-              </div>
+              <ColorInput
+                value={settings.background_color}
+                onChange={(color) => setSettings({ ...settings, background_color: color })}
+                allowImageVideo={false}
+                className="relative"
+                placeholder="#ffffff"
+                inputClassName="h-10 text-xs pl-7"
+              />
             </div>
             <div>
               <Label>Font Family</Label>

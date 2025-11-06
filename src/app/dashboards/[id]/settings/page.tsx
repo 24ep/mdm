@@ -13,6 +13,7 @@ import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 import { 
   Save, 
   ArrowLeft, 
@@ -482,11 +483,13 @@ export default function DashboardSettingsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="background_color">Background Color</Label>
-                    <Input
-                      id="background_color"
-                      type="color"
+                    <ColorInput
                       value={dashboard.background_color}
-                      onChange={(e) => setDashboard({ ...dashboard, background_color: e.target.value })}
+                      onChange={(color) => setDashboard({ ...dashboard, background_color: color })}
+                      allowImageVideo={false}
+                      className="relative"
+                      placeholder="#ffffff"
+                      inputClassName="h-10 text-xs pl-7"
                     />
                   </div>
                   <div>

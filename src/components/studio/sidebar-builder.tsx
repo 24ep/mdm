@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ColorPicker } from '@/components/ui/color-swatch'
+import { ColorInput } from './layout-config/ColorInput'
 import { IconPicker } from '@/components/ui/icon-picker'
 import { 
   Plus, 
@@ -214,9 +214,13 @@ export function SidebarBuilder({ items, config, onUpdate, onConfigUpdate }: Side
 
                       <div>
                         <Label htmlFor="item-color">Color</Label>
-                        <ColorPicker
+                        <ColorInput
                           value={newItem.color}
                           onChange={(color) => setNewItem({ ...newItem, color })}
+                          allowImageVideo={false}
+                          className="relative"
+                          placeholder="#3b82f6"
+                          inputClassName="h-8 text-xs pl-7"
                         />
                       </div>
                     </>
@@ -339,17 +343,25 @@ export function SidebarBuilder({ items, config, onUpdate, onConfigUpdate }: Side
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="bg-color">Background Color</Label>
-                <ColorPicker
+                <ColorInput
                   value={config.backgroundColor}
                   onChange={(color) => onConfigUpdate({ ...config, backgroundColor: color })}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="#ffffff"
+                  inputClassName="h-8 text-xs pl-7"
                 />
               </div>
 
               <div>
                 <Label htmlFor="text-color">Text Color</Label>
-                <ColorPicker
+                <ColorInput
                   value={config.textColor}
                   onChange={(color) => onConfigUpdate({ ...config, textColor: color })}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="#000000"
+                  inputClassName="h-8 text-xs pl-7"
                 />
               </div>
 
@@ -431,9 +443,13 @@ export function SidebarBuilder({ items, config, onUpdate, onConfigUpdate }: Side
 
                   <div>
                     <Label htmlFor="edit-color">Color</Label>
-                    <ColorPicker
+                    <ColorInput
                       value={editingItem.color}
                       onChange={(color) => setEditingItem({ ...editingItem, color })}
+                      allowImageVideo={false}
+                      className="relative"
+                      placeholder="#3b82f6"
+                      inputClassName="h-8 text-xs pl-7"
                     />
                   </div>
                 </>

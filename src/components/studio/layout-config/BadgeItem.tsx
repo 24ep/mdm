@@ -8,6 +8,7 @@ import { MoreVertical, Badge, Trash } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { UnifiedPage } from './types'
 import { SpacesEditorPage } from '@/lib/space-studio-manager'
+import { ColorInput } from './ColorInput'
 
 interface BadgeItemProps {
   page: UnifiedPage
@@ -36,7 +37,7 @@ export function BadgeItem({
   return (
     <div
       key={page.id}
-      className={`flex items-center gap-2 ${isMobileViewport ? 'px-3 py-2' : 'px-4 py-1.5'} rounded-md border hover:bg-muted`}
+      className={`flex items-center gap-2 ${isMobileViewport ? 'px-3 py-2' : 'px-4 py-1.5'} rounded-[10px] border hover:bg-muted`}
     >
       {isEditing ? (
         <>
@@ -65,13 +66,13 @@ export function BadgeItem({
             onClick={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
           />
-          <Input
-            type="color"
+          <ColorInput
             value={badgeColor}
-            onChange={(e) => setBadgeColor(e.target.value)}
-            className="h-7 w-12 p-0 cursor-pointer"
-            onClick={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
+            onChange={(color) => setBadgeColor(color)}
+            allowImageVideo={false}
+            className="relative"
+            placeholder="#ef4444"
+            inputClassName="h-7 text-xs pl-7"
           />
         </>
       ) : (

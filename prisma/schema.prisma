@@ -30,6 +30,11 @@ model User {
   teamMemberships   TeamMember[]      @relation("UserTeamMembers")
   chatSessions      ChatSession[]     @relation("UserChatSessions")
   auditLogs         AuditLog[]        @relation("UserAuditLogs")
+  createdTickets    Ticket[]          @relation("TicketCreator")
+  assignedTickets   TicketAssignee[]  @relation("TicketAssignees")
+  ticketComments    TicketComment[]   @relation("TicketCommentAuthor")
+  ticketTimeLogs    TicketTimeLog[]   @relation("TicketTimeLogUser")
+  intakeSubmissions IntakeSubmission[] @relation("IntakeSubmissionUser")
 
   @@map("users")
 }
@@ -62,6 +67,9 @@ model Space {
   externalConnections ExternalConnection[] @relation("SpaceExternalConnections")
   notebooks         Notebook[]      @relation("SpaceNotebooks")
   chatSessions      ChatSession[]  @relation("SpaceChatSessions")
+  ticketSpaces      TicketSpace[]   @relation("SpaceTicketSpaces")
+  kanbanConfigs     KanbanConfig[]  @relation("SpaceKanbanConfigs")
+  intakeForms       IntakeForm[]    @relation("SpaceIntakeForms")
 
   @@map("spaces")
 }
@@ -765,4 +773,230 @@ model AuditLog {
   user User? @relation("UserAuditLogs", fields: [userId], references: [id], onDelete: SetNull)
 
   @@map("audit_logs")
+}
+
+// Project Management - Tickets
+model Ticket {
+  id          String   @id @default(uuid()) @db.Uuid
+  title       String
+  description String?
+  status      String   @default("BACKLOG") // BACKLOG, TODO, IN_PROGRESS, IN_REVIEW, DONE, CANCELLED
+  priority    String   @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  dueDate     DateTime? @map("due_date")
+  startDate   DateTime? @map("start_date")
+  completedAt DateTime? @map("completed_at")
+  createdBy   String   @map("created_by") @db.Uuid
+  estimate    Int?     // Story points or hours
+  metadata    Json?    @default("{}")
+  parentId    String?  @map("parent_id") @db.Uuid // For subtasks
+  position    Int      @default(0) // For ordering
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  spaces      TicketSpace[] @relation("TicketSpaces")
+  assignees   TicketAssignee[] @relation("TicketAssignees")
+  creator     User        @relation("TicketCreator", fields: [createdBy], references: [id])
+  attributes  TicketAttribute[] @relation("TicketAttributes")
+  tags        TicketTag[] @relation("TicketTags")
+  comments    TicketComment[] @relation("TicketComments")
+  attachments TicketAttachment[] @relation("TicketAttachments")
+  timeLogs    TicketTimeLog[] @relation("TicketTimeLogs")
+  subtasks    Ticket[] @relation("TicketSubtasks")
+  parent      Ticket? @relation("TicketSubtasks", fields: [parentId], references: [id])
+  dependencies TicketDependency[] @relation("TicketDependencies")
+  dependents  TicketDependency[] @relation("TicketDependents")
+
+  @@map("tickets")
+}
+
+// Many-to-many: Tickets can belong to multiple spaces
+model TicketSpace {
+  id       String @id @default(uuid()) @db.Uuid
+  ticketId String @map("ticket_id") @db.Uuid
+  spaceId  String @map("space_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  ticket Ticket @relation("TicketSpaces", fields: [ticketId], references: [id], onDelete: Cascade)
+  space  Space  @relation("SpaceTicketSpaces", fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@unique([ticketId, spaceId])
+  @@map("ticket_spaces")
+}
+
+// Many-to-many: Tickets can have multiple assignees
+model TicketAssignee {
+  id       String @id @default(uuid()) @db.Uuid
+  ticketId String @map("ticket_id") @db.Uuid
+  userId   String @map("user_id") @db.Uuid
+  role     String @default("ASSIGNEE") // ASSIGNEE, REVIEWER, WATCHER
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  ticket Ticket @relation("TicketAssignees", fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User   @relation("TicketAssignees", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([ticketId, userId])
+  @@map("ticket_assignees")
+}
+
+// Tags for tickets
+model TicketTag {
+  id       String @id @default(uuid()) @db.Uuid
+  ticketId String @map("ticket_id") @db.Uuid
+  name     String
+  color    String? // Hex color
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  ticket Ticket @relation("TicketTags", fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@unique([ticketId, name])
+  @@map("ticket_tags")
+}
+
+// Custom attributes for tickets (similar to ClickUp custom fields)
+model TicketAttribute {
+  id          String   @id @default(uuid()) @db.Uuid
+  ticketId    String   @map("ticket_id") @db.Uuid
+  name        String
+  displayName String   @map("display_name")
+  type        String   // TEXT, NUMBER, BOOLEAN, DATE, SELECT, MULTI_SELECT, USER, URL, EMAIL
+  value       String?  // For simple types
+  jsonValue   Json?    @map("json_value") // For complex types (select options, etc.)
+  isRequired  Boolean  @default(false) @map("is_required")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  ticket      Ticket   @relation("TicketAttributes", fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@unique([ticketId, name])
+  @@map("ticket_attributes")
+}
+
+// Comments on tickets
+model TicketComment {
+  id        String   @id @default(uuid()) @db.Uuid
+  ticketId  String   @map("ticket_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  content   String
+  metadata  Json?    @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  // Relations
+  ticket Ticket @relation("TicketComments", fields: [ticketId], references: [id], onDelete: Cascade)
+  author User   @relation("TicketCommentAuthor", fields: [userId], references: [id])
+
+  @@map("ticket_comments")
+}
+
+// Attachments on tickets
+model TicketAttachment {
+  id        String   @id @default(uuid()) @db.Uuid
+  ticketId  String   @map("ticket_id") @db.Uuid
+  fileName  String   @map("file_name")
+  filePath  String   @map("file_path")
+  fileSize  Int      @map("file_size")
+  mimeType  String   @map("mime_type")
+  uploadedBy String? @map("uploaded_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  ticket Ticket @relation("TicketAttachments", fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@map("ticket_attachments")
+}
+
+// Time tracking for tickets
+model TicketTimeLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  ticketId  String   @map("ticket_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  description String?
+  hours     Decimal  @db.Decimal(10, 2)
+  loggedAt  DateTime @map("logged_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  ticket Ticket @relation("TicketTimeLogs", fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User   @relation("TicketTimeLogUser", fields: [userId], references: [id])
+
+  @@map("ticket_time_logs")
+}
+
+// Dependencies between tickets
+model TicketDependency {
+  id          String @id @default(uuid()) @db.Uuid
+  ticketId    String @map("ticket_id") @db.Uuid
+  dependsOnId String @map("depends_on_id") @db.Uuid
+  type        String @default("BLOCKS") // BLOCKS, BLOCKED_BY, RELATES_TO
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  ticket    Ticket @relation("TicketDependencies", fields: [ticketId], references: [id], onDelete: Cascade)
+  dependsOn Ticket @relation("TicketDependents", fields: [dependsOnId], references: [id], onDelete: Cascade)
+
+  @@unique([ticketId, dependsOnId])
+  @@map("ticket_dependencies")
+}
+
+// Kanban board configuration
+model KanbanConfig {
+  id          String   @id @default(uuid()) @db.Uuid
+  spaceId     String   @map("space_id") @db.Uuid
+  name        String
+  description String?
+  config      Json     // Board configuration (rows, columns, grouping, etc.)
+  isDefault   Boolean  @default(false) @map("is_default")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  space Space @relation("SpaceKanbanConfigs", fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@map("kanban_configs")
+}
+
+// Intake forms for ticket creation
+model IntakeForm {
+  id          String   @id @default(uuid()) @db.Uuid
+  spaceId     String   @map("space_id") @db.Uuid
+  name        String
+  description String?
+  formFields  Json     @map("form_fields") // Form field definitions
+  workflow    Json?    // Workflow configuration
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  space      Space            @relation("SpaceIntakeForms", fields: [spaceId], references: [id], onDelete: Cascade)
+  submissions IntakeSubmission[] @relation("IntakeFormSubmissions")
+
+  @@map("intake_forms")
+}
+
+// Intake form submissions
+model IntakeSubmission {
+  id          String   @id @default(uuid()) @db.Uuid
+  formId      String   @map("form_id") @db.Uuid
+  userId      String?  @map("user_id") @db.Uuid
+  data        Json     // Submission data
+  ticketId    String?  @map("ticket_id") @db.Uuid // If converted to ticket
+  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED, CONVERTED
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  form  IntakeForm @relation("IntakeFormSubmissions", fields: [formId], references: [id], onDelete: Cascade)
+  user  User?      @relation("IntakeSubmissionUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("intake_submissions")
 }

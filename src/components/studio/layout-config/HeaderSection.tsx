@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
-import { ColorPickerPopover } from './ColorPickerPopover'
+import { ColorInput } from './ColorInput'
 import { Star, Home, Settings, Table as TableIcon, BarChart3, LineChart, AreaChart } from 'lucide-react'
 import { PlacedWidget } from './widgets'
 
@@ -115,11 +115,13 @@ export function HeaderSection({ widget, selectedWidgetId, setPlacedWidgets }: He
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs font-medium">Title Color</Label>
-                <Input
-                  type="color"
+                <ColorInput
                   value={widget.properties?.titleColor || '#111827'}
-                  onChange={(e) => updateProperty('titleColor', e.target.value)}
-                  className="h-7 text-xs p-0 cursor-pointer"
+                  onChange={(color) => updateProperty('titleColor', color)}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="#111827"
+                  inputClassName="h-7 text-xs pl-7"
                 />
               </div>
               <div className="space-y-1">
@@ -136,37 +138,14 @@ export function HeaderSection({ widget, selectedWidgetId, setPlacedWidgets }: He
             </div>
             <div className="space-y-1">
               <Label className="text-xs font-medium">Header Background</Label>
-              <div className="relative w-28">
-                <ColorPickerPopover
-                  value={widget.properties?.headerBackgroundColor || '#ffffff'}
-                  onChange={(color) => updateProperty('headerBackgroundColor', color)}
-                  allowImageVideo={true}
-                >
-                  <button
-                    type="button"
-                    className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-                    style={{
-                      backgroundColor: (widget.properties?.headerBackgroundColor || '#ffffff') as string,
-                      border: 'none',
-                      outline: 'none',
-                      backgroundImage: String(widget.properties?.headerBackgroundColor || '').startsWith('linear-gradient') || String(widget.properties?.headerBackgroundColor || '').startsWith('radial-gradient')
-                        ? (widget.properties?.headerBackgroundColor as string)
-                        : String(widget.properties?.headerBackgroundColor || '').startsWith('url(')
-                        ? (widget.properties?.headerBackgroundColor as string)
-                        : 'none',
-                      backgroundSize: String(widget.properties?.headerBackgroundColor || '').startsWith('url(') ? 'cover' : 'auto'
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </ColorPickerPopover>
-                <Input
-                  type="text"
-                  value={widget.properties?.headerBackgroundColor || '#ffffff'}
-                  onChange={(e) => updateProperty('headerBackgroundColor', e.target.value)}
-                  className="h-7 text-xs pl-7"
-                  placeholder="#ffffff"
-                />
-              </div>
+              <ColorInput
+                value={widget.properties?.headerBackgroundColor || '#ffffff'}
+                onChange={(color) => updateProperty('headerBackgroundColor', color)}
+                allowImageVideo={true}
+                className="relative w-28"
+                placeholder="#ffffff"
+                inputClassName="h-7 text-xs pl-7"
+              />
             </div>
             <div className="space-y-1">
               <Label className="text-xs font-medium">Text Alignment</Label>

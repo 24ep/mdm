@@ -19,6 +19,7 @@ import {
   Building2,
   Plus,
   BarChart3,
+  Kanban,
 } from 'lucide-react'
 import * as LucideIcons from 'lucide-react'
 import { AnimatedIcon } from '@/components/ui/animated-icon'
@@ -39,7 +40,7 @@ interface MenuItem {
 
 const getMenuItems = (
   spaceId: string | null,
-  flags?: { assignments?: boolean; bulk_activity?: boolean; workflows?: boolean; dashboard?: boolean }
+  flags?: { assignments?: boolean; bulk_activity?: boolean; workflows?: boolean; dashboard?: boolean; projects?: boolean }
 ): MenuItem[] => {
   if (!spaceId) {
     return [
@@ -61,6 +62,9 @@ const getMenuItems = (
   }
   if (flags?.assignments !== false) {
     generalChildren.push({ title: 'Assignment', href: `/${spaceId}/assignments`, icon: ClipboardList })
+  }
+  if (flags?.projects !== false) {
+    generalChildren.push({ title: 'Projects', href: `/${spaceId}/projects`, icon: Kanban })
   }
   if (generalChildren.length > 0) {
     items.push({ title: 'General', icon: LayoutDashboard, children: generalChildren })
@@ -185,6 +189,7 @@ export function Sidebar({ className }: SidebarProps) {
           bulk_activity: (currentSpace as any)?.enable_bulk_activity,
           workflows: (currentSpace as any)?.enable_workflows,
           dashboard: (currentSpace as any)?.enable_dashboard,
+          projects: (currentSpace as any)?.enable_projects !== false, // Default to true
         }
       )
 

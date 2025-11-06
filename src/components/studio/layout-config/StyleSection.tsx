@@ -6,7 +6,9 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import { Slider } from '@/components/ui/slider'
 import { PlacedWidget } from './widgets'
+import { ColorInput } from './ColorInput'
 
 interface StyleSectionProps {
   widget: PlacedWidget
@@ -73,64 +75,38 @@ export function StyleSection({
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <Label className="text-xs">Background</Label>
-                <div className="relative">
-                  <Input
-                    type="color"
-                    value={widget.properties?.backgroundColor || '#ffffff'}
-                    onChange={(e) => updateProperty('backgroundColor', e.target.value)}
-                    className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 p-0 border-0 cursor-pointer rounded-none"
-                    style={{ appearance: 'none', WebkitAppearance: 'none', border: 'none', outline: 'none' }}
-                    disabled={widget.properties?.showBackground === false}
-                  />
-                  <Input
-                    type="text"
-                    value={widget.properties?.backgroundColor || '#ffffff'}
-                    onChange={(e) => updateProperty('backgroundColor', e.target.value)}
-                    className="h-7 text-xs pl-7"
-                    placeholder="#ffffff"
-                    disabled={widget.properties?.showBackground === false}
-                  />
-                </div>
+                <ColorInput
+                  value={widget.properties?.backgroundColor || '#ffffff'}
+                  onChange={(color) => updateProperty('backgroundColor', color)}
+                  allowImageVideo={false}
+                  disabled={widget.properties?.showBackground === false}
+                  className="relative"
+                  placeholder="#ffffff"
+                  inputClassName="h-7 text-xs pl-7"
+                />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Text Color</Label>
-                <div className="relative">
-                  <Input
-                    type="color"
-                    value={widget.properties?.textColor || '#000000'}
-                    onChange={(e) => updateProperty('textColor', e.target.value)}
-                    className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 p-0 border-0 cursor-pointer rounded-none"
-                    style={{ appearance: 'none', WebkitAppearance: 'none', border: 'none', outline: 'none' }}
-                  />
-                  <Input
-                    type="text"
-                    value={widget.properties?.textColor || '#000000'}
-                    onChange={(e) => updateProperty('textColor', e.target.value)}
-                    className="h-7 text-xs pl-7"
-                    placeholder="#000000"
-                  />
-                </div>
+                <ColorInput
+                  value={widget.properties?.textColor || '#000000'}
+                  onChange={(color) => updateProperty('textColor', color)}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="#000000"
+                  inputClassName="h-7 text-xs pl-7"
+                />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Border Color</Label>
-                <div className="relative">
-                  <Input
-                    type="color"
-                    value={widget.properties?.borderColor || '#e5e7eb'}
-                    onChange={(e) => updateProperty('borderColor', e.target.value)}
-                    className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 p-0 border-0 cursor-pointer rounded-none"
-                    style={{ appearance: 'none', WebkitAppearance: 'none', border: 'none', outline: 'none' }}
-                    disabled={widget.properties?.showBorder !== true}
-                  />
-                  <Input
-                    type="text"
-                    value={widget.properties?.borderColor || '#e5e7eb'}
-                    onChange={(e) => updateProperty('borderColor', e.target.value)}
-                    className="h-7 text-xs pl-7"
-                    placeholder="#e5e7eb"
-                    disabled={widget.properties?.showBorder !== true}
-                  />
-                </div>
+                <ColorInput
+                  value={widget.properties?.borderColor || '#e5e7eb'}
+                  onChange={(color) => updateProperty('borderColor', color)}
+                  allowImageVideo={false}
+                  disabled={widget.properties?.showBorder !== true}
+                  className="relative"
+                  placeholder="#e5e7eb"
+                  inputClassName="h-7 text-xs pl-7"
+                />
               </div>
             </div>
           </div>

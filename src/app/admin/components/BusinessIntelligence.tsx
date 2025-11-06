@@ -536,35 +536,45 @@ export function BusinessIntelligence() {
 
         <TabsContent value="reports" className="space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Scheduled Reports</h3>
-            <Dialog open={showCreateReport} onOpenChange={setShowCreateReport}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Report
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create Report</DialogTitle>
-                  <DialogDescription>
-                    Create a new automated report
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+            <h3 className="text-lg font-semibold">Dashboards & Reports</h3>
+            <div className="flex items-center gap-2">
+              <Dialog open={showCreateDashboard} onOpenChange={setShowCreateDashboard}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Dashboard
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Create Dashboard</DialogTitle>
+                    <DialogDescription>
+                      Create a new dashboard for data visualization
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
                     <div>
-                      <Label htmlFor="report-name">Report Name</Label>
+                      <Label htmlFor="dashboard-name">Dashboard Name</Label>
                       <Input
-                        id="report-name"
-                        value={newReport.name}
-                        onChange={(e) => setNewReport({ ...newReport, name: e.target.value })}
-                        placeholder="Monthly Sales Report"
+                        id="dashboard-name"
+                        value={newDashboard.name}
+                        onChange={(e) => setNewDashboard({ ...newDashboard, name: e.target.value })}
+                        placeholder="Sales Dashboard"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="report-space">Space</Label>
-                      <Select value={newReport.spaceId} onValueChange={(value) => setNewReport({ ...newReport, spaceId: value })}>
+                      <Label htmlFor="dashboard-description">Description</Label>
+                      <Textarea
+                        id="dashboard-description"
+                        value={newDashboard.description}
+                        onChange={(e) => setNewDashboard({ ...newDashboard, description: e.target.value })}
+                        placeholder="Dashboard description"
+                        rows={3}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="dashboard-space">Space</Label>
+                      <Select value={newDashboard.spaceId} onValueChange={(value) => setNewDashboard({ ...newDashboard, spaceId: value })}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a space" />
                         </SelectTrigger>
@@ -577,116 +587,199 @@ export function BusinessIntelligence() {
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="report-description">Description</Label>
-                    <Textarea
-                      id="report-description"
-                      value={newReport.description}
-                      onChange={(e) => setNewReport({ ...newReport, description: e.target.value })}
-                      placeholder="Report description"
-                      rows={3}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="report-type">Type</Label>
-                      <Select value={newReport.type} onValueChange={(value: any) => setNewReport({ ...newReport, type: value })}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="on_demand">On Demand</SelectItem>
-                          <SelectItem value="scheduled">Scheduled</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="report-format">Format</Label>
-                      <Select value={newReport.format} onValueChange={(value: any) => setNewReport({ ...newReport, format: value })}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pdf">PDF</SelectItem>
-                          <SelectItem value="excel">Excel</SelectItem>
-                          <SelectItem value="csv">CSV</SelectItem>
-                          <SelectItem value="json">JSON</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  {newReport.type === 'scheduled' && (
-                    <div>
-                      <Label htmlFor="report-schedule">Schedule (Cron)</Label>
-                      <Input
-                        id="report-schedule"
-                        value={newReport.schedule}
-                        onChange={(e) => setNewReport({ ...newReport, schedule: e.target.value })}
-                        placeholder="0 9 * * 1 (Every Monday at 9 AM)"
+                    <div className="flex items-center space-x-2">
+                      <Switch 
+                        checked={newDashboard.isPublic} 
+                        onCheckedChange={(checked) => setNewDashboard({ ...newDashboard, isPublic: checked })}
                       />
+                      <Label>Make Public</Label>
                     </div>
-                  )}
-                  <div>
-                    <Label htmlFor="report-recipients">Recipients (comma-separated emails)</Label>
-                    <Input
-                      id="report-recipients"
-                      value={newReport.recipients}
-                      onChange={(e) => setNewReport({ ...newReport, recipients: e.target.value })}
-                      placeholder="admin@company.com, manager@company.com"
-                    />
                   </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setShowCreateReport(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={createReport} disabled={!newReport.name || !newReport.spaceId}>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowCreateDashboard(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={createDashboard} disabled={!newDashboard.name || !newDashboard.spaceId}>
+                      Create Dashboard
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              <Dialog open={showCreateReport} onOpenChange={setShowCreateReport}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
                     Create Report
                   </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Create Report</DialogTitle>
+                    <DialogDescription>
+                      Create a new automated report
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="report-name">Report Name</Label>
+                        <Input
+                          id="report-name"
+                          value={newReport.name}
+                          onChange={(e) => setNewReport({ ...newReport, name: e.target.value })}
+                          placeholder="Monthly Sales Report"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="report-space">Space</Label>
+                        <Select value={newReport.spaceId} onValueChange={(value) => setNewReport({ ...newReport, spaceId: value })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a space" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {spaces.map(space => (
+                              <SelectItem key={space.id} value={space.id}>
+                                {space.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="report-description">Description</Label>
+                      <Textarea
+                        id="report-description"
+                        value={newReport.description}
+                        onChange={(e) => setNewReport({ ...newReport, description: e.target.value })}
+                        placeholder="Report description"
+                        rows={3}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="report-type">Type</Label>
+                        <Select value={newReport.type} onValueChange={(value: any) => setNewReport({ ...newReport, type: value })}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="on_demand">On Demand</SelectItem>
+                            <SelectItem value="scheduled">Scheduled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="report-format">Format</Label>
+                        <Select value={newReport.format} onValueChange={(value: any) => setNewReport({ ...newReport, format: value })}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pdf">PDF</SelectItem>
+                            <SelectItem value="excel">Excel</SelectItem>
+                            <SelectItem value="csv">CSV</SelectItem>
+                            <SelectItem value="json">JSON</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    {newReport.type === 'scheduled' && (
+                      <div>
+                        <Label htmlFor="report-schedule">Schedule (Cron)</Label>
+                        <Input
+                          id="report-schedule"
+                          value={newReport.schedule}
+                          onChange={(e) => setNewReport({ ...newReport, schedule: e.target.value })}
+                          placeholder="0 9 * * 1 (Every Monday at 9 AM)"
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <Label htmlFor="report-recipients">Recipients (comma-separated emails)</Label>
+                      <Input
+                        id="report-recipients"
+                        value={newReport.recipients}
+                        onChange={(e) => setNewReport({ ...newReport, recipients: e.target.value })}
+                        placeholder="admin@company.com, manager@company.com"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowCreateReport(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={createReport} disabled={!newReport.name || !newReport.spaceId}>
+                      Create Report
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
 
-          <div className="space-y-4">
-            {filteredReports.map(report => (
-              <Card key={report.id}>
-                <CardContent className="p-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredDashboards.map(dashboard => (
+              <Card key={dashboard.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
                   <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <FileText className="h-4 w-4" />
-                        <span className="font-medium">{report.name}</span>
-                        <Badge variant={report.type === 'scheduled' ? 'default' : 'outline'}>
-                          {report.type}
-                        </Badge>
-                        <Badge variant="outline">{report.format.toUpperCase()}</Badge>
-                        {report.isActive && (
-                          <Badge variant="outline" className="text-green-600">Active</Badge>
-                        )}
-                      </div>
-                      <div className="text-sm text-muted-foreground mb-2">
-                        {report.spaceName} • {report.recipients.length} recipients
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {report.description}
-                      </div>
-                      {report.lastRun && (
-                        <div className="text-xs text-muted-foreground mt-1">
-                          Last run: {report.lastRun.toLocaleString()}
-                        </div>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5" />
+                      {dashboard.name}
+                    </CardTitle>
+                    <div className="flex items-center gap-1">
+                      <Badge variant="outline" className="text-xs">Dashboard</Badge>
+                      {dashboard.isPublic && (
+                        <Badge variant="outline" className="text-xs">Public</Badge>
                       )}
-                    </div>
-                    <div className="flex items-center gap-2">
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => runReport(report.id)}
+                        onClick={() => deleteDashboard(dashboard.id)}
                       >
-                        <Play className="h-3 w-3 mr-1" />
-                        Run
+                        <Trash2 className="h-3 w-3" />
                       </Button>
+                    </div>
+                  </div>
+                  <CardDescription>
+                    {dashboard.spaceName} • {dashboard.widgets.length} widgets
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {dashboard.description}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs text-muted-foreground">
+                      Updated: {new Date(dashboard.updatedAt).toLocaleDateString()}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button size="sm" variant="outline">
+                        <Eye className="h-3 w-3 mr-1" />
+                        View
+                      </Button>
+                      <Button size="sm" variant="outline">
+                        <Edit className="h-3 w-3 mr-1" />
+                        Edit
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            {filteredReports.map(report => (
+              <Card key={report.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      {report.name}
+                    </CardTitle>
+                    <div className="flex items-center gap-1">
+                      <Badge variant="outline" className="text-xs">Report</Badge>
+                      <Badge variant={report.type === 'scheduled' ? 'default' : 'outline'}>
+                        {report.type}
+                      </Badge>
                       <Button
                         size="sm"
                         variant="outline"
@@ -696,10 +789,56 @@ export function BusinessIntelligence() {
                       </Button>
                     </div>
                   </div>
+                  <CardDescription>
+                    {report.spaceName} • {report.format.toUpperCase()} • {report.recipients.length} recipients
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {report.description}
+                  </p>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-xs text-muted-foreground">
+                      {report.lastRun && (
+                        <div>Last run: {report.lastRun.toLocaleDateString()}</div>
+                      )}
+                      {report.nextRun && (
+                        <div>Next run: {report.nextRun.toLocaleDateString()}</div>
+                      )}
+                    </div>
+                    {report.isActive && (
+                      <Badge variant="outline" className="text-green-600">Active</Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => runReport(report.id)}
+                      className="flex-1"
+                    >
+                      <Play className="h-3 w-3 mr-1" />
+                      Run
+                    </Button>
+                    <Button size="sm" variant="outline">
+                      <Eye className="h-3 w-3 mr-1" />
+                      View
+                    </Button>
+                    <Button size="sm" variant="outline">
+                      <Edit className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
           </div>
+          {filteredDashboards.length === 0 && filteredReports.length === 0 && (
+            <div className="text-center py-12 text-muted-foreground">
+              <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No dashboards or reports yet. Create your first one to get started.</p>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="data-sources" className="space-y-6">
