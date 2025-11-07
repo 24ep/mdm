@@ -1,0 +1,11 @@
+export { ThemeSection } from './ThemeSection'
+export { ComposerSection } from './ComposerSection'
+export { EntitiesSection } from './EntitiesSection'
+export { LocaleSection } from './LocaleSection'
+export { StartScreenSection } from './StartScreenSection'
+export { HeaderSection } from './HeaderSection'
+export { PopoverSection } from './PopoverSection'
+export { FooterSection } from './FooterSection'
+export { SendButtonSection } from './SendButtonSection'
+export { WidgetSection } from './WidgetSection'
+

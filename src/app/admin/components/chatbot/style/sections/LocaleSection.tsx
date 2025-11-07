@@ -1,0 +1,44 @@
+'use client'
+
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import type { SectionProps } from './types'
+
+export function LocaleSection({ formData, setFormData, chatkitOptions }: SectionProps) {
+  return (
+    <AccordionItem value="locale" className="border-b px-4">
+      <AccordionTrigger className="text-lg font-semibold hover:no-underline">
+        Locale
+      </AccordionTrigger>
+      <AccordionContent className="pt-4 pb-6">
+        <div className="space-y-2">
+          <Label>Language</Label>
+          <Select
+            value={chatkitOptions?.locale || 'en'}
+            onValueChange={(v) => setFormData({
+              ...formData,
+              chatkitOptions: {
+                ...chatkitOptions,
+                locale: v
+              }
+            } as any)}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="en">English</SelectItem>
+              <SelectItem value="es">Spanish</SelectItem>
+              <SelectItem value="fr">French</SelectItem>
+              <SelectItem value="de">German</SelectItem>
+              <SelectItem value="ja">Japanese</SelectItem>
+              <SelectItem value="zh">Chinese</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </AccordionContent>
+    </AccordionItem>
+  )
+}
+
