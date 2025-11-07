@@ -179,7 +179,11 @@ export function FileManager({
           comparison = a.name.localeCompare(b.name)
           break
         case 'date':
-          comparison = a.updatedAt.getTime() - b.updatedAt.getTime()
+          const aUpdated = a.updatedAt instanceof Date ? a.updatedAt : new Date(a.updatedAt || 0)
+          const bUpdated = b.updatedAt instanceof Date ? b.updatedAt : new Date(b.updatedAt || 0)
+          const aUpdatedTime = isNaN(aUpdated.getTime()) ? 0 : aUpdated.getTime()
+          const bUpdatedTime = isNaN(bUpdated.getTime()) ? 0 : bUpdated.getTime()
+          comparison = aUpdatedTime - bUpdatedTime
           break
         case 'size':
           comparison = a.size - b.size

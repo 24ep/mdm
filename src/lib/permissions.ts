@@ -65,15 +65,23 @@ export const SYSTEM_PERMISSIONS: Permission[] = [
   { id: 'workflow:create', name: 'Create Workflows', description: 'Create new workflows', resource: 'workflow', action: 'create', level: 'space' },
   { id: 'workflow:edit', name: 'Edit Workflows', description: 'Modify existing workflows', resource: 'workflow', action: 'edit', level: 'space' },
   { id: 'workflow:execute', name: 'Execute Workflows', description: 'Execute workflow instances', resource: 'workflow', action: 'execute', level: 'space' },
+  
+  // Global/System Level Permissions
+  { id: 'system:admin', name: 'System Administration', description: 'Full system administration access', resource: 'system', action: 'admin', level: 'space' },
+  { id: 'system:manage_users', name: 'Manage All Users', description: 'Manage all users across the system', resource: 'system', action: 'manage_users', level: 'space' },
+  { id: 'system:manage_spaces', name: 'Manage All Spaces', description: 'Manage all spaces in the system', resource: 'system', action: 'manage_spaces', level: 'space' },
+  { id: 'system:manage_roles', name: 'Manage Roles and Permissions', description: 'Manage roles and permissions system-wide', resource: 'system', action: 'manage_roles', level: 'space' },
+  { id: 'system:view_analytics', name: 'View System Analytics', description: 'View system-wide analytics and reports', resource: 'system', action: 'view_analytics', level: 'space' },
+  { id: 'system:manage_settings', name: 'Manage System Settings', description: 'Manage global system settings', resource: 'system', action: 'manage_settings', level: 'space' },
 ]
 
-// System Roles
-export const SYSTEM_ROLES: Role[] = [
+// System Roles - Space Level
+export const SPACE_ROLES: Role[] = [
   {
     id: 'owner',
     name: 'Owner',
-    description: 'Full access to everything',
-    permissions: SYSTEM_PERMISSIONS,
+    description: 'Full access to everything in space',
+    permissions: SYSTEM_PERMISSIONS.filter(p => !p.resource.startsWith('system:')),
     isSystem: true,
     level: 'space'
   },
@@ -81,7 +89,7 @@ export const SYSTEM_ROLES: Role[] = [
     id: 'admin',
     name: 'Administrator',
     description: 'Full access except space deletion',
-    permissions: SYSTEM_PERMISSIONS.filter(p => p.id !== 'space:delete'),
+    permissions: SYSTEM_PERMISSIONS.filter(p => p.id !== 'space:delete' && !p.resource.startsWith('system:')),
     isSystem: true,
     level: 'space'
   },
@@ -99,7 +107,7 @@ export const SYSTEM_ROLES: Role[] = [
     id: 'viewer',
     name: 'Viewer',
     description: 'Read-only access',
-    permissions: SYSTEM_PERMISSIONS.filter(p => p.action === 'view'),
+    permissions: SYSTEM_PERMISSIONS.filter(p => p.action === 'view' && !p.resource.startsWith('system:')),
     isSystem: true,
     level: 'space'
   },
@@ -114,6 +122,45 @@ export const SYSTEM_ROLES: Role[] = [
     level: 'space'
   }
 ]
+
+// System Roles - Global Level
+export const GLOBAL_ROLES: Role[] = [
+  {
+    id: 'SUPER_ADMIN',
+    name: 'Super Administrator',
+    description: 'Full system access',
+    permissions: SYSTEM_PERMISSIONS.filter(p => p.resource === 'system'),
+    isSystem: true,
+    level: 'global'
+  },
+  {
+    id: 'ADMIN',
+    name: 'Administrator',
+    description: 'System management access',
+    permissions: SYSTEM_PERMISSIONS.filter(p => p.resource === 'system' && p.id !== 'system:admin'),
+    isSystem: true,
+    level: 'global'
+  },
+  {
+    id: 'MANAGER',
+    name: 'Manager',
+    description: 'Limited system management',
+    permissions: SYSTEM_PERMISSIONS.filter(p => p.resource === 'system' && ['system:view_analytics', 'system:manage_spaces'].includes(p.id)),
+    isSystem: true,
+    level: 'global'
+  },
+  {
+    id: 'USER',
+    name: 'User',
+    description: 'Basic user access',
+    permissions: [],
+    isSystem: true,
+    level: 'global'
+  }
+]
+
+// Combined system roles
+export const SYSTEM_ROLES: Role[] = [...GLOBAL_ROLES, ...SPACE_ROLES]
 
 export class PermissionManager {
   private permissions: Permission[]

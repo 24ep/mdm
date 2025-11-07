@@ -40,6 +40,8 @@
     "@mui/lab": "^5.0.0-alpha.170",
     "@mui/material": "^5.18.0",
     "@next/swc-win32-x64-msvc": "^15.5.5",
+    "@openai/agents": "^0.1.11",
+    "@openai/chatkit-react": "^1.2.0",
     "@prisma/client": "^6.17.1",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-avatar": "^1.1.10",

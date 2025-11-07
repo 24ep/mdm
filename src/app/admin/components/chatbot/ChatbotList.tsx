@@ -99,9 +99,13 @@ export function ChatbotList({
                   <TableCell>{chatbot.website || '—'}</TableCell>
                   <TableCell>v{chatbot.currentVersion}</TableCell>
                   <TableCell>
-                    <Badge variant={chatbot.isPublished ? 'default' : 'secondary'}>
-                      {chatbot.isPublished ? 'Published' : 'Draft'}
-                    </Badge>
+                    {chatbot.isPublished ? (
+                      <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200">
+                        Published
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary">Draft</Badge>
+                    )}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
@@ -222,9 +226,13 @@ export function ChatbotList({
                     )}
                   </div>
                 </div>
-                <Badge variant={chatbot.isPublished ? 'default' : 'secondary'}>
-                  {chatbot.isPublished ? 'Published' : 'Draft'}
-                </Badge>
+                {chatbot.isPublished ? (
+                  <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200">
+                    Published
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary">Draft</Badge>
+                )}
               </div>
             </CardHeader>
             <CardContent>
@@ -345,9 +353,13 @@ export function ChatbotList({
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <CardTitle className="text-base">{chatbot.name}</CardTitle>
-                    <Badge variant={chatbot.isPublished ? 'default' : 'secondary'}>
-                      {chatbot.isPublished ? 'Published' : 'Draft'}
-                    </Badge>
+                    {chatbot.isPublished ? (
+                      <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200">
+                        Published
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary">Draft</Badge>
+                    )}
                   </div>
                   <CardDescription className="mt-1">{chatbot.description || 'No description'}</CardDescription>
                   <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">

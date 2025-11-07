@@ -20,7 +20,6 @@ import { ChatbotEmulator } from './chatbot/ChatbotEmulator'
 import { NameDialog } from './chatbot/NameDialog'
 import { ChatbotSearch } from './chatbot/ChatbotSearch'
 import { ChatbotFilters } from './chatbot/ChatbotFilters'
-import { ChatbotStats } from './chatbot/ChatbotStats'
 import { DEFAULT_CHATBOT_CONFIG, createDefaultChatbot } from './chatbot/constants'
 import { generateEmbedCode, createNewVersion, validateChatbot, duplicateChatbot, exportChatbot, importChatbot } from './chatbot/utils'
 
@@ -62,11 +61,12 @@ export function AIChatUI() {
         const parsed = JSON.parse(saved)
         setChatbots(parsed.map((c: any) => ({
           ...c,
-          createdAt: new Date(c.createdAt),
-          updatedAt: new Date(c.updatedAt),
+          engineType: c.engineType || 'custom', // Backward compatibility
+          createdAt: c.createdAt ? (c.createdAt instanceof Date ? c.createdAt : new Date(c.createdAt)) : new Date(),
+          updatedAt: c.updatedAt ? (c.updatedAt instanceof Date ? c.updatedAt : new Date(c.updatedAt)) : new Date(),
           versions: (c.versions || []).map((v: any) => ({
             ...v,
-            createdAt: new Date(v.createdAt)
+            createdAt: v.createdAt ? (v.createdAt instanceof Date ? v.createdAt : new Date(v.createdAt)) : new Date()
           }))
         })))
       } else {
@@ -75,11 +75,12 @@ export function AIChatUI() {
           const data = await response.json()
           setChatbots(data.chatbots.map((c: any) => ({
             ...c,
-            createdAt: new Date(c.createdAt),
-            updatedAt: new Date(c.updatedAt),
+            engineType: c.engineType || 'custom', // Backward compatibility
+            createdAt: c.createdAt ? (c.createdAt instanceof Date ? c.createdAt : new Date(c.createdAt)) : new Date(),
+            updatedAt: c.updatedAt ? (c.updatedAt instanceof Date ? c.updatedAt : new Date(c.updatedAt)) : new Date(),
             versions: (c.versions || []).map((v: any) => ({
               ...v,
-              createdAt: new Date(v.createdAt)
+              createdAt: v.createdAt ? (v.createdAt instanceof Date ? v.createdAt : new Date(v.createdAt)) : new Date()
             }))
           })))
         }
@@ -139,9 +140,13 @@ export function AIChatUI() {
         if (index >= 0) {
           const newVersion = createNewVersion(selectedChatbot.currentVersion)
           
+          // Use formData directly - it should already have all the updated nested properties
+          // formData.chatkitOptions is already properly merged by ChatKitStyleConfig
           updatedChatbots[index] = {
             ...selectedChatbot,
             ...formData,
+            // Ensure chatkitOptions from formData is used if it exists
+            chatkitOptions: formData.chatkitOptions || selectedChatbot.chatkitOptions,
             updatedAt: new Date(),
             currentVersion: newVersion.version,
             versions: [...selectedChatbot.versions, newVersion]
@@ -150,16 +155,40 @@ export function AIChatUI() {
       } else {
         const newChatbot = createDefaultChatbot(formData.name || 'Untitled Chatbot')
         Object.assign(newChatbot, formData)
-        updatedChatbots.push(newChatbot)
+          updatedChatbots.push(newChatbot)
+      }
+      
+      // Debug: Log what's being saved (only in development)
+      if (process.env.NODE_ENV === 'development' && selectedChatbot) {
+        const savedIndex = updatedChatbots.findIndex(c => c.id === selectedChatbot.id)
+        if (savedIndex >= 0) {
+          console.log('Saving chatbot config:', {
+            id: updatedChatbots[savedIndex].id,
+            name: updatedChatbots[savedIndex].name,
+            hasChatkitOptions: !!updatedChatbots[savedIndex].chatkitOptions,
+            chatkitOptions: updatedChatbots[savedIndex].chatkitOptions
+          })
+        }
       }
       
       localStorage.setItem('ai-chatbots', JSON.stringify(updatedChatbots))
       setChatbots(updatedChatbots)
       
+      // Update selectedChatbot to reflect the saved changes
+      const savedChatbot = selectedChatbot 
+        ? updatedChatbots.find(c => c.id === selectedChatbot.id)
+        : updatedChatbots[updatedChatbots.length - 1] // New chatbot is last in array
+      
+      if (savedChatbot) {
+        setSelectedChatbot(savedChatbot as Chatbot)
+        setFormData(savedChatbot as Partial<Chatbot>)
+      }
+      
       toast.success(selectedChatbot ? 'Chatbot updated successfully' : 'Chatbot created successfully')
-      setShowCreateDialog(false)
-      setShowEditDialog(false)
-      setSelectedChatbot(null)
+      // Keep dialog open - don't navigate away
+      // setShowCreateDialog(false)
+      // setShowEditDialog(false)
+      // setSelectedChatbot(null)
     } catch (error) {
       console.error('Error saving chatbot:', error)
       toast.error('Failed to save chatbot')
@@ -286,10 +315,18 @@ export function AIChatUI() {
           comparison = a.name.localeCompare(b.name)
           break
         case 'created':
-          comparison = a.createdAt.getTime() - b.createdAt.getTime()
+          const aCreated = a.createdAt instanceof Date ? a.createdAt : new Date(a.createdAt || 0)
+          const bCreated = b.createdAt instanceof Date ? b.createdAt : new Date(b.createdAt || 0)
+          const aCreatedTime = isNaN(aCreated.getTime()) ? 0 : aCreated.getTime()
+          const bCreatedTime = isNaN(bCreated.getTime()) ? 0 : bCreated.getTime()
+          comparison = aCreatedTime - bCreatedTime
           break
         case 'updated':
-          comparison = a.updatedAt.getTime() - b.updatedAt.getTime()
+          const aUpdated = a.updatedAt instanceof Date ? a.updatedAt : new Date(a.updatedAt || 0)
+          const bUpdated = b.updatedAt instanceof Date ? b.updatedAt : new Date(b.updatedAt || 0)
+          const aUpdatedTime = isNaN(aUpdated.getTime()) ? 0 : aUpdated.getTime()
+          const bUpdatedTime = isNaN(bUpdated.getTime()) ? 0 : bUpdated.getTime()
+          comparison = aUpdatedTime - bUpdatedTime
           break
         case 'status':
           comparison = (a.isPublished ? 1 : 0) - (b.isPublished ? 1 : 0)
@@ -304,10 +341,6 @@ export function AIChatUI() {
       <div className="flex items-center justify-between">
         {!(showCreateDialog || showEditDialog) && (
           <>
-            <Button onClick={handleCreate}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Chatbot
-            </Button>
             <div className="flex items-center gap-1 border rounded-md p-1">
               <Button
                 variant={viewMode === 'table' ? 'default' : 'ghost'}
@@ -337,6 +370,32 @@ export function AIChatUI() {
                 List
               </Button>
             </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="file"
+                accept=".json"
+                className="hidden"
+                id="import-chatbot"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    handleImport(file)
+                    e.target.value = ''
+                  }
+                }}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => document.getElementById('import-chatbot')?.click()}
+              >
+                Import
+              </Button>
+              <Button onClick={handleCreate}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Chatbot
+              </Button>
+            </div>
           </>
         )}
       </div>
@@ -348,8 +407,6 @@ export function AIChatUI() {
             <div className="text-center py-12">Loading chatbots...</div>
           ) : (
             <>
-              <ChatbotStats chatbots={chatbots} />
-              
               <div className="flex items-center gap-4 flex-wrap">
                 <div className="flex-1 max-w-md">
                   <ChatbotSearch
@@ -357,40 +414,17 @@ export function AIChatUI() {
                     onSearchChange={setSearchQuery}
                   />
                 </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="file"
-                    accept=".json"
-                    className="hidden"
-                    id="import-chatbot"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (file) {
-                        handleImport(file)
-                        e.target.value = ''
-                      }
-                    }}
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => document.getElementById('import-chatbot')?.click()}
-                  >
-                    Import
-                  </Button>
-                </div>
+                <ChatbotFilters
+                  statusFilter={statusFilter}
+                  onStatusFilterChange={setStatusFilter}
+                  deploymentFilter={deploymentFilter}
+                  onDeploymentFilterChange={setDeploymentFilter}
+                  sortBy={sortBy}
+                  onSortChange={setSortBy}
+                  sortOrder={sortOrder}
+                  onSortOrderChange={setSortOrder}
+                />
               </div>
-              
-              <ChatbotFilters
-                statusFilter={statusFilter}
-                onStatusFilterChange={setStatusFilter}
-                deploymentFilter={deploymentFilter}
-                onDeploymentFilterChange={setDeploymentFilter}
-                sortBy={sortBy}
-                onSortChange={setSortBy}
-                sortOrder={sortOrder}
-                onSortOrderChange={setSortOrder}
-              />
               
               <ChatbotList
                 chatbots={filteredAndSortedChatbots}

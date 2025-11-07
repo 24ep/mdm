@@ -19,7 +19,7 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    // Protect all routes except auth, API debug, static files, and sign-in page
-    '/((?!api/auth|api/debug|api/public|_next/static|_next/image|favicon.ico|auth/signin|[^/]+/auth/signin|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // Protect all routes except auth, API debug, API public, API dify, static files, and sign-in page
+    '/((?!api/auth|api/debug|api/public|api/dify|_next/static|_next/image|favicon.ico|auth/signin|[^/]+/auth/signin|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

@@ -7,7 +7,20 @@ export async function GET(request: NextRequest) {
   const forbidden = await requireRole(request, 'ADMIN')
   if (forbidden) return forbidden
   try {
-    const { rows } = await query<any>('SELECT id, name, description, resource, action FROM public.permissions ORDER BY resource, action')
+    const { searchParams } = new URL(request.url)
+    const resource = searchParams.get('resource') // Filter by resource type (system, space, model, etc.)
+    
+    let queryStr = 'SELECT id, name, description, resource, action FROM public.permissions'
+    const params: any[] = []
+    
+    if (resource) {
+      queryStr += ' WHERE resource = $1'
+      params.push(resource)
+    }
+    
+    queryStr += ' ORDER BY resource, action'
+    
+    const { rows } = await query<any>(queryStr, params)
     return NextResponse.json({ permissions: rows })
   } catch (error) {
     console.error('List permissions error:', error)

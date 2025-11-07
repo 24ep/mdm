@@ -1,9 +1,12 @@
 'use client'
 
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
+import { ExternalLink, Settings } from 'lucide-react'
 import { Chatbot } from './types'
+import { EmulatorConfigDrawer } from './EmulatorConfigDrawer'
 
 interface ChatbotEmulatorProps {
   selectedChatbot: Chatbot | null
@@ -19,26 +22,49 @@ export function ChatbotEmulator({
   formData 
 }: ChatbotEmulatorProps) {
   const emulatorRef = useRef<HTMLIFrameElement | null>(null)
+  const [configDrawerOpen, setConfigDrawerOpen] = useState(false)
+  const [emulatorConfig, setEmulatorConfig] = useState({
+    backgroundColor: '#ffffff',
+    backgroundImage: '',
+    text: '',
+    description: ''
+  })
 
-  // Send preview mode to iframe when it loads or when preview mode changes
+  // Send preview mode and emulator config to iframe when it loads or when preview mode changes
   useEffect(() => {
     if (!selectedChatbot?.id || !emulatorRef.current) return
     
-    const sendMessage = () => {
+    const sendMessages = () => {
       try {
         setTimeout(() => {
           emulatorRef.current?.contentWindow?.postMessage({ type: 'chatbot-preview-mode', value: previewMode }, '*')
+          emulatorRef.current?.contentWindow?.postMessage(
+            {
+              type: 'emulator-config-update',
+              id: selectedChatbot.id,
+              emulatorConfig: emulatorConfig,
+            },
+            '*'
+          )
         }, 100)
       } catch {}
     }
     
-    sendMessage()
+    sendMessages()
     
     const iframe = emulatorRef.current
     const handleLoad = () => {
       setTimeout(() => {
         try {
           iframe.contentWindow?.postMessage({ type: 'chatbot-preview-mode', value: previewMode }, '*')
+          iframe.contentWindow?.postMessage(
+            {
+              type: 'emulator-config-update',
+              id: selectedChatbot.id,
+              emulatorConfig: emulatorConfig,
+            },
+            '*'
+          )
         } catch {}
       }, 200)
     }
@@ -48,7 +74,7 @@ export function ChatbotEmulator({
     return () => {
       iframe.removeEventListener('load', handleLoad)
     }
-  }, [previewMode, selectedChatbot?.id])
+  }, [previewMode, selectedChatbot?.id, emulatorConfig])
 
   // Push realtime style updates to emulator via postMessage
   useEffect(() => {
@@ -71,6 +97,24 @@ export function ChatbotEmulator({
     }
   }, [selectedChatbot?.id, formData])
 
+  // Send emulator config updates to iframe
+  useEffect(() => {
+    if (!selectedChatbot?.id || !emulatorRef.current) return
+    const iframe = emulatorRef.current
+    try {
+      iframe.contentWindow?.postMessage(
+        {
+          type: 'emulator-config-update',
+          id: selectedChatbot.id,
+          emulatorConfig: emulatorConfig,
+        },
+        '*'
+      )
+    } catch (e) {
+      // ignore
+    }
+  }, [selectedChatbot?.id, emulatorConfig])
+
   return (
     <div className="min-h-[800px] border rounded-lg overflow-visible relative" style={{ borderColor: formData.borderColor }}>
       <div className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: formData.borderColor }}>
@@ -87,6 +131,27 @@ export function ChatbotEmulator({
               <SelectItem value="fullpage">Full Page</SelectItem>
             </SelectContent>
           </Select>
+          {selectedChatbot?.id && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8"
+                onClick={() => setConfigDrawerOpen(true)}
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8"
+                onClick={() => window.open(`/chat/${selectedChatbot.id}`, '_blank')}
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Open in new page
+              </Button>
+            </>
+          )}
         </div>
       </div>
       {selectedChatbot?.id ? (
@@ -104,6 +169,13 @@ export function ChatbotEmulator({
           Save the chatbot first to enable the live emulator preview here.
         </div>
       )}
+      
+      <EmulatorConfigDrawer
+        open={configDrawerOpen}
+        onOpenChange={setConfigDrawerOpen}
+        config={emulatorConfig}
+        onConfigChange={setEmulatorConfig}
+      />
     </div>
   )
 }

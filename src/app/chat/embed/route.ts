@@ -76,11 +76,17 @@ export async function GET(request: NextRequest) {
     }
     
     // Get widget configuration
+    // For ChatKit, use theme accent color if available
+    var isChatKit = chatbot.engineType === 'chatkit';
+    var chatKitAccentColor = isChatKit && chatbot.chatkitOptions && chatbot.chatkitOptions.theme && chatbot.chatkitOptions.theme.color && chatbot.chatkitOptions.theme.color.accent && chatbot.chatkitOptions.theme.color.accent.primary
+      ? chatbot.chatkitOptions.theme.color.accent.primary
+      : null;
+    
     var widgetConfig = {
       avatarStyle: chatbot.widgetAvatarStyle || 'circle',
       position: chatbot.widgetPosition || 'bottom-right',
       size: chatbot.widgetSize || '60px',
-      backgroundColor: chatbot.widgetBackgroundColor || chatbot.primaryColor || '#3b82f6',
+      backgroundColor: chatbot.widgetBackgroundColor || chatKitAccentColor || chatbot.primaryColor || '#3b82f6',
       borderColor: chatbot.widgetBorderColor || '#ffffff',
       borderWidth: chatbot.widgetBorderWidth || '2px',
       borderRadius: chatbot.widgetBorderRadius || '50%',

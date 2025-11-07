@@ -33,7 +33,8 @@ import {
   Layout,
   BookOpen,
   Building2,
-  Kanban
+  Kanban,
+  TestTube
 } from 'lucide-react'
 import { addRecentItem, getRecentItems, type RecentItem } from '@/lib/recent-items'
 import { PlatformLayout } from '@/components/platform/PlatformLayout'
@@ -42,6 +43,8 @@ import { KnowledgeBase } from './admin/components/KnowledgeBase'
 import { ProjectsList } from '@/components/datascience/ProjectsList'
 import { AttachmentManager } from './admin/components/AttachmentManager'
 import { UserManagement } from './admin/components/UserManagement'
+import { RoleManagement } from './admin/components/RoleManagement'
+import { PermissionTester } from './admin/components/PermissionTester'
 import { SystemSettings } from './admin/components/SystemSettings'
 import { PageTemplatesAdmin } from './admin/components/PageTemplatesAdmin'
 import { AnalyticsDashboard } from './admin/components/AnalyticsDashboard'
@@ -360,6 +363,40 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('roles')}>
+              <CardHeader className="flex flex-row items-center gap-3">
+                <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/20">
+                  <Shield className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Role & Permission Management</CardTitle>
+                  <CardDescription>Manage roles and permissions</CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Create and manage roles with custom permissions for global and space levels
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('permission-tester')}>
+              <CardHeader className="flex flex-row items-center gap-3">
+                <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/20">
+                  <TestTube className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Permission Tester</CardTitle>
+                  <CardDescription>Test and debug permissions</CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Test user permissions and debug access control issues
+                </p>
+              </CardContent>
+            </Card>
+
             <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('space-settings')}>
               <CardHeader className="flex flex-row items-center gap-3">
                 <div className="p-2 rounded-lg bg-cyan-100 dark:bg-cyan-900/20">
@@ -446,6 +483,8 @@ export default function HomePage() {
         {activeTab === 'storage' && <StorageManagement />}
         {activeTab === 'bi' && <BusinessIntelligence />}
         {activeTab === 'users' && <UserManagement />}
+        {activeTab === 'roles' && <RoleManagement />}
+        {activeTab === 'permission-tester' && <PermissionTester />}
         {activeTab === 'space-selection' && <SpaceSelection />}
         {activeTab === 'space-settings' && <SpaceSettingsAdmin selectedSpaceId={selectedSpace} />}
         {activeTab === 'attachments' && <AttachmentManager />}

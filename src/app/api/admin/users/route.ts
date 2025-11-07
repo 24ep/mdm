@@ -2,6 +2,105 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
+import bcrypt from 'bcryptjs'
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check if user has admin privileges
+    if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    }
+
+    const body = await request.json()
+    const { email, name, password, role, isActive, defaultSpaceId, spaces } = body
+
+    // Validate required fields
+    if (!email || !name || !password) {
+      return NextResponse.json(
+        { error: 'Email, name, and password are required' },
+        { status: 400 }
+      )
+    }
+
+    // Check if user already exists
+    const existing = await query<any>(
+      'SELECT id FROM users WHERE email = $1 LIMIT 1',
+      [email]
+    )
+
+    if (existing.rows.length > 0) {
+      return NextResponse.json(
+        { error: 'User with this email already exists' },
+        { status: 400 }
+      )
+    }
+
+    // Validate role
+    const allowedRoles = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'USER']
+    const userRole = role || 'USER'
+    if (!allowedRoles.includes(userRole)) {
+      return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 12)
+
+    // Create user
+    const result = await query<any>(
+      `INSERT INTO users (email, name, password, role, is_active, default_space_id, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+       RETURNING id, email, name, role, is_active, created_at, default_space_id`,
+      [
+        email,
+        name,
+        hashedPassword,
+        userRole,
+        isActive !== undefined ? isActive : true,
+        defaultSpaceId || null
+      ]
+    )
+
+    const newUser = result.rows[0]
+
+    // Handle space memberships if provided
+    if (spaces && Array.isArray(spaces) && spaces.length > 0) {
+      for (const space of spaces) {
+        if (space.spaceId && space.role) {
+          await query(
+            'INSERT INTO space_members (user_id, space_id, role) VALUES ($1, $2, $3)',
+            [newUser.id, space.spaceId, space.role]
+          )
+        }
+      }
+    }
+
+    return NextResponse.json(
+      {
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          name: newUser.name,
+          role: newUser.role,
+          isActive: newUser.is_active,
+          createdAt: newUser.created_at,
+          defaultSpaceId: newUser.default_space_id
+        }
+      },
+      { status: 201 }
+    )
+  } catch (error) {
+    console.error('Error creating user:', error)
+    return NextResponse.json(
+      { error: 'Failed to create user' },
+      { status: 500 }
+    )
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {

@@ -29,7 +29,9 @@ import {
   MoreHorizontal,
   UserPlus,
   UserMinus,
-  Settings
+  Settings,
+  Globe,
+  Folder
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -77,6 +79,7 @@ export function UserManagement() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [showUserDetails, setShowUserDetails] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [editForm, setEditForm] = useState({
     name: '',
@@ -86,6 +89,16 @@ export function UserManagement() {
     defaultSpaceId: '',
     spaces: [] as Array<{ spaceId: string; role: string }>
   })
+  const [createForm, setCreateForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'USER',
+    isActive: true,
+    defaultSpaceId: '',
+    spaces: [] as Array<{ spaceId: string; role: string }>
+  })
+  const [creatingUser, setCreatingUser] = useState(false)
 
   // Reset password
   const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false)
@@ -93,6 +106,15 @@ export function UserManagement() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [resettingPassword, setResettingPassword] = useState(false)
+
+  // Bulk operations
+  const [showBulkDialog, setShowBulkDialog] = useState(false)
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([])
+  const [bulkOperation, setBulkOperation] = useState<'role' | 'space' | null>(null)
+  const [bulkRole, setBulkRole] = useState('')
+  const [bulkSpaceId, setBulkSpaceId] = useState('')
+  const [bulkSpaceRole, setBulkSpaceRole] = useState('')
+  const [bulkProcessing, setBulkProcessing] = useState(false)
 
   const pages = useMemo(() => Math.ceil(total / limit), [total, limit])
 
@@ -155,6 +177,19 @@ export function UserManagement() {
     }
   }
 
+  const openCreateDialog = () => {
+    setCreateForm({
+      name: '',
+      email: '',
+      password: '',
+      role: 'USER',
+      isActive: true,
+      defaultSpaceId: '',
+      spaces: []
+    })
+    setShowCreateDialog(true)
+  }
+
   const openEditDialog = (user: User) => {
     setEditingUser(user)
     setEditForm({
@@ -166,6 +201,55 @@ export function UserManagement() {
       spaces: user.spaces || []
     })
     setShowEditDialog(true)
+  }
+
+  const createUser = async () => {
+    if (!createForm.email || !createForm.name || !createForm.password) {
+      toast.error('Please fill in all required fields')
+      return
+    }
+
+    setCreatingUser(true)
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: createForm.email,
+          name: createForm.name,
+          password: createForm.password,
+          role: createForm.role,
+          isActive: createForm.isActive,
+          defaultSpaceId: createForm.defaultSpaceId && createForm.defaultSpaceId !== 'none' ? createForm.defaultSpaceId : null,
+          spaces: createForm.spaces
+        }),
+      })
+
+      if (response.ok) {
+        toast.success('User created successfully')
+        setShowCreateDialog(false)
+        setCreateForm({
+          name: '',
+          email: '',
+          password: '',
+          role: 'USER',
+          isActive: true,
+          defaultSpaceId: '',
+          spaces: []
+        })
+        loadUsers()
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to create user')
+      }
+    } catch (error) {
+      console.error('Error creating user:', error)
+      toast.error('Failed to create user')
+    } finally {
+      setCreatingUser(false)
+    }
   }
 
   const saveUser = async () => {
@@ -285,10 +369,35 @@ export function UserManagement() {
             Manage users, roles, and permissions across all spaces
           </p>
         </div>
-        <Button>
-          <UserPlus className="h-4 w-4 mr-2" />
-          Add User
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => {
+            // Navigate to role management
+            const url = new URL(window.location.href)
+            url.searchParams.set('tab', 'roles')
+            window.location.href = url.toString()
+          }}>
+            <Shield className="h-4 w-4 mr-2" />
+            Manage Roles
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              if (selectedUserIds.length === 0) {
+                toast.error('Please select users first')
+                return
+              }
+              setShowBulkDialog(true)
+            }}
+            disabled={selectedUserIds.length === 0}
+          >
+            <Users className="h-4 w-4 mr-2" />
+            Bulk Actions ({selectedUserIds.length})
+          </Button>
+          <Button onClick={openCreateDialog}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            Add User
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -370,7 +479,19 @@ export function UserManagement() {
             <ScrollArea className="h-[500px]">
               <div className="space-y-2">
                 {users.map(user => (
-                  <div key={user.id} className="flex items-center gap-4 p-4 border rounded hover:bg-muted/50 transition-colors">
+                  <div key={user.id} className={`flex items-center gap-4 p-4 border rounded hover:bg-muted/50 transition-colors ${selectedUserIds.includes(user.id) ? 'bg-primary/10 border-primary' : ''}`}>
+                    <input
+                      type="checkbox"
+                      checked={selectedUserIds.includes(user.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedUserIds([...selectedUserIds, user.id])
+                        } else {
+                          setSelectedUserIds(selectedUserIds.filter(id => id !== user.id))
+                        }
+                      }}
+                      className="rounded"
+                    />
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={user.avatar} />
                       <AvatarFallback>
@@ -379,12 +500,26 @@ export function UserManagement() {
                     </Avatar>
                     
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium">{user.name}</span>
                         {getStatusIcon(user.isActive)}
-                        <Badge className={`text-xs ${getRoleColor(user.role)}`}>
-                          {user.role}
+                        <Badge className={`text-xs ${getRoleColor(user.role)}`} variant="default">
+                          Global: {user.role}
                         </Badge>
+                        {user.spaces && user.spaces.length > 0 && (
+                          <div className="flex items-center gap-1 flex-wrap">
+                            {user.spaces.slice(0, 3).map((space, idx) => (
+                              <Badge key={idx} className="text-xs" variant="outline">
+                                {space.spaceName}: {space.role}
+                              </Badge>
+                            ))}
+                            {user.spaces.length > 3 && (
+                              <Badge className="text-xs" variant="outline">
+                                +{user.spaces.length - 3} more
+                              </Badge>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <div className="text-sm text-muted-foreground">
                         {user.email}
@@ -496,9 +631,15 @@ export function UserManagement() {
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4 border-t pt-4">
               <div>
-                <Label htmlFor="edit-role">Role</Label>
+                <Label className="text-base font-semibold flex items-center gap-2">
+                  <Globe className="h-4 w-4" />
+                  Global Role (System-wide)
+                </Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  This role applies across all spaces and controls system-level access
+                </p>
                 <Select value={editForm.role} onValueChange={(value) => setEditForm({ ...editForm, role: value })}>
                   <SelectTrigger>
                     <SelectValue />
@@ -511,6 +652,7 @@ export function UserManagement() {
                   </SelectContent>
                 </Select>
               </div>
+
               <div>
                 <Label htmlFor="edit-default-space">Default Space</Label>
                 <Select value={editForm.defaultSpaceId} onValueChange={(value) => setEditForm({ ...editForm, defaultSpaceId: value })}>
@@ -527,6 +669,33 @@ export function UserManagement() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {editingUser && editingUser.spaces && editingUser.spaces.length > 0 && (
+                <div className="space-y-2 border-t pt-4">
+                  <Label className="text-base font-semibold flex items-center gap-2">
+                    <Folder className="h-4 w-4" />
+                    Space Roles
+                  </Label>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Roles assigned in specific spaces
+                  </p>
+                  <div className="space-y-2">
+                    {editingUser.spaces.map((space) => (
+                      <div key={space.spaceId} className="flex items-center justify-between p-2 border rounded">
+                        <div>
+                          <span className="text-sm font-medium">{space.spaceName}</span>
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          {space.role}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground italic">
+                    Note: Space roles are managed from the space settings
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center space-x-2">
@@ -544,6 +713,312 @@ export function UserManagement() {
             </Button>
             <Button onClick={saveUser}>
               Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create User Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create New User</DialogTitle>
+            <DialogDescription>
+              Add a new user to the system
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="create-name">Name *</Label>
+                <Input
+                  id="create-name"
+                  value={createForm.name}
+                  onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                  placeholder="Enter full name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="create-email">Email *</Label>
+                <Input
+                  id="create-email"
+                  type="email"
+                  value={createForm.email}
+                  onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                  placeholder="Enter email address"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="create-password">Password *</Label>
+              <Input
+                id="create-password"
+                type="password"
+                value={createForm.password}
+                onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                placeholder="Enter password"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="create-role">Role</Label>
+                <Select value={createForm.role} onValueChange={(value) => setCreateForm({ ...createForm, role: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USER">User</SelectItem>
+                    <SelectItem value="MANAGER">Manager</SelectItem>
+                    <SelectItem value="ADMIN">Admin</SelectItem>
+                    <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="create-default-space">Default Space</Label>
+                <Select value={createForm.defaultSpaceId} onValueChange={(value) => setCreateForm({ ...createForm, defaultSpaceId: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select default space" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No default space</SelectItem>
+                    {spaces.map(space => (
+                      <SelectItem key={space.id} value={space.id}>
+                        {space.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="create-active"
+                checked={createForm.isActive}
+                onCheckedChange={(checked) => setCreateForm({ ...createForm, isActive: checked })}
+              />
+              <Label htmlFor="create-active">Active</Label>
+            </div>
+
+            {/* Space Assignments */}
+            <div className="space-y-2">
+              <Label>Space Access</Label>
+              <div className="text-sm text-muted-foreground mb-2">
+                Assign user to spaces and set their role in each space
+              </div>
+              <div className="space-y-2 max-h-48 overflow-y-auto border rounded-md p-3">
+                {spaces.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">No spaces available</div>
+                ) : (
+                  spaces.map(space => {
+                    const userSpace = createForm.spaces.find((s: any) => s.spaceId === space.id)
+                    return (
+                      <div key={space.id} className="flex items-center justify-between py-1">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id={`create-space-${space.id}`}
+                            checked={!!userSpace}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setCreateForm({
+                                  ...createForm,
+                                  spaces: [...createForm.spaces, { spaceId: space.id, role: 'member' }]
+                                })
+                              } else {
+                                setCreateForm({
+                                  ...createForm,
+                                  spaces: createForm.spaces.filter((s: any) => s.spaceId !== space.id)
+                                })
+                              }
+                            }}
+                            className="rounded"
+                          />
+                          <label htmlFor={`create-space-${space.id}`} className="text-sm cursor-pointer">
+                            {space.name}
+                          </label>
+                        </div>
+                        {userSpace && (
+                          <Select
+                            value={userSpace.role}
+                            onValueChange={(role) => {
+                              setCreateForm({
+                                ...createForm,
+                                spaces: createForm.spaces.map((s: any) =>
+                                  s.spaceId === space.id ? { ...s, role } : s
+                                )
+                              })
+                            }}
+                          >
+                            <SelectTrigger className="w-28 h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="member">Member</SelectItem>
+                              <SelectItem value="admin">Admin</SelectItem>
+                              <SelectItem value="owner">Owner</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={createUser} disabled={creatingUser}>
+              {creatingUser ? 'Creating...' : 'Create User'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Operations Dialog */}
+      <Dialog open={showBulkDialog} onOpenChange={setShowBulkDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Bulk Actions</DialogTitle>
+            <DialogDescription>
+              Apply actions to {selectedUserIds.length} selected user(s)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Operation Type</Label>
+              <Select value={bulkOperation || ''} onValueChange={(value) => setBulkOperation(value as 'role' | 'space' | null)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select operation" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="role">Update Global Role</SelectItem>
+                  <SelectItem value="space">Assign to Space</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {bulkOperation === 'role' && (
+              <div>
+                <Label>Global Role</Label>
+                <Select value={bulkRole} onValueChange={setBulkRole}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USER">User</SelectItem>
+                    <SelectItem value="MANAGER">Manager</SelectItem>
+                    <SelectItem value="ADMIN">Admin</SelectItem>
+                    <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {bulkOperation === 'space' && (
+              <div className="space-y-4">
+                <div>
+                  <Label>Space</Label>
+                  <Select value={bulkSpaceId} onValueChange={setBulkSpaceId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select space" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {spaces.map(space => (
+                        <SelectItem key={space.id} value={space.id}>
+                          {space.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Space Role</Label>
+                  <Select value={bulkSpaceRole} onValueChange={setBulkSpaceRole}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="member">Member</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="owner">Owner</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowBulkDialog(false)
+              setBulkOperation(null)
+              setBulkRole('')
+              setBulkSpaceId('')
+              setBulkSpaceRole('')
+            }}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={async () => {
+                if (!bulkOperation) {
+                  toast.error('Please select an operation')
+                  return
+                }
+                if (bulkOperation === 'role' && !bulkRole) {
+                  toast.error('Please select a role')
+                  return
+                }
+                if (bulkOperation === 'space' && (!bulkSpaceId || !bulkSpaceRole)) {
+                  toast.error('Please select space and role')
+                  return
+                }
+
+                setBulkProcessing(true)
+                try {
+                  const response = await fetch('/api/admin/users/bulk', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      userIds: selectedUserIds,
+                      role: bulkOperation === 'role' ? bulkRole : undefined,
+                      spaceId: bulkOperation === 'space' ? bulkSpaceId : undefined,
+                      spaceRole: bulkOperation === 'space' ? bulkSpaceRole : undefined
+                    })
+                  })
+
+                  if (response.ok) {
+                    const data = await response.json()
+                    toast.success(`Successfully updated ${data.results.success.length} user(s)`)
+                    if (data.results.failed.length > 0) {
+                      toast.error(`${data.results.failed.length} user(s) failed to update`)
+                    }
+                    setShowBulkDialog(false)
+                    setSelectedUserIds([])
+                    setBulkOperation(null)
+                    setBulkRole('')
+                    setBulkSpaceId('')
+                    setBulkSpaceRole('')
+                    loadUsers()
+                  } else {
+                    const error = await response.json()
+                    toast.error(error.error || 'Bulk operation failed')
+                  }
+                } catch (error) {
+                  console.error('Error in bulk operation:', error)
+                  toast.error('Bulk operation failed')
+                } finally {
+                  setBulkProcessing(false)
+                }
+              }}
+              disabled={bulkProcessing || !bulkOperation}
+            >
+              {bulkProcessing ? 'Processing...' : 'Apply'}
             </Button>
           </DialogFooter>
         </DialogContent>

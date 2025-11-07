@@ -83,7 +83,6 @@ export function KnowledgePage({ notebookId, notebookName, onBack }: KnowledgePag
   const [isEditing, setIsEditing] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
-  const [viewMode, setViewMode] = useState<'edit' | 'preview' | 'split'>('split')
   const [showNewDocDialog, setShowNewDocDialog] = useState(false)
   const [showNewCategoryDialog, setShowNewCategoryDialog] = useState(false)
   const [newDocTitle, setNewDocTitle] = useState('')
@@ -164,12 +163,19 @@ export function KnowledgePage({ notebookId, notebookName, onBack }: KnowledgePag
     ? documents.filter(doc => doc.categoryId === selectedCategory)
     : documents.filter(doc => !doc.categoryId)
 
-  // Build category tree
-  const buildCategoryTree = (): Category[] => {
-    const rootCategories = categories
-      .filter(c => !c.parentId)
+  // Build category tree with nested structure
+  interface CategoryWithChildren extends Category {
+    children?: CategoryWithChildren[]
+  }
+
+  const buildCategoryTree = (parentId?: string): CategoryWithChildren[] => {
+    return categories
+      .filter(c => c.parentId === parentId)
       .sort((a, b) => a.order - b.order)
-    return rootCategories
+      .map(category => ({
+        ...category,
+        children: buildCategoryTree(category.id)
+      }))
   }
 
   const categoryTree = buildCategoryTree()
@@ -365,60 +371,82 @@ export function KnowledgePage({ notebookId, notebookName, onBack }: KnowledgePag
                   All Documents
                 </Button>
 
-                {categoryTree.map(category => {
-                  const categoryDocs = documents.filter(doc => doc.categoryId === category.id)
-                  const isExpanded = expandedCategories.has(category.id)
-                  const isSelected = selectedCategory === category.id
+                {/* Recursive Category Tree Renderer */}
+                {(() => {
+                  const renderCategoryTree = (categories: CategoryWithChildren[], depth: number = 0): JSX.Element[] => {
+                    return categories.map(category => {
+                      const categoryDocs = documents.filter(doc => doc.categoryId === category.id)
+                      const isExpanded = expandedCategories.has(category.id)
+                      const isSelected = selectedCategory === category.id
+                      const hasChildren = category.children && category.children.length > 0
+                      const hasDocs = categoryDocs.length > 0
 
-                  return (
-                    <div key={category.id}>
-                      <Button
-                        variant="ghost"
-                        className={cn(
-                          "w-full justify-start text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800",
-                          isSelected && "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
-                        )}
-                        onClick={() => {
-                          handleToggleCategory(category.id)
-                          setSelectedCategory(category.id)
-                        }}
-                      >
-                        {isExpanded ? (
-                          <ChevronDown className="h-4 w-4 mr-1" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 mr-1" />
-                        )}
-                        <Folder className="h-4 w-4 mr-2" />
-                        <span className="flex-1 text-left truncate">{category.name}</span>
-                        <Badge variant="secondary" className="ml-2 text-xs">
-                          {categoryDocs.length}
-                        </Badge>
-                      </Button>
-                      {isExpanded && (
-                        <div className="ml-6">
-                          {categoryDocs.map(doc => (
-                            <Button
-                              key={doc.id}
-                              variant="ghost"
-                              className={cn(
-                                "w-full justify-start text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800",
-                                selectedDocument?.id === doc.id && "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
+                      return (
+                        <div key={category.id} style={{ marginLeft: `${depth * 1.5}rem` }}>
+                          <Button
+                            variant="ghost"
+                            className={cn(
+                              "w-full justify-start text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800",
+                              isSelected && "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
+                            )}
+                            onClick={() => {
+                              if (hasChildren || hasDocs) {
+                                handleToggleCategory(category.id)
+                              }
+                              setSelectedCategory(category.id)
+                            }}
+                          >
+                            {(hasChildren || hasDocs) ? (
+                              isExpanded ? (
+                                <ChevronDown className="h-4 w-4 mr-1" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4 mr-1" />
+                              )
+                            ) : (
+                              <div className="h-4 w-4 mr-1" />
+                            )}
+                            <Folder className="h-4 w-4 mr-2" />
+                            <span className="flex-1 text-left truncate">{category.name}</span>
+                            <Badge variant="secondary" className="ml-2 text-xs">
+                              {categoryDocs.length}
+                            </Badge>
+                          </Button>
+                          {isExpanded && (
+                            <div>
+                              {/* Render child categories */}
+                              {category.children && category.children.length > 0 && (
+                                <div>
+                                  {renderCategoryTree(category.children, depth + 1)}
+                                </div>
                               )}
-                              onClick={() => {
-                                setSelectedDocument(doc)
-                                setIsEditing(true)
-                                setEditingDocument(doc)
-                              }}
-                            >
-                              <FileText className="h-3 w-3 mr-2" />
-                              <span className="flex-1 text-left truncate">{doc.title}</span>
-                            </Button>
-                          ))}
+                              {/* Render documents in this category */}
+                              {categoryDocs.map(doc => (
+                                <Button
+                                  key={doc.id}
+                                  variant="ghost"
+                                  className={cn(
+                                    "w-full justify-start text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 ml-6",
+                                    selectedDocument?.id === doc.id && "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
+                                  )}
+                                  onClick={() => {
+                                    setSelectedDocument(doc)
+                                    setIsEditing(true)
+                                    setEditingDocument(doc)
+                                  }}
+                                >
+                                  <FileText className="h-3 w-3 mr-2" />
+                                  <span className="flex-1 text-left truncate">{doc.title}</span>
+                                </Button>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  )
-                })}
+                      )
+                    })
+                  }
+
+                  return renderCategoryTree(categoryTree)
+                })()}
 
                 {filteredDocuments
                   .filter(doc => !doc.categoryId)
@@ -470,32 +498,6 @@ export function KnowledgePage({ notebookId, notebookName, onBack }: KnowledgePag
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      if (viewMode === 'edit') setViewMode('preview')
-                      else if (viewMode === 'preview') setViewMode('edit')
-                      else setViewMode('edit')
-                    }}
-                    className="text-gray-600 dark:text-gray-400"
-                  >
-                    {viewMode === 'edit' ? 'Preview' : 'Edit'}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      if (viewMode === 'split') {
-                        setViewMode('edit')
-                      } else {
-                        setViewMode('split')
-                      }
-                    }}
-                    className="text-gray-600 dark:text-gray-400"
-                  >
-                    Split
-                  </Button>
                   {isEditing ? (
                     <Button 
                       size="sm" 
@@ -530,69 +532,58 @@ export function KnowledgePage({ notebookId, notebookName, onBack }: KnowledgePag
                 </div>
               </div>
 
-              {/* Editor/Preview */}
-              <div className="flex-1 overflow-hidden flex">
-                {(viewMode === 'edit' || viewMode === 'split') && (
-                  <div className={cn(
-                    "h-full border-r border-gray-200 dark:border-gray-800",
-                    viewMode === 'split' && "w-1/2"
-                  )}>
-                    <RichMarkdownEditor
-                      content={isEditing && editingDocument ? editingDocument.content : selectedDocument?.content || ''}
-                      onChange={(content) => {
-                        if (isEditing && editingDocument) {
-                          setEditingDocument({
-                            ...editingDocument,
-                            content
-                          })
-                        }
-                      }}
-                      editable={isEditing}
-                      className="h-full bg-white dark:bg-gray-950"
-                    />
+              {/* Editor/Preview - Full Page Notion Style */}
+              <div className="flex-1 overflow-hidden relative">
+                {/* Table of Contents - Top Left */}
+                {config.showTableOfContents && toc.length > 0 && (
+                  <div className="absolute top-4 left-4 z-10 w-64 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-lg p-4 max-h-[calc(100vh-200px)] overflow-auto">
+                    <h3 className="text-sm font-semibold mb-3 text-gray-900 dark:text-white">Table of Contents</h3>
+                    <nav className="space-y-1">
+                      {toc.map((item, index) => (
+                        <a
+                          key={index}
+                          href={`#${item.id}`}
+                          className={cn(
+                            "block text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors",
+                            item.level === 1 && "font-medium",
+                            item.level === 2 && "ml-4",
+                            item.level === 3 && "ml-8"
+                          )}
+                        >
+                          {item.text}
+                        </a>
+                      ))}
+                    </nav>
                   </div>
                 )}
-
-                {(viewMode === 'preview' || viewMode === 'split') && (
+                
+                {/* Full Page Editor/Preview */}
+                <div className="h-full overflow-auto bg-white dark:bg-gray-950">
                   <div className={cn(
-                    "h-full overflow-auto bg-white dark:bg-gray-950 flex",
-                    viewMode === 'split' && "w-1/2"
+                    "min-h-full",
+                    config.fullWidth ? "max-w-full px-8" : "max-w-4xl mx-auto px-8 py-8"
                   )}>
-                    <div className={cn(
-                      "flex-1",
-                      config.fullWidth ? "max-w-full px-8" : "max-w-4xl mx-auto px-8"
-                    )}>
-                      <MarkdownRenderer
-                        content={
-                          isEditing && editingDocument
-                            ? editingDocument.content
-                            : selectedDocument?.content || ''
-                        }
+                    {isEditing ? (
+                      <RichMarkdownEditor
+                        content={editingDocument?.content || ''}
+                        onChange={(content) => {
+                          if (editingDocument) {
+                            setEditingDocument({
+                              ...editingDocument,
+                              content
+                            })
+                          }
+                        }}
+                        editable={true}
+                        className="h-full bg-white dark:bg-gray-950"
                       />
-                    </div>
-                    {config.showTableOfContents && toc.length > 0 && (
-                      <div className="w-64 border-l border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 p-4">
-                        <h3 className="text-sm font-semibold mb-3 text-gray-900 dark:text-white">Table of Contents</h3>
-                        <nav className="space-y-1">
-                          {toc.map((item, index) => (
-                            <a
-                              key={index}
-                              href={`#${item.id}`}
-                              className={cn(
-                                "block text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white",
-                                item.level === 1 && "font-medium",
-                                item.level === 2 && "ml-4",
-                                item.level === 3 && "ml-8"
-                              )}
-                            >
-                              {item.text}
-                            </a>
-                          ))}
-                        </nav>
-                      </div>
+                    ) : (
+                      <MarkdownRenderer
+                        content={selectedDocument?.content || ''}
+                      />
                     )}
                   </div>
-                )}
+                </div>
               </div>
             </>
           ) : (
