@@ -1,5 +1,6 @@
 import { Client as MinioClient } from 'minio'
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, CopyObjectCommand } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { Client as SftpClient } from 'ssh2-sftp-client'
 import { Client as FtpClient } from 'ftp'
 import { Readable } from 'stream'
@@ -121,6 +122,46 @@ export class AttachmentStorageService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Delete failed'
+      }
+    }
+  }
+
+  async renameFile(oldFileName: string, newFileName: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      switch (this.config.provider) {
+        case 'minio':
+          return await this.renameInMinIO(oldFileName, newFileName)
+        case 's3':
+          return await this.renameInS3(oldFileName, newFileName)
+        case 'sftp':
+          return await this.renameInSFTP(oldFileName, newFileName)
+        case 'ftp':
+          return await this.renameInFTP(oldFileName, newFileName)
+        default:
+          return { success: false, error: `Unsupported provider: ${this.config.provider}` }
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Rename failed'
+      }
+    }
+  }
+
+  async generatePublicUrl(fileName: string, expiresIn?: number): Promise<{ success: boolean; url?: string; error?: string }> {
+    try {
+      switch (this.config.provider) {
+        case 'minio':
+          return await this.generateMinIOPublicUrl(fileName, expiresIn)
+        case 's3':
+          return await this.generateS3PublicUrl(fileName, expiresIn)
+        default:
+          return { success: false, error: `Public URLs not supported for provider: ${this.config.provider}` }
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to generate public URL'
       }
     }
   }
@@ -408,5 +449,154 @@ export class AttachmentStorageService {
         passive: config.passive
       })
     })
+  }
+
+  private async renameInMinIO(oldFileName: string, newFileName: string): Promise<{ success: boolean; error?: string }> {
+    const config = this.config.config.minio
+    const endpoint = new URL(config.endpoint)
+    const port = endpoint.port ? parseInt(endpoint.port) : (endpoint.protocol === 'https:' ? 443 : 80)
+    const useSSL = endpoint.protocol === 'https:' || config.use_ssl
+
+    const minioClient = new MinioClient({
+      endPoint: endpoint.hostname,
+      port: port,
+      useSSL: useSSL,
+      accessKey: config.access_key,
+      secretKey: config.secret_key,
+      region: config.region
+    })
+
+    const oldObjectName = `attachments/${oldFileName}`
+    const newObjectName = `attachments/${newFileName}`
+
+    // MinIO/S3 doesn't have a direct rename - we copy then delete
+    await minioClient.copyObject(config.bucket, newObjectName, `${config.bucket}/${oldObjectName}`)
+    await minioClient.removeObject(config.bucket, oldObjectName)
+    return { success: true }
+  }
+
+  private async renameInS3(oldFileName: string, newFileName: string): Promise<{ success: boolean; error?: string }> {
+    const config = this.config.config.s3
+    const s3Client = new S3Client({
+      region: config.region,
+      credentials: {
+        accessKeyId: config.access_key_id,
+        secretAccessKey: config.secret_access_key
+      }
+    })
+
+    const oldObjectName = `attachments/${oldFileName}`
+    const newObjectName = `attachments/${newFileName}`
+
+    // S3 doesn't have a direct rename - we copy then delete
+    const copyCommand = new CopyObjectCommand({
+      Bucket: config.bucket,
+      CopySource: `${config.bucket}/${oldObjectName}`,
+      Key: newObjectName
+    })
+    await s3Client.send(copyCommand)
+
+    const deleteCommand = new DeleteObjectCommand({
+      Bucket: config.bucket,
+      Key: oldObjectName
+    })
+    await s3Client.send(deleteCommand)
+    return { success: true }
+  }
+
+  private async renameInSFTP(oldFileName: string, newFileName: string): Promise<{ success: boolean; error?: string }> {
+    const config = this.config.config.sftp
+    const sftp = new SftpClient()
+
+    try {
+      await sftp.connect({
+        host: config.host,
+        port: config.port,
+        username: config.username,
+        password: config.password
+      })
+
+      const oldPath = `${config.path}/attachments/${oldFileName}`
+      const newPath = `${config.path}/attachments/${newFileName}`
+      await sftp.rename(oldPath, newPath)
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Rename failed' }
+    } finally {
+      await sftp.end()
+    }
+  }
+
+  private async renameInFTP(oldFileName: string, newFileName: string): Promise<{ success: boolean; error?: string }> {
+    const config = this.config.config.ftp
+
+    return new Promise((resolve) => {
+      const ftp = new FtpClient()
+
+      ftp.on('ready', () => {
+        const oldPath = `${config.path}/attachments/${oldFileName}`
+        const newPath = `${config.path}/attachments/${newFileName}`
+        ftp.rename(oldPath, newPath, (err) => {
+          ftp.end()
+          if (err) {
+            resolve({ success: false, error: err.message })
+          } else {
+            resolve({ success: true })
+          }
+        })
+      })
+
+      ftp.on('error', (err) => {
+        resolve({ success: false, error: err.message })
+      })
+
+      ftp.connect({
+        host: config.host,
+        port: config.port,
+        user: config.username,
+        password: config.password,
+        passive: config.passive
+      })
+    })
+  }
+
+  private async generateMinIOPublicUrl(fileName: string, expiresIn: number = 3600): Promise<{ success: boolean; url?: string; error?: string }> {
+    const config = this.config.config.minio
+    const endpoint = new URL(config.endpoint)
+    const port = endpoint.port ? parseInt(endpoint.port) : (endpoint.protocol === 'https:' ? 443 : 80)
+    const useSSL = endpoint.protocol === 'https:' || config.use_ssl
+
+    const minioClient = new MinioClient({
+      endPoint: endpoint.hostname,
+      port: port,
+      useSSL: useSSL,
+      accessKey: config.access_key,
+      secretKey: config.secret_key,
+      region: config.region
+    })
+
+    const objectName = `attachments/${fileName}`
+    const url = await minioClient.presignedGetObject(config.bucket, objectName, expiresIn)
+    return { success: true, url }
+  }
+
+  private async generateS3PublicUrl(fileName: string, expiresIn: number = 3600): Promise<{ success: boolean; url?: string; error?: string }> {
+    const config = this.config.config.s3
+    const s3Client = new S3Client({
+      region: config.region,
+      credentials: {
+        accessKeyId: config.access_key_id,
+        secretAccessKey: config.secret_access_key
+      }
+    })
+
+    const objectName = `attachments/${fileName}`
+    const command = new GetObjectCommand({
+      Bucket: config.bucket,
+      Key: objectName
+    })
+
+    const url = await getSignedUrl(s3Client, command, { expiresIn })
+    return { success: true, url }
   }
 }

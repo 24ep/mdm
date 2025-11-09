@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { formatDateTime } from '@/lib/date-formatters'
 import { 
   Clock, 
   Calendar, 
@@ -238,9 +239,6 @@ export function DashboardScheduling({
     return nextRun.toISOString()
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString()
-  }
 
   const getFrequencyLabel = (frequency: string) => {
     switch (frequency) {
@@ -352,7 +350,7 @@ export function DashboardScheduling({
                     <div>
                       <Label className="text-sm font-medium">Next Run</Label>
                       <p className="text-sm text-muted-foreground">
-                        {formatDate(schedule.nextRun)}
+                        {formatDateTime(schedule.nextRun)}
                       </p>
                     </div>
                   </div>
@@ -368,7 +366,7 @@ export function DashboardScheduling({
                     </div>
                     {schedule.lastRun && (
                       <div className="text-sm text-muted-foreground">
-                        Last run: {formatDate(schedule.lastRun)}
+                        Last run: {formatDateTime(schedule.lastRun)}
                       </div>
                     )}
                   </div>

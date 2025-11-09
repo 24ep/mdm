@@ -19,6 +19,14 @@ export const DEFAULT_CHATBOT_CONFIG: Partial<Chatbot> = {
   openaiAgentSdkReasoningEffort: undefined,
   openaiAgentSdkStore: undefined,
   openaiAgentSdkVectorStoreId: undefined,
+  openaiAgentSdkEnableWebSearch: false,
+  openaiAgentSdkEnableCodeInterpreter: false,
+  openaiAgentSdkEnableComputerUse: false,
+  openaiAgentSdkEnableImageGeneration: false,
+  openaiAgentSdkUseWorkflowConfig: undefined, // Will auto-detect based on agentId (true for workflows, false for assistants)
+  openaiAgentSdkGreeting: undefined,
+  openaiAgentSdkPlaceholder: undefined,
+  openaiAgentSdkBackgroundColor: undefined,
   difyApiKey: undefined,
   difyOptions: {
     apiBaseUrl: '',
@@ -92,6 +100,9 @@ export const DEFAULT_CHATBOT_CONFIG: Partial<Chatbot> = {
   userMessageFontColor: '#ffffff',
   userMessageFontFamily: 'Inter',
   userMessageFontSize: '14px',
+  botMessageFontColor: '#000000',
+  botMessageFontFamily: 'Inter',
+  botMessageFontSize: '14px',
   showMessageName: false,
   messageName: '',
   messageNamePosition: 'top-of-message',
@@ -101,15 +112,29 @@ export const DEFAULT_CHATBOT_CONFIG: Partial<Chatbot> = {
   shadowColor: '#000000',
   shadowBlur: '4px',
   conversationOpener: 'Hello! How can I help you today?',
+  conversationOpenerFontSize: '16px',
+  conversationOpenerFontColor: '#6b7280',
+  conversationOpenerFontFamily: 'Inter',
+  conversationOpenerPosition: 'center',
+  conversationOpenerAlignment: 'center',
+  conversationOpenerBackgroundColor: undefined,
+  conversationOpenerPadding: '16px',
+  conversationOpenerBorderRadius: '8px',
+  conversationOpenerFontWeight: '400',
+  conversationOpenerLineHeight: '1.5',
   followUpQuestions: [],
   enableFileUpload: false,
   showCitations: true,
   enableVoiceAgent: false,
+  showMessageFeedback: false,
+  showMessageRetry: false,
   deploymentType: 'popover',
   widgetAvatarStyle: 'circle',
   widgetPosition: 'bottom-right',
   widgetSize: '60px',
   widgetBackgroundColor: '#3b82f6',
+  widgetBackgroundBlur: 0, // No blur by default
+  widgetBackgroundOpacity: 100, // Fully opaque by default
   widgetBorderColor: '#ffffff',
   widgetBorderWidth: '2px',
   widgetBorderRadius: '50%',
@@ -125,8 +150,17 @@ export const DEFAULT_CHATBOT_CONFIG: Partial<Chatbot> = {
   widgetZIndex: 9999,
   showNotificationBadge: false,
   notificationBadgeColor: '#ef4444',
+  popoverPosition: 'left', // Default: popover appears to the left of widget
+  widgetPopoverMargin: '10px', // Default margin between widget and popover
   chatWindowWidth: '380px',
   chatWindowHeight: '600px',
+  chatWindowBackgroundBlur: 0, // No blur by default
+  chatWindowBackgroundOpacity: 100, // Fully opaque by default
+  // Overlay configuration
+  overlayEnabled: false, // Disabled by default
+  overlayColor: '#000000', // Black overlay by default
+  overlayOpacity: 50, // 50% opacity by default
+  overlayBlur: 0, // No blur by default
   chatWindowBorderColor: '#e5e7eb',
   chatWindowBorderWidth: '1px',
   chatWindowBorderRadius: '8px',
@@ -134,6 +168,8 @@ export const DEFAULT_CHATBOT_CONFIG: Partial<Chatbot> = {
   chatWindowShadowBlur: '4px',
   typingIndicatorStyle: 'spinner',
   typingIndicatorColor: '#6b7280',
+  showThinkingMessage: false, // Disabled by default
+  thinkingMessageText: 'Thinking...', // Default thinking message text
   headerTitle: '',
   headerDescription: '',
   headerLogo: '',
@@ -153,7 +189,7 @@ export const DEFAULT_CHATBOT_CONFIG: Partial<Chatbot> = {
   headerPaddingY: '16px',
   // Close Button
   closeButtonOffsetX: '8px',
-  closeButtonOffsetY: '8px',
+  closeButtonOffsetY: '16px', // Match headerPaddingY to align with clear session button
   footerBgColor: '#ffffff',
   footerBorderColor: '#e5e7eb',
   footerBorderWidth: '1px',
@@ -190,9 +226,22 @@ export const DEFAULT_CHATBOT_CONFIG: Partial<Chatbot> = {
   currentVersion: '1.0.0'
 }
 
+// Generate a proper UUID for database compatibility
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID()
+  }
+  // Fallback for older browsers
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0
+    const v = c === 'x' ? r : (r & 0x3 | 0x8)
+    return v.toString(16)
+  })
+}
+
 export function createDefaultChatbot(name: string): Chatbot {
   return {
-    id: `chatbot-${Date.now()}`,
+    id: generateUUID(),
     name: name,
     website: '',
     description: '',
@@ -282,6 +331,17 @@ export function createDefaultChatbot(name: string): Chatbot {
     shadowColor: '#000000',
     shadowBlur: '4px',
     conversationOpener: 'Hello! How can I help you today?',
+    showStartConversation: true, // Show start conversation message by default
+    conversationOpenerFontSize: '16px',
+    conversationOpenerFontColor: '#6b7280',
+    conversationOpenerFontFamily: 'Inter',
+    conversationOpenerPosition: 'center',
+    conversationOpenerAlignment: 'center',
+    conversationOpenerBackgroundColor: undefined,
+    conversationOpenerPadding: '16px',
+    conversationOpenerBorderRadius: '8px',
+    conversationOpenerFontWeight: '400',
+    conversationOpenerLineHeight: '1.5',
     followUpQuestions: [],
     enableFileUpload: false,
     showCitations: true,
@@ -291,6 +351,8 @@ export function createDefaultChatbot(name: string): Chatbot {
     widgetPosition: 'bottom-right',
     widgetSize: '60px',
     widgetBackgroundColor: '#3b82f6',
+    widgetBackgroundBlur: 0, // No blur by default
+    widgetBackgroundOpacity: 100, // Fully opaque by default
     widgetBorderColor: '#ffffff',
     widgetBorderWidth: '2px',
     widgetBorderRadius: '50%',
@@ -306,8 +368,17 @@ export function createDefaultChatbot(name: string): Chatbot {
     widgetZIndex: 9999,
     showNotificationBadge: false,
     notificationBadgeColor: '#ef4444',
+    popoverPosition: 'left', // Default: popover appears to the left of widget
+    widgetPopoverMargin: '10px', // Default margin between widget and popover
     chatWindowWidth: '380px',
     chatWindowHeight: '600px',
+    chatWindowBackgroundBlur: 0, // No blur by default
+    chatWindowBackgroundOpacity: 100, // Fully opaque by default
+    // Overlay configuration
+    overlayEnabled: false, // Disabled by default
+    overlayColor: '#000000', // Black overlay by default
+    overlayOpacity: 50, // 50% opacity by default
+    overlayBlur: 0, // No blur by default
     chatWindowBorderColor: '#e5e7eb',
     chatWindowBorderWidth: '1px',
     chatWindowBorderRadius: '8px',

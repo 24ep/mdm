@@ -1,45 +1,103 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
-    const { elementId, datasourceId, query, filters } = await request.json()
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-    // Validate required fields
-    if (!elementId || !datasourceId) {
+    const { dataModelId, filters, columns, elementId, datasourceId } = await request.json()
+
+    // Support both old format (elementId/datasourceId) and new format (dataModelId)
+    const modelId = dataModelId || datasourceId
+
+    if (!modelId) {
       return NextResponse.json(
-        { error: 'Element ID and Data Source ID are required' },
+        { error: 'Data Model ID is required' },
         { status: 400 }
       )
     }
 
-    // TODO: Implement actual data fetching from data source
-    // For now, return mock CSV data
-    const mockData = [
-      ['Date', 'Value', 'Category'],
-      ['2024-01-01', '100', 'A'],
-      ['2024-01-02', '150', 'B'],
-      ['2024-01-03', '200', 'A'],
-      ['2024-01-04', '175', 'C'],
-      ['2024-01-05', '225', 'B']
-    ]
+    // Fetch data from data model
+    const dataResponse = await fetch(
+      `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/data-models/${modelId}/data`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': request.headers.get('cookie') || ''
+        },
+        body: JSON.stringify({
+          filters: filters || {},
+          limit: 10000, // Max records for export
+          offset: 0
+        })
+      }
+    )
 
-    // Convert to CSV format
-    const csvContent = mockData.map(row => row.join(',')).join('\n')
+    if (!dataResponse.ok) {
+      const error = await dataResponse.json().catch(() => ({}))
+      throw new Error(error.error || 'Failed to fetch data')
+    }
+
+    const { data, metadata } = await dataResponse.json()
+
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return NextResponse.json(
+        { error: 'No data available to export' },
+        { status: 404 }
+      )
+    }
+
+    // Get column names from metadata or data
+    const allColumns = columns || metadata?.attributes?.map((attr: any) => attr.name) || Object.keys(data[0] || {})
+    
+    // Build CSV header
+    const header = allColumns.map((col: string) => {
+      // Escape commas and quotes in CSV
+      const value = String(col).replace(/"/g, '""')
+      return `"${value}"`
+    }).join(',')
+
+    // Build CSV rows
+    const rows = data.map((record: any) => {
+      return allColumns.map((col: string) => {
+        const value = record[col] ?? ''
+        // Handle null/undefined
+        if (value === null || value === undefined) return '""'
+        // Convert to string and escape
+        const stringValue = String(value).replace(/"/g, '""')
+        // Handle newlines
+        if (stringValue.includes('\n') || stringValue.includes(',') || stringValue.includes('"')) {
+          return `"${stringValue}"`
+        }
+        return stringValue
+      }).join(',')
+    })
+
+    const csvContent = [header, ...rows].join('\n')
 
     // Create response with CSV content
+    const filename = elementId 
+      ? `chart_data_${elementId}.csv`
+      : `export_${modelId}_${new Date().toISOString().split('T')[0]}.csv`
+
     const response = new NextResponse(csvContent, {
       status: 200,
       headers: {
-        'Content-Type': 'text/csv',
-        'Content-Disposition': `attachment; filename="chart_data_${elementId}.csv"`
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="${filename}"`
       }
     })
 
     return response
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error exporting to CSV:', error)
     return NextResponse.json(
-      { error: 'Failed to export data to CSV' },
+      { error: error.message || 'Failed to export data to CSV' },
       { status: 500 }
     )
   }

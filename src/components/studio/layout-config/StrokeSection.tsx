@@ -11,6 +11,7 @@ import { PlacedWidget } from './widgets'
 import { ComponentStyle } from './types'
 import { getEffectiveStyle, isUsingGlobalStyle } from './globalStyleUtils'
 import { ColorInput } from './ColorInput'
+import { MultiSideInput } from '@/components/shared/MultiSideInput'
 
 interface StrokeSectionProps {
   widget: PlacedWidget
@@ -224,12 +225,38 @@ export function StrokeSection({
               </Button>
             )}
           </div>
-          <Input
-            type="number"
-            value={effectiveBorderWidth}
-            onChange={(e) => updateProperty('borderWidth', parseInt(e.target.value) || 1)}
-            className="h-7 text-xs"
-            placeholder="1"
+          <MultiSideInput
+            label=""
+            baseKey="borderWidth"
+            type="sides"
+            defaultValue={effectiveBorderWidth}
+            inputClassName="h-7 text-xs"
+            getValue={(side: string) => {
+              const key = `borderWidth${side.charAt(0).toUpperCase() + side.slice(1)}`
+              const baseValue = typeof widget.properties?.borderWidth === 'number' 
+                ? widget.properties.borderWidth 
+                : (widget.properties?.borderWidth || effectiveBorderWidth)
+              const sideValue = widget.properties?.[key]
+              return sideValue !== undefined ? sideValue : baseValue
+            }}
+            setValue={(updates) => {
+              const props = widget.properties || {}
+              const newProps = { ...props }
+              Object.keys(updates).forEach(key => {
+                const value = updates[key]
+                if (typeof value === 'string' && value.endsWith('px')) {
+                  const numValue = parseInt(value.replace('px', '')) || 0
+                  newProps[key] = numValue
+                } else {
+                  newProps[key] = value
+                }
+              })
+              setPlacedWidgets(prev => prev.map(w => 
+                w.id === selectedWidgetId 
+                  ? { ...w, properties: newProps }
+                  : w
+              ))
+            }}
           />
         </div>
         <div className="space-y-1">
@@ -277,49 +304,86 @@ export function StrokeSection({
         </div>
       </div>
 
-      {/* Corner Radius (uniform) */}
-      <div className="grid grid-cols-2 gap-2">
-        <div className="space-y-1 col-span-2">
-          <Label className="text-xs text-muted-foreground">Corner Radius</Label>
-          <div className="grid grid-cols-2 gap-2">
-            <Input
-              type="number"
-              value={typeof widget.properties?.borderRadius === 'number' ? widget.properties.borderRadius : (widget.properties?.borderRadius?.topLeft?.value ?? 0)}
-              onChange={(e) => {
-                const val = parseFloat(e.target.value) || 0
-                const unit = (typeof widget.properties?.borderRadius === 'object' && widget.properties?.borderRadius?.topLeft?.unit) || 'px'
-                updateProperty('borderRadius', {
-                  topLeft: { value: val, unit },
-                  topRight: { value: val, unit },
-                  bottomRight: { value: val, unit },
-                  bottomLeft: { value: val, unit },
+      {/* Corner Radius */}
+      <div className="space-y-1">
+        <Label className="text-xs text-muted-foreground">Corner Radius</Label>
+        <MultiSideInput
+          label=""
+          baseKey="borderRadius"
+          type="corners"
+          defaultValue={0}
+          inputClassName="h-7 text-xs"
+          getValue={(side: string) => {
+            const br = widget.properties?.borderRadius
+            if (typeof br === 'number') return br
+            if (typeof br === 'object' && br !== null) {
+              const obj = br as any
+              const corner = obj[side]
+              return corner?.value ?? 0
+            }
+            return 0
+          }}
+          setValue={(updates) => {
+            const props = widget.properties || {}
+            const currentBr = props.borderRadius
+            
+            let brObj: any = typeof currentBr === 'number' 
+              ? {
+                  topLeft: { value: currentBr, unit: 'px' },
+                  topRight: { value: currentBr, unit: 'px' },
+                  bottomRight: { value: currentBr, unit: 'px' },
+                  bottomLeft: { value: currentBr, unit: 'px' }
+                }
+              : (currentBr || {
+                  topLeft: { value: 0, unit: 'px' },
+                  topRight: { value: 0, unit: 'px' },
+                  bottomRight: { value: 0, unit: 'px' },
+                  bottomLeft: { value: 0, unit: 'px' }
                 })
-              }}
-              className="h-7 text-xs"
-              placeholder="0"
-            />
-            <Select
-              value={typeof widget.properties?.borderRadius === 'object' ? (widget.properties?.borderRadius?.topLeft?.unit || 'px') : 'px'}
-              onValueChange={(unit: 'px' | '%') => {
-                const val = typeof widget.properties?.borderRadius === 'number' ? widget.properties.borderRadius : (widget.properties?.borderRadius?.topLeft?.value ?? 0)
-                updateProperty('borderRadius', {
-                  topLeft: { value: val, unit },
-                  topRight: { value: val, unit },
-                  bottomRight: { value: val, unit },
-                  bottomLeft: { value: val, unit },
-                })
-              }}
-            >
-              <SelectTrigger className="h-7 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="px">px</SelectItem>
-                <SelectItem value="%">%</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+            
+            Object.keys(updates).forEach(key => {
+              if (key === 'borderRadius') {
+                const value = updates[key]
+                if (typeof value === 'string' && value.endsWith('px')) {
+                  const numValue = parseInt(value.replace('px', '')) || 0
+                  brObj = {
+                    topLeft: { value: numValue, unit: 'px' },
+                    topRight: { value: numValue, unit: 'px' },
+                    bottomRight: { value: numValue, unit: 'px' },
+                    bottomLeft: { value: numValue, unit: 'px' }
+                  }
+                } else if (typeof value === 'string' && value.endsWith('%')) {
+                  const numValue = parseInt(value.replace('%', '')) || 0
+                  brObj = {
+                    topLeft: { value: numValue, unit: '%' },
+                    topRight: { value: numValue, unit: '%' },
+                    bottomRight: { value: numValue, unit: '%' },
+                    bottomLeft: { value: numValue, unit: '%' }
+                  }
+                }
+              } else if (key.startsWith('borderRadius')) {
+                const corner = key.replace('borderRadius', '').charAt(0).toLowerCase() + key.replace('borderRadius', '').slice(1)
+                const value = updates[key]
+                if (typeof value === 'string' && value.endsWith('px')) {
+                  const numValue = parseInt(value.replace('px', '')) || 0
+                  brObj[corner] = { value: numValue, unit: 'px' }
+                } else if (typeof value === 'string' && value.endsWith('%')) {
+                  const numValue = parseInt(value.replace('%', '')) || 0
+                  brObj[corner] = { value: numValue, unit: '%' }
+                }
+              }
+            })
+            
+            const allSame = brObj.topLeft.value === brObj.topRight.value &&
+                           brObj.topRight.value === brObj.bottomRight.value &&
+                           brObj.bottomRight.value === brObj.bottomLeft.value &&
+                           brObj.topLeft.unit === brObj.topRight.unit &&
+                           brObj.topRight.unit === brObj.bottomRight.unit &&
+                           brObj.bottomRight.unit === brObj.bottomLeft.unit
+            
+            updateProperty('borderRadius', allSame ? brObj.topLeft.value : brObj)
+          }}
+        />
       </div>
     </div>
   )

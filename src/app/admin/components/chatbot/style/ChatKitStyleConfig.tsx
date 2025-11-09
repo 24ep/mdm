@@ -8,13 +8,11 @@ import {
   ComposerSection,
   EntitiesSection,
   LocaleSection,
-  StartScreenSection,
   HeaderSection,
   PopoverSection,
-  FooterSection,
-  SendButtonSection,
   WidgetSection
 } from './sections'
+import { ChatKitIntegrationSection } from './sections/ChatKitIntegrationSection'
 
 interface ChatKitStyleConfigProps {
   formData: Partial<Chatbot>
@@ -36,15 +34,13 @@ export function ChatKitStyleConfig({ formData, setFormData }: ChatKitStyleConfig
         </div>
 
         <Accordion type="single" collapsible value={accordionValue} onValueChange={setAccordionValue} className="space-y-0">
+          <ChatKitIntegrationSection formData={formData} setFormData={setFormData} />
           <ThemeSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
           <ComposerSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
           <EntitiesSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
           <LocaleSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
-          <StartScreenSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
           <HeaderSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
           <PopoverSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
-          <FooterSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
-          <SendButtonSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
           <WidgetSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
         </Accordion>
       </div>

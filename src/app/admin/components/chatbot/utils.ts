@@ -1,5 +1,18 @@
 import { Chatbot, ChatbotVersion } from './types'
 
+// Generate a proper UUID for database compatibility
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID()
+  }
+  // Fallback for older browsers
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0
+    const v = c === 'x' ? r : (r & 0x3 | 0x8)
+    return v.toString(16)
+  })
+}
+
 export function generateEmbedCode(chatbot: Chatbot): string {
   const type = chatbot.deploymentType || 'popover'
   const src = `${typeof window !== 'undefined' ? window.location.origin : ''}/chat/embed?id=${chatbot.id}&type=${type}`
@@ -53,6 +66,13 @@ export function validateChatbot(formData: Partial<Chatbot>): { valid: boolean; e
     if (!formData.chatkitAgentId || formData.chatkitAgentId.trim() === '') {
       errors.push('Agent Builder Agent ID is required for ChatKit')
     }
+  } else if (engineType === 'openai-agent-sdk') {
+    if (!formData.openaiAgentSdkAgentId || formData.openaiAgentSdkAgentId.trim() === '') {
+      errors.push('Agent/Workflow ID is required for OpenAI Agent SDK')
+    }
+    if (!formData.openaiAgentSdkApiKey || formData.openaiAgentSdkApiKey.trim() === '') {
+      errors.push('OpenAI API Key is required for OpenAI Agent SDK')
+    }
   }
   
   return {
@@ -64,7 +84,7 @@ export function validateChatbot(formData: Partial<Chatbot>): { valid: boolean; e
 export function duplicateChatbot(chatbot: Chatbot, newName?: string): Chatbot {
   return {
     ...chatbot,
-    id: `chatbot-${Date.now()}`,
+    id: generateUUID(),
     name: newName || `${chatbot.name} (Copy)`,
     isPublished: false,
     createdAt: new Date(),
@@ -100,8 +120,8 @@ export function importChatbot(file: File): Promise<Chatbot> {
       try {
         const content = e.target?.result as string
         const chatbot = JSON.parse(content) as Chatbot
-        // Reset id and dates for new import
-        chatbot.id = `chatbot-${Date.now()}`
+        // Reset id and dates for new import - use UUID for database compatibility
+        chatbot.id = generateUUID()
         chatbot.createdAt = new Date()
         chatbot.updatedAt = new Date()
         chatbot.isPublished = false
@@ -122,4 +142,8 @@ export function importChatbot(file: File): Promise<Chatbot> {
     reader.readAsText(file)
   })
 }
+
+
+
+
 

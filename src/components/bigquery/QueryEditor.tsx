@@ -1,5 +1,7 @@
 'use client'
 
+import { useThemeSafe } from '@/hooks/use-theme-safe'
+import { useEffect, useState } from 'react'
 import { CodeEditor } from '@/components/ui/code-editor'
 
 interface QueryEditorProps {
@@ -9,6 +11,9 @@ interface QueryEditorProps {
 }
 
 export function QueryEditor({ query, onChange, placeholder }: QueryEditorProps) {
+  const { resolvedTheme, mounted } = useThemeSafe()
+  const currentTheme = mounted ? (resolvedTheme === 'dark' ? 'dark' : 'light') : 'light'
+
   const defaultPlaceholder = `-- Enter your SQL query here
 SELECT 
   name,
@@ -27,7 +32,7 @@ LIMIT 100;`
         language="sql"
         height="100%"
         placeholder={placeholder || defaultPlaceholder}
-        theme="light"
+        theme={mounted ? currentTheme : 'light'}
         options={{
           fontSize: 14,
           fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',

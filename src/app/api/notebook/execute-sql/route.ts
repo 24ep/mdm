@@ -93,7 +93,13 @@ export async function POST(request: NextRequest) {
           id: connection,
           isActive: true,
           deletedAt: null,
-          // TODO: Add space-based access control
+          OR: [
+            { spaceId: null }, // Global connections accessible to all
+            ...(spaceId ? [
+              { spaceId },
+              { space: { members: { some: { userId } } } }
+            ] : [])
+          ]
         }
       })
 
@@ -104,8 +110,9 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Create external client
-      const externalClient = await createExternalClient({
+      // Create external client with Vault credential retrieval
+      const { createExternalClientWithCredentials } = await import('@/lib/external-connection-helper')
+      const externalClient = await createExternalClientWithCredentials({
         id: connectionConfig.id,
         db_type: connectionConfig.dbType as 'postgres' | 'mysql',
         host: connectionConfig.host,

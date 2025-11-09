@@ -8,8 +8,7 @@ import { isUuid } from '@/lib/validation'
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    // Temporarily bypass authentication for testing
-    // if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { searchParams } = new URL(request.url)
     const dataModelId = searchParams.get('data_model_id')
@@ -142,7 +141,9 @@ export async function GET(request: NextRequest) {
         countParams = [...extParams]
       }
 
-      const client = await createExternalClient({
+      // Create external client with Vault credential retrieval
+      const { createExternalClientWithCredentials } = await import('@/lib/external-connection-helper')
+      const client = await createExternalClientWithCredentials({
         id: model.conn_id,
         db_type: model.db_type,
         host: model.host,

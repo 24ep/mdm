@@ -15,6 +15,7 @@ import { DashboardElement } from '../hooks/useDashboardState'
 import { IconPicker } from './IconPicker'
 import { EnhancedColorPicker } from '@/components/ui/EnhancedColorPicker'
 import ReactDOM from 'react-dom'
+import { MultiSideInput } from '@/components/shared/MultiSideInput'
 
 interface PropertiesPanelProps {
   selectedElement: DashboardElement | null
@@ -540,35 +541,51 @@ export function PropertiesPanel({
 
             <div>
               <Label>Border</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label className="text-xs">Top Width</Label>
-                  <Input type="number" value={Number(selectedElement.style?.borderWidth?.top ?? 0)}
-                    onChange={(e) => onUpdateElement(selectedElement.id, {
-                      style: { ...(selectedElement.style || {}), borderWidth: { ...(selectedElement.style?.borderWidth || {}), top: Number(e.target.value) } }
-                    })} />
-                </div>
-                <div>
-                  <Label className="text-xs">Right Width</Label>
-                  <Input type="number" value={Number(selectedElement.style?.borderWidth?.right ?? 0)}
-                    onChange={(e) => onUpdateElement(selectedElement.id, {
-                      style: { ...(selectedElement.style || {}), borderWidth: { ...(selectedElement.style?.borderWidth || {}), right: Number(e.target.value) } }
-                    })} />
-                </div>
-                <div>
-                  <Label className="text-xs">Bottom Width</Label>
-                  <Input type="number" value={Number(selectedElement.style?.borderWidth?.bottom ?? 0)}
-                    onChange={(e) => onUpdateElement(selectedElement.id, {
-                      style: { ...(selectedElement.style || {}), borderWidth: { ...(selectedElement.style?.borderWidth || {}), bottom: Number(e.target.value) } }
-                    })} />
-                </div>
-                <div>
-                  <Label className="text-xs">Left Width</Label>
-                  <Input type="number" value={Number(selectedElement.style?.borderWidth?.left ?? 0)}
-                    onChange={(e) => onUpdateElement(selectedElement.id, {
-                      style: { ...(selectedElement.style || {}), borderWidth: { ...(selectedElement.style?.borderWidth || {}), left: Number(e.target.value) } }
-                    })} />
-                </div>
+              <div className="space-y-3">
+                <MultiSideInput
+                  label="Border Width"
+                  baseKey="borderWidth"
+                  type="sides"
+                  defaultValue={0}
+                  inputClassName="h-8 text-xs"
+                  getValue={(side: string) => {
+                    const borderWidth = selectedElement.style?.borderWidth
+                    if (typeof borderWidth === 'number') return borderWidth
+                    if (typeof borderWidth === 'object' && borderWidth !== null) {
+                      return borderWidth[side as keyof typeof borderWidth] ?? 0
+                    }
+                    return 0
+                  }}
+                  setValue={(updates) => {
+                    const currentStyle = selectedElement.style || {}
+                    const currentBorderWidth = currentStyle.borderWidth || {}
+                    const newBorderWidth: any = { ...currentBorderWidth }
+                    
+                    Object.keys(updates).forEach(key => {
+                      if (key === 'borderWidth') {
+                        const value = updates[key]
+                        if (typeof value === 'string' && value.endsWith('px')) {
+                          const numValue = parseInt(value.replace('px', '')) || 0
+                          newBorderWidth.top = numValue
+                          newBorderWidth.right = numValue
+                          newBorderWidth.bottom = numValue
+                          newBorderWidth.left = numValue
+                        }
+                      } else if (key.startsWith('borderWidth')) {
+                        const side = key.replace('borderWidth', '').toLowerCase()
+                        const value = updates[key]
+                        if (typeof value === 'string' && value.endsWith('px')) {
+                          const numValue = parseInt(value.replace('px', '')) || 0
+                          newBorderWidth[side] = numValue
+                        }
+                      }
+                    })
+                    
+                    onUpdateElement(selectedElement.id, {
+                      style: { ...currentStyle, borderWidth: newBorderWidth }
+                    })
+                  }}
+                />
                 <div>
                   <Label className="text-xs">Top Color</Label>
                   <Input value={typeof selectedElement.style?.borderColor === 'object' ? (selectedElement.style?.borderColor?.top || '') : (selectedElement.style?.borderColor || '')}
@@ -609,36 +626,50 @@ export function PropertiesPanel({
 
             <div>
               <Label>Corner Radius</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label className="text-xs">Top Left</Label>
-                  <Input type="number" value={Number(selectedElement.style?.borderRadius?.topLeft ?? 0)}
-                    onChange={(e) => onUpdateElement(selectedElement.id, {
-                      style: { ...(selectedElement.style || {}), borderRadius: { ...(selectedElement.style?.borderRadius || {}), topLeft: Number(e.target.value) } }
-                    })} />
-                </div>
-                <div>
-                  <Label className="text-xs">Top Right</Label>
-                  <Input type="number" value={Number(selectedElement.style?.borderRadius?.topRight ?? 0)}
-                    onChange={(e) => onUpdateElement(selectedElement.id, {
-                      style: { ...(selectedElement.style || {}), borderRadius: { ...(selectedElement.style?.borderRadius || {}), topRight: Number(e.target.value) } }
-                    })} />
-                </div>
-                <div>
-                  <Label className="text-xs">Bottom Right</Label>
-                  <Input type="number" value={Number(selectedElement.style?.borderRadius?.bottomRight ?? 0)}
-                    onChange={(e) => onUpdateElement(selectedElement.id, {
-                      style: { ...(selectedElement.style || {}), borderRadius: { ...(selectedElement.style?.borderRadius || {}), bottomRight: Number(e.target.value) } }
-                    })} />
-                </div>
-                <div>
-                  <Label className="text-xs">Bottom Left</Label>
-                  <Input type="number" value={Number(selectedElement.style?.borderRadius?.bottomLeft ?? 0)}
-                    onChange={(e) => onUpdateElement(selectedElement.id, {
-                      style: { ...(selectedElement.style || {}), borderRadius: { ...(selectedElement.style?.borderRadius || {}), bottomLeft: Number(e.target.value) } }
-                    })} />
-                </div>
-              </div>
+              <MultiSideInput
+                label=""
+                baseKey="borderRadius"
+                type="corners"
+                defaultValue={0}
+                inputClassName="h-8 text-xs"
+                getValue={(side: string) => {
+                  const borderRadius = selectedElement.style?.borderRadius
+                  if (typeof borderRadius === 'number') return borderRadius
+                  if (typeof borderRadius === 'object' && borderRadius !== null) {
+                    return borderRadius[side as keyof typeof borderRadius] ?? 0
+                  }
+                  return 0
+                }}
+                setValue={(updates) => {
+                  const currentStyle = selectedElement.style || {}
+                  const currentBorderRadius = currentStyle.borderRadius || {}
+                  const newBorderRadius: any = { ...currentBorderRadius }
+                  
+                  Object.keys(updates).forEach(key => {
+                    if (key === 'borderRadius') {
+                      const value = updates[key]
+                      if (typeof value === 'string' && value.endsWith('px')) {
+                        const numValue = parseInt(value.replace('px', '')) || 0
+                        newBorderRadius.topLeft = numValue
+                        newBorderRadius.topRight = numValue
+                        newBorderRadius.bottomRight = numValue
+                        newBorderRadius.bottomLeft = numValue
+                      }
+                    } else if (key.startsWith('borderRadius')) {
+                      const corner = key.replace('borderRadius', '').charAt(0).toLowerCase() + key.replace('borderRadius', '').slice(1)
+                      const value = updates[key]
+                      if (typeof value === 'string' && value.endsWith('px')) {
+                        const numValue = parseInt(value.replace('px', '')) || 0
+                        newBorderRadius[corner] = numValue
+                      }
+                    }
+                  })
+                  
+                  onUpdateElement(selectedElement.id, {
+                    style: { ...currentStyle, borderRadius: newBorderRadius }
+                  })
+                }}
+              />
             </div>
           </TabsContent>
         </Tabs>

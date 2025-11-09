@@ -1,0 +1,613 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { ColorInput } from '@/components/studio/layout-config/ColorInput'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
+import { Rocket, Loader2, Code2 } from 'lucide-react'
+import { Chatbot } from '../types'
+import toast from 'react-hot-toast'
+import { WorkflowCodeModal } from './WorkflowCodeModal'
+import { WorkflowCodeValidationTable } from './WorkflowCodeValidationTable'
+
+interface OpenAIAgentSDKConfigProps {
+  formData: Partial<Chatbot>
+  setFormData: React.Dispatch<React.SetStateAction<Partial<Chatbot>>>
+  isFetchingWorkflowConfig: boolean
+  setIsFetchingWorkflowConfig: (value: boolean) => void
+}
+
+export function OpenAIAgentSDKConfig({
+  formData,
+  setFormData,
+  isFetchingWorkflowConfig,
+  setIsFetchingWorkflowConfig,
+}: OpenAIAgentSDKConfigProps) {
+  const [fetchedConfig, setFetchedConfig] = useState<any>(null)
+  const [showFetchedConfig, setShowFetchedConfig] = useState(false)
+  const [configApiSupported, setConfigApiSupported] = useState<boolean | null>(null) // null = not checked yet, true = supported, false = not supported
+  const [globalApiKeyExists, setGlobalApiKeyExists] = useState(false)
+  const [isLoadingGlobalKey, setIsLoadingGlobalKey] = useState(false)
+  const [workflowCodeModalOpen, setWorkflowCodeModalOpen] = useState(false)
+  
+  const agentId = formData.openaiAgentSdkAgentId || ''
+  const isWorkflow = agentId.startsWith('wf_')
+  // For workflows, always use workflow configuration automatically (per AgentSDK documentation)
+  // The Agents SDK is designed to dynamically pull configurations from workflows
+  const useWorkflowConfig = isWorkflow
+
+  const handleFetchWorkflowConfig = async () => {
+    if (!agentId || !isWorkflow) {
+      toast.error('Please enter a valid workflow ID (starting with wf_)')
+      return
+    }
+
+    if (!formData.openaiAgentSdkApiKey) {
+      toast.error('Please enter an API key first')
+      return
+    }
+
+    setIsFetchingWorkflowConfig(true)
+    try {
+      const response = await fetch('/api/openai-agent-sdk/workflow-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workflowId: agentId,
+          apiKey: formData.openaiAgentSdkApiKey,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        throw new Error(errorData.error || errorData.details || 'Failed to fetch workflow config')
+      }
+
+      const config = await response.json()
+      
+      // Check if API supports fetching config
+      // If message indicates config not available, mark API as not supported
+      if (config.message && (config.message.includes('not available') || config.message.includes('Using defaults'))) {
+        setConfigApiSupported(false)
+      } else {
+        // If we got actual config data (not just nulls), API is supported
+        const hasConfigData = config.model || config.instructions || config.name || config.tools || 
+                             config.enableWebSearch !== undefined || config.enableCodeInterpreter !== undefined ||
+                             config.enableComputerUse !== undefined || config.enableImageGeneration !== undefined
+        setConfigApiSupported(hasConfigData)
+      }
+      
+      // Store fetched config to display
+      setFetchedConfig(config)
+      setShowFetchedConfig(true)
+      
+      setFormData((prev: any) => ({
+        ...prev,
+        openaiAgentSdkModel: config.model || prev.openaiAgentSdkModel,
+        openaiAgentSdkInstructions: config.instructions || prev.openaiAgentSdkInstructions,
+        openaiAgentSdkReasoningEffort: config.reasoningEffort || prev.openaiAgentSdkReasoningEffort,
+        openaiAgentSdkStore: config.store !== null && config.store !== undefined ? config.store : prev.openaiAgentSdkStore,
+        openaiAgentSdkVectorStoreId: config.vectorStoreId || prev.openaiAgentSdkVectorStoreId,
+        openaiAgentSdkEnableWebSearch: config.enableWebSearch !== undefined ? config.enableWebSearch : prev.openaiAgentSdkEnableWebSearch,
+        openaiAgentSdkEnableCodeInterpreter: config.enableCodeInterpreter !== undefined ? config.enableCodeInterpreter : prev.openaiAgentSdkEnableCodeInterpreter,
+        openaiAgentSdkEnableComputerUse: config.enableComputerUse !== undefined ? config.enableComputerUse : prev.openaiAgentSdkEnableComputerUse,
+        openaiAgentSdkEnableImageGeneration: config.enableImageGeneration !== undefined ? config.enableImageGeneration : prev.openaiAgentSdkEnableImageGeneration,
+        openaiAgentSdkGuardrails: config.guardrails !== undefined ? config.guardrails : prev.openaiAgentSdkGuardrails,
+        openaiAgentSdkInputGuardrails: config.inputGuardrails !== undefined ? config.inputGuardrails : prev.openaiAgentSdkInputGuardrails,
+        openaiAgentSdkOutputGuardrails: config.outputGuardrails !== undefined ? config.outputGuardrails : prev.openaiAgentSdkOutputGuardrails,
+        openaiAgentSdkGreeting: config.greeting || config.uiConfig?.greeting || prev.openaiAgentSdkGreeting,
+        openaiAgentSdkPlaceholder: config.placeholder || config.uiConfig?.placeholder || prev.openaiAgentSdkPlaceholder,
+        openaiAgentSdkBackgroundColor: config.backgroundColor || config.uiConfig?.backgroundColor || prev.openaiAgentSdkBackgroundColor,
+        openaiAgentSdkUseWorkflowConfig: true,
+      }))
+
+      if (config.message) {
+        // If message indicates config not available, show as warning
+        if (config.message.includes('not available') || config.message.includes('Using defaults')) {
+          toast(config.message, {
+            icon: '⚠️',
+            duration: 4000,
+          })
+        } else {
+          toast.success(config.message)
+        }
+      } else {
+        toast.success('Workflow configuration fetched and applied successfully')
+      }
+    } catch (error) {
+      console.error('Error fetching workflow config:', error)
+      // If fetch fails, mark API as not supported
+      setConfigApiSupported(false)
+      toast.error(error instanceof Error ? error.message : 'Failed to fetch workflow configuration')
+    } finally {
+      setIsFetchingWorkflowConfig(false)
+    }
+  }
+
+  // Load global OpenAI API key on mount and when formData changes
+  useEffect(() => {
+    const loadGlobalApiKey = async () => {
+      setIsLoadingGlobalKey(true)
+      try {
+        const response = await fetch('/api/admin/ai-providers')
+        if (response.ok) {
+          const data = await response.json()
+          const openaiProvider = data.providers?.find((p: any) => p.provider === 'openai')
+          if (openaiProvider?.isConfigured) {
+            setGlobalApiKeyExists(true)
+            // If chatbot doesn't have an API key, auto-populate from global key
+            // This enables 2-way sync: API Key Management → Chat UI
+            if (!formData.openaiAgentSdkApiKey) {
+              // Note: We don't auto-fill here to avoid overwriting user input
+              // But we show that global key is available
+            }
+          } else {
+            setGlobalApiKeyExists(false)
+          }
+        }
+      } catch (error) {
+        console.error('Error loading global API key:', error)
+      } finally {
+        setIsLoadingGlobalKey(false)
+      }
+    }
+
+    loadGlobalApiKey()
+  }, [formData.openaiAgentSdkApiKey]) // Reload when chatbot API key changes
+
+  // Check if API supports config fetching on mount or when workflow ID/API key changes
+  useEffect(() => {
+    // Reset support status when workflow ID or API key changes
+    setConfigApiSupported(null)
+    
+    const checkConfigApiSupport = async () => {
+      // Only check if we have workflow ID and API key
+      if (!isWorkflow || !agentId || !formData.openaiAgentSdkApiKey) {
+        return
+      }
+
+      // Try a test fetch to see if API is supported
+      try {
+        const response = await fetch('/api/openai-agent-sdk/workflow-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            workflowId: agentId,
+            apiKey: formData.openaiAgentSdkApiKey,
+          }),
+        })
+
+        if (response.ok) {
+          const config = await response.json()
+          // If message indicates config not available, API is not supported
+          if (config.message && (config.message.includes('not available') || config.message.includes('Using defaults'))) {
+            setConfigApiSupported(false)
+          } else {
+            // Check if we got actual config data
+            const hasConfigData = config.model || config.instructions || config.name || config.tools || 
+                                 config.enableWebSearch !== undefined || config.enableCodeInterpreter !== undefined ||
+                                 config.enableComputerUse !== undefined || config.enableImageGeneration !== undefined
+            setConfigApiSupported(hasConfigData)
+          }
+        } else {
+          setConfigApiSupported(false)
+        }
+      } catch (error) {
+        // Silently fail - API is not supported
+        setConfigApiSupported(false)
+      }
+    }
+
+    checkConfigApiSupport()
+  }, [agentId, formData.openaiAgentSdkApiKey, isWorkflow])
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label>Agent/Workflow ID *</Label>
+        <Input
+          value={agentId}
+          onChange={(e) => {
+            const newAgentId = e.target.value
+            const isNewWorkflow = newAgentId.startsWith('wf_')
+            // Auto-enable workflow config for workflows (background mode)
+            if (isNewWorkflow) {
+              setFormData({ 
+                ...formData, 
+                openaiAgentSdkAgentId: newAgentId, 
+                // Workflow config is always used automatically for workflows
+              } as any)
+            } else {
+              setFormData({ ...formData, openaiAgentSdkAgentId: newAgentId } as any)
+            }
+          }}
+          placeholder="asst_abc123... or wf_abc123..."
+        />
+        <p className="text-xs text-muted-foreground">
+          Enter your OpenAI Assistant ID (<code className="bg-muted px-1 rounded">asst_</code>) or Workflow ID (<code className="bg-muted px-1 rounded">wf_</code>). 
+          Workflows use the OpenAI Agents SDK, while Assistants use the Assistants API.
+        </p>
+        {isWorkflow && (
+          <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+            ✓ For workflows, only the Workflow ID and API Key are required. The system will automatically use the workflow's configuration. All other settings are optional overrides.
+          </p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label>OpenAI API Key *</Label>
+        <Input
+          type="password"
+          value={formData.openaiAgentSdkApiKey || ''}
+          onChange={(e) => setFormData({ ...formData, openaiAgentSdkApiKey: e.target.value } as any)}
+          placeholder="sk-..."
+        />
+        <div className="space-y-1">
+        <p className="text-xs text-muted-foreground">
+            Your OpenAI API key for Agent SDK authentication. <strong>2-way sync enabled:</strong> Keys saved here sync to API Key Management, and you can load keys from API Key Management.
+          </p>
+          {globalApiKeyExists && !formData.openaiAgentSdkApiKey && (
+            <div className="space-y-2">
+              <p className="text-xs text-blue-600 dark:text-blue-400">
+                ℹ️ A global OpenAI API key is configured. You can use it or enter a chatbot-specific key.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/admin/ai-providers')
+                    if (response.ok) {
+                      const data = await response.json()
+                      const openaiProvider = data.providers?.find((p: any) => p.provider === 'openai')
+                      if (openaiProvider?.isConfigured) {
+                        // Get the actual API key from the backend (it will decrypt it)
+                        const keyResponse = await fetch(`/api/admin/ai-providers/${openaiProvider.id}/key`)
+                        if (keyResponse.ok) {
+                          const keyData = await keyResponse.json()
+                          if (keyData.apiKey) {
+                            setFormData({ ...formData, openaiAgentSdkApiKey: keyData.apiKey } as any)
+                            toast.success('Global API key loaded')
+                          }
+                        }
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Error loading global API key:', error)
+                    toast.error('Failed to load global API key')
+                  }
+                }}
+                className="h-7 text-xs"
+              >
+                Use Global API Key
+              </Button>
+            </div>
+          )}
+          {formData.openaiAgentSdkApiKey && (
+            <p className="text-xs text-green-600 dark:text-green-400">
+              ✓ This API key will be synced to the global API Key Management page (2-way sync enabled).
+        </p>
+          )}
+        </div>
+      </div>
+
+      {/* Realtime Voice Prompt Configuration */}
+      <div className="space-y-3 pt-2 border-t">
+        <h5 className="text-sm font-medium">Realtime Voice Settings</h5>
+        <p className="text-xs text-muted-foreground">
+          Configure prompt for OpenAI Realtime Voice API. If prompt ID is provided, it will be used instead of instructions.
+        </p>
+        
+        <div className="space-y-2">
+          <Label>Realtime Voice Prompt ID (Optional)</Label>
+          <Input
+            value={formData.openaiAgentSdkRealtimePromptId || ''}
+            onChange={(e) => setFormData({ ...formData, openaiAgentSdkRealtimePromptId: e.target.value } as any)}
+            placeholder="pmpt_6910de2213d881909b426f4ebc8644010d67268fbf2a125c"
+          />
+          <p className="text-xs text-muted-foreground">
+            Enter the prompt ID from OpenAI Realtime API. This will be used for voice interactions instead of instructions.
+            You can create prompts at <a href="https://platform.openai.com/prompts" target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 underline">OpenAI Platform</a>.
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Prompt Version (Optional)</Label>
+          <Input
+            value={formData.openaiAgentSdkRealtimePromptVersion || '1'}
+            onChange={(e) => setFormData({ ...formData, openaiAgentSdkRealtimePromptVersion: e.target.value } as any)}
+            placeholder="1"
+          />
+          <p className="text-xs text-muted-foreground">
+            Version of the prompt to use. Defaults to "1" if not specified.
+          </p>
+        </div>
+      </div>
+
+      {/* Workflow Code from Agent Builder */}
+      {isWorkflow && (
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <Label>Workflow Code (Optional - Paste from Agent Builder)</Label>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setWorkflowCodeModalOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <Code2 className="h-4 w-4" />
+                {((formData as any).openaiAgentSdkWorkflowCode || '').trim() 
+                  ? 'Edit Workflow Code' 
+                  : 'Add Workflow Code'}
+              </Button>
+              {((formData as any).openaiAgentSdkWorkflowCode || '').trim() && (
+                <span className="text-xs text-muted-foreground">
+                  Code is configured
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Paste the complete workflow code exported from Agent Builder. The platform will automatically replace variables like process.env.OPENAI_API_KEY with your actual API key.
+            </p>
+          </div>
+
+          {/* Validation Table - Only show if code exists */}
+          {((formData as any).openaiAgentSdkWorkflowCode || '').trim() && (
+            <WorkflowCodeValidationTable
+              code={(formData as any).openaiAgentSdkWorkflowCode || ''}
+              apiKey={formData.openaiAgentSdkApiKey}
+              workflowId={agentId}
+            />
+          )}
+
+          {/* Workflow Code Modal */}
+          <WorkflowCodeModal
+            value={(formData as any).openaiAgentSdkWorkflowCode || ''}
+            onChange={(value) => setFormData({ ...formData, openaiAgentSdkWorkflowCode: value } as any)}
+            apiKey={formData.openaiAgentSdkApiKey}
+            workflowId={agentId}
+            chatbotId={formData.id}
+            open={workflowCodeModalOpen}
+            onOpenChange={setWorkflowCodeModalOpen}
+          />
+        </div>
+      )}
+
+      {/* Workflow configuration is automatically used in the background - no UI needed */}
+      {false && isWorkflow && (
+        <>
+          <div className="p-3 border rounded-lg bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+            <div className="flex items-start justify-between">
+              <div className="space-y-1 flex-1">
+                <div className="flex items-center gap-2">
+                  <Rocket className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <Label className="text-sm font-semibold text-blue-900 dark:text-blue-100">Automatic Workflow Configuration</Label>
+                </div>
+                <p className="text-xs text-blue-700 dark:text-blue-300">
+                  The Agents SDK automatically pulls all configuration from your workflow. Settings below are optional overrides.
+              </p>
+            </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleFetchWorkflowConfig}
+                  disabled={isFetchingWorkflowConfig || !agentId || !formData.openaiAgentSdkApiKey}
+                className="ml-2"
+                >
+                  {isFetchingWorkflowConfig ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Fetching...
+                    </>
+                  ) : (
+                    <>
+                      <Rocket className="h-4 w-4 mr-2" />
+                    Preview Config
+                    </>
+                  )}
+                </Button>
+            </div>
+          </div>
+
+          {showFetchedConfig && fetchedConfig && (
+            <div className="p-4 border rounded-lg bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">Fetched Workflow Configuration</p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowFetchedConfig(false)}
+                  className="h-6 w-6 p-0"
+                >
+                  ×
+                </Button>
+              </div>
+              <div className="space-y-2 text-xs">
+                {fetchedConfig.name && (
+                  <p><strong className="text-blue-800 dark:text-blue-200">Name:</strong> <span className="text-blue-700 dark:text-blue-300">{fetchedConfig.name}</span></p>
+                )}
+                {fetchedConfig.model && (
+                  <p><strong className="text-blue-800 dark:text-blue-200">Model:</strong> <span className="text-blue-700 dark:text-blue-300">{fetchedConfig.model}</span></p>
+                )}
+                {fetchedConfig.instructions && (
+                  <div>
+                    <strong className="text-blue-800 dark:text-blue-200">Instructions:</strong>
+                    <p className="text-blue-700 dark:text-blue-300 mt-1 whitespace-pre-wrap">{fetchedConfig.instructions.substring(0, 200)}{fetchedConfig.instructions.length > 200 ? '...' : ''}</p>
+                  </div>
+                )}
+                {fetchedConfig.reasoningEffort && (
+                  <p><strong className="text-blue-800 dark:text-blue-200">Reasoning Effort:</strong> <span className="text-blue-700 dark:text-blue-300">{fetchedConfig.reasoningEffort}</span></p>
+                )}
+                <p><strong className="text-blue-800 dark:text-blue-200">Store Traces:</strong> <span className="text-blue-700 dark:text-blue-300">{fetchedConfig.store !== undefined ? (fetchedConfig.store ? 'Yes' : 'No') : 'Not specified'}</span></p>
+                {fetchedConfig.vectorStoreId && (
+                  <p><strong className="text-blue-800 dark:text-blue-200">Vector Store ID:</strong> <span className="text-blue-700 dark:text-blue-300 font-mono text-xs">{fetchedConfig.vectorStoreId}</span></p>
+                )}
+                <div className="pt-2 border-t border-blue-200 dark:border-blue-700">
+                  <strong className="text-blue-800 dark:text-blue-200">Tools:</strong>
+                  <div className="mt-1 space-y-1">
+                    <p className="text-blue-700 dark:text-blue-300">• Web Search: {fetchedConfig.enableWebSearch ? 'Enabled' : 'Disabled'}</p>
+                    <p className="text-blue-700 dark:text-blue-300">• Code Interpreter: {fetchedConfig.enableCodeInterpreter ? 'Enabled' : 'Disabled'}</p>
+                    <p className="text-blue-700 dark:text-blue-300">• Computer Use: {fetchedConfig.enableComputerUse ? 'Enabled' : 'Disabled'}</p>
+                    <p className="text-blue-700 dark:text-blue-300">• Image Generation: {fetchedConfig.enableImageGeneration ? 'Enabled' : 'Disabled'}</p>
+                  </div>
+                </div>
+                {(fetchedConfig.guardrails || fetchedConfig.inputGuardrails || fetchedConfig.outputGuardrails) && (
+                  <div className="pt-2 border-t border-blue-200 dark:border-blue-700">
+                    <strong className="text-blue-800 dark:text-blue-200">Guardrails:</strong>
+                    <div className="mt-1 space-y-1">
+                      {fetchedConfig.inputGuardrails && (
+                        <p className="text-blue-700 dark:text-blue-300">• Input: {Array.isArray(fetchedConfig.inputGuardrails) ? `${fetchedConfig.inputGuardrails.length} configured` : 'Enabled'}</p>
+                      )}
+                      {fetchedConfig.outputGuardrails && (
+                        <p className="text-blue-700 dark:text-blue-300">• Output: {Array.isArray(fetchedConfig.outputGuardrails) ? `${fetchedConfig.outputGuardrails.length} configured` : 'Enabled'}</p>
+                      )}
+                      {fetchedConfig.guardrails && !fetchedConfig.inputGuardrails && !fetchedConfig.outputGuardrails && (
+                        <p className="text-blue-700 dark:text-blue-300">• Configured</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {fetchedConfig.message && (
+                  <div className="pt-2 border-t border-blue-200 dark:border-blue-700">
+                    <p className="text-blue-600 dark:text-blue-400 italic">{fetchedConfig.message}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {(!useWorkflowConfig || !isWorkflow) && (
+        <>
+          <div className="space-y-2">
+            <Label>Model {useWorkflowConfig ? '(Workflow Override)' : '(Optional)'}</Label>
+            <Input
+              value={formData.openaiAgentSdkModel || ''}
+              onChange={(e) => setFormData({ ...formData, openaiAgentSdkModel: e.target.value } as any)}
+              placeholder="gpt-4o, gpt-5, etc."
+            />
+            <p className="text-xs text-muted-foreground">
+              Model to use for the agent. If not specified, defaults to gpt-4o. For workflows, this may be overridden by the workflow configuration.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Agent Instructions (Optional Override)</Label>
+            <Textarea
+              value={formData.openaiAgentSdkInstructions || ''}
+              onChange={(e) => setFormData({ ...formData, openaiAgentSdkInstructions: e.target.value } as any)}
+              placeholder="You are a helpful assistant..."
+              className="min-h-[80px]"
+            />
+            <p className="text-xs text-muted-foreground">
+              Instructions for the agent. If not specified, uses default instructions. For workflows, this may be overridden by the workflow configuration.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Reasoning Effort (Optional Override)</Label>
+            <Select
+              value={formData.openaiAgentSdkReasoningEffort || 'default'}
+              onValueChange={(value) => setFormData({ ...formData, openaiAgentSdkReasoningEffort: value === 'default' ? undefined : value as 'low' | 'medium' | 'high' } as any)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Default" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">Default</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Reasoning effort for gpt-5 models. Controls how much the model reasons before responding.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Store Reasoning Traces</Label>
+              <p className="text-xs text-muted-foreground">Whether to store reasoning traces for analysis</p>
+            </div>
+            <Switch
+              checked={formData.openaiAgentSdkStore || false}
+              onCheckedChange={(checked) => setFormData({ ...formData, openaiAgentSdkStore: checked } as any)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Vector Store ID (Optional Override)</Label>
+            <Input
+              value={formData.openaiAgentSdkVectorStoreId || ''}
+              onChange={(e) => setFormData({ ...formData, openaiAgentSdkVectorStoreId: e.target.value } as any)}
+              placeholder="vs_abc123..."
+            />
+            <p className="text-xs text-muted-foreground">
+              Vector store ID for file search tool. If provided, enables file search capability for the agent.
+            </p>
+          </div>
+
+          <div className="space-y-3 pt-2 border-t">
+            <h5 className="text-sm font-medium">Tools</h5>
+            
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Web Search</Label>
+                <p className="text-xs text-muted-foreground">Allow the agent to search the internet for real-time information</p>
+              </div>
+              <Switch
+                checked={formData.openaiAgentSdkEnableWebSearch || false}
+                onCheckedChange={(checked) => setFormData({ ...formData, openaiAgentSdkEnableWebSearch: checked } as any)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Code Interpreter</Label>
+                <p className="text-xs text-muted-foreground">Enable code execution in a sandboxed environment for data analysis and computation</p>
+              </div>
+              <Switch
+                checked={formData.openaiAgentSdkEnableCodeInterpreter || false}
+                onCheckedChange={(checked) => setFormData({ ...formData, openaiAgentSdkEnableCodeInterpreter: checked } as any)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Computer Use</Label>
+                <p className="text-xs text-muted-foreground">Enable automated interactions with graphical user interfaces</p>
+              </div>
+              <Switch
+                checked={formData.openaiAgentSdkEnableComputerUse || false}
+                onCheckedChange={(checked) => setFormData({ ...formData, openaiAgentSdkEnableComputerUse: checked } as any)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Image Generation</Label>
+                <p className="text-xs text-muted-foreground">Enable image creation based on textual prompts</p>
+              </div>
+              <Switch
+                checked={formData.openaiAgentSdkEnableImageGeneration || false}
+                onCheckedChange={(checked) => setFormData({ ...formData, openaiAgentSdkEnableImageGeneration: checked } as any)}
+              />
+            </div>
+          </div>
+        </>
+      )}
+
+    </div>
+  )
+}
+

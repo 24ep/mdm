@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
+import { getSecretsManager } from '@/lib/secrets-manager'
+import { encryptApiKey } from '@/lib/encryption'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { createAuditContext } from '@/lib/audit-context-helper'
 
 const prisma = new PrismaClient()
 
@@ -55,8 +60,45 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check if user has admin privileges
+    if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    }
+
     const body = await request.json()
     const { name, spaceId, type, host, port, database, username, password } = body
+
+    const secretsManager = getSecretsManager()
+    const useVault = secretsManager.getBackend() === 'vault'
+
+    let storedPassword = password || null
+
+    if (useVault && password) {
+      // Store password in Vault (will update with actual ID after insert)
+      const connectionId = `temp-${Date.now()}`
+      const auditContext = createAuditContext(request, session.user, 'Admin database connection creation')
+      await secretsManager.storeSecret(
+        `database-connections/${connectionId}/credentials`,
+        {
+          password: password,
+          username: username,
+          host: host,
+          port: port ? parseInt(port.toString()) : undefined,
+          database: database,
+        },
+        undefined,
+        auditContext
+      )
+      storedPassword = `vault://${connectionId}/password`
+    } else if (!useVault && password) {
+      // Encrypt for database storage
+      storedPassword = encryptApiKey(password)
+    }
 
     const connection = await prisma.externalConnection.create({
       data: {
@@ -67,7 +109,7 @@ export async function POST(request: NextRequest) {
         port: port || 5432,
         database,
         username,
-        password,
+        password: storedPassword,
         isActive: true
       },
       include: {
@@ -79,6 +121,32 @@ export async function POST(request: NextRequest) {
         }
       }
     })
+
+    // Update Vault path with actual connection ID if using Vault
+    if (useVault && connection.id && password) {
+      const actualId = connection.id
+      // Get the temp ID from the stored password reference
+      const tempMatch = storedPassword?.match(/temp-(\d+)/)
+      if (tempMatch) {
+        const tempId = `temp-${tempMatch[1]}`
+        const vaultCreds = await secretsManager.getDatabaseCredentials(tempId)
+        if (vaultCreds) {
+          // Store with actual ID
+          await secretsManager.storeDatabaseCredentials(actualId, vaultCreds)
+          // Delete temp entry
+          try {
+            await secretsManager.deleteSecret(`database-connections/${tempId}/credentials`)
+          } catch (error) {
+            // Ignore if already deleted
+          }
+          // Update database with correct Vault path
+          await prisma.externalConnection.update({
+            where: { id: actualId },
+            data: { password: `vault://${actualId}/password` }
+          })
+        }
+      }
+    }
 
     return NextResponse.json({ 
       connection: {

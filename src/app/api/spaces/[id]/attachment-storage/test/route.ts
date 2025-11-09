@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { Client as MinioClient } from 'minio'
 import { S3Client, ListBucketsCommand } from '@aws-sdk/client-s3'
@@ -19,19 +21,19 @@ export async function POST(
     const body = await request.json()
 
     // Check if user has access to this space
-    const { data: spaceMember, error: memberError } = await supabase
-      .from('space_members')
-      .select('role')
-      .eq('space_id', spaceId)
-      .eq('user_id', user.id)
-      .single()
+    const spaceMember = await db.spaceMember.findFirst({
+      where: {
+        spaceId,
+        userId: session.user.id
+      }
+    })
 
-    if (memberError || !spaceMember) {
+    if (!spaceMember) {
       return NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 })
     }
 
     // Check if user has admin/owner role
-    if (!['admin', 'owner'].includes(spaceMember.role)) {
+    if (!['ADMIN', 'OWNER'].includes(spaceMember.role)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 

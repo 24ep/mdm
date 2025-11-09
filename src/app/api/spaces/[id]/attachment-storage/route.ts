@@ -16,33 +16,26 @@ export async function GET(
     const spaceId = params.id
 
     // Check if user has access to this space
-    const { data: spaceMember, error: memberError } = await supabase
-      .from('space_members')
-      .select('role')
-      .eq('space_id', spaceId)
-      .eq('user_id', user.id)
-      .single()
+    const spaceMember = await db.spaceMember.findFirst({
+      where: {
+        spaceId,
+        userId: session.user.id
+      }
+    })
 
-    if (memberError || !spaceMember) {
+    if (!spaceMember) {
       return NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 })
     }
 
     // Check if user has admin/owner role
-    if (!['admin', 'owner'].includes(spaceMember.role)) {
+    if (!['ADMIN', 'OWNER'].includes(spaceMember.role)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
     // Get attachment storage configuration
-    const { data: storageConfig, error: configError } = await supabase
-      .from('space_attachment_storage')
-      .select('*')
-      .eq('space_id', spaceId)
-      .single()
-
-    if (configError && configError.code !== 'PGRST116') {
-      console.error('Error fetching attachment storage config:', configError)
-      return NextResponse.json({ error: 'Failed to fetch storage configuration' }, { status: 500 })
-    }
+    const storageConfig = await db.spaceAttachmentStorage.findFirst({
+      where: { spaceId }
+    })
 
     // Return default MinIO config if no config exists
     const defaultConfig = {
@@ -104,19 +97,19 @@ export async function PUT(
     const body = await request.json()
 
     // Check if user has access to this space
-    const { data: spaceMember, error: memberError } = await supabase
-      .from('space_members')
-      .select('role')
-      .eq('space_id', spaceId)
-      .eq('user_id', user.id)
-      .single()
+    const spaceMember = await db.spaceMember.findFirst({
+      where: {
+        spaceId,
+        userId: session.user.id
+      }
+    })
 
-    if (memberError || !spaceMember) {
+    if (!spaceMember) {
       return NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 })
     }
 
     // Check if user has admin/owner role
-    if (!['admin', 'owner'].includes(spaceMember.role)) {
+    if (!['ADMIN', 'OWNER'].includes(spaceMember.role)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
@@ -151,19 +144,19 @@ export async function PUT(
     }
 
     // Upsert the configuration
-    const { error: upsertError } = await supabase
-      .from('space_attachment_storage')
-      .upsert({
-        space_id: spaceId,
+    await db.spaceAttachmentStorage.upsert({
+      where: { spaceId },
+      update: {
         provider,
-        config,
-        updated_at: new Date().toISOString()
-      })
-
-    if (upsertError) {
-      console.error('Error saving attachment storage config:', upsertError)
-      return NextResponse.json({ error: 'Failed to save storage configuration' }, { status: 500 })
-    }
+        config: config as any,
+        updatedAt: new Date()
+      },
+      create: {
+        spaceId,
+        provider,
+        config: config as any
+      }
+    })
 
     return NextResponse.json({ success: true })
 

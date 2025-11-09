@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { createAuditLog } from '@/lib/audit'
+import { getSecretsManager } from '@/lib/secrets-manager'
+import { encryptApiKey, decryptApiKey } from '@/lib/encryption'
+import { createAuditContext } from '@/lib/audit-context-helper'
 
 export async function GET(request: NextRequest) {
   try {
@@ -38,15 +41,55 @@ export async function GET(request: NextRequest) {
       ldapSearchBase: ''
     }
 
-    rows.forEach((row: any) => {
+    const secretsManager = getSecretsManager()
+    const useVault = secretsManager.getBackend() === 'vault'
+    
+    // List of sensitive fields that should be encrypted
+    const sensitiveFields = ['googleClientSecret', 'azureClientSecret', 'ldapBindPassword']
+    
+    // Process rows and decrypt sensitive fields
+    for (const row of rows) {
       const key = row.key.replace('sso_', '')
+      let value: any
+      
       try {
-        const value = typeof row.value === 'string' ? JSON.parse(row.value) : row.value
-        config[key] = value
+        value = typeof row.value === 'string' ? JSON.parse(row.value) : row.value
       } catch {
-        config[key] = row.value
+        value = row.value
       }
-    })
+      
+      // Decrypt sensitive fields if they're encrypted
+      if (sensitiveFields.includes(key) && value) {
+        if (useVault && typeof value === 'string' && value.startsWith('vault://')) {
+          // Value is stored in Vault, retrieve it
+          try {
+            const vaultPath = value.replace('vault://', '')
+            const secret = await secretsManager.getSecret(`sso/${vaultPath}`)
+            if (secret) {
+              config[key] = secret[key] || secret.value || ''
+            } else {
+              config[key] = value // Keep reference if retrieval fails
+            }
+          } catch (error) {
+            // If Vault retrieval fails, keep the reference (will be handled on next save)
+            console.warn(`Failed to retrieve ${key} from Vault:`, error)
+            config[key] = value
+          }
+        } else if (typeof value === 'string' && value.length > 0) {
+          // Try to decrypt if it's encrypted
+          const decrypted = decryptApiKey(value)
+          if (decrypted && decrypted !== value) {
+            config[key] = decrypted
+          } else {
+            config[key] = value
+          }
+        } else {
+          config[key] = value
+        }
+      } else {
+        config[key] = value
+      }
+    }
 
     return NextResponse.json({ config })
   } catch (error) {
@@ -89,11 +132,45 @@ export async function PUT(request: NextRequest) {
       {}
     )
 
+    const secretsManager = getSecretsManager()
+    const useVault = secretsManager.getBackend() === 'vault'
+    const auditContext = createAuditContext(request, session.user, 'SSO configuration update')
+    
+    // List of sensitive fields that should be encrypted
+    const sensitiveFields = ['googleClientSecret', 'azureClientSecret', 'ldapBindPassword']
+    
     // Save each SSO setting
     const updatedSettings: Record<string, any> = {}
     for (const [key, value] of Object.entries(config)) {
       const settingKey = `sso_${key}`
-      const valueToStore = typeof value === 'object' ? JSON.stringify(value) : String(value)
+      let valueToStore: any = value
+      
+      // Encrypt sensitive fields
+      if (sensitiveFields.includes(key) && value && String(value).trim() !== '') {
+        if (useVault) {
+          // Store in Vault
+          try {
+            await secretsManager.storeSecret(
+              `sso/${key}`,
+              { value: String(value) },
+              undefined,
+              auditContext
+            )
+            // Store reference in database
+            valueToStore = `vault://${key}`
+          } catch (error) {
+            console.error(`Failed to store ${key} in Vault:`, error)
+            // Fallback to database encryption
+            valueToStore = encryptApiKey(String(value))
+          }
+        } else {
+          // Use database encryption
+          valueToStore = encryptApiKey(String(value))
+        }
+      } else {
+        // Non-sensitive fields stored as-is
+        valueToStore = typeof value === 'object' ? JSON.stringify(value) : String(value)
+      }
       
       const upsertSql = `
         INSERT INTO system_settings (key, value, updated_at)

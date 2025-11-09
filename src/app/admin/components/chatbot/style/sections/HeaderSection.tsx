@@ -19,9 +19,75 @@ export function HeaderSection({ formData, setFormData, chatkitOptions }: Section
           <div className="space-y-4">
             <h4 className="text-md font-semibold">Header Styling</h4>
             <p className="text-xs text-muted-foreground mb-4">
-              Configure the header appearance and custom buttons.
+              Configure the header appearance, title, description, logo, and custom buttons.
             </p>
           </div>
+
+          <div className="space-y-4">
+            <h4 className="text-md font-semibold mb-2">Header Title & Description</h4>
+            <p className="text-xs text-muted-foreground mb-4">
+              Configure the header title and description. These can be simple strings or objects for more advanced styling.
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Header Title</Label>
+                <Input
+                  value={chatkitOptions?.header?.title 
+                    ? (typeof chatkitOptions.header.title === 'string' 
+                        ? chatkitOptions.header.title 
+                        : (chatkitOptions.header.title as any)?.text || formData.headerTitle || '')
+                    : formData.headerTitle || ''}
+                  onChange={(e) => {
+                    const titleValue = e.target.value
+                    setFormData({ 
+                      ...formData, 
+                      headerTitle: titleValue,
+                      chatkitOptions: {
+                        ...chatkitOptions,
+                        header: {
+                          ...chatkitOptions?.header,
+                          title: titleValue || undefined
+                        }
+                      }
+                    } as any)
+                  }}
+                  placeholder="Chat Assistant"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Title displayed in the header
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label>Header Description</Label>
+                <Input
+                  value={chatkitOptions?.header?.description 
+                    ? (typeof chatkitOptions.header.description === 'string' 
+                        ? chatkitOptions.header.description 
+                        : (chatkitOptions.header.description as any)?.text || formData.headerDescription || '')
+                    : formData.headerDescription || ''}
+                  onChange={(e) => {
+                    const descValue = e.target.value
+                    setFormData({ 
+                      ...formData, 
+                      headerDescription: descValue,
+                      chatkitOptions: {
+                        ...chatkitOptions,
+                        header: {
+                          ...chatkitOptions?.header,
+                          description: descValue || undefined
+                        }
+                      }
+                    } as any)
+                  }}
+                  placeholder="How can I help you?"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Description/subtitle displayed in the header
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="space-y-4">
             <h4 className="text-md font-semibold mb-2">Header Logo</h4>
             <p className="text-xs text-muted-foreground mb-4">
@@ -31,8 +97,21 @@ export function HeaderSection({ formData, setFormData, chatkitOptions }: Section
               <div className="space-y-2">
                 <Label>Header Logo URL</Label>
                 <Input
-                  value={formData.headerLogo || ''}
-                  onChange={(e) => setFormData({ ...formData, headerLogo: e.target.value })}
+                  value={formData.headerLogo || chatkitOptions?.header?.logo || ''}
+                  onChange={(e) => {
+                    const logoValue = e.target.value
+                    setFormData({ 
+                      ...formData, 
+                      headerLogo: logoValue,
+                      chatkitOptions: {
+                        ...chatkitOptions,
+                        header: {
+                          ...chatkitOptions?.header,
+                          logo: logoValue
+                        }
+                      }
+                    } as any)
+                  }}
                   placeholder="https://example.com/logo.png"
                 />
               </div>
@@ -47,19 +126,29 @@ export function HeaderSection({ formData, setFormData, chatkitOptions }: Section
                     const reader = new FileReader()
                     reader.onload = (ev) => {
                       const url = ev.target?.result as string
-                      setFormData({ ...formData, headerLogo: url })
+                      setFormData({ 
+                        ...formData, 
+                        headerLogo: url,
+                        chatkitOptions: {
+                          ...chatkitOptions,
+                          header: {
+                            ...chatkitOptions?.header,
+                            logo: url
+                          }
+                        }
+                      } as any)
                     }
                     reader.readAsDataURL(file)
                   }}
                 />
               </div>
             </div>
-            {formData.headerLogo && (
+            {(formData.headerLogo || chatkitOptions?.header?.logo) && (
               <div className="space-y-2">
                 <Label>Preview</Label>
                 <div className="border rounded-lg p-4 flex items-center justify-center bg-muted/50">
                   <img 
-                    src={formData.headerLogo} 
+                    src={formData.headerLogo || chatkitOptions?.header?.logo || ''} 
                     alt="Header logo preview" 
                     className="max-w-full max-h-32 object-contain"
                     onError={(e) => {

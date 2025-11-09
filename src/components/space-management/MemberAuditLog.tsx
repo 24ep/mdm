@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import { formatTimestamp } from '@/lib/date-formatters'
 import { 
   History, 
   Search, 
@@ -132,22 +133,6 @@ export function MemberAuditLog({
 
   const getActionColor = (action: string) => {
     return ACTION_COLORS[action as keyof typeof ACTION_COLORS] || ACTION_COLORS.default
-  }
-
-  const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp)
-    const now = new Date()
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60)
-    
-    if (diffInHours < 1) {
-      return 'Just now'
-    } else if (diffInHours < 24) {
-      return `${Math.floor(diffInHours)}h ago`
-    } else if (diffInHours < 168) { // 7 days
-      return `${Math.floor(diffInHours / 24)}d ago`
-    } else {
-      return date.toLocaleDateString()
-    }
   }
 
   return (

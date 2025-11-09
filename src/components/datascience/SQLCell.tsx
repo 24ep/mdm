@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useThemeSafe } from '@/hooks/use-theme-safe'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -54,7 +55,18 @@ export function SQLCell({
   const [sqlAutocomplete, setSqlAutocomplete] = useState<any>(null)
   const [selectedSpaceId, setSelectedSpaceId] = useState<string>('')
   const [selectedDataModelId, setSelectedDataModelId] = useState<string>('')
-  const isDark = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
+  const { isDark, mounted } = useThemeSafe()
+  
+  // Ensure component is mounted before rendering theme-dependent content
+  if (!mounted) {
+    return (
+      <div className="space-y-2">
+        <div style={{ padding: '4px' }}>
+          <div className="bg-input h-[150px] animate-pulse" />
+        </div>
+      </div>
+    )
+  }
   
   // Fetch spaces and data models
   const { spaces, loading: spacesLoading } = useSpaces()

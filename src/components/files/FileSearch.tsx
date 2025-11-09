@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from 'react'
+import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -65,6 +66,7 @@ export function FileSearch({
   showFilters = true,
   showActions = true
 }: FileSearchProps) {
+  const { data: session } = useSession()
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({
     query: '',
     fileType: '',
@@ -90,6 +92,8 @@ export function FileSearch({
 
   // Search files
   const searchFiles = useCallback(async (filters: SearchFilters, page = 1) => {
+    if (!session?.user?.id) return
+
     try {
       setLoading(true)
       setError(null)
@@ -105,7 +109,7 @@ export function FileSearch({
 
       const response = await fetch(`/api/files/search?${params}`, {
         headers: {
-          'x-user-id': 'current-user-id' // TODO: Replace with actual user ID
+          'x-user-id': session.user.id
         }
       })
 

@@ -343,14 +343,17 @@ export function ColorPickerPopover({
     recentColors.length > 0 ? 'recent' : 'quick'
   )
 
-  // Auto-switch to valid set if current becomes unavailable
+  // Auto-switch to valid set if current becomes unavailable (only when selectedColorSet changes, not when colors are added)
   React.useEffect(() => {
+    // Only auto-switch if the current set becomes unavailable
+    // This effect only runs when selectedColorSet changes, not when recentColors/favoriteColors change
+    // This prevents the color set from changing when you adjust a custom color
     if (selectedColorSet === 'recent' && recentColors.length === 0) {
       setSelectedColorSet('quick')
     } else if (selectedColorSet === 'favorites' && favoriteColors.length === 0) {
       setSelectedColorSet('quick')
     }
-  }, [selectedColorSet, recentColors.length, favoriteColors.length])
+  }, [selectedColorSet]) // Only depend on selectedColorSet, not on recentColors/favoriteColors length
   
   // Parse gradient into editable structure
   const parseGradient = (gradStr: string) => {
@@ -634,24 +637,22 @@ export function ColorPickerPopover({
           <TabsContent value="solid" className="p-4 space-y-2 mt-0">
             {/* Color Set Selector */}
             <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs">Color Set</Label>
-                <Select value={selectedColorSet} onValueChange={setSelectedColorSet}>
-                  <SelectTrigger className="h-7 text-xs w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="quick">Quick Colors</SelectItem>
-                    {recentColors.length > 0 && <SelectItem value="recent">Recent Colors</SelectItem>}
-                    {favoriteColors.length > 0 && <SelectItem value="favorites">Favorites</SelectItem>}
-                    {Object.keys(colorPalettes).map((name) => (
-                      <SelectItem key={name} value={name.toLowerCase().replace(/\s+/g, '-')}>
-                        {name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Label className="text-xs">Color Set</Label>
+              <Select value={selectedColorSet} onValueChange={setSelectedColorSet}>
+                <SelectTrigger className="h-7 text-xs w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="quick">Quick Colors</SelectItem>
+                  {recentColors.length > 0 && <SelectItem value="recent">Recent Colors</SelectItem>}
+                  {favoriteColors.length > 0 && <SelectItem value="favorites">Favorites</SelectItem>}
+                  {Object.keys(colorPalettes).map((name) => (
+                    <SelectItem key={name} value={name.toLowerCase().replace(/\s+/g, '-')}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
               {/* Quick Colors */}
               {selectedColorSet === 'quick' && (

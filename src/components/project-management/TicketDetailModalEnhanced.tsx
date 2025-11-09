@@ -25,9 +25,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent } from '@/components/ui/card'
 import { 
   Calendar, Clock, User, X, Plus, MessageSquare, Paperclip, 
-  ListChecks, GitBranch, Trash2, Edit, Download
+  ListChecks, GitBranch, Trash2, Edit, Download, ExternalLink, Loader
 } from 'lucide-react'
 import { format } from 'date-fns'
+import { useToast } from '@/hooks/use-toast'
 
 interface TicketDetailModalProps {
   ticket: {
@@ -43,12 +44,28 @@ interface TicketDetailModalProps {
         id: string
         name: string
         avatar?: string | null
+        email?: string
       }
     }>
     tags?: Array<{
       id: string
       name: string
       color?: string | null
+    }>
+    spaces?: Array<{
+      spaceId: string
+      space?: {
+        id: string
+        name: string
+      }
+    }>
+    creator?: {
+      email?: string
+    }
+    attributes?: Array<{
+      name: string
+      value?: string | null
+      jsonValue?: any
     }>
   } | null
   open: boolean
@@ -64,6 +81,7 @@ export function TicketDetailModalEnhanced({
   onSave,
   onDelete,
 }: TicketDetailModalProps) {
+  const { toast } = useToast()
   const [activeTab, setActiveTab] = useState('details')
   const [comments, setComments] = useState<any[]>([])
   const [attachments, setAttachments] = useState<any[]>([])
@@ -73,12 +91,598 @@ export function TicketDetailModalEnhanced({
   const [newComment, setNewComment] = useState('')
   const [newSubtask, setNewSubtask] = useState({ title: '', status: 'BACKLOG' })
   const [newTimeLog, setNewTimeLog] = useState({ hours: '', description: '', loggedAt: format(new Date(), 'yyyy-MM-dd') })
+  const [pushingToServiceDesk, setPushingToServiceDesk] = useState(false)
+  const [serviceDeskConfig, setServiceDeskConfig] = useState<any>(null)
+  const [ticketType, setTicketType] = useState<string>('')
+  const [serviceDeskRequestId, setServiceDeskRequestId] = useState<string | null>(null)
+  const [serviceDeskComments, setServiceDeskComments] = useState<any[]>([])
+  const [serviceDeskAttachments, setServiceDeskAttachments] = useState<any[]>([])
+  const [serviceDeskTimeLogs, setServiceDeskTimeLogs] = useState<any[]>([])
+  const [syncingFromServiceDesk, setSyncingFromServiceDesk] = useState(false)
+  const [newServiceDeskComment, setNewServiceDeskComment] = useState('')
+  const [newServiceDeskResolution, setNewServiceDeskResolution] = useState('')
+  const [newServiceDeskTimeLog, setNewServiceDeskTimeLog] = useState({ hours: '', minutes: '', description: '' })
+  const [newServiceDeskLink, setNewServiceDeskLink] = useState({ requestId: '', linkType: 'relates_to' })
+  const [updatingServiceDesk, setUpdatingServiceDesk] = useState(false)
+  const [deletingServiceDesk, setDeletingServiceDesk] = useState(false)
 
   useEffect(() => {
     if (ticket?.id && open) {
       loadAllData()
+      checkServiceDeskConfig()
+      // Load ticket type from attributes
+      const typeAttr = ticket.attributes?.find(attr => 
+        attr.name.toLowerCase() === 'ticket type' || 
+        attr.name.toLowerCase() === 'type' ||
+        attr.name.toLowerCase() === 'tickettype'
+      )
+      if (typeAttr) {
+        setTicketType(String(typeAttr.value || ''))
+      } else {
+        // Check tags for ticket type
+        const typeTags = ['Request', 'Change', 'Change Request', 'Issue', 'Problem', 'Incident']
+        const foundTypeTag = ticket.tags?.find(tag => 
+          typeTags.some(type => tag.name.toLowerCase().includes(type.toLowerCase()))
+        )
+        if (foundTypeTag) {
+          setTicketType(foundTypeTag.name)
+        } else {
+          setTicketType('')
+        }
+      }
+      // Load ServiceDesk request ID from metadata
+      const metadata = (ticket as any).metadata
+      if (metadata?.serviceDeskRequestId) {
+        setServiceDeskRequestId(metadata.serviceDeskRequestId)
+        loadServiceDeskData(metadata.serviceDeskRequestId)
+      }
     }
-  }, [ticket?.id, open])
+  }, [ticket?.id, open, ticket?.attributes, ticket?.tags])
+
+  const checkServiceDeskConfig = async () => {
+    if (!ticket?.spaces || ticket.spaces.length === 0) return
+    
+    const spaceId = ticket.spaces[0].spaceId || ticket.spaces[0].space?.id
+    if (!spaceId) return
+
+    try {
+      const response = await fetch(`/api/integrations/manageengine-servicedesk?space_id=${spaceId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setServiceDeskConfig(data.config)
+      }
+    } catch (error) {
+      console.error('Failed to check ServiceDesk config:', error)
+    }
+  }
+
+  const loadServiceDeskData = async (requestId: string) => {
+    if (!ticket?.spaces || ticket.spaces.length === 0) return
+    const spaceId = ticket.spaces[0].spaceId || ticket.spaces[0].space?.id
+    if (!spaceId) return
+
+    try {
+      const [commentsRes, attachmentsRes, timeLogsRes] = await Promise.all([
+        fetch(`/api/integrations/manageengine-servicedesk/comments?space_id=${spaceId}&request_id=${requestId}`),
+        fetch(`/api/integrations/manageengine-servicedesk/attachments?space_id=${spaceId}&request_id=${requestId}`),
+        fetch(`/api/integrations/manageengine-servicedesk/time-logs?space_id=${spaceId}&request_id=${requestId}`)
+      ])
+
+      if (commentsRes.ok) {
+        const data = await commentsRes.json()
+        setServiceDeskComments(data.comments || [])
+      }
+      if (attachmentsRes.ok) {
+        const data = await attachmentsRes.json()
+        setServiceDeskAttachments(data.attachments || [])
+      }
+      if (timeLogsRes.ok) {
+        const data = await timeLogsRes.json()
+        setServiceDeskTimeLogs(data.timeLogs || [])
+      }
+    } catch (error) {
+      console.error('Error loading ServiceDesk data:', error)
+    }
+  }
+
+  const handlePushToServiceDesk = async () => {
+    if (!ticket?.spaces || ticket.spaces.length === 0) {
+      toast({
+        title: 'Error',
+        description: 'Ticket must belong to a space',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    const spaceId = ticket.spaces[0].spaceId || ticket.spaces[0].space?.id
+    if (!spaceId) {
+      toast({
+        title: 'Error',
+        description: 'Unable to determine space',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    setPushingToServiceDesk(true)
+    try {
+      const response = await fetch('/api/integrations/manageengine-servicedesk/push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ticket_id: ticket.id,
+          space_id: spaceId,
+          requesterEmail: ticket.creator?.email,
+          syncComments: true,
+          syncAttachments: true,
+          syncTimeLogs: true
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setServiceDeskRequestId(result.requestId)
+        if (result.requestId) {
+          await loadServiceDeskData(result.requestId)
+        }
+        toast({
+          title: 'Success',
+          description: `Ticket pushed to ServiceDesk successfully. Request ID: ${result.requestId}${result.synced ? ` (Synced: ${result.synced.comments} comments, ${result.synced.attachments} attachments, ${result.synced.timeLogs} time logs)` : ''}`,
+        })
+      } else {
+        toast({
+          title: 'Push Failed',
+          description: result.error || 'Failed to push ticket to ServiceDesk',
+          variant: 'destructive'
+        })
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to push ticket to ServiceDesk',
+        variant: 'destructive'
+      })
+    } finally {
+      setPushingToServiceDesk(false)
+    }
+  }
+
+  const handleSyncFromServiceDesk = async () => {
+    if (!ticket?.spaces || ticket.spaces.length === 0 || !serviceDeskRequestId) return
+    const spaceId = ticket.spaces[0].spaceId || ticket.spaces[0].space?.id
+    if (!spaceId) return
+
+    setSyncingFromServiceDesk(true)
+    try {
+      // Check for conflicts first
+      const conflictResponse = await fetch('/api/integrations/manageengine-servicedesk/conflict-resolution', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ticket_id: ticket.id,
+          space_id: spaceId,
+          request_id: serviceDeskRequestId
+        })
+      })
+
+      const conflictData = await conflictResponse.json()
+
+      if (conflictData.has_conflicts && conflictData.conflicts.length > 0) {
+        // Show conflict resolution dialog
+        const resolution: any = {}
+        for (const conflict of conflictData.conflicts) {
+          // For now, default to keeping ServiceDesk version
+          // In a full implementation, you'd show a dialog to let user choose
+          resolution[conflict.field] = 'keep_servicedesk'
+        }
+
+        // Resolve conflicts
+        const resolveResponse = await fetch('/api/integrations/manageengine-servicedesk/conflict-resolution', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ticket_id: ticket.id,
+            space_id: spaceId,
+            request_id: serviceDeskRequestId,
+            resolution
+          })
+        })
+
+        const resolveResult = await resolveResponse.json()
+        if (!resolveResult.success) {
+          toast({
+            title: 'Conflict Resolution Failed',
+            description: resolveResult.error || 'Failed to resolve conflicts',
+            variant: 'destructive'
+          })
+          setSyncingFromServiceDesk(false)
+          return
+        }
+      }
+
+      // Proceed with sync
+      const response = await fetch('/api/integrations/manageengine-servicedesk/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ticket_id: ticket.id,
+          space_id: spaceId,
+          request_id: serviceDeskRequestId
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        await loadServiceDeskData(serviceDeskRequestId)
+        toast({
+          title: 'Success',
+          description: `Ticket synced from ServiceDesk successfully${result.updated ? ' (Updated)' : ''}`,
+        })
+        if (onSave) {
+          onSave(ticket)
+        }
+      } else {
+        toast({
+          title: 'Sync Failed',
+          description: result.error || 'Failed to sync ticket from ServiceDesk',
+          variant: 'destructive'
+        })
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to sync ticket from ServiceDesk',
+        variant: 'destructive'
+      })
+    } finally {
+      setSyncingFromServiceDesk(false)
+    }
+  }
+
+  const handleAddServiceDeskComment = async () => {
+    if (!newServiceDeskComment.trim() || !ticket?.spaces || ticket.spaces.length === 0 || !serviceDeskRequestId) return
+    const spaceId = ticket.spaces[0].spaceId || ticket.spaces[0].space?.id
+    if (!spaceId) return
+
+    try {
+      const response = await fetch('/api/integrations/manageengine-servicedesk/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ticket_id: ticket.id,
+          space_id: spaceId,
+          request_id: serviceDeskRequestId,
+          content: newServiceDeskComment,
+          isPublic: true
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setNewServiceDeskComment('')
+        await loadServiceDeskData(serviceDeskRequestId)
+        toast({
+          title: 'Success',
+          description: 'Comment added to ServiceDesk successfully',
+        })
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to add comment to ServiceDesk',
+          variant: 'destructive'
+        })
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to add comment to ServiceDesk',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  const handleSetServiceDeskResolution = async () => {
+    if (!newServiceDeskResolution.trim() || !ticket?.spaces || ticket.spaces.length === 0 || !serviceDeskRequestId) return
+    const spaceId = ticket.spaces[0].spaceId || ticket.spaces[0].space?.id
+    if (!spaceId) return
+
+    try {
+      const response = await fetch('/api/integrations/manageengine-servicedesk/resolution', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          space_id: spaceId,
+          request_id: serviceDeskRequestId,
+          resolution: newServiceDeskResolution
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setNewServiceDeskResolution('')
+        toast({
+          title: 'Success',
+          description: 'Resolution set in ServiceDesk successfully',
+        })
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to set resolution in ServiceDesk',
+          variant: 'destructive'
+        })
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to set resolution in ServiceDesk',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  const handleLogServiceDeskTime = async () => {
+    if (!newServiceDeskTimeLog.hours || !ticket?.spaces || ticket.spaces.length === 0 || !serviceDeskRequestId) return
+    const spaceId = ticket.spaces[0].spaceId || ticket.spaces[0].space?.id
+    if (!spaceId) return
+
+    try {
+      const response = await fetch('/api/integrations/manageengine-servicedesk/time-logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          space_id: spaceId,
+          request_id: serviceDeskRequestId,
+          hours: parseFloat(newServiceDeskTimeLog.hours),
+          minutes: newServiceDeskTimeLog.minutes ? parseInt(newServiceDeskTimeLog.minutes) : undefined,
+          description: newServiceDeskTimeLog.description || undefined
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setNewServiceDeskTimeLog({ hours: '', minutes: '', description: '' })
+        await loadServiceDeskData(serviceDeskRequestId)
+        toast({
+          title: 'Success',
+          description: 'Time logged to ServiceDesk successfully',
+        })
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to log time to ServiceDesk',
+          variant: 'destructive'
+        })
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to log time to ServiceDesk',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  const handleLinkServiceDeskTickets = async () => {
+    if (!newServiceDeskLink.requestId || !ticket?.spaces || ticket.spaces.length === 0 || !serviceDeskRequestId) return
+    const spaceId = ticket.spaces[0].spaceId || ticket.spaces[0].space?.id
+    if (!spaceId) return
+
+    try {
+      const response = await fetch('/api/integrations/manageengine-servicedesk/link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          space_id: spaceId,
+          request_id: serviceDeskRequestId,
+          linked_request_id: newServiceDeskLink.requestId,
+          link_type: newServiceDeskLink.linkType
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setNewServiceDeskLink({ requestId: '', linkType: 'relates_to' })
+        toast({
+          title: 'Success',
+          description: 'Tickets linked in ServiceDesk successfully',
+        })
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to link tickets in ServiceDesk',
+          variant: 'destructive'
+        })
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to link tickets in ServiceDesk',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  const handleUploadServiceDeskAttachment = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !ticket?.spaces || ticket.spaces.length === 0 || !serviceDeskRequestId) return
+    const spaceId = ticket.spaces[0].spaceId || ticket.spaces[0].space?.id
+    if (!spaceId) return
+
+    try {
+      const formData = new FormData()
+      formData.append('space_id', spaceId)
+      formData.append('request_id', serviceDeskRequestId)
+      formData.append('file', file)
+      formData.append('description', `Uploaded from internal ticket ${ticket.id}`)
+
+      const response = await fetch('/api/integrations/manageengine-servicedesk/attachments', {
+        method: 'POST',
+        body: formData
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        await loadServiceDeskData(serviceDeskRequestId)
+        toast({
+          title: 'Success',
+          description: 'Attachment uploaded to ServiceDesk successfully',
+        })
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to upload attachment to ServiceDesk',
+          variant: 'destructive'
+        })
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to upload attachment to ServiceDesk',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  const handleUpdateServiceDeskTicket = async () => {
+    if (!ticket?.spaces || ticket.spaces.length === 0 || !serviceDeskRequestId) return
+    const spaceId = ticket.spaces[0].spaceId || ticket.spaces[0].space?.id
+    if (!spaceId) return
+
+    setUpdatingServiceDesk(true)
+    try {
+      // Map our ticket status to ServiceDesk status
+      const statusMap: Record<string, string> = {
+        'BACKLOG': 'Open',
+        'TODO': 'Open',
+        'IN_PROGRESS': 'In Progress',
+        'IN_REVIEW': 'In Progress',
+        'DONE': 'Resolved',
+        'CLOSED': 'Closed'
+      }
+
+      // Map our priority to ServiceDesk priority
+      const priorityMap: Record<string, string> = {
+        'LOW': 'Low',
+        'MEDIUM': 'Medium',
+        'HIGH': 'High',
+        'URGENT': 'Critical'
+      }
+
+      const updates: any = {}
+      
+      if (ticket.title) {
+        updates.subject = ticket.title
+      }
+      if (ticket.description) {
+        updates.description = ticket.description
+      }
+      if (ticket.status) {
+        updates.status = statusMap[ticket.status] || 'Open'
+      }
+      if (ticket.priority) {
+        updates.priority = priorityMap[ticket.priority] || 'Medium'
+      }
+      if (ticket.dueDate) {
+        updates.dueDate = ticket.dueDate instanceof Date 
+          ? ticket.dueDate.toISOString() 
+          : new Date(ticket.dueDate).toISOString()
+      }
+
+      const response = await fetch('/api/integrations/manageengine-servicedesk/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          space_id: spaceId,
+          request_id: serviceDeskRequestId,
+          updates
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        toast({
+          title: 'Success',
+          description: 'Ticket updated in ServiceDesk successfully',
+        })
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to update ticket in ServiceDesk',
+          variant: 'destructive'
+        })
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update ticket in ServiceDesk',
+        variant: 'destructive'
+      })
+    } finally {
+      setUpdatingServiceDesk(false)
+    }
+  }
+
+  const handleDeleteServiceDeskTicket = async () => {
+    if (!ticket?.spaces || ticket.spaces.length === 0 || !serviceDeskRequestId) return
+    const spaceId = ticket.spaces[0].spaceId || ticket.spaces[0].space?.id
+    if (!spaceId) return
+
+    if (!confirm(`Are you sure you want to delete ticket ${serviceDeskRequestId} from ServiceDesk? This action cannot be undone.`)) {
+      return
+    }
+
+    setDeletingServiceDesk(true)
+    try {
+      const response = await fetch('/api/integrations/manageengine-servicedesk/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          space_id: spaceId,
+          request_id: serviceDeskRequestId,
+          ticket_id: ticket.id
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setServiceDeskRequestId(null)
+        setServiceDeskComments([])
+        setServiceDeskAttachments([])
+        setServiceDeskTimeLogs([])
+        toast({
+          title: 'Success',
+          description: 'Ticket deleted from ServiceDesk successfully',
+        })
+        if (onSave) {
+          onSave(ticket)
+        }
+      } else {
+        toast({
+          title: 'Delete Failed',
+          description: result.error || 'Failed to delete ticket from ServiceDesk',
+          variant: 'destructive'
+        })
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete ticket from ServiceDesk',
+        variant: 'destructive'
+      })
+    } finally {
+      setDeletingServiceDesk(false)
+    }
+  }
 
   const loadAllData = async () => {
     if (!ticket?.id) return
@@ -212,7 +816,7 @@ export function TicketDetailModalEnhanced({
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="comments">
               Comments {comments.length > 0 && `(${comments.length})`}
@@ -227,6 +831,11 @@ export function TicketDetailModalEnhanced({
             <TabsTrigger value="time">
               Time {totalHours > 0 && `(${totalHours.toFixed(1)}h)`}
             </TabsTrigger>
+            {serviceDeskConfig?.isConfigured && (
+              <TabsTrigger value="servicedesk">
+                ServiceDesk {serviceDeskRequestId && `(${serviceDeskRequestId})`}
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="details" className="space-y-4 mt-4">
@@ -260,6 +869,25 @@ export function TicketDetailModalEnhanced({
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div>
+              <Label htmlFor="ticketType">Ticket Type</Label>
+              <Select value={ticketType} onValueChange={setTicketType}>
+                <SelectTrigger className="mt-1" id="ticketType">
+                  <SelectValue placeholder="Select ticket type (for ServiceDesk)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="Request">Request</SelectItem>
+                  <SelectItem value="Change Request">Change Request</SelectItem>
+                  <SelectItem value="Issue">Issue</SelectItem>
+                  <SelectItem value="Problem">Problem</SelectItem>
+                  <SelectItem value="Incident">Incident</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                This will be mapped to ServiceDesk category when pushing
+              </p>
             </div>
             {ticket.description && (
               <div>
@@ -481,10 +1109,365 @@ export function TicketDetailModalEnhanced({
               </div>
             </div>
           </TabsContent>
+
+          {serviceDeskConfig?.isConfigured && (
+            <TabsContent value="servicedesk" className="space-y-4 mt-4">
+              <div className="space-y-4">
+                {serviceDeskRequestId ? (
+                  <>
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <div className="text-sm text-muted-foreground">ServiceDesk Request ID</div>
+                            <div className="text-lg font-bold">{serviceDeskRequestId}</div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleUpdateServiceDeskTicket}
+                              disabled={updatingServiceDesk}
+                            >
+                              {updatingServiceDesk ? (
+                                <Loader className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <Edit className="h-4 w-4 mr-2" />
+                              )}
+                              Update Ticket
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleSyncFromServiceDesk}
+                              disabled={syncingFromServiceDesk}
+                            >
+                              {syncingFromServiceDesk ? (
+                                <Loader className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <ExternalLink className="h-4 w-4 mr-2" />
+                              )}
+                              Sync from ServiceDesk
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleDeleteServiceDeskTicket}
+                              disabled={deletingServiceDesk}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              {deletingServiceDesk ? (
+                                <Loader className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4 mr-2" />
+                              )}
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="mb-2 block">ServiceDesk Comments</Label>
+                        <div className="space-y-2 mb-4">
+                          {serviceDeskComments.map((comment: any, idx: number) => (
+                            <Card key={idx}>
+                              <CardContent className="p-3">
+                                <div className="text-sm">{comment.content || comment.description}</div>
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  {comment.created_time ? format(new Date(comment.created_time), 'MMM d, yyyy HH:mm') : ''}
+                                  {comment.technician?.name && ` by ${comment.technician.name}`}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <Textarea
+                            placeholder="Add a comment to ServiceDesk..."
+                            value={newServiceDeskComment}
+                            onChange={(e) => setNewServiceDeskComment(e.target.value)}
+                            className="flex-1"
+                          />
+                          <Button onClick={handleAddServiceDeskComment} disabled={!newServiceDeskComment.trim()}>
+                            <MessageSquare className="h-4 w-4 mr-2" />
+                            Add Comment
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="mb-2 block">ServiceDesk Attachments</Label>
+                        <div className="space-y-2 mb-4">
+                          {serviceDeskAttachments.map((attachment: any, idx: number) => (
+                            <Card key={idx}>
+                              <CardContent className="p-3 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <Paperclip className="h-5 w-5 text-muted-foreground" />
+                                  <div>
+                                    <div className="font-medium text-sm">{attachment.file_name || attachment.name}</div>
+                                    {attachment.file_size && (
+                                      <div className="text-xs text-muted-foreground">
+                                        {(attachment.file_size / 1024).toFixed(2)} KB
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                        <Input
+                          type="file"
+                          onChange={handleUploadServiceDeskAttachment}
+                          className="cursor-pointer"
+                        />
+                      </div>
+
+                      <div>
+                        <Label className="mb-2 block">ServiceDesk Time Logs</Label>
+                        <div className="space-y-2 mb-4">
+                          {serviceDeskTimeLogs.map((log: any, idx: number) => (
+                            <Card key={idx}>
+                              <CardContent className="p-3">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <div className="font-medium">
+                                      {log.hours || 0}h {log.minutes || 0}m
+                                    </div>
+                                    {log.description && (
+                                      <div className="text-sm text-muted-foreground mt-1">{log.description}</div>
+                                    )}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {log.technician?.name || log.created_by?.name}
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <Input
+                            type="number"
+                            step="0.25"
+                            placeholder="Hours"
+                            value={newServiceDeskTimeLog.hours}
+                            onChange={(e) => setNewServiceDeskTimeLog({ ...newServiceDeskTimeLog, hours: e.target.value })}
+                            className="w-24"
+                          />
+                          <Input
+                            type="number"
+                            placeholder="Minutes"
+                            value={newServiceDeskTimeLog.minutes}
+                            onChange={(e) => setNewServiceDeskTimeLog({ ...newServiceDeskTimeLog, minutes: e.target.value })}
+                            className="w-24"
+                          />
+                          <Input
+                            placeholder="Description (optional)"
+                            value={newServiceDeskTimeLog.description}
+                            onChange={(e) => setNewServiceDeskTimeLog({ ...newServiceDeskTimeLog, description: e.target.value })}
+                            className="flex-1"
+                          />
+                          <Button onClick={handleLogServiceDeskTime} disabled={!newServiceDeskTimeLog.hours}>
+                            <Clock className="h-4 w-4 mr-2" />
+                            Log Time
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="mb-2 block">Set Resolution</Label>
+                        <div className="flex gap-2">
+                          <Textarea
+                            placeholder="Enter resolution details..."
+                            value={newServiceDeskResolution}
+                            onChange={(e) => setNewServiceDeskResolution(e.target.value)}
+                            className="flex-1"
+                          />
+                          <Button onClick={handleSetServiceDeskResolution} disabled={!newServiceDeskResolution.trim()}>
+                            Set Resolution
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="mb-2 block">Link Tickets</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="ServiceDesk Request ID"
+                            value={newServiceDeskLink.requestId}
+                            onChange={(e) => setNewServiceDeskLink({ ...newServiceDeskLink, requestId: e.target.value })}
+                            className="flex-1"
+                          />
+                          <Select
+                            value={newServiceDeskLink.linkType}
+                            onValueChange={(value) => setNewServiceDeskLink({ ...newServiceDeskLink, linkType: value })}
+                          >
+                            <SelectTrigger className="w-40">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="relates_to">Relates To</SelectItem>
+                              <SelectItem value="duplicate">Duplicate</SelectItem>
+                              <SelectItem value="depends_on">Depends On</SelectItem>
+                              <SelectItem value="blocked_by">Blocked By</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button onClick={handleLinkServiceDeskTickets} disabled={!newServiceDeskLink.requestId}>
+                            <GitBranch className="h-4 w-4 mr-2" />
+                            Link
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="mb-2 block">Search ServiceDesk Tickets</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Search by subject, ID, or requester..."
+                            id="servicedesk-search"
+                            className="flex-1"
+                            onKeyDown={async (e) => {
+                              if (e.key === 'Enter' && e.currentTarget.value) {
+                                const spaceId = ticket?.spaces?.[0]?.spaceId || ticket?.spaces?.[0]?.space?.id
+                                if (!spaceId) return
+                                
+                                try {
+                                  const response = await fetch(
+                                    `/api/integrations/manageengine-servicedesk/list?space_id=${spaceId}&search=${encodeURIComponent(e.currentTarget.value)}&row_count=10`
+                                  )
+                                  if (response.ok) {
+                                    const data = await response.json()
+                                    toast({
+                                      title: 'Search Results',
+                                      description: `Found ${data.total || 0} ticket(s)`,
+                                    })
+                                    // In a full implementation, show results in a dialog
+                                  }
+                                } catch (error) {
+                                  console.error('Search error:', error)
+                                }
+                              }
+                            }}
+                          />
+                          <Button variant="outline">
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <Card>
+                    <CardContent className="p-4 text-center">
+                      <p className="text-sm text-muted-foreground mb-4">
+                        This ticket has not been pushed to ServiceDesk yet.
+                      </p>
+                      <Button
+                        onClick={handlePushToServiceDesk}
+                        disabled={pushingToServiceDesk}
+                      >
+                        {pushingToServiceDesk ? (
+                          <Loader className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                        )}
+                        Push to ServiceDesk
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </TabsContent>
+          )}
         </Tabs>
 
         <div className="flex gap-2 pt-4 border-t">
-          <Button onClick={() => onSave?.(ticket)} className="flex-1">
+          {serviceDeskConfig?.isConfigured && (
+            <Button
+              variant="outline"
+              onClick={handlePushToServiceDesk}
+              disabled={pushingToServiceDesk}
+            >
+              {pushingToServiceDesk ? (
+                <Loader className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <ExternalLink className="h-4 w-4 mr-2" />
+              )}
+              Push to ServiceDesk
+            </Button>
+          )}
+          <Button 
+            onClick={async () => {
+              // Save ticket type as attribute if set
+              if (ticketType && ticket?.id) {
+                try {
+                  // Check if attribute already exists
+                  const existingAttr = ticket.attributes?.find(attr => 
+                    attr.name.toLowerCase() === 'ticket type' || 
+                    attr.name.toLowerCase() === 'type' ||
+                    attr.name.toLowerCase() === 'tickettype'
+                  )
+                  
+                  if (existingAttr && (existingAttr as any).id) {
+                    // Update existing attribute by ID
+                    await fetch(`/api/tickets/${ticket.id}/attributes`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        attributeId: (existingAttr as any).id,
+                        value: ticketType
+                      })
+                    })
+                  } else {
+                    // Create new attribute (check if it already exists first to avoid error)
+                    try {
+                      await fetch(`/api/tickets/${ticket.id}/attributes`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          name: 'Ticket Type',
+                          displayName: 'Ticket Type',
+                          type: 'SELECT',
+                          value: ticketType
+                        })
+                      })
+                    } catch (createError: any) {
+                      // If attribute already exists, try to find and update it
+                      if (createError.message?.includes('already exists')) {
+                        // Reload ticket to get the attribute ID, then update
+                        const ticketRes = await fetch(`/api/tickets/${ticket.id}`)
+                        if (ticketRes.ok) {
+                          const updatedTicket = await ticketRes.json()
+                          const attr = updatedTicket.attributes?.find((a: any) => 
+                            a.name.toLowerCase() === 'ticket type'
+                          )
+                          if (attr?.id) {
+                            await fetch(`/api/tickets/${ticket.id}/attributes`, {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                attributeId: attr.id,
+                                value: ticketType
+                              })
+                            })
+                          }
+                        }
+                      }
+                    }
+                  }
+                } catch (error) {
+                  console.error('Error saving ticket type:', error)
+                  // Continue with save even if attribute save fails
+                }
+              }
+              onSave?.(ticket)
+            }} 
+            className="flex-1"
+          >
             Save Changes
           </Button>
           {onDelete && (

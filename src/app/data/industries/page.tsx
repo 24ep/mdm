@@ -16,18 +16,15 @@ export default function IndustriesPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL
-        if (!baseUrl) {
-          throw new Error('NEXT_PUBLIC_API_URL is not set')
-        }
-        const url = `${baseUrl}/industries?select=id,name,description&order=name.asc`
-        const res = await fetch(url, { cache: 'no-store' })
+        // Use Next.js API route for internal access
+        const res = await fetch('/api/industries?limit=1000', { cache: 'no-store' })
         if (!res.ok) {
           const text = await res.text()
           throw new Error(`Failed to fetch industries (${res.status}): ${text}`)
         }
-        const data = await res.json()
-        setIndustries(data)
+        const result = await res.json()
+        // API returns { industries: [...] }
+        setIndustries(result.industries || [])
       } catch (e: any) {
         setError(e?.message || 'Failed to load industries')
       } finally {

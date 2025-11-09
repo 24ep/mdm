@@ -8,16 +8,8 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { MessageSquare, Plus, X, Edit, Trash2, User } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-// Format date helper
-const formatTimeAgo = (date: Date): string => {
-  const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000)
-  if (seconds < 60) return 'just now'
-  if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`
-  if (seconds < 604800) return `${Math.floor(seconds / 86400)} days ago`
-  return date.toLocaleDateString()
-}
-import toast from 'react-hot-toast'
+import { formatTimeAgo } from '@/lib/date-formatters'
+import { showSuccess, showError, ToastMessages } from '@/lib/toast-utils'
 
 interface QueryComment {
   id: string
@@ -67,7 +59,7 @@ export function QueryComments({
 
   const handleAddComment = () => {
     if (!newComment.trim()) {
-      toast.error('Comment cannot be empty')
+      showError(ToastMessages.VALIDATION_ERROR)
       return
     }
 
@@ -85,12 +77,12 @@ export function QueryComments({
 
     setNewComment('')
     setSelectedLine(null)
-    toast.success('Comment added')
+    showSuccess('Comment added')
   }
 
   const handleUpdateComment = (commentId: string) => {
     if (!editContent.trim()) {
-      toast.error('Comment cannot be empty')
+      showError(ToastMessages.VALIDATION_ERROR)
       return
     }
 
@@ -100,7 +92,7 @@ export function QueryComments({
 
     setEditingId(null)
     setEditContent('')
-    toast.success('Comment updated')
+    showSuccess(ToastMessages.UPDATED)
   }
 
   const handleDeleteComment = (commentId: string) => {
@@ -108,7 +100,7 @@ export function QueryComments({
       if (onDeleteComment) {
         onDeleteComment(commentId)
       }
-      toast.success('Comment deleted')
+      showSuccess(ToastMessages.DELETED)
     }
   }
 

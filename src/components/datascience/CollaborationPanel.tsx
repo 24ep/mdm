@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { formatTimeAgo } from '@/lib/date-formatters'
 import { 
   Users,
   UserPlus,
@@ -335,17 +336,6 @@ export function CollaborationPanel({
     }
   }
 
-  const formatTime = (date: Date) => {
-    const now = new Date()
-    const diff = now.getTime() - date.getTime()
-    const minutes = Math.floor(diff / 60000)
-    
-    if (minutes < 1) return 'Just now'
-    if (minutes < 60) return `${minutes}m ago`
-    const hours = Math.floor(minutes / 60)
-    if (hours < 24) return `${hours}h ago`
-    return date.toLocaleDateString()
-  }
 
   // Auto-scroll chat to bottom
   useEffect(() => {
@@ -429,7 +419,7 @@ export function CollaborationPanel({
                   )}
                 </div>
                 <div className="text-xs text-gray-500">
-                  {participant.status === 'online' ? 'Online' : `Last seen ${formatTime(participant.lastSeen)}`}
+                  {participant.status === 'online' ? 'Online' : `Last seen ${formatTimeAgo(participant.lastSeen)}`}
                 </div>
               </div>
               
@@ -514,7 +504,7 @@ export function CollaborationPanel({
                     {message.content}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
-                    {message.userName} • {formatTime(message.timestamp)}
+                    {message.userName} • {formatTimeAgo(message.timestamp)}
                   </div>
                 </div>
               </div>

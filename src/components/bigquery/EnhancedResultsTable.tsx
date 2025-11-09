@@ -233,16 +233,16 @@ export function EnhancedResultsTable({ currentResult, formatDuration, formatByte
                   ))}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-background divide-y divide-border">
                 {paginatedResults.length === 0 ? (
                   <tr>
-                    <td colSpan={currentResult.columns.length} className="px-6 py-8 text-center text-sm text-gray-500">
+                    <td colSpan={currentResult.columns.length} className="px-6 py-8 text-center text-sm text-muted-foreground">
                       No results match your filters
                     </td>
                   </tr>
                 ) : (
                   paginatedResults.map((row, rowIndex) => (
-                    <tr key={rowIndex} className="hover:bg-gray-50">
+                    <tr key={rowIndex} className="hover:bg-muted/50">
                       {currentResult.columns.map(col => {
                         const cellValue = row[col]
                         const displayValue = cellValue !== null && cellValue !== undefined ? String(cellValue) : 'NULL'
@@ -252,7 +252,7 @@ export function EnhancedResultsTable({ currentResult, formatDuration, formatByte
                           <td
                             key={`${rowIndex}-${col}`}
                             className={`px-4 py-2 whitespace-nowrap text-sm ${
-                              isMatch ? 'bg-yellow-100' : 'text-gray-900'
+                              isMatch ? 'bg-yellow-100 dark:bg-yellow-900/30' : 'text-foreground'
                             }`}
                           >
                             {displayValue}
@@ -270,8 +270,8 @@ export function EnhancedResultsTable({ currentResult, formatDuration, formatByte
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="px-4 py-3 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
-          <div className="text-xs text-gray-500">
+        <div className="px-4 py-3 border-t border-border bg-muted flex items-center justify-between">
+          <div className="text-xs text-muted-foreground">
             Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, processedResults.length)} of {processedResults.length} rows
           </div>
           <div className="flex items-center gap-2">

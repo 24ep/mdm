@@ -13,13 +13,19 @@ export interface ChatKitColorAccent {
   icon?: string // Icon color (separate from primary accent)
 }
 
+export interface ChatKitSurfaceColors {
+  background?: string
+  foreground?: string
+  [key: string]: any
+}
+
 export interface ChatKitColor {
   accent?: ChatKitColorAccent
   background?: string
   text?: string
   secondary?: string
   border?: string
-  surface?: string
+  surface?: string | ChatKitSurfaceColors
   [key: string]: any
 }
 
@@ -169,6 +175,7 @@ export interface Chatbot {
   chatkitAgentId?: string
   chatkitApiKey?: string
   chatkitOptions?: ChatKitOptions
+  useChatKitInRegularStyle?: boolean // Enable ChatKit in regular style (only header config will be used)
   // Dify specific
   difyApiKey?: string
   difyOptions?: DifyOptions
@@ -180,6 +187,20 @@ export interface Chatbot {
   openaiAgentSdkReasoningEffort?: 'low' | 'medium' | 'high' // Reasoning effort for gpt-5
   openaiAgentSdkStore?: boolean // Whether to store reasoning traces
   openaiAgentSdkVectorStoreId?: string // Vector store ID for file search tool
+  openaiAgentSdkEnableWebSearch?: boolean // Enable web search tool for the agent
+  openaiAgentSdkEnableCodeInterpreter?: boolean // Enable code interpreter tool for the agent
+  openaiAgentSdkEnableComputerUse?: boolean // Enable computer use tool for the agent
+  openaiAgentSdkEnableImageGeneration?: boolean // Enable image generation tool for the agent
+  openaiAgentSdkGuardrails?: any // Guardrails configuration from workflow (read-only, configured in Agent Builder)
+  openaiAgentSdkRealtimePromptId?: string // Prompt ID for OpenAI Realtime API (alternative to instructions)
+  openaiAgentSdkRealtimePromptVersion?: string // Prompt version for OpenAI Realtime API
+  openaiAgentSdkInputGuardrails?: any // Input guardrails from workflow (read-only, configured in Agent Builder)
+  openaiAgentSdkOutputGuardrails?: any // Output guardrails from workflow (read-only, configured in Agent Builder)
+  openaiAgentSdkUseWorkflowConfig?: boolean // Whether to use workflow config or custom config (controls ALL configs: agent + UI)
+  openaiAgentSdkGreeting?: string // Greeting/start message for Agent SDK
+  openaiAgentSdkPlaceholder?: string // Input placeholder text for Agent SDK
+  openaiAgentSdkBackgroundColor?: string // Background color for Agent SDK chat UI
+  openaiAgentSdkWorkflowCode?: string // Custom workflow code from Agent Builder (pasted by user)
   // Style config
   logo?: string
   primaryColor: string
@@ -189,14 +210,61 @@ export interface Chatbot {
   borderColor: string
   borderWidth: string
   borderRadius: string
+  // Individual border width sides
+  borderWidthTop?: string
+  borderWidthRight?: string
+  borderWidthBottom?: string
+  borderWidthLeft?: string
+  // Individual border radius corners
+  borderRadiusTopLeft?: string
+  borderRadiusTopRight?: string
+  borderRadiusBottomRight?: string
+  borderRadiusBottomLeft?: string
   // Message bubble borders
   bubbleBorderColor?: string
   bubbleBorderWidth?: string
   bubbleBorderRadius?: string
+  // Individual bubble border width sides
+  bubbleBorderWidthTop?: string
+  bubbleBorderWidthRight?: string
+  bubbleBorderWidthBottom?: string
+  bubbleBorderWidthLeft?: string
+  // Individual bubble border radius corners
+  bubbleBorderRadiusTopLeft?: string
+  bubbleBorderRadiusTopRight?: string
+  bubbleBorderRadiusBottomRight?: string
+  bubbleBorderRadiusBottomLeft?: string
+  // Message bubble borders (separate for user and bot)
+  userBubbleBorderColor?: string
+  userBubbleBorderWidth?: string
+  userBubbleBorderRadius?: string
+  botBubbleBorderColor?: string
+  botBubbleBorderWidth?: string
+  botBubbleBorderRadius?: string
+  // Individual user bubble border radius corners
+  userBubbleBorderRadiusTopLeft?: string
+  userBubbleBorderRadiusTopRight?: string
+  userBubbleBorderRadiusBottomRight?: string
+  userBubbleBorderRadiusBottomLeft?: string
+  // Individual bot bubble border radius corners
+  botBubbleBorderRadiusTopLeft?: string
+  botBubbleBorderRadiusTopRight?: string
+  botBubbleBorderRadiusBottomRight?: string
+  botBubbleBorderRadiusBottomLeft?: string
   bubblePadding?: string
   // Message bubble padding (separate for user and bot)
   userBubblePadding?: string
   botBubblePadding?: string
+  // Individual bot message padding sides
+  botBubblePaddingTop?: string
+  botBubblePaddingRight?: string
+  botBubblePaddingBottom?: string
+  botBubblePaddingLeft?: string
+  // Individual user message padding sides
+  userBubblePaddingTop?: string
+  userBubblePaddingRight?: string
+  userBubblePaddingBottom?: string
+  userBubblePaddingLeft?: string
   // Message background colors
   userMessageBackgroundColor?: string
   botMessageBackgroundColor?: string
@@ -204,6 +272,10 @@ export interface Chatbot {
   userMessageFontColor?: string
   userMessageFontFamily?: string
   userMessageFontSize?: string
+  // Bot message font styling
+  botMessageFontColor?: string
+  botMessageFontFamily?: string
+  botMessageFontSize?: string
   // Message display options
   showMessageName?: boolean
   messageName?: string
@@ -215,10 +287,36 @@ export interface Chatbot {
   shadowBlur: string
   // Config
   conversationOpener: string
+  showStartConversation?: boolean // Show/hide the start conversation message
+  // Start Screen Prompts (for Agent SDK and other engines)
+  startScreenPrompts?: Array<{ label?: string; prompt: string; icon?: string }> // Quick prompt buttons shown when chat starts
+  // Start Screen Prompts Styling
+  startScreenPromptsPosition?: 'center' | 'bottom' | 'list' // Position of prompts
+  startScreenPromptsIconDisplay?: 'suffix' | 'show-all' | 'none' // How to display icons
+  startScreenPromptsBackgroundColor?: string // Background color of prompt buttons
+  startScreenPromptsFontColor?: string // Font color of prompt buttons
+  startScreenPromptsBorderColor?: string // Border color of prompt buttons
+  startScreenPromptsBorderWidth?: string // Border width of prompt buttons
+  startScreenPromptsBorderRadius?: string // Border radius of prompt buttons
+  // Conversation Opener Styling
+  conversationOpenerFontSize?: string
+  conversationOpenerFontColor?: string
+  conversationOpenerFontFamily?: string
+  conversationOpenerPosition?: 'center' | 'left' | 'right' | 'top' | 'bottom'
+  conversationOpenerAlignment?: 'left' | 'center' | 'right' | 'justify'
+  conversationOpenerBackgroundColor?: string
+  conversationOpenerPadding?: string
+  conversationOpenerBorderRadius?: string
+  conversationOpenerFontWeight?: string | number
+  conversationOpenerLineHeight?: string | number
   followUpQuestions: string[]
   enableFileUpload: boolean
   showCitations: boolean
   enableVoiceAgent?: boolean
+  voiceProvider?: 'browser' | 'openai-realtime' | 'agentbuilder' // Voice provider: 'browser' for Web Speech API, 'openai-realtime' for OpenAI Realtime API, 'agentbuilder' for Agent Builder voice
+  voiceUIStyle?: 'chat' | 'wave' // Voice UI style: 'chat' for chat-like UI, 'wave' for background wave animation
+  showMessageFeedback?: boolean // Show like/dislike buttons on messages
+  showMessageRetry?: boolean // Show retry button on messages
   // Deployment
   deploymentType: 'popover' | 'fullpage' | 'popup-center'
   embedCode?: string
@@ -227,6 +325,8 @@ export interface Chatbot {
   widgetPosition: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | 'bottom-center' | 'top-center'
   widgetSize: string
   widgetBackgroundColor: string
+  widgetBackgroundBlur?: number // Blur percentage (0-100) for glassmorphism effect
+  widgetBackgroundOpacity?: number // Background opacity (0-100) for glassmorphism effect
   widgetBorderColor: string
   widgetBorderWidth: string
   widgetBorderRadius: string
@@ -243,26 +343,54 @@ export interface Chatbot {
   widgetZIndex: number
   showNotificationBadge: boolean
   notificationBadgeColor: string
+  popoverPosition?: 'top' | 'left' // Position of popover relative to widget: 'top' = above widget, 'left' = to the left of widget
+  widgetPopoverMargin?: string // Margin/spacing between widget button and popover window
   // Chat window size
   chatWindowWidth: string
   chatWindowHeight: string
+  // Chat window background blur for glassmorphism
+  chatWindowBackgroundBlur?: number // Blur percentage (0-100) for glassmorphism effect
+  chatWindowBackgroundOpacity?: number // Background opacity (0-100) for glassmorphism effect
+  // Overlay configuration (shown when chat is open)
+  overlayEnabled?: boolean // Enable/disable overlay when chat is open
+  overlayColor?: string // Overlay background color (hex, rgb, rgba)
+  overlayOpacity?: number // Overlay opacity (0-100)
+  overlayBlur?: number // Overlay blur percentage (0-100) for glassmorphism effect
   // Chat window border (popover/fullpage frame)
   chatWindowBorderColor?: string
   chatWindowBorderWidth?: string
   chatWindowBorderRadius?: string
+  // Individual chat window border width sides
+  chatWindowBorderWidthTop?: string
+  chatWindowBorderWidthRight?: string
+  chatWindowBorderWidthBottom?: string
+  chatWindowBorderWidthLeft?: string
+  // Individual chat window border radius corners
+  chatWindowBorderRadiusTopLeft?: string
+  chatWindowBorderRadiusTopRight?: string
+  chatWindowBorderRadiusBottomRight?: string
+  chatWindowBorderRadiusBottomLeft?: string
   // Chat window shadow
   chatWindowShadowColor?: string
   chatWindowShadowBlur?: string
   // Chat window padding
   chatWindowPaddingX?: string
   chatWindowPaddingY?: string
+  // Individual chat window padding sides
+  chatWindowPaddingTop?: string
+  chatWindowPaddingRight?: string
+  chatWindowPaddingBottom?: string
+  chatWindowPaddingLeft?: string
   // Typing indicator
   typingIndicatorStyle?: 'spinner' | 'dots' | 'pulse' | 'bounce'
   typingIndicatorColor?: string
+  showThinkingMessage?: boolean // Show "Thinking..." text like OpenAI
+  thinkingMessageText?: string // Custom text for thinking message (default: "Thinking...")
   // Header
   headerTitle?: string
   headerDescription?: string
   headerLogo?: string
+  headerShowLogo?: boolean // Show/hide header logo
   headerBgColor?: string
   headerFontColor?: string
   headerFontFamily?: string
@@ -277,6 +405,11 @@ export interface Chatbot {
   headerBorderColor?: string
   headerPaddingX?: string
   headerPaddingY?: string
+  // Individual header padding sides
+  headerPaddingTop?: string
+  headerPaddingRight?: string
+  headerPaddingBottom?: string
+  headerPaddingLeft?: string
   // Close Button
   closeButtonOffsetX?: string
   closeButtonOffsetY?: string
@@ -285,22 +418,60 @@ export interface Chatbot {
   footerBorderColor?: string
   footerBorderWidth?: string
   footerBorderRadius?: string
+  // Individual footer border width sides
+  footerBorderWidthTop?: string
+  footerBorderWidthRight?: string
+  footerBorderWidthBottom?: string
+  footerBorderWidthLeft?: string
+  // Individual footer border radius corners
+  footerBorderRadiusTopLeft?: string
+  footerBorderRadiusTopRight?: string
+  footerBorderRadiusBottomRight?: string
+  footerBorderRadiusBottomLeft?: string
   footerPaddingX?: string
   footerPaddingY?: string
+  // Individual footer padding sides
+  footerPaddingTop?: string
+  footerPaddingRight?: string
+  footerPaddingBottom?: string
+  footerPaddingLeft?: string
   footerInputBgColor?: string
   footerInputBorderColor?: string
   footerInputBorderWidth?: string
   footerInputBorderRadius?: string
+  // Individual footer input border width sides
+  footerInputBorderWidthTop?: string
+  footerInputBorderWidthRight?: string
+  footerInputBorderWidthBottom?: string
+  footerInputBorderWidthLeft?: string
+  // Individual footer input border radius corners
+  footerInputBorderRadiusTopLeft?: string
+  footerInputBorderRadiusTopRight?: string
+  footerInputBorderRadiusBottomRight?: string
+  footerInputBorderRadiusBottomLeft?: string
   footerInputFontColor?: string
   // Send Button
   sendButtonIcon?: string
-  sendButtonRounded?: boolean
+  sendButtonRounded?: boolean // Deprecated - use sendButtonBorderRadius instead
+  sendButtonBorderRadius?: string
+  sendButtonBorderRadiusTopLeft?: string
+  sendButtonBorderRadiusTopRight?: string
+  sendButtonBorderRadiusBottomRight?: string
+  sendButtonBorderRadiusBottomLeft?: string
   sendButtonBgColor?: string
   sendButtonIconColor?: string
   sendButtonShadowColor?: string
   sendButtonShadowBlur?: string
   sendButtonPaddingX?: string
   sendButtonPaddingY?: string
+  sendButtonPadding?: string
+  sendButtonPaddingTop?: string
+  sendButtonPaddingRight?: string
+  sendButtonPaddingBottom?: string
+  sendButtonPaddingLeft?: string
+  sendButtonWidth?: string // Send button width (default: same as height for square)
+  sendButtonHeight?: string // Send button height (default: same as width for square)
+  sendButtonPosition?: 'inside' | 'outside' // Send button position: inside input or outside
   // File Upload Layout
   fileUploadLayout?: 'attach-first' | 'input-first'
   // Avatar (Bot/Assistant)

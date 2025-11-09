@@ -218,7 +218,7 @@ export default function CustomersPage() {
   const handleColumnFilter = (field: string, value: any) => {
     setColumnFilters(prev => ({
       ...prev,
-      [field]: value
+      [field]: value === '__all__' ? '' : value
     }))
     setPage(1)
   }
@@ -273,7 +273,7 @@ export default function CustomersPage() {
   // Render filter input based on attribute type
   const renderFilterInput = (attribute: any) => {
     const fieldName = attribute.name || attribute.field_name
-    const currentValue = columnFilters[fieldName] || ''
+    const currentValue = columnFilters[fieldName] || '__all__'
     
     switch (attribute.data_type) {
       case 'text':
@@ -332,7 +332,7 @@ export default function CustomersPage() {
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All</SelectItem>
+              <SelectItem value="__all__">All</SelectItem>
               <SelectItem value="true">Yes</SelectItem>
               <SelectItem value="false">No</SelectItem>
             </SelectContent>
@@ -349,12 +349,16 @@ export default function CustomersPage() {
               <SelectValue placeholder={`All ${attribute.display_name || fieldName}`} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All {attribute.display_name || fieldName}</SelectItem>
-              {attribute.options?.map((option: any) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label || option.value}
-                </SelectItem>
-              ))}
+              <SelectItem value="__all__">All {attribute.display_name || fieldName}</SelectItem>
+              {attribute.options?.map((option: any) => {
+                const optionValue = String(option.value ?? '')
+                if (optionValue === '') return null
+                return (
+                  <SelectItem key={optionValue} value={optionValue}>
+                    {option.label || option.value}
+                  </SelectItem>
+                )
+              })}
             </SelectContent>
           </Select>
         )

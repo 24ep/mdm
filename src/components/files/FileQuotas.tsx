@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -49,6 +50,7 @@ interface QuotaData {
 }
 
 export function FileQuotas({ spaceId }: FileQuotasProps) {
+  const { data: session } = useSession()
   const [quota, setQuota] = useState<QuotaData | null>(null)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -63,19 +65,21 @@ export function FileQuotas({ spaceId }: FileQuotasProps) {
   })
 
   useEffect(() => {
-    if (spaceId) {
+    if (spaceId && session?.user?.id) {
       fetchQuota()
     }
-  }, [spaceId])
+  }, [spaceId, session?.user?.id])
 
   const fetchQuota = async () => {
+    if (!session?.user?.id) return
+
     try {
       setLoading(true)
       setError(null)
 
       const response = await fetch(`/api/files/quotas?spaceId=${spaceId}`, {
         headers: {
-          'x-user-id': 'current-user-id' // TODO: Replace with actual user ID
+          'x-user-id': session.user.id
         }
       })
 
@@ -104,11 +108,13 @@ export function FileQuotas({ spaceId }: FileQuotasProps) {
       setSaving(true)
       setError(null)
 
+      if (!session?.user?.id) return
+
       const response = await fetch('/api/files/quotas', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': 'current-user-id' // TODO: Replace with actual user ID
+          'x-user-id': session.user.id
         },
         body: JSON.stringify({
           spaceId,

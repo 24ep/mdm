@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { formatDateTime } from '@/lib/date-formatters'
 import { 
   History, 
   Plus, 
@@ -164,15 +165,6 @@ export function VersioningDialog({
     }))
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -249,7 +241,7 @@ export function VersioningDialog({
                       <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                         <div className="flex items-center space-x-1">
                           <Calendar className="h-4 w-4" />
-                          <span>{formatDate(version.created_at)}</span>
+                          <span>{formatDateTime(version.created_at)}</span>
                         </div>
                         <div className="flex items-center space-x-1">
                           <User className="h-4 w-4" />

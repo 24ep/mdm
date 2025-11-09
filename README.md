@@ -150,17 +150,18 @@ customer-data-management/
 ### **Environment Variables**
 See `env.example` for all required environment variables:
 
-- **Supabase:** Project URL, API keys, and service role key
+- **Database:** PostgreSQL connection string
+- **PostgREST:** External REST API configuration
 - **Application:** App-specific settings and configuration
 
 ### **Database Schema**
-The application uses a comprehensive Supabase database schema with:
-- **Users & Authentication:** Supabase Auth integration
+The application uses a comprehensive PostgreSQL database schema with:
+- **Users & Authentication:** NextAuth.js integration
 - **Customer Data:** Complete customer information
 - **Assignment System:** Task and workflow management
 - **Data Models:** Flexible data structure system
 - **Audit Trail:** Activity logging and tracking
-- **Row Level Security:** Database-level access control
+- **Row Level Security:** Database-level access control (PostgreSQL RLS)
 
 ## 📊 **API Documentation**
 
@@ -200,15 +201,15 @@ The application uses a comprehensive Supabase database schema with:
 ## 🔒 **Security**
 
 ### **Authentication & Authorization**
-- **Supabase Auth:** Secure authentication with multiple providers
-- **Row Level Security:** Database-level access control
+- **NextAuth.js:** Secure authentication with multiple providers
+- **Row Level Security:** Database-level access control (PostgreSQL RLS)
 - **Session Management:** Automatic token handling
 - **OAuth Integration:** Google, Azure AD support
 
 ### **Data Protection**
 - **Row Level Security:** Database-level access control
 - **Input Validation:** Comprehensive data validation
-- **SQL Injection Prevention:** Supabase client protection
+- **SQL Injection Prevention:** Prisma ORM and parameterized queries
 - **XSS Protection:** Content Security Policy
 
 ## 📈 **Performance**

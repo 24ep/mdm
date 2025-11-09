@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 import type { SectionProps } from './types'
 
 export function ThemeSection({ formData, setFormData, chatkitOptions }: SectionProps) {
@@ -105,59 +106,34 @@ export function ThemeSection({ formData, setFormData, chatkitOptions }: SectionP
             {/* Accent Color */}
             <div className="space-y-2">
               <Label>Accent Color (Primary)</Label>
-              <div className="flex gap-2">
-                <Input
-                  type="color"
-                  value={chatkitOptions?.theme?.color?.accent?.primary || chatkitOptions?.theme?.primaryColor || '#3b82f6'}
-                  onChange={(e) => {
-                    const theme = chatkitOptions?.theme || {}
-                    setFormData({
-                      ...formData,
-                      chatkitOptions: {
-                        ...chatkitOptions,
-                        theme: {
-                          ...theme,
-                          color: {
-                            ...theme.color,
-                            accent: {
-                              ...theme.color?.accent,
-                              primary: e.target.value
-                            }
-                          },
-                          // Legacy support
-                          primaryColor: e.target.value
-                        }
+              <ColorInput
+                value={chatkitOptions?.theme?.color?.accent?.primary || chatkitOptions?.theme?.primaryColor || '#3b82f6'}
+                onChange={(color) => {
+                  const theme = chatkitOptions?.theme || {}
+                  setFormData({
+                    ...formData,
+                    chatkitOptions: {
+                      ...chatkitOptions,
+                      theme: {
+                        ...theme,
+                        color: {
+                          ...theme.color,
+                          accent: {
+                            ...theme.color?.accent,
+                            primary: color
+                          }
+                        },
+                        // Legacy support
+                        primaryColor: color
                       }
-                    } as any)
-                  }}
-                  className="w-16 h-10"
-                />
-                <Input
-                  value={chatkitOptions?.theme?.color?.accent?.primary || chatkitOptions?.theme?.primaryColor || '#3b82f6'}
-                  onChange={(e) => {
-                    const theme = chatkitOptions?.theme || {}
-                    setFormData({
-                      ...formData,
-                      chatkitOptions: {
-                        ...chatkitOptions,
-                        theme: {
-                          ...theme,
-                          color: {
-                            ...theme.color,
-                            accent: {
-                              ...theme.color?.accent,
-                              primary: e.target.value
-                            }
-                          },
-                          // Legacy support
-                          primaryColor: e.target.value
-                        }
-                      }
-                    } as any)
-                  }}
-                  placeholder="#3b82f6"
-                />
-              </div>
+                    }
+                  } as any)
+                }}
+                allowImageVideo={false}
+                className="relative"
+                placeholder="#3b82f6"
+                inputClassName="h-8 text-xs pl-7"
+              />
             </div>
 
             <div className="space-y-2">
@@ -199,56 +175,32 @@ export function ThemeSection({ formData, setFormData, chatkitOptions }: SectionP
               <p className="text-xs text-muted-foreground">
                 Color for icons (if different from accent color)
               </p>
-              <div className="flex gap-2">
-                <Input
-                  type="color"
-                  value={chatkitOptions?.theme?.color?.accent?.icon || chatkitOptions?.theme?.color?.accent?.primary || chatkitOptions?.theme?.primaryColor || '#3b82f6'}
-                  onChange={(e) => {
-                    const theme = chatkitOptions?.theme || {}
-                    setFormData({
-                      ...formData,
-                      chatkitOptions: {
-                        ...chatkitOptions,
-                        theme: {
-                          ...theme,
-                          color: {
-                            ...theme.color,
-                            accent: {
-                              ...theme.color?.accent,
-                              icon: e.target.value
-                            }
+              <ColorInput
+                value={chatkitOptions?.theme?.color?.accent?.icon || chatkitOptions?.theme?.color?.accent?.primary || chatkitOptions?.theme?.primaryColor || '#3b82f6'}
+                onChange={(color) => {
+                  const theme = chatkitOptions?.theme || {}
+                  setFormData({
+                    ...formData,
+                    chatkitOptions: {
+                      ...chatkitOptions,
+                      theme: {
+                        ...theme,
+                        color: {
+                          ...theme.color,
+                          accent: {
+                            ...theme.color?.accent,
+                            icon: color
                           }
                         }
                       }
-                    } as any)
-                  }}
-                  className="w-16 h-10"
-                />
-                <Input
-                  value={chatkitOptions?.theme?.color?.accent?.icon || chatkitOptions?.theme?.color?.accent?.primary || chatkitOptions?.theme?.primaryColor || '#3b82f6'}
-                  onChange={(e) => {
-                    const theme = chatkitOptions?.theme || {}
-                    setFormData({
-                      ...formData,
-                      chatkitOptions: {
-                        ...chatkitOptions,
-                        theme: {
-                          ...theme,
-                          color: {
-                            ...theme.color,
-                            accent: {
-                              ...theme.color?.accent,
-                              icon: e.target.value
-                            }
-                          }
-                        }
-                      }
-                    } as any)
-                  }}
-                  placeholder="#3b82f6"
-                  className="flex-1"
-                />
-              </div>
+                    }
+                  } as any)
+                }}
+                allowImageVideo={false}
+                className="relative"
+                placeholder="#3b82f6"
+                inputClassName="h-8 text-xs pl-7"
+              />
               <p className="text-xs text-muted-foreground">
                 Leave empty to use accent color for icons
               </p>
@@ -258,243 +210,175 @@ export function ThemeSection({ formData, setFormData, chatkitOptions }: SectionP
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Background Color (optional)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="color"
-                    value={chatkitOptions?.theme?.color?.background || chatkitOptions?.theme?.backgroundColor || '#ffffff'}
-                    onChange={(e) => {
-                      const theme = chatkitOptions?.theme || {}
-                      setFormData({
-                        ...formData,
-                        chatkitOptions: {
-                          ...chatkitOptions,
-                          theme: {
-                            ...theme,
-                            color: {
-                              ...theme.color,
-                              background: e.target.value
-                            },
-                            backgroundColor: e.target.value
-                          }
+                <ColorInput
+                  value={chatkitOptions?.theme?.color?.background || chatkitOptions?.theme?.backgroundColor || '#ffffff'}
+                  onChange={(color) => {
+                    const theme = chatkitOptions?.theme || {}
+                    setFormData({
+                      ...formData,
+                      chatkitOptions: {
+                        ...chatkitOptions,
+                        theme: {
+                          ...theme,
+                          color: {
+                            ...theme.color,
+                            background: color
+                          },
+                          backgroundColor: color
                         }
-                      } as any)
-                    }}
-                    className="w-16 h-10"
-                  />
-                  <Input
-                    value={chatkitOptions?.theme?.color?.background || chatkitOptions?.theme?.backgroundColor || '#ffffff'}
-                    onChange={(e) => {
-                      const theme = chatkitOptions?.theme || {}
-                      setFormData({
-                        ...formData,
-                        chatkitOptions: {
-                          ...chatkitOptions,
-                          theme: {
-                            ...theme,
-                            color: {
-                              ...theme.color,
-                              background: e.target.value
-                            },
-                            backgroundColor: e.target.value
-                          }
-                        }
-                      } as any)
-                    }}
-                    placeholder="#ffffff"
-                  />
-                </div>
+                      }
+                    } as any)
+                  }}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="#ffffff"
+                  inputClassName="h-8 text-xs pl-7"
+                />
               </div>
 
               <div className="space-y-2">
                 <Label>Text Color (optional)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="color"
-                    value={chatkitOptions?.theme?.color?.text || chatkitOptions?.theme?.textColor || '#000000'}
-                    onChange={(e) => {
-                      const theme = chatkitOptions?.theme || {}
-                      setFormData({
-                        ...formData,
-                        chatkitOptions: {
-                          ...chatkitOptions,
-                          theme: {
-                            ...theme,
-                            color: {
-                              ...theme.color,
-                              text: e.target.value
-                            },
-                            textColor: e.target.value
-                          }
+                <ColorInput
+                  value={chatkitOptions?.theme?.color?.text || chatkitOptions?.theme?.textColor || '#000000'}
+                  onChange={(color) => {
+                    const theme = chatkitOptions?.theme || {}
+                    setFormData({
+                      ...formData,
+                      chatkitOptions: {
+                        ...chatkitOptions,
+                        theme: {
+                          ...theme,
+                          color: {
+                            ...theme.color,
+                            text: color
+                          },
+                          textColor: color
                         }
-                      } as any)
-                    }}
-                    className="w-16 h-10"
-                  />
-                  <Input
-                    value={chatkitOptions?.theme?.color?.text || chatkitOptions?.theme?.textColor || '#000000'}
-                    onChange={(e) => {
-                      const theme = chatkitOptions?.theme || {}
-                      setFormData({
-                        ...formData,
-                        chatkitOptions: {
-                          ...chatkitOptions,
-                          theme: {
-                            ...theme,
-                            color: {
-                              ...theme.color,
-                              text: e.target.value
-                            },
-                            textColor: e.target.value
-                          }
-                        }
-                      } as any)
-                    }}
-                    placeholder="#000000"
-                  />
-                </div>
+                      }
+                    } as any)
+                  }}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="#000000"
+                  inputClassName="h-8 text-xs pl-7"
+                />
               </div>
 
               <div className="space-y-2">
                 <Label>Secondary Color (optional)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="color"
-                    value={chatkitOptions?.theme?.color?.secondary || chatkitOptions?.theme?.secondaryColor || '#6b7280'}
-                    onChange={(e) => {
-                      const theme = chatkitOptions?.theme || {}
-                      setFormData({
-                        ...formData,
-                        chatkitOptions: {
-                          ...chatkitOptions,
-                          theme: {
-                            ...theme,
-                            color: {
-                              ...theme.color,
-                              secondary: e.target.value
-                            },
-                            secondaryColor: e.target.value
-                          }
+                <ColorInput
+                  value={chatkitOptions?.theme?.color?.secondary || chatkitOptions?.theme?.secondaryColor || '#6b7280'}
+                  onChange={(color) => {
+                    const theme = chatkitOptions?.theme || {}
+                    setFormData({
+                      ...formData,
+                      chatkitOptions: {
+                        ...chatkitOptions,
+                        theme: {
+                          ...theme,
+                          color: {
+                            ...theme.color,
+                            secondary: color
+                          },
+                          secondaryColor: color
                         }
-                      } as any)
-                    }}
-                    className="w-16 h-10"
-                  />
-                  <Input
-                    value={chatkitOptions?.theme?.color?.secondary || chatkitOptions?.theme?.secondaryColor || '#6b7280'}
-                    onChange={(e) => {
-                      const theme = chatkitOptions?.theme || {}
-                      setFormData({
-                        ...formData,
-                        chatkitOptions: {
-                          ...chatkitOptions,
-                          theme: {
-                            ...theme,
-                            color: {
-                              ...theme.color,
-                              secondary: e.target.value
-                            },
-                            secondaryColor: e.target.value
-                          }
-                        }
-                      } as any)
-                    }}
-                    placeholder="#6b7280"
-                  />
-                </div>
+                      }
+                    } as any)
+                  }}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="#6b7280"
+                  inputClassName="h-8 text-xs pl-7"
+                />
               </div>
 
               <div className="space-y-2">
                 <Label>Border Color (optional)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="color"
-                    value={chatkitOptions?.theme?.color?.border || '#e5e7eb'}
-                    onChange={(e) => {
-                      const theme = chatkitOptions?.theme || {}
-                      setFormData({
-                        ...formData,
-                        chatkitOptions: {
-                          ...chatkitOptions,
-                          theme: {
-                            ...theme,
-                            color: {
-                              ...theme.color,
-                              border: e.target.value
-                            }
+                <ColorInput
+                  value={chatkitOptions?.theme?.color?.border || '#e5e7eb'}
+                  onChange={(color) => {
+                    const theme = chatkitOptions?.theme || {}
+                    setFormData({
+                      ...formData,
+                      chatkitOptions: {
+                        ...chatkitOptions,
+                        theme: {
+                          ...theme,
+                          color: {
+                            ...theme.color,
+                            border: color
                           }
                         }
-                      } as any)
-                    }}
-                    className="w-16 h-10"
-                  />
-                  <Input
-                    value={chatkitOptions?.theme?.color?.border || '#e5e7eb'}
-                    onChange={(e) => {
-                      const theme = chatkitOptions?.theme || {}
-                      setFormData({
-                        ...formData,
-                        chatkitOptions: {
-                          ...chatkitOptions,
-                          theme: {
-                            ...theme,
-                            color: {
-                              ...theme.color,
-                              border: e.target.value
-                            }
-                          }
-                        }
-                      } as any)
-                    }}
-                    placeholder="#e5e7eb"
-                  />
-                </div>
+                      }
+                    } as any)
+                  }}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="#e5e7eb"
+                  inputClassName="h-8 text-xs pl-7"
+                />
               </div>
 
               <div className="space-y-2">
-                <Label>Surface Color (optional)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="color"
-                    value={chatkitOptions?.theme?.color?.surface || '#f9fafb'}
-                    onChange={(e) => {
-                      const theme = chatkitOptions?.theme || {}
-                      setFormData({
-                        ...formData,
-                        chatkitOptions: {
-                          ...chatkitOptions,
-                          theme: {
-                            ...theme,
-                            color: {
-                              ...theme.color,
-                              surface: e.target.value
+                <Label>Surface Background (optional)</Label>
+                <ColorInput
+                  value={chatkitOptions?.theme?.color?.surface?.background || (typeof chatkitOptions?.theme?.color?.surface === 'string' ? chatkitOptions.theme.color.surface : '#f9fafb')}
+                  onChange={(color) => {
+                    const theme = chatkitOptions?.theme || {}
+                    const currentSurface = theme.color?.surface || {}
+                    setFormData({
+                      ...formData,
+                      chatkitOptions: {
+                        ...chatkitOptions,
+                        theme: {
+                          ...theme,
+                          color: {
+                            ...theme.color,
+                            surface: {
+                              ...(typeof currentSurface === 'object' ? currentSurface : {}),
+                              background: color
                             }
                           }
                         }
-                      } as any)
-                    }}
-                    className="w-16 h-10"
-                  />
-                  <Input
-                    value={chatkitOptions?.theme?.color?.surface || '#f9fafb'}
-                    onChange={(e) => {
-                      const theme = chatkitOptions?.theme || {}
-                      setFormData({
-                        ...formData,
-                        chatkitOptions: {
-                          ...chatkitOptions,
-                          theme: {
-                            ...theme,
-                            color: {
-                              ...theme.color,
-                              surface: e.target.value
+                      }
+                    } as any)
+                  }}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="#f9fafb"
+                  inputClassName="h-8 text-xs pl-7"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Surface Foreground (optional)</Label>
+                <ColorInput
+                  value={chatkitOptions?.theme?.color?.surface?.foreground || '#000000'}
+                  onChange={(color) => {
+                    const theme = chatkitOptions?.theme || {}
+                    const currentSurface = theme.color?.surface || {}
+                    setFormData({
+                      ...formData,
+                      chatkitOptions: {
+                        ...chatkitOptions,
+                        theme: {
+                          ...theme,
+                          color: {
+                            ...theme.color,
+                            surface: {
+                              ...(typeof currentSurface === 'object' ? currentSurface : {}),
+                              foreground: color
                             }
                           }
                         }
-                      } as any)
-                    }}
-                    placeholder="#f9fafb"
-                  />
-                </div>
+                      }
+                    } as any)
+                  }}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="#000000"
+                  inputClassName="h-8 text-xs pl-7"
+                />
               </div>
             </div>
           </div>

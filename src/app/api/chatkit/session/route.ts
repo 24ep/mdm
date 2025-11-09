@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
+import { decryptApiKey } from '@/lib/encryption'
+import { getSecretsManager } from '@/lib/secrets-manager'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { createAuditContext } from '@/lib/audit-context-helper'
 
 const prisma = new PrismaClient()
 
@@ -34,7 +39,18 @@ export async function POST(request: NextRequest) {
         })
 
         if (openaiConfig?.isConfigured && openaiConfig.apiKey) {
-          openaiApiKey = openaiConfig.apiKey
+          // Check if stored in Vault
+          if (openaiConfig.apiKey.startsWith('vault://')) {
+            const secretsManager = getSecretsManager()
+            // Try to get session for audit logging
+            const session = await getServerSession(authOptions).catch(() => null)
+            const auditContext = createAuditContext(request, session?.user || null, 'ChatKit session creation')
+            
+            openaiApiKey = await secretsManager.getApiKey('openai', auditContext)
+          } else {
+            // Decrypt the API key if it's encrypted in database
+            openaiApiKey = decryptApiKey(openaiConfig.apiKey) || openaiConfig.apiKey
+          }
         }
       } catch (dbError) {
         console.error('Error fetching OpenAI config from database:', dbError)
@@ -114,8 +130,15 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('ChatKit session error:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorStack = error instanceof Error ? error.stack : undefined
+    
     return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+      { 
+        error: 'Failed to create ChatKit session',
+        details: errorMessage || 'The server had an error while processing your request. Sorry about that!',
+        fullError: process.env.NODE_ENV === 'development' ? { message: errorMessage, stack: errorStack } : undefined
+      },
       { status: 500 }
     )
   }

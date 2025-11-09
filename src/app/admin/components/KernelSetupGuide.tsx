@@ -43,7 +43,7 @@ import {
   Network
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import toast from 'react-hot-toast'
+import { showSuccess, ToastMessages } from '@/lib/toast-utils'
 
 interface SetupGuideProps {
   onClose?: () => void
@@ -67,7 +67,7 @@ export function KernelSetupGuide({ onClose }: SetupGuideProps) {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
-    toast.success('Copied to clipboard')
+    showSuccess(ToastMessages.COPIED)
   }
 
   const downloadScript = (content: string, filename: string) => {
@@ -78,7 +78,7 @@ export function KernelSetupGuide({ onClose }: SetupGuideProps) {
     link.download = filename
     link.click()
     URL.revokeObjectURL(url)
-    toast.success(`Downloaded ${filename}`)
+    showSuccess(`Downloaded ${filename}`)
   }
 
   const setupScripts = {

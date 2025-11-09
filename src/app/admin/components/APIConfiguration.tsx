@@ -39,7 +39,7 @@ import {
   Image,
   Code
 } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { showSuccess, showError, ToastMessages } from '@/lib/toast-utils'
 import { cn } from '@/lib/utils'
 
 interface AIProvider {
@@ -384,7 +384,7 @@ export function APIConfiguration() {
       })
 
       if (response.ok) {
-        toast.success(`${selectedProvider.name} configured successfully`)
+        showSuccess(`${selectedProvider.name} configured successfully`)
         setShowConfigDialog(false)
         setConfig({
           apiKey: '',
@@ -396,11 +396,11 @@ export function APIConfiguration() {
         loadProviders()
       } else {
         const error = await response.json()
-        toast.error(error.error || 'Failed to configure provider')
+        showError(error.error || 'Failed to configure provider')
       }
     } catch (error) {
       console.error('Error configuring provider:', error)
-      toast.error('Failed to configure provider')
+      showError('Failed to configure provider')
     }
   }
 
@@ -414,13 +414,13 @@ export function APIConfiguration() {
       setTestResults(prev => ({ ...prev, [providerId]: result }))
 
       if (response.ok) {
-        toast.success(`${providerId} test successful`)
+        showSuccess(`${providerId} test successful`)
       } else {
-        toast.error(result.error || 'Provider test failed')
+        showError(result.error || 'Provider test failed')
       }
     } catch (error) {
       console.error('Error testing provider:', error)
-      toast.error('Provider test failed')
+      showError('Provider test failed')
     }
   }
 
@@ -433,15 +433,15 @@ export function APIConfiguration() {
       })
 
       if (response.ok) {
-        toast.success('Configuration deleted successfully')
+        showSuccess(ToastMessages.DELETED)
         loadProviders()
       } else {
         const error = await response.json()
-        toast.error(error.error || 'Failed to delete configuration')
+        showError(error.error || ToastMessages.DELETE_ERROR)
       }
     } catch (error) {
       console.error('Error deleting configuration:', error)
-      toast.error('Failed to delete configuration')
+      showError(ToastMessages.DELETE_ERROR)
     }
   }
 

@@ -26,15 +26,15 @@ export function TabBar({
   onCreateNewTab
 }: TabBarProps) {
   return (
-    <div className="bg-white border-b border-gray-200 px-4">
+    <div className="bg-background border-b border-border px-4">
       <div className="flex items-center gap-2">
         {tabs.map((tab) => (
           <div
             key={tab.id}
             className={`flex items-center gap-2 px-3 py-3 text-sm border-b-[3px] cursor-pointer ${
               tab.id === activeTabId
-                ? 'border-black text-black'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
+                ? 'border-primary text-foreground'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
             }`}
             onClick={() => onTabChange(tab.id)}
           >
@@ -45,7 +45,7 @@ export function TabBar({
                   e.stopPropagation()
                   onCloseTab(tab.id)
                 }}
-                className="ml-1 hover:bg-gray-200 rounded p-1"
+                className="ml-1 hover:bg-muted rounded p-1"
               >
                 <X className="h-3 w-3" />
               </button>

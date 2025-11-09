@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Fragment, useMemo, useCallback } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useTheme } from 'next-themes'
 import { useRouter } from 'next/navigation'
@@ -35,8 +35,8 @@ interface PlatformLayoutProps {
 const getGroupForTab = (tab: string): string | null => {
   const groupedTabs: Record<string, string[]> = {
     overview: ['overview', 'analytics'],
-    tools: ['bigquery', 'notebook', 'ai-analyst', 'ai-chat-ui', 'knowledge-base', 'bi', 'storage'],
-    system: ['users', 'space-layouts', 'data', 'attachments', 'kernels', 'health', 'logs', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache', 'security', 'performance', 'settings', 'page-templates', 'export', 'integrations'],
+    tools: ['bigquery', 'notebook', 'ai-analyst', 'ai-chat-ui', 'knowledge-base', 'projects', 'bi', 'reports', 'storage', 'data-governance'],
+    system: ['users', 'roles', 'permission-tester', 'space-layouts', 'space-settings', 'assets', 'data', 'attachments', 'kernels', 'health', 'logs', 'audit', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache', 'backup', 'security', 'performance', 'settings', 'page-templates', 'notifications', 'themes', 'export', 'integrations', 'api'],
     'data-management': ['space-selection']
   }
   
@@ -52,6 +52,128 @@ const getGroupForTab = (tab: string): string | null => {
   return null
 }
 
+// Generate breadcrumb items based on group structure
+const generateBreadcrumbs = (activeTab: string): BreadcrumbItem[] => {
+  const groupMetadata: Record<string, { name: string }> = {
+    overview: { name: 'Homepage' },
+    tools: { name: 'Tools' },
+    system: { name: 'System' },
+    'data-management': { name: 'Data Management' }
+  }
+
+  const toolSections: Record<string, string[]> = {
+    'AI & Assistants': ['ai-analyst', 'ai-chat-ui'],
+    'Data Tools': ['bigquery', 'notebook', 'storage', 'data-governance'],
+    'Knowledge': ['knowledge-base'],
+    'Project Management': ['projects'],
+    'Reporting': ['bi', 'reports']
+  }
+
+  const groupSections: Record<string, string[]> = {
+    management: ['users', 'roles', 'permission-tester', 'space-layouts', 'space-settings', 'assets', 'data', 'attachments'],
+    kernels: ['kernels'],
+    system: ['health', 'logs', 'audit', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache', 'backup'],
+    security: ['security', 'performance'],
+    integrations: ['settings', 'page-templates', 'notifications', 'themes', 'export', 'integrations', 'api']
+  }
+
+  const tabNames: Record<string, string> = {
+    'overview': 'Overview',
+    'analytics': 'Analytics',
+    'bigquery': 'SQL Query',
+    'notebook': 'Data Science',
+    'ai-analyst': 'AI Analyst',
+    'ai-chat-ui': 'AI Chat UI',
+    'knowledge-base': 'Knowledge Base',
+    'projects': 'Project Management',
+    'bi': 'BI & Reports',
+    'reports': 'Reports & Dashboard',
+    'storage': 'Storage',
+    'data-governance': 'Data Governance',
+    'users': 'Users',
+    'roles': 'Roles',
+    'permission-tester': 'Permission Tester',
+    'space-layouts': 'Space Layouts',
+    'space-settings': 'Space Settings',
+    'assets': 'Asset Management',
+    'data': 'Data Models',
+    'attachments': 'Attachments',
+    'kernels': 'Kernel Management',
+    'health': 'System Health',
+    'logs': 'Logs',
+    'audit': 'Audit Logs',
+    'database': 'Database',
+    'change-requests': 'Change Requests',
+    'sql-linting': 'SQL Linting',
+    'schema-migrations': 'Schema Migrations',
+    'data-masking': 'Data Masking',
+    'cache': 'Cache',
+    'backup': 'Backup & Recovery',
+    'security': 'Security',
+    'performance': 'Performance',
+    'settings': 'System Settings',
+    'page-templates': 'Page Templates',
+    'notifications': 'Notifications',
+    'themes': 'Theme & Branding',
+    'export': 'Data Export',
+    'integrations': 'Integrations',
+    'api': 'API Management',
+    'space-selection': 'Data Management'
+  }
+
+  const group = getGroupForTab(activeTab)
+  const breadcrumbs: BreadcrumbItem[] = []
+
+  // If no group found or activeTab is invalid, return empty breadcrumbs
+  if (!group || !activeTab || activeTab === 'admin') {
+    return breadcrumbs
+  }
+
+  // Add group name
+  if (groupMetadata[group]) {
+    breadcrumbs.push({
+      label: groupMetadata[group].name,
+      href: undefined
+    })
+  }
+
+  // Find section for tools group
+  if (group === 'tools') {
+    for (const [sectionName, tabIds] of Object.entries(toolSections)) {
+      if (tabIds.includes(activeTab)) {
+        breadcrumbs.push({
+          label: sectionName,
+          href: undefined
+        })
+        break
+      }
+    }
+  }
+
+  // Find section for system group
+  if (group === 'system') {
+    for (const [sectionName, tabIds] of Object.entries(groupSections)) {
+      if (tabIds.includes(activeTab)) {
+        const sectionLabel = sectionName.charAt(0).toUpperCase() + sectionName.slice(1)
+        breadcrumbs.push({
+          label: sectionLabel,
+          href: undefined
+        })
+        break
+      }
+    }
+  }
+
+  // Add tab name
+  const tabName = tabNames[activeTab] || activeTab.charAt(0).toUpperCase() + activeTab.slice(1).replace(/([A-Z])/g, ' $1')
+  breadcrumbs.push({
+    label: tabName,
+    href: undefined
+  })
+
+  return breadcrumbs
+}
+
 export function PlatformLayout({ 
   children, 
   activeTab, 
@@ -65,36 +187,44 @@ export function PlatformLayout({
   const { theme, setTheme } = useTheme()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true)
   
+  // Memoize group calculation to avoid unnecessary recalculations
+  const currentGroup = useMemo(() => getGroupForTab(activeTab), [activeTab])
+  
   // Initialize selectedGroup based on activeTab
-  const [selectedGroup, setSelectedGroup] = useState<string | null>(() => getGroupForTab(activeTab))
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(currentGroup)
   const isGroupManuallySelected = useRef(false)
 
-  const handleSignOut = async () => {
+  const handleSignOut = useCallback(async () => {
     await signOut({ callbackUrl: '/auth/signin' })
-  }
+  }, [])
 
   // Set selected group based on active tab when activeTab changes
   // Only update if the group was not manually selected by the user clicking on a group
   useEffect(() => {
     if (!isGroupManuallySelected.current) {
-      const group = getGroupForTab(activeTab)
-      setSelectedGroup(group) // Set to null for data-management, which is correct
+      if (selectedGroup !== currentGroup) {
+        setSelectedGroup(currentGroup) // Set to null for data-management, which is correct
+      }
     } else {
       // Reset the flag after processing
       isGroupManuallySelected.current = false
     }
-  }, [activeTab])
+  }, [activeTab, currentGroup, selectedGroup])
 
   // Custom setter that tracks manual selection
-  const handleGroupSelect = (group: string | null) => {
+  const handleGroupSelect = useCallback((group: string | null) => {
     isGroupManuallySelected.current = true
     setSelectedGroup(group)
-  }
+  }, [])
+
+  const handleToggleCollapse = useCallback(() => {
+    setSidebarCollapsed(prev => !prev)
+  }, [])
 
   return (
     <div className="flex h-screen bg-background">
       {/* Primary Sidebar - Groups */}
-      <div className={`transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'w-16' : 'w-64'} flex-shrink-0 border-r border-gray-200`}>
+      <div className={`transition-all duration-150 ease-in-out ${sidebarCollapsed ? 'w-16' : 'w-64'} flex-shrink-0 border-r border-gray-200`}>
         <PlatformSidebar
           activeTab={activeTab}
           onTabChange={onTabChange}
@@ -104,13 +234,13 @@ export function PlatformLayout({
           selectedGroup={selectedGroup}
           onGroupSelect={handleGroupSelect}
           mode="primary"
-          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          onToggleCollapse={handleToggleCollapse}
         />
       </div>
 
       {/* Secondary Sidebar - Submenu Items */}
       {selectedGroup && selectedGroup !== '' && (
-        <div className="w-64 flex-shrink-0 border-r border-gray-200 transition-all duration-300 ease-in-out">
+        <div className="w-64 flex-shrink-0 border-r border-gray-200 transition-all duration-150 ease-in-out">
           <PlatformSidebar
             activeTab={activeTab}
             onTabChange={onTabChange}
@@ -130,7 +260,7 @@ export function PlatformLayout({
         <div className="h-10 border-b bg-background flex items-center justify-between px-4">
           <div className="flex items-center gap-2 text-sm">
             <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              onClick={handleToggleCollapse}
               className="p-1 hover:bg-muted rounded"
               title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
@@ -146,14 +276,18 @@ export function PlatformLayout({
             </button>
             <nav aria-label="Breadcrumb" className="truncate text-muted-foreground">
               <ol className="flex items-center space-x-2">
-                {(
-                  breadcrumbItems && breadcrumbItems.length
+                {(() => {
+                  // Generate breadcrumbs, filtering out any items that contain "admin"
+                  const crumbs = breadcrumbItems && breadcrumbItems.length
                     ? breadcrumbItems
-                    : [
-                        'Unified Data Platform',
-                        activeTab.charAt(0).toUpperCase() + activeTab.slice(1).replace(/([A-Z])/g, ' $1')
-                      ]
-                ).map((item, idx, arr) => {
+                    : generateBreadcrumbs(activeTab)
+                  
+                  // Filter out any breadcrumb items that contain "admin" (case-insensitive)
+                  return crumbs.filter(item => {
+                    const label = typeof item === 'string' ? item : item.label
+                    return label && !label.toLowerCase().includes('admin')
+                  })
+                })().map((item, idx, arr) => {
                   const isLast = idx === arr.length - 1
                   const label = typeof item === 'string' ? item : item.label
                   const href = typeof item === 'object' ? item.href : undefined
@@ -161,8 +295,8 @@ export function PlatformLayout({
                   const isClickable = !isLast && (href || onClick)
                   
                   return (
-                    <>
-                      <li key={`bc-${idx}`} className={`truncate ${isLast ? 'font-medium text-foreground' : 'whitespace-nowrap'}`}>
+                    <Fragment key={`breadcrumb-${idx}`}>
+                      <li className={`truncate ${isLast ? 'font-medium text-foreground' : 'whitespace-nowrap'}`}>
                         {isClickable ? (
                           href ? (
                             <Link 
@@ -183,8 +317,8 @@ export function PlatformLayout({
                           <span>{label}</span>
                         )}
                       </li>
-                      {!isLast && <li key={`sep-${idx}`} className="text-muted-foreground">/</li>}
-                    </>
+                      {!isLast && <li className="text-muted-foreground">/</li>}
+                    </Fragment>
                   )
                 })}
               </ol>

@@ -10,8 +10,7 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession(authOptions)
-    // Temporarily bypass authentication for testing
-    // if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { rows } = await query<any>(
       'SELECT * FROM public.data_models WHERE id = $1::uuid AND deleted_at IS NULL',

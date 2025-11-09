@@ -10,15 +10,15 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const level = searchParams.get('level') // 'global' or 'space' or null for all
 
-    let queryStr = 'SELECT id, name, description, level, is_system FROM public.roles'
+    // Note: level and is_system columns don't exist in the database schema
+    // They are set as defaults in the response mapping below
+    let queryStr = 'SELECT id, name, description FROM public.roles'
     const params: any[] = []
     
-    if (level) {
-      queryStr += ' WHERE level = $1'
-      params.push(level)
-    }
+    // Level filtering removed since column doesn't exist in DB
+    // Filtering can be done client-side if needed
     
-    queryStr += ' ORDER BY level DESC, name ASC'
+    queryStr += ' ORDER BY name ASC'
 
     const { rows: roles } = await query<any>(queryStr, params)
 
@@ -34,12 +34,18 @@ export async function GET(request: NextRequest) {
       roleIdToPerms[rp.role_id].push({ id: rp.permission_id, name: rp.name, resource: rp.resource, action: rp.action })
     }
 
-    const result = roles.map(r => ({ 
+    let result = roles.map(r => ({ 
       ...r, 
       permissions: roleIdToPerms[r.id] || [],
-      isSystem: r.is_system || false,
-      level: r.level || 'space'
+      isSystem: false, // Default since column doesn't exist in DB
+      level: 'space' as 'global' | 'space' // Default since column doesn't exist in DB
     }))
+    
+    // Client-side filtering by level if requested
+    if (level) {
+      result = result.filter(r => r.level === level)
+    }
+    
     return NextResponse.json({ roles: result })
   } catch (error) {
     console.error('List roles error:', error)
@@ -55,16 +61,18 @@ export async function POST(request: NextRequest) {
     const { name, description, level } = await request.json()
     if (!name) return NextResponse.json({ error: 'name is required' }, { status: 400 })
     
+    // Note: level and is_system columns don't exist in the database schema
+    // They are set as defaults in the response below
     const roleLevel = level === 'global' ? 'global' : 'space'
     const { rows } = await query<any>(
-      'INSERT INTO public.roles (name, description, level, is_system) VALUES ($1, $2, $3, $4) RETURNING id, name, description, level, is_system',
-      [name, description || null, roleLevel, false]
+      'INSERT INTO public.roles (name, description) VALUES ($1, $2) RETURNING id, name, description',
+      [name, description || null]
     )
     return NextResponse.json({ 
       role: {
         ...rows[0],
-        isSystem: rows[0].is_system || false,
-        level: rows[0].level || 'space'
+        isSystem: false,
+        level: roleLevel
       }
     }, { status: 201 })
   } catch (error: any) {

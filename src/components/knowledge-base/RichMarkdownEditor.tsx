@@ -438,8 +438,10 @@ export function RichMarkdownEditor({
       if (content !== editor.getHTML()) {
         editor.commands.setContent(content, false)
       }
+      // Update editable state
+      editor.setEditable(editable)
     }
-  }, [content, editor])
+  }, [content, editor, editable])
 
   // Monitor editor updates to track slash commands
   useEffect(() => {
@@ -478,6 +480,18 @@ export function RichMarkdownEditor({
       editor.off('selectionUpdate', handleUpdate)
     }
   }, [editor, editable, updateSlashMenuPosition])
+
+  // Auto-focus editor when it becomes editable
+  const prevEditableRef = useRef(editable)
+  useEffect(() => {
+    if (editor && editable && mounted && !prevEditableRef.current) {
+      // Only focus when transitioning from non-editable to editable
+      setTimeout(() => {
+        editor.commands.focus('end')
+      }, 100)
+    }
+    prevEditableRef.current = editable
+  }, [editor, editable, mounted])
 
 
   if (!mounted || !editor) {
@@ -645,14 +659,23 @@ export function RichMarkdownEditor({
         </div>
       )}
       
-      <div className="relative">
+      <div 
+        className="relative"
+        onClick={() => {
+          if (editable && editor) {
+            editor.commands.focus()
+          }
+        }}
+      >
         {/* Inline menus can be re-enabled when supported in current TipTap build */}
         <EditorContent 
           editor={editor}
           className={cn(
             "prose prose-sm max-w-none dark:prose-invert",
             "focus:outline-none",
+            editable && "cursor-text",
             "[&_.ProseMirror]:outline-none [&_.ProseMirror]:p-6 [&_.ProseMirror]:min-h-[400px]",
+            editable && "[&_.ProseMirror]:cursor-text",
             "[&_.ProseMirror_heading]:font-semibold [&_.ProseMirror_heading]:mt-6 [&_.ProseMirror_heading]:mb-4",
             "[&_.ProseMirror_h1]:text-3xl [&_.ProseMirror_h2]:text-2xl [&_.ProseMirror_h3]:text-xl",
             "[&_.ProseMirror_p]:my-4 [&_.ProseMirror_p]:leading-relaxed",

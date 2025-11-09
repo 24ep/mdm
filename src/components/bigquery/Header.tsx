@@ -44,12 +44,12 @@ export function Header({ selectedSpace, spaces, onSpaceChange }: HeaderProps) {
   )
 
   return (
-    <div className="bg-white border-b border-gray-200 px-4 py-3">
+    <div className="bg-background border-b border-border px-4 py-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <Database className="h-6 w-6 text-blue-600" />
-            <h1 className="text-xl font-semibold text-gray-900">SQL Query</h1>
+            <h1 className="text-xl font-semibold text-foreground">SQL Query</h1>
           </div>
           
           {/* Space Selection Dropdown */}

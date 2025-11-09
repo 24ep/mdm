@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { formatDateTime } from '@/lib/date-formatters'
+import { formatFileSize } from '@/lib/formatters'
 import { 
   History, 
   Save, 
@@ -152,17 +154,6 @@ export function DashboardVersioning({
     return `${major}.${minor + 1}.0`
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString()
-  }
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-  }
 
   const handleRestoreVersion = (versionId: string) => {
     onVersionRestore(versionId)
@@ -230,7 +221,7 @@ export function DashboardVersioning({
                   <TableCell>
                     <div className="flex items-center space-x-1 text-sm">
                       <Clock className="h-3 w-3" />
-                      <span>{formatDate(version.created_at)}</span>
+                      <span>{formatDateTime(version.created_at)}</span>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -272,7 +263,7 @@ export function DashboardVersioning({
                             <div className="grid grid-cols-2 gap-4 text-sm">
                               <div>
                                 <Label className="font-medium">Created</Label>
-                                <p className="text-muted-foreground">{formatDate(version.created_at)}</p>
+                                <p className="text-muted-foreground">{formatDateTime(version.created_at)}</p>
                               </div>
                               <div>
                                 <Label className="font-medium">Author</Label>

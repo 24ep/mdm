@@ -6,8 +6,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { History, Clock, User, RotateCcw, Eye, Copy, Check } from 'lucide-react'
-import { formatTimeAgo } from '@/lib/utils'
-import toast from 'react-hot-toast'
+import { formatTimeAgo } from '@/lib/date-formatters'
+import { showSuccess } from '@/lib/toast-utils'
 
 interface QueryVersion {
   id: string
@@ -64,7 +64,7 @@ export function QueryVersionHistory({
     if (onLoadVersion) {
       onLoadVersion(version)
     }
-    toast.success(`Loaded version ${version.version}`)
+    showSuccess(`Loaded version ${version.version}`)
     onClose()
   }
 
@@ -73,19 +73,16 @@ export function QueryVersionHistory({
       if (onRestoreVersion) {
         onRestoreVersion(version)
       }
-      toast.success(`Query restored to version ${version.version}`)
+      showSuccess(`Query restored to version ${version.version}`)
       onClose()
     }
   }
 
   const handleCopyVersion = (version: QueryVersion) => {
     navigator.clipboard.writeText(version.query)
-    toast.success('Query copied to clipboard')
+    showSuccess('Query copied to clipboard')
   }
 
-  const formatTime = (date: Date) => {
-    return formatTimeAgo(date)
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -143,7 +140,7 @@ export function QueryVersionHistory({
                     </div>
                     <div className="flex items-center gap-2 text-xs text-gray-500">
                       <Clock className="h-3 w-3" />
-                      <span>{formatTime(version.createdAt)}</span>
+                      <span>{formatTimeAgo(version.createdAt)}</span>
                     </div>
                     {version.description && (
                       <p className="text-xs text-gray-600 mt-2">{version.description}</p>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { toast } from 'sonner'
+import { showError } from '@/lib/toast-utils'
 
 interface RealtimeDataOptions {
   interval?: number
@@ -147,7 +147,7 @@ export function useRealtimeData(
             connectWebSocket()
           }, delay)
         } else {
-          toast.error('Failed to reconnect to real-time data')
+          showError('Failed to reconnect to real-time data')
         }
       }
 

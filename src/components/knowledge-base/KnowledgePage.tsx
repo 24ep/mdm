@@ -9,7 +9,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import {
-  ArrowLeft,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
   Search,
   Plus,
   Edit,
@@ -24,13 +29,34 @@ import {
   FileText,
   Folder,
   FolderPlus,
-  FilePlus
+  FilePlus,
+  GripVertical
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import { useSession } from 'next-auth/react'
 import dynamic from 'next/dynamic'
 import { MarkdownRenderer } from '@/components/knowledge-base/MarkdownRenderer'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
+  useDroppable,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 const RichMarkdownEditor = dynamic(
   () => import('@/components/knowledge-base/RichMarkdownEditor').then(mod => mod.RichMarkdownEditor),
@@ -51,8 +77,10 @@ interface Document {
   title: string
   content: string
   categoryId?: string
+  parentId?: string // For nesting pages inside other pages
   isPinned?: boolean
   isPublic?: boolean
+  isFolder?: boolean // To distinguish folders from pages
   createdAt: Date
   updatedAt: Date
   createdBy: string
@@ -70,10 +98,12 @@ interface KnowledgePageConfig {
 interface KnowledgePageProps {
   notebookId: string
   notebookName: string
-  onBack: () => void
+  onBack?: () => void
+  canEdit?: boolean
+  onNotebookNameChange?: (newName: string) => void
 }
 
-export function KnowledgePage({ notebookId, notebookName, onBack }: KnowledgePageProps) {
+export function KnowledgePage({ notebookId, notebookName, onBack, canEdit = true, onNotebookNameChange }: KnowledgePageProps) {
   const { data: session } = useSession()
   const [categories, setCategories] = useState<Category[]>([])
   const [documents, setDocuments] = useState<Document[]>([])
@@ -88,12 +118,31 @@ export function KnowledgePage({ notebookId, notebookName, onBack }: KnowledgePag
   const [newDocTitle, setNewDocTitle] = useState('')
   const [newCategoryName, setNewCategoryName] = useState('')
   const [showConfigDialog, setShowConfigDialog] = useState(false)
+  const [isEditingNotebookName, setIsEditingNotebookName] = useState(false)
+  const [editedNotebookName, setEditedNotebookName] = useState(notebookName)
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const [draggedItem, setDraggedItem] = useState<Document | null>(null)
+  const [showNewFolderDialog, setShowNewFolderDialog] = useState(false)
+  const [newFolderName, setNewFolderName] = useState('')
   const [config, setConfig] = useState<KnowledgePageConfig>({
-    fullWidth: false,
+    fullWidth: true,
     showTableOfContents: true,
     showCategories: true,
     showSearch: true
   })
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  // Update edited name when notebookName prop changes
+  useEffect(() => {
+    setEditedNotebookName(notebookName)
+  }, [notebookName])
 
   // Load data from localStorage
   useEffect(() => {
@@ -149,19 +198,226 @@ export function KnowledgePage({ notebookId, notebookName, onBack }: KnowledgePag
     }
   }, [documents, notebookId])
 
+  // Auto-select first document when documents are loaded and no document is selected
+  useEffect(() => {
+    if (documents.length > 0 && !selectedDocument) {
+      const firstDoc = documents[0]
+      setSelectedDocument(firstDoc)
+      setEditingDocument(firstDoc)
+      setIsEditing(canEdit) // Set edit mode based on permission
+    }
+  }, [documents]) // Only depend on documents, not canEdit to avoid re-triggering
+
   useEffect(() => {
     localStorage.setItem(`knowledge-base-${notebookId}-config`, JSON.stringify(config))
   }, [config, notebookId])
 
-  // Filter documents
+  // Filter documents by search query only
   const filteredDocuments = searchQuery
     ? documents.filter(doc => 
         doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         doc.content.toLowerCase().includes(searchQuery.toLowerCase())
       )
-    : selectedCategory
-    ? documents.filter(doc => doc.categoryId === selectedCategory)
-    : documents.filter(doc => !doc.categoryId)
+    : documents
+
+  // Build document tree for nested pages
+  interface DocumentWithChildren extends Document {
+    children?: DocumentWithChildren[]
+  }
+
+  const buildDocumentTree = (parentId?: string): DocumentWithChildren[] => {
+    return filteredDocuments
+      .filter(doc => doc.parentId === parentId)
+      .sort((a, b) => (a.order || 0) - (b.order || 0))
+      .map(doc => ({
+        ...doc,
+        children: buildDocumentTree(doc.id)
+      }))
+  }
+
+  const documentTree = buildDocumentTree()
+  const rootDocuments = filteredDocuments.filter(doc => !doc.parentId).sort((a, b) => (a.order || 0) - (b.order || 0))
+
+  // Drag handlers
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string)
+    const doc = documents.find(d => d.id === event.active.id)
+    if (doc) {
+      setDraggedItem(doc)
+    }
+  }
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    setActiveId(null)
+    setDraggedItem(null)
+
+    if (!over || !canEdit) return
+
+    const draggedId = active.id as string
+    const targetId = over.id as string
+
+    const draggedDoc = documents.find(d => d.id === draggedId)
+    const targetDoc = documents.find(d => d.id === targetId)
+
+    if (!draggedDoc || draggedId === targetId) return
+
+    // If dropping on a folder, nest inside it
+    if (targetDoc?.isFolder) {
+      const childCount = documents.filter(d => d.parentId === targetId).length
+      const updated = documents.map(doc => 
+        doc.id === draggedId 
+          ? { ...doc, parentId: targetId, order: childCount }
+          : doc
+      )
+      setDocuments(updated)
+      toast.success(`Moved "${draggedDoc.title}" into "${targetDoc.title}"`)
+      return
+    }
+
+    // If dropping on a page, convert target to folder and nest
+    if (targetDoc && !targetDoc.isFolder) {
+      const updated = documents.map(doc => {
+        if (doc.id === targetId) {
+          return { ...doc, isFolder: true }
+        }
+        if (doc.id === draggedId) {
+          return { ...doc, parentId: targetId, order: 0 }
+        }
+        return doc
+      })
+      setDocuments(updated)
+      toast.success(`Moved "${draggedDoc.title}" into "${targetDoc.title}"`)
+      return
+    }
+
+    // Reorder within same level
+    const draggedIndex = rootDocuments.findIndex(d => d.id === draggedId)
+    const targetIndex = rootDocuments.findIndex(d => d.id === targetId)
+
+    if (draggedIndex !== -1 && targetIndex !== -1) {
+      const newOrder = arrayMove(rootDocuments, draggedIndex, targetIndex)
+      const updated = documents.map(doc => {
+        const newIndex = newOrder.findIndex(d => d.id === doc.id)
+        if (newIndex !== -1 && !doc.parentId) {
+          return { ...doc, order: newIndex }
+        }
+        return doc
+      })
+      setDocuments(updated)
+    }
+  }
+
+  // Create folder handler
+  const handleCreateFolder = () => {
+    if (!newFolderName.trim()) {
+      toast.error('Please enter a folder name')
+      return
+    }
+
+    const newFolder: Document = {
+      id: `folder-${Date.now()}`,
+      title: newFolderName.trim(),
+      content: '',
+      isFolder: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      createdBy: session?.user?.email || 'system',
+      order: rootDocuments.length
+    }
+
+    setDocuments([...documents, newFolder])
+    setShowNewFolderDialog(false)
+    setNewFolderName('')
+    toast.success('Folder created')
+  }
+
+  // SortablePageItem component
+  const SortablePageItem = ({ doc, depth = 0 }: { doc: DocumentWithChildren, depth?: number }) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id: doc.id })
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+    }
+
+    const isExpanded = expandedCategories.has(doc.id)
+    const children = doc.children || []
+    const hasChildren = children.length > 0
+
+    return (
+      <div ref={setNodeRef} style={style} className={cn(isDragging && "opacity-50")}>
+        <div className="flex items-center group" style={{ marginLeft: `${depth * 1.5}rem` }}>
+          {canEdit && (
+            <div
+              {...attributes}
+              {...listeners}
+              className="cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 p-1"
+            >
+              <GripVertical className="h-4 w-4 text-gray-400" />
+            </div>
+          )}
+          <Button
+            variant="ghost"
+            className={cn(
+              "flex-1 justify-start text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800",
+              selectedDocument?.id === doc.id && !doc.isFolder && "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
+            )}
+            onClick={() => {
+              if (doc.isFolder) {
+                const newExpanded = new Set(expandedCategories)
+                if (newExpanded.has(doc.id)) {
+                  newExpanded.delete(doc.id)
+                } else {
+                  newExpanded.add(doc.id)
+                }
+                setExpandedCategories(newExpanded)
+              } else {
+                setSelectedDocument(doc)
+                setEditingDocument(doc)
+                setIsEditing(canEdit)
+              }
+            }}
+          >
+            {doc.isFolder ? (
+              <>
+                {hasChildren ? (
+                  isExpanded ? (
+                    <ChevronDown className="h-4 w-4 mr-1" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 mr-1" />
+                  )
+                ) : (
+                  <div className="h-4 w-4 mr-1" />
+                )}
+                <Folder className="h-4 w-4 mr-2" />
+              </>
+            ) : (
+              <FileText className="h-4 w-4 mr-2" />
+            )}
+            <span className="flex-1 text-left truncate">{doc.title}</span>
+          </Button>
+        </div>
+        {isExpanded && hasChildren && (
+          <SortableContext
+            items={children.map(c => c.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {children.map(child => (
+              <SortablePageItem key={child.id} doc={child} depth={depth + 1} />
+            ))}
+          </SortableContext>
+        )}
+      </div>
+    )
+  }
 
   // Build category tree with nested structure
   interface CategoryWithChildren extends Category {
@@ -287,22 +543,57 @@ export function KnowledgePage({ notebookId, notebookName, onBack }: KnowledgePag
   const toc = selectedDocContent ? getTableOfContents(selectedDocContent.content) : []
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-gray-950">
+    <div className="h-screen flex flex-col bg-white dark:bg-gray-950">
       {/* Header */}
       <div className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onBack}
-            className="text-gray-600 dark:text-gray-400"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">{notebookName}</h1>
+        <div className="flex items-center gap-3 flex-1">
+          {isEditingNotebookName && canEdit ? (
+            <Input
+              value={editedNotebookName}
+              onChange={(e) => setEditedNotebookName(e.target.value)}
+              onBlur={() => {
+                if (editedNotebookName.trim() && editedNotebookName !== notebookName) {
+                  onNotebookNameChange?.(editedNotebookName.trim())
+                } else {
+                  setEditedNotebookName(notebookName)
+                }
+                setIsEditingNotebookName(false)
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.currentTarget.blur()
+                } else if (e.key === 'Escape') {
+                  setEditedNotebookName(notebookName)
+                  setIsEditingNotebookName(false)
+                }
+              }}
+              className="text-lg font-semibold h-8 px-2 max-w-md"
+              autoFocus
+            />
+          ) : (
+            <h1 
+              className={cn(
+                "text-lg font-semibold text-gray-900 dark:text-white",
+                canEdit && "cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              )}
+              onClick={() => canEdit && setIsEditingNotebookName(true)}
+            >
+              {editedNotebookName}
+            </h1>
+          )}
         </div>
         <div className="flex items-center gap-2">
+          {canEdit && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setShowNewFolderDialog(true)}
+              className="text-gray-600 dark:text-gray-400"
+            >
+              <FolderPlus className="h-4 w-4 mr-2" />
+              New Folder
+            </Button>
+          )}
           <Button
             size="sm"
             variant="ghost"
@@ -312,28 +603,11 @@ export function KnowledgePage({ notebookId, notebookName, onBack }: KnowledgePag
             <Settings className="h-4 w-4 mr-2" />
             Settings
           </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setShowNewCategoryDialog(true)}
-            className="text-gray-600 dark:text-gray-400"
-          >
-            <FolderPlus className="h-4 w-4 mr-2" />
-            New Category
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => setShowNewDocDialog(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            New Document
-          </Button>
         </div>
       </div>
 
       <div className="flex flex-1 overflow-hidden min-h-0">
-        {/* Left Sidebar - Categories */}
+        {/* Left Sidebar - Notebook Name and Pages */}
         {config.showCategories && (
           <div className={cn(
             "border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 flex flex-col min-h-0",
@@ -344,7 +618,7 @@ export function KnowledgePage({ notebookId, notebookName, onBack }: KnowledgePag
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
-                    placeholder="Search..."
+                    placeholder="Search pages..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-9 h-9 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
@@ -354,121 +628,83 @@ export function KnowledgePage({ notebookId, notebookName, onBack }: KnowledgePag
             )}
 
             <ScrollArea className="flex-1 h-full min-h-0">
-              <div className="p-2">
-                <Button
-                  variant="ghost"
-                  className={cn(
-                    "w-full justify-start mb-1 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800",
-                    !selectedCategory && "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
-                  )}
-                  onClick={() => {
-                    setSelectedCategory(null)
-                    setSelectedDocument(null)
-                    setIsEditing(false)
-                  }}
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  All Documents
-                </Button>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+              >
+                <div className="p-2">
+                  {/* Notebook Name */}
+                  <div className="px-3 py-2 mb-2">
+                    <h2 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                      {editedNotebookName}
+                    </h2>
+                  </div>
 
-                {/* Recursive Category Tree Renderer */}
-                {(() => {
-                  const renderCategoryTree = (categories: CategoryWithChildren[], depth: number = 0): JSX.Element[] => {
-                    return categories.map(category => {
-                      const categoryDocs = documents.filter(doc => doc.categoryId === category.id)
-                      const isExpanded = expandedCategories.has(category.id)
-                      const isSelected = selectedCategory === category.id
-                      const hasChildren = category.children && category.children.length > 0
-                      const hasDocs = categoryDocs.length > 0
-
-                      return (
-                        <div key={category.id} style={{ marginLeft: `${depth * 1.5}rem` }}>
+                  {/* Add New Page/Folder Dropdown */}
+                  {canEdit && (
+                    <div className="px-2 mb-2">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
                           <Button
-                            variant="ghost"
-                            className={cn(
-                              "w-full justify-start text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800",
-                              isSelected && "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
-                            )}
-                            onClick={() => {
-                              if (hasChildren || hasDocs) {
-                                handleToggleCategory(category.id)
-                              }
-                              setSelectedCategory(category.id)
-                            }}
+                            size="sm"
+                            variant="outline"
+                            className="w-full h-8 text-xs justify-start"
                           >
-                            {(hasChildren || hasDocs) ? (
-                              isExpanded ? (
-                                <ChevronDown className="h-4 w-4 mr-1" />
-                              ) : (
-                                <ChevronRight className="h-4 w-4 mr-1" />
-                              )
-                            ) : (
-                              <div className="h-4 w-4 mr-1" />
-                            )}
-                            <Folder className="h-4 w-4 mr-2" />
-                            <span className="flex-1 text-left truncate">{category.name}</span>
-                            <Badge variant="secondary" className="ml-2 text-xs">
-                              {categoryDocs.length}
-                            </Badge>
+                            <Plus className="h-3 w-3 mr-2" />
+                            New
                           </Button>
-                          {isExpanded && (
-                            <div>
-                              {/* Render child categories */}
-                              {category.children && category.children.length > 0 && (
-                                <div>
-                                  {renderCategoryTree(category.children, depth + 1)}
-                                </div>
-                              )}
-                              {/* Render documents in this category */}
-                              {categoryDocs.map(doc => (
-                                <Button
-                                  key={doc.id}
-                                  variant="ghost"
-                                  className={cn(
-                                    "w-full justify-start text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 ml-6",
-                                    selectedDocument?.id === doc.id && "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
-                                  )}
-                                  onClick={() => {
-                                    setSelectedDocument(doc)
-                                    setIsEditing(true)
-                                    setEditingDocument(doc)
-                                  }}
-                                >
-                                  <FileText className="h-3 w-3 mr-2" />
-                                  <span className="flex-1 text-left truncate">{doc.title}</span>
-                                </Button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })
-                  }
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-48">
+                          <DropdownMenuItem
+                            onClick={() => setShowNewDocDialog(true)}
+                            className="cursor-pointer"
+                          >
+                            <FileText className="h-4 w-4 mr-2" />
+                            New Page
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setShowNewFolderDialog(true)}
+                            className="cursor-pointer"
+                          >
+                            <FolderPlus className="h-4 w-4 mr-2" />
+                            New Folder
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  )}
 
-                  return renderCategoryTree(categoryTree)
-                })()}
+                  {/* Sortable Pages Tree */}
+                  <SortableContext
+                    items={rootDocuments.map(d => d.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {documentTree.map(doc => (
+                      <SortablePageItem key={doc.id} doc={doc} />
+                    ))}
+                  </SortableContext>
 
-                {filteredDocuments
-                  .filter(doc => !doc.categoryId)
-                  .map(doc => (
-                    <Button
-                      key={doc.id}
-                      variant="ghost"
-                      className={cn(
-                        "w-full justify-start text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800",
-                        selectedDocument?.id === doc.id && "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
+                  {documentTree.length === 0 && (
+                    <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 text-center">
+                      No pages found
+                    </div>
+                  )}
+                </div>
+                <DragOverlay>
+                  {draggedItem && (
+                    <div className="bg-white dark:bg-gray-800 p-2 rounded shadow-lg border flex items-center gap-2">
+                      {draggedItem.isFolder ? (
+                        <Folder className="h-4 w-4" />
+                      ) : (
+                        <FileText className="h-4 w-4" />
                       )}
-                      onClick={() => {
-                        setSelectedDocument(doc)
-                        setIsEditing(true)
-                        setEditingDocument(doc)
-                      }}
-                    >
-                      <FileText className="h-4 w-4 mr-2" />
-                      <span className="flex-1 text-left truncate">{doc.title}</span>
-                    </Button>
-                  ))}
-              </div>
+                      <span className="text-sm">{draggedItem.title}</span>
+                    </div>
+                  )}
+                </DragOverlay>
+              </DndContext>
             </ScrollArea>
           </div>
         )}
@@ -498,7 +734,7 @@ export function KnowledgePage({ notebookId, notebookName, onBack }: KnowledgePag
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  {isEditing ? (
+                  {isEditing && canEdit ? (
                     <Button 
                       size="sm" 
                       onClick={handleSaveDocument}
@@ -507,7 +743,7 @@ export function KnowledgePage({ notebookId, notebookName, onBack }: KnowledgePag
                       <Save className="h-4 w-4 mr-1" />
                       Save
                     </Button>
-                  ) : (
+                  ) : canEdit ? (
                     <Button
                       size="sm"
                       variant="ghost"
@@ -520,7 +756,7 @@ export function KnowledgePage({ notebookId, notebookName, onBack }: KnowledgePag
                       <Edit className="h-4 w-4 mr-1" />
                       Edit
                     </Button>
-                  )}
+                  ) : null}
                   <Button
                     size="sm"
                     variant="ghost"
@@ -536,7 +772,7 @@ export function KnowledgePage({ notebookId, notebookName, onBack }: KnowledgePag
               <div className="flex-1 overflow-hidden relative">
                 {/* Table of Contents - Top Left */}
                 {config.showTableOfContents && toc.length > 0 && (
-                  <div className="absolute top-4 left-4 z-10 w-64 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-lg p-4 max-h-[calc(100vh-200px)] overflow-auto">
+                  <div className="absolute top-4 left-4 z-10 w-64 bg-transparent p-4 max-h-[calc(100vh-200px)] overflow-auto pointer-events-auto">
                     <h3 className="text-sm font-semibold mb-3 text-gray-900 dark:text-white">Table of Contents</h3>
                     <nav className="space-y-1">
                       {toc.map((item, index) => (
@@ -560,8 +796,9 @@ export function KnowledgePage({ notebookId, notebookName, onBack }: KnowledgePag
                 {/* Full Page Editor/Preview */}
                 <div className="h-full overflow-auto bg-white dark:bg-gray-950">
                   <div className={cn(
-                    "min-h-full",
-                    config.fullWidth ? "max-w-full px-8" : "max-w-4xl mx-auto px-8 py-8"
+                    "h-full",
+                    config.fullWidth ? "max-w-full px-8" : "max-w-4xl mx-auto px-8 py-8",
+                    config.showTableOfContents && toc.length > 0 && "pl-[280px]"
                   )}>
                     {isEditing ? (
                       <RichMarkdownEditor
@@ -574,7 +811,7 @@ export function KnowledgePage({ notebookId, notebookName, onBack }: KnowledgePag
                             })
                           }
                         }}
-                        editable={true}
+                        editable={canEdit && isEditing}
                         className="h-full bg-white dark:bg-gray-950"
                       />
                     ) : (
@@ -590,15 +827,8 @@ export function KnowledgePage({ notebookId, notebookName, onBack }: KnowledgePag
             <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-900">
               <div className="text-center max-w-md">
                 <FileText className="h-16 w-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">No document selected</h3>
-                <p className="text-gray-500 dark:text-gray-400 mb-4">Select a document from the sidebar or create a new one</p>
-                <Button 
-                  onClick={() => setShowNewDocDialog(true)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Document
-                </Button>
+                <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">No pages available</h3>
+                <p className="text-gray-500 dark:text-gray-400">This notebook doesn't have any pages yet.</p>
               </div>
             </div>
           )}
@@ -655,6 +885,34 @@ export function KnowledgePage({ notebookId, notebookName, onBack }: KnowledgePag
               Cancel
             </Button>
             <Button onClick={handleCreateCategory} className="bg-blue-600 hover:bg-blue-700 text-white">
+              Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Folder Dialog */}
+      <Dialog open={showNewFolderDialog} onOpenChange={setShowNewFolderDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Folder</DialogTitle>
+            <DialogDescription>Enter a name for your new folder</DialogDescription>
+          </DialogHeader>
+          <Input
+            placeholder="Folder name..."
+            value={newFolderName}
+            onChange={(e) => setNewFolderName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleCreateFolder()
+              }
+            }}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewFolderDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateFolder} className="bg-blue-600 hover:bg-blue-700 text-white">
               Create
             </Button>
           </DialogFooter>

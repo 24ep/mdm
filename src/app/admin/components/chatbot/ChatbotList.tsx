@@ -75,7 +75,6 @@ export function ChatbotList({
             <TableHeader>
               <TableRow>
                 <TableHead>Agent</TableHead>
-                <TableHead>Description</TableHead>
                 <TableHead>Website</TableHead>
                 <TableHead>Version</TableHead>
                 <TableHead>Status</TableHead>
@@ -92,10 +91,14 @@ export function ChatbotList({
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <ChatbotAvatar chatbot={chatbot} size="md" />
-                      <span className="font-medium">{chatbot.name}</span>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{chatbot.name}</span>
+                        {chatbot.description && (
+                          <span className="text-xs text-gray-500 mt-0.5">{chatbot.description}</span>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
-                  <TableCell>{chatbot.description || 'No description'}</TableCell>
                   <TableCell>{chatbot.website || '—'}</TableCell>
                   <TableCell>v{chatbot.currentVersion}</TableCell>
                   <TableCell>
@@ -217,7 +220,9 @@ export function ChatbotList({
                   <ChatbotAvatar chatbot={chatbot} size="lg" />
                   <div className="flex-1 min-w-0">
                     <CardTitle className="text-lg">{chatbot.name}</CardTitle>
-                    <CardDescription className="mt-1">{chatbot.description || 'No description'}</CardDescription>
+                    {chatbot.description && (
+                      <p className="text-xs text-gray-500 mt-1">{chatbot.description}</p>
+                    )}
                     {chatbot.website && (
                       <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
                         <Globe className="h-3 w-3" />
@@ -361,7 +366,9 @@ export function ChatbotList({
                       <Badge variant="secondary">Draft</Badge>
                     )}
                   </div>
-                  <CardDescription className="mt-1">{chatbot.description || 'No description'}</CardDescription>
+                  {chatbot.description && (
+                    <p className="text-xs text-gray-500 mt-1">{chatbot.description}</p>
+                  )}
                   <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                     {chatbot.website && (
                       <>

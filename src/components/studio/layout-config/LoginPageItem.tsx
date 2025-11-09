@@ -11,6 +11,7 @@ import toast from 'react-hot-toast'
 import { SpacesEditorManager, LoginPageConfig } from '@/lib/space-studio-manager'
 import { UnifiedPage } from './types'
 import { ColorInput } from './ColorInput'
+import { MultiSideInput } from '@/components/shared/MultiSideInput'
 
 interface LoginPageItemProps {
   page: UnifiedPage
@@ -309,20 +310,77 @@ export function LoginPageItem({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label className={`${isMobileViewport ? 'text-sm' : 'text-xs'} font-medium`}>Card Border Radius</Label>
-            <Input
-              type="number"
-              className={`${isMobileViewport ? 'h-10' : 'h-8'} text-xs`}
-              value={currentConfig.cardStyle?.borderRadius || 8}
-              onChange={(e) => setLoginPageConfig({
+          <MultiSideInput
+            label="Card Border Radius"
+            baseKey="borderRadius"
+            type="corners"
+            defaultValue={8}
+            inputClassName={`${isMobileViewport ? 'h-10' : 'h-8'} text-xs`}
+            getValue={(side: string) => {
+              const br = currentConfig.cardStyle?.borderRadius
+              if (typeof br === 'number') return br
+              if (typeof br === 'object' && br !== null) {
+                const obj = br as any
+                const corner = obj[side]
+                return corner?.value ?? 8
+              }
+              return 8
+            }}
+            setValue={(updates) => {
+              const currentBr = currentConfig.cardStyle?.borderRadius
+              
+              let brObj: any = typeof currentBr === 'number' 
+                ? {
+                    topLeft: { value: currentBr, unit: 'px' },
+                    topRight: { value: currentBr, unit: 'px' },
+                    bottomRight: { value: currentBr, unit: 'px' },
+                    bottomLeft: { value: currentBr, unit: 'px' }
+                  }
+                : (currentBr || {
+                    topLeft: { value: 8, unit: 'px' },
+                    topRight: { value: 8, unit: 'px' },
+                    bottomRight: { value: 8, unit: 'px' },
+                    bottomLeft: { value: 8, unit: 'px' }
+                  })
+              
+              Object.keys(updates).forEach(key => {
+                if (key === 'borderRadius') {
+                  const value = updates[key]
+                  if (typeof value === 'string' && value.endsWith('px')) {
+                    const numValue = parseInt(value.replace('px', '')) || 8
+                    brObj = {
+                      topLeft: { value: numValue, unit: 'px' },
+                      topRight: { value: numValue, unit: 'px' },
+                      bottomRight: { value: numValue, unit: 'px' },
+                      bottomLeft: { value: numValue, unit: 'px' }
+                    }
+                  }
+                } else if (key.startsWith('borderRadius')) {
+                  const corner = key.replace('borderRadius', '').charAt(0).toLowerCase() + key.replace('borderRadius', '').slice(1)
+                  const value = updates[key]
+                  if (typeof value === 'string' && value.endsWith('px')) {
+                    const numValue = parseInt(value.replace('px', '')) || 8
+                    brObj[corner] = { value: numValue, unit: 'px' }
+                  }
+                }
+              })
+              
+              const allSame = brObj.topLeft.value === brObj.topRight.value &&
+                             brObj.topRight.value === brObj.bottomRight.value &&
+                             brObj.bottomRight.value === brObj.bottomLeft.value &&
+                             brObj.topLeft.unit === brObj.topRight.unit &&
+                             brObj.topRight.unit === brObj.bottomRight.unit &&
+                             brObj.bottomRight.unit === brObj.bottomLeft.unit
+              
+              setLoginPageConfig({
                 ...currentConfig,
-                cardStyle: { ...currentConfig.cardStyle!, borderRadius: parseInt(e.target.value) || 8 }
-              })}
-              min={0}
-              max={50}
-            />
-          </div>
+                cardStyle: { 
+                  ...currentConfig.cardStyle!, 
+                  borderRadius: allSame ? brObj.topLeft.value : brObj 
+                }
+              })
+            }}
+          />
 
           <div className="flex items-center justify-between">
             <Label className={`${isMobileViewport ? 'text-sm' : 'text-xs'} font-medium`}>Card Shadow</Label>

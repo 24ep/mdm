@@ -8,7 +8,7 @@ import { ConfigurableKanbanBoard } from '@/components/project-management/Configu
 import { SpreadsheetView } from '@/components/project-management/SpreadsheetView'
 import { GanttChartView } from '@/components/project-management/GanttChartView'
 import { TimesheetView } from '@/components/project-management/TimesheetView'
-import { TicketDetailModal } from '@/components/project-management/TicketDetailModal'
+import { TicketDetailModalEnhanced } from '@/components/project-management/TicketDetailModalEnhanced'
 import { SpaceSelector } from '@/components/project-management/SpaceSelector'
 import { Input } from '@/components/ui/input'
 import {
@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Plus, Search, Filter, List, Kanban as KanbanIcon, Table, BarChart3, Clock, FileText } from 'lucide-react'
+import { Plus, Search, Filter, List, Kanban as KanbanIcon, Table, BarChart3, Clock, FileText, ExternalLink, Loader } from 'lucide-react'
 import { useSpace } from '@/contexts/space-context'
 
 interface Ticket {
@@ -65,10 +65,68 @@ export default function ProjectsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
+  const [selectedTickets, setSelectedTickets] = useState<Set<string>>(new Set())
+  const [bulkPushing, setBulkPushing] = useState(false)
+  const [serviceDeskConfig, setServiceDeskConfig] = useState<any>(null)
 
   useEffect(() => {
     fetchTickets()
+    checkServiceDeskConfig()
   }, [selectedSpaceId, statusFilter, priorityFilter])
+
+  const checkServiceDeskConfig = async () => {
+    if (!selectedSpaceId || selectedSpaceId === 'all') return
+    try {
+      const response = await fetch(`/api/integrations/manageengine-servicedesk?space_id=${selectedSpaceId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setServiceDeskConfig(data.config)
+      }
+    } catch (error) {
+      console.error('Failed to check ServiceDesk config:', error)
+    }
+  }
+
+  const handleBulkPushToServiceDesk = async () => {
+    if (selectedTickets.size === 0 || !selectedSpaceId || selectedSpaceId === 'all') {
+      alert('Please select tickets and ensure a space is selected')
+      return
+    }
+
+    if (!confirm(`Push ${selectedTickets.size} ticket(s) to ServiceDesk?`)) {
+      return
+    }
+
+    setBulkPushing(true)
+    try {
+      const response = await fetch('/api/integrations/manageengine-servicedesk/bulk-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ticket_ids: Array.from(selectedTickets),
+          space_id: selectedSpaceId,
+          syncComments: true,
+          syncAttachments: true,
+          syncTimeLogs: true
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        alert(`Successfully pushed ${result.results.success.length} ticket(s). ${result.results.failed.length} failed.`)
+        setSelectedTickets(new Set())
+        fetchTickets()
+      } else {
+        alert(`Failed to push tickets: ${result.error}`)
+      }
+    } catch (error) {
+      console.error('Bulk push error:', error)
+      alert('Failed to push tickets to ServiceDesk')
+    } finally {
+      setBulkPushing(false)
+    }
+  }
 
   const fetchTickets = async () => {
     try {
@@ -343,6 +401,16 @@ export default function ProjectsPage() {
         ) : viewMode === 'spreadsheet' ? (
           <SpreadsheetView
             tickets={filteredTickets}
+            selectedTickets={selectedTickets}
+            onTicketSelect={(ticketId, selected) => {
+              const newSelected = new Set(selectedTickets)
+              if (selected) {
+                newSelected.add(ticketId)
+              } else {
+                newSelected.delete(ticketId)
+              }
+              setSelectedTickets(newSelected)
+            }}
             onTicketClick={handleTicketClick}
             onTicketUpdate={async (ticketId, field, value) => {
               await fetch(`/api/tickets/${ticketId}`, {
@@ -405,7 +473,7 @@ export default function ProjectsPage() {
         )}
 
         {/* Ticket Detail Modal */}
-        <TicketDetailModal
+        <TicketDetailModalEnhanced
           ticket={selectedTicket}
           open={isModalOpen}
           onOpenChange={setIsModalOpen}

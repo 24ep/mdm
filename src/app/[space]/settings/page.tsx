@@ -18,7 +18,7 @@ import { MemberManagementPanel } from '@/components/space-management/MemberManag
 import { MemberPermissionsPanel } from '@/components/space-management/MemberPermissionsPanel'
 import { MemberAuditLog } from '@/components/space-management/MemberAuditLog'
 import { Building2, Layout, Database, History, Users as UsersIcon, UserCog, UserPlus, Plus, Edit, Trash2, Search, Type, AlertTriangle, FolderPlus, Share2, Folder, FolderOpen, Move, Settings, Palette, Shield, Archive, Trash, MoreVertical, ChevronDown, ChevronRight, ArrowLeft, ExternalLink, Grid3X3, CheckCircle2, Circle, Lock } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { showSuccess, showError, ToastMessages } from '@/lib/toast-utils'
 import { useSpace } from '@/contexts/space-context'
 import { useSession } from 'next-auth/react'
 import { PagesManagement } from '@/components/studio/pages-management'
@@ -76,10 +76,10 @@ export default function SpaceSettingsPage() {
       const { SpacesEditorManager } = await import('@/lib/space-studio-manager')
       await SpacesEditorManager.clearSpacesEditorConfig(currentSpace?.id || '')
       await refreshEditorConfig()
-      toast.success('All pages have been removed')
+      showSuccess('All pages have been removed')
     } catch (error) {
       console.error('Failed to reset pages:', error)
-      toast.error('Failed to reset pages')
+      showError('Failed to reset pages')
     }
   }
 
@@ -122,11 +122,11 @@ export default function SpaceSettingsPage() {
         })
         
         if (res.ok) {
-          toast.success('User added to space')
+          showSuccess('User added to space')
           await loadMembers(selectedSpace.id)
         } else {
           const error = await res.json()
-          toast.error(error.error || 'Failed to add user')
+          showError(error.error || 'Failed to add user')
         }
       } else {
         // New user - send invitation email
@@ -137,15 +137,15 @@ export default function SpaceSettingsPage() {
         })
         
         if (res.ok) {
-          toast.success('Invitation sent successfully')
+          showSuccess('Invitation sent successfully')
         } else {
           const error = await res.json()
-          toast.error(error.error || 'Failed to send invitation')
+          showError(error.error || 'Failed to send invitation')
         }
       }
     } catch (error) {
       console.error('Error inviting user:', error)
-      toast.error('Failed to invite user')
+      showError('Failed to invite user')
     }
   }
 
@@ -162,14 +162,14 @@ export default function SpaceSettingsPage() {
       
       if (res.ok) {
         await loadMembers(selectedSpace.id)
-        toast.success('Bulk operation completed successfully')
+        showSuccess('Bulk operation completed successfully')
       } else {
         const error = await res.json()
-        toast.error(error.error || 'Failed to perform bulk operation')
+        showError(error.error || 'Failed to perform bulk operation')
       }
     } catch (error) {
       console.error('Error performing bulk operation:', error)
-      toast.error('Failed to perform bulk operation')
+      showError('Failed to perform bulk operation')
     }
   }
 
@@ -186,14 +186,14 @@ export default function SpaceSettingsPage() {
       
       if (res.ok) {
         await loadMembers(selectedSpace.id)
-        toast.success('Role updated successfully')
+        showSuccess('Role updated successfully')
       } else {
         const error = await res.json()
-        toast.error(error.error || 'Failed to update role')
+        showError(error.error || 'Failed to update role')
       }
     } catch (error) {
       console.error('Error updating role:', error)
-      toast.error('Failed to update role')
+      showError('Failed to update role')
     }
   }
 
@@ -208,14 +208,14 @@ export default function SpaceSettingsPage() {
       
       if (res.ok) {
         await loadMembers(selectedSpace.id)
-        toast.success('Member removed successfully')
+        showSuccess('Member removed successfully')
       } else {
         const error = await res.json()
-        toast.error(error.error || 'Failed to remove member')
+        showError(error.error || 'Failed to remove member')
       }
     } catch (error) {
       console.error('Error removing member:', error)
-      toast.error('Failed to remove member')
+      showError('Failed to remove member')
     }
   }
 
@@ -231,14 +231,14 @@ export default function SpaceSettingsPage() {
       })
       
       if (res.ok) {
-        toast.success('Permissions updated successfully')
+        showSuccess('Permissions updated successfully')
       } else {
         const error = await res.json()
-        toast.error(error.error || 'Failed to update permissions')
+      showError(error.error || 'Failed to update permissions')
       }
     } catch (error) {
       console.error('Error updating permissions:', error)
-      toast.error('Failed to update permissions')
+      showError('Failed to update permissions')
     }
   }
 
@@ -327,6 +327,9 @@ export default function SpaceSettingsPage() {
   const [spaceDetails, setSpaceDetails] = useState<any | null>(null)
   const [savingLoginImage, setSavingLoginImage] = useState(false)
   const [expandedFolders, setExpandedFolders] = useState<string[]>([])
+  const [showEditFolderDialog, setShowEditFolderDialog] = useState(false)
+  const [editingFolder, setEditingFolder] = useState<any | null>(null)
+  const [editFolderName, setEditFolderName] = useState('')
 
   // Extra model config
   const [modelIcon, setModelIcon] = useState<string>('')
@@ -455,7 +458,7 @@ export default function SpaceSettingsPage() {
       const json = await res.json()
       setMembers(json.members || [])
     } catch (e) {
-      toast.error('Failed to load members')
+      showError('Failed to load members')
     }
   }
 
@@ -467,7 +470,7 @@ export default function SpaceSettingsPage() {
       const json = await res.json().catch(() => ({}))
       setModels(json.dataModels || [])
     } catch (e) {
-      toast.error('Failed to load data models')
+      showError('Failed to load data models')
     } finally {
       setModelsLoading(false)
     }
@@ -603,10 +606,10 @@ export default function SpaceSettingsPage() {
         const json = await res.json()
         if (res.ok && json.success) {
           setConnectionTestResult({ success: true, data: json.data, sampleResponse: json.sampleResponse })
-          toast.success('API connection test successful')
+          showSuccess('API connection test successful')
         } else {
           setConnectionTestResult({ success: false, error: json.error || 'API connection failed' })
-          toast.error('API connection test failed')
+          showError('API connection test failed')
         }
       } else {
         // Test database connection
@@ -630,15 +633,15 @@ export default function SpaceSettingsPage() {
           setConnectionTestResult({ success: true, schemas: json.schemas, tablesBySchema: json.tablesBySchema })
           setConnectionSchemas(json.schemas || [])
           setConnectionTables(json.tablesBySchema || {})
-          toast.success('Connection test successful')
+          showSuccess('Connection test successful')
         } else {
           setConnectionTestResult({ success: false, error: json.error || 'Connection failed' })
-          toast.error('Connection test failed')
+          showError('Connection test failed')
         }
       }
     } catch (error: any) {
       setConnectionTestResult({ success: false, error: error.message || 'Connection test failed' })
-      toast.error('Connection test failed')
+      showError('Connection test failed')
     } finally {
       setTestingConnection(false)
     }
@@ -648,33 +651,33 @@ export default function SpaceSettingsPage() {
     if (!selectedSpace?.id) return
     
     if (!connectionForm.name) {
-      toast.error('Please provide a connection name')
+      showError('Please provide a connection name')
       return
     }
 
     if (connectionForm.connection_type === 'api') {
       // Validate API connection
       if (!connectionForm.api_url) {
-        toast.error('Please provide an API URL')
+        showError('Please provide an API URL')
         return
       }
     } else {
       // Validate database connection
       if (!connectionForm.host || !connectionForm.db_type) {
-        toast.error('Please fill in all required fields')
+        showError('Please fill in all required fields')
         return
       }
 
       // For PostgreSQL, schema and table are required. For MySQL, schema might be optional
       if (!connectionForm.table) {
-        toast.error('Please select a table')
+        showError('Please select a table')
         return
       }
 
       // For PostgreSQL, schema is required. For MySQL, use database name as schema if not provided
       const schemaToUse = connectionForm.schema || (connectionForm.db_type === 'mysql' ? connectionForm.database : null)
       if (connectionForm.db_type === 'postgres' && !schemaToUse) {
-        toast.error('Please select a schema')
+        showError('Please select a schema')
         return
       }
     }
@@ -768,7 +771,7 @@ export default function SpaceSettingsPage() {
         throw new Error('Failed to create data model')
       }
 
-      toast.success('External data source connected successfully')
+      showSuccess('External data source connected successfully')
       setShowConnectionForm(false)
       setShowDatabaseSelection(false)
       setSelectedDataModelType(null)
@@ -798,21 +801,17 @@ export default function SpaceSettingsPage() {
       await loadModels()
     } catch (error: any) {
       console.error('Error saving external connection:', error)
-      toast.error(error.message || 'Failed to save external connection')
+      showError(error.message || 'Failed to save external connection')
     }
   }
 
-  // Database types available
-  const databaseTypes = [
-    { id: 'postgres', name: 'PostgreSQL', icon: '🐘', description: 'PostgreSQL database' },
-    { id: 'mysql', name: 'MySQL', icon: '🐬', description: 'MySQL database' },
-    { id: 'api', name: 'API Endpoint', icon: '🌐', description: 'REST API endpoint' }
-  ]
-
-  const filteredDatabaseTypes = databaseTypes.filter(db => 
-    db.name.toLowerCase().includes(databaseSearch.toLowerCase()) ||
-    db.description.toLowerCase().includes(databaseSearch.toLowerCase())
-  )
+  // filteredDatabaseTypes is computed from allDataSources (which uses asset management system)
+  const filteredDatabaseTypes = useMemo(() => {
+    return allDataSources.filter(db => 
+      db.name.toLowerCase().includes(databaseSearch.toLowerCase()) ||
+      db.description.toLowerCase().includes(databaseSearch.toLowerCase())
+    )
+  }, [allDataSources, databaseSearch])
 
   const openEditModel = (model: any) => {
     setEditingModel(model)
@@ -854,9 +853,9 @@ export default function SpaceSettingsPage() {
       if (!res.ok) throw new Error(editingModel ? 'Failed to update model' : 'Failed to create model')
       setShowModelDrawer(false)
       await loadModels()
-      toast.success(editingModel ? 'Model updated' : 'Model created')
+      showSuccess(editingModel ? 'Model updated' : 'Model created')
     } catch (e) {
-      toast.error(editingModel ? 'Failed to update model' : 'Failed to create model')
+      showError(editingModel ? 'Failed to update model' : 'Failed to create model')
     }
   }
 
@@ -864,9 +863,9 @@ export default function SpaceSettingsPage() {
     if (!confirm(`Delete model "${m.display_name || m.name}"?`)) return
     try {
       const res = await fetch(`/api/data-models/${m.id}`, { method: 'DELETE' })
-      if (res.ok) { await loadModels(); toast.success('Model deleted') } else { throw new Error() }
+      if (res.ok) { await loadModels(); showSuccess('Model deleted') } else { throw new Error() }
     } catch {
-      toast.error('Failed to delete model')
+      showError('Failed to delete model')
     }
   }
 
@@ -955,7 +954,7 @@ export default function SpaceSettingsPage() {
     ))
     setShowAttributeDrawer(false)
     setSelectedAttribute(null)
-    toast.success('Attribute updated successfully')
+    showSuccess('Attribute updated successfully')
   }
 
   const handleAttributeDelete = (attributeId: string) => {
@@ -963,7 +962,7 @@ export default function SpaceSettingsPage() {
     setAttributes(prev => prev.filter(attr => attr.id !== attributeId))
     setShowAttributeDrawer(false)
     setSelectedAttribute(null)
-    toast.success('Attribute deleted successfully')
+    showSuccess('Attribute deleted successfully')
   }
 
   const handleAttributeReorder = (attributeId: string, newOrder: number) => {
@@ -984,7 +983,7 @@ export default function SpaceSettingsPage() {
         order: index
       }))
     })
-    toast.success('Attribute order updated')
+    showSuccess('Attribute order updated')
   }
 
   const createAttribute = async () => {
@@ -1001,9 +1000,9 @@ export default function SpaceSettingsPage() {
       
       setShowCreateAttributeDrawer(false)
       await loadAttributes(editingModel.id)
-      toast.success('Attribute created')
+      showSuccess('Attribute created')
     } catch (e) {
-      toast.error('Failed to create attribute')
+      showError('Failed to create attribute')
     }
   }
 
@@ -1023,7 +1022,7 @@ export default function SpaceSettingsPage() {
       })
       
       if (res.status === 503) {
-        toast.error('Folders feature not yet available. Please run database migrations.')
+        showError('Folders feature not yet available. Please run database migrations.')
         return
       }
       
@@ -1032,9 +1031,9 @@ export default function SpaceSettingsPage() {
       setShowCreateFolderDialog(false)
       setFolderForm({ name: '', parent_id: '' })
       await loadFolders()
-      toast.success('Folder created')
+      showSuccess('Folder created')
     } catch (e) {
-      toast.error('Failed to create folder')
+      showError('Failed to create folder')
     }
   }
 
@@ -1062,9 +1061,9 @@ export default function SpaceSettingsPage() {
       
       if (!res.ok) throw new Error('Failed to save storage configuration')
       
-      toast.success('Attachment storage configuration saved')
+      showSuccess('Attachment storage configuration saved')
     } catch (e) {
-      toast.error('Failed to save storage configuration')
+      showError('Failed to save storage configuration')
     }
   }
 
@@ -1082,13 +1081,13 @@ export default function SpaceSettingsPage() {
       setStorageTestResult(json)
       
       if (json.success) {
-        toast.success('Storage connection test successful')
+        showSuccess('Storage connection test successful')
       } else {
-        toast.error('Storage connection test failed')
+        showError('Storage connection test failed')
       }
     } catch (e) {
       setStorageTestResult({ success: false, error: 'Test failed' })
-      toast.error('Storage connection test failed')
+      showError('Storage connection test failed')
     } finally {
       setTestingStorage(false)
     }
@@ -1115,9 +1114,9 @@ export default function SpaceSettingsPage() {
       
       setShowShareModelDialog(false)
       await loadModels()
-      toast.success('Model sharing updated')
+      showSuccess('Model sharing updated')
     } catch (e) {
-      toast.error('Failed to share model')
+      showError('Failed to share model')
     }
   }
 
@@ -1132,9 +1131,9 @@ export default function SpaceSettingsPage() {
       if (!res.ok) throw new Error('Failed to move model')
       
       await loadModels()
-      toast.success('Model moved')
+      showSuccess('Model moved')
     } catch (e) {
-      toast.error('Failed to move model')
+      showError('Failed to move model')
     }
   }
 
@@ -1160,18 +1159,50 @@ export default function SpaceSettingsPage() {
       })
       if (res.ok) {
         await loadFolders()
-        toast.success('Folder created')
+        showSuccess('Folder created')
       } else {
         throw new Error()
       }
     } catch {
-      toast.error('Failed to create folder')
+      showError('Failed to create folder')
     }
   }
 
-  const handleEditFolder = async (folder: any) => {
-    // TODO: Implement folder editing
-    toast('Folder editing not implemented yet')
+  const handleEditFolder = (folder: any) => {
+    setEditingFolder(folder)
+    setEditFolderName(folder.name)
+    setShowEditFolderDialog(true)
+  }
+
+  const saveFolderEdit = async () => {
+    if (!editingFolder || !editFolderName.trim() || editFolderName === editingFolder.name) {
+      setShowEditFolderDialog(false)
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/folders/${editingFolder.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editFolderName.trim(),
+          parent_id: editingFolder.parent_id || null
+        })
+      })
+      
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || 'Failed to update folder')
+      }
+      
+      showSuccess('Folder renamed successfully')
+      setShowEditFolderDialog(false)
+      setEditingFolder(null)
+      setEditFolderName('')
+      await loadFolders()
+    } catch (e: any) {
+      showError(e.message || 'Failed to rename folder')
+    }
   }
 
   const handleDeleteFolder = async (folder: any) => {
@@ -1181,12 +1212,12 @@ export default function SpaceSettingsPage() {
       if (res.ok) {
         await loadFolders()
         await loadModels()
-        toast.success('Folder deleted')
+        showSuccess('Folder deleted')
       } else {
         throw new Error()
       }
     } catch {
-      toast.error('Failed to delete folder')
+      showError('Failed to delete folder')
     }
   }
 
@@ -1278,7 +1309,7 @@ export default function SpaceSettingsPage() {
                           method: 'PUT', headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ name })
                         })
-                        if (res.ok) { toast.success('Space name updated'); await refreshSpaces() } else { toast.error('Failed to update name') }
+                        if (res.ok) { showSuccess('Space name updated'); await refreshSpaces() } else { showError('Failed to update name') }
                               }} 
                             />
                             <p className="text-xs text-muted-foreground">The display name for your space</p>
@@ -1299,7 +1330,7 @@ export default function SpaceSettingsPage() {
                           method: 'PUT', headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ slug })
                         })
-                        if (res.ok) { toast.success('Slug updated'); await refreshSpaces() } else { toast.error('Failed to update slug') }
+                        if (res.ok) { showSuccess('Slug updated'); await refreshSpaces() } else { showError('Failed to update slug') }
                                 }} 
                               />
                             </div>
@@ -1322,7 +1353,7 @@ export default function SpaceSettingsPage() {
                                 method: 'PUT', headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ description })
                               })
-                              if (res.ok) { toast.success('Description updated'); await refreshSpaces() } else { toast.error('Failed to update description') }
+                              if (res.ok) { showSuccess('Description updated'); await refreshSpaces() } else { showError('Failed to update description') }
                             }} 
                           />
                           <p className="text-xs text-muted-foreground">A brief description of your space's purpose</p>
@@ -1371,11 +1402,11 @@ export default function SpaceSettingsPage() {
                               body: JSON.stringify({ features })
                             })
                             if (res.ok) {
-                              toast.success('Login image saved')
+                              showSuccess('Login image saved')
                               const j = await res.json().catch(()=>({}))
                               setSpaceDetails(j.space || { ...spaceDetails, features })
                             } else {
-                              toast.error('Failed to save login image')
+                              showError('Failed to save login image')
                             }
                           } finally {
                             setSavingLoginImage(false)
@@ -2274,6 +2305,42 @@ export default function SpaceSettingsPage() {
                   </DialogContent>
                 </Dialog>
 
+                {/* Edit Folder Dialog */}
+                <Dialog open={showEditFolderDialog} onOpenChange={setShowEditFolderDialog}>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Edit Folder</DialogTitle>
+                      <DialogDescription>
+                        Rename the folder "{editingFolder?.name}"
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="edit-folder-name">Folder Name</Label>
+                        <Input
+                          id="edit-folder-name"
+                          value={editFolderName}
+                          onChange={(e) => setEditFolderName(e.target.value)}
+                          placeholder="Enter folder name"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && editFolderName.trim()) {
+                              saveFolderEdit()
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setShowEditFolderDialog(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={saveFolderEdit} disabled={!editFolderName.trim() || editFolderName === editingFolder?.name}>
+                        Save Changes
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+
                 {/* Data Model Type Selection Dialog */}
                 <Dialog open={showDataModelTypeDialog} onOpenChange={setShowDataModelTypeDialog}>
                   <DialogContent className="sm:max-w-md">
@@ -2768,7 +2835,7 @@ export default function SpaceSettingsPage() {
                           a.click()
                           URL.revokeObjectURL(url)
                         } catch (e) {
-                          toast.error('Failed to export')
+                          showError('Failed to export')
                         }
                       }}>Export Space Data</Button>
                       <label className="inline-flex items-center gap-2">
@@ -2779,8 +2846,8 @@ export default function SpaceSettingsPage() {
                           fd.append('file', file)
                           try {
                             const res = await fetch(`/api/spaces/${selectedSpace.id}/import`, { method: 'POST', body: fd })
-                            if (res.ok) { toast.success('Import started') } else { throw new Error('Import failed') }
-                          } catch (err) { toast.error('Failed to import') }
+                            if (res.ok) { showSuccess('Import started') } else { throw new Error('Import failed') }
+                          } catch (err) { showError('Failed to import') }
                         }} />
                         <span className="text-sm">Import from JSON</span>
                       </label>
@@ -3362,7 +3429,7 @@ export default function SpaceSettingsPage() {
                                       throw new Error(error.error || 'Failed to delete space')
                                     }
 
-                                    toast.success('Space deleted successfully')
+                                    showSuccess('Space deleted successfully')
                                     await refreshSpaces()
                                     
                                     // Redirect to spaces page or another space
@@ -3376,7 +3443,7 @@ export default function SpaceSettingsPage() {
                                     }
                                   } catch (error) {
                                     console.error('Error deleting space:', error)
-                                    toast.error(error instanceof Error ? error.message : 'Failed to delete space')
+                                    showError(error instanceof Error ? error.message : 'Failed to delete space')
                                   }
                                 }}
                               >

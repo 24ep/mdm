@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useThemeSafe } from '@/hooks/use-theme-safe'
 import { Button } from '@/components/ui/button'
 import { 
   Play, 
@@ -94,6 +95,7 @@ export function CellRenderer({
   canEdit = true,
   canExecute = true
 }: CellRendererProps) {
+  const { isDark, mounted } = useThemeSafe()
   const [showOutput, setShowOutput] = useState(true)
   const [showComments, setShowComments] = useState(false)
   const [commentsLimit, setCommentsLimit] = useState(5)
@@ -233,7 +235,7 @@ export function CellRenderer({
   }
 
   const renderCodeCell = () => {
-    const isDark = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
+    // isDark is already available from useThemeSafe
     
     // Light theme highlight style
     const lightHighlightStyle = HighlightStyle.define([

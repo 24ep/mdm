@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     if (forbidden) return forbidden
 
     const body = await request.json()
-    const { userIds, role, spaceId, spaceRole } = body
+    const { userIds, role, spaceId, spaceRole, operation, isActive } = body
 
     if (!Array.isArray(userIds) || userIds.length === 0) {
       return NextResponse.json({ error: 'userIds array is required' }, { status: 400 })
@@ -22,8 +22,44 @@ export async function POST(request: NextRequest) {
       failed: [] as Array<{ userId: string; error: string }>
     }
 
+    // Bulk delete users
+    if (operation === 'delete') {
+      for (const userId of userIds) {
+        try {
+          // Prevent deleting yourself
+          const session = await getServerSession(authOptions)
+          if (session?.user?.id === userId) {
+            results.failed.push({ userId, error: 'Cannot delete your own account' })
+            continue
+          }
+          
+          // Delete space memberships first
+          await query('DELETE FROM space_members WHERE user_id = $1', [userId])
+          // Delete user
+          await query('DELETE FROM users WHERE id = $1', [userId])
+          results.success.push(userId)
+        } catch (error: any) {
+          results.failed.push({ userId, error: error.message || 'Delete failed' })
+        }
+      }
+    }
+    // Bulk activate/deactivate users
+    else if (operation === 'activate' || operation === 'deactivate') {
+      const activeStatus = operation === 'activate'
+      for (const userId of userIds) {
+        try {
+          await query(
+            'UPDATE users SET is_active = $1, updated_at = NOW() WHERE id = $2',
+            [activeStatus, userId]
+          )
+          results.success.push(userId)
+        } catch (error: any) {
+          results.failed.push({ userId, error: error.message || 'Update failed' })
+        }
+      }
+    }
     // Bulk update global role
-    if (role) {
+    else if (role) {
       const allowedRoles = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'USER']
       if (!allowedRoles.includes(role)) {
         return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
@@ -41,9 +77,8 @@ export async function POST(request: NextRequest) {
         }
       }
     }
-
     // Bulk assign to space
-    if (spaceId && spaceRole) {
+    else if (spaceId && spaceRole) {
       for (const userId of userIds) {
         try {
           await query(

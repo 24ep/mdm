@@ -18,8 +18,8 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Set default envs for build to avoid SSR failures during prerender
-ENV NEXT_PUBLIC_SUPABASE_URL="http://localhost:54321"
-ENV NEXT_PUBLIC_SUPABASE_ANON_KEY="anon-dev-key"
+# Note: PostgREST API URL (not Supabase)
+ENV NEXT_PUBLIC_API_URL="http://localhost:3001"
 
 # Ensure public directory exists (some repos may not include it)
 RUN mkdir -p public
@@ -34,8 +34,8 @@ WORKDIR /app
 ENV NODE_ENV production
 # Uncomment the following line in case you want to disable telemetry during runtime.
 # ENV NEXT_TELEMETRY_DISABLED 1
-ENV NEXT_PUBLIC_SUPABASE_URL="http://localhost:54321"
-ENV NEXT_PUBLIC_SUPABASE_ANON_KEY="anon-dev-key"
+# Note: PostgREST API URL (not Supabase)
+ENV NEXT_PUBLIC_API_URL="http://localhost:3001"
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs

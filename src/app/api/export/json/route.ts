@@ -1,52 +1,97 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
-    const { elementId, datasourceId, query, filters } = await request.json()
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-    // Validate required fields
-    if (!elementId || !datasourceId) {
+    const { dataModelId, filters, columns, elementId, datasourceId, query } = await request.json()
+
+    // Support both old format (elementId/datasourceId) and new format (dataModelId)
+    const modelId = dataModelId || datasourceId
+
+    if (!modelId) {
       return NextResponse.json(
-        { error: 'Element ID and Data Source ID are required' },
+        { error: 'Data Model ID is required' },
         { status: 400 }
       )
     }
 
-    // TODO: Implement actual data fetching from data source
-    // For now, return mock JSON data
-    const mockData = {
-      elementId,
-      datasourceId,
-      query,
-      filters,
-      data: [
-        { date: '2024-01-01', value: 100, category: 'A' },
-        { date: '2024-01-02', value: 150, category: 'B' },
-        { date: '2024-01-03', value: 200, category: 'A' },
-        { date: '2024-01-04', value: 175, category: 'C' },
-        { date: '2024-01-05', value: 225, category: 'B' }
-      ],
+    // Fetch data from data model
+    const dataResponse = await fetch(
+      `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/data-models/${modelId}/data`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': request.headers.get('cookie') || ''
+        },
+        body: JSON.stringify({
+          customQuery: query || undefined,
+          filters: filters || {},
+          limit: 10000, // Max records for export
+          offset: 0
+        })
+      }
+    )
+
+    if (!dataResponse.ok) {
+      const error = await dataResponse.json().catch(() => ({}))
+      throw new Error(error.error || 'Failed to fetch data')
+    }
+
+    const { data, metadata } = await dataResponse.json()
+
+    // Filter columns if specified
+    let exportData = data || []
+    if (columns && Array.isArray(columns) && columns.length > 0) {
+      exportData = exportData.map((record: any) => {
+        const filtered: any = {}
+        columns.forEach((col: string) => {
+          if (record[col] !== undefined) {
+            filtered[col] = record[col]
+          }
+        })
+        return filtered
+      })
+    }
+
+    const exportPayload = {
+      elementId: elementId || null,
+      dataModelId: modelId,
+      query: query || null,
+      filters: filters || {},
+      data: exportData,
       metadata: {
+        ...metadata,
         exportedAt: new Date().toISOString(),
-        totalRecords: 5,
-        dataSource: datasourceId
+        totalRecords: exportData.length,
+        columns: columns || metadata?.attributes?.map((attr: any) => attr.name) || []
       }
     }
 
     // Create response with JSON content
-    const response = new NextResponse(JSON.stringify(mockData, null, 2), {
+    const filename = elementId 
+      ? `chart_data_${elementId}.json`
+      : `export_${modelId}_${new Date().toISOString().split('T')[0]}.json`
+
+    const response = new NextResponse(JSON.stringify(exportPayload, null, 2), {
       status: 200,
       headers: {
-        'Content-Type': 'application/json',
-        'Content-Disposition': `attachment; filename="chart_data_${elementId}.json"`
+        'Content-Type': 'application/json; charset=utf-8',
+        'Content-Disposition': `attachment; filename="${filename}"`
       }
     })
 
     return response
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error exporting to JSON:', error)
     return NextResponse.json(
-      { error: 'Failed to export data to JSON' },
+      { error: error.message || 'Failed to export data to JSON' },
       { status: 500 }
     )
   }

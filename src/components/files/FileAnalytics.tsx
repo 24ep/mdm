@@ -1,11 +1,13 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
+import { formatDate } from '@/lib/date-formatters'
 import { 
   BarChart, 
   Bar, 
@@ -92,25 +94,28 @@ interface AnalyticsData {
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#84CC16', '#F97316']
 
 export function FileAnalytics({ spaceId }: FileAnalyticsProps) {
+  const { data: session } = useSession()
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [period, setPeriod] = useState('30d')
 
   useEffect(() => {
-    if (spaceId) {
+    if (spaceId && session?.user?.id) {
       fetchAnalytics()
     }
-  }, [spaceId, period])
+  }, [spaceId, period, session?.user?.id])
 
   const fetchAnalytics = async () => {
+    if (!session?.user?.id) return
+
     try {
       setLoading(true)
       setError(null)
 
       const response = await fetch(`/api/files/analytics?spaceId=${spaceId}&period=${period}`, {
         headers: {
-          'x-user-id': 'current-user-id' // TODO: Replace with actual user ID
+          'x-user-id': session.user.id
         }
       })
 
@@ -135,9 +140,6 @@ export function FileAnalytics({ spaceId }: FileAnalyticsProps) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString()
-  }
 
   if (loading) {
     return (
@@ -166,7 +168,7 @@ export function FileAnalytics({ spaceId }: FileAnalyticsProps) {
         <div>
           <h2 className="text-2xl font-bold">File Analytics</h2>
           <p className="text-muted-foreground">
-            {formatDate(analytics.dateRange.from)} - {formatDate(analytics.dateRange.to)}
+            {formatDate(analytics.dateRange.from.toString())} - {formatDate(analytics.dateRange.to.toString())}
           </p>
         </div>
         <Select value={period} onValueChange={setPeriod}>

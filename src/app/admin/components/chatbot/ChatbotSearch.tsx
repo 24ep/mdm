@@ -24,3 +24,7 @@ export function ChatbotSearch({ searchQuery, onSearchChange, placeholder = 'Sear
   )
 }
 
+
+
+
+

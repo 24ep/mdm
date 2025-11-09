@@ -25,53 +25,30 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { data: exportJob, error: jobError } = await supabase
-      .from('export_jobs')
-      .insert({
-        file_name: `export_${Date.now()}.${format}`,
-        data_model_id: dataModelId,
-        status: 'PENDING',
-        filters,
-        columns,
+    // Create export job
+    const exportJob = await db.exportJob.create({
+      data: {
+        dataModelId,
         format,
-        created_by: user.id,
-      })
-      .select('*')
-      .single()
-    if (jobError) throw jobError
-
-    setTimeout(async () => {
-      try {
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        await supabase
-          .from('export_jobs')
-          .update({ status: 'PROCESSING', progress: 50 })
-          .eq('id', exportJob.id)
-
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        await supabase
-          .from('export_jobs')
-          .update({ status: 'COMPLETED', progress: 100, completed_at: new Date().toISOString() })
-          .eq('id', exportJob.id)
-
-        await supabase
-          .from('activities')
-          .insert({
-            action: 'EXPORT',
-            entity_type: 'ExportJob',
-            entity_id: exportJob.id,
-            new_value: { dataModelId, format, filters, columns },
-            user_id: user.id,
-          })
-      } catch (error) {
-        await supabase
-          .from('export_jobs')
-          .update({ status: 'FAILED', completed_at: new Date().toISOString() })
-          .eq('id', exportJob.id)
+        status: 'PENDING',
+        filters: filters || {},
+        columns: columns || [],
+        createdBy: session.user.id,
+        spaceId: body.spaceId || null
       }
-    }, 1000)
+    })
 
-    return NextResponse.json(exportJob, { status: 201 })
+    // TODO: In a production system, you would:
+    // 1. Queue a background job to process the export
+    // 2. Fetch data from the data model based on filters
+    // 3. Format data according to the specified format
+    // 4. Upload the file to storage and update the job with fileUrl
+    // For now, we just create the job record
+
+    return NextResponse.json({ 
+      job: exportJob,
+      message: 'Export job created. Processing will begin shortly.'
+    }, { status: 201 })
   } catch (error) {
     console.error('Error creating export job:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -80,44 +57,71 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    // Using Prisma instead of Supabase
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
-    const status = searchParams.get('status') || ''
+    const status = searchParams.get('status')
+    const dataModelId = searchParams.get('dataModelId')
+    const spaceId = searchParams.get('spaceId')
 
-    const from = (page - 1) * limit
-    const to = from + limit - 1
+    const where: any = {
+      OR: [
+        { createdBy: session.user.id },
+        { space: { members: { some: { userId: session.user.id } } } }
+      ]
+    }
 
-    let query = supabase
-      .from('export_jobs')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .range(from, to)
+    if (status) {
+      where.status = status
+    }
 
-    if (status) query = query.eq('status', status)
+    if (dataModelId) {
+      where.dataModelId = dataModelId
+    }
 
-    const { data: exportJobs, error } = await query
-    if (error) throw error
+    if (spaceId) {
+      where.spaceId = spaceId
+    }
 
-    const { count } = await supabase
-      .from('export_jobs')
-      .select('*', { count: 'exact', head: true })
-      .filter('status', status ? 'eq' : 'not.is', status || null as any)
+    const [exportJobs, total] = await Promise.all([
+      db.exportJob.findMany({
+        where,
+        take: limit,
+        skip: (page - 1) * limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          creator: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          },
+          space: {
+            select: {
+              id: true,
+              name: true,
+              slug: true
+            }
+          }
+        }
+      }),
+      db.exportJob.count({ where })
+    ])
 
-    return NextResponse.json({
-      exportJobs: exportJobs || [],
+    return NextResponse.json({ 
+      exportJobs,
       pagination: {
         page,
         limit,
-        total: count || 0,
-        pages: Math.ceil((count || 0) / limit),
-      },
+        total,
+        pages: Math.ceil(total / limit)
+      }
     })
   } catch (error) {
     console.error('Error fetching export jobs:', error)

@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/database'
 import { uploadFile } from '@/lib/attachment-storage'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
-    // TODO: Implement your authentication system here
-    const userId = request.headers.get('x-user-id')
+    const session = await getServerSession(authOptions)
+    const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

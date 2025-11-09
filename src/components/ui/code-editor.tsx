@@ -45,6 +45,8 @@ interface CodeEditorProps {
     enableSelectionHighlight?: boolean
   }
   className?: string
+  onJumpToLine?: (line: number, column?: number) => void
+  editorRef?: React.RefObject<any>
 }
 
 export function CodeEditor({
@@ -56,13 +58,45 @@ export function CodeEditor({
   readOnly = false,
   theme = 'light',
   options = {},
-  className = ''
+  className = '',
+  onJumpToLine,
+  editorRef
 }: CodeEditorProps) {
   const [dbSchema, setDbSchema] = useState<any>(null)
   const [sqlAutocomplete, setSqlAutocomplete] = useState<any>(null)
+  const internalEditorRef = useRef<any>(null)
+  const viewRef = useRef<EditorView | null>(null)
+  
+  // Use provided ref or internal ref
+  const codeMirrorRef = editorRef || internalEditorRef
   
   // For SQL language, use CodeMirror with proper autocomplete
   const isSQL = language.toLowerCase() === 'sql'
+  
+  // Expose jump to line function via ref
+  useEffect(() => {
+    if (codeMirrorRef && onJumpToLine) {
+      const jumpToLine = (line: number, column?: number) => {
+        if (viewRef.current) {
+          const lineNumber = Math.max(1, Math.min(line, value.split('\n').length))
+          const doc = viewRef.current.state.doc
+          const linePos = doc.line(lineNumber).from
+          const pos = column ? linePos + Math.max(0, column - 1) : linePos
+          
+          viewRef.current.dispatch({
+            selection: { anchor: pos, head: pos },
+            effects: EditorView.scrollIntoView(pos, { y: 'center' })
+          })
+          viewRef.current.focus()
+        }
+      }
+      
+      // Store jump function in ref
+      if (codeMirrorRef.current) {
+        codeMirrorRef.current.jumpToLine = jumpToLine
+      }
+    }
+  }, [codeMirrorRef, onJumpToLine, value])
   
   // Fetch database schema for SQL autocomplete
   useEffect(() => {
@@ -192,7 +226,14 @@ export function CodeEditor({
           readOnly={readOnly}
           height={height}
           theme={theme === 'dark' ? oneDark : undefined}
-          extensions={sqlExtensions}
+          extensions={[
+            ...sqlExtensions,
+            EditorView.updateListener.of((update) => {
+              if (update.view && !viewRef.current) {
+                viewRef.current = update.view
+              }
+            })
+          ]}
           basicSetup={{
             lineNumbers: options.showLineNumbers !== false,
             highlightActiveLine: true,

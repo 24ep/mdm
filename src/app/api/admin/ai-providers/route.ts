@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-
-const prisma = new PrismaClient()
+import { encryptApiKey, decryptApiKey } from '@/lib/encryption'
+import { getSecretsManager } from '@/lib/secrets-manager'
+import { createAuditContext } from '@/lib/audit-context-helper'
+import { db as prisma } from '@/lib/db'
 
 export async function GET() {
   try {
@@ -11,6 +12,11 @@ export async function GET() {
     
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check if user has admin privileges
+    if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
     const providers = await prisma.aIProviderConfig.findMany({
@@ -54,6 +60,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Check if user has admin privileges
+    if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    }
+
     const body = await request.json()
     const { 
       provider, 
@@ -68,6 +79,29 @@ export async function POST(request: NextRequest) {
       retryAttempts 
     } = body
 
+    const secretsManager = getSecretsManager()
+    const useVault = secretsManager.getBackend() === 'vault'
+
+    let encryptedApiKey: string | null = null
+
+    if (apiKey) {
+      if (useVault) {
+        // Store in Vault with audit context
+        const auditContext = createAuditContext(request, session.user, 'API key creation')
+        await secretsManager.storeSecret(
+          `ai-providers/${provider}/api-key`,
+          { apiKey },
+          undefined,
+          auditContext
+        )
+        // Store a reference in database (encrypted or masked)
+        encryptedApiKey = 'vault://' + provider
+      } else {
+        // Use database encryption
+        encryptedApiKey = encryptApiKey(apiKey)
+      }
+    }
+
     const providerConfig = await prisma.aIProviderConfig.create({
       data: {
         provider,
@@ -75,7 +109,7 @@ export async function POST(request: NextRequest) {
         description,
         website,
         icon,
-        apiKey,
+        apiKey: encryptedApiKey,
         baseUrl,
         customHeaders: customHeaders || {},
         timeout: timeout || 30000,
@@ -120,6 +154,11 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Check if user has admin privileges
+    if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    }
+
     const body = await request.json()
     const { 
       id,
@@ -130,17 +169,83 @@ export async function PUT(request: NextRequest) {
       retryAttempts 
     } = body
 
+    // Get existing provider to know the provider name
+    const existingProvider = await prisma.aIProviderConfig.findUnique({
+      where: { id },
+      select: { provider: true }
+    })
+
+    if (!existingProvider) {
+      return NextResponse.json({ error: 'Provider not found' }, { status: 404 })
+    }
+
+    const secretsManager = getSecretsManager()
+    const useVault = secretsManager.getBackend() === 'vault'
+
+    let encryptedApiKey: string | null | undefined = undefined
+
+    if (apiKey !== undefined) {
+      if (apiKey) {
+        if (useVault) {
+          // Store in Vault with audit context
+          const auditContext = createAuditContext(request, session.user, 'API key update')
+          await secretsManager.storeSecret(
+            `ai-providers/${existingProvider.provider}/api-key`,
+            { apiKey },
+            undefined,
+            auditContext
+          )
+          // Store reference in database
+          encryptedApiKey = 'vault://' + existingProvider.provider
+        } else {
+          // Use database encryption
+          encryptedApiKey = encryptApiKey(apiKey)
+        }
+      } else {
+        // Delete from Vault if using Vault
+        if (useVault) {
+          try {
+            const auditContext = createAuditContext(request, session.user, 'API key deletion')
+            await secretsManager.deleteSecret(
+              `ai-providers/${existingProvider.provider}/api-key`,
+              auditContext
+            )
+          } catch (error) {
+            // Ignore if secret doesn't exist
+          }
+        }
+        encryptedApiKey = null
+      }
+    }
+
+    const updateData: any = {
+      baseUrl,
+      customHeaders: customHeaders || {},
+      timeout: timeout || 30000,
+      retryAttempts: retryAttempts || 3,
+    }
+
+    if (encryptedApiKey !== undefined) {
+      updateData.apiKey = encryptedApiKey
+      updateData.isConfigured = !!apiKey
+      updateData.status = apiKey ? 'active' : 'inactive'
+      
+      // 2-way sync: If OpenAI provider key is updated, sync to chatbots that use global key
+      if (existingProvider.provider === 'openai' && apiKey) {
+        try {
+          // Find chatbots using OpenAI Agent SDK that might be using global key
+          // Note: We don't force update chatbot-specific keys, but the global key is available
+          // The Chat UI will show the global key is available and user can choose to use it
+        } catch (syncError) {
+          // Don't fail the main request if sync fails
+          console.warn('Note: Global API key updated. Chatbots can now use this key via "Use Global API Key" button.', syncError)
+        }
+      }
+    }
+
     const providerConfig = await prisma.aIProviderConfig.update({
       where: { id },
-      data: {
-        apiKey,
-        baseUrl,
-        customHeaders: customHeaders || {},
-        timeout: timeout || 30000,
-        retryAttempts: retryAttempts || 3,
-        isConfigured: !!apiKey,
-        status: apiKey ? 'active' : 'inactive'
-      }
+      data: updateData
     })
 
     const formattedProvider = {

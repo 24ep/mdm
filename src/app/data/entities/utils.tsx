@@ -240,15 +240,18 @@ export function renderEditFieldHelper(
             <SelectValue placeholder={`Select ${attribute.display_name}`} />
           </SelectTrigger>
           <SelectContent>
-            {selectOptions.map((option: any, index: number) => {
-              const optionValue = option.value || option
-              const optionLabel = option.label || option
-              return (
+            {selectOptions
+              .map((option: any, index: number) => {
+                const optionValue = String(option.value ?? option ?? '')
+                const optionLabel = option.label || option || ''
+                return { optionValue, optionLabel, index }
+              })
+              .filter(({ optionValue }) => optionValue !== '')
+              .map(({ optionValue, optionLabel, index }) => (
                 <SelectItem key={`${optionValue}-${index}`} value={optionValue}>
                   {optionLabel}
                 </SelectItem>
-              )
-            })}
+              ))}
           </SelectContent>
         </Select>
       )

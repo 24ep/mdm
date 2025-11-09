@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -38,47 +38,85 @@ import {
 } from 'lucide-react'
 import { addRecentItem, getRecentItems, type RecentItem } from '@/lib/recent-items'
 import { PlatformLayout } from '@/components/platform/PlatformLayout'
-import { BigQueryInterface } from './admin/components/BigQueryInterface'
-import { KnowledgeBase } from './admin/components/KnowledgeBase'
+import { BigQueryInterface } from './admin/features/business-intelligence/components/BigQueryInterface'
+import { KnowledgeBase } from './admin/features/content'
 import { ProjectsList } from '@/components/datascience/ProjectsList'
-import { AttachmentManager } from './admin/components/AttachmentManager'
-import { UserManagement } from './admin/components/UserManagement'
-import { RoleManagement } from './admin/components/RoleManagement'
-import { PermissionTester } from './admin/components/PermissionTester'
-import { SystemSettings } from './admin/components/SystemSettings'
-import { PageTemplatesAdmin } from './admin/components/PageTemplatesAdmin'
-import { AnalyticsDashboard } from './admin/components/AnalyticsDashboard'
-import { AuditLogs } from './admin/components/AuditLogs'
-import { BackupRecovery } from './admin/components/BackupRecovery'
-import { APIManagement } from './admin/components/APIManagement'
-import { NotificationCenter } from './admin/components/NotificationCenter'
-import { ThemeBranding } from './admin/components/ThemeBranding'
-import { SecurityFeatures } from './admin/components/SecurityFeatures'
-import { PerformanceMonitoring } from './admin/components/PerformanceMonitoring'
-import { DataExportImport } from './admin/components/DataExportImport'
-import { IntegrationHub } from './admin/components/IntegrationHub'
-import { SystemHealthDashboard } from './admin/components/SystemHealthDashboard'
-import { LogManagement } from './admin/components/LogManagement'
-import { DatabaseManagement } from './admin/components/DatabaseManagement'
-import { CacheManagement } from './admin/components/CacheManagement'
-import { StorageManagement } from './admin/components/StorageManagement'
-import { BusinessIntelligence } from './admin/components/BusinessIntelligence'
-import { SpaceSelection } from './admin/components/SpaceSelection'
-import { SpaceLayoutsAdmin } from './admin/components/SpaceLayoutsAdmin'
-import { AIAnalyst } from './admin/components/AIAnalyst'
-import { AIChatUI } from './admin/components/AIChatUI'
-import { KernelManagement } from './admin/components/KernelManagement'
-import { DataModelManagement } from './admin/components/DataModelManagement'
-import { SpaceSettingsAdmin } from './admin/components/SpaceSettingsAdmin'
-import { ChangeRequests } from './admin/components/ChangeRequests'
-import { SQLLinting } from './admin/components/SQLLinting'
-import { SchemaMigrations } from './admin/components/SchemaMigrations'
-import { DataMasking } from './admin/components/DataMasking'
-import { ProjectsManagement } from './admin/components/ProjectsManagement'
+import { AttachmentManager } from './admin/features/content'
+import { UserManagement, RoleManagement, PermissionTester } from './admin/features/users'
+import { SystemSettings, PageTemplatesAdmin } from './admin/features/system'
+import { AnalyticsDashboard } from './admin/features/analytics'
+import { AuditLogs } from './admin/features/security'
+import { BackupRecovery } from './admin/features/storage'
+import { APIManagement } from './admin/features/integration'
+import { NotificationCenter, ThemeBranding } from './admin/features/system'
+import { SecurityFeatures } from './admin/features/security'
+import { PerformanceMonitoring } from './admin/features/analytics'
+import { DataExportImport } from './admin/features/data'
+import { IntegrationHub } from './admin/features/integration'
+import { SystemHealthDashboard, LogManagement } from './admin/features/analytics'
+import { DatabaseManagement } from './admin/features/data'
+import { CacheManagement, StorageManagement } from './admin/features/storage'
+import { MergedBIReports } from './admin/features/business-intelligence'
+import { SpaceSelection, SpaceLayoutsAdmin } from './admin/features/spaces'
+import { AIAnalyst, AIChatUI, KernelManagement } from './admin/features/business-intelligence'
+import { DataModelManagement } from './admin/features/data'
+import { SpaceSettingsAdmin } from './admin/features/spaces'
+import { ChangeRequests } from './admin/features/content'
+import { SQLLinting, SchemaMigrations, DataMasking } from './admin/features/data'
+import { ProjectsManagement } from './admin/features/content'
+import { DataGovernance } from './admin/features/data-governance'
+
+// Map tab IDs to their new route paths
+const getRouteForTab = (tab: string): string => {
+  const routeMap: Record<string, string> = {
+    'overview': '/',
+    'analytics': '/overview/analytics',
+    'bigquery': '/tools/bigquery',
+    'notebook': '/tools/notebook',
+    'ai-analyst': '/tools/ai-analyst',
+    'ai-chat-ui': '/tools/ai-chat-ui',
+    'knowledge-base': '/tools/knowledge-base',
+    'projects': '/tools/projects',
+    'bi': '/tools/bi',
+    'storage': '/tools/storage',
+    'data-governance': '/tools/data-governance',
+    'users': '/system/users',
+    'roles': '/system/roles',
+    'permission-tester': '/system/permission-tester',
+    'space-layouts': '/system/space-layouts',
+    'space-settings': '/system/space-settings',
+    'assets': '/system/assets',
+    'data': '/system/data',
+    'attachments': '/system/attachments',
+    'kernels': '/system/kernels',
+    'health': '/system/health',
+    'logs': '/system/logs',
+    'audit': '/system/audit',
+    'database': '/system/database',
+    'change-requests': '/system/change-requests',
+    'sql-linting': '/system/sql-linting',
+    'schema-migrations': '/system/schema-migrations',
+    'data-masking': '/system/data-masking',
+    'cache': '/system/cache',
+    'backup': '/system/backup',
+    'security': '/system/security',
+    'performance': '/system/performance',
+    'settings': '/system/settings',
+    'page-templates': '/system/page-templates',
+    'notifications': '/system/notifications',
+    'themes': '/system/themes',
+    'export': '/system/export',
+    'integrations': '/system/integrations',
+    'api': '/system/api',
+    'space-selection': '/data-management/space-selection',
+  }
+  return routeMap[tab] || '/'
+}
 
 export default function HomePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const pathname = usePathname()
   const [activeTab, setActiveTab] = useState('overview')
   const [selectedSpace, setSelectedSpace] = useState<string>('')
   const [error, setError] = useState<string | null>(null)
@@ -94,6 +132,18 @@ export default function HomePage() {
     window.addEventListener('error', handleError)
     return () => window.removeEventListener('error', handleError)
   }, [])
+
+  // Redirect old query parameter URLs to new route structure
+  useEffect(() => {
+    const urlTab = searchParams?.get('tab')
+    if (urlTab && pathname === '/') {
+      const newRoute = getRouteForTab(urlTab)
+      if (newRoute !== '/') {
+        router.replace(newRoute)
+        return
+      }
+    }
+  }, [searchParams, pathname, router])
 
   // Load recent items
   useEffect(() => {
@@ -116,15 +166,17 @@ export default function HomePage() {
         settings: { name: 'System Settings', icon: 'Settings', color: '#6b7280' },
         analytics: { name: 'Analytics', icon: 'BarChart3', color: '#3b82f6' },
         projects: { name: 'Project Management', icon: 'Kanban', color: '#8b5cf6' },
+        'data-governance': { name: 'Data Governance', icon: 'Shield', color: '#059669' },
       }[activeTab]
 
       if (tabConfig) {
+        const route = getRouteForTab(activeTab)
         addRecentItem({
           id: activeTab,
           type: 'tool',
           name: tabConfig.name,
           tabId: activeTab,
-          url: `/?tab=${activeTab}`,
+          url: route,
           icon: tabConfig.icon,
           color: tabConfig.color,
         })
@@ -134,27 +186,38 @@ export default function HomePage() {
     }
   }, [activeTab])
 
-  // Sync activeTab with URL (?tab=...)
+  // Sync activeTab with URL (?tab=...) - only for homepage
   useEffect(() => {
-    const urlTab = searchParams?.get('tab')
-    if (urlTab && urlTab !== activeTab) {
-      setActiveTab(urlTab)
+    if (pathname === '/') {
+      const urlTab = searchParams?.get('tab')
+      if (urlTab && urlTab !== activeTab) {
+        setActiveTab(urlTab)
+      } else if (!urlTab) {
+        setActiveTab('overview')
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams])
+  }, [searchParams, pathname])
 
   const handleTabChange = (tab: string) => {
-    setActiveTab(tab)
-    const params = new URLSearchParams(Array.from(searchParams?.entries?.() || []))
-    params.set('tab', tab)
-    router.replace(`?${params.toString()}`)
+    const route = getRouteForTab(tab)
+    if (route === '/') {
+      // For homepage, use query parameter
+      setActiveTab(tab)
+      const params = new URLSearchParams(Array.from(searchParams?.entries?.() || []))
+      params.set('tab', tab)
+      router.replace(`?${params.toString()}`)
+    } else {
+      // For other routes, navigate to the new route
+      router.push(route)
+    }
   }
 
   const handleRecentItemClick = (item: RecentItem) => {
-    if (item.tabId) {
-      handleTabChange(item.tabId)
-    } else if (item.url) {
+    if (item.url) {
       router.push(item.url)
+    } else if (item.tabId) {
+      handleTabChange(item.tabId)
     }
   }
 
@@ -447,6 +510,23 @@ export default function HomePage() {
                 </p>
               </CardContent>
             </Card>
+
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('data-governance')}>
+              <CardHeader className="flex flex-row items-center gap-3">
+                <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/20">
+                  <Shield className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Data Governance</CardTitle>
+                  <CardDescription>OpenMetadata data governance and quality</CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Manage data assets, policies, quality, and lineage using OpenMetadata
+                </p>
+              </CardContent>
+            </Card>
             </div>
           </div>
         )}
@@ -481,7 +561,8 @@ export default function HomePage() {
         {activeTab === 'data-masking' && <DataMasking />}
         {activeTab === 'cache' && <CacheManagement />}
         {activeTab === 'storage' && <StorageManagement />}
-        {activeTab === 'bi' && <BusinessIntelligence />}
+        {activeTab === 'bi' && <MergedBIReports />}
+        {activeTab === 'reports' && <MergedBIReports />}
         {activeTab === 'users' && <UserManagement />}
         {activeTab === 'roles' && <RoleManagement />}
         {activeTab === 'permission-tester' && <PermissionTester />}
@@ -499,6 +580,7 @@ export default function HomePage() {
         {activeTab === 'space-layouts' && <SpaceLayoutsAdmin />}
         {activeTab === 'page-templates' && <PageTemplatesAdmin />}
         {activeTab === 'projects' && <ProjectsManagement />}
+        {activeTab === 'data-governance' && <DataGovernance />}
       </div>
     </PlatformLayout>
   )

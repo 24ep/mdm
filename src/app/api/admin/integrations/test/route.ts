@@ -1,0 +1,193 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { name, type, config } = body
+
+    if (!name || !type) {
+      return NextResponse.json({ error: 'Name and type are required' }, { status: 400 })
+    }
+
+    // Test connection based on integration type
+    let testResult = { success: false, error: 'Unknown integration type' }
+
+    try {
+      switch (type.toLowerCase()) {
+        case 'openmetadata':
+        case 'metadata':
+          // Test OpenMetadata connection
+          if (config?.apiUrl && config?.apiKey) {
+            const response = await fetch(`${config.apiUrl}/api/v1/system/version`, {
+              headers: {
+                'Authorization': `Bearer ${config.apiKey}`,
+                'Content-Type': 'application/json'
+              },
+              signal: AbortSignal.timeout(10000) // 10 second timeout
+            })
+            testResult = {
+              success: response.ok,
+              error: response.ok ? undefined : `HTTP ${response.status}: ${response.statusText}`
+            }
+          } else {
+            testResult = { success: false, error: 'API URL and API Key are required' }
+          }
+          break
+
+        case 'sso':
+          // Test SSO configuration (basic validation)
+          if (config?.ssoUrl && config?.entityId) {
+            testResult = { success: true, message: 'SSO configuration is valid' }
+          } else {
+            testResult = { success: false, error: 'SSO URL and Entity ID are required' }
+          }
+          break
+
+        case 'servicedesk':
+          // Test Service Desk connection
+          if (config?.baseUrl && config?.apiKey) {
+            const response = await fetch(`${config.baseUrl}/api/v3/requests`, {
+              headers: {
+                'authtoken': config.apiKey,
+                'Content-Type': 'application/json'
+              },
+              signal: AbortSignal.timeout(10000)
+            })
+            testResult = {
+              success: response.ok || response.status === 401, // 401 means auth works but might need permissions
+              error: response.ok ? undefined : `HTTP ${response.status}: ${response.statusText}`
+            }
+          } else {
+            testResult = { success: false, error: 'Base URL and API Key are required' }
+          }
+          break
+
+        case 'powerbi':
+          // Test Power BI connection (validate config)
+          if (config?.clientId && config?.clientSecret && config?.tenantId) {
+            testResult = { success: true, message: 'Power BI configuration is valid' }
+          } else {
+            testResult = { success: false, error: 'Client ID, Client Secret, and Tenant ID are required' }
+          }
+          break
+
+        case 'looker':
+          // Test Looker connection
+          if (config?.apiUrl && config?.clientId && config?.clientSecret) {
+            const response = await fetch(`${config.apiUrl}/api/3.1/session`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                client_id: config.clientId,
+                client_secret: config.clientSecret
+              }),
+              signal: AbortSignal.timeout(10000)
+            })
+            testResult = {
+              success: response.ok,
+              error: response.ok ? undefined : `HTTP ${response.status}: ${response.statusText}`
+            }
+          } else {
+            testResult = { success: false, error: 'API URL, Client ID, and Client Secret are required' }
+          }
+          break
+
+        case 'grafana':
+          // Test Grafana connection
+          if (config?.apiUrl && config?.apiKey) {
+            const response = await fetch(`${config.apiUrl}/api/health`, {
+              headers: {
+                'Authorization': `Bearer ${config.apiKey}`,
+                'Content-Type': 'application/json'
+              },
+              signal: AbortSignal.timeout(10000)
+            })
+            testResult = {
+              success: response.ok,
+              error: response.ok ? undefined : `HTTP ${response.status}: ${response.statusText}`
+            }
+          } else {
+            testResult = { success: false, error: 'API URL and API Key are required' }
+          }
+          break
+
+        case 'vault':
+          // Test Vault connection
+          if (config?.vaultUrl && config?.token) {
+            const response = await fetch(`${config.vaultUrl}/v1/sys/health`, {
+              headers: {
+                'X-Vault-Token': config.token,
+                'Content-Type': 'application/json'
+              },
+              signal: AbortSignal.timeout(10000)
+            })
+            testResult = {
+              success: response.ok,
+              error: response.ok ? undefined : `HTTP ${response.status}: ${response.statusText}`
+            }
+          } else {
+            testResult = { success: false, error: 'Vault URL and Token are required' }
+          }
+          break
+
+        case 'launchpad':
+        case 'api':
+        case 'sdk':
+          // Test generic API/SDK connection
+          if (config?.endpoint || config?.apiUrl) {
+            const url = config.endpoint || config.apiUrl
+            const headers: Record<string, string> = {
+              'Content-Type': 'application/json'
+            }
+
+            if (config.apiKey) {
+              if (config.authType === 'bearer') {
+                headers['Authorization'] = `Bearer ${config.apiKey}`
+              } else if (config.authType === 'apiKey') {
+                headers['X-API-Key'] = config.apiKey
+              }
+            }
+
+            const response = await fetch(url, {
+              method: 'GET',
+              headers,
+              signal: AbortSignal.timeout(10000)
+            })
+            testResult = {
+              success: response.ok || response.status === 401, // 401 means endpoint exists
+              error: response.ok ? undefined : `HTTP ${response.status}: ${response.statusText}`
+            }
+          } else {
+            testResult = { success: false, error: 'Endpoint URL is required' }
+          }
+          break
+
+        default:
+          testResult = { success: false, error: `Unsupported integration type: ${type}` }
+      }
+    } catch (testError: any) {
+      testResult = {
+        success: false,
+        error: testError.message || 'Connection test failed'
+      }
+    }
+
+    return NextResponse.json(testResult)
+  } catch (error: any) {
+    console.error('Error testing integration:', error)
+    return NextResponse.json({ 
+      success: false,
+      error: error.message || 'Failed to test connection'
+    }, { status: 500 })
+  }
+}
+

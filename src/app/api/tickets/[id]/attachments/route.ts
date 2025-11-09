@@ -5,6 +5,7 @@ import { db } from '@/lib/db'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { v4 as uuidv4 } from 'uuid'
+import { createSuccessResponse, createErrorResponse } from '@/lib/api-response'
 
 export async function GET(
   request: NextRequest,
@@ -13,7 +14,7 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json(createErrorResponse('Unauthorized', 'UNAUTHORIZED'), { status: 401 })
     }
 
     const attachments = await db.ticketAttachment.findMany({
@@ -25,10 +26,10 @@ export async function GET(
       }
     })
 
-    return NextResponse.json({ attachments })
+    return NextResponse.json(createSuccessResponse({ attachments }))
   } catch (error) {
     console.error('Error fetching attachments:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json(createErrorResponse('Internal server error', 'INTERNAL_ERROR'), { status: 500 })
   }
 }
 
@@ -39,14 +40,14 @@ export async function POST(
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json(createErrorResponse('Unauthorized', 'UNAUTHORIZED'), { status: 401 })
     }
 
     const formData = await request.formData()
     const file = formData.get('file') as File
 
     if (!file) {
-      return NextResponse.json({ error: 'File is required' }, { status: 400 })
+      return NextResponse.json(createErrorResponse('File is required', 'VALIDATION_ERROR'), { status: 400 })
     }
 
     // Check if ticket exists
@@ -56,8 +57,12 @@ export async function POST(
     })
 
     if (!ticket || ticket.deletedAt) {
-      return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
+      return NextResponse.json(createErrorResponse('Ticket not found', 'NOT_FOUND'), { status: 404 })
     }
+
+    // Note: Tickets use local file system storage instead of AttachmentStorageService
+    // because tickets may not be associated with a space, and local storage is simpler
+    // for ticket-specific attachments. This is an intentional design decision.
 
     // Generate unique filename
     const fileExtension = file.name.split('.').pop()
@@ -84,10 +89,10 @@ export async function POST(
       }
     })
 
-    return NextResponse.json(attachment, { status: 201 })
+    return NextResponse.json(createSuccessResponse({ attachment }), { status: 201 })
   } catch (error) {
     console.error('Error uploading attachment:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json(createErrorResponse('Internal server error', 'INTERNAL_ERROR'), { status: 500 })
   }
 }
 
@@ -98,14 +103,14 @@ export async function DELETE(
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json(createErrorResponse('Unauthorized', 'UNAUTHORIZED'), { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
     const attachmentId = searchParams.get('attachmentId')
 
     if (!attachmentId) {
-      return NextResponse.json({ error: 'attachmentId is required' }, { status: 400 })
+      return NextResponse.json(createErrorResponse('attachmentId is required', 'VALIDATION_ERROR'), { status: 400 })
     }
 
     const attachment = await db.ticketAttachment.findUnique({
@@ -113,7 +118,7 @@ export async function DELETE(
     })
 
     if (!attachment || attachment.ticketId !== params.id) {
-      return NextResponse.json({ error: 'Attachment not found' }, { status: 404 })
+      return NextResponse.json(createErrorResponse('Attachment not found', 'NOT_FOUND'), { status: 404 })
     }
 
     // Only allow deletion by uploader or ticket owner
@@ -122,17 +127,17 @@ export async function DELETE(
     })
 
     if (attachment.uploadedBy !== session.user.id && ticket?.createdBy !== session.user.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      return NextResponse.json(createErrorResponse('Unauthorized', 'FORBIDDEN'), { status: 403 })
     }
 
     await db.ticketAttachment.delete({
       where: { id: attachmentId }
     })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json(createSuccessResponse({ deleted: true }))
   } catch (error) {
     console.error('Error deleting attachment:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json(createErrorResponse('Internal server error', 'INTERNAL_ERROR'), { status: 500 })
   }
 }
 

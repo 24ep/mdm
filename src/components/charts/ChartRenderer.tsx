@@ -54,6 +54,7 @@ import {
   Check as CheckIcon
 } from 'lucide-react'
 import { getTableColumns, hasValidTableColumns } from './chartUtils'
+import { processChartData, validateChartConfig, DEFAULT_CHART_COLORS, type ChartType } from '@/lib/chart-utils'
 
 interface ChartData {
   [key: string]: any
@@ -76,7 +77,8 @@ interface ChartRendererProps {
   config?: any
 }
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF7C7C']
+// Use shared chart colors from chart-utils
+const COLORS = DEFAULT_CHART_COLORS
 
 export function ChartRenderer({
   type,
@@ -256,8 +258,22 @@ export function ChartRenderer({
   }
 
   const renderChart = () => {
-    // Use sample data if no real data is provided
-    const chartData = data && data.length > 0 ? data : (() => {
+    // Validate chart configuration
+    const chartConfig = {
+      type: (chartType || type || 'BAR') as ChartType,
+      dimensions,
+      measures,
+      filters
+    }
+    const validation = validateChartConfig(chartConfig)
+    if (!validation.isValid && validation.errors.length > 0) {
+      console.warn('Chart validation errors:', validation.errors)
+    }
+
+    // Process chart data with filters using shared utilities
+    const processedData = data && data.length > 0 
+      ? processChartData(data, dimensions, measures, filters)
+      : (() => {
       const ct = (chartType || type || '').toUpperCase()
       
       if (ct.includes('LINE')) {
@@ -303,7 +319,7 @@ export function ChartRenderer({
     })()
 
     const commonProps = {
-      data: chartData,
+      data: processedData,
       margin: { top: 20, right: 30, left: 20, bottom: 5 }
     }
 
@@ -455,7 +471,7 @@ export function ChartRenderer({
         }
         
         return (
-          <div className="w-full h-full bg-white overflow-hidden">
+          <div className="w-full h-full bg-background overflow-hidden">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart {...commonProps} layout={config?.bar?.orientation === 'horizontal' ? 'horizontal' : undefined}>
                 {(config?.xAxis?.showGrid ?? config?.showGrid ?? true) && (
@@ -537,7 +553,7 @@ export function ChartRenderer({
 
       case 'LINE':
         return (
-          <div className="w-full h-full bg-white overflow-hidden">
+          <div className="w-full h-full bg-background overflow-hidden">
             <ResponsiveContainer width="100%" height="100%">
             <LineChart {...commonProps}>
                 {(config?.xAxis?.showGrid ?? config?.showGrid ?? true) && (
@@ -958,7 +974,7 @@ export function ChartRenderer({
                         <span>{formatLabelWithType(String(d[dimensions[0] || 'stage']), 'x')}</span>
                         <span>{formatNumber(v, measures[0], 'y')}</span>
                       </div>
-                      <div className="h-8 bg-gray-100 rounded">
+                      <div className="h-8 bg-muted rounded">
                         <div className="h-8 rounded bg-blue-500 transition-all" style={{ width: `${Math.max(8, Math.round(pct * 100))}%` }} />
                       </div>
                     </div>
@@ -1282,20 +1298,20 @@ export function ChartRenderer({
           source.forEach(r => { groups[r[dim]] = (groups[r[dim]] || 0) + Number(r[meas] || 0) })
           const rows = Object.entries(groups).map(([k, v]) => ({ [dim]: k, [meas]: v }))
           return (
-            <div className="w-full h-full bg-white overflow-hidden">
+            <div className="w-full h-full bg-background overflow-hidden">
               <div className="overflow-auto h-full">
                 <table className="w-full border-collapse">
                   <thead>
-                    <tr className="border-b bg-gray-50">
-                      <th className="text-left p-3 font-medium text-xs text-gray-700 uppercase tracking-wide" style={{ fontFamily: 'Roboto, sans-serif' }}>{dim}</th>
-                      <th className="text-left p-3 font-medium text-xs text-gray-700 uppercase tracking-wide" style={{ fontFamily: 'Roboto, sans-serif' }}>{meas}</th>
+                    <tr className="border-b bg-muted">
+                      <th className="text-left p-3 font-medium text-xs text-muted-foreground uppercase tracking-wide" style={{ fontFamily: 'Roboto, sans-serif' }}>{dim}</th>
+                      <th className="text-left p-3 font-medium text-xs text-muted-foreground uppercase tracking-wide" style={{ fontFamily: 'Roboto, sans-serif' }}>{meas}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {rows.map((r, idx) => (
-                      <tr key={idx} className="border-b hover:bg-gray-50 transition-colors">
-                        <td className="p-3 text-sm" style={{ fontFamily: 'Roboto, sans-serif' }}>{String(r[dim])}</td>
-                        <td className="p-3 text-sm" style={{ fontFamily: 'Roboto, sans-serif' }}>{String(r[meas])}</td>
+                      <tr key={idx} className="border-b hover:bg-muted/50 transition-colors">
+                        <td className="p-3 text-sm text-foreground" style={{ fontFamily: 'Roboto, sans-serif' }}>{String(r[dim])}</td>
+                        <td className="p-3 text-sm text-foreground" style={{ fontFamily: 'Roboto, sans-serif' }}>{String(r[meas])}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1314,8 +1330,8 @@ export function ChartRenderer({
           // If no columns selected, show empty state
           if (!hasValidTableColumns(columns)) {
             return (
-              <div className="w-full h-full bg-white flex items-center justify-center p-4">
-                <div className="text-center text-sm text-gray-500">
+              <div className="w-full h-full bg-background flex items-center justify-center p-4">
+                <div className="text-center text-sm text-muted-foreground">
                   No columns selected. Please configure columns in chart settings.
                 </div>
               </div>
@@ -1323,26 +1339,26 @@ export function ChartRenderer({
           }
 
           return (
-            <div className="w-full h-full bg-white overflow-hidden">
+            <div className="w-full h-full bg-background overflow-hidden">
               <div className="overflow-auto h-full">
                 <table className="w-full border-collapse">
                   <thead>
-                    <tr className="border-b bg-gray-50">
+                    <tr className="border-b bg-muted">
                       {columns.map((col, index) => (
-                        <th key={index} className="text-left p-3 font-medium text-xs text-gray-700 uppercase tracking-wide" style={{ fontFamily: 'Roboto, sans-serif' }}>
+                        <th key={index} className="text-left p-3 font-medium text-xs text-muted-foreground uppercase tracking-wide" style={{ fontFamily: 'Roboto, sans-serif' }}>
                           {col.charAt(0).toUpperCase() + col.slice(1)}
                         </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {chartData.slice(0, 100).map((row, rowIndex) => (
-                      <tr key={rowIndex} className="border-b hover:bg-gray-50 transition-colors">
+                    {processedData.slice(0, 100).map((row, rowIndex) => (
+                      <tr key={rowIndex} className="border-b hover:bg-muted/50 transition-colors">
                         {columns.map((col, colIndex) => (
-                          <td key={colIndex} className="p-3 text-sm" style={{ fontFamily: 'Roboto, sans-serif' }}>
+                          <td key={colIndex} className="p-3 text-sm text-foreground" style={{ fontFamily: 'Roboto, sans-serif' }}>
                             {col === 'growth' ? (
                               <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                (row as any)[col]?.startsWith('+') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                (row as any)[col]?.startsWith('+') ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200' : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200'
                               }`}>
                                 {(row as any)[col]}
                               </span>
@@ -1355,9 +1371,9 @@ export function ChartRenderer({
                     ))}
                   </tbody>
                 </table>
-                {chartData.length > 100 && (
-                  <div className="text-xs text-gray-500 p-3 text-center border-t border-gray-200" style={{ fontFamily: 'Roboto, sans-serif' }}>
-                    Showing first 100 rows of {chartData.length} total
+                {processedData.length > 100 && (
+                  <div className="text-xs text-muted-foreground p-3 text-center border-t border-border" style={{ fontFamily: 'Roboto, sans-serif' }}>
+                    Showing first 100 rows of {processedData.length} total
                   </div>
                 )}
               </div>
@@ -1366,7 +1382,7 @@ export function ChartRenderer({
 
       case 'AREA':
         return (
-          <div className="w-full h-full bg-white overflow-hidden">
+          <div className="w-full h-full bg-background overflow-hidden">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart {...commonProps}>
                 {(config?.xAxis?.showGrid ?? config?.showGrid ?? true) && (

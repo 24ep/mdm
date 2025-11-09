@@ -19,12 +19,16 @@ export async function GET(
         deletedAt: null
       },
       include: {
-        assignee: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true
+        assignees: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true
+              }
+            }
           }
         },
         creator: {
@@ -40,11 +44,15 @@ export async function GET(
             sortOrder: 'asc'
           }
         },
-        space: {
-          select: {
-            id: true,
-            name: true,
-            slug: true
+        spaces: {
+          include: {
+            space: {
+              select: {
+                id: true,
+                name: true,
+                slug: true
+              }
+            }
           }
         }
       }
@@ -54,22 +62,34 @@ export async function GET(
       return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
     }
 
-    // Check if user has access to this space
-    const spaceAccess = await db.spaceMember.findFirst({
-      where: {
-        spaceId: ticket.spaceId,
-        userId: session.user.id
-      }
-    })
+    // Check if user has access to any of the ticket's spaces
+    if (!ticket.spaces || ticket.spaces.length === 0) {
+      return NextResponse.json({ error: 'Ticket has no associated spaces' }, { status: 404 })
+    }
 
-    const isSpaceOwner = await db.space.findFirst({
-      where: {
-        id: ticket.spaceId,
-        createdBy: session.user.id
-      }
-    })
+    let hasAccess = false
+    for (const ticketSpace of ticket.spaces) {
+      const spaceAccess = await db.spaceMember.findFirst({
+        where: {
+          spaceId: ticketSpace.spaceId,
+          userId: session.user.id
+        }
+      })
 
-    if (!spaceAccess && !isSpaceOwner) {
+      const isSpaceOwner = await db.space.findFirst({
+        where: {
+          id: ticketSpace.spaceId,
+          createdBy: session.user.id
+        }
+      })
+
+      if (spaceAccess || isSpaceOwner) {
+        hasAccess = true
+        break
+      }
+    }
+
+    if (!hasAccess) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { ChevronDown, ChevronRight, Database, Table, Folder, FolderOpen, FileText, Star, Clock, Search } from 'lucide-react'
+import { formatDateTime } from '@/lib/date-formatters'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -220,15 +221,6 @@ export function DataExplorer({
     return queryFolders.filter(folder => folder.parentId === parentId)
   }
 
-  // Format date for display
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date)
-  }
 
   return (
     <div className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col">
@@ -377,7 +369,7 @@ export function DataExplorer({
                       <div className="truncate font-medium">{query.name}</div>
                       <div className="text-xs text-gray-500 flex items-center gap-2">
                         <Clock className="h-3 w-3" />
-                        {formatDate(query.updatedAt)}
+                        {formatDateTime(query.updatedAt)}
                       </div>
                     </div>
                     <Button
@@ -449,7 +441,7 @@ export function DataExplorer({
                                       <div className="truncate font-medium">{query.name}</div>
                                       <div className="text-xs text-gray-500 flex items-center gap-2">
                                         <Clock className="h-3 w-3" />
-                                        {formatDate(query.updatedAt)}
+                                        {formatDateTime(query.updatedAt)}
                                       </div>
                                     </div>
                                     <Button
@@ -482,7 +474,7 @@ export function DataExplorer({
                               <div className="truncate font-medium">{query.name}</div>
                               <div className="text-xs text-gray-500 flex items-center gap-2">
                                 <Clock className="h-3 w-3" />
-                                {formatDate(query.updatedAt)}
+                                {formatDateTime(query.updatedAt)}
                               </div>
                             </div>
                             <Button

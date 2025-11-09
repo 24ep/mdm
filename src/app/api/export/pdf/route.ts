@@ -1,113 +1,188 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import puppeteer from 'puppeteer'
 
 export async function POST(request: NextRequest) {
   try {
-    const { elementId, datasourceId, query, filters, elementName, elementType } = await request.json()
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-    // Validate required fields
-    if (!elementId || !datasourceId) {
+    const { dataModelId, filters, columns, elementId, datasourceId, query, elementName, elementType } = await request.json()
+
+    // Support both old format (elementId/datasourceId) and new format (dataModelId)
+    const modelId = dataModelId || datasourceId
+
+    if (!modelId) {
       return NextResponse.json(
-        { error: 'Element ID and Data Source ID are required' },
+        { error: 'Data Model ID is required' },
         { status: 400 }
       )
     }
 
-    // TODO: Implement actual PDF generation with a library like puppeteer or jsPDF
-    // For now, return a simple text-based PDF content
-    const pdfContent = `
-%PDF-1.4
-1 0 obj
-<<
-/Type /Catalog
-/Pages 2 0 R
->>
-endobj
+    // Fetch data from data model
+    const dataResponse = await fetch(
+      `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/data-models/${modelId}/data`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': request.headers.get('cookie') || ''
+        },
+        body: JSON.stringify({
+          customQuery: query || undefined,
+          filters: filters || {},
+          limit: 1000, // Limit for PDF (smaller than CSV/JSON)
+          offset: 0
+        })
+      }
+    )
 
-2 0 obj
-<<
-/Type /Pages
-/Kids [3 0 R]
-/Count 1
->>
-endobj
+    if (!dataResponse.ok) {
+      const error = await dataResponse.json().catch(() => ({}))
+      throw new Error(error.error || 'Failed to fetch data')
+    }
 
-3 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 4 0 R
-/Resources <<
-/Font <<
-/F1 5 0 R
->>
->>
->>
-endobj
+    const { data, metadata } = await dataResponse.json()
 
-4 0 obj
-<<
-/Length 200
->>
-stream
-BT
-/F1 12 Tf
-72 720 Td
-(Chart Export Report) Tj
-0 -20 Td
-(Element: ${elementName || 'Unknown'}) Tj
-0 -20 Td
-(Type: ${elementType || 'Unknown'}) Tj
-0 -20 Td
-(Data Source: ${datasourceId}) Tj
-0 -20 Td
-(Exported: ${new Date().toLocaleString()}) Tj
-0 -20 Td
-(Query: ${query || 'No query specified'}) Tj
-ET
-endstream
-endobj
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return NextResponse.json(
+        { error: 'No data available to export' },
+        { status: 404 }
+      )
+    }
 
-5 0 obj
-<<
-/Type /Font
-/Subtype /Type1
-/BaseFont /Helvetica
->>
-endobj
+    // Get column names
+    const allColumns = columns || metadata?.attributes?.map((attr: any) => attr.display_name || attr.name) || Object.keys(data[0] || {})
 
-xref
-0 6
-0000000000 65535 f 
-0000000009 00000 n 
-0000000058 00000 n 
-0000000115 00000 n 
-0000000274 00000 n 
-0000000525 00000 n 
-trailer
-<<
-/Size 6
-/Root 1 0 R
->>
-startxref
-610
-%%EOF
+    // Build HTML table for PDF
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      font-size: 10px;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #333;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+    .metadata {
+      margin-bottom: 20px;
+      color: #666;
+      font-size: 9px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th {
+      background-color: #f0f0f0;
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+      font-weight: bold;
+    }
+    td {
+      border: 1px solid #ddd;
+      padding: 6px;
+    }
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    .footer {
+      margin-top: 30px;
+      font-size: 8px;
+      color: #999;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>${elementName || 'Data Export Report'}</h1>
+  <div class="metadata">
+    <p><strong>Data Model:</strong> ${metadata?.dataModelName || modelId}</p>
+    <p><strong>Element Type:</strong> ${elementType || 'N/A'}</p>
+    <p><strong>Total Records:</strong> ${data.length}</p>
+    <p><strong>Exported:</strong> ${new Date().toLocaleString()}</p>
+    ${query ? `<p><strong>Query:</strong> ${query}</p>` : ''}
+  </div>
+  <table>
+    <thead>
+      <tr>
+        ${allColumns.map((col: string) => `<th>${String(col).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</th>`).join('')}
+      </tr>
+    </thead>
+    <tbody>
+      ${data.map((record: any) => `
+        <tr>
+          ${allColumns.map((col: string) => {
+            const value = record[col] ?? ''
+            const displayValue = value === null || value === undefined ? '' : String(value)
+            return `<td>${displayValue.replace(/</g, '&lt;').replace(/>/g, '&gt;').substring(0, 100)}</td>`
+          }).join('')}
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
+  <div class="footer">
+    Generated on ${new Date().toLocaleString()}
+  </div>
+</body>
+</html>
     `.trim()
 
-    // Create response with PDF content
-    const response = new NextResponse(pdfContent, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="chart_report_${elementId}.pdf"`
-      }
+    // Generate PDF using Puppeteer
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
     })
+    
+    try {
+      const page = await browser.newPage()
+      await page.setContent(htmlContent, { waitUntil: 'networkidle0' })
+      
+      const pdfBuffer = await page.pdf({
+        format: 'A4',
+        margin: {
+          top: '20mm',
+          right: '15mm',
+          bottom: '20mm',
+          left: '15mm'
+        },
+        printBackground: true
+      })
 
-    return response
-  } catch (error) {
+      await browser.close()
+
+      const filename = elementId 
+        ? `chart_report_${elementId}.pdf`
+        : `export_${modelId}_${new Date().toISOString().split('T')[0]}.pdf`
+
+      return new NextResponse(pdfBuffer, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="${filename}"`
+        }
+      })
+    } catch (pdfError) {
+      await browser.close()
+      throw pdfError
+    }
+  } catch (error: any) {
     console.error('Error exporting to PDF:', error)
     return NextResponse.json(
-      { error: 'Failed to export report to PDF' },
+      { error: error.message || 'Failed to export report to PDF' },
       { status: 500 }
     )
   }

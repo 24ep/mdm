@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { useThemeSafe } from '@/hooks/use-theme-safe'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -90,6 +91,9 @@ const LANGUAGES = [
 ]
 
 export function AccessibilityManager({ onSettingsChange }: AccessibilityManagerProps) {
+  const { theme, setTheme, isDark, mounted: themeMounted } = useThemeSafe()
+  const [mounted, setMounted] = useState(false)
+  
   const [settings, setSettings] = useState<AccessibilitySettings>({
     // Visual
     highContrast: false,
@@ -125,7 +129,32 @@ export function AccessibilityManager({ onSettingsChange }: AccessibilityManagerP
   const [isTesting, setIsTesting] = useState(false)
   const [testResults, setTestResults] = useState<Record<string, boolean>>({})
 
+  // Sync darkMode setting with theme on mount and when theme changes
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (mounted && themeMounted) {
+      setSettings(prev => {
+        if (prev.darkMode !== isDark) {
+          const updated = { ...prev, darkMode: isDark }
+          onSettingsChange?.(updated)
+          return updated
+        }
+        return prev
+      })
+    }
+  }, [isDark, mounted, themeMounted, onSettingsChange])
+
   const updateSetting = (key: keyof AccessibilitySettings, value: any) => {
+    // Handle dark mode specially - use theme provider
+    if (key === 'darkMode') {
+      setTheme(value ? 'dark' : 'light')
+      // The theme change will trigger the useEffect above to sync settings
+      return
+    }
+    
     const newSettings = { ...settings, [key]: value }
     setSettings(newSettings)
     onSettingsChange?.(newSettings)
@@ -142,11 +171,7 @@ export function AccessibilityManager({ onSettingsChange }: AccessibilityManagerP
       document.documentElement.classList.remove('high-contrast')
     }
 
-    if (newSettings.darkMode) {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
+    // Dark mode is now handled by next-themes provider, no manual manipulation needed
 
     if (newSettings.reducedMotion) {
       document.documentElement.classList.add('reduced-motion')
@@ -329,8 +354,9 @@ export function AccessibilityManager({ onSettingsChange }: AccessibilityManagerP
                   </div>
                   <Switch
                     id="dark-mode"
-                    checked={settings.darkMode}
+                    checked={mounted ? settings.darkMode : false}
                     onCheckedChange={(darkMode) => updateSetting('darkMode', darkMode)}
+                    disabled={!mounted}
                   />
                 </div>
               </div>

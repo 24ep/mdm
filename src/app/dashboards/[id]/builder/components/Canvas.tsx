@@ -227,9 +227,9 @@ export function Canvas({
     }
   }
   return (
-    <div className={`flex-1 overflow-auto ${fullpageBackground ? 'bg-transparent p-0' : 'bg-gray-50 p-8'}`}> 
+    <div className={`flex-1 overflow-auto ${fullpageBackground ? 'bg-transparent p-0' : 'bg-muted/30 p-8'}`}> 
       <div
-        className={`relative ${showCanvasBorder ? 'border border-gray-200' : ''} min-h-full canvas-container`}
+        className={`relative ${showCanvasBorder ? 'border border-border' : ''} min-h-full canvas-container`}
         style={{
           width: `${canvasWidth}px`,
           height: `${canvasHeight}px`,

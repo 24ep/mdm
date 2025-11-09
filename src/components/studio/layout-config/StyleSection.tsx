@@ -9,6 +9,7 @@ import { AccordionContent, AccordionItem, AccordionTrigger } from '@/components/
 import { Slider } from '@/components/ui/slider'
 import { PlacedWidget } from './widgets'
 import { ColorInput } from './ColorInput'
+import { MultiSideInput } from '@/components/shared/MultiSideInput'
 
 interface StyleSectionProps {
   widget: PlacedWidget
@@ -215,49 +216,112 @@ export function StyleSection({
           <div className="space-y-2">
             <Label className="text-xs font-medium">Borders & Rounded Corners</Label>
             <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <Label className="text-xs">Border Width</Label>
-                <Input
-                  type="number"
-                  value={widget.properties?.borderWidth || 0}
-                  onChange={(e) => updateProperty('borderWidth', parseInt(e.target.value) || 0)}
-                  className="h-7 text-xs"
-                  placeholder="0"
-                  disabled={widget.properties?.showBorder !== true}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Border Radius (Rounded)</Label>
-                <Input
-                  type="number"
-                  value={widget.properties?.borderRadius || 0}
-                  onChange={(e) => updateProperty('borderRadius', parseInt(e.target.value) || 0)}
-                  className="h-7 text-xs"
-                  placeholder="0"
-                  disabled={widget.properties?.showBorder !== true}
-                />
-              </div>
-              <div className="space-y-1 col-span-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs">Border Radius</Label>
-                  <span className="text-xs text-muted-foreground">
-                    {widget.properties?.borderRadius || 0}px
-                  </span>
-                </div>
-                <Slider
-                  value={[widget.properties?.borderRadius || 0]}
-                  onValueChange={(value) => updateProperty('borderRadius', value[0])}
-                  min={0}
-                  max={50}
-                  step={1}
-                  className="w-full"
-                  disabled={widget.properties?.showBorder !== true}
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>0px</span>
-                  <span>50px</span>
-                </div>
-              </div>
+              <MultiSideInput
+                label="Border Width"
+                baseKey="borderWidth"
+                type="sides"
+                defaultValue={0}
+                disabled={widget.properties?.showBorder !== true}
+                inputClassName="h-7 text-xs"
+                getValue={(side: string) => {
+                  const key = `borderWidth${side.charAt(0).toUpperCase() + side.slice(1)}`
+                  const baseValue = typeof widget.properties?.borderWidth === 'number' 
+                    ? widget.properties.borderWidth 
+                    : (widget.properties?.borderWidth || 0)
+                  const sideValue = widget.properties?.[key]
+                  return sideValue !== undefined ? sideValue : baseValue
+                }}
+                setValue={(updates) => {
+                  const props = widget.properties || {}
+                  const newProps = { ...props }
+                  Object.keys(updates).forEach(key => {
+                    const value = updates[key]
+                    // Convert string with px to number if it's just a number
+                    if (typeof value === 'string' && value.endsWith('px')) {
+                      const numValue = parseInt(value.replace('px', '')) || 0
+                      newProps[key] = numValue
+                    } else {
+                      newProps[key] = value
+                    }
+                  })
+                  setPlacedWidgets(prev => prev.map(w => 
+                    w.id === selectedWidgetId 
+                      ? { ...w, properties: newProps }
+                      : w
+                  ))
+                }}
+              />
+              <MultiSideInput
+                label="Border Radius"
+                baseKey="borderRadius"
+                type="corners"
+                defaultValue={0}
+                disabled={widget.properties?.showBorder !== true}
+                inputClassName="h-7 text-xs"
+                getValue={(side: string) => {
+                  const br = widget.properties?.borderRadius
+                  if (typeof br === 'number') return br
+                  if (typeof br === 'object' && br !== null) {
+                    const obj = br as any
+                    const corner = obj[side]
+                    return corner?.value ?? 0
+                  }
+                  return 0
+                }}
+                setValue={(updates) => {
+                  const props = widget.properties || {}
+                  const currentBr = props.borderRadius
+                  
+                  // Initialize border radius object if it's a number
+                  let brObj: any = typeof currentBr === 'number' 
+                    ? {
+                        topLeft: { value: currentBr, unit: 'px' },
+                        topRight: { value: currentBr, unit: 'px' },
+                        bottomRight: { value: currentBr, unit: 'px' },
+                        bottomLeft: { value: currentBr, unit: 'px' }
+                      }
+                    : (currentBr || {
+                        topLeft: { value: 0, unit: 'px' },
+                        topRight: { value: 0, unit: 'px' },
+                        bottomRight: { value: 0, unit: 'px' },
+                        bottomLeft: { value: 0, unit: 'px' }
+                      })
+                  
+                  // Update the border radius object
+                  Object.keys(updates).forEach(key => {
+                    if (key === 'borderRadius') {
+                      // If all corners are the same, store as number for backward compatibility
+                      const value = updates[key]
+                      if (typeof value === 'string' && value.endsWith('px')) {
+                        const numValue = parseInt(value.replace('px', '')) || 0
+                        brObj = {
+                          topLeft: { value: numValue, unit: 'px' },
+                          topRight: { value: numValue, unit: 'px' },
+                          bottomRight: { value: numValue, unit: 'px' },
+                          bottomLeft: { value: numValue, unit: 'px' }
+                        }
+                      }
+                    } else if (key.startsWith('borderRadius')) {
+                      const corner = key.replace('borderRadius', '').charAt(0).toLowerCase() + key.replace('borderRadius', '').slice(1)
+                      const value = updates[key]
+                      if (typeof value === 'string' && value.endsWith('px')) {
+                        const numValue = parseInt(value.replace('px', '')) || 0
+                        brObj[corner] = { value: numValue, unit: 'px' }
+                      }
+                    }
+                  })
+                  
+                  // Check if all corners are the same
+                  const allSame = brObj.topLeft.value === brObj.topRight.value &&
+                                 brObj.topRight.value === brObj.bottomRight.value &&
+                                 brObj.bottomRight.value === brObj.bottomLeft.value &&
+                                 brObj.topLeft.unit === brObj.topRight.unit &&
+                                 brObj.topRight.unit === brObj.bottomRight.unit &&
+                                 brObj.bottomRight.unit === brObj.bottomLeft.unit
+                  
+                  updateProperty('borderRadius', allSame ? brObj.topLeft.value : brObj)
+                }}
+              />
               <div className="space-y-1 col-span-2">
                 <Label className="text-xs">Border Style</Label>
                 <Select
@@ -284,16 +348,41 @@ export function StyleSection({
           <div className="space-y-2">
             <Label className="text-xs font-medium">Spacing</Label>
             <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <Label className="text-xs">Padding</Label>
-                <Input
-                  type="number"
-                  value={widget.properties?.padding || 0}
-                  onChange={(e) => updateProperty('padding', parseInt(e.target.value) || 0)}
-                  className="h-7 text-xs"
-                  placeholder="0"
-                />
-              </div>
+              <MultiSideInput
+                label="Padding"
+                baseKey="padding"
+                type="sides"
+                defaultValue={0}
+                inputClassName="h-7 text-xs"
+                getValue={(side: string) => {
+                  const key = `padding${side.charAt(0).toUpperCase() + side.slice(1)}`
+                  const baseValue = typeof widget.properties?.padding === 'number'
+                    ? widget.properties.padding
+                    : (typeof widget.properties?.padding === 'object' && widget.properties.padding !== null
+                      ? (widget.properties.padding as any)[side] || 0
+                      : 0)
+                  const sideValue = widget.properties?.[key]
+                  return sideValue !== undefined ? sideValue : baseValue
+                }}
+                setValue={(updates) => {
+                  const props = widget.properties || {}
+                  const newProps = { ...props }
+                  Object.keys(updates).forEach(key => {
+                    const value = updates[key]
+                    if (typeof value === 'string' && value.endsWith('px')) {
+                      const numValue = parseInt(value.replace('px', '')) || 0
+                      newProps[key] = numValue
+                    } else {
+                      newProps[key] = value
+                    }
+                  })
+                  setPlacedWidgets(prev => prev.map(w => 
+                    w.id === selectedWidgetId 
+                      ? { ...w, properties: newProps }
+                      : w
+                  ))
+                }}
+              />
               <div className="space-y-1">
                 <Label className="text-xs">Margin</Label>
                 <Input

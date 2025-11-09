@@ -21,55 +21,67 @@ model User {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  createdSpaces     Space[]           @relation("SpaceCreator")
-  spaceMemberships SpaceMember[]     @relation("UserSpaceMembers")
-  createdDataModels DataModel[]       @relation("DataModelCreator")
-  createdDataRecords DataRecord[]     @relation("DataRecordCreator")
-  createdEavEntities EavEntity[]       @relation("EavEntityCreator")
-  notifications     Notification[]    @relation("UserNotifications")
-  teamMemberships   TeamMember[]      @relation("UserTeamMembers")
-  chatSessions      ChatSession[]     @relation("UserChatSessions")
-  auditLogs         AuditLog[]        @relation("UserAuditLogs")
-  createdTickets    Ticket[]          @relation("TicketCreator")
-  assignedTickets   TicketAssignee[]  @relation("TicketAssignees")
-  ticketComments    TicketComment[]   @relation("TicketCommentAuthor")
-  ticketTimeLogs    TicketTimeLog[]   @relation("TicketTimeLogUser")
-  intakeSubmissions IntakeSubmission[] @relation("IntakeSubmissionUser")
+  createdSpaces      Space[]             @relation("SpaceCreator")
+  spaceMemberships   SpaceMember[]       @relation("UserSpaceMembers")
+  createdDataModels  DataModel[]         @relation("DataModelCreator")
+  createdDataRecords DataRecord[]        @relation("DataRecordCreator")
+  createdEavEntities EavEntity[]         @relation("EavEntityCreator")
+  notifications      Notification[]      @relation("UserNotifications")
+  teamMemberships    TeamMember[]        @relation("UserTeamMembers")
+  chatSessions       ChatSession[]       @relation("UserChatSessions")
+  auditLogs          AuditLog[]          @relation("UserAuditLogs")
+  createdTickets     Ticket[]            @relation("TicketCreator")
+  assignedTickets    TicketAssignee[]    @relation("TicketAssignees")
+  ticketComments     TicketComment[]     @relation("TicketCommentAuthor")
+  ticketTimeLogs     TicketTimeLog[]     @relation("TicketTimeLogUser")
+  intakeSubmissions  IntakeSubmission[]  @relation("IntakeSubmissionUser")
+  importProfiles     ImportProfile[]     @relation("ImportProfileCreator")
+  importJobs         ImportJob[]         @relation("ImportJobCreator")
+  exportJobs         ExportJob[]         @relation("ExportJobCreator")
+  createdChatbots    Chatbot[]           @relation("ChatbotCreator")
+  chatbotVersions    ChatbotVersion[]    @relation("ChatbotVersionCreator")
+  agentThreads       OpenAIAgentThread[] @relation("UserAgentThreads")
+  costRecords        ChatbotCostRecord[] @relation("UserCostRecords")
 
   @@map("users")
 }
 
 model Space {
-  id                String   @id @default(uuid()) @db.Uuid
-  name              String
-  description       String?
-  slug              String   @unique
-  isDefault         Boolean  @default(false) @map("is_default")
-  isActive          Boolean  @default(true) @map("is_active")
-  icon              String?
-  logoUrl           String?  @map("logo_url")
-  features          Json?    @default("{}")
-  sidebarConfig     Json?    @map("sidebar_config")
-  enableAssignments Boolean  @default(true) @map("enable_assignments")
-  enableBulkActivity Boolean @default(true) @map("enable_bulk_activity")
-  enableWorkflows   Boolean  @default(true) @map("enable_workflows")
-  enableDashboard   Boolean  @default(true) @map("enable_dashboard")
-  createdBy         String   @map("created_by") @db.Uuid
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
-  deletedAt         DateTime? @map("deleted_at")
+  id                 String    @id @default(uuid()) @db.Uuid
+  name               String
+  description        String?
+  slug               String    @unique
+  isDefault          Boolean   @default(false) @map("is_default")
+  isActive           Boolean   @default(true) @map("is_active")
+  icon               String?
+  logoUrl            String?   @map("logo_url")
+  features           Json?     @default("{}")
+  sidebarConfig      Json?     @map("sidebar_config")
+  enableAssignments  Boolean   @default(true) @map("enable_assignments")
+  enableBulkActivity Boolean   @default(true) @map("enable_bulk_activity")
+  enableWorkflows    Boolean   @default(true) @map("enable_workflows")
+  enableDashboard    Boolean   @default(true) @map("enable_dashboard")
+  createdBy          String    @map("created_by") @db.Uuid
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  deletedAt          DateTime? @map("deleted_at")
 
   // Relations
-  creator           User            @relation("SpaceCreator", fields: [createdBy], references: [id])
-  members           SpaceMember[]   @relation("SpaceMembers")
-  dataModels        DataModelSpace[] @relation("SpaceDataModels")
-  attachmentStorage SpaceAttachmentStorage[] @relation("SpaceAttachments")
-  externalConnections ExternalConnection[] @relation("SpaceExternalConnections")
-  notebooks         Notebook[]      @relation("SpaceNotebooks")
-  chatSessions      ChatSession[]  @relation("SpaceChatSessions")
-  ticketSpaces      TicketSpace[]   @relation("SpaceTicketSpaces")
-  kanbanConfigs     KanbanConfig[]  @relation("SpaceKanbanConfigs")
-  intakeForms       IntakeForm[]    @relation("SpaceIntakeForms")
+  creator             User                     @relation("SpaceCreator", fields: [createdBy], references: [id])
+  members             SpaceMember[]            @relation("SpaceMembers")
+  dataModels          DataModelSpace[]         @relation("SpaceDataModels")
+  attachmentStorage   SpaceAttachmentStorage[] @relation("SpaceAttachments")
+  externalConnections ExternalConnection[]     @relation("SpaceExternalConnections")
+  notebooks           Notebook[]               @relation("SpaceNotebooks")
+  chatSessions        ChatSession[]            @relation("SpaceChatSessions")
+  ticketSpaces        TicketSpace[]            @relation("SpaceTicketSpaces")
+  kanbanConfigs       KanbanConfig[]           @relation("SpaceKanbanConfigs")
+  intakeForms         IntakeForm[]             @relation("SpaceIntakeForms")
+  importProfiles      ImportProfile[]          @relation("SpaceImportProfiles")
+  importJobs          ImportJob[]              @relation("SpaceImportJobs")
+  exportJobs          ExportJob[]              @relation("SpaceExportJobs")
+  chatbots            Chatbot[]                @relation("SpaceChatbots")
+  agentThreads        OpenAIAgentThread[]      @relation("SpaceAgentThreads")
 
   @@map("spaces")
 }
@@ -90,91 +102,91 @@ model SpaceMember {
 
 // Enhanced EAV Entity Types
 model EntityType {
-  id          String   @id @default(uuid()) @db.Uuid
-  name        String   @unique
-  displayName String   @map("display_name")
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @unique
+  displayName String    @map("display_name")
   description String?
-  parentId    String?  @map("parent_id") @db.Uuid
-  isAbstract  Boolean  @default(false) @map("is_abstract")
-  isActive    Boolean  @default(true) @map("is_active")
-  sortOrder   Int      @default(0) @map("sort_order")
-  metadata    Json?    @default("{}")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  parentId    String?   @map("parent_id") @db.Uuid
+  isAbstract  Boolean   @default(false) @map("is_abstract")
+  isActive    Boolean   @default(true) @map("is_active")
+  sortOrder   Int       @default(0) @map("sort_order")
+  metadata    Json?     @default("{}")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
 
   // Relations
-  parent      EntityType?     @relation("EntityTypeHierarchy", fields: [parentId], references: [id])
-  children     EntityType[]      @relation("EntityTypeHierarchy")
-  attributes   EavAttribute[]    @relation("EntityTypeAttributes")
-  entities     EavEntity[]       @relation("EntityTypeEntities")
-  attributeGroups AttributeGroup[] @relation("EntityTypeAttributeGroups")
-  referencedAttributes EavAttribute[] @relation("ReferenceEntityType")
-  childInheritances AttributeInheritance[] @relation("ChildEntityType")
-  parentInheritances AttributeInheritance[] @relation("ParentEntityType")
+  parent               EntityType?            @relation("EntityTypeHierarchy", fields: [parentId], references: [id])
+  children             EntityType[]           @relation("EntityTypeHierarchy")
+  attributes           EavAttribute[]         @relation("EntityTypeAttributes")
+  entities             EavEntity[]            @relation("EntityTypeEntities")
+  attributeGroups      AttributeGroup[]       @relation("EntityTypeAttributeGroups")
+  referencedAttributes EavAttribute[]         @relation("ReferenceEntityType")
+  childInheritances    AttributeInheritance[] @relation("ChildEntityType")
+  parentInheritances   AttributeInheritance[] @relation("ParentEntityType")
 
   @@map("entity_types")
 }
 
 // Attribute Groups for better organization
 model AttributeGroup {
-  id           String   @id @default(uuid()) @db.Uuid
-  name         String
+  id            String   @id @default(uuid()) @db.Uuid
+  name          String
   displayName   String   @map("display_name")
   description   String?
-  entityTypeId String   @map("entity_type_id") @db.Uuid
-  sortOrder    Int      @default(0) @map("sort_order")
-  isCollapsible Boolean @default(true) @map("is_collapsible")
-  isRequired   Boolean  @default(false) @map("is_required")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  entityTypeId  String   @map("entity_type_id") @db.Uuid
+  sortOrder     Int      @default(0) @map("sort_order")
+  isCollapsible Boolean  @default(true) @map("is_collapsible")
+  isRequired    Boolean  @default(false) @map("is_required")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   // Relations
-  entityType   EntityType    @relation("EntityTypeAttributeGroups", fields: [entityTypeId], references: [id], onDelete: Cascade)
-  attributes  EavAttribute[] @relation("AttributeGroupAttributes")
+  entityType EntityType     @relation("EntityTypeAttributeGroups", fields: [entityTypeId], references: [id], onDelete: Cascade)
+  attributes EavAttribute[] @relation("AttributeGroupAttributes")
 
   @@map("attribute_groups")
 }
 
 // Enhanced EAV Attributes
 model EavAttribute {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String  @id @default(uuid()) @db.Uuid
   name        String
-  displayName String   @map("display_name")
+  displayName String  @map("display_name")
   description String?
-  
+
   // Entity relationship
   entityTypeId     String  @map("entity_type_id") @db.Uuid
   attributeGroupId String? @map("attribute_group_id") @db.Uuid
-  
+
   // Data type and constraints
   dataType    String @map("data_type") // eav_data_type enum
   cardinality String @default("SINGLE") // attribute_cardinality enum
   scope       String @default("INSTANCE") // attribute_scope enum
-  
+
   // Validation and constraints
-  isRequired  Boolean @default(false) @map("is_required")
-  isUnique    Boolean @default(false) @map("is_unique")
-  isIndexed   Boolean @default(false) @map("is_indexed")
+  isRequired   Boolean @default(false) @map("is_required")
+  isUnique     Boolean @default(false) @map("is_unique")
+  isIndexed    Boolean @default(false) @map("is_indexed")
   isSearchable Boolean @default(true) @map("is_searchable")
-  isAuditable Boolean @default(true) @map("is_auditable")
-  
+  isAuditable  Boolean @default(true) @map("is_auditable")
+
   // Default values and options
-  defaultValue   String? @map("default_value")
-  options       Json?   @default("{}")
-  validationRules Json? @map("validation_rules") @default("{}")
-  
+  defaultValue    String? @map("default_value")
+  options         Json?   @default("{}")
+  validationRules Json?   @default("{}") @map("validation_rules")
+
   // UI and display
   sortOrder   Int     @default(0) @map("sort_order")
   isVisible   Boolean @default(true) @map("is_visible")
   isEditable  Boolean @default(true) @map("is_editable")
   helpText    String? @map("help_text")
   placeholder String?
-  
+
   // Reference attributes (for foreign keys)
   referenceEntityTypeId String? @map("reference_entity_type_id") @db.Uuid
   referenceDisplayField String? @map("reference_display_field")
-  
+
   // Auto-increment support
   isAutoIncrement           Boolean @default(false) @map("is_auto_increment")
   autoIncrementPrefix       String  @default("") @map("auto_increment_prefix")
@@ -182,26 +194,26 @@ model EavAttribute {
   autoIncrementStart        Int     @default(1) @map("auto_increment_start")
   autoIncrementPadding      Int     @default(3) @map("auto_increment_padding")
   currentAutoIncrementValue Int     @default(0) @map("current_auto_increment_value")
-  
+
   // External system integration
-  externalColumn String? @map("external_column")
-  externalMapping Json? @map("external_mapping") @default("{}")
-  
+  externalColumn  String? @map("external_column")
+  externalMapping Json?   @default("{}") @map("external_mapping")
+
   // Metadata
-  metadata Json? @default("{}")
-  isActive Boolean @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  metadata  Json?     @default("{}")
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
   // Relations
-  entityType       EntityType        @relation("EntityTypeAttributes", fields: [entityTypeId], references: [id], onDelete: Cascade)
-  attributeGroup   AttributeGroup?   @relation("AttributeGroupAttributes", fields: [attributeGroupId], references: [id], onDelete: SetNull)
-  referenceEntityType EntityType?   @relation("ReferenceEntityType", fields: [referenceEntityTypeId], references: [id])
-  values           EavValue[]        @relation("AttributeValues")
-  dependencies     AttributeDependency[] @relation("DependentAttributes")
-  dependents       AttributeDependency[] @relation("DependsOnAttributes")
-  inheritances     AttributeInheritance[] @relation("AttributeInheritances")
+  entityType          EntityType             @relation("EntityTypeAttributes", fields: [entityTypeId], references: [id], onDelete: Cascade)
+  attributeGroup      AttributeGroup?        @relation("AttributeGroupAttributes", fields: [attributeGroupId], references: [id], onDelete: SetNull)
+  referenceEntityType EntityType?            @relation("ReferenceEntityType", fields: [referenceEntityTypeId], references: [id])
+  values              EavValue[]             @relation("AttributeValues")
+  dependencies        AttributeDependency[]  @relation("DependentAttributes")
+  dependents          AttributeDependency[]  @relation("DependsOnAttributes")
+  inheritances        AttributeInheritance[] @relation("AttributeInheritances")
 
   @@unique([entityTypeId, name])
   @@map("eav_attributes")
@@ -209,15 +221,15 @@ model EavAttribute {
 
 // Enhanced Entity Instances
 model EavEntity {
-  id          String   @id @default(uuid()) @db.Uuid
-  entityTypeId String  @map("entity_type_id") @db.Uuid
-  externalId  String?  @map("external_id")
-  isActive    Boolean  @default(true) @map("is_active")
-  metadata    Json?    @default("{}")
-  createdBy   String?  @map("created_by") @db.Uuid
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  deletedAt   DateTime? @map("deleted_at")
+  id           String    @id @default(uuid()) @db.Uuid
+  entityTypeId String    @map("entity_type_id") @db.Uuid
+  externalId   String?   @map("external_id")
+  isActive     Boolean   @default(true) @map("is_active")
+  metadata     Json?     @default("{}")
+  createdBy    String?   @map("created_by") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
 
   // Relations
   entityType EntityType @relation("EntityTypeEntities", fields: [entityTypeId], references: [id], onDelete: Cascade)
@@ -230,10 +242,10 @@ model EavEntity {
 
 // Enhanced Values table with type-specific columns
 model EavValue {
-  id          String   @id @default(uuid()) @db.Uuid
-  entityId    String   @map("entity_id") @db.Uuid
-  attributeId String   @map("attribute_id") @db.Uuid
-  
+  id          String @id @default(uuid()) @db.Uuid
+  entityId    String @map("entity_id") @db.Uuid
+  attributeId String @map("attribute_id") @db.Uuid
+
   // Type-specific value columns for better performance
   textValue     String?   @map("text_value")
   numberValue   Decimal?  @map("number_value") @db.Decimal(20, 6)
@@ -242,7 +254,7 @@ model EavValue {
   datetimeValue DateTime? @map("datetime_value")
   jsonValue     Json?     @map("json_value")
   blobValue     Bytes?    @map("blob_value")
-  
+
   // Metadata
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -257,13 +269,13 @@ model EavValue {
 
 // Attribute Dependencies for complex relationships
 model AttributeDependency {
-  id                    String @id @default(uuid()) @db.Uuid
-  dependentAttributeId  String @map("dependent_attribute_id") @db.Uuid
-  dependsOnAttributeId  String @map("depends_on_attribute_id") @db.Uuid
-  conditionType         String @map("condition_type")
-  conditionValue        String? @map("condition_value")
-  isActive              Boolean @default(true) @map("is_active")
-  createdAt             DateTime @default(now()) @map("created_at")
+  id                   String   @id @default(uuid()) @db.Uuid
+  dependentAttributeId String   @map("dependent_attribute_id") @db.Uuid
+  dependsOnAttributeId String   @map("depends_on_attribute_id") @db.Uuid
+  conditionType        String   @map("condition_type")
+  conditionValue       String?  @map("condition_value")
+  isActive             Boolean  @default(true) @map("is_active")
+  createdAt            DateTime @default(now()) @map("created_at")
 
   // Relations
   dependentAttribute EavAttribute @relation("DependentAttributes", fields: [dependentAttributeId], references: [id], onDelete: Cascade)
@@ -274,18 +286,18 @@ model AttributeDependency {
 
 // Attribute Inheritance for entity type hierarchies
 model AttributeInheritance {
-  id                    String @id @default(uuid()) @db.Uuid
-  childEntityTypeId     String @map("child_entity_type_id") @db.Uuid
-  parentEntityTypeId    String @map("parent_entity_type_id") @db.Uuid
-  attributeId           String @map("attribute_id") @db.Uuid
-  inheritanceType       String @default("INHERIT") @map("inheritance_type")
-  overriddenMetadata    Json?  @map("overridden_metadata") @default("{}")
-  createdAt             DateTime @default(now()) @map("created_at")
+  id                 String   @id @default(uuid()) @db.Uuid
+  childEntityTypeId  String   @map("child_entity_type_id") @db.Uuid
+  parentEntityTypeId String   @map("parent_entity_type_id") @db.Uuid
+  attributeId        String   @map("attribute_id") @db.Uuid
+  inheritanceType    String   @default("INHERIT") @map("inheritance_type")
+  overriddenMetadata Json?    @default("{}") @map("overridden_metadata")
+  createdAt          DateTime @default(now()) @map("created_at")
 
   // Relations
-  childEntityType  EntityType    @relation("ChildEntityType", fields: [childEntityTypeId], references: [id], onDelete: Cascade)
-  parentEntityType EntityType    @relation("ParentEntityType", fields: [parentEntityTypeId], references: [id], onDelete: Cascade)
-  attribute        EavAttribute  @relation("AttributeInheritances", fields: [attributeId], references: [id], onDelete: Cascade)
+  childEntityType  EntityType   @relation("ChildEntityType", fields: [childEntityTypeId], references: [id], onDelete: Cascade)
+  parentEntityType EntityType   @relation("ParentEntityType", fields: [parentEntityTypeId], references: [id], onDelete: Cascade)
+  attribute        EavAttribute @relation("AttributeInheritances", fields: [attributeId], references: [id], onDelete: Cascade)
 
   @@unique([childEntityTypeId, attributeId])
   @@map("attribute_inheritance")
@@ -293,56 +305,56 @@ model AttributeInheritance {
 
 // Value History for audit trail
 model EavValueHistory {
-  id                String   @id @default(uuid()) @db.Uuid
-  entityId          String   @map("entity_id") @db.Uuid
-  attributeId       String   @map("attribute_id") @db.Uuid
-  oldTextValue      String?  @map("old_text_value")
-  oldNumberValue    Decimal? @map("old_number_value") @db.Decimal(20, 6)
-  oldBooleanValue   Boolean? @map("old_boolean_value")
-  oldDateValue      DateTime? @map("old_date_value") @db.Date
-  oldDatetimeValue  DateTime? @map("old_datetime_value")
-  oldJsonValue      Json?    @map("old_json_value")
-  oldBlobValue      Bytes?   @map("old_blob_value")
-  newTextValue      String?  @map("new_text_value")
-  newNumberValue    Decimal? @map("new_number_value") @db.Decimal(20, 6)
-  newBooleanValue   Boolean? @map("new_boolean_value")
-  newDateValue      DateTime? @map("new_date_value") @db.Date
-  newDatetimeValue  DateTime? @map("new_datetime_value")
-  newJsonValue      Json?    @map("new_json_value")
-  newBlobValue      Bytes?   @map("new_blob_value")
-  changedBy         String?  @map("changed_by") @db.Uuid
-  changeReason      String?  @map("change_reason")
-  createdAt         DateTime @default(now()) @map("created_at")
+  id               String    @id @default(uuid()) @db.Uuid
+  entityId         String    @map("entity_id") @db.Uuid
+  attributeId      String    @map("attribute_id") @db.Uuid
+  oldTextValue     String?   @map("old_text_value")
+  oldNumberValue   Decimal?  @map("old_number_value") @db.Decimal(20, 6)
+  oldBooleanValue  Boolean?  @map("old_boolean_value")
+  oldDateValue     DateTime? @map("old_date_value") @db.Date
+  oldDatetimeValue DateTime? @map("old_datetime_value")
+  oldJsonValue     Json?     @map("old_json_value")
+  oldBlobValue     Bytes?    @map("old_blob_value")
+  newTextValue     String?   @map("new_text_value")
+  newNumberValue   Decimal?  @map("new_number_value") @db.Decimal(20, 6)
+  newBooleanValue  Boolean?  @map("new_boolean_value")
+  newDateValue     DateTime? @map("new_date_value") @db.Date
+  newDatetimeValue DateTime? @map("new_datetime_value")
+  newJsonValue     Json?     @map("new_json_value")
+  newBlobValue     Bytes?    @map("new_blob_value")
+  changedBy        String?   @map("changed_by") @db.Uuid
+  changeReason     String?   @map("change_reason")
+  createdAt        DateTime  @default(now()) @map("created_at")
 
   @@map("eav_value_history")
 }
 
 // Legacy DataModel for backward compatibility
 model DataModel {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String    @id @default(uuid()) @db.Uuid
   name        String
   description String?
-  sortOrder   Int      @default(0) @map("sort_order")
-  isActive    Boolean  @default(true) @map("is_active")
-  createdBy   String   @map("created_by") @db.Uuid
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  sortOrder   Int       @default(0) @map("sort_order")
+  isActive    Boolean   @default(true) @map("is_active")
+  createdBy   String    @map("created_by") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
 
   // Relations
-  creator     User            @relation("DataModelCreator", fields: [createdBy], references: [id])
-  spaces      DataModelSpace[] @relation("DataModelSpaces")
-  attributes  Attribute[]     @relation("DataModelAttributes")
-  dataRecords DataRecord[]    @relation("DataModelRecords")
+  creator             User                 @relation("DataModelCreator", fields: [createdBy], references: [id])
+  spaces              DataModelSpace[]     @relation("DataModelSpaces")
+  attributes          Attribute[]          @relation("DataModelAttributes")
+  dataRecords         DataRecord[]         @relation("DataModelRecords")
   externalConnections ExternalConnection[] @relation("ExternalConnectionDataModels")
 
   @@map("data_models")
 }
 
 model DataModelSpace {
-  id          String @id @default(uuid()) @db.Uuid
-  dataModelId String @map("data_model_id") @db.Uuid
-  spaceId     String @map("space_id") @db.Uuid
+  id          String   @id @default(uuid()) @db.Uuid
+  dataModelId String   @map("data_model_id") @db.Uuid
+  spaceId     String   @map("space_id") @db.Uuid
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -356,26 +368,26 @@ model DataModelSpace {
 
 // Legacy Attribute model for backward compatibility
 model Attribute {
-  id              String   @id @default(uuid()) @db.Uuid
+  id              String    @id @default(uuid()) @db.Uuid
   name            String
-  displayName     String   @map("display_name")
+  displayName     String    @map("display_name")
   type            String
   description     String?
-  isRequired      Boolean  @default(false) @map("is_required")
-  isUnique        Boolean  @default(false) @map("is_unique")
-  isPrimaryKey    Boolean? @default(false) @map("is_primary_key")
-  isForeignKey    Boolean? @default(false) @map("is_foreign_key")
-  defaultValue    String?  @map("default_value")
-  validationRules Json?    @map("validation_rules")
+  isRequired      Boolean   @default(false) @map("is_required")
+  isUnique        Boolean   @default(false) @map("is_unique")
+  isPrimaryKey    Boolean?  @default(false) @map("is_primary_key")
+  isForeignKey    Boolean?  @default(false) @map("is_foreign_key")
+  defaultValue    String?   @map("default_value")
+  validationRules Json?     @map("validation_rules")
   options         Json?
-  order           Int      @default(0) @map("order")
-  isActive        Boolean  @default(true) @map("is_active")
+  order           Int       @default(0) @map("order")
+  isActive        Boolean   @default(true) @map("is_active")
   deletedAt       DateTime? @map("deleted_at")
-  
+
   // Data entity support
-  dataEntityModelId    String? @map("data_entity_model_id")
+  dataEntityModelId     String? @map("data_entity_model_id")
   dataEntityAttributeId String? @map("data_entity_attribute_id")
-  
+
   // Auto-increment support
   isAutoIncrement           Boolean @default(false) @map("is_auto_increment")
   autoIncrementPrefix       String  @default("") @map("auto_increment_prefix")
@@ -383,51 +395,51 @@ model Attribute {
   autoIncrementStart        Int     @default(1) @map("auto_increment_start")
   autoIncrementPadding      Int     @default(3) @map("auto_increment_padding")
   currentAutoIncrementValue Int     @default(0) @map("current_auto_increment_value")
-  
+
   // External connection support
   externalColumn String? @map("external_column")
-  
-  dataModelId     String   @map("data_model_id") @db.Uuid
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  dataModelId String   @map("data_model_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  dataModel       DataModel       @relation("DataModelAttributes", fields: [dataModelId], references: [id], onDelete: Cascade)
+  dataModel        DataModel         @relation("DataModelAttributes", fields: [dataModelId], references: [id], onDelete: Cascade)
   dataRecordValues DataRecordValue[] @relation("AttributeValues")
 
   @@map("data_model_attributes")
 }
 
 model ExternalConnection {
-  id        String   @id @default(uuid()) @db.Uuid
-  spaceId   String   @map("space_id") @db.Uuid
+  id        String    @id @default(uuid()) @db.Uuid
+  spaceId   String    @map("space_id") @db.Uuid
   name      String
-  dbType    String   @map("db_type") // 'postgres' | 'mysql'
+  dbType    String    @map("db_type") // 'postgres' | 'mysql'
   host      String
   port      Int?
-  database String?
+  database  String?
   username  String
   password  String
   options   Json?
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
   // Relations
-  space       Space        @relation("SpaceExternalConnections", fields: [spaceId], references: [id], onDelete: Cascade)
-  dataModels  DataModel[]  @relation("ExternalConnectionDataModels")
+  space      Space       @relation("SpaceExternalConnections", fields: [spaceId], references: [id], onDelete: Cascade)
+  dataModels DataModel[] @relation("ExternalConnectionDataModels")
 
   @@map("external_connections")
 }
 
 model Team {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String    @id @default(uuid()) @db.Uuid
   name        String
   description String?
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
 
   // Relations
@@ -452,8 +464,8 @@ model TeamMember {
 }
 
 model Permission {
-  id          String @id @default(uuid()) @db.Uuid
-  name        String @unique
+  id          String  @id @default(uuid()) @db.Uuid
+  name        String  @unique
   description String?
   resource    String
   action      String
@@ -479,8 +491,8 @@ model TeamPermission {
 }
 
 model Role {
-  id          String @id @default(uuid()) @db.Uuid
-  name        String @unique
+  id          String  @id @default(uuid()) @db.Uuid
+  name        String  @unique
   description String?
 
   // Relations
@@ -508,16 +520,16 @@ model RolePermission {
 
 // Legacy DataRecord model for backward compatibility
 model DataRecord {
-  id        String   @id @default(uuid()) @db.Uuid
-  dataModelId String @map("data_model_id") @db.Uuid
-  createdBy  String   @map("created_by") @db.Uuid
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-  deletedAt  DateTime? @map("deleted_at")
+  id          String    @id @default(uuid()) @db.Uuid
+  dataModelId String    @map("data_model_id") @db.Uuid
+  createdBy   String    @map("created_by") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
 
   // Relations
-  dataModel DataModel       @relation("DataModelRecords", fields: [dataModelId], references: [id], onDelete: Cascade)
-  creator   User            @relation("DataRecordCreator", fields: [createdBy], references: [id])
+  dataModel DataModel         @relation("DataModelRecords", fields: [dataModelId], references: [id], onDelete: Cascade)
+  creator   User              @relation("DataRecordCreator", fields: [createdBy], references: [id])
   values    DataRecordValue[] @relation("RecordValues")
 
   @@map("data_records")
@@ -525,12 +537,12 @@ model DataRecord {
 
 // Legacy DataRecordValue model for backward compatibility
 model DataRecordValue {
-  id        String @id @default(uuid()) @db.Uuid
-  dataRecordId String @map("data_record_id") @db.Uuid
-  attributeId  String @map("attribute_id") @db.Uuid
-  value     String?
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id           String   @id @default(uuid()) @db.Uuid
+  dataRecordId String   @map("data_record_id") @db.Uuid
+  attributeId  String   @map("attribute_id") @db.Uuid
+  value        String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   // Relations
   dataRecord DataRecord @relation("RecordValues", fields: [dataRecordId], references: [id], onDelete: Cascade)
@@ -541,20 +553,20 @@ model DataRecordValue {
 }
 
 model Notification {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @map("user_id") @db.Uuid
-  type      String
-  title     String
-  message   String
-  priority  String   @default("MEDIUM")
-  status    String   @default("UNREAD")
-  data      Json?
-  actionUrl String?  @map("action_url")
-  actionLabel String? @map("action_label")
-  expiresAt DateTime? @map("expires_at")
-  readAt    DateTime? @map("read_at")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  type        String
+  title       String
+  message     String
+  priority    String    @default("MEDIUM")
+  status      String    @default("UNREAD")
+  data        Json?
+  actionUrl   String?   @map("action_url")
+  actionLabel String?   @map("action_label")
+  expiresAt   DateTime? @map("expires_at")
+  readAt      DateTime? @map("read_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   // Relations
   user User @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
@@ -600,87 +612,104 @@ model AttachmentFile {
 
 // Cache Management Models
 model CacheInstance {
-  id            String   @id @default(uuid()) @db.Uuid
+  id            String    @id @default(uuid()) @db.Uuid
   name          String
-  type          String   // 'redis', 'memcached', 'memory', 'file'
+  type          String // 'redis', 'memcached', 'memory', 'file'
   host          String
   port          Int
   password      String?
-  isActive      Boolean  @default(true) @map("is_active")
-  status        String   @default("disconnected") // 'connected', 'disconnected', 'error'
+  isActive      Boolean   @default(true) @map("is_active")
+  status        String    @default("disconnected") // 'connected', 'disconnected', 'error'
   lastConnected DateTime? @map("last_connected")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  keys          CacheKey[]
-  stats         CacheStats[]
+  keys  CacheKey[]
+  stats CacheStats[]
 
   @@map("cache_instances")
 }
 
+// Kong Gateway Management Models
+model KongInstance {
+  id            String    @id @default(uuid()) @db.Uuid
+  name          String
+  adminUrl      String    @map("admin_url") // Kong Admin API URL (e.g., http://kong:8001)
+  adminApiKey   String?   @map("admin_api_key") // Optional API key for Admin API authentication
+  description   String?
+  isActive      Boolean   @default(true) @map("is_active")
+  status        String    @default("disconnected") // 'connected', 'disconnected', 'error'
+  lastConnected DateTime? @map("last_connected")
+  metadata      Json?     @default("{}") // Additional configuration (timeout, retries, etc.)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@map("kong_instances")
+}
+
 model CacheKey {
-  id           String   @id @default(uuid()) @db.Uuid
-  instanceId   String   @map("instance_id") @db.Uuid
+  id           String    @id @default(uuid()) @db.Uuid
+  instanceId   String    @map("instance_id") @db.Uuid
   key          String
   value        String
-  type         String   @default("string")
-  size         Int      @default(0)
-  ttl          Int?     // Time to live in seconds
-  hitCount     Int      @default(0) @map("hit_count")
+  type         String    @default("string")
+  size         Int       @default(0)
+  ttl          Int? // Time to live in seconds
+  hitCount     Int       @default(0) @map("hit_count")
   lastAccessed DateTime? @map("last_accessed")
-  isExpired    Boolean  @default(false) @map("is_expired")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  isExpired    Boolean   @default(false) @map("is_expired")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  instance     CacheInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+  instance CacheInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
 
   @@unique([instanceId, key])
   @@map("cache_keys")
 }
 
 model CacheStats {
-  id              String   @id @default(uuid()) @db.Uuid
-  instanceId      String   @map("instance_id") @db.Uuid
-  totalKeys       Int      @default(0) @map("total_keys")
-  memoryUsage     BigInt   @default(0) @map("memory_usage")
-  hitRate         Float    @default(0) @map("hit_rate")
-  missRate        Float    @default(0) @map("miss_rate")
-  evictionRate    Float    @default(0) @map("eviction_rate")
-  avgResponseTime Float    @default(0) @map("avg_response_time")
-  connections     Int      @default(0)
-  commandsPerSecond Int    @default(0) @map("commands_per_second")
-  hits            Int      @default(0)
-  misses          Int      @default(0)
-  evictions       Int      @default(0)
-  expired         Int      @default(0)
-  createdAt       DateTime @default(now()) @map("created_at")
+  id                String   @id @default(uuid()) @db.Uuid
+  instanceId        String   @map("instance_id") @db.Uuid
+  totalKeys         Int      @default(0) @map("total_keys")
+  memoryUsage       BigInt   @default(0) @map("memory_usage")
+  hitRate           Float    @default(0) @map("hit_rate")
+  missRate          Float    @default(0) @map("miss_rate")
+  evictionRate      Float    @default(0) @map("eviction_rate")
+  avgResponseTime   Float    @default(0) @map("avg_response_time")
+  connections       Int      @default(0)
+  commandsPerSecond Int      @default(0) @map("commands_per_second")
+  hits              Int      @default(0)
+  misses            Int      @default(0)
+  evictions         Int      @default(0)
+  expired           Int      @default(0)
+  createdAt         DateTime @default(now()) @map("created_at")
 
   // Relations
-  instance       CacheInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+  instance CacheInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
 
   @@map("cache_stats")
 }
 
 model CacheConfig {
-  id            String   @id @default(uuid()) @db.Uuid
-  instanceId    String   @map("instance_id") @db.Uuid
-  maxMemory     String   @map("max_memory")
-  evictionPolicy String  @map("eviction_policy")
-  ttl           Int      @default(3600)
-  compression   Boolean  @default(false)
-  persistence   Boolean  @default(false)
-  clustering    Boolean  @default(false)
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  id             String   @id @default(uuid()) @db.Uuid
+  instanceId     String   @map("instance_id") @db.Uuid
+  maxMemory      String   @map("max_memory")
+  evictionPolicy String   @map("eviction_policy")
+  ttl            Int      @default(3600)
+  compression    Boolean  @default(false)
+  persistence    Boolean  @default(false)
+  clustering     Boolean  @default(false)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
   @@unique([instanceId])
   @@map("cache_configs")
 }
 
 model Notebook {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String    @id @default(uuid()) @db.Uuid
   name        String
   description String?
   content     Json?     @default("{}")
@@ -689,8 +718,8 @@ model Notebook {
   isPublic    Boolean   @default(false) @map("is_public")
   author      String
   spaceId     String?   @map("space_id") @db.Uuid
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
 
   // Relations
@@ -700,60 +729,60 @@ model Notebook {
 }
 
 model AIProviderConfig {
-  id            String   @id @default(uuid()) @db.Uuid
-  provider      String   @unique
+  id            String    @id @default(uuid()) @db.Uuid
+  provider      String    @unique
   name          String
   description   String?
   website       String?
   icon          String?
-  isSupported   Boolean  @default(true) @map("is_supported")
-  apiKey        String?  @map("api_key")
-  baseUrl       String?  @map("base_url")
-  customHeaders Json?    @default("{}") @map("custom_headers")
-  timeout       Int      @default(30000)
-  retryAttempts Int      @default(3) @map("retry_attempts")
-  status        String   @default("inactive") // active, inactive, error, pending
-  isConfigured  Boolean  @default(false) @map("is_configured")
+  isSupported   Boolean   @default(true) @map("is_supported")
+  apiKey        String?   @map("api_key")
+  baseUrl       String?   @map("base_url")
+  customHeaders Json?     @default("{}") @map("custom_headers")
+  timeout       Int       @default(30000)
+  retryAttempts Int       @default(3) @map("retry_attempts")
+  status        String    @default("inactive") // active, inactive, error, pending
+  isConfigured  Boolean   @default(false) @map("is_configured")
   lastTested    DateTime? @map("last_tested")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
 
   @@map("ai_provider_configs")
 }
 
 model AIModel {
-  id          String   @id @default(uuid()) @db.Uuid
-  name        String
-  provider    String
-  type        String   // text, image, code, multimodal
-  description String?
-  maxTokens   Int      @map("max_tokens")
-  costPerToken Float   @map("cost_per_token")
-  isAvailable Boolean  @default(true) @map("is_available")
-  capabilities Json?   @default("[]")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id           String        @id @default(uuid()) @db.Uuid
+  name         String
+  provider     String
+  type         String // text, image, code, multimodal
+  description  String?
+  maxTokens    Int           @map("max_tokens")
+  costPerToken Float         @map("cost_per_token")
+  isAvailable  Boolean       @default(true) @map("is_available")
+  capabilities Json?         @default("[]")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
   chatSessions ChatSession[] @relation("ModelChatSessions")
 
   @@map("ai_models")
 }
 
 model ChatSession {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String    @id @default(uuid()) @db.Uuid
   title       String
   description String?
-  isPrivate   Boolean  @default(false) @map("is_private")
-  userId      String   @map("user_id") @db.Uuid
-  spaceId     String?  @map("space_id") @db.Uuid
-  modelId     String?  @map("model_id") @db.Uuid
-  messages    Json?    @default("[]")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  isPrivate   Boolean   @default(false) @map("is_private")
+  userId      String    @map("user_id") @db.Uuid
+  spaceId     String?   @map("space_id") @db.Uuid
+  modelId     String?   @map("model_id") @db.Uuid
+  messages    Json?     @default("[]")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
 
   // Relations
-  user User @relation("UserChatSessions", fields: [userId], references: [id], onDelete: Cascade)
-  space Space? @relation("SpaceChatSessions", fields: [spaceId], references: [id], onDelete: Cascade)
+  user  User     @relation("UserChatSessions", fields: [userId], references: [id], onDelete: Cascade)
+  space Space?   @relation("SpaceChatSessions", fields: [spaceId], references: [id], onDelete: Cascade)
   model AIModel? @relation("ModelChatSessions", fields: [modelId], references: [id], onDelete: SetNull)
 
   @@map("chat_sessions")
@@ -761,7 +790,7 @@ model ChatSession {
 
 model AuditLog {
   id         String   @id @default(uuid()) @db.Uuid
-  action     String   // CREATE, UPDATE, DELETE, etc.
+  action     String // CREATE, UPDATE, DELETE, etc.
   entityType String   @map("entity_type") // attribute, data_model, etc.
   entityId   String   @map("entity_id") @db.Uuid
   oldValue   String?  @map("old_value") // JSON string
@@ -777,45 +806,45 @@ model AuditLog {
 
 // Project Management - Tickets
 model Ticket {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String    @id @default(uuid()) @db.Uuid
   title       String
   description String?
-  status      String   @default("BACKLOG") // BACKLOG, TODO, IN_PROGRESS, IN_REVIEW, DONE, CANCELLED
-  priority    String   @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  status      String    @default("BACKLOG") // BACKLOG, TODO, IN_PROGRESS, IN_REVIEW, DONE, CANCELLED
+  priority    String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
   dueDate     DateTime? @map("due_date")
   startDate   DateTime? @map("start_date")
   completedAt DateTime? @map("completed_at")
-  createdBy   String   @map("created_by") @db.Uuid
-  estimate    Int?     // Story points or hours
-  metadata    Json?    @default("{}")
-  parentId    String?  @map("parent_id") @db.Uuid // For subtasks
-  position    Int      @default(0) // For ordering
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdBy   String    @map("created_by") @db.Uuid
+  estimate    Int? // Story points or hours
+  metadata    Json?     @default("{}")
+  parentId    String?   @map("parent_id") @db.Uuid // For subtasks
+  position    Int       @default(0) // For ordering
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
 
   // Relations
-  spaces      TicketSpace[] @relation("TicketSpaces")
-  assignees   TicketAssignee[] @relation("TicketAssignees")
-  creator     User        @relation("TicketCreator", fields: [createdBy], references: [id])
-  attributes  TicketAttribute[] @relation("TicketAttributes")
-  tags        TicketTag[] @relation("TicketTags")
-  comments    TicketComment[] @relation("TicketComments")
-  attachments TicketAttachment[] @relation("TicketAttachments")
-  timeLogs    TicketTimeLog[] @relation("TicketTimeLogs")
-  subtasks    Ticket[] @relation("TicketSubtasks")
-  parent      Ticket? @relation("TicketSubtasks", fields: [parentId], references: [id])
+  spaces       TicketSpace[]      @relation("TicketSpaces")
+  assignees    TicketAssignee[]   @relation("TicketAssignees")
+  creator      User               @relation("TicketCreator", fields: [createdBy], references: [id])
+  attributes   TicketAttribute[]  @relation("TicketAttributes")
+  tags         TicketTag[]        @relation("TicketTags")
+  comments     TicketComment[]    @relation("TicketComments")
+  attachments  TicketAttachment[] @relation("TicketAttachments")
+  timeLogs     TicketTimeLog[]    @relation("TicketTimeLogs")
+  subtasks     Ticket[]           @relation("TicketSubtasks")
+  parent       Ticket?            @relation("TicketSubtasks", fields: [parentId], references: [id])
   dependencies TicketDependency[] @relation("TicketDependencies")
-  dependents  TicketDependency[] @relation("TicketDependents")
+  dependents   TicketDependency[] @relation("TicketDependents")
 
   @@map("tickets")
 }
 
 // Many-to-many: Tickets can belong to multiple spaces
 model TicketSpace {
-  id       String @id @default(uuid()) @db.Uuid
-  ticketId String @map("ticket_id") @db.Uuid
-  spaceId  String @map("space_id") @db.Uuid
+  id        String   @id @default(uuid()) @db.Uuid
+  ticketId  String   @map("ticket_id") @db.Uuid
+  spaceId   String   @map("space_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at")
 
   // Relations
@@ -828,10 +857,10 @@ model TicketSpace {
 
 // Many-to-many: Tickets can have multiple assignees
 model TicketAssignee {
-  id       String @id @default(uuid()) @db.Uuid
-  ticketId String @map("ticket_id") @db.Uuid
-  userId   String @map("user_id") @db.Uuid
-  role     String @default("ASSIGNEE") // ASSIGNEE, REVIEWER, WATCHER
+  id        String   @id @default(uuid()) @db.Uuid
+  ticketId  String   @map("ticket_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  role      String   @default("ASSIGNEE") // ASSIGNEE, REVIEWER, WATCHER
   createdAt DateTime @default(now()) @map("created_at")
 
   // Relations
@@ -844,10 +873,10 @@ model TicketAssignee {
 
 // Tags for tickets
 model TicketTag {
-  id       String @id @default(uuid()) @db.Uuid
-  ticketId String @map("ticket_id") @db.Uuid
-  name     String
-  color    String? // Hex color
+  id        String   @id @default(uuid()) @db.Uuid
+  ticketId  String   @map("ticket_id") @db.Uuid
+  name      String
+  color     String? // Hex color
   createdAt DateTime @default(now()) @map("created_at")
 
   // Relations
@@ -863,8 +892,8 @@ model TicketAttribute {
   ticketId    String   @map("ticket_id") @db.Uuid
   name        String
   displayName String   @map("display_name")
-  type        String   // TEXT, NUMBER, BOOLEAN, DATE, SELECT, MULTI_SELECT, USER, URL, EMAIL
-  value       String?  // For simple types
+  type        String // TEXT, NUMBER, BOOLEAN, DATE, SELECT, MULTI_SELECT, USER, URL, EMAIL
+  value       String? // For simple types
   jsonValue   Json?    @map("json_value") // For complex types (select options, etc.)
   isRequired  Boolean  @default(false) @map("is_required")
   sortOrder   Int      @default(0) @map("sort_order")
@@ -872,7 +901,7 @@ model TicketAttribute {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  ticket      Ticket   @relation("TicketAttributes", fields: [ticketId], references: [id], onDelete: Cascade)
+  ticket Ticket @relation("TicketAttributes", fields: [ticketId], references: [id], onDelete: Cascade)
 
   @@unique([ticketId, name])
   @@map("ticket_attributes")
@@ -880,13 +909,13 @@ model TicketAttribute {
 
 // Comments on tickets
 model TicketComment {
-  id        String   @id @default(uuid()) @db.Uuid
-  ticketId  String   @map("ticket_id") @db.Uuid
-  userId    String   @map("user_id") @db.Uuid
+  id        String    @id @default(uuid()) @db.Uuid
+  ticketId  String    @map("ticket_id") @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
   content   String
-  metadata  Json?    @default("{}")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  metadata  Json?     @default("{}")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
   // Relations
@@ -898,14 +927,14 @@ model TicketComment {
 
 // Attachments on tickets
 model TicketAttachment {
-  id        String   @id @default(uuid()) @db.Uuid
-  ticketId  String   @map("ticket_id") @db.Uuid
-  fileName  String   @map("file_name")
-  filePath  String   @map("file_path")
-  fileSize  Int      @map("file_size")
-  mimeType  String   @map("mime_type")
-  uploadedBy String? @map("uploaded_by") @db.Uuid
-  createdAt DateTime @default(now()) @map("created_at")
+  id         String   @id @default(uuid()) @db.Uuid
+  ticketId   String   @map("ticket_id") @db.Uuid
+  fileName   String   @map("file_name")
+  filePath   String   @map("file_path")
+  fileSize   Int      @map("file_size")
+  mimeType   String   @map("mime_type")
+  uploadedBy String?  @map("uploaded_by") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
 
   // Relations
   ticket Ticket @relation("TicketAttachments", fields: [ticketId], references: [id], onDelete: Cascade)
@@ -915,14 +944,14 @@ model TicketAttachment {
 
 // Time tracking for tickets
 model TicketTimeLog {
-  id        String   @id @default(uuid()) @db.Uuid
-  ticketId  String   @map("ticket_id") @db.Uuid
-  userId    String   @map("user_id") @db.Uuid
+  id          String   @id @default(uuid()) @db.Uuid
+  ticketId    String   @map("ticket_id") @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
   description String?
-  hours     Decimal  @db.Decimal(10, 2)
-  loggedAt  DateTime @map("logged_at")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  hours       Decimal  @db.Decimal(10, 2)
+  loggedAt    DateTime @map("logged_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
   ticket Ticket @relation("TicketTimeLogs", fields: [ticketId], references: [id], onDelete: Cascade)
@@ -933,10 +962,10 @@ model TicketTimeLog {
 
 // Dependencies between tickets
 model TicketDependency {
-  id          String @id @default(uuid()) @db.Uuid
-  ticketId    String @map("ticket_id") @db.Uuid
-  dependsOnId String @map("depends_on_id") @db.Uuid
-  type        String @default("BLOCKS") // BLOCKS, BLOCKED_BY, RELATES_TO
+  id          String   @id @default(uuid()) @db.Uuid
+  ticketId    String   @map("ticket_id") @db.Uuid
+  dependsOnId String   @map("depends_on_id") @db.Uuid
+  type        String   @default("BLOCKS") // BLOCKS, BLOCKED_BY, RELATES_TO
   createdAt   DateTime @default(now()) @map("created_at")
 
   // Relations
@@ -953,7 +982,7 @@ model KanbanConfig {
   spaceId     String   @map("space_id") @db.Uuid
   name        String
   description String?
-  config      Json     // Board configuration (rows, columns, grouping, etc.)
+  config      Json // Board configuration (rows, columns, grouping, etc.)
   isDefault   Boolean  @default(false) @map("is_default")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
@@ -971,13 +1000,13 @@ model IntakeForm {
   name        String
   description String?
   formFields  Json     @map("form_fields") // Form field definitions
-  workflow    Json?    // Workflow configuration
+  workflow    Json? // Workflow configuration
   isActive    Boolean  @default(true) @map("is_active")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  space      Space            @relation("SpaceIntakeForms", fields: [spaceId], references: [id], onDelete: Cascade)
+  space       Space              @relation("SpaceIntakeForms", fields: [spaceId], references: [id], onDelete: Cascade)
   submissions IntakeSubmission[] @relation("IntakeFormSubmissions")
 
   @@map("intake_forms")
@@ -985,18 +1014,623 @@ model IntakeForm {
 
 // Intake form submissions
 model IntakeSubmission {
+  id        String   @id @default(uuid()) @db.Uuid
+  formId    String   @map("form_id") @db.Uuid
+  userId    String?  @map("user_id") @db.Uuid
+  data      Json // Submission data
+  ticketId  String?  @map("ticket_id") @db.Uuid // If converted to ticket
+  status    String   @default("PENDING") // PENDING, APPROVED, REJECTED, CONVERTED
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  form IntakeForm @relation("IntakeFormSubmissions", fields: [formId], references: [id], onDelete: Cascade)
+  user User?      @relation("IntakeSubmissionUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("intake_submissions")
+}
+
+// API Client Models
+model ApiClientCollection {
+  id          String             @id @default(uuid()) @db.Uuid
+  userId      String             @map("user_id") @db.Uuid
+  name        String
+  description String?
+  requests    ApiClientRequest[] @relation("CollectionRequests")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  @@map("api_client_collections")
+}
+
+model ApiClientRequest {
+  id               String   @id @default(uuid()) @db.Uuid
+  collectionId     String?  @map("collection_id") @db.Uuid
+  userId           String   @map("user_id") @db.Uuid
+  name             String
+  method           String // GET, POST, PUT, etc.
+  url              String
+  headers          Json     @default("[]")
+  auth             Json? // Auth configuration
+  body             Json? // Request body configuration
+  preRequestScript String?  @map("pre_request_script") @db.Text
+  tests            Json?    @default("[]") // Test assertions
+  description      String?  @db.Text
+  tags             String[] @default([])
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  collection ApiClientCollection? @relation("CollectionRequests", fields: [collectionId], references: [id], onDelete: Cascade)
+  history    ApiClientHistory[]   @relation("RequestHistory")
+
+  @@map("api_client_requests")
+}
+
+model ApiClientHistory {
+  id                 String   @id @default(uuid()) @db.Uuid
+  requestId          String   @map("request_id") @db.Uuid
+  userId             String   @map("user_id") @db.Uuid
+  method             String
+  url                String
+  requestHeaders     Json     @default("{}") @map("request_headers")
+  requestBody        String?  @map("request_body") @db.Text
+  responseStatus     Int?     @map("response_status")
+  responseStatusText String?  @map("response_status_text")
+  responseHeaders    Json?    @map("response_headers")
+  responseBody       String?  @map("response_body") @db.Text
+  responseSize       Int?     @map("response_size")
+  responseTime       Int?     @map("response_time") // milliseconds
+  error              String?  @db.Text
+  testResults        Json?    @map("test_results") // Test execution results
+  timestamp          DateTime @default(now())
+
+  // Relations
+  request ApiClientRequest @relation("RequestHistory", fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+  @@index([userId])
+  @@index([timestamp])
+  @@map("api_client_history")
+}
+
+model ApiClientEnvironment {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  name      String
+  variables Json     @default("[]") // Array of {key, value, enabled}
+  isActive  Boolean  @default(false) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("api_client_environments")
+}
+
+model ApiClientTemplate {
+  id               String   @id @default(uuid()) @db.Uuid
+  name             String
+  description      String?  @db.Text
+  category         String // REST, GraphQL, WebSocket, etc.
+  method           String?
+  url              String?
+  headers          Json     @default("[]")
+  auth             Json?
+  body             Json?
+  preRequestScript String?  @map("pre_request_script") @db.Text
+  tests            Json?    @default("[]")
+  tags             String[] @default([])
+  isPublic         Boolean  @default(false) @map("is_public")
+  usageCount       Int      @default(0) @map("usage_count")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("api_client_templates")
+}
+
+model ImportProfile {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String
+  description String?   @db.Text
+  dataModelId String    @map("data_model_id") @db.Uuid
+  mapping     Json      @default("{}")
+  settings    Json      @default("{}")
+  createdBy   String    @map("created_by") @db.Uuid
+  spaceId     String?   @map("space_id") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  creator User        @relation("ImportProfileCreator", fields: [createdBy], references: [id])
+  space   Space?      @relation("SpaceImportProfiles", fields: [spaceId], references: [id])
+  jobs    ImportJob[] @relation("ImportProfileJobs")
+
+  @@map("import_profiles")
+}
+
+model ImportJob {
+  id            String    @id @default(uuid()) @db.Uuid
+  profileId     String?   @map("profile_id") @db.Uuid
+  dataModelId   String    @map("data_model_id") @db.Uuid
+  fileName      String    @map("file_name")
+  fileSize      Int       @map("file_size")
+  fileType      String    @map("file_type")
+  status        String    @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED, CANCELLED
+  progress      Int       @default(0)
+  totalRows     Int?      @map("total_rows")
+  processedRows Int       @default(0) @map("processed_rows")
+  errorMessage  String?   @map("error_message") @db.Text
+  result        Json?
+  mapping       Json      @default("{}")
+  createdBy     String    @map("created_by") @db.Uuid
+  spaceId       String?   @map("space_id") @db.Uuid
+  startedAt     DateTime? @map("started_at")
+  completedAt   DateTime? @map("completed_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  profile ImportProfile? @relation("ImportProfileJobs", fields: [profileId], references: [id])
+  creator User           @relation("ImportJobCreator", fields: [createdBy], references: [id])
+  space   Space?         @relation("SpaceImportJobs", fields: [spaceId], references: [id])
+
+  @@map("import_jobs")
+}
+
+model ExportJob {
+  id            String    @id @default(uuid()) @db.Uuid
+  dataModelId   String    @map("data_model_id") @db.Uuid
+  format        String    @default("xlsx") // xlsx, csv, json, pdf
+  status        String    @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED, CANCELLED
+  progress      Int       @default(0)
+  totalRows     Int?      @map("total_rows")
+  processedRows Int       @default(0) @map("processed_rows")
+  errorMessage  String?   @map("error_message") @db.Text
+  fileUrl       String?   @map("file_url")
+  fileName      String?   @map("file_name")
+  fileSize      Int?      @map("file_size")
+  filters       Json      @default("{}")
+  columns       Json      @default("[]")
+  createdBy     String    @map("created_by") @db.Uuid
+  spaceId       String?   @map("space_id") @db.Uuid
+  startedAt     DateTime? @map("started_at")
+  completedAt   DateTime? @map("completed_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  creator User   @relation("ExportJobCreator", fields: [createdBy], references: [id])
+  space   Space? @relation("SpaceExportJobs", fields: [spaceId], references: [id])
+
+  @@map("export_jobs")
+}
+
+model Chatbot {
+  id                 String    @id @default(uuid()) @db.Uuid
+  name               String
+  website            String?
+  description        String?   @db.Text
+  apiEndpoint        String    @map("api_endpoint")
+  apiAuthType        String    @default("none") @map("api_auth_type")
+  apiAuthValue       String?   @map("api_auth_value") @db.Text
+  logo               String?
+  primaryColor       String?   @map("primary_color")
+  fontFamily         String?   @map("font_family")
+  fontSize           String?   @map("font_size")
+  fontColor          String?   @map("font_color")
+  borderColor        String?   @map("border_color")
+  borderWidth        String?   @map("border_width")
+  borderRadius       String?   @map("border_radius")
+  messageBoxColor    String?   @map("message_box_color")
+  shadowColor        String?   @map("shadow_color")
+  shadowBlur         String?   @map("shadow_blur")
+  conversationOpener String?   @map("conversation_opener") @db.Text
+  followUpQuestions  Json      @default("[]") @map("follow_up_questions")
+  enableFileUpload   Boolean   @default(false) @map("enable_file_upload")
+  showCitations      Boolean   @default(true) @map("show_citations")
+  deploymentType     String    @default("popover") @map("deployment_type")
+  isPublished        Boolean   @default(false) @map("is_published")
+  currentVersion     String?   @map("current_version")
+  createdBy          String    @map("created_by") @db.Uuid
+  spaceId            String?   @map("space_id") @db.Uuid
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  deletedAt          DateTime? @map("deleted_at")
+
+  // Relations
+  creator     User                @relation("ChatbotCreator", fields: [createdBy], references: [id])
+  space       Space?              @relation("SpaceChatbots", fields: [spaceId], references: [id])
+  versions    ChatbotVersion[]    @relation("ChatbotVersions")
+  threads     OpenAIAgentThread[] @relation("ChatbotThreads")
+  rateLimit   ChatbotRateLimit?   @relation("ChatbotRateLimits")
+  cacheConfig ChatbotCacheConfig? @relation("ChatbotCacheConfigs")
+  retryConfig ChatbotRetryConfig? @relation("ChatbotRetryConfigs")
+  costBudget  ChatbotCostBudget?  @relation("ChatbotCostBudgets")
+  costRecords ChatbotCostRecord[] @relation("ChatbotCostRecords")
+  webhooks    ChatbotWebhook[]    @relation("ChatbotWebhooks")
+  performanceMetrics ChatbotPerformanceMetric[] @relation("ChatbotPerformanceMetrics")
+  customFunctions ChatbotCustomFunction[] @relation("ChatbotCustomFunctions")
+  multiAgentConfig ChatbotMultiAgentConfig? @relation("ChatbotMultiAgentConfigs")
+  lifecycleHooks ChatbotLifecycleHook[] @relation("ChatbotLifecycleHooks")
+  connectors ChatbotConnector[] @relation("ChatbotConnectors")
+  agentLoopConfig ChatbotAgentLoopConfig? @relation("ChatbotAgentLoopConfigs")
+
+  @@map("chatbots")
+}
+
+model ChatbotVersion {
   id          String   @id @default(uuid()) @db.Uuid
-  formId      String   @map("form_id") @db.Uuid
-  userId      String?  @map("user_id") @db.Uuid
-  data        Json     // Submission data
-  ticketId    String?  @map("ticket_id") @db.Uuid // If converted to ticket
-  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED, CONVERTED
+  chatbotId   String   @map("chatbot_id") @db.Uuid
+  version     String
+  config      Json     @default("{}")
+  isPublished Boolean  @default(false) @map("is_published")
+  createdBy   String   @map("created_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  chatbot Chatbot @relation("ChatbotVersions", fields: [chatbotId], references: [id], onDelete: Cascade)
+  creator User    @relation("ChatbotVersionCreator", fields: [createdBy], references: [id])
+
+  @@map("chatbot_versions")
+}
+
+model OpenAIAgentThread {
+  id            String    @id @default(uuid()) @db.Uuid
+  threadId      String    @unique @map("thread_id") // OpenAI thread ID (thread_xxx)
+  chatbotId     String    @map("chatbot_id") @db.Uuid
+  userId        String?   @map("user_id") @db.Uuid
+  spaceId       String?   @map("space_id") @db.Uuid
+  title         String? // User-friendly title (auto-generated from first message)
+  metadata      Json?     @default("{}") // Store additional metadata (agentId, model, etc.)
+  messageCount  Int       @default(0) @map("message_count") // Track number of messages
+  lastMessageAt DateTime? @map("last_message_at") // Last message timestamp
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  // Relations
+  chatbot Chatbot @relation("ChatbotThreads", fields: [chatbotId], references: [id], onDelete: Cascade)
+  user    User?   @relation("UserAgentThreads", fields: [userId], references: [id], onDelete: SetNull)
+  space   Space?  @relation("SpaceAgentThreads", fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@index([chatbotId, userId])
+  @@index([threadId])
+  @@map("openai_agent_threads")
+}
+
+// Rate Limiting Configuration
+model ChatbotRateLimit {
+  id                   String   @id @default(uuid()) @db.Uuid
+  chatbotId            String   @unique @map("chatbot_id") @db.Uuid
+  enabled              Boolean  @default(true)
+  maxRequestsPerMinute Int?     @map("max_requests_per_minute") // Per user
+  maxRequestsPerHour   Int?     @map("max_requests_per_hour") // Per user
+  maxRequestsPerDay    Int?     @map("max_requests_per_day") // Per user
+  maxRequestsPerMonth  Int?     @map("max_requests_per_month") // Per user
+  burstLimit           Int?     @map("burst_limit") // Allow burst of N requests
+  windowSize           Int?     @default(60) @map("window_size") // Window size in seconds
+  blockDuration        Int?     @default(300) @map("block_duration") // Block duration in seconds when limit exceeded
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  chatbot Chatbot @relation("ChatbotRateLimits", fields: [chatbotId], references: [id], onDelete: Cascade)
+
+  @@map("chatbot_rate_limits")
+}
+
+// Response Caching Configuration
+model ChatbotCacheConfig {
+  id             String   @id @default(uuid()) @db.Uuid
+  chatbotId      String   @unique @map("chatbot_id") @db.Uuid
+  enabled        Boolean  @default(true)
+  ttl            Int      @default(3600) // Time to live in seconds (1 hour default)
+  maxSize        Int      @default(1000) @map("max_size") // Maximum number of cached responses
+  strategy       String   @default("exact") // 'exact', 'semantic', 'fuzzy'
+  includeContext Boolean  @default(false) @map("include_context") // Include conversation context in cache key
+  cacheKeyPrefix String?  @map("cache_key_prefix") // Optional prefix for cache keys
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  chatbot Chatbot @relation("ChatbotCacheConfigs", fields: [chatbotId], references: [id], onDelete: Cascade)
+
+  @@map("chatbot_cache_configs")
+}
+
+// Retry Configuration
+model ChatbotRetryConfig {
+  id                   String   @id @default(uuid()) @db.Uuid
+  chatbotId            String   @unique @map("chatbot_id") @db.Uuid
+  enabled              Boolean  @default(true)
+  maxRetries           Int      @default(3) @map("max_retries")
+  initialDelay         Int      @default(1000) @map("initial_delay") // Initial delay in ms
+  maxDelay             Int      @default(30000) @map("max_delay") // Maximum delay in ms
+  backoffMultiplier    Float    @default(2.0) @map("backoff_multiplier")
+  retryableStatusCodes String[] @default(["500", "502", "503", "504"]) @map("retryable_status_codes") // HTTP status codes to retry
+  jitter               Boolean  @default(true) // Add randomness to delays
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  chatbot Chatbot @relation("ChatbotRetryConfigs", fields: [chatbotId], references: [id], onDelete: Cascade)
+
+  @@map("chatbot_retry_configs")
+}
+
+// Cost Tracking and Budgets
+model ChatbotCostBudget {
+  id             String   @id @default(uuid()) @db.Uuid
+  chatbotId      String   @unique @map("chatbot_id") @db.Uuid
+  enabled        Boolean  @default(true)
+  monthlyBudget  Decimal? @map("monthly_budget") @db.Decimal(10, 2) // Monthly budget in USD
+  dailyBudget    Decimal? @map("daily_budget") @db.Decimal(10, 2) // Daily budget in USD
+  alertThreshold Float    @default(0.8) @map("alert_threshold") // Alert at 80% of budget
+  alertEmail     String?  @map("alert_email") // Email to send alerts to
+  trackPerUser   Boolean  @default(false) @map("track_per_user") // Track costs per user
+  trackPerThread Boolean  @default(false) @map("track_per_thread") // Track costs per thread
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  chatbot Chatbot @relation("ChatbotCostBudgets", fields: [chatbotId], references: [id], onDelete: Cascade)
+
+  @@map("chatbot_cost_budgets")
+}
+
+// Cost Tracking Records
+model ChatbotCostRecord {
+  id           String   @id @default(uuid()) @db.Uuid
+  chatbotId    String   @map("chatbot_id") @db.Uuid
+  userId       String?  @map("user_id") @db.Uuid
+  threadId     String?  @map("thread_id")
+  traceId      String?  @map("trace_id")
+  cost         Decimal  @db.Decimal(10, 6) // Cost in USD (high precision)
+  inputTokens  Int?     @map("input_tokens")
+  outputTokens Int?     @map("output_tokens")
+  totalTokens  Int?     @map("total_tokens")
+  model        String? // Model used (e.g., gpt-4, gpt-3.5-turbo)
+  metadata     Json?    @default("{}") // Additional metadata
+  recordedAt   DateTime @default(now()) @map("recorded_at")
+
+  // Relations
+  chatbot Chatbot @relation("ChatbotCostRecords", fields: [chatbotId], references: [id], onDelete: Cascade)
+  user    User?   @relation("UserCostRecords", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([chatbotId, recordedAt])
+  @@index([userId, recordedAt])
+  @@index([threadId])
+  @@map("chatbot_cost_records")
+}
+
+// Webhook Configuration for Chatbot Events
+model ChatbotWebhook {
+  id          String   @id @default(uuid()) @db.Uuid
+  chatbotId   String   @map("chatbot_id") @db.Uuid
+  url         String   // Webhook URL
+  secret      String?  // Optional secret for webhook signature
+  events      String[] // Array of event types: 'budget_alert', 'budget_exceeded', 'rate_limit_exceeded', 'cost_threshold'
+  enabled     Boolean  @default(true)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  form  IntakeForm @relation("IntakeFormSubmissions", fields: [formId], references: [id], onDelete: Cascade)
-  user  User?      @relation("IntakeSubmissionUser", fields: [userId], references: [id], onDelete: SetNull)
+  chatbot Chatbot @relation("ChatbotWebhooks", fields: [chatbotId], references: [id], onDelete: Cascade)
 
-  @@map("intake_submissions")
+  @@index([chatbotId])
+  @@map("chatbot_webhooks")
+}
+
+// Performance Metrics Tracking
+model ChatbotPerformanceMetric {
+  id              String   @id @default(uuid()) @db.Uuid
+  chatbotId       String   @map("chatbot_id") @db.Uuid
+  metricType      String   @map("metric_type") // 'cache_hit', 'cache_miss', 'retry_attempt', 'retry_success', 'rate_limit_violation', 'response_time'
+  value           Decimal  @db.Decimal(10, 4) // Metric value (e.g., response time in ms, cache hit count)
+  metadata        Json?    @default("{}") // Additional context
+  recordedAt      DateTime @default(now()) @map("recorded_at")
+
+  // Relations
+  chatbot Chatbot @relation("ChatbotPerformanceMetrics", fields: [chatbotId], references: [id], onDelete: Cascade)
+
+  @@index([chatbotId, metricType, recordedAt])
+  @@index([recordedAt])
+  @@map("chatbot_performance_metrics")
+}
+
+// Custom Function Tools for OpenAI Agent SDK
+model ChatbotCustomFunction {
+  id          String   @id @default(uuid()) @db.Uuid
+  chatbotId   String   @map("chatbot_id") @db.Uuid
+  name        String   // Function name
+  description String   @db.Text // Function description for the agent
+  parameters  Json     // JSON schema for function parameters
+  endpoint    String?  // API endpoint to call (if external)
+  code        String?  @db.Text // JavaScript/TypeScript code to execute (if inline)
+  executionType String @map("execution_type") // 'api', 'inline', 'webhook'
+  enabled     Boolean  @default(true)
+  metadata    Json?    @default("{}") // Additional configuration
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  chatbot Chatbot @relation("ChatbotCustomFunctions", fields: [chatbotId], references: [id], onDelete: Cascade)
+
+  @@index([chatbotId])
+  @@map("chatbot_custom_functions")
+}
+
+// Multi-Agent Coordination Configuration
+model ChatbotMultiAgentConfig {
+  id          String   @id @default(uuid()) @db.Uuid
+  chatbotId   String   @map("chatbot_id") @db.Uuid
+  enabled     Boolean  @default(false)
+  agents      Json     // Array of agent configurations with handoff rules
+  handoffRules Json?   @default("{}") @map("handoff_rules") // Rules for agent handoffs
+  coordinationStrategy String? @map("coordination_strategy") // 'sequential', 'parallel', 'conditional'
+  metadata    Json?    @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  chatbot Chatbot @relation("ChatbotMultiAgentConfigs", fields: [chatbotId], references: [id], onDelete: Cascade)
+
+  @@unique([chatbotId])
+  @@map("chatbot_multi_agent_configs")
+}
+
+// Lifecycle Hooks Configuration
+model ChatbotLifecycleHook {
+  id          String   @id @default(uuid()) @db.Uuid
+  chatbotId   String   @map("chatbot_id") @db.Uuid
+  hookType    String   @map("hook_type") // 'before_execution', 'after_execution', 'on_tool_call', 'on_error', 'on_handoff'
+  enabled     Boolean  @default(true)
+  handlerType String   @map("handler_type") // 'api', 'inline', 'webhook'
+  handlerUrl  String?  @map("handler_url") // API endpoint or webhook URL
+  handlerCode String?  @db.Text @map("handler_code") // Inline code to execute
+  metadata    Json?    @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  chatbot Chatbot @relation("ChatbotLifecycleHooks", fields: [chatbotId], references: [id], onDelete: Cascade)
+
+  @@index([chatbotId, hookType])
+  @@map("chatbot_lifecycle_hooks")
+}
+
+// Third-party Service Connectors
+model ChatbotConnector {
+  id          String   @id @default(uuid()) @db.Uuid
+  chatbotId   String   @map("chatbot_id") @db.Uuid
+  connectorType String @map("connector_type") // 'gmail', 'google_drive', 'github', 'slack', etc.
+  enabled     Boolean  @default(true)
+  credentials Json?    // Encrypted OAuth tokens or API keys
+  config      Json?    @default("{}") // Connector-specific configuration
+  metadata    Json?    @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  chatbot Chatbot @relation("ChatbotConnectors", fields: [chatbotId], references: [id], onDelete: Cascade)
+
+  @@index([chatbotId, connectorType])
+  @@map("chatbot_connectors")
+}
+
+// Agent Loop Configuration
+model ChatbotAgentLoopConfig {
+  id              String   @id @default(uuid()) @db.Uuid
+  chatbotId       String   @map("chatbot_id") @db.Uuid
+  maxIterations   Int?     @map("max_iterations") // Maximum agent loop iterations
+  stopConditions  Json?    @default("{}") @map("stop_conditions") // Conditions to stop the loop
+  timeout         Int?     // Timeout in milliseconds
+  enableHumanInLoop Boolean @default(false) @map("enable_human_in_loop") // Enable human-in-the-loop pauses
+  humanInLoopConfig Json?  @default("{}") @map("human_in_loop_config") // Configuration for human-in-the-loop
+  metadata        Json?    @default("{}")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  chatbot Chatbot @relation("ChatbotAgentLoopConfigs", fields: [chatbotId], references: [id], onDelete: Cascade)
+
+  @@unique([chatbotId])
+  @@map("chatbot_agent_loop_configs")
+}
+
+// Asset Management Models
+model Language {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique // ISO 639-1 code (e.g., 'en', 'es', 'fr')
+  name        String   // Native name (e.g., 'English', 'Español')
+  nativeName  String   @map("native_name") // Native name in that language
+  flag        String?  // Flag emoji or icon URL
+  isActive    Boolean  @default(true) @map("is_active")
+  isDefault   Boolean  @default(false) @map("is_default")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  localizations Localization[] @relation("LanguageLocalizations")
+
+  @@map("languages")
+}
+
+model AssetType {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique // Unique code (e.g., 'database_type', 'system_type', 'cms_type')
+  name        String   // Display name
+  description String?  @db.Text
+  category    String   // 'database', 'system', 'cms', 'other'
+  isActive    Boolean  @default(true) @map("is_active")
+  isSystem    Boolean  @default(false) @map("is_system") // System types cannot be deleted
+  sortOrder   Int      @default(0) @map("sort_order")
+  metadata    Json?    @default("{}") // Additional configuration
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  assets Asset[] @relation("AssetTypeAssets")
+
+  @@map("asset_types")
+}
+
+model Asset {
+  id          String    @id @default(uuid()) @db.Uuid
+  assetTypeId String    @map("asset_type_id") @db.Uuid
+  code        String    // Unique code within type (e.g., 'postgresql', 'mysql')
+  name        String    // Display name
+  description String?   @db.Text
+  logo        String?   // Logo URL or path
+  icon        String?   // Icon URL or emoji
+  color       String?   // Primary color (hex)
+  isActive    Boolean   @default(true) @map("is_active")
+  isSystem    Boolean   @default(false) @map("is_system") // System assets cannot be deleted
+  sortOrder   Int       @default(0) @map("sort_order")
+  metadata    Json?     @default("{}") // Additional data (ports, versions, etc.)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  assetType AssetType @relation("AssetTypeAssets", fields: [assetTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([assetTypeId, code])
+  @@map("assets")
+}
+
+model Localization {
+  id        String   @id @default(uuid()) @db.Uuid
+  languageId String   @map("language_id") @db.Uuid
+  entityType String   @map("entity_type") // 'asset_type', 'asset', 'system'
+  entityId   String   @map("entity_id") @db.Uuid
+  field     String   // Field name (e.g., 'name', 'description')
+  value     String   @db.Text // Translated value
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  language Language @relation("LanguageLocalizations", fields: [languageId], references: [id], onDelete: Cascade)
+
+  @@unique([languageId, entityType, entityId, field])
+  @@index([entityType, entityId])
+  @@map("localizations")
+}
+
+model StorageConnection {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  type        String   // 'minio', 's3', 'sftp', 'onedrive', 'google_drive'
+  config      Json     // Provider-specific configuration (encrypted in production)
+  isActive    Boolean  @default(true) @map("is_active")
+  status      String   @default("disconnected") // 'connected', 'disconnected', 'error'
+  lastTested  DateTime? @map("last_tested")
+  lastError   String?  @map("last_error") @db.Text
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("storage_connections")
 }

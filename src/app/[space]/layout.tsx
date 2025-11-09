@@ -39,11 +39,59 @@ export default function SpaceLayout({
     }
   }, [currentSpace, spaces, spaceSlug, setCurrentSpace])
 
+  // Map tab IDs to their new route paths
+  const getRouteForTab = (tab: string): string => {
+    const routeMap: Record<string, string> = {
+      'overview': '/',
+      'analytics': '/overview/analytics',
+      'bigquery': '/tools/bigquery',
+      'notebook': '/tools/notebook',
+      'ai-analyst': '/tools/ai-analyst',
+      'ai-chat-ui': '/tools/ai-chat-ui',
+      'knowledge-base': '/tools/knowledge-base',
+      'projects': '/tools/projects',
+      'bi': '/tools/bi',
+      'storage': '/tools/storage',
+      'data-governance': '/tools/data-governance',
+      'users': '/system/users',
+      'roles': '/system/roles',
+      'permission-tester': '/system/permission-tester',
+      'space-layouts': '/system/space-layouts',
+      'space-settings': '/system/space-settings',
+      'assets': '/system/assets',
+      'data': '/system/data',
+      'attachments': '/system/attachments',
+      'kernels': '/system/kernels',
+      'health': '/system/health',
+      'logs': '/system/logs',
+      'audit': '/system/audit',
+      'database': '/system/database',
+      'change-requests': '/system/change-requests',
+      'sql-linting': '/system/sql-linting',
+      'schema-migrations': '/system/schema-migrations',
+      'data-masking': '/system/data-masking',
+      'cache': '/system/cache',
+      'backup': '/system/backup',
+      'security': '/system/security',
+      'performance': '/system/performance',
+      'settings': '/system/settings',
+      'page-templates': '/system/page-templates',
+      'notifications': '/system/notifications',
+      'themes': '/system/themes',
+      'export': '/system/export',
+      'integrations': '/system/integrations',
+      'api': '/system/api',
+      'space-selection': '/data-management/space-selection',
+    }
+    return routeMap[tab] || '/'
+  }
+
   const handleTabChange = (tab: string) => {
     setActiveTab(tab)
-    // Navigate to homepage with the tab when clicking other tabs
+    // Navigate to new route structure when clicking other tabs
     if (tab !== 'space-settings') {
-      router.push(`/?tab=${encodeURIComponent(tab)}`)
+      const route = getRouteForTab(tab)
+      router.push(route)
     }
   }
 
@@ -94,7 +142,7 @@ export default function SpaceLayout({
         }}
         breadcrumbItems={[
           { label: 'Unified Data Platform', href: '/' },
-          { label: 'System', href: '/?tab=space-settings' },
+          { label: 'System', href: '/system/space-settings' },
           { label: 'Space Settings', href: `/${spaceSlug}/settings` },
           currentSpace?.name || ''
         ]}

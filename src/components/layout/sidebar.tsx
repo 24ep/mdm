@@ -20,6 +20,7 @@ import {
   Plus,
   BarChart3,
   Kanban,
+  FileText,
 } from 'lucide-react'
 import * as LucideIcons from 'lucide-react'
 import { AnimatedIcon } from '@/components/ui/animated-icon'
@@ -60,6 +61,7 @@ const getMenuItems = (
   if (flags?.dashboard !== false) {
     generalChildren.push({ title: 'Dashboards', href: `/dashboards`, icon: BarChart3 })
   }
+  generalChildren.push({ title: 'Reports', href: `/reports`, icon: FileText })
   if (flags?.assignments !== false) {
     generalChildren.push({ title: 'Assignment', href: `/${spaceId}/assignments`, icon: ClipboardList })
   }

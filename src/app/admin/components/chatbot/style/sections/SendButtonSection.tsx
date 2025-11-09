@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 import type { SectionProps } from './types'
 import { extractNumericValue, ensurePx } from '../styleUtils'
 
@@ -21,20 +22,24 @@ export function SendButtonSection({ formData, setFormData, chatkitOptions }: Sec
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div className="space-y-2">
               <Label>Send Button Background Color</Label>
-              <Input
-                type="color"
+              <ColorInput
                 value={(formData as any).sendButtonBgColor || formData.primaryColor || '#3b82f6'}
-                onChange={(e) => setFormData({ ...formData, sendButtonBgColor: e.target.value } as any)}
-                className="h-10 w-full"
+                onChange={(color) => setFormData({ ...formData, sendButtonBgColor: color } as any)}
+                allowImageVideo={false}
+                className="relative"
+                placeholder="#3b82f6"
+                inputClassName="h-8 text-xs pl-7"
               />
             </div>
             <div className="space-y-2">
               <Label>Send Button Icon Color</Label>
-              <Input
-                type="color"
+              <ColorInput
                 value={(formData as any).sendButtonIconColor || '#ffffff'}
-                onChange={(e) => setFormData({ ...formData, sendButtonIconColor: e.target.value } as any)}
-                className="h-10 w-full"
+                onChange={(color) => setFormData({ ...formData, sendButtonIconColor: color } as any)}
+                allowImageVideo={false}
+                className="relative"
+                placeholder="#ffffff"
+                inputClassName="h-8 text-xs pl-7"
               />
             </div>
           </div>

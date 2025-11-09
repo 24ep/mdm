@@ -3,17 +3,22 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google"
 import AzureADProvider from "next-auth/providers/azure-ad"
 import bcrypt from "bcryptjs"
+import crypto from "crypto"
 import { query } from "@/lib/db"
 
 async function checkUserEmailExists(email: string): Promise<boolean> {
   try {
     const { rows } = await query<any>(
-      'SELECT id FROM public.users WHERE email = $1 AND is_active = true LIMIT 1',
+      'SELECT id FROM public.users WHERE email = $1 LIMIT 1',
       [email]
     )
-    return rows.length > 0
-  } catch (error) {
-    console.error('Error checking user email:', error)
+    return rows && Array.isArray(rows) && rows.length > 0
+  } catch (error: any) {
+    // Silently return false if database query fails
+    // This prevents authentication from failing if DB isn't ready
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Error checking user email:', error?.message)
+    }
     return false
   }
 }
@@ -24,7 +29,7 @@ async function getOrCreateSSOUser(email: string, name: string, provider: string)
       'SELECT id, email, name, role FROM public.users WHERE email = $1 LIMIT 1',
       [email]
     )
-    if (existingUsers.length > 0) {
+    if (existingUsers && Array.isArray(existingUsers) && existingUsers.length > 0) {
       return {
         id: existingUsers[0].id,
         email: existingUsers[0].email,
@@ -33,8 +38,12 @@ async function getOrCreateSSOUser(email: string, name: string, provider: string)
       }
     }
     return null
-  } catch (error) {
-    console.error('Error getting/creating SSO user:', error)
+  } catch (error: any) {
+    // Silently return null if database query fails
+    // This prevents SSO authentication from crashing if DB isn't ready
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Error getting/creating SSO user:', error?.message)
+    }
     return null
   }
 }
@@ -60,18 +69,63 @@ async function getSSOConfig() {
       ldapSearchFilter: '(uid={{username}})',
       ldapSearchBase: ''
     }
-    rows.forEach((row: any) => {
-      const key = row.key.replace('sso_', '')
-      try {
-        const value = typeof row.value === 'string' ? JSON.parse(row.value) : row.value
-        config[key] = value
-      } catch {
-        config[key] = row.value === 'true' || row.value === true ? true : row.value
+    
+    const { getSecretsManager } = await import('@/lib/secrets-manager')
+    const { decryptApiKey } = await import('@/lib/encryption')
+    const secretsManager = getSecretsManager()
+    const useVault = secretsManager.getBackend() === 'vault'
+    const sensitiveFields = ['googleClientSecret', 'azureClientSecret', 'ldapBindPassword']
+    
+    if (rows && Array.isArray(rows)) {
+      for (const row of rows) {
+        const key = row.key.replace('sso_', '')
+        let value: any
+        
+        try {
+          value = typeof row.value === 'string' ? JSON.parse(row.value) : row.value
+        } catch {
+          value = row.value === 'true' || row.value === true ? true : row.value
+        }
+        
+        // Decrypt sensitive fields if they're encrypted
+        if (sensitiveFields.includes(key) && value) {
+          if (useVault && typeof value === 'string' && value.startsWith('vault://')) {
+            // Value is stored in Vault, retrieve it
+            try {
+              const vaultPath = value.replace('vault://', '')
+              const secret = await secretsManager.getSecret(`sso/${vaultPath}`)
+              if (secret) {
+                config[key] = secret[key] || secret.value || ''
+              } else {
+                config[key] = '' // Empty if retrieval fails
+              }
+            } catch (error) {
+              console.warn(`Failed to retrieve ${key} from Vault:`, error)
+              config[key] = '' // Empty if retrieval fails
+            }
+          } else if (typeof value === 'string' && value.length > 0) {
+            // Try to decrypt if it's encrypted
+            const decrypted = decryptApiKey(value)
+            if (decrypted && decrypted !== value) {
+              config[key] = decrypted
+            } else {
+              config[key] = value
+            }
+          } else {
+            config[key] = value
+          }
+        } else {
+          config[key] = value
+        }
       }
-    })
+    }
     return config
-  } catch (error) {
-    console.error('Error loading SSO config:', error)
+  } catch (error: any) {
+    // Silently fall back to environment variables if database query fails
+    // This prevents NextAuth initialization from failing if DB isn't ready
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Could not load SSO config from database, using environment variables:', error?.message)
+    }
     return {
       googleEnabled: false,
       azureEnabled: false,
@@ -99,7 +153,7 @@ async function getSessionTimeoutSeconds(): Promise<number> {
     const { rows: policyRows } = await query<any>(
       "SELECT value FROM system_settings WHERE key = 'sessionPolicy' LIMIT 1"
     )
-    if (policyRows && policyRows[0]?.value) {
+    if (policyRows && Array.isArray(policyRows) && policyRows[0]?.value) {
       try {
         const policy = typeof policyRows[0].value === 'string' 
           ? JSON.parse(policyRows[0].value) 
@@ -117,12 +171,16 @@ async function getSessionTimeoutSeconds(): Promise<number> {
     const { rows } = await query<any>(
       "SELECT value FROM system_settings WHERE key = 'sessionTimeout' LIMIT 1"
     )
-    if (rows && rows[0]?.value) {
+    if (rows && Array.isArray(rows) && rows[0]?.value) {
       const hours = Number(rows[0].value)
       if (!Number.isNaN(hours) && hours > 0) return hours * 3600
     }
-  } catch (err) {
-    // no-op; fall back to env/default
+  } catch (err: any) {
+    // Silently fall back to env/default if database query fails
+    // This prevents NextAuth initialization from failing if DB isn't ready
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Could not load session timeout from database, using default:', err?.message)
+    }
   }
   const envHours = Number(process.env.SESSION_TIMEOUT_HOURS || 24)
   return (Number.isNaN(envHours) || envHours <= 0 ? 24 : envHours) * 3600
@@ -147,6 +205,9 @@ providers.push(
           'SELECT id, email, name, password, role FROM public.users WHERE email = $1 LIMIT 1',
           [credentials.email]
         )
+        if (!rows || !Array.isArray(rows) || rows.length === 0) {
+          return null
+        }
         const user = rows[0]
         if (!user || !user.password) {
           return null
@@ -156,8 +217,12 @@ providers.push(
           return null
         }
         return { id: user.id, email: user.email, name: user.name, role: user.role }
-      } catch (error) {
-        console.error('Authorization error:', error)
+      } catch (error: any) {
+        // Silently return null if database query fails
+        // This prevents authentication from crashing if DB isn't ready
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Authorization error:', error?.message)
+        }
         return null
       }
     }
@@ -209,7 +274,7 @@ providers.push(
                   if (err) { userClient.unbind(); return resolve(null) }
                   userClient.unbind()
                   const { rows } = await query<any>('SELECT id, email, name, role FROM public.users WHERE email = $1 LIMIT 1', [credentials.email])
-                  if (rows.length === 0) return resolve(null)
+                  if (!rows || !Array.isArray(rows) || rows.length === 0) return resolve(null)
                   const user = rows[0]
                   return resolve({ id: user.id, email: user.email, name: user.name, role: user.role })
                 })
@@ -226,9 +291,52 @@ providers.push(
   })
 )
 
+// Validate required environment variables
+// In development, generate a secret if not set (not recommended for production)
+let nextAuthSecret = process.env.NEXTAUTH_SECRET
+
+if (!nextAuthSecret) {
+  if (process.env.NODE_ENV === 'development') {
+    // Debug: Log available env vars
+    console.warn('⚠️  NEXTAUTH_SECRET is not set in environment variables!')
+    console.warn('Available env vars starting with NEXTAUTH:', 
+      Object.keys(process.env).filter(k => k.startsWith('NEXTAUTH')).join(', ') || 'none')
+    console.warn('Available env vars starting with AUTH:', 
+      Object.keys(process.env).filter(k => k.startsWith('AUTH')).join(', ') || 'none')
+    
+    // Generate a temporary secret for development (will change on each restart)
+    nextAuthSecret = crypto.randomBytes(32).toString('base64')
+    console.warn('⚠️  Generated temporary NEXTAUTH_SECRET for development:', nextAuthSecret.substring(0, 20) + '...')
+    console.warn('⚠️  WARNING: This secret will change on each restart. Add NEXTAUTH_SECRET to .env.local for a persistent secret.')
+  } else {
+    throw new Error(
+      'Missing NEXTAUTH_SECRET environment variable. ' +
+      'Please set it in your .env.local file and restart your dev server. ' +
+      'You can generate one with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'base64\'))"'
+    )
+  }
+}
+
+// Ensure we have at least one provider
+if (providers.length === 0) {
+  console.warn('Warning: No authentication providers configured. At least one provider is required.')
+}
+
 export const authOptions: NextAuthOptions = {
-  secret: process.env.NEXTAUTH_SECRET,
-  providers,
+  secret: nextAuthSecret,
+  providers: providers.length > 0 ? providers : [
+    // Fallback: provide a minimal credentials provider if none are configured
+    CredentialsProvider({
+      name: "credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize() {
+        return null // Always fail - this is just to prevent NextAuth from crashing
+      }
+    })
+  ],
   session: { strategy: "jwt" },
   callbacks: {
     async signIn({ user, account, profile }) {

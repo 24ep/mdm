@@ -346,7 +346,7 @@ export default function DashboardViewPage() {
         <Card>
           <CardContent className="p-6">
             <div
-              className="relative min-h-96 bg-white rounded-lg shadow-sm"
+              className="relative min-h-96 bg-background rounded-lg shadow-sm"
               style={{
                 backgroundColor: dashboard.background_color,
                 fontFamily: dashboard.font_family,
@@ -377,7 +377,7 @@ export default function DashboardViewPage() {
                       return (
                         <div
                           key={element.id}
-                          className="absolute border rounded-lg shadow-sm bg-white"
+                          className="absolute border rounded-lg shadow-sm bg-background"
                           style={{
                             left: `${(element.position_x / dashboard.grid_size) * 100}%`,
                             top: `${(element.position_y / dashboard.grid_size) * 100}%`,
@@ -401,7 +401,7 @@ export default function DashboardViewPage() {
                               {element.width}×{element.height} grid units
                             </div>
                             {/* Placeholder for actual chart/table content */}
-                            <div className="mt-4 flex items-center justify-center h-20 bg-gray-50 rounded border-2 border-dashed border-gray-300">
+                            <div className="mt-4 flex items-center justify-center h-20 bg-muted/30 rounded border-2 border-dashed border-border">
                               <div className="text-center text-gray-500">
                                 <Icon className="h-8 w-8 mx-auto mb-2" />
                                 <p className="text-xs">{element.name}</p>

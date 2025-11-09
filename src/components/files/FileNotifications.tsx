@@ -1,11 +1,13 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Checkbox } from '@/components/ui/checkbox'
+import { formatTimeAgo } from '@/lib/date-formatters'
 import { 
   Bell, 
   BellOff, 
@@ -39,6 +41,7 @@ interface Notification {
 }
 
 export function FileNotifications({ spaceId }: FileNotificationsProps) {
+  const { data: session } = useSession()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -46,17 +49,21 @@ export function FileNotifications({ spaceId }: FileNotificationsProps) {
   const [selectedNotifications, setSelectedNotifications] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    fetchNotifications()
-  }, [spaceId])
+    if (session?.user?.id) {
+      fetchNotifications()
+    }
+  }, [spaceId, session?.user?.id])
 
   const fetchNotifications = async () => {
+    if (!session?.user?.id) return
+
     try {
       setLoading(true)
       setError(null)
 
       const response = await fetch('/api/files/notifications', {
         headers: {
-          'x-user-id': 'current-user-id' // TODO: Replace with actual user ID
+          'x-user-id': session.user.id
         }
       })
 
@@ -75,12 +82,14 @@ export function FileNotifications({ spaceId }: FileNotificationsProps) {
   }
 
   const markAsRead = async (notificationIds: string[]) => {
+    if (!session?.user?.id) return
+
     try {
       const response = await fetch('/api/files/notifications', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': 'current-user-id' // TODO: Replace with actual user ID
+          'x-user-id': session.user.id
         },
         body: JSON.stringify({ notificationIds })
       })
@@ -104,12 +113,14 @@ export function FileNotifications({ spaceId }: FileNotificationsProps) {
   }
 
   const markAllAsRead = async () => {
+    if (!session?.user?.id) return
+
     try {
       const response = await fetch('/api/files/notifications', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': 'current-user-id' // TODO: Replace with actual user ID
+          'x-user-id': session.user.id
         },
         body: JSON.stringify({ markAllAsRead: true })
       })
@@ -126,12 +137,14 @@ export function FileNotifications({ spaceId }: FileNotificationsProps) {
   }
 
   const deleteNotifications = async (notificationIds: string[]) => {
+    if (!session?.user?.id) return
+
     try {
       const response = await fetch('/api/files/notifications', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': 'current-user-id' // TODO: Replace with actual user ID
+          'x-user-id': session.user.id
         },
         body: JSON.stringify({ notificationIds })
       })
@@ -148,12 +161,14 @@ export function FileNotifications({ spaceId }: FileNotificationsProps) {
   }
 
   const deleteAllNotifications = async () => {
+    if (!session?.user?.id) return
+
     try {
       const response = await fetch('/api/files/notifications', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': 'current-user-id' // TODO: Replace with actual user ID
+          'x-user-id': session.user.id
         },
         body: JSON.stringify({ deleteAll: true })
       })
@@ -228,18 +243,6 @@ export function FileNotifications({ spaceId }: FileNotificationsProps) {
       default:
         return 'text-gray-600'
     }
-  }
-
-  const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
-
-    if (diffInSeconds < 60) return 'Just now'
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`
-    return date.toLocaleDateString()
   }
 
   if (loading) {

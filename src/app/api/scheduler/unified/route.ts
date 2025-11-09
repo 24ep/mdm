@@ -13,13 +13,55 @@ import { executeNotebookSchedule } from '@/lib/notebook-scheduler'
  * - Data Syncs
  * 
  * Should be called by a cron job (e.g., every 5 minutes)
+ * 
+ * Authentication: Requires API key via X-API-Key header or valid session
  */
 export async function POST(request: NextRequest) {
   try {
+    // Authentication: Check for API key (for cron jobs) or session (for manual triggers)
+    const apiKey = request.headers.get('X-API-Key') || request.headers.get('x-api-key')
+    const expectedApiKey = process.env.SCHEDULER_API_KEY || process.env.CRON_SECRET
+
+    // If API key is required and provided, validate it
+    if (expectedApiKey && apiKey) {
+      if (apiKey !== expectedApiKey) {
+        return NextResponse.json(
+          { error: 'Invalid API key' },
+          { status: 401 }
+        )
+      }
+    } else if (expectedApiKey && !apiKey) {
+      // If API key is configured but not provided, require it
+      return NextResponse.json(
+        { error: 'API key required. Provide X-API-Key header.' },
+        { status: 401 }
+      )
+    }
+    // If no API key is configured, allow unauthenticated access (for development)
+    // In production, you should always set SCHEDULER_API_KEY
+
+    console.log('[Unified Scheduler] Starting scheduled task execution...')
     const results = {
       workflows: [] as any[],
       notebooks: [] as any[],
       dataSyncs: [] as any[]
+    }
+
+    // 0. Execute ServiceDesk sync schedules
+    try {
+      const servicedeskSyncResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/integrations/manageengine-servicedesk/sync-schedule`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(expectedApiKey && { 'X-API-Key': expectedApiKey })
+        }
+      })
+      if (servicedeskSyncResponse.ok) {
+        const servicedeskData = await servicedeskSyncResponse.json()
+        console.log('[Unified Scheduler] ServiceDesk syncs:', servicedeskData.results?.length || 0)
+      }
+    } catch (error) {
+      console.error('[Unified Scheduler] Error executing ServiceDesk syncs:', error)
     }
 
     // 1. Execute scheduled workflows

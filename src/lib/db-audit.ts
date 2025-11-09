@@ -96,6 +96,107 @@ class DatabaseAuditLogger {
         CREATE INDEX IF NOT EXISTS idx_audit_logs_user_action ON public.audit_logs(user_id, action);
       `)
       
+      // Add missing columns if table already exists (migration)
+      try {
+        await query(`
+          DO $$ 
+          BEGIN
+            -- Add user_name column if it doesn't exist
+            IF NOT EXISTS (
+              SELECT 1 FROM information_schema.columns 
+              WHERE table_schema = 'public' 
+              AND table_name = 'audit_logs' 
+              AND column_name = 'user_name'
+            ) THEN
+              ALTER TABLE public.audit_logs ADD COLUMN user_name TEXT;
+            END IF;
+            
+            -- Add user_email column if it doesn't exist
+            IF NOT EXISTS (
+              SELECT 1 FROM information_schema.columns 
+              WHERE table_schema = 'public' 
+              AND table_name = 'audit_logs' 
+              AND column_name = 'user_email'
+            ) THEN
+              ALTER TABLE public.audit_logs ADD COLUMN user_email TEXT;
+            END IF;
+            
+            -- Add resource_type column if it doesn't exist
+            IF NOT EXISTS (
+              SELECT 1 FROM information_schema.columns 
+              WHERE table_schema = 'public' 
+              AND table_name = 'audit_logs' 
+              AND column_name = 'resource_type'
+            ) THEN
+              ALTER TABLE public.audit_logs ADD COLUMN resource_type TEXT;
+            END IF;
+            
+            -- Add resource_id column if it doesn't exist
+            IF NOT EXISTS (
+              SELECT 1 FROM information_schema.columns 
+              WHERE table_schema = 'public' 
+              AND table_name = 'audit_logs' 
+              AND column_name = 'resource_id'
+            ) THEN
+              ALTER TABLE public.audit_logs ADD COLUMN resource_id TEXT;
+            END IF;
+            
+            -- Add resource_name column if it doesn't exist
+            IF NOT EXISTS (
+              SELECT 1 FROM information_schema.columns 
+              WHERE table_schema = 'public' 
+              AND table_name = 'audit_logs' 
+              AND column_name = 'resource_name'
+            ) THEN
+              ALTER TABLE public.audit_logs ADD COLUMN resource_name TEXT;
+            END IF;
+            
+            -- Add metadata column if it doesn't exist
+            IF NOT EXISTS (
+              SELECT 1 FROM information_schema.columns 
+              WHERE table_schema = 'public' 
+              AND table_name = 'audit_logs' 
+              AND column_name = 'metadata'
+            ) THEN
+              ALTER TABLE public.audit_logs ADD COLUMN metadata JSONB;
+            END IF;
+            
+            -- Add success column if it doesn't exist
+            IF NOT EXISTS (
+              SELECT 1 FROM information_schema.columns 
+              WHERE table_schema = 'public' 
+              AND table_name = 'audit_logs' 
+              AND column_name = 'success'
+            ) THEN
+              ALTER TABLE public.audit_logs ADD COLUMN success BOOLEAN NOT NULL DEFAULT true;
+            END IF;
+            
+            -- Add ip_address column if it doesn't exist
+            IF NOT EXISTS (
+              SELECT 1 FROM information_schema.columns 
+              WHERE table_schema = 'public' 
+              AND table_name = 'audit_logs' 
+              AND column_name = 'ip_address'
+            ) THEN
+              ALTER TABLE public.audit_logs ADD COLUMN ip_address TEXT;
+            END IF;
+            
+            -- Add user_agent column if it doesn't exist
+            IF NOT EXISTS (
+              SELECT 1 FROM information_schema.columns 
+              WHERE table_schema = 'public' 
+              AND table_name = 'audit_logs' 
+              AND column_name = 'user_agent'
+            ) THEN
+              ALTER TABLE public.audit_logs ADD COLUMN user_agent TEXT;
+            END IF;
+          END $$;
+        `)
+      } catch (migrationError) {
+        // Log but don't fail - columns might already exist
+        console.warn('Migration check for audit_logs columns:', migrationError)
+      }
+      
       this.initialized = true
       console.log('✅ Audit logging system initialized')
     } catch (error) {

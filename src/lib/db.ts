@@ -4,7 +4,18 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
+// Log DATABASE_URL in development (without password)
+if (process.env.NODE_ENV === 'development' && !globalForPrisma.prisma) {
+  const dbUrl = process.env.DATABASE_URL
+  if (dbUrl) {
+    // Database URL is set
+  } else {
+    console.warn('⚠️  DATABASE_URL is not set!')
+  }
+}
+
 export const db = globalForPrisma.prisma ?? new PrismaClient()
+export const prisma = db // Alias for compatibility
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
 

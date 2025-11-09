@@ -15,27 +15,35 @@ This directory contains all the documentation for the Master Data Management (MD
 
 ### **Setup Guides**
 - **[ENVIRONMENT_SETUP.md](./ENVIRONMENT_SETUP.md)** - Environment configuration
-- **[DATABASE_SETUP_GUIDE.md](./DATABASE_SETUP_GUIDE.md)** - Database setup instructions
-- **[POSTGRESQL_SETUP.md](./POSTGRESQL_SETUP.md)** - PostgreSQL specific setup
+- **[NEXT_STEPS.md](./NEXT_STEPS.md)** - Recommended next steps after setup
+- **[CODEBASE_STRUCTURE_ANALYSIS.md](./CODEBASE_STRUCTURE_ANALYSIS.md)** - Codebase structure analysis and best practices
+
+### **API Documentation**
+- **[API_ARCHITECTURE.md](./API_ARCHITECTURE.md)** - API architecture and best practices
+- **[EXTERNAL_API_GUIDE.md](./EXTERNAL_API_GUIDE.md)** - External API access guide
 
 ### **Feature Documentation**
 - **[ATTACHMENT_INFRASTRUCTURE.md](./ATTACHMENT_INFRASTRUCTURE.md)** - File attachment system
-- **[SETUP_ATTACHMENTS.md](./SETUP_ATTACHMENTS.md)** - Attachment setup guide
+- **[COMPREHENSIVE_MEMBER_MANAGEMENT.md](./COMPREHENSIVE_MEMBER_MANAGEMENT.md)** - Member management system
+- **[SPACE_INVITATION_SYSTEM.md](./SPACE_INVITATION_SYSTEM.md)** - Space invitation system
+- **[VAULT_SETUP.md](./VAULT_SETUP.md)** - Vault secrets management setup
+- **[VAULT_INTEGRATION_SUMMARY.md](./VAULT_INTEGRATION_SUMMARY.md)** - Vault integration overview
+- **[SECRETS_MANAGEMENT_COMPARISON.md](./SECRETS_MANAGEMENT_COMPARISON.md)** - Secrets management comparison
+- **[REALTIME_CHARTS_BEST_PRACTICES.md](./REALTIME_CHARTS_BEST_PRACTICES.md)** - Realtime charts guide
+- **[REMOTE_SERVER_SETUP.md](./REMOTE_SERVER_SETUP.md)** - Remote server configuration
+- **[PRISMA_UUID_BEST_PRACTICES.md](./PRISMA_UUID_BEST_PRACTICES.md)** - Prisma UUID best practices
+- **[UUID_INDEXES_MIGRATION.md](./UUID_INDEXES_MIGRATION.md)** - UUID indexes migration guide
 
 ### **Project Documentation**
 - **[BRD.md](./BRD.md)** - Business Requirements Document
 - **[SRS.md](./SRS.md)** - Software Requirements Specification
 - **[TEST_CASES.md](./TEST_CASES.md)** - Test cases and scenarios
 
-### **Troubleshooting**
-- **[FIX_DATABASE_CONNECTION.md](./FIX_DATABASE_CONNECTION.md)** - Database connection issues
-
 ## 🚀 **Quick Start**
 
 1. Start with **[COMPLETE_SYSTEM_GUIDE.md](./COMPLETE_SYSTEM_GUIDE.md)** for an overview
 2. Follow **[ENVIRONMENT_SETUP.md](./ENVIRONMENT_SETUP.md)** for configuration
-3. Use **[DATABASE_SETUP_GUIDE.md](./DATABASE_SETUP_GUIDE.md)** for database setup
-4. Check API documentation in the **[api/](./api/)** folder for development
+3. Check API documentation in the **[api/](./api/)** folder for development
 
 ## 📝 **Contributing**
 

@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useThemeSafe } from '@/hooks/use-theme-safe'
+import { getChartGridColor, getChartTextColor } from '@/lib/theme-utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -61,10 +63,18 @@ const defaultConfig: VisualizationConfig = {
 }
 
 export function DataVisualization({ data, columns, onUpdate, className }: DataVisualizationProps) {
-  const [config, setConfig] = useState<VisualizationConfig>(defaultConfig)
+  const { resolvedTheme, mounted } = useThemeSafe()
+  
+  const [config, setConfig] = useState<VisualizationConfig>({ ...defaultConfig, theme: resolvedTheme as 'light' | 'dark' })
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  
+  useEffect(() => {
+    if (mounted) {
+      setConfig(prev => ({ ...prev, theme: resolvedTheme as 'light' | 'dark' }))
+    }
+  }, [resolvedTheme, mounted])
 
   // Update config when data changes
   useEffect(() => {
@@ -108,13 +118,14 @@ export function DataVisualization({ data, columns, onUpdate, className }: DataVi
   const drawChart = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
     ctx.clearRect(0, 0, width, height)
     
-    // Set background
-    ctx.fillStyle = config.theme === 'dark' ? '#1f2937' : '#ffffff'
+    // Set background - use CSS variable equivalent
+    const isDark = config.theme === 'dark'
+    ctx.fillStyle = isDark ? '#1f2937' : '#ffffff' // Canvas requires hex, but theme-aware
     ctx.fillRect(0, 0, width, height)
     
     // Draw grid
     if (config.showGrid) {
-      ctx.strokeStyle = config.theme === 'dark' ? '#374151' : '#e5e7eb'
+      ctx.strokeStyle = getChartGridColor(isDark)
       ctx.lineWidth = 1
       
       // Vertical grid lines
@@ -152,7 +163,7 @@ export function DataVisualization({ data, columns, onUpdate, className }: DataVi
     }
     
     // Draw title
-    ctx.fillStyle = config.theme === 'dark' ? '#ffffff' : '#000000'
+    ctx.fillStyle = getChartTextColor(isDark)
     ctx.font = 'bold 16px Arial'
     ctx.textAlign = 'center'
     ctx.fillText(config.title, width / 2, 30)
@@ -260,7 +271,7 @@ export function DataVisualization({ data, columns, onUpdate, className }: DataVi
             <CardContent className="p-4">
               <div className={cn(
                 "flex justify-center",
-                isFullscreen ? "fixed inset-0 z-50 bg-white p-4" : ""
+                isFullscreen ? "fixed inset-0 z-50 bg-background p-4" : ""
               )}>
                 <canvas
                   ref={canvasRef}

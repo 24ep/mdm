@@ -8,6 +8,7 @@ import { Label } from './label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select'
 import { Badge } from './badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './table'
+import { formatDateTime } from '@/lib/date-formatters'
 import { 
   Search, 
   Filter, 
@@ -139,9 +140,6 @@ export function AuditLogs({ className }: AuditLogsProps) {
     }
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString()
-  }
 
   const exportLogs = async () => {
     try {
@@ -290,7 +288,7 @@ export function AuditLogs({ className }: AuditLogsProps) {
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          {formatDate(log.created_at)}
+                          {formatDateTime(log.created_at)}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -387,7 +385,7 @@ export function AuditLogs({ className }: AuditLogsProps) {
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Date</Label>
-                  <div className="mt-1">{formatDate(selectedLog.created_at)}</div>
+                  <div className="mt-1">{formatDateTime(selectedLog.created_at)}</div>
                 </div>
                 <div>
                   <Label className="text-sm font-medium">IP Address</Label>

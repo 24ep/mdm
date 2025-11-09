@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/database'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    // TODO: Implement your authentication system here
-    // For now, we'll assume the user is authenticated
-    const userId = request.headers.get('x-user-id') // Adjust based on your auth system
+    const session = await getServerSession(authOptions)
+    const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -65,8 +66,8 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    // TODO: Implement your authentication system here
-    const userId = request.headers.get('x-user-id')
+    const session = await getServerSession(authOptions)
+    const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

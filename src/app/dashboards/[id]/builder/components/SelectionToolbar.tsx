@@ -45,6 +45,7 @@ import { Label } from '@/components/ui/label'
 import { SketchPicker, ColorResult } from 'react-color'
 import { EnhancedColorPicker } from '@/components/ui/EnhancedColorPicker'
 import { DashboardElement } from '../hooks/useDashboardState'
+import { MultiSideInput } from '@/components/shared/MultiSideInput'
 
 interface SelectionToolbarProps {
   selectedElement: DashboardElement | null
@@ -586,39 +587,109 @@ export function SelectionToolbar({
             {/* Border Settings */}
             <div className="p-3">
               <Label className="text-xs font-medium text-gray-700 mb-2 block">Border</Label>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label className="text-xs w-12">Width:</Label>
-                  <Input 
-                    type="number"
-                    value={elements[0]?.style?.borderWidth || 0}
-                    onChange={(e) => {
-                      const borderWidth = parseInt(e.target.value) || 0
-                      if (isMultiSelect) {
-                        onBulkUpdate({ style: { ...elements[0].style, borderWidth } })
-                      } else if (selectedElement) {
-                        onUpdateElement(selectedElement.id, { style: { ...selectedElement.style, borderWidth } })
+              <div className="space-y-3">
+                <MultiSideInput
+                  label="Border Width"
+                  baseKey="borderWidth"
+                  type="sides"
+                  defaultValue={0}
+                  inputClassName="h-6 text-xs"
+                  getValue={(side: string) => {
+                    const key = `borderWidth${side.charAt(0).toUpperCase() + side.slice(1)}`
+                    const baseValue = elements[0]?.style?.borderWidth || 0
+                    const sideValue = elements[0]?.style?.[key]
+                    return sideValue !== undefined ? sideValue : baseValue
+                  }}
+                  setValue={(updates) => {
+                    const currentStyle = elements[0]?.style || {}
+                    const newStyle = { ...currentStyle }
+                    Object.keys(updates).forEach(key => {
+                      const value = updates[key]
+                      if (typeof value === 'string' && value.endsWith('px')) {
+                        const numValue = parseInt(value.replace('px', '')) || 0
+                        newStyle[key] = numValue
+                      } else {
+                        newStyle[key] = value
                       }
-                    }}
-                    className="h-6 text-xs"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Label className="text-xs w-12">Radius:</Label>
-                  <Input 
-                    type="number"
-                    value={elements[0]?.style?.borderRadius || 0}
-                    onChange={(e) => {
-                      const borderRadius = parseInt(e.target.value) || 0
-                      if (isMultiSelect) {
-                        onBulkUpdate({ style: { ...elements[0].style, borderRadius } })
-                      } else if (selectedElement) {
-                        onUpdateElement(selectedElement.id, { style: { ...selectedElement.style, borderRadius } })
+                    })
+                    if (isMultiSelect) {
+                      onBulkUpdate({ style: newStyle })
+                    } else if (selectedElement) {
+                      onUpdateElement(selectedElement.id, { style: newStyle })
+                    }
+                  }}
+                />
+                <MultiSideInput
+                  label="Border Radius"
+                  baseKey="borderRadius"
+                  type="corners"
+                  defaultValue={0}
+                  inputClassName="h-6 text-xs"
+                  getValue={(side: string) => {
+                    const br = elements[0]?.style?.borderRadius
+                    if (typeof br === 'number') return br
+                    if (typeof br === 'object' && br !== null) {
+                      const obj = br as any
+                      const corner = obj[side]
+                      return corner?.value ?? 0
+                    }
+                    return 0
+                  }}
+                  setValue={(updates) => {
+                    const currentStyle = elements[0]?.style || {}
+                    const currentBr = currentStyle.borderRadius
+                    
+                    let brObj: any = typeof currentBr === 'number' 
+                      ? {
+                          topLeft: { value: currentBr, unit: 'px' },
+                          topRight: { value: currentBr, unit: 'px' },
+                          bottomRight: { value: currentBr, unit: 'px' },
+                          bottomLeft: { value: currentBr, unit: 'px' }
+                        }
+                      : (currentBr || {
+                          topLeft: { value: 0, unit: 'px' },
+                          topRight: { value: 0, unit: 'px' },
+                          bottomRight: { value: 0, unit: 'px' },
+                          bottomLeft: { value: 0, unit: 'px' }
+                        })
+                    
+                    Object.keys(updates).forEach(key => {
+                      if (key === 'borderRadius') {
+                        const value = updates[key]
+                        if (typeof value === 'string' && value.endsWith('px')) {
+                          const numValue = parseInt(value.replace('px', '')) || 0
+                          brObj = {
+                            topLeft: { value: numValue, unit: 'px' },
+                            topRight: { value: numValue, unit: 'px' },
+                            bottomRight: { value: numValue, unit: 'px' },
+                            bottomLeft: { value: numValue, unit: 'px' }
+                          }
+                        }
+                      } else if (key.startsWith('borderRadius')) {
+                        const corner = key.replace('borderRadius', '').charAt(0).toLowerCase() + key.replace('borderRadius', '').slice(1)
+                        const value = updates[key]
+                        if (typeof value === 'string' && value.endsWith('px')) {
+                          const numValue = parseInt(value.replace('px', '')) || 0
+                          brObj[corner] = { value: numValue, unit: 'px' }
+                        }
                       }
-                    }}
-                    className="h-6 text-xs"
-                  />
-                </div>
+                    })
+                    
+                    const allSame = brObj.topLeft.value === brObj.topRight.value &&
+                                   brObj.topRight.value === brObj.bottomRight.value &&
+                                   brObj.bottomRight.value === brObj.bottomLeft.value &&
+                                   brObj.topLeft.unit === brObj.topRight.unit &&
+                                   brObj.topRight.unit === brObj.bottomRight.unit &&
+                                   brObj.bottomRight.unit === brObj.bottomLeft.unit
+                    
+                    const newStyle = { ...currentStyle, borderRadius: allSame ? brObj.topLeft.value : brObj }
+                    if (isMultiSelect) {
+                      onBulkUpdate({ style: newStyle })
+                    } else if (selectedElement) {
+                      onUpdateElement(selectedElement.id, { style: newStyle })
+                    }
+                  }}
+                />
                 <div className="flex items-center gap-2">
                   <Label className="text-xs w-12">Color:</Label>
                   <div 

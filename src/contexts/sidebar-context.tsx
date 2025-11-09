@@ -38,7 +38,6 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     if (savedSettings) {
       try {
         const parsed = JSON.parse(savedSettings)
-        console.log('Loading sidebar settings from localStorage:', parsed)
         setSettings({ ...defaultSettings, ...parsed })
       } catch (error) {
         console.error('Failed to parse sidebar settings:', error)
@@ -53,7 +52,6 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   // Save settings to localStorage whenever they change (but not on initial load)
   useEffect(() => {
     if (isInitialized) {
-      console.log('Saving sidebar settings to localStorage:', settings)
       localStorage.setItem('sidebar-settings', JSON.stringify(settings))
     }
   }, [settings, isInitialized])

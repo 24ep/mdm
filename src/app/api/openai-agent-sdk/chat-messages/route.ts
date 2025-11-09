@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Agent, AgentInputItem, Runner, withTrace, fileSearchTool } from '@openai/agents'
-import { OpenAI } from 'openai'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { getLangfuseClient, isLangfuseEnabled } from '@/lib/langfuse'
+import { checkRateLimit, getRateLimitConfig } from '@/lib/rate-limiter'
+import { getCachedResponse, getCacheConfig } from '@/lib/response-cache'
+import { getBudgetConfig } from '@/lib/cost-tracker'
+import { handleWorkflowRequest } from './handlers/workflow-handler'
+import { handleAssistantRequest } from './handlers/assistant-handler'
 
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -15,6 +21,7 @@ export async function OPTIONS() {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions)
     const body = await request.json()
     const { 
       agentId, 
@@ -26,7 +33,16 @@ export async function POST(request: NextRequest) {
       instructions,
       reasoningEffort,
       store,
-      vectorStoreId
+      vectorStoreId,
+      enableWebSearch,
+      enableCodeInterpreter,
+      enableComputerUse,
+      enableImageGeneration,
+      useWorkflowConfig,
+      stream: requestStream,
+      threadId: existingThreadId,
+      chatbotId,
+      spaceId
     } = body
 
     if (!agentId || !apiKey) {
@@ -34,6 +50,113 @@ export async function POST(request: NextRequest) {
         { error: 'Missing agentId or apiKey' },
         { status: 400 }
       )
+    }
+
+    // Budget Check
+    if (chatbotId) {
+      try {
+        const budgetConfig = await getBudgetConfig(chatbotId)
+        if (budgetConfig && budgetConfig.enabled) {
+          const { checkBudget } = await import('@/lib/cost-tracker')
+          await checkBudget(chatbotId)
+        }
+      } catch (budgetError: any) {
+        if (budgetError.message?.includes('budget exceeded')) {
+          return NextResponse.json(
+            {
+              error: 'Budget exceeded',
+              message: budgetError.message,
+            },
+            { status: 402 }
+          )
+        }
+        console.warn('Budget check failed:', budgetError)
+      }
+    }
+
+    // Rate Limiting Check
+    if (chatbotId && session?.user?.id) {
+      const rateLimitConfig = await getRateLimitConfig(chatbotId)
+      if (rateLimitConfig) {
+        const rateLimitResult = await checkRateLimit(
+          chatbotId,
+          session.user.id,
+          rateLimitConfig
+        )
+
+        if (!rateLimitResult.allowed) {
+          const { recordMetric } = await import('@/lib/performance-metrics')
+          await recordMetric({
+            chatbotId,
+            metricType: 'rate_limit_violation',
+            value: 1,
+            metadata: { userId: session.user.id, reason: rateLimitResult.reason },
+          }).catch(() => {})
+
+          const { sendWebhook } = await import('@/lib/webhook-service')
+          await sendWebhook(chatbotId, 'rate_limit_exceeded', {
+            userId: session.user.id,
+            reason: rateLimitResult.reason,
+            resetTime: rateLimitResult.resetTime,
+            blockedUntil: rateLimitResult.blockedUntil,
+          }).catch(() => {})
+
+          return NextResponse.json(
+            {
+              error: 'Rate limit exceeded',
+              message: rateLimitResult.reason || 'Too many requests',
+              resetTime: rateLimitResult.resetTime,
+              blockedUntil: rateLimitResult.blockedUntil,
+            },
+            {
+              status: 429,
+              headers: {
+                'X-RateLimit-Limit': String(rateLimitConfig.maxRequestsPerMinute || rateLimitConfig.maxRequestsPerHour || rateLimitConfig.maxRequestsPerDay || 60),
+                'X-RateLimit-Remaining': String(rateLimitResult.remaining),
+                'X-RateLimit-Reset': String(rateLimitResult.resetTime),
+                'Retry-After': rateLimitResult.blockedUntil
+                  ? String(Math.ceil((rateLimitResult.blockedUntil - Date.now()) / 1000))
+                  : '60',
+              },
+            }
+          )
+        }
+      }
+    }
+
+    // Cache Check (only for non-streaming requests)
+    if (chatbotId && message && !requestStream) {
+      const cacheConfig = await getCacheConfig(chatbotId)
+      if (cacheConfig && cacheConfig.enabled) {
+        const context = conversationHistory?.map((m: any) => m.content).join(' ') || ''
+        const cached = await getCachedResponse(
+          chatbotId,
+          message,
+          cacheConfig,
+          cacheConfig.includeContext ? [context] : undefined
+        )
+
+        if (cached) {
+          const { recordMetric } = await import('@/lib/performance-metrics')
+          await recordMetric({
+            chatbotId,
+            metricType: 'cache_hit',
+            value: 1,
+          }).catch(() => {})
+
+          return NextResponse.json({
+            ...cached.response,
+            cached: true,
+          })
+        } else {
+          const { recordMetric } = await import('@/lib/performance-metrics')
+          await recordMetric({
+            chatbotId,
+            metricType: 'cache_miss',
+            value: 1,
+          }).catch(() => {})
+        }
+      }
     }
 
     // Check if agentId is a workflow ID (wf_...) or assistant ID (asst_...)
@@ -62,174 +185,56 @@ export async function POST(request: NextRequest) {
       content: message || ''
     })
 
-    // For workflows, use OpenAI Agents SDK
+    // Handle workflow requests
     if (isWorkflow) {
       try {
-        // Set OpenAI API key for the Agents SDK
-        process.env.OPENAI_API_KEY = apiKey
-
-        // Try to fetch workflow configuration from OpenAI API
-        // Note: This might not be available in all versions, but we'll try
-        let workflowConfig: any = null
-        try {
-          // Attempt to fetch workflow details from OpenAI API
-          // The endpoint might be different - this is a placeholder
-          const workflowResponse = await fetch(`https://api.openai.com/v1/workflows/${agentId}`, {
-            headers: {
-              'Authorization': `Bearer ${apiKey}`,
-              'Content-Type': 'application/json',
-            },
-          })
-          if (workflowResponse.ok) {
-            workflowConfig = await workflowResponse.json()
-          }
-        } catch (e) {
-          // Workflow API might not be available, continue with defaults
-          console.debug('Could not fetch workflow config, using defaults:', e)
-        }
-
-        // Create agent configuration from user settings, workflow config, or defaults
-        // Priority: user settings > workflow config > defaults
-        const agentName = workflowConfig?.name || "Workflow Agent"
-        const agentInstructions = instructions || workflowConfig?.instructions || workflowConfig?.agent?.instructions || "You are a helpful assistant."
-        const agentModel = model || workflowConfig?.model || workflowConfig?.agent?.model || "gpt-4o"
-        
-        // Build tools array - add file search if vector store ID is provided
-        const tools: any[] = []
-        if (vectorStoreId) {
-          try {
-            const fileSearch = fileSearchTool([vectorStoreId])
-            tools.push(fileSearch)
-          } catch (e) {
-            console.warn('Failed to create file search tool:', e)
-          }
-        }
-        
-        // Build model settings
-        const modelSettings: any = {}
-        if (reasoningEffort && (reasoningEffort === 'low' || reasoningEffort === 'medium' || reasoningEffort === 'high')) {
-          modelSettings.reasoning = { effort: reasoningEffort }
-        }
-        if (store !== undefined) {
-          modelSettings.store = store
-        }
-        
-        // Merge with workflow config model settings if available
-        if (workflowConfig?.agent?.modelSettings) {
-          Object.assign(modelSettings, workflowConfig.agent.modelSettings)
-        }
-        
-        const myAgent = new Agent({
-          name: agentName,
-          instructions: agentInstructions,
-          model: agentModel,
-          ...(tools.length > 0 ? { tools } : {}),
-          ...(Object.keys(modelSettings).length > 0 ? { modelSettings } : {}),
-        })
-
-        // Convert to AgentInputItem format
-        // Based on the example, we only pass the current message, not the full history
-        // The workflow handles its own state management
-        const agentInputHistory: AgentInputItem[] = [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'input_text',
-                text: message || ''
-              }
-            ]
-          }
-        ]
-
-        // Create runner with workflow ID in traceMetadata
-        const runner = new Runner({
-          traceMetadata: {
-            __trace_source__: 'agent-builder',
-            workflow_id: agentId
-          }
-        })
-
-        // Run the agent with the workflow
-        const result = await withTrace('chat-workflow', async () => {
-          const agentResult = await runner.run(myAgent, agentInputHistory)
-          
-          // Extract text content from the result
-          // The output might be in finalOutput or in newItems
-          let outputText = ''
-          
-          // First, try to extract from newItems (assistant messages)
-          if (agentResult.newItems && Array.isArray(agentResult.newItems)) {
-            for (const item of agentResult.newItems) {
-              if (item.rawItem && item.rawItem.role === 'assistant') {
-                // Extract text from assistant message
-                if (item.rawItem.content && Array.isArray(item.rawItem.content)) {
-                  for (const contentItem of item.rawItem.content) {
-                    if (contentItem.type === 'text' || contentItem.type === 'output_text') {
-                      const textValue = typeof contentItem.text === 'string' 
-                        ? contentItem.text 
-                        : (contentItem.text?.value || contentItem.value || '')
-                      if (textValue) {
-                        outputText += textValue
-                      }
-                    }
-                  }
-                } else if (typeof item.rawItem.content === 'string') {
-                  outputText += item.rawItem.content
-                }
-              }
-            }
-          }
-          
-          // If no output from newItems, try finalOutput
-          if (!outputText && agentResult.finalOutput) {
-            if (typeof agentResult.finalOutput === 'string') {
-              outputText = agentResult.finalOutput
-            } else if (typeof agentResult.finalOutput === 'object') {
-              // Skip if it has input_text type (that's an error)
-              if (agentResult.finalOutput.type === 'input_text') {
-                console.warn('Agent returned input_text type in output, skipping')
-              } else if (agentResult.finalOutput.type === 'text' || agentResult.finalOutput.type === 'output_text') {
-                outputText = agentResult.finalOutput.text || agentResult.finalOutput.value || ''
-              } else if ('text' in agentResult.finalOutput) {
-                outputText = typeof agentResult.finalOutput.text === 'string' 
-                  ? agentResult.finalOutput.text 
-                  : agentResult.finalOutput.text?.value || ''
-              } else if ('value' in agentResult.finalOutput) {
-                outputText = String(agentResult.finalOutput.value)
-              } else if ('content' in agentResult.finalOutput) {
-                if (typeof agentResult.finalOutput.content === 'string') {
-                  outputText = agentResult.finalOutput.content
-                }
-              }
-            }
-          }
-
-          if (!outputText) {
-            // Log the full result for debugging
-            console.error('Agent result structure:', JSON.stringify(agentResult, null, 2))
-            throw new Error('Agent result has no extractable text content')
-          }
-
-          return {
-            content: outputText,
-            newItems: agentResult.newItems
-          }
-        })
-
-        // Return the response
-        return NextResponse.json({
-          content: result.content || 'No response received',
-          message: result.content || 'No response received',
-          text: result.content || 'No response received',
-          response: result.content || 'No response received'
+        // Use static workflow from repository
+        return await handleWorkflowRequest({
+          agentId,
+          apiKey,
+          message,
+          attachments,
+          conversationHistory,
+          model,
+          instructions,
+          reasoningEffort,
+          store,
+          vectorStoreId,
+          enableWebSearch,
+          enableCodeInterpreter,
+          enableComputerUse,
+          enableImageGeneration,
+          requestStream,
+          existingThreadId,
+          chatbotId,
+          spaceId,
+          session,
         })
       } catch (error) {
         console.error('OpenAI Agents SDK workflow error:', error)
+        
+        const langfuse = isLangfuseEnabled() ? getLangfuseClient() : null
+        if (langfuse) {
+          try {
+            langfuse.trace({
+              name: 'openai-workflow-chat',
+              userId: session?.user?.id || undefined,
+              level: 'ERROR',
+              statusMessage: error instanceof Error ? error.message : 'Unknown error',
+              metadata: {
+                chatbotId,
+                agentId,
+                error: error instanceof Error ? error.stack : String(error),
+              },
+            })
+          } catch (langfuseError) {
+            console.warn('Failed to log workflow error to Langfuse:', langfuseError)
+          }
+        }
+        
         const errorMessage = error instanceof Error ? error.message : 'Unknown error'
         const errorStack = error instanceof Error ? error.stack : undefined
         
-        // Try to extract more details from the error
         let errorDetails = errorMessage
         if (error instanceof Error && 'cause' in error) {
           const cause = (error as any).cause
@@ -237,107 +242,91 @@ export async function POST(request: NextRequest) {
             errorDetails += `\nCause: ${typeof cause === 'string' ? cause : JSON.stringify(cause)}`
           }
         }
-        
+
         return NextResponse.json(
           { 
-            error: 'Workflow execution failed',
-            details: errorDetails,
-            stack: process.env.NODE_ENV === 'development' ? errorStack : undefined
+            error: errorDetails,
+            stack: errorStack,
           },
           { status: 500 }
         )
       }
     }
 
-    // For assistants, use the standard Assistants API
-    const requestBody: any = {
-      assistant_id: agentId,
-      stream: true, // Enable streaming
-    }
-
-    // If we have a thread_id stored, use it; otherwise create a new thread first
-    // For simplicity, we'll create a new thread each time
-    // In production, you'd want to maintain thread state
-    
-    // First, create a thread with messages
-    const threadResponse = await fetch('https://api.openai.com/v1/threads', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2',
-      },
-      body: JSON.stringify({
-        messages: threadMessages
-      }),
-    })
-
-    if (!threadResponse.ok) {
-      const errorText = await threadResponse.text()
+    // Handle assistant requests
+    if (isAssistant) {
       try {
-        const errorData = JSON.parse(errorText)
-        return NextResponse.json(errorData, { status: threadResponse.status })
-      } catch {
+        return await handleAssistantRequest({
+          agentId,
+          apiKey,
+          message,
+          attachments,
+          conversationHistory,
+          model,
+          instructions,
+          requestStream,
+          existingThreadId,
+          chatbotId,
+          spaceId,
+          session,
+          threadMessages,
+        })
+      } catch (error) {
+        console.error('OpenAI Agent SDK assistant error:', error)
+        
+        const langfuse = isLangfuseEnabled() ? getLangfuseClient() : null
+        if (langfuse) {
+          try {
+            langfuse.trace({
+              name: 'openai-assistant-chat',
+              userId: session?.user?.id || undefined,
+              level: 'ERROR',
+              statusMessage: error instanceof Error ? error.message : 'Unknown error',
+              metadata: {
+                error: error instanceof Error ? error.stack : String(error),
+              },
+            })
+          } catch (langfuseError) {
+            console.warn('Failed to log error to Langfuse:', langfuseError)
+          }
+        }
+        
         return NextResponse.json(
-          { error: errorText || 'Failed to create thread' },
-          { status: threadResponse.status }
+          { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+          { status: 500 }
         )
       }
     }
 
-    const threadData = await threadResponse.json()
-    const threadId = threadData.id
-
-    // Now create a run on the thread
-    const runResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2',
-      },
-      body: JSON.stringify(requestBody),
-    })
-
-    if (!runResponse.ok) {
-      const errorText = await runResponse.text()
-      try {
-        const errorData = JSON.parse(errorText)
-        return NextResponse.json(errorData, { status: runResponse.status })
-      } catch {
-        return NextResponse.json(
-          { error: errorText || 'OpenAI Agent SDK API request failed' },
-          { status: runResponse.status }
-        )
-      }
-    }
-
-    // Check if response is streaming
-    const contentType = runResponse.headers.get('content-type')
-    const isStreaming = contentType?.includes('text/event-stream') || requestBody.stream
-
-    if (isStreaming && runResponse.body) {
-      // Return streaming response - proxy the stream directly
-      return new NextResponse(runResponse.body, {
-        status: runResponse.status,
-        headers: {
-          'Content-Type': contentType || 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
-          'X-Accel-Buffering': 'no',
-        },
-      })
-    } else {
-      // Return JSON response
-      const data = await runResponse.json()
-      return NextResponse.json(data, { status: runResponse.status })
-    }
+    // Should never reach here, but just in case
+    return NextResponse.json(
+      { error: 'Invalid agent type' },
+      { status: 400 }
+    )
   } catch (error) {
     console.error('OpenAI Agent SDK proxy error:', error)
+    
+    const langfuse = isLangfuseEnabled() ? getLangfuseClient() : null
+    if (langfuse) {
+      try {
+        const session = await getServerSession(authOptions)
+        langfuse.trace({
+          name: 'openai-assistant-chat',
+          userId: session?.user?.id || undefined,
+          level: 'ERROR',
+          statusMessage: error instanceof Error ? error.message : 'Unknown error',
+          metadata: {
+            error: error instanceof Error ? error.stack : String(error),
+          },
+        })
+      } catch (langfuseError) {
+        console.warn('Failed to log error to Langfuse:', langfuseError)
+      }
+    }
+    
     return NextResponse.json(
       { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
 }
-

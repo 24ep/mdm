@@ -138,12 +138,20 @@
 }
 
 .scrollbar-custom::-webkit-scrollbar-thumb {
-  background: rgb(203 213 225);
+  background: hsl(var(--muted-foreground) / 0.5);
   border-radius: 3px;
 }
 
 .scrollbar-custom::-webkit-scrollbar-thumb:hover {
-  background: rgb(148 163 184);
+  background: hsl(var(--muted-foreground));
+}
+
+.dark .scrollbar-custom::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+.dark .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
 }
 
 /* Syntax highlighting for code blocks */
@@ -151,6 +159,11 @@
   display: block;
   overflow-x: auto;
   padding: 1em;
+  background: hsl(var(--muted));
+  color: hsl(var(--foreground));
+}
+
+.dark .hljs {
   background: #1e1e1e;
   color: #d4d4d4;
 }
@@ -208,4 +221,38 @@
 
 .hljs-strong {
   font-weight: bold;
+}
+
+/* Hide ChatKit header when rendered inside regular style container */
+.chatkit-in-regular-style > div > div:first-child,
+.chatkit-in-regular-style [data-chatkit-header],
+.chatkit-in-regular-style header {
+  display: none !important;
+}
+
+/* Make ChatKit fill the container properly - remove all margins and positioning */
+.chatkit-in-regular-style {
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  position: relative !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+}
+
+.chatkit-in-regular-style > div {
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  position: relative !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
 }

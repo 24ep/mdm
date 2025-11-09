@@ -31,6 +31,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { AvatarUpload } from '@/components/ui/avatar-upload'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
 interface User {
@@ -576,6 +577,28 @@ export function EnhancedUserManagement() {
           </DialogHeader>
           
           <div className="space-y-4">
+            {/* Avatar Upload */}
+            {editingUser && (
+              <div className="space-y-2">
+                <Label>Profile Picture</Label>
+                <AvatarUpload
+                  userId={editingUser.id}
+                  currentAvatar={editingUser.avatar}
+                  userName={editForm.name}
+                  userEmail={editForm.email}
+                  onAvatarChange={(avatarUrl) => {
+                    // Update the user in the list
+                    setUsers(users.map(u => 
+                      u.id === editingUser.id ? { ...u, avatar: avatarUrl || undefined } : u
+                    ))
+                    // Update editing user
+                    setEditingUser({ ...editingUser, avatar: avatarUrl || undefined })
+                  }}
+                  size="lg"
+                />
+              </div>
+            )}
+            
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="name">Name</Label>

@@ -1,49 +1,48 @@
-// Simple migration runner for a single SQL file
-// Usage: node scripts/run-migration.js supabase/migrations/019_notification_system.sql
-
 const fs = require('fs');
 const path = require('path');
-const { Client } = require('pg');
-require('dotenv').config();
+const { PrismaClient } = require('@prisma/client');
 
-async function main() {
-  const fileArg = process.argv[2];
-  if (!fileArg) {
-    console.error('Usage: node scripts/run-migration.js <path-to-sql>');
-    process.exit(1);
-  }
+const prisma = new PrismaClient();
 
-  const filePath = path.resolve(process.cwd(), fileArg);
-  if (!fs.existsSync(filePath)) {
-    console.error(`SQL file not found: ${filePath}`);
-    process.exit(1);
-  }
-
-  const sql = fs.readFileSync(filePath, 'utf8');
-
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
-    console.error('DATABASE_URL is not set in environment.');
-    process.exit(1);
-  }
-
-  const client = new Client({ connectionString: databaseUrl });
-
+async function runMigration() {
   try {
-    await client.connect();
-    await client.query('BEGIN');
-    await client.query(sql);
-    await client.query('COMMIT');
-    console.log(`Migration applied successfully: ${fileArg}`);
-  } catch (err) {
-    try { await client.query('ROLLBACK'); } catch (_) {}
-    console.error('Migration failed:', err.message || err);
-    process.exitCode = 1;
-  } finally {
-    await client.end();
+    const sqlFile = path.join(__dirname, '../sql/platform_integrations_schema.sql');
+    const sql = fs.readFileSync(sqlFile, 'utf8');
+    
+    console.log('Running platform_integrations migration...');
+    
+    // Remove comments and split by semicolons
+    const cleanSql = sql
+      .split('\n')
+      .filter(line => !line.trim().startsWith('--'))
+      .join('\n');
+    
+    // Split into individual statements (by semicolon, but keep CREATE INDEX statements together)
+    const statements = cleanSql
+      .split(';')
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+    
+    // Execute each statement separately
+    for (const statement of statements) {
+      if (statement.trim()) {
+        console.log(`Executing: ${statement.substring(0, 50)}...`);
+        await prisma.$executeRawUnsafe(statement + ';');
+      }
+    }
+    
+    console.log('✅ Migration completed successfully!');
+    await prisma.$disconnect();
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Migration failed:', error.message);
+    if (error.meta) {
+      console.error('Error details:', error.meta);
+    }
+    await prisma.$disconnect();
+    process.exit(1);
   }
 }
 
-main();
-
+runMigration();
 

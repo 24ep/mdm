@@ -355,11 +355,17 @@ export function EavEntityManager({
               <SelectValue placeholder={attribute.placeholder} />
             </SelectTrigger>
             <SelectContent>
-              {attribute.options?.choices?.map((choice: any) => (
-                <SelectItem key={choice.value} value={choice.value}>
-                  {choice.label}
-                </SelectItem>
-              ))}
+              {attribute.options?.choices
+                ?.map((choice: any) => {
+                  const choiceValue = String(choice.value ?? '')
+                  return { choiceValue, choice }
+                })
+                .filter(({ choiceValue }) => choiceValue !== '')
+                .map(({ choiceValue, choice }) => (
+                  <SelectItem key={choiceValue} value={choiceValue}>
+                    {choice.label}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
         )

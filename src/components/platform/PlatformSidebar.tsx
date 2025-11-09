@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -219,46 +219,110 @@ export function PlatformSidebar({
       icon: Kanban,
       description: 'Ticket and project management'
     },
+    {
+      id: 'audit',
+      name: 'Audit Logs',
+      icon: History,
+      description: 'System audit and activity logs'
+    },
+    {
+      id: 'backup',
+      name: 'Backup & Recovery',
+      icon: Cloud,
+      description: 'Backup and recovery management'
+    },
+    {
+      id: 'api',
+      name: 'API Management',
+      icon: Key,
+      description: 'API client and management'
+    },
+    {
+      id: 'notifications',
+      name: 'Notifications',
+      icon: Bell,
+      description: 'Notification center and settings'
+    },
+    {
+      id: 'themes',
+      name: 'Theme & Branding',
+      icon: Palette,
+      description: 'Theme and branding customization'
+    },
+    {
+      id: 'roles',
+      name: 'Role Management',
+      icon: Users,
+      description: 'Role and permission management'
+    },
+    {
+      id: 'permission-tester',
+      name: 'Permission Tester',
+      icon: Shield,
+      description: 'Test user permissions'
+    },
+    {
+      id: 'space-settings',
+      name: 'Space Settings',
+      icon: Building,
+      description: 'Space configuration and settings'
+    },
+    {
+      id: 'assets',
+      name: 'Asset Management',
+      icon: Database,
+      description: 'Manage database types, system types, logos, and localizations'
+    },
   ]
 
   const groupedTabs = {
     overview: [
-      { id: 'overview', name: 'Homepage', icon: Monitor },
-      { id: 'analytics', name: 'Analytics', icon: BarChart3 }
+      { id: 'overview', name: 'Homepage', icon: Monitor, href: '/' },
+      { id: 'analytics', name: 'Analytics', icon: BarChart3, href: '/overview/analytics' }
     ],
     tools: [
-      { id: 'bigquery', name: 'SQL Query', icon: Code },
-      { id: 'notebook', name: 'Data Science', icon: FileText },
-      { id: 'ai-analyst', name: 'AI Analyst', icon: Bot },
-      { id: 'ai-chat-ui', name: 'AI Chat UI', icon: Bot },
-      { id: 'knowledge-base', name: 'Knowledge Base', icon: BookOpen },
-      { id: 'projects', name: 'Project Management', icon: Kanban },
-      { id: 'bi', name: 'BI & Reports', icon: BarChart3 },
-      { id: 'storage', name: 'Storage', icon: HardDrive },
+      { id: 'bigquery', name: 'SQL Query', icon: Code, href: '/tools/bigquery' },
+      { id: 'notebook', name: 'Data Science', icon: FileText, href: '/tools/notebook' },
+      { id: 'ai-analyst', name: 'AI Analyst', icon: Bot, href: '/tools/ai-analyst' },
+      { id: 'ai-chat-ui', name: 'AI Chat UI', icon: Bot, href: '/tools/ai-chat-ui' },
+      { id: 'knowledge-base', name: 'Knowledge Base', icon: BookOpen, href: '/tools/knowledge-base' },
+      { id: 'projects', name: 'Project Management', icon: Kanban, href: '/tools/projects' },
+      { id: 'bi', name: 'BI & Reports', icon: BarChart3, href: '/tools/bi' },
+      { id: 'storage', name: 'Storage', icon: HardDrive, href: '/tools/storage' },
+      { id: 'data-governance', name: 'Data Governance', icon: Shield, href: '/tools/data-governance' },
     ],
     system: [
-      { id: 'users', name: 'User Management', icon: Users },
-      { id: 'space-layouts', name: 'Space Layouts', icon: Layout },
-      { id: 'data', name: 'Data Models', icon: Database },
-      { id: 'attachments', name: 'Attachments', icon: Paperclip },
-      { id: 'kernels', name: 'Kernel Management', icon: Server },
-      { id: 'health', name: 'System Health', icon: Heart },
-      { id: 'logs', name: 'Logs', icon: FileTextIcon },
-      { id: 'database', name: 'Database', icon: DatabaseIcon },
-      { id: 'change-requests', name: 'Change Requests', icon: GitBranch },
-      { id: 'sql-linting', name: 'SQL Linting', icon: CheckCircle2 },
-      { id: 'schema-migrations', name: 'Schema Migrations', icon: FileCode },
-      { id: 'data-masking', name: 'Data Masking', icon: ShieldCheck },
-      { id: 'cache', name: 'Cache', icon: Zap },
-      { id: 'security', name: 'Security', icon: Shield },
-      { id: 'performance', name: 'Performance', icon: Activity },
-      { id: 'settings', name: 'System Settings', icon: Settings },
-      { id: 'page-templates', name: 'Page Templates', icon: FileText },
-      { id: 'export', name: 'Data Export', icon: Cloud },
-      { id: 'integrations', name: 'Integrations', icon: Key }
+      { id: 'users', name: 'User Management', icon: Users, href: '/system/users' },
+      { id: 'roles', name: 'Role Management', icon: Users, href: '/system/roles' },
+      { id: 'permission-tester', name: 'Permission Tester', icon: Shield, href: '/system/permission-tester' },
+      { id: 'space-layouts', name: 'Space Layouts', icon: Layout, href: '/system/space-layouts' },
+      { id: 'space-settings', name: 'Space Settings', icon: Building, href: '/system/space-settings' },
+      { id: 'assets', name: 'Asset Management', icon: Database, href: '/system/assets' },
+      { id: 'data', name: 'Data Models', icon: Database, href: '/system/data' },
+      { id: 'attachments', name: 'Attachments', icon: Paperclip, href: '/system/attachments' },
+      { id: 'kernels', name: 'Kernel Management', icon: Server, href: '/system/kernels' },
+      { id: 'health', name: 'System Health', icon: Heart, href: '/system/health' },
+      { id: 'logs', name: 'Logs', icon: FileTextIcon, href: '/system/logs' },
+      { id: 'audit', name: 'Audit Logs', icon: History, href: '/system/audit' },
+      { id: 'database', name: 'Database', icon: DatabaseIcon, href: '/system/database' },
+      { id: 'change-requests', name: 'Change Requests', icon: GitBranch, href: '/system/change-requests' },
+      { id: 'sql-linting', name: 'SQL Linting', icon: CheckCircle2, href: '/system/sql-linting' },
+      { id: 'schema-migrations', name: 'Schema Migrations', icon: FileCode, href: '/system/schema-migrations' },
+      { id: 'data-masking', name: 'Data Masking', icon: ShieldCheck, href: '/system/data-masking' },
+      { id: 'cache', name: 'Cache', icon: Zap, href: '/system/cache' },
+      { id: 'backup', name: 'Backup & Recovery', icon: Cloud, href: '/system/backup' },
+      { id: 'security', name: 'Security', icon: Shield, href: '/system/security' },
+      { id: 'performance', name: 'Performance', icon: Activity, href: '/system/performance' },
+      { id: 'settings', name: 'System Settings', icon: Settings, href: '/system/settings' },
+      { id: 'page-templates', name: 'Page Templates', icon: FileText, href: '/system/page-templates' },
+      { id: 'notifications', name: 'Notifications', icon: Bell, href: '/system/notifications' },
+      { id: 'themes', name: 'Theme & Branding', icon: Palette, href: '/system/themes' },
+      { id: 'export', name: 'Data Export', icon: Cloud, href: '/system/export' },
+      { id: 'integrations', name: 'Integrations', icon: Key, href: '/system/integrations' },
+      { id: 'api', name: 'API Management', icon: Key, href: '/system/api' }
     ],
     'data-management': [
-      { id: 'space-selection', name: 'Data Management', icon: FolderKanban }
+      { id: 'space-selection', name: 'Data Management', icon: FolderKanban, href: '/data-management/space-selection' }
     ]
   }
 
@@ -272,31 +336,37 @@ export function PlatformSidebar({
   
   // Define group sections for secondary sidebar separators
   const groupSections: Record<string, string[]> = {
-    management: ['users', 'space-layouts', 'data', 'attachments'],
+    management: ['users', 'roles', 'permission-tester', 'space-layouts', 'space-settings', 'assets', 'data', 'attachments'],
     kernels: ['kernels'],
-    system: ['health', 'logs', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache'],
+    system: ['health', 'logs', 'audit', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache', 'backup'],
     security: ['security', 'performance'],
-    integrations: ['settings', 'page-templates', 'export', 'integrations']
+    integrations: ['settings', 'page-templates', 'notifications', 'themes', 'export', 'integrations', 'api']
   }
 
   // Define tool categories for the Tools group
   const toolSections: Record<string, string[]> = {
     'AI & Assistants': ['ai-analyst', 'ai-chat-ui'],
-    'Data Tools': ['bigquery', 'storage'],
+    'Data Tools': ['bigquery', 'storage', 'data-governance'],
     'Knowledge': ['knowledge-base'],
     'Project Management': ['projects'],
     'Reporting': ['bi']
   }
 
 
-  const handleGroupClick = (groupName: string) => {
+  const handleTabClick = useCallback((tabId: string, href?: string) => {
+    // Always use href if available, otherwise construct from tabId
+    const targetHref = href || `/${tabId}`
+    router.push(targetHref)
+  }, [router])
+
+  const handleGroupClick = useCallback((groupName: string) => {
     const tabs = groupedTabs[groupName as keyof typeof groupedTabs]
     // Data Management has no secondary sidebar - go directly to the tab and clear selectedGroup
     if (groupName === 'data-management' && tabs && tabs.length > 0) {
       if (onGroupSelect) {
         onGroupSelect('') // Clear selectedGroup to hide secondary sidebar
       }
-      handleTabClick(tabs[0].id)
+      handleTabClick(tabs[0].id, (tabs[0] as any).href)
       return
     }
     
@@ -305,18 +375,9 @@ export function PlatformSidebar({
     }
     // If group has tabs, select the first one
     if (tabs && tabs.length > 0) {
-      handleTabClick(tabs[0].id)
+      handleTabClick(tabs[0].id, (tabs[0] as any).href)
     }
-  }
-
-  const handleTabClick = (tabId: string) => {
-    // Update parent state if present
-    onTabChange(tabId)
-    // Ensure navigation to homepage with the selected tab
-    try {
-      router.push(`/?tab=${encodeURIComponent(tabId)}`)
-    } catch {}
-  }
+  }, [onGroupSelect, handleTabClick])
 
 
 
@@ -340,8 +401,8 @@ export function PlatformSidebar({
       )}
 
       {/* GCP-style Navigation */}
-      <ScrollArea className="flex-1">
-        <div className="py-2 px-2">
+      <ScrollArea className="flex-1 overflow-auto">
+        <div className={mode === 'secondary' ? 'min-h-full' : 'py-2 px-2'}>
           {mode === 'primary' ? (
             // Primary sidebar - show groups
             collapsed ? (
@@ -416,7 +477,7 @@ export function PlatformSidebar({
           ) : (
             // Secondary sidebar - show submenu items for selected group
             selectedGroup && groupedTabs[selectedGroup as keyof typeof groupedTabs] ? (
-              <div className="space-y-1">
+              <div className="w-full pb-4">
                 {/* Back button to deselect group */}
                 <Button
                   variant="ghost"
@@ -460,7 +521,7 @@ export function PlatformSidebar({
                                 ? "bg-gray-200 text-gray-900 rounded-sm" 
                                 : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-none"
                             )}
-                            onClick={() => handleTabClick(tab.id)}
+                            onClick={() => handleTabClick(tab.id, (tab as any).href)}
                           >
                             <tab.icon className="h-4 w-4 mr-3 text-gray-500" />
                             <span className="truncate">{tab.name}</span>
@@ -488,7 +549,7 @@ export function PlatformSidebar({
                                 ? "bg-gray-200 text-gray-900 rounded-sm" 
                                 : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-none"
                             )}
-                            onClick={() => handleTabClick(tab.id)}
+                            onClick={() => handleTabClick(tab.id, (tab as any).href)}
                           >
                             <tab.icon className="h-4 w-4 mr-3 text-gray-500" />
                             <span className="truncate">{tab.name}</span>
@@ -516,7 +577,7 @@ export function PlatformSidebar({
                                 ? "bg-gray-200 text-gray-900 rounded-sm" 
                                 : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-none"
                             )}
-                            onClick={() => handleTabClick(tab.id)}
+                            onClick={() => handleTabClick(tab.id, (tab as any).href)}
                           >
                             <tab.icon className="h-4 w-4 mr-3 text-gray-500" />
                             <span className="truncate">{tab.name}</span>
@@ -544,7 +605,7 @@ export function PlatformSidebar({
                                 ? "bg-gray-200 text-gray-900 rounded-md" 
                                 : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-none"
                             )}
-                            onClick={() => handleTabClick(tab.id)}
+                            onClick={() => handleTabClick(tab.id, (tab as any).href)}
                           >
                             <tab.icon className="h-4 w-4 mr-3 text-gray-500" />
                             <span className="truncate">{tab.name}</span>
@@ -572,7 +633,7 @@ export function PlatformSidebar({
                         ? "bg-gray-200 text-gray-900 rounded-sm" 
                         : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-none"
                     )}
-                    onClick={() => handleTabClick(tab.id)}
+                    onClick={() => handleTabClick(tab.id, (tab as any).href)}
                   >
                     <tab.icon className="h-4 w-4 mr-3 text-gray-500" />
                     <span className="truncate">{tab.name}</span>
@@ -600,7 +661,7 @@ export function PlatformSidebar({
                                   ? "bg-gray-200 text-gray-900 rounded-sm" 
                                   : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-none"
                               )}
-                              onClick={() => handleTabClick(tab.id)}
+                              onClick={() => handleTabClick(tab.id, (tab as any).href)}
                             >
                               <tab.icon className="h-4 w-4 mr-3 text-gray-500" />
                               <span className="truncate">{tab.name}</span>
@@ -624,7 +685,7 @@ export function PlatformSidebar({
                           ? "bg-gray-200 text-gray-900 rounded-md" 
                           : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-none"
                       )}
-                      onClick={() => handleTabClick(tab.id)}
+                      onClick={() => handleTabClick(tab.id, (tab as any).href)}
                     >
                       <tab.icon className="h-4 w-4 mr-3 text-gray-500" />
                       <span className="truncate">{tab.name}</span>
@@ -632,7 +693,12 @@ export function PlatformSidebar({
                   ))
                 )}
               </div>
-            ) : null
+            ) : (
+              // Fallback: Show message if group not found
+              <div className="p-4 text-sm text-muted-foreground">
+                No menu items available for this group.
+              </div>
+            )
           )}
         </div>
       </ScrollArea>

@@ -92,6 +92,9 @@ export async function GET(request: NextRequest) {
       borderRadius: chatbot.widgetBorderRadius || '50%',
       shadowColor: chatbot.widgetShadowColor || '#000000',
       shadowBlur: chatbot.widgetShadowBlur || '8px',
+      shadowX: chatbot.widgetShadowX || '0px',
+      shadowY: chatbot.widgetShadowY || '0px',
+      shadowSpread: chatbot.widgetShadowSpread || '0px',
       labelText: chatbot.widgetLabelText || 'Chat',
       labelColor: chatbot.widgetLabelColor || '#ffffff',
       logo: chatbot.logo || '',
@@ -104,7 +107,17 @@ export async function GET(request: NextRequest) {
       showBadge: chatbot.showNotificationBadge || false,
       badgeColor: chatbot.notificationBadgeColor || '#ef4444',
       chatWidth: chatbot.chatWindowWidth || '380px',
-      chatHeight: chatbot.chatWindowHeight || '600px'
+      chatHeight: chatbot.chatWindowHeight || '600px',
+      popoverPosition: chatbot.popoverPosition || 'left', // 'top' or 'left'
+      popoverMargin: chatbot.widgetPopoverMargin || '10px', // Margin between widget and popover
+      widgetBlur: chatbot.widgetBackgroundBlur || 0, // Widget blur percentage
+      widgetOpacity: chatbot.widgetBackgroundOpacity !== undefined ? chatbot.widgetBackgroundOpacity : 100, // Widget opacity percentage
+      chatBlur: chatbot.chatWindowBackgroundBlur || 0, // Chat window blur percentage
+      chatOpacity: chatbot.chatWindowBackgroundOpacity !== undefined ? chatbot.chatWindowBackgroundOpacity : 100, // Chat window opacity percentage
+      overlayEnabled: chatbot.overlayEnabled !== undefined ? chatbot.overlayEnabled : false, // Overlay enabled
+      overlayColor: chatbot.overlayColor || '#000000', // Overlay color
+      overlayOpacity: chatbot.overlayOpacity !== undefined ? chatbot.overlayOpacity : 50, // Overlay opacity percentage
+      overlayBlur: chatbot.overlayBlur || 0 // Overlay blur percentage
     };
     
     // Calculate position with custom offsets
@@ -161,19 +174,75 @@ export async function GET(request: NextRequest) {
     button.setAttribute('aria-expanded', 'false');
     button.setAttribute('type', 'button');
     
+    // Helper function to convert hex to RGB
+    function hexToRgb(hex) {
+      hex = hex.replace('#', '');
+      if (hex.length === 3) {
+        hex = hex.split('').map(function(char) { return char + char; }).join('');
+      }
+      var r = parseInt(hex.substring(0, 2), 16);
+      var g = parseInt(hex.substring(2, 4), 16);
+      var b = parseInt(hex.substring(4, 6), 16);
+      return r + ', ' + g + ', ' + b;
+    }
+    
+    // Helper to build widget background style with glassmorphism
+    function getWidgetBackgroundStyle(bgValue, blur, opacity) {
+      var style = '';
+      if (blur > 0) {
+        style += 'backdrop-filter: blur(' + blur + 'px); -webkit-backdrop-filter: blur(' + blur + 'px); ';
+      }
+      // Check if it's an image URL (starts with url(, http://, https://, or /)
+      if (bgValue && (bgValue.startsWith('url(') || bgValue.startsWith('http://') || bgValue.startsWith('https://') || bgValue.startsWith('/'))) {
+        var imageUrl = bgValue.startsWith('url(') ? bgValue : 'url(' + bgValue + ')';
+        style += 'background-image: ' + imageUrl + '; ';
+        style += 'background-size: cover; ';
+        style += 'background-position: center; ';
+        style += 'background-repeat: no-repeat; ';
+        if (opacity < 100) {
+          style += 'background-color: rgba(255, 255, 255, ' + (opacity / 100) + '); ';
+        }
+      } else {
+        // It's a color value
+        if (opacity < 100) {
+          style += 'background-color: rgba(' + hexToRgb(bgValue) + ', ' + (opacity / 100) + '); ';
+        } else {
+          style += 'background-color: ' + bgValue + '; ';
+        }
+      }
+      return style;
+    }
+    
     // Create button content based on avatar style
     if (widgetConfig.avatarStyle === 'circle-with-label') {
       button.innerHTML = (widgetConfig.logo ? '<img src="' + widgetConfig.logo + '" style="width: 100%; height: 100%; border-radius: ' + avatarBorderRadius + '; object-fit: cover;" onerror="this.style.display=\\'none\\'; this.parentElement.innerHTML=\\'💬\\'; this.parentElement.style.fontSize=\\'24px\\'; this.parentElement.style.color=\\'white\\';">' : '<span style="font-size: 24px; color: white;">💬</span>');
-      button.style.cssText = 'width: ' + widgetConfig.size + '; height: ' + widgetConfig.size + '; border-radius: ' + avatarBorderRadius + '; background-color: ' + widgetConfig.backgroundColor + '; border: ' + widgetConfig.borderWidth + ' solid ' + widgetConfig.borderColor + '; color: white; font-size: 24px; cursor: pointer; box-shadow: 0 0 ' + widgetConfig.shadowBlur + ' ' + widgetConfig.shadowColor + '; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; padding: 0; margin: 0;';
+      var buttonBgStyle = getWidgetBackgroundStyle(widgetConfig.backgroundColor, widgetConfig.widgetBlur, widgetConfig.widgetOpacity);
+      var shadowX = parseFloat(widgetConfig.shadowX) || 0;
+      var shadowY = parseFloat(widgetConfig.shadowY) || 0;
+      var shadowBlur = parseFloat(widgetConfig.shadowBlur) || 0;
+      var shadowSpread = parseFloat(widgetConfig.shadowSpread) || 0;
+      var boxShadow = (shadowBlur !== 0 || shadowX !== 0 || shadowY !== 0 || shadowSpread !== 0)
+        ? shadowX + 'px ' + shadowY + 'px ' + shadowBlur + 'px ' + shadowSpread + 'px ' + widgetConfig.shadowColor
+        : 'none';
+      button.style.cssText = 'width: ' + widgetConfig.size + '; height: ' + widgetConfig.size + '; border-radius: ' + avatarBorderRadius + '; ' + buttonBgStyle + 'border: ' + widgetConfig.borderWidth + ' solid ' + widgetConfig.borderColor + '; color: white; font-size: 24px; cursor: pointer; box-shadow: ' + boxShadow + '; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; padding: 0; margin: 0;';
       
       var label = document.createElement('div');
-      label.style.cssText = 'background-color: ' + widgetConfig.backgroundColor + '; color: ' + widgetConfig.labelColor + '; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; white-space: nowrap;';
+      var labelBgStyle = getWidgetBackgroundStyle(widgetConfig.backgroundColor, widgetConfig.widgetBlur, widgetConfig.widgetOpacity);
+      label.style.cssText = labelBgStyle + 'color: ' + widgetConfig.labelColor + '; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; white-space: nowrap;';
       label.textContent = widgetConfig.labelText;
       buttonContainer.appendChild(button);
       buttonContainer.appendChild(label);
     } else {
       button.innerHTML = widgetConfig.logo ? '<img src="' + widgetConfig.logo + '" style="width: 100%; height: 100%; border-radius: ' + avatarBorderRadius + '; object-fit: cover;" onerror="this.parentElement.innerHTML=\\'💬\\'; this.parentElement.style.fontSize=\\'24px\\'; this.parentElement.style.color=\\'white\\';">' : '💬';
-      button.style.cssText = 'width: ' + widgetConfig.size + '; height: ' + widgetConfig.size + '; border-radius: ' + avatarBorderRadius + '; background-color: ' + widgetConfig.backgroundColor + '; border: ' + widgetConfig.borderWidth + ' solid ' + widgetConfig.borderColor + '; color: white; font-size: 24px; cursor: pointer; box-shadow: 0 0 ' + widgetConfig.shadowBlur + ' ' + widgetConfig.shadowColor + '; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; padding: 0; margin: 0; position: relative;';
+      var buttonBgStyle = getWidgetBackgroundStyle(widgetConfig.backgroundColor, widgetConfig.widgetBlur, widgetConfig.widgetOpacity);
+      var shadowX = parseFloat(widgetConfig.shadowX) || 0;
+      var shadowY = parseFloat(widgetConfig.shadowY) || 0;
+      var shadowBlur = parseFloat(widgetConfig.shadowBlur) || 0;
+      var shadowSpread = parseFloat(widgetConfig.shadowSpread) || 0;
+      var boxShadow = (shadowBlur !== 0 || shadowX !== 0 || shadowY !== 0 || shadowSpread !== 0)
+        ? shadowX + 'px ' + shadowY + 'px ' + shadowBlur + 'px ' + shadowSpread + 'px ' + widgetConfig.shadowColor
+        : 'none';
+      button.style.cssText = 'width: ' + widgetConfig.size + '; height: ' + widgetConfig.size + '; border-radius: ' + avatarBorderRadius + '; ' + buttonBgStyle + 'border: ' + widgetConfig.borderWidth + ' solid ' + widgetConfig.borderColor + '; color: white; font-size: 24px; cursor: pointer; box-shadow: ' + boxShadow + '; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; padding: 0; margin: 0; position: relative;';
       buttonContainer.appendChild(button);
     }
     
@@ -207,22 +276,55 @@ export async function GET(request: NextRequest) {
       }
     };
     
-    // Calculate chat window position based on widget position
+    // Calculate chat window position based on widget position and popover position preference
     var chatWindowPosition = '';
-    var widgetOffset = widgetConfig.avatarStyle === 'circle-with-label' ? '120px' : '90px';
+    var popoverPos = widgetConfig.popoverPosition || 'left';
     var offsetX = widgetConfig.offsetX;
-    if (widgetConfig.position === 'bottom-right') {
-      chatWindowPosition = 'bottom: ' + widgetOffset + '; right: ' + offsetX + ';';
-    } else if (widgetConfig.position === 'bottom-left') {
-      chatWindowPosition = 'bottom: ' + widgetOffset + '; left: ' + offsetX + ';';
-    } else if (widgetConfig.position === 'top-right') {
-      chatWindowPosition = 'top: ' + widgetOffset + '; right: ' + offsetX + ';';
-    } else if (widgetConfig.position === 'top-left') {
-      chatWindowPosition = 'top: ' + widgetOffset + '; left: ' + offsetX + ';';
-    } else if (widgetConfig.position === 'bottom-center') {
-      chatWindowPosition = 'bottom: ' + widgetOffset + '; left: 50%; transform: translateX(-50%);';
-    } else if (widgetConfig.position === 'top-center') {
-      chatWindowPosition = 'top: ' + widgetOffset + '; left: 50%; transform: translateX(-50%);';
+    var offsetY = widgetConfig.offsetY;
+    
+    // Parse widget size to get numeric value for calculations
+    var widgetSizePx = parseFloat(widgetConfig.size) || 60;
+    if (typeof widgetConfig.size === 'string' && widgetConfig.size.includes('px')) {
+      widgetSizePx = parseFloat(widgetConfig.size);
+    }
+    
+    // Parse popover margin to get numeric value
+    var popoverMarginPx = parseFloat(widgetConfig.popoverMargin) || 10;
+    if (typeof widgetConfig.popoverMargin === 'string' && widgetConfig.popoverMargin.includes('px')) {
+      popoverMarginPx = parseFloat(widgetConfig.popoverMargin);
+    }
+    
+    if (popoverPos === 'top') {
+      // Position popover above the widget button
+      if (widgetConfig.position === 'bottom-right') {
+        chatWindowPosition = 'bottom: calc(' + offsetY + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px); right: ' + offsetX + ';';
+      } else if (widgetConfig.position === 'bottom-left') {
+        chatWindowPosition = 'bottom: calc(' + offsetY + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px); left: ' + offsetX + ';';
+      } else if (widgetConfig.position === 'top-right') {
+        chatWindowPosition = 'top: calc(' + offsetY + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px); right: ' + offsetX + ';';
+      } else if (widgetConfig.position === 'top-left') {
+        chatWindowPosition = 'top: calc(' + offsetY + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px); left: ' + offsetX + ';';
+      } else if (widgetConfig.position === 'bottom-center') {
+        chatWindowPosition = 'bottom: calc(' + offsetY + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px); left: 50%; transform: translateX(-50%);';
+      } else if (widgetConfig.position === 'top-center') {
+        chatWindowPosition = 'top: calc(' + offsetY + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px); left: 50%; transform: translateX(-50%);';
+      }
+    } else {
+      // Position popover to the left/right of widget button (default behavior)
+      var widgetOffset = widgetConfig.avatarStyle === 'circle-with-label' ? '120px' : '90px';
+      if (widgetConfig.position === 'bottom-right') {
+        chatWindowPosition = 'bottom: ' + widgetOffset + '; right: calc(' + offsetX + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px);';
+      } else if (widgetConfig.position === 'bottom-left') {
+        chatWindowPosition = 'bottom: ' + widgetOffset + '; left: calc(' + offsetX + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px);';
+      } else if (widgetConfig.position === 'top-right') {
+        chatWindowPosition = 'top: ' + widgetOffset + '; right: calc(' + offsetX + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px);';
+      } else if (widgetConfig.position === 'top-left') {
+        chatWindowPosition = 'top: ' + widgetOffset + '; left: calc(' + offsetX + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px);';
+      } else if (widgetConfig.position === 'bottom-center') {
+        chatWindowPosition = 'bottom: ' + widgetOffset + '; left: calc(50% + ' + (widgetSizePx / 2) + 'px + ' + popoverMarginPx + 'px); transform: translateX(0);';
+      } else if (widgetConfig.position === 'top-center') {
+        chatWindowPosition = 'top: ' + widgetOffset + '; left: calc(50% + ' + (widgetSizePx / 2) + 'px + ' + popoverMarginPx + 'px); transform: translateX(0);';
+      }
     }
     
     // Detect mobile
@@ -239,7 +341,17 @@ export async function GET(request: NextRequest) {
     chatWindow.id = 'chatbot-window-' + chatbotId;
     var chatWindowShadowColor = chatbot.chatWindowShadowColor || chatbot.shadowColor || '#000000';
     var chatWindowShadowBlur = chatbot.chatWindowShadowBlur || chatbot.shadowBlur || '4px';
-    chatWindow.style.cssText = 'position: fixed; ' + chatWindowPositionMobile + ' width: ' + chatWindowWidth + '; height: ' + chatWindowHeight + '; background: ' + (chatbot.messageBoxColor || '#ffffff') + '; border-radius: ' + chatWindowBorderRadius + '; box-shadow: 0 0 ' + chatWindowShadowBlur + ' ' + chatWindowShadowColor + '; border: ' + (chatbot.borderWidth || '1px') + ' solid ' + (chatbot.borderColor || '#e5e7eb') + '; font-family: ' + (chatbot.fontFamily || 'Inter') + '; font-size: ' + (chatbot.fontSize || '14px') + '; color: ' + (chatbot.fontColor || '#000000') + '; display: none; flex-direction: column; z-index: ' + (widgetConfig.zIndex + 1) + '; transition: opacity 0.3s ease, transform 0.3s ease; opacity: 0; transform: scale(0.9);';
+    var chatBgColor = chatbot.messageBoxColor || '#ffffff';
+    var chatBgStyle = '';
+    if (widgetConfig.chatBlur > 0) {
+      chatBgStyle += 'backdrop-filter: blur(' + widgetConfig.chatBlur + 'px); -webkit-backdrop-filter: blur(' + widgetConfig.chatBlur + 'px); ';
+    }
+    if (widgetConfig.chatOpacity < 100) {
+      chatBgStyle += 'background-color: rgba(' + hexToRgb(chatBgColor) + ', ' + (widgetConfig.chatOpacity / 100) + '); ';
+    } else {
+      chatBgStyle += 'background-color: ' + chatBgColor + '; ';
+    }
+    chatWindow.style.cssText = 'position: fixed; ' + chatWindowPositionMobile + ' width: ' + chatWindowWidth + '; height: ' + chatWindowHeight + '; ' + chatBgStyle + 'border-radius: ' + chatWindowBorderRadius + '; box-shadow: 0 0 ' + chatWindowShadowBlur + ' ' + chatWindowShadowColor + '; border: ' + (chatbot.borderWidth || '1px') + ' solid ' + (chatbot.borderColor || '#e5e7eb') + '; font-family: ' + (chatbot.fontFamily || 'Inter') + '; font-size: ' + (chatbot.fontSize || '14px') + '; color: ' + (chatbot.fontColor || '#000000') + '; display: none; flex-direction: column; z-index: ' + (widgetConfig.zIndex + 1) + '; transition: opacity 0.3s ease, transform 0.3s ease; opacity: 0; transform: scale(0.9);';
     
     // Create header for chat window
     var header = document.createElement('div');
@@ -279,8 +391,39 @@ export async function GET(request: NextRequest) {
     chatWindow.appendChild(header);
     chatWindow.appendChild(iframe);
     
+    // Create overlay element
+    var overlay = null;
+    if (widgetConfig.overlayEnabled) {
+      overlay = document.createElement('div');
+      overlay.id = 'chatbot-overlay-' + chatbotId;
+      var overlayBgColor = widgetConfig.overlayColor;
+      var overlayBgStyle = '';
+      if (widgetConfig.overlayBlur > 0) {
+        overlayBgStyle += 'backdrop-filter: blur(' + widgetConfig.overlayBlur + 'px); -webkit-backdrop-filter: blur(' + widgetConfig.overlayBlur + 'px); ';
+      }
+      if (overlayBgColor.startsWith('rgba') || overlayBgColor.startsWith('rgb')) {
+        // Extract RGB values and apply new opacity
+        var rgbMatch = overlayBgColor.match(/(\\d+),\\s*(\\d+),\\s*(\\d+)/);
+        if (rgbMatch) {
+          overlayBgStyle += 'background-color: rgba(' + rgbMatch[1] + ', ' + rgbMatch[2] + ', ' + rgbMatch[3] + ', ' + (widgetConfig.overlayOpacity / 100) + '); ';
+        } else {
+          // If we can't parse, use the color as-is (might already have opacity)
+          overlayBgStyle += 'background-color: ' + overlayBgColor + '; ';
+        }
+      } else {
+        // Convert hex to rgba
+        overlayBgStyle += 'background-color: rgba(' + hexToRgb(overlayBgColor) + ', ' + (widgetConfig.overlayOpacity / 100) + '); ';
+      }
+      overlay.style.cssText = 'position: fixed; inset: 0; ' + overlayBgStyle + 'z-index: ' + (widgetConfig.zIndex - 1) + '; display: none; pointer-events: auto;';
+      overlay.setAttribute('aria-hidden', 'true');
+      overlay.onclick = function() { closeChat(); };
+    }
+    
     // Append to document
     widgetContainer.appendChild(buttonContainer);
+    if (overlay) {
+      widgetContainer.appendChild(overlay);
+    }
     widgetContainer.appendChild(chatWindow);
     
     // Auto-show with delay
@@ -297,6 +440,10 @@ export async function GET(request: NextRequest) {
       isOpen = true;
       chatWindow.style.display = 'flex';
       button.setAttribute('aria-expanded', 'true');
+      // Show overlay if enabled
+      if (overlay && widgetConfig.overlayEnabled) {
+        overlay.style.display = 'block';
+      }
       // Prevent body scroll on mobile when chat is open
       if (isMobile) {
         document.body.style.overflow = 'hidden';
@@ -320,6 +467,10 @@ export async function GET(request: NextRequest) {
     function closeChat() {
       isOpen = false;
       button.setAttribute('aria-expanded', 'false');
+      // Hide overlay if enabled
+      if (overlay && widgetConfig.overlayEnabled) {
+        overlay.style.display = 'none';
+      }
       // Restore body scroll
       document.body.style.overflow = '';
       chatWindow.style.opacity = '0';

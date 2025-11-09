@@ -14,6 +14,7 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table'
+import { formatDate } from '@/lib/date-formatters'
 import { 
   Dialog,
   DialogContent,
@@ -98,13 +99,6 @@ export default function EventsPage() {
     event.location.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
-  }
 
   return (
     <MainLayout>

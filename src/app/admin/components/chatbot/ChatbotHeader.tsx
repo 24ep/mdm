@@ -13,7 +13,7 @@ export function ChatbotHeader({ formData, setFormData }: ChatbotHeaderProps) {
   const avatarType = (formData.avatarType || 'icon') as 'icon' | 'image'
   
   return (
-    <div className="flex items-start gap-4">
+    <div className="flex items-start gap-4 py-2">
       {/* Avatar/Icon preview */}
       {avatarType === 'image' && formData.avatarImageUrl ? (
         <img

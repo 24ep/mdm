@@ -13,12 +13,12 @@ export function StyleTab({
 }) {
   const engineType = (formData as any).engineType || 'custom'
 
-  // If ChatKit engine, show ChatKit theme/style config instead of regular style
+  // If ChatKit engine, show ChatKit theme/style config
   if (engineType === 'chatkit') {
     return <ChatKitStyleConfig formData={formData} setFormData={setFormData} />
   }
 
-  // Otherwise, show regular style config
+  // Otherwise (including openai-agent-sdk), show regular style config
   return <RegularStyleConfig formData={formData} setFormData={setFormData} />
 }
 

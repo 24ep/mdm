@@ -41,9 +41,11 @@ interface SpreadsheetViewProps {
   tickets: Ticket[]
   onTicketClick?: (ticket: Ticket) => void
   onTicketUpdate?: (ticketId: string, field: string, value: any) => void
+  selectedTickets?: Set<string>
+  onTicketSelect?: (ticketId: string, selected: boolean) => void
 }
 
-export function SpreadsheetView({ tickets, onTicketClick, onTicketUpdate }: SpreadsheetViewProps) {
+export function SpreadsheetView({ tickets, onTicketClick, onTicketUpdate, selectedTickets, onTicketSelect }: SpreadsheetViewProps) {
   const [editingCell, setEditingCell] = useState<{ ticketId: string; field: string } | null>(null)
   const [editValue, setEditValue] = useState('')
 
@@ -70,6 +72,20 @@ export function SpreadsheetView({ tickets, onTicketClick, onTicketUpdate }: Spre
       <Table>
         <TableHeader>
           <TableRow>
+            {onTicketSelect && (
+              <TableHead className="w-[50px]">
+                <input
+                  type="checkbox"
+                  checked={selectedTickets?.size === tickets.length && tickets.length > 0}
+                  onChange={(e) => {
+                    tickets.forEach(ticket => {
+                      onTicketSelect(ticket.id, e.target.checked)
+                    })
+                  }}
+                  className="rounded border-gray-300"
+                />
+              </TableHead>
+            )}
             <TableHead className="w-[50px]">#</TableHead>
             <TableHead className="min-w-[300px]">Title</TableHead>
             <TableHead className="w-[150px]">Status</TableHead>
@@ -84,6 +100,17 @@ export function SpreadsheetView({ tickets, onTicketClick, onTicketUpdate }: Spre
         <TableBody>
           {tickets.map((ticket, index) => (
             <TableRow key={ticket.id} className="hover:bg-accent/50">
+              {onTicketSelect && (
+                <TableCell>
+                  <input
+                    type="checkbox"
+                    checked={selectedTickets?.has(ticket.id) || false}
+                    onChange={(e) => onTicketSelect(ticket.id, e.target.checked)}
+                    className="rounded border-gray-300"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </TableCell>
+              )}
               <TableCell>{index + 1}</TableCell>
               <TableCell
                 className="cursor-pointer"

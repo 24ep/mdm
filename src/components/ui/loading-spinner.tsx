@@ -13,7 +13,7 @@ export function LoadingSpinner({ size = "md", className }: LoadingSpinnerProps) 
   }
 
   return (
-    <div className={cn("animate-spin rounded-full border-2 border-gray-300 border-t-blue-600", sizeClasses[size], className)} />
+    <div className={cn("animate-spin rounded-full border-2 border-muted border-t-primary", sizeClasses[size], className)} />
   )
 }
 
@@ -22,7 +22,7 @@ export function LoadingPage() {
     <div className="flex items-center justify-center min-h-screen">
       <div className="text-center">
         <LoadingSpinner size="lg" className="mx-auto mb-4" />
-        <p className="text-gray-600">Loading...</p>
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     </div>
   )

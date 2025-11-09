@@ -28,7 +28,26 @@ export interface StorageConfig {
     path: string
     passive: boolean
   }
+  onedrive: {
+    client_id: string
+    client_secret: string
+    tenant_id?: string
+    redirect_uri: string
+    access_token?: string
+    refresh_token?: string
+    folder_path?: string
+  }
+  google_drive: {
+    client_id: string
+    client_secret: string
+    redirect_uri: string
+    access_token?: string
+    refresh_token?: string
+    folder_id?: string
+  }
 }
+
+export type StorageProviderType = 'minio' | 's3' | 'sftp' | 'ftp' | 'onedrive' | 'google_drive'
 
 export const DEFAULT_STORAGE_CONFIG: StorageConfig = {
   minio: {
@@ -59,6 +78,23 @@ export const DEFAULT_STORAGE_CONFIG: StorageConfig = {
     password: '',
     path: '/uploads',
     passive: true
+  },
+  onedrive: {
+    client_id: '',
+    client_secret: '',
+    tenant_id: 'common',
+    redirect_uri: '',
+    access_token: '',
+    refresh_token: '',
+    folder_path: ''
+  },
+  google_drive: {
+    client_id: '',
+    client_secret: '',
+    redirect_uri: '',
+    access_token: '',
+    refresh_token: '',
+    folder_id: ''
   }
 }
 

@@ -263,14 +263,46 @@ export class DataSyncExecutor {
       ...(conn.api_headers || {})
     }
 
-    // Add authentication
-    if (conn.api_auth_type === 'bearer' && conn.api_auth_token) {
-      headers['Authorization'] = `Bearer ${conn.api_auth_token}`
-    } else if (conn.api_auth_type === 'basic' && conn.api_auth_username && conn.api_auth_password) {
-      const credentials = Buffer.from(`${conn.api_auth_username}:${conn.api_auth_password}`).toString('base64')
+    // Add authentication - retrieve from Vault if needed
+    let apiAuthToken = conn.api_auth_token
+    let apiAuthPassword = conn.api_auth_password
+    let apiAuthApiKey = conn.api_auth_apikey_value
+    
+    // Check if credentials are stored in Vault
+    if (apiAuthToken?.startsWith('vault://') || apiAuthPassword?.startsWith('vault://') || apiAuthApiKey?.startsWith('vault://')) {
+      const { getSecretsManager } = await import('@/lib/secrets-manager')
+      const secretsManager = getSecretsManager()
+      const connectionId = conn.id
+      
+      if (connectionId) {
+        const vaultCreds = await secretsManager.getExternalApiCredentials(connectionId)
+        if (vaultCreds) {
+          if (apiAuthToken?.startsWith('vault://')) {
+            apiAuthToken = vaultCreds.authToken || apiAuthToken
+          }
+          if (apiAuthPassword?.startsWith('vault://')) {
+            apiAuthPassword = vaultCreds.password || apiAuthPassword
+          }
+          if (apiAuthApiKey?.startsWith('vault://')) {
+            apiAuthApiKey = vaultCreds.apiKey || apiAuthApiKey
+          }
+        }
+      }
+    } else {
+      // Decrypt if stored in database
+      const { decryptApiKey } = await import('@/lib/encryption')
+      if (apiAuthToken) apiAuthToken = decryptApiKey(apiAuthToken) || apiAuthToken
+      if (apiAuthPassword) apiAuthPassword = decryptApiKey(apiAuthPassword) || apiAuthPassword
+      if (apiAuthApiKey) apiAuthApiKey = decryptApiKey(apiAuthApiKey) || apiAuthApiKey
+    }
+    
+    if (conn.api_auth_type === 'bearer' && apiAuthToken) {
+      headers['Authorization'] = `Bearer ${apiAuthToken}`
+    } else if (conn.api_auth_type === 'basic' && conn.api_auth_username && apiAuthPassword) {
+      const credentials = Buffer.from(`${conn.api_auth_username}:${apiAuthPassword}`).toString('base64')
       headers['Authorization'] = `Basic ${credentials}`
-    } else if (conn.api_auth_type === 'apikey' && conn.api_auth_apikey_name && conn.api_auth_apikey_value) {
-      headers[conn.api_auth_apikey_name] = conn.api_auth_apikey_value
+    } else if (conn.api_auth_type === 'apikey' && conn.api_auth_apikey_name && apiAuthApiKey) {
+      headers[conn.api_auth_apikey_name] = apiAuthApiKey
     }
 
     // Make API request
@@ -323,8 +355,9 @@ export class DataSyncExecutor {
     const conn = schedule.external_connection!
     executionLog.push({ step: 'database_sync_started', host: conn.host, database: conn.database })
 
-    // Create external database client
-    const client = await createExternalClient({
+    // Create external database client with Vault credential retrieval
+    const { createExternalClientWithCredentials } = await import('@/lib/external-connection-helper')
+    const client = await createExternalClientWithCredentials({
       id: schedule.external_connection_id,
       db_type: conn.db_type as 'postgres' | 'mysql',
       host: conn.host!,

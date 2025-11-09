@@ -18,8 +18,13 @@ export function DynamicFavicon({ faviconUrl }: DynamicFaviconProps) {
       // Load favicon from settings
       const loadFavicon = async () => {
         // Don't fetch if user is not authenticated
+        // Skip if session is still loading
+        if (status === 'loading') {
+          return
+        }
+        
         if (status === 'unauthenticated' || !session?.user?.id) {
-          console.warn('Authentication required for settings. Using default favicon.')
+          // Expected behavior when not authenticated - use default favicon silently
           return
         }
 
@@ -29,7 +34,7 @@ export function DynamicFavicon({ faviconUrl }: DynamicFaviconProps) {
             // Check if response is HTML (likely a redirect to login page)
             const contentType = response.headers.get('content-type')
             if (contentType && !contentType.includes('application/json')) {
-              console.warn('Authentication required for settings. Using default favicon.')
+              // Expected behavior when not authenticated - use default favicon silently
               return
             }
             
@@ -54,9 +59,23 @@ export function DynamicFavicon({ faviconUrl }: DynamicFaviconProps) {
   }, [faviconUrl, status, session?.user?.id])
 
   useEffect(() => {
-    // Remove existing favicon links
+    // Remove existing favicon links and preload links for favicons
     const existingLinks = document.querySelectorAll('link[rel*="icon"]')
     existingLinks.forEach(link => link.remove())
+    
+    // Also remove any preload links for favicons (check both as="image" and without as attribute)
+    const allPreloadLinks = document.querySelectorAll('link[rel="preload"]')
+    allPreloadLinks.forEach(link => {
+      const href = link.getAttribute('href')
+      const as = link.getAttribute('as')
+      if (href && (
+        href.includes('favicon') || 
+        href.endsWith('.ico') || 
+        (href.endsWith('.svg') && (as === 'image' || !as))
+      )) {
+        link.remove()
+      }
+    })
 
     if (currentFavicon) {
       // Create new favicon link

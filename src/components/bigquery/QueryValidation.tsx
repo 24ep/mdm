@@ -1,6 +1,7 @@
 'use client'
 
 import { CheckCircle, XCircle, AlertCircle } from 'lucide-react'
+import { validateSQLQuery } from '@/lib/query-execution/utils'
 
 interface QueryValidationProps {
   query: string
@@ -81,67 +82,36 @@ export function QueryValidation({ query, validation }: QueryValidationProps) {
   )
 }
 
-// Validation logic hook
+// Validation logic hook - uses shared query validation utilities
 export function useQueryValidation() {
   const validateQuery = (sql: string) => {
-    const errors: string[] = []
-    const warnings: string[] = []
-    
     if (!sql.trim()) {
       return { isValid: true, errors: [], warnings: [] }
     }
     
-    // Basic SQL syntax validation
-    const trimmedSql = sql.trim()
+    // Use shared validation utility
+    const validation = validateSQLQuery(sql)
     
-    // Check for balanced parentheses
-    const openParens = (trimmedSql.match(/\(/g) || []).length
-    const closeParens = (trimmedSql.match(/\)/g) || []).length
-    if (openParens !== closeParens) {
-      errors.push('Unbalanced parentheses')
-    }
-    
-    // Check for balanced quotes
-    const singleQuotes = (trimmedSql.match(/'/g) || []).length
-    const doubleQuotes = (trimmedSql.match(/"/g) || []).length
-    if (singleQuotes % 2 !== 0) {
-      errors.push('Unclosed single quotes')
-    }
-    if (doubleQuotes % 2 !== 0) {
-      errors.push('Unclosed double quotes')
-    }
-    
-    // Check for common SQL keywords
-    const upperSql = trimmedSql.toUpperCase()
+    // Add additional BigQuery-specific validations
+    const upperSql = sql.trim().toUpperCase()
     const hasSelect = upperSql.includes('SELECT')
     const hasFrom = upperSql.includes('FROM')
     
     if (hasSelect && !hasFrom) {
-      warnings.push('SELECT statement without FROM clause')
-    }
-    
-    // Check for dangerous operations
-    const dangerousKeywords = ['DROP', 'DELETE', 'TRUNCATE', 'ALTER']
-    const hasDangerous = dangerousKeywords.some(keyword => upperSql.includes(keyword))
-    if (hasDangerous) {
-      warnings.push('Query contains potentially dangerous operations')
+      validation.warnings.push('SELECT statement without FROM clause')
     }
     
     // Check for missing semicolon
-    if (!trimmedSql.endsWith(';') && trimmedSql.length > 10) {
-      warnings.push('Consider adding semicolon at the end')
+    if (!sql.trim().endsWith(';') && sql.trim().length > 10) {
+      validation.warnings.push('Consider adding semicolon at the end')
     }
     
     // Check for LIMIT in large queries
     if (hasSelect && !upperSql.includes('LIMIT') && !upperSql.includes('WHERE')) {
-      warnings.push('Consider adding LIMIT clause for large result sets')
+      validation.warnings.push('Consider adding LIMIT clause for large result sets')
     }
     
-    return {
-      isValid: errors.length === 0,
-      errors,
-      warnings
-    }
+    return validation
   }
 
   return { validateQuery }

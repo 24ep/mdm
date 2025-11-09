@@ -9,7 +9,11 @@ import { Toaster } from 'sonner'
 import { Suspense } from 'react'
 import { LoadingPage } from '@/components/ui/loading-spinner'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ 
+  subsets: ['latin'],
+  display: 'swap',
+  preload: true,
+})
 
 export const metadata: Metadata = {
   title: 'Customer Data Management',

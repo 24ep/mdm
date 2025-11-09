@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { ComponentStyle, GlobalStyleConfig } from './types'
 import { ColorInput } from './ColorInput'
+import { MultiSideInput } from '@/components/shared/MultiSideInput'
 
 interface ComponentStyleEditorProps {
   componentType: 'input' | 'select' | 'button' | 'tabs' | 'card' | 'table' | 'modal' | 'tooltip'
@@ -53,26 +54,102 @@ function ComponentStyleEditor({ componentType, style, onUpdate, isMobileViewport
 
       {/* Border */}
       <div className="grid grid-cols-2 gap-2">
-        <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Border Width</Label>
-          <Input
-            type="number"
-            value={style?.borderWidth ?? 1}
-            onChange={(e) => updateStyle('borderWidth', parseInt(e.target.value) || 0)}
-            className={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs`}
-            placeholder="1"
-          />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Border Radius</Label>
-          <Input
-            type="number"
-            value={style?.borderRadius ?? 4}
-            onChange={(e) => updateStyle('borderRadius', parseInt(e.target.value) || 0)}
-            className={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs`}
-            placeholder="4"
-          />
-        </div>
+        <MultiSideInput
+          label="Border Width"
+          baseKey="borderWidth"
+          type="sides"
+          defaultValue={1}
+          inputClassName={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs`}
+          getValue={(side: string) => {
+            const key = `borderWidth${side.charAt(0).toUpperCase() + side.slice(1)}`
+            const baseValue = typeof style?.borderWidth === 'number' 
+              ? style.borderWidth 
+              : (style?.borderWidth || 1)
+            const sideValue = (style as any)?.[key]
+            return sideValue !== undefined ? sideValue : baseValue
+          }}
+          setValue={(updates) => {
+            const newStyle: any = { ...style }
+            Object.keys(updates).forEach(key => {
+              const value = updates[key]
+              if (typeof value === 'string' && value.endsWith('px')) {
+                const numValue = parseInt(value.replace('px', '')) || 0
+                newStyle[key] = numValue
+              } else {
+                newStyle[key] = value
+              }
+            })
+            onUpdate(newStyle)
+          }}
+        />
+        <MultiSideInput
+          label="Border Radius"
+          baseKey="borderRadius"
+          type="corners"
+          defaultValue={4}
+          inputClassName={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs`}
+          getValue={(side: string) => {
+            const br = style?.borderRadius
+            if (typeof br === 'number') return br
+            if (typeof br === 'object' && br !== null) {
+              const obj = br as any
+              const corner = obj[side]
+              return corner?.value ?? 4
+            }
+            return 4
+          }}
+          setValue={(updates) => {
+            const currentBr = style?.borderRadius
+            
+            // Initialize border radius object if it's a number
+            let brObj: any = typeof currentBr === 'number' 
+              ? {
+                  topLeft: { value: currentBr, unit: 'px' },
+                  topRight: { value: currentBr, unit: 'px' },
+                  bottomRight: { value: currentBr, unit: 'px' },
+                  bottomLeft: { value: currentBr, unit: 'px' }
+                }
+              : (currentBr || {
+                  topLeft: { value: 4, unit: 'px' },
+                  topRight: { value: 4, unit: 'px' },
+                  bottomRight: { value: 4, unit: 'px' },
+                  bottomLeft: { value: 4, unit: 'px' }
+                })
+            
+            // Update the border radius object
+            Object.keys(updates).forEach(key => {
+              if (key === 'borderRadius') {
+                const value = updates[key]
+                if (typeof value === 'string' && value.endsWith('px')) {
+                  const numValue = parseInt(value.replace('px', '')) || 4
+                  brObj = {
+                    topLeft: { value: numValue, unit: 'px' },
+                    topRight: { value: numValue, unit: 'px' },
+                    bottomRight: { value: numValue, unit: 'px' },
+                    bottomLeft: { value: numValue, unit: 'px' }
+                  }
+                }
+              } else if (key.startsWith('borderRadius')) {
+                const corner = key.replace('borderRadius', '').charAt(0).toLowerCase() + key.replace('borderRadius', '').slice(1)
+                const value = updates[key]
+                if (typeof value === 'string' && value.endsWith('px')) {
+                  const numValue = parseInt(value.replace('px', '')) || 4
+                  brObj[corner] = { value: numValue, unit: 'px' }
+                }
+              }
+            })
+            
+            // Check if all corners are the same
+            const allSame = brObj.topLeft.value === brObj.topRight.value &&
+                           brObj.topRight.value === brObj.bottomRight.value &&
+                           brObj.bottomRight.value === brObj.bottomLeft.value &&
+                           brObj.topLeft.unit === brObj.topRight.unit &&
+                           brObj.topRight.unit === brObj.bottomRight.unit &&
+                           brObj.bottomRight.unit === brObj.bottomLeft.unit
+            
+            onUpdate({ borderRadius: allSame ? brObj.topLeft.value : brObj })
+          }}
+        />
       </div>
 
       {/* Border Color */}
@@ -90,16 +167,36 @@ function ComponentStyleEditor({ componentType, style, onUpdate, isMobileViewport
 
       {/* Spacing */}
       <div className="grid grid-cols-2 gap-2">
-        <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Padding</Label>
-          <Input
-            type="number"
-            value={style?.padding ?? 8}
-            onChange={(e) => updateStyle('padding', parseInt(e.target.value) || 0)}
-            className={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs`}
-            placeholder="8"
-          />
-        </div>
+        <MultiSideInput
+          label="Padding"
+          baseKey="padding"
+          type="sides"
+          defaultValue={8}
+          inputClassName={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs`}
+          getValue={(side: string) => {
+            const key = `padding${side.charAt(0).toUpperCase() + side.slice(1)}`
+            const baseValue = typeof style?.padding === 'number'
+              ? style.padding
+              : (typeof style?.padding === 'object' && style.padding !== null
+                ? (style.padding as any)[side] || 8
+                : 8)
+            const sideValue = (style as any)?.[key]
+            return sideValue !== undefined ? sideValue : baseValue
+          }}
+          setValue={(updates) => {
+            const newStyle: any = { ...style }
+            Object.keys(updates).forEach(key => {
+              const value = updates[key]
+              if (typeof value === 'string' && value.endsWith('px')) {
+                const numValue = parseInt(value.replace('px', '')) || 0
+                newStyle[key] = numValue
+              } else {
+                newStyle[key] = value
+              }
+            })
+            onUpdate(newStyle)
+          }}
+        />
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">Margin</Label>
           <Input

@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { ColorInput } from './layout-config/ColorInput'
+import { MultiSideInput } from '@/components/shared/MultiSideInput'
 import { 
   Database, 
   Palette, 
@@ -407,35 +408,132 @@ export function ComponentConfig({ component, onUpdate }: ComponentConfigProps) {
           />
         </div>
 
-        <div>
-          <Label htmlFor="border-width">Border Width (px)</Label>
-          <Input
-            id="border-width"
-            type="number"
-            value={parseInt(style.borderWidth) || 1}
-            onChange={(e) => handleStyleUpdate('borderWidth', `${e.target.value}px`)}
-          />
-        </div>
+        <MultiSideInput
+          label="Border Width"
+          baseKey="borderWidth"
+          type="sides"
+          defaultValue="1px"
+          inputClassName="h-8 text-xs"
+          getValue={(side: string) => {
+            const key = `borderWidth${side.charAt(0).toUpperCase() + side.slice(1)}`
+            const baseValue = style.borderWidth || '1px'
+            const sideValue = style[key]
+            return sideValue || baseValue
+          }}
+          setValue={(updates) => {
+            const newStyle = { ...style }
+            Object.keys(updates).forEach(key => {
+              newStyle[key] = updates[key]
+            })
+            setStyle(newStyle)
+            onUpdate({ ...component, style: newStyle })
+          }}
+        />
 
-        <div>
-          <Label htmlFor="border-radius">Border Radius (px)</Label>
-          <Input
-            id="border-radius"
-            type="number"
-            value={parseInt(style.borderRadius) || 0}
-            onChange={(e) => handleStyleUpdate('borderRadius', `${e.target.value}px`)}
-          />
-        </div>
+        <MultiSideInput
+          label="Border Radius"
+          baseKey="borderRadius"
+          type="corners"
+          defaultValue="0px"
+          inputClassName="h-8 text-xs"
+          getValue={(side: string) => {
+            const br = style.borderRadius
+            if (typeof br === 'string') {
+              // If it's a string like "8px", check if there's an object version
+              const objKey = `borderRadius${side.charAt(0).toUpperCase() + side.slice(1)}`
+              return style[objKey] || br
+            }
+            if (typeof br === 'object' && br !== null) {
+              const obj = br as any
+              const corner = obj[side]
+              return corner?.value ? `${corner.value}${corner.unit || 'px'}` : '0px'
+            }
+            return '0px'
+          }}
+          setValue={(updates) => {
+            const newStyle = { ...style }
+            let brObj: any = {}
+            
+            // Initialize from existing borderRadius
+            if (typeof style.borderRadius === 'string') {
+              const baseValue = parseInt(style.borderRadius) || 0
+              brObj = {
+                topLeft: { value: baseValue, unit: 'px' },
+                topRight: { value: baseValue, unit: 'px' },
+                bottomRight: { value: baseValue, unit: 'px' },
+                bottomLeft: { value: baseValue, unit: 'px' }
+              }
+            } else if (typeof style.borderRadius === 'object' && style.borderRadius !== null) {
+              brObj = { ...style.borderRadius }
+            } else {
+              brObj = {
+                topLeft: { value: 0, unit: 'px' },
+                topRight: { value: 0, unit: 'px' },
+                bottomRight: { value: 0, unit: 'px' },
+                bottomLeft: { value: 0, unit: 'px' }
+              }
+            }
+            
+            // Update from updates
+            Object.keys(updates).forEach(key => {
+              if (key === 'borderRadius') {
+                const value = updates[key]
+                if (typeof value === 'string' && value.endsWith('px')) {
+                  const numValue = parseInt(value.replace('px', '')) || 0
+                  brObj = {
+                    topLeft: { value: numValue, unit: 'px' },
+                    topRight: { value: numValue, unit: 'px' },
+                    bottomRight: { value: numValue, unit: 'px' },
+                    bottomLeft: { value: numValue, unit: 'px' }
+                  }
+                }
+              } else if (key.startsWith('borderRadius')) {
+                const corner = key.replace('borderRadius', '').charAt(0).toLowerCase() + key.replace('borderRadius', '').slice(1)
+                const value = updates[key]
+                if (typeof value === 'string' && value.endsWith('px')) {
+                  const numValue = parseInt(value.replace('px', '')) || 0
+                  brObj[corner] = { value: numValue, unit: 'px' }
+                }
+              } else {
+                newStyle[key] = updates[key]
+              }
+            })
+            
+            // Check if all corners are the same
+            const allSame = brObj.topLeft.value === brObj.topRight.value &&
+                           brObj.topRight.value === brObj.bottomRight.value &&
+                           brObj.bottomRight.value === brObj.bottomLeft.value &&
+                           brObj.topLeft.unit === brObj.topRight.unit &&
+                           brObj.topRight.unit === brObj.bottomRight.unit &&
+                           brObj.bottomRight.unit === brObj.bottomLeft.unit
+            
+            newStyle.borderRadius = allSame ? `${brObj.topLeft.value}px` : brObj
+            setStyle(newStyle)
+            onUpdate({ ...component, style: newStyle })
+          }}
+        />
 
-        <div>
-          <Label htmlFor="padding">Padding (px)</Label>
-          <Input
-            id="padding"
-            type="number"
-            value={parseInt(style.padding) || 16}
-            onChange={(e) => handleStyleUpdate('padding', `${e.target.value}px`)}
-          />
-        </div>
+        <MultiSideInput
+          label="Padding"
+          baseKey="padding"
+          type="sides"
+          defaultValue="16px"
+          inputClassName="h-8 text-xs"
+          getValue={(side: string) => {
+            const key = `padding${side.charAt(0).toUpperCase() + side.slice(1)}`
+            const baseValue = style.padding || '16px'
+            const sideValue = style[key]
+            return sideValue || baseValue
+          }}
+          setValue={(updates) => {
+            const newStyle = { ...style }
+            Object.keys(updates).forEach(key => {
+              newStyle[key] = updates[key]
+            })
+            setStyle(newStyle)
+            onUpdate({ ...component, style: newStyle })
+          }}
+        />
 
         <div>
           <Label htmlFor="font-size">Font Size (px)</Label>

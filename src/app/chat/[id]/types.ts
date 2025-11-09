@@ -4,6 +4,7 @@ export interface Message {
   content: string
   timestamp: Date
   citations?: string[]
+  traceId?: string // Langfuse trace ID for observability
   attachments?: Array<{
     type: 'image' | 'video'
     url: string
@@ -84,6 +85,11 @@ export interface ChatbotConfig {
   openaiAgentSdkReasoningEffort?: 'low' | 'medium' | 'high'
   openaiAgentSdkStore?: boolean
   openaiAgentSdkVectorStoreId?: string
+  openaiAgentSdkEnableWebSearch?: boolean
+  openaiAgentSdkEnableCodeInterpreter?: boolean
+  openaiAgentSdkEnableComputerUse?: boolean
+  openaiAgentSdkEnableImageGeneration?: boolean
+  openaiAgentSdkUseWorkflowConfig?: boolean
   logo?: string
   primaryColor: string
   fontFamily: string
@@ -113,12 +119,43 @@ export interface ChatbotConfig {
   shadowColor: string
   shadowBlur: string
   conversationOpener: string
+  showStartConversation?: boolean // Show/hide the start conversation message
+  // Start Screen Prompts (for Agent SDK and other engines)
+  startScreenPrompts?: Array<{ label?: string; prompt: string; icon?: string }> // Quick prompt buttons shown when chat starts
+  // Start Screen Prompts Styling
+  startScreenPromptsPosition?: 'center' | 'bottom' | 'list' // Position of prompts
+  startScreenPromptsIconDisplay?: 'suffix' | 'show-all' | 'none' // How to display icons
+  startScreenPromptsBackgroundColor?: string // Background color of prompt buttons
+  startScreenPromptsFontColor?: string // Font color of prompt buttons
+  startScreenPromptsBorderColor?: string // Border color of prompt buttons
+  startScreenPromptsBorderWidth?: string // Border width of prompt buttons
+  startScreenPromptsBorderRadius?: string // Border radius of prompt buttons
+  // Conversation Opener Styling
+  conversationOpenerFontSize?: string
+  conversationOpenerFontColor?: string
+  conversationOpenerFontFamily?: string
+  conversationOpenerPosition?: 'center' | 'left' | 'right' | 'top' | 'bottom'
+  conversationOpenerAlignment?: 'left' | 'center' | 'right' | 'justify'
+  conversationOpenerBackgroundColor?: string
+  conversationOpenerPadding?: string
+  conversationOpenerBorderRadius?: string
+  conversationOpenerFontWeight?: string | number
+  conversationOpenerLineHeight?: string | number
   followUpQuestions: string[]
+  openaiAgentSdkGreeting?: string
+  openaiAgentSdkPlaceholder?: string
+  openaiAgentSdkBackgroundColor?: string
   enableFileUpload: boolean
   showCitations: boolean
   enableVoiceAgent?: boolean
+  voiceProvider?: 'browser' | 'openai-realtime' | 'agentbuilder' // Voice provider: 'browser' for Web Speech API, 'openai-realtime' for OpenAI Realtime API, 'agentbuilder' for Agent Builder voice
+  voiceUIStyle?: 'chat' | 'wave' // Voice UI style: 'chat' for chat-like UI, 'wave' for background wave animation
+  showMessageFeedback?: boolean
+  showMessageRetry?: boolean
   typingIndicatorStyle?: 'spinner' | 'dots' | 'pulse' | 'bounce'
   typingIndicatorColor?: string
+  showThinkingMessage?: boolean // Show "Thinking..." text like OpenAI
+  thinkingMessageText?: string // Custom text for thinking message (default: "Thinking...")
   headerTitle?: string
   headerDescription?: string
   headerLogo?: string
@@ -150,7 +187,12 @@ export interface ChatbotConfig {
   footerInputBorderRadius?: string
   footerInputFontColor?: string
   sendButtonIcon?: string
-  sendButtonRounded?: boolean
+  sendButtonRounded?: boolean // Deprecated - use sendButtonBorderRadius instead
+  sendButtonBorderRadius?: string
+  sendButtonBorderRadiusTopLeft?: string
+  sendButtonBorderRadiusTopRight?: string
+  sendButtonBorderRadiusBottomRight?: string
+  sendButtonBorderRadiusBottomLeft?: string
   sendButtonBgColor?: string
   sendButtonIconColor?: string
   sendButtonShadowColor?: string
@@ -174,6 +216,8 @@ export interface ChatbotConfig {
   widgetPosition?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | 'bottom-center' | 'top-center'
   widgetSize?: string
   widgetBackgroundColor?: string
+  widgetBackgroundBlur?: number // Blur percentage (0-100) for glassmorphism effect
+  widgetBackgroundOpacity?: number // Background opacity (0-100) for glassmorphism effect
   widgetBorderColor?: string
   widgetBorderWidth?: string
   widgetBorderRadius?: string
@@ -191,6 +235,13 @@ export interface ChatbotConfig {
   notificationBadgeColor?: string
   chatWindowWidth?: string
   chatWindowHeight?: string
+  chatWindowBackgroundBlur?: number // Blur percentage (0-100) for glassmorphism effect
+  chatWindowBackgroundOpacity?: number // Background opacity (0-100) for glassmorphism effect
+  // Overlay configuration (shown when chat is open)
+  overlayEnabled?: boolean // Enable/disable overlay when chat is open
+  overlayColor?: string // Overlay background color (hex, rgb, rgba)
+  overlayOpacity?: number // Overlay opacity (0-100)
+  overlayBlur?: number // Overlay blur percentage (0-100) for glassmorphism effect
   chatWindowBorderColor?: string
   chatWindowBorderWidth?: string
   chatWindowBorderRadius?: string
@@ -198,5 +249,7 @@ export interface ChatbotConfig {
   chatWindowShadowBlur?: string
   chatWindowPaddingX?: string
   chatWindowPaddingY?: string
+  popoverPosition?: 'top' | 'left' // Position of popover relative to widget: 'top' = above widget, 'left' = to the left of widget
+  widgetPopoverMargin?: string // Margin/spacing between widget button and popover window
 }
 

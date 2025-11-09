@@ -9,6 +9,47 @@ import { AccordionContent, AccordionItem, AccordionTrigger } from '@/components/
 import { X } from 'lucide-react'
 import type { SectionProps } from './types'
 
+// ChatKit Icon Select Component - Only shows ChatKit-supported icons (no search)
+function ChatKitIconSelect({ value, onValueChange }: { value: string; onValueChange: (value: string) => void }) {
+  // Valid ChatKit icon names (from ChatKit documentation)
+  const validChatKitIcons = [
+    'agent', 'analytics', 'atom', 'bolt', 'book-open', 'calendar', 'chart', 'check', 'check-circle',
+    'chevron-left', 'chevron-right', 'circle-question', 'compass', 'confetti', 'cube', 'document',
+    'dots-horizontal', 'empty-circle', 'globe', 'keys', 'lab', 'images', 'info', 'lifesaver',
+    'lightbulb', 'mail', 'map-pin', 'maps', 'name', 'notebook', 'notebook-pencil', 'page-blank',
+    'phone', 'plus', 'profile', 'profile-card', 'star', 'star-filled', 'search', 'sparkle',
+    'sparkle-double', 'square-code', 'square-image', 'square-text', 'suitcase', 'settings-slider',
+    'user', 'wreath', 'write', 'write-alt', 'write-alt2', 'bug'
+  ]
+
+  const getIconLabel = (iconName: string) => {
+    if (iconName === 'none') return 'None'
+    return iconName
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+  }
+
+  return (
+    <Select
+      value={value || 'none'}
+      onValueChange={(val) => onValueChange(val === 'none' ? '' : val)}
+    >
+      <SelectTrigger>
+        <SelectValue placeholder="Select icon" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="none">None</SelectItem>
+        {validChatKitIcons.map((iconName) => (
+          <SelectItem key={iconName} value={iconName}>
+            {getIconLabel(iconName)}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
+
 export function StartScreenSection({ formData, setFormData, chatkitOptions }: SectionProps) {
   return (
     <AccordionItem value="startScreen" className="border-b px-4">
@@ -39,8 +80,11 @@ export function StartScreenSection({ formData, setFormData, chatkitOptions }: Se
           <div className="space-y-2">
             <Label>Start Screen Prompts</Label>
             <p className="text-xs text-muted-foreground mb-2">
-              Add quick prompt buttons that appear when the chat starts. Supports name, label, prompt, and icon.
+              Add quick prompt buttons that appear when the chat starts. ChatKit supports <strong>label</strong> and <strong>prompt</strong> properties only.
             </p>
+            <div className="p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded text-xs text-blue-800 dark:text-blue-200 mb-2">
+              <strong>Note:</strong> The "Name" field is stored but not currently supported by ChatKit API. "Icon" is supported but must be a valid ChatKitIcon value (e.g., "lightbulb", "star", "search", "bolt", etc.).
+            </div>
             <div className="space-y-2">
               {(chatkitOptions?.startScreen?.prompts || []).map((prompt: { name?: string; label?: string; prompt: string; icon?: string }, index: number) => (
                 <div key={index} className="border rounded-lg p-3 space-y-2">
@@ -134,7 +178,7 @@ export function StartScreenSection({ formData, setFormData, chatkitOptions }: Se
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Icon (optional)</Label>
-                      <Select
+                      <ChatKitIconSelect
                         value={prompt.icon || 'none'}
                         onValueChange={(value) => {
                           const prompts = [...(chatkitOptions?.startScreen?.prompts || [])]
@@ -150,48 +194,7 @@ export function StartScreenSection({ formData, setFormData, chatkitOptions }: Se
                             }
                           } as any)
                         }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select icon" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">None</SelectItem>
-                          <SelectItem value="Bot">Bot</SelectItem>
-                          <SelectItem value="MessageCircle">Message Circle</SelectItem>
-                          <SelectItem value="Zap">Zap / Bolt</SelectItem>
-                          <SelectItem value="Star">Star</SelectItem>
-                          <SelectItem value="Heart">Heart</SelectItem>
-                          <SelectItem value="ThumbsUp">Thumbs Up</SelectItem>
-                          <SelectItem value="HelpCircle">Help Circle</SelectItem>
-                          <SelectItem value="Info">Info</SelectItem>
-                          <SelectItem value="Lightbulb">Lightbulb</SelectItem>
-                          <SelectItem value="Rocket">Rocket</SelectItem>
-                          <SelectItem value="Sparkles">Sparkles</SelectItem>
-                          <SelectItem value="Wand2">Wand</SelectItem>
-                          <SelectItem value="Search">Search</SelectItem>
-                          <SelectItem value="Settings">Settings</SelectItem>
-                          <SelectItem value="User">User</SelectItem>
-                          <SelectItem value="Users">Users</SelectItem>
-                          <SelectItem value="ShoppingCart">Shopping Cart</SelectItem>
-                          <SelectItem value="Calendar">Calendar</SelectItem>
-                          <SelectItem value="Mail">Mail</SelectItem>
-                          <SelectItem value="Phone">Phone</SelectItem>
-                          <SelectItem value="MapPin">Map Pin</SelectItem>
-                          <SelectItem value="FileText">File Text</SelectItem>
-                          <SelectItem value="Image">Image</SelectItem>
-                          <SelectItem value="Video">Video</SelectItem>
-                          <SelectItem value="Music">Music</SelectItem>
-                          <SelectItem value="Download">Download</SelectItem>
-                          <SelectItem value="Upload">Upload</SelectItem>
-                          <SelectItem value="Share">Share</SelectItem>
-                          <SelectItem value="Bookmark">Bookmark</SelectItem>
-                          <SelectItem value="Flag">Flag</SelectItem>
-                          <SelectItem value="Bell">Bell</SelectItem>
-                          <SelectItem value="Home">Home</SelectItem>
-                          <SelectItem value="Menu">Menu</SelectItem>
-                          <SelectItem value="MoreHorizontal">More</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      />
                     </div>
                   </div>
                 </div>

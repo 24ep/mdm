@@ -3,8 +3,11 @@
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Camera, X, Upload, Loader2 } from 'lucide-react'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Camera, X, Upload, Loader2, Image as ImageIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { AVATAR_LIBRARY, getAvatarByCategory, type AvatarOption } from '@/lib/avatar-library'
 
 interface AvatarUploadProps {
   userId: string
@@ -29,6 +32,7 @@ export function AvatarUpload({
 }: AvatarUploadProps) {
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState<string | null>(null)
+  const [showLibraryDialog, setShowLibraryDialog] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const sizeClasses = {
@@ -121,6 +125,33 @@ export function AvatarUpload({
     }
   }
 
+  const selectAvatarFromLibrary = async (avatarUrl: string) => {
+    setUploading(true)
+    try {
+      const response = await fetch(`/api/users/${userId}/avatar`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ avatarUrl })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to set avatar')
+      }
+
+      const data = await response.json()
+      toast.success('Avatar selected successfully')
+      setShowLibraryDialog(false)
+      onAvatarChange?.(data.avatar)
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to select avatar')
+    } finally {
+      setUploading(false)
+    }
+  }
+
   const getInitials = () => {
     if (userName) {
       return userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
@@ -152,7 +183,7 @@ export function AvatarUpload({
 
       {showUploadButton && (
         <div className="flex flex-col gap-2">
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button
               variant="outline"
               size="sm"
@@ -161,7 +192,18 @@ export function AvatarUpload({
               className="flex items-center gap-2"
             >
               <Camera className="h-4 w-4" />
-              {currentAvatar ? 'Change' : 'Upload'}
+              Upload
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowLibraryDialog(true)}
+              disabled={uploading || disabled}
+              className="flex items-center gap-2"
+            >
+              <ImageIcon className="h-4 w-4" />
+              Library
             </Button>
             
             {currentAvatar && (
@@ -179,10 +221,111 @@ export function AvatarUpload({
           </div>
           
           <p className="text-xs text-muted-foreground">
-            JPEG, PNG, GIF, WebP up to 5MB
+            Upload image or select from library
           </p>
         </div>
       )}
+
+      {/* Avatar Library Dialog */}
+      <Dialog open={showLibraryDialog} onOpenChange={setShowLibraryDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Select Avatar from Library</DialogTitle>
+            <DialogDescription>
+              Choose an avatar from our library or upload your own
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Tabs defaultValue="all" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="people">People</TabsTrigger>
+              <TabsTrigger value="abstract">Abstract</TabsTrigger>
+              <TabsTrigger value="characters">Characters</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="all" className="mt-4">
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-4 max-h-[400px] overflow-y-auto">
+                {AVATAR_LIBRARY.map((avatar) => (
+                  <button
+                    key={avatar.id}
+                    onClick={() => selectAvatarFromLibrary(avatar.url)}
+                    disabled={uploading}
+                    className="relative aspect-square rounded-full overflow-hidden border-2 hover:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={avatar.name}
+                  >
+                    <img
+                      src={avatar.url}
+                      alt={avatar.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="people" className="mt-4">
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-4 max-h-[400px] overflow-y-auto">
+                {getAvatarByCategory('people').map((avatar) => (
+                  <button
+                    key={avatar.id}
+                    onClick={() => selectAvatarFromLibrary(avatar.url)}
+                    disabled={uploading}
+                    className="relative aspect-square rounded-full overflow-hidden border-2 hover:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={avatar.name}
+                  >
+                    <img
+                      src={avatar.url}
+                      alt={avatar.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="abstract" className="mt-4">
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-4 max-h-[400px] overflow-y-auto">
+                {getAvatarByCategory('abstract').map((avatar) => (
+                  <button
+                    key={avatar.id}
+                    onClick={() => selectAvatarFromLibrary(avatar.url)}
+                    disabled={uploading}
+                    className="relative aspect-square rounded-full overflow-hidden border-2 hover:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={avatar.name}
+                  >
+                    <img
+                      src={avatar.url}
+                      alt={avatar.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="characters" className="mt-4">
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-4 max-h-[400px] overflow-y-auto">
+                {getAvatarByCategory('characters').map((avatar) => (
+                  <button
+                    key={avatar.id}
+                    onClick={() => selectAvatarFromLibrary(avatar.url)}
+                    disabled={uploading}
+                    className="relative aspect-square rounded-full overflow-hidden border-2 hover:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={avatar.name}
+                  >
+                    <img
+                      src={avatar.url}
+                      alt={avatar.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
 
       <input
         ref={fileInputRef}

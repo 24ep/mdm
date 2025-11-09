@@ -122,6 +122,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'db_type, host required for database connections' }, { status: 400 })
       }
 
+      // For test connections, use direct credentials (not from Vault)
+      // Test connections use temporary credentials provided by user
       const client = await createExternalClient({
         id: 'temp', db_type, host, port, database, username, password, options: null,
       })
@@ -179,6 +181,8 @@ export async function GET(request: NextRequest) {
     const { rows: access } = await query('SELECT 1 FROM space_members WHERE space_id = $1 AND user_id = $2', [spaceId, session.user.id])
     if (access.length === 0) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
+    // For metadata fetch, use direct credentials (not from Vault)
+    // Metadata fetch uses temporary credentials provided by user
     const client = await createExternalClient({ id: 'temp', db_type: dbType as any, host: host!, port, database, username, password, options: null })
     try {
       // Columns
