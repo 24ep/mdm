@@ -4,18 +4,29 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { ChatbotConfig } from '../types'
 import { ChatKitWrapper } from './ChatKitWrapper'
+
+interface ChatbotConfig {
+  id: string
+  name: string
+  chatkitAgentId?: string
+  chatkitApiKey?: string
+  chatkitOptions?: any
+  primaryColor?: string
+  [key: string]: any
+}
+
+interface ChatKitRendererProps {
+  chatbot: ChatbotConfig
+  previewDeploymentType?: 'popover' | 'fullpage' | 'popup-center'
+  isInIframe?: boolean
+}
 
 export function ChatKitRenderer({ 
   chatbot, 
   previewDeploymentType = 'fullpage',
   isInIframe = false 
-}: { 
-  chatbot: ChatbotConfig
-  previewDeploymentType?: 'popover' | 'fullpage' | 'popup-center'
-  isInIframe?: boolean
-}) {
+}: ChatKitRendererProps) {
   const [chatkitLoaded, setChatkitLoaded] = useState(false)
   const [chatkitModule, setChatkitModule] = useState<any>(null)
   const [chatkitError, setChatkitError] = useState<string | null>(null)
@@ -26,11 +37,13 @@ export function ChatKitRenderer({
   useEffect(() => {
     if (typeof window === 'undefined') return
 
+    // Check if script already loaded
     if (document.querySelector('script[src*="chatkit.js"]')) {
       setChatkitLoaded(true)
       return
     }
 
+    // Load ChatKit script
     const script = document.createElement('script')
     script.src = 'https://cdn.platform.openai.com/deployments/chatkit/chatkit.js'
     script.async = true
@@ -44,6 +57,10 @@ export function ChatKitRenderer({
       toast.error('Failed to load ChatKit')
     }
     document.head.appendChild(script)
+
+    return () => {
+      // Cleanup if needed
+    }
   }, [])
 
   // Load ChatKit module when script is loaded
@@ -55,6 +72,7 @@ export function ChatKitRenderer({
     setIsInitializing(true)
     console.log('Loading ChatKit module...')
 
+    // Import ChatKit module dynamically
     import('@openai/chatkit-react')
       .then((module) => {
         console.log('ChatKit module loaded:', module)
@@ -99,6 +117,7 @@ export function ChatKitRenderer({
           onClick={() => {
             setChatkitError(null)
             setChatkitLoaded(false)
+            // Reload the page to retry
             window.location.reload()
           }}
         >
@@ -125,4 +144,3 @@ export function ChatKitRenderer({
 
   return null
 }
-
