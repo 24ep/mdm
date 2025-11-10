@@ -465,13 +465,13 @@ export function APIConfiguration() {
       case 'active':
         return 'bg-green-100 text-green-800'
       case 'inactive':
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-muted text-foreground'
       case 'error':
         return 'bg-red-100 text-red-800'
       case 'pending':
         return 'bg-yellow-100 text-yellow-800'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-muted text-foreground'
     }
   }
 
@@ -645,7 +645,7 @@ export function APIConfiguration() {
                           key={model.id}
                           className={cn(
                             "p-4 border rounded-lg",
-                            model.isAvailable ? "border-green-200 bg-green-50" : "border-gray-200 bg-gray-50"
+                            model.isAvailable ? "border-green-200 bg-green-50" : "border-border bg-muted"
                           )}
                         >
                           <div className="flex items-center justify-between mb-2">

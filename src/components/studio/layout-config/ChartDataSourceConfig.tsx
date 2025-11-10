@@ -875,7 +875,7 @@ export function ChartDataSourceConfig({
         </span>
         <button
           type="button"
-          className="px-2 py-1 text-[11px] rounded-[2px] bg-input border-0 hover:bg-gray-200 dark:hover:bg-gray-700"
+          className="px-2 py-1 text-[11px] rounded-[2px] bg-input border-0 hover:bg-muted"
           onClick={() => setIsFilterDialogOpen(true)}
         >
           Edit filters
@@ -993,7 +993,7 @@ export function ChartDataSourceConfig({
           const cond = item as FilterCondition
           return (
             <div className="flex items-center gap-2 py-1" style={{ paddingLeft: `${indent}px` }}>
-              <div className="flex items-center gap-2 flex-1 border rounded-[6px] p-2 bg-gray-50 dark:bg-gray-900">
+              <div className="flex items-center gap-2 flex-1 border rounded-[6px] p-2 bg-muted">
                 <select
                   className="min-w-[160px] rounded-[2px] px-2 py-1 text-[11px] bg-input border-0 focus:outline-none focus:ring-0 focus:border-0"
                   value={cond.attribute}
