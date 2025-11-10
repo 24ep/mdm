@@ -450,13 +450,13 @@ export function APIConfiguration() {
       case 'active':
         return <CheckCircle className="h-4 w-4 text-green-500" />
       case 'inactive':
-        return <XCircle className="h-4 w-4 text-gray-500" />
+        return <XCircle className="h-4 w-4 text-muted-foreground" />
       case 'error':
         return <AlertTriangle className="h-4 w-4 text-red-500" />
       case 'pending':
         return <RefreshCw className="h-4 w-4 text-yellow-500 animate-spin" />
       default:
-        return <AlertTriangle className="h-4 w-4 text-gray-500" />
+        return <AlertTriangle className="h-4 w-4 text-muted-foreground" />
     }
   }
 

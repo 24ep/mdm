@@ -17,9 +17,17 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Set default envs for build to avoid SSR failures during prerender
+# Accept build arguments for NEXT_PUBLIC_* variables
+# These must be set at build time to be embedded in the client bundle
+ARG NEXT_PUBLIC_API_URL=http://localhost:8302
+ARG NEXT_PUBLIC_WS_PROXY_URL=ws://localhost:3002/api/openai-realtime
+ARG NEXT_PUBLIC_WS_PROXY_PORT=3002
+
+# Set envs for build to avoid SSR failures during prerender
 # Note: PostgREST API URL (not Supabase)
-ENV NEXT_PUBLIC_API_URL="http://localhost:8302"
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_WS_PROXY_URL=${NEXT_PUBLIC_WS_PROXY_URL}
+ENV NEXT_PUBLIC_WS_PROXY_PORT=${NEXT_PUBLIC_WS_PROXY_PORT}
 
 # Ensure public directory exists (some repos may not include it)
 RUN mkdir -p public
@@ -34,8 +42,8 @@ WORKDIR /app
 ENV NODE_ENV production
 # Uncomment the following line in case you want to disable telemetry during runtime.
 # ENV NEXT_TELEMETRY_DISABLED 1
-# Note: PostgREST API URL (not Supabase)
-ENV NEXT_PUBLIC_API_URL="http://localhost:8302"
+# Note: NEXT_PUBLIC_* variables are set at build time and embedded in the bundle
+# Runtime ENV vars here are for reference only (they won't affect client-side code)
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
