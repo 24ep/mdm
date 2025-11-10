@@ -76,11 +76,11 @@ export function EnhancedColorPicker({
 
   return (
     <div className={`space-y-2 ${className}`}>
-      <Label className="text-xs font-medium text-gray-700">{label}</Label>
+      <Label className="text-xs font-medium text-foreground">{label}</Label>
       
       <div className="flex items-center gap-2">
         {/* Color Type Toggle */}
-        <div className="flex border border-gray-300 rounded">
+        <div className="flex border border-border rounded">
           <Button
             variant={colorType === 'solid' ? 'default' : 'ghost'}
             size="sm"
@@ -101,7 +101,7 @@ export function EnhancedColorPicker({
 
         {/* Color Swatch */}
         <div
-          className="w-8 h-8 border border-gray-300 rounded cursor-pointer"
+          className="w-8 h-8 border border-border rounded cursor-pointer"
           style={{ background: getSwatchBackground() }}
           onClick={handleSwatchClick}
         />
@@ -122,7 +122,7 @@ export function EnhancedColorPicker({
 
       {/* Color Picker */}
       {showPicker && (
-        <div className="mt-2 p-3 border border-gray-200 rounded-lg bg-white shadow-lg">
+        <div className="mt-2 p-3 border border-border rounded-lg bg-popover shadow-lg">
           {colorType === 'solid' ? (
             <div>
               <SketchPicker

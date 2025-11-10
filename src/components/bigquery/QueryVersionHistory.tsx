@@ -109,7 +109,7 @@ export function QueryVersionHistory({
                     className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                       selectedVersion?.id === version.id
                         ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                        : 'border-border hover:border-primary/50'
                     } ${version.isCurrent ? 'ring-2 ring-green-200' : ''}`}
                     onClick={() => handleViewVersion(version)}
                   >
@@ -134,16 +134,16 @@ export function QueryVersionHistory({
                         </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                       <User className="h-3 w-3" />
                       <span>{version.createdBy}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Clock className="h-3 w-3" />
                       <span>{formatTimeAgo(version.createdAt)}</span>
                     </div>
                     {version.description && (
-                      <p className="text-xs text-gray-600 mt-2">{version.description}</p>
+                      <p className="text-xs text-muted-foreground mt-2">{version.description}</p>
                     )}
                   </div>
                 ))}
@@ -158,7 +158,7 @@ export function QueryVersionHistory({
               <div className="h-[400px] flex flex-col">
                 <ScrollArea className="flex-1 border rounded-lg">
                   <div className="p-4">
-                    <pre className="text-xs font-mono bg-gray-50 p-3 rounded whitespace-pre-wrap">
+                    <pre className="text-xs font-mono bg-muted p-3 rounded whitespace-pre-wrap">
                       {previewVersion}
                     </pre>
                   </div>
@@ -188,8 +188,8 @@ export function QueryVersionHistory({
                 )}
               </div>
             ) : (
-              <div className="h-[400px] flex items-center justify-center border rounded-lg bg-gray-50">
-                <p className="text-sm text-gray-500">Select a version to preview</p>
+              <div className="h-[400px] flex items-center justify-center border rounded-lg bg-muted">
+                <p className="text-sm text-muted-foreground">Select a version to preview</p>
               </div>
             )}
           </div>

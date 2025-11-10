@@ -23,6 +23,22 @@ export function StartScreenPromptsSection({ formData, setFormData }: StartScreen
         <SectionGroup title="Layout" isFirst>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
+              <Label>Style Type</Label>
+              <Select
+                value={(formData as any).startScreenPromptsStyle || 'card'}
+                onValueChange={(value: 'list' | 'card') => setFormData({ ...formData, startScreenPromptsStyle: value } as any)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="card">Card</SelectItem>
+                  <SelectItem value="list">List</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
               <Label>Position</Label>
               <Select
                 value={(formData as any).startScreenPromptsPosition || 'center'}
@@ -38,7 +54,9 @@ export function StartScreenPromptsSection({ formData, setFormData }: StartScreen
                 </SelectContent>
               </Select>
             </div>
-            
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4 mt-4">
             <div className="space-y-2">
               <Label>Icon Display</Label>
               <Select
@@ -83,6 +101,43 @@ export function StartScreenPromptsSection({ formData, setFormData }: StartScreen
                 inputClassName="h-7 text-xs pl-7 w-full"
               />
             </div>
+          </div>
+        </SectionGroup>
+
+        <SectionGroup title="Typography">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Font Family</Label>
+              <Input
+                type="text"
+                value={(formData as any).startScreenPromptsFontFamily || 'Inter'}
+                onChange={(e) => setFormData({ ...formData, startScreenPromptsFontFamily: e.target.value } as any)}
+                placeholder="Inter"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Font Size</Label>
+              <Input
+                type="text"
+                value={(formData as any).startScreenPromptsFontSize || '14px'}
+                onChange={(e) => setFormData({ ...formData, startScreenPromptsFontSize: e.target.value } as any)}
+                placeholder="14px"
+              />
+            </div>
+          </div>
+        </SectionGroup>
+
+        <SectionGroup title="Spacing">
+          <div className="space-y-2">
+            <Label>Padding</Label>
+            <Input
+              type="text"
+              value={(formData as any).startScreenPromptsPadding || '12px'}
+              onChange={(e) => setFormData({ ...formData, startScreenPromptsPadding: e.target.value } as any)}
+              placeholder="12px"
+            />
+            <p className="text-xs text-muted-foreground">Padding for prompt buttons (e.g., "12px" or "8px 16px")</p>
           </div>
         </SectionGroup>
 

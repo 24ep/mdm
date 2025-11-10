@@ -1,11 +1,12 @@
 "use client"
 
 import { SessionProvider } from "next-auth/react"
-import { ThemeProvider } from "next-themes"
+import { ThemeProvider as NextThemeProvider } from "next-themes"
 import { useThemeSafe } from "@/hooks/use-theme-safe"
 import { Toaster } from "react-hot-toast"
 import { NotificationProvider } from "@/contexts/notification-context"
 import { QueryProvider } from "@/lib/providers/query-provider"
+import { ThemeProvider } from "@/contexts/theme-context"
 import { useEffect, useState } from "react"
 
 function ThemedToaster() {
@@ -57,19 +58,21 @@ function ThemedToaster() {
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
-      <ThemeProvider
+      <NextThemeProvider
         attribute="class"
         defaultTheme="system"
         enableSystem
         disableTransitionOnChange
       >
-        <QueryProvider>
-          <NotificationProvider>
-            {children}
-            <ThemedToaster />
-          </NotificationProvider>
-        </QueryProvider>
-      </ThemeProvider>
+        <ThemeProvider>
+          <QueryProvider>
+            <NotificationProvider>
+              {children}
+              <ThemedToaster />
+            </NotificationProvider>
+          </QueryProvider>
+        </ThemeProvider>
+      </NextThemeProvider>
     </SessionProvider>
   )
 }

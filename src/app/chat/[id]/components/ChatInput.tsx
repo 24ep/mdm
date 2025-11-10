@@ -3,7 +3,7 @@
 import { useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Paperclip, Mic, MicOff, Volume2, VolumeX, Send, X } from 'lucide-react'
+import { Paperclip, Mic, MicOff, Send, X } from 'lucide-react'
 import * as Icons from 'lucide-react'
 import { ChatbotConfig } from '../types'
 
@@ -21,7 +21,6 @@ interface ChatInputProps {
   isSpeaking: boolean
   onStartRecording: () => void
   onStopRecording: () => void
-  onToggleVoiceOutput: () => void
   removeAttachment: (index: number) => void
 }
 
@@ -39,7 +38,6 @@ export function ChatInput({
   isSpeaking,
   onStartRecording,
   onStopRecording,
-  onToggleVoiceOutput,
   removeAttachment,
 }: ChatInputProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -70,7 +68,8 @@ export function ChatInput({
     </>
   ) : null
 
-  const voiceButton = chatbot.enableVoiceAgent ? (
+  // Hide voice button when wave UI is active (voice controls are in VoiceWaveUI)
+  const voiceButton = chatbot.enableVoiceAgent && chatbot.voiceUIStyle !== 'wave' ? (
     <Button
       type="button"
       variant={isRecording ? "destructive" : "outline"}
@@ -83,23 +82,6 @@ export function ChatInput({
         <MicOff className="h-4 w-4 animate-pulse" />
       ) : (
         <Mic className="h-4 w-4" />
-      )}
-    </Button>
-  ) : null
-
-  const voiceOutputButton = chatbot.enableVoiceAgent ? (
-    <Button
-      type="button"
-      variant="outline"
-      size="icon"
-      onClick={onToggleVoiceOutput}
-      disabled={isLoading || !isVoiceEnabled}
-      title={isSpeaking ? "Stop voice output" : "Resume voice output"}
-    >
-      {isSpeaking ? (
-        <VolumeX className="h-4 w-4" />
-      ) : (
-        <Volume2 className="h-4 w-4" />
       )}
     </Button>
   ) : null
@@ -263,13 +245,11 @@ export function ChatInput({
                   {inputField}
                   {attachButton}
                   {voiceButton}
-                  {voiceOutputButton}
                 </>
               ) : (
                 <>
                   {attachButton}
                   {voiceButton}
-                  {voiceOutputButton}
                   <div className="flex-1 relative">
                     {inputField}
                     <div className="absolute right-2 top-1/2 -translate-y-1/2">
@@ -287,14 +267,12 @@ export function ChatInput({
                 {inputField}
                 {attachButton}
                 {voiceButton}
-                {voiceOutputButton}
                 {sendButton}
               </>
             ) : (
               <>
                 {attachButton}
                 {voiceButton}
-                {voiceOutputButton}
                 {inputField}
                 {sendButton}
               </>

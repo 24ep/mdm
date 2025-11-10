@@ -214,7 +214,7 @@ export function PowerBIIntegration({ spaceId, onSuccess }: PowerBIIntegrationPro
                   className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                     activeConfig?.id === config.id
                       ? 'border-primary bg-primary/5'
-                      : 'hover:bg-gray-50'
+                      : 'hover:bg-muted'
                   }`}
                   onClick={() => setActiveConfig(config)}
                 >

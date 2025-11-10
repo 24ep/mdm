@@ -6,11 +6,12 @@ import type { Chatbot } from '../types'
 import {
   ThemeSection,
   ComposerSection,
-  EntitiesSection,
   LocaleSection,
+  StartScreenSection,
   HeaderSection,
   PopoverSection,
-  WidgetSection
+  WidgetSection,
+  PersonaPickerSection
 } from './sections'
 import { ChatKitIntegrationSection } from './sections/ChatKitIntegrationSection'
 
@@ -37,9 +38,10 @@ export function ChatKitStyleConfig({ formData, setFormData }: ChatKitStyleConfig
           <ChatKitIntegrationSection formData={formData} setFormData={setFormData} />
           <ThemeSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
           <ComposerSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
-          <EntitiesSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
+          <StartScreenSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
           <LocaleSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
           <HeaderSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
+          <PersonaPickerSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
           <PopoverSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
           <WidgetSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
         </Accordion>

@@ -202,7 +202,7 @@ export function SelectionToolbar({
 
   return (
     <div 
-      className="absolute bg-white border border-gray-200 rounded-lg shadow-lg p-2 flex items-center gap-1 z-50"
+      className="absolute bg-background border border-border rounded-lg shadow-lg p-2 flex items-center gap-1 z-50"
       style={{
         left: '50%',
         top: 12,
@@ -217,7 +217,7 @@ export function SelectionToolbar({
       
 
       {/* Typography Group */}
-      <div className="flex items-center border-r border-gray-200 pr-2 mr-2">
+      <div className="flex items-center border-r border-border pr-2 mr-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 px-2" title="Typography">
@@ -241,9 +241,9 @@ export function SelectionToolbar({
               return (
                 <div className="p-3 space-y-3">
                   <div>
-                    <div className="text-[11px] text-gray-600 mb-1">Font Family</div>
+                    <div className="text-[11px] text-muted-foreground mb-1">Font Family</div>
                     <select
-                      className="w-full h-7 border border-gray-300 rounded px-1 text-xs"
+                      className="w-full h-7 border border-border rounded px-1 text-xs"
                       value={String(style.fontFamily || 'Roboto, sans-serif')}
                       onChange={(e)=>{ ensureGoogleFontLoaded(e.target.value); updateStyle({ fontFamily: e.target.value }) }}
                     >
@@ -263,20 +263,20 @@ export function SelectionToolbar({
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     <div>
-                      <div className="text-[11px] text-gray-600 mb-1">Size</div>
-                      <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={Number(style.fontSize ?? 14)} onChange={(e)=>updateStyle({ fontSize: Number(e.target.value)||14 })} />
+                      <div className="text-[11px] text-muted-foreground mb-1">Size</div>
+                      <input className="w-full h-7 border border-border rounded px-1 text-xs" type="number" value={Number(style.fontSize ?? 14)} onChange={(e)=>updateStyle({ fontSize: Number(e.target.value)||14 })} />
                     </div>
                     <div>
-                      <div className="text-[11px] text-gray-600 mb-1">Weight</div>
-                      <select className="w-full h-7 border border-gray-300 rounded px-1 text-xs" value={String(style.fontWeight || 'normal')} onChange={(e)=>updateStyle({ fontWeight: e.target.value })}>
+                      <div className="text-[11px] text-muted-foreground mb-1">Weight</div>
+                      <select className="w-full h-7 border border-border rounded px-1 text-xs" value={String(style.fontWeight || 'normal')} onChange={(e)=>updateStyle({ fontWeight: e.target.value })}>
                         <option value="lighter">Light</option>
                         <option value="normal">Normal</option>
                         <option value="bold">Bold</option>
                       </select>
                     </div>
                     <div>
-                      <div className="text-[11px] text-gray-600 mb-1">Align</div>
-                      <select className="w-full h-7 border border-gray-300 rounded px-1 text-xs" value={String(style.textAlign || 'left')} onChange={(e)=>updateStyle({ textAlign: e.target.value })}>
+                      <div className="text-[11px] text-muted-foreground mb-1">Align</div>
+                      <select className="w-full h-7 border border-border rounded px-1 text-xs" value={String(style.textAlign || 'left')} onChange={(e)=>updateStyle({ textAlign: e.target.value })}>
                         <option value="left">Left</option>
                         <option value="center">Center</option>
                         <option value="right">Right</option>
@@ -300,7 +300,7 @@ export function SelectionToolbar({
       </div>
 
       {/* Padding Group */}
-      <div className="flex items-center border-r border-gray-200 pr-2 mr-2">
+      <div className="flex items-center border-r border-border pr-2 mr-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 px-2" title="Padding">
@@ -327,19 +327,19 @@ export function SelectionToolbar({
               return (
                 <div className="p-3 grid grid-cols-2 gap-2">
                   <div>
-                    <div className="text-[11px] text-gray-600 mb-1">Top</div>
+                    <div className="text-[11px] text-muted-foreground mb-1">Top</div>
                     <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={Number(current.top||0)} onChange={(e)=>updatePad('top', Number(e.target.value)||0)} />
                   </div>
                   <div>
-                    <div className="text-[11px] text-gray-600 mb-1">Right</div>
+                    <div className="text-[11px] text-muted-foreground mb-1">Right</div>
                     <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={Number(current.right||0)} onChange={(e)=>updatePad('right', Number(e.target.value)||0)} />
                   </div>
                   <div>
-                    <div className="text-[11px] text-gray-600 mb-1">Bottom</div>
+                    <div className="text-[11px] text-muted-foreground mb-1">Bottom</div>
                     <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={Number(current.bottom||0)} onChange={(e)=>updatePad('bottom', Number(e.target.value)||0)} />
                   </div>
                   <div>
-                    <div className="text-[11px] text-gray-600 mb-1">Left</div>
+                    <div className="text-[11px] text-muted-foreground mb-1">Left</div>
                     <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={Number(current.left||0)} onChange={(e)=>updatePad('left', Number(e.target.value)||0)} />
                   </div>
                 </div>
@@ -350,7 +350,7 @@ export function SelectionToolbar({
       </div>
 
       {/* Shadow Group */}
-      <div className="flex items-center border-r border-gray-200 pr-2 mr-2">
+      <div className="flex items-center border-r border-border pr-2 mr-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 px-2" title="Effects">
@@ -376,34 +376,34 @@ export function SelectionToolbar({
               return (
                 <div className="p-3 grid grid-cols-2 gap-2">
                   <div>
-                    <div className="text-[11px] text-gray-600 mb-1">Offset X</div>
+                    <div className="text-[11px] text-muted-foreground mb-1">Offset X</div>
                     <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={getNum(shadow.offsetX)} onChange={(e)=>updateShadow({ offsetX: Number(e.target.value)||0 })} />
                   </div>
                   <div>
-                    <div className="text-[11px] text-gray-600 mb-1">Offset Y</div>
+                    <div className="text-[11px] text-muted-foreground mb-1">Offset Y</div>
                     <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={getNum(shadow.offsetY)} onChange={(e)=>updateShadow({ offsetY: Number(e.target.value)||0 })} />
                   </div>
                   <div>
-                    <div className="text-[11px] text-gray-600 mb-1">Blur</div>
+                    <div className="text-[11px] text-muted-foreground mb-1">Blur</div>
                     <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={getNum(shadow.blur)} onChange={(e)=>updateShadow({ blur: Number(e.target.value)||0 })} />
                   </div>
                   <div>
-                    <div className="text-[11px] text-gray-600 mb-1">Spread</div>
+                    <div className="text-[11px] text-muted-foreground mb-1">Spread</div>
                     <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={getNum(shadow.spread)} onChange={(e)=>updateShadow({ spread: Number(e.target.value)||0 })} />
                   </div>
                   <div className="col-span-2">
-                    <div className="text-[11px] text-gray-600 mb-1">Color</div>
+                    <div className="text-[11px] text-muted-foreground mb-1">Color</div>
                     <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" value={shadow.color || '#000000'} onChange={(e)=>updateShadow({ color: e.target.value })} />
                   </div>
                   <div className="col-span-2">
-                    <div className="text-[11px] text-gray-600 mb-1">Opacity (%)</div>
+                    <div className="text-[11px] text-muted-foreground mb-1">Opacity (%)</div>
                     <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" min={0} max={100} value={Math.round(Number((shadow.opacity ?? 0.25) * 100))} onChange={(e)=>{
                       const v = Math.max(0, Math.min(100, Number(e.target.value)||0))
                       updateShadow({ opacity: v/100 })
                     }} />
                   </div>
                   <div className="col-span-2 border-t pt-2 mt-1">
-                    <div className="text-[11px] text-gray-600 mb-2">Optical (Filters)</div>
+                    <div className="text-[11px] text-muted-foreground mb-2">Optical (Filters)</div>
                     {(() => {
                       const fc = e0?.style?.filterConfig || {}
                       const updateFilter = (partial:any) => {
@@ -417,32 +417,32 @@ export function SelectionToolbar({
                       return (
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <div className="text-[11px] text-gray-600 mb-1">Blur (px)</div>
-                            <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={Number(fc.blur ?? 0)} onChange={(e)=>updateFilter({ blur: Number(e.target.value)||0 })} />
+                            <div className="text-[11px] text-muted-foreground mb-1">Blur (px)</div>
+                            <input className="w-full h-7 border border-border rounded px-1 text-xs" type="number" value={Number(fc.blur ?? 0)} onChange={(e)=>updateFilter({ blur: Number(e.target.value)||0 })} />
                           </div>
                           <div>
-                            <div className="text-[11px] text-gray-600 mb-1">Backdrop Blur (px)</div>
-                            <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={Number(fc.backdropBlur ?? 0)} onChange={(e)=>updateFilter({ backdropBlur: Number(e.target.value)||0 })} />
+                            <div className="text-[11px] text-muted-foreground mb-1">Backdrop Blur (px)</div>
+                            <input className="w-full h-7 border border-border rounded px-1 text-xs" type="number" value={Number(fc.backdropBlur ?? 0)} onChange={(e)=>updateFilter({ backdropBlur: Number(e.target.value)||0 })} />
                           </div>
                           <div>
-                            <div className="text-[11px] text-gray-600 mb-1">Brightness (%)</div>
-                            <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={Number(fc.brightness ?? 100)} onChange={(e)=>updateFilter({ brightness: Number(e.target.value)||100 })} />
+                            <div className="text-[11px] text-muted-foreground mb-1">Brightness (%)</div>
+                            <input className="w-full h-7 border border-border rounded px-1 text-xs" type="number" value={Number(fc.brightness ?? 100)} onChange={(e)=>updateFilter({ brightness: Number(e.target.value)||100 })} />
                           </div>
                           <div>
-                            <div className="text-[11px] text-gray-600 mb-1">Contrast (%)</div>
-                            <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={Number(fc.contrast ?? 100)} onChange={(e)=>updateFilter({ contrast: Number(e.target.value)||100 })} />
+                            <div className="text-[11px] text-muted-foreground mb-1">Contrast (%)</div>
+                            <input className="w-full h-7 border border-border rounded px-1 text-xs" type="number" value={Number(fc.contrast ?? 100)} onChange={(e)=>updateFilter({ contrast: Number(e.target.value)||100 })} />
                           </div>
                           <div>
-                            <div className="text-[11px] text-gray-600 mb-1">Saturate (%)</div>
-                            <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={Number(fc.saturate ?? 100)} onChange={(e)=>updateFilter({ saturate: Number(e.target.value)||100 })} />
+                            <div className="text-[11px] text-muted-foreground mb-1">Saturate (%)</div>
+                            <input className="w-full h-7 border border-border rounded px-1 text-xs" type="number" value={Number(fc.saturate ?? 100)} onChange={(e)=>updateFilter({ saturate: Number(e.target.value)||100 })} />
                           </div>
                           <div>
-                            <div className="text-[11px] text-gray-600 mb-1">Grayscale (%)</div>
-                            <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={Number(fc.grayscale ?? 0)} onChange={(e)=>updateFilter({ grayscale: Number(e.target.value)||0 })} />
+                            <div className="text-[11px] text-muted-foreground mb-1">Grayscale (%)</div>
+                            <input className="w-full h-7 border border-border rounded px-1 text-xs" type="number" value={Number(fc.grayscale ?? 0)} onChange={(e)=>updateFilter({ grayscale: Number(e.target.value)||0 })} />
                           </div>
                           <div className="col-span-2">
-                            <div className="text-[11px] text-gray-600 mb-1">Hue Rotate (deg)</div>
-                            <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={Number(fc.hueRotate ?? 0)} onChange={(e)=>updateFilter({ hueRotate: Number(e.target.value)||0 })} />
+                            <div className="text-[11px] text-muted-foreground mb-1">Hue Rotate (deg)</div>
+                            <input className="w-full h-7 border border-border rounded px-1 text-xs" type="number" value={Number(fc.hueRotate ?? 0)} onChange={(e)=>updateFilter({ hueRotate: Number(e.target.value)||0 })} />
                           </div>
                         </div>
                       )
@@ -458,7 +458,7 @@ export function SelectionToolbar({
       {/* Vertical Alignment Group temporarily removed to avoid undefined icons */}
 
       {/* Transform Group */}
-      <div className="flex items-center border-r border-gray-200 pr-2 mr-2">
+      <div className="flex items-center border-r border-border pr-2 mr-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 px-2">
@@ -491,7 +491,7 @@ export function SelectionToolbar({
       </div>
 
       {/* Style Group */}
-      <div className="flex items-center border-r border-gray-200 pr-2 mr-2">
+      <div className="flex items-center border-r border-border pr-2 mr-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 px-2" title="Style">
@@ -523,7 +523,7 @@ export function SelectionToolbar({
 
             {/* Font Settings */}
             <div className="p-3">
-              <Label className="text-xs font-medium text-gray-700 mb-2 block">Font Settings</Label>
+              <Label className="text-xs font-medium text-foreground mb-2 block">Font Settings</Label>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Label className="text-xs w-12">Size:</Label>
@@ -553,7 +553,7 @@ export function SelectionToolbar({
                         onUpdateElement(selectedElement.id, { style: { ...selectedElement.style, fontWeight } })
                       }
                     }}
-                    className="h-6 text-xs border border-gray-300 rounded px-1"
+                    className="h-6 text-xs border border-border rounded px-1"
                   >
                     <option value="normal">Normal</option>
                     <option value="bold">Bold</option>
@@ -563,7 +563,7 @@ export function SelectionToolbar({
                 <div className="flex items-center gap-2">
                   <Label className="text-xs w-12">Color:</Label>
                   <div 
-                    className="w-6 h-6 border border-gray-300 rounded cursor-pointer"
+                    className="w-6 h-6 border border-border rounded cursor-pointer"
                     style={{ backgroundColor: elements[0]?.style?.color || '#000000' }}
                   />
                   <Input 
@@ -586,7 +586,7 @@ export function SelectionToolbar({
 
             {/* Border Settings */}
             <div className="p-3">
-              <Label className="text-xs font-medium text-gray-700 mb-2 block">Border</Label>
+              <Label className="text-xs font-medium text-foreground mb-2 block">Border</Label>
               <div className="space-y-3">
                 <MultiSideInput
                   label="Border Width"
@@ -693,7 +693,7 @@ export function SelectionToolbar({
                 <div className="flex items-center gap-2">
                   <Label className="text-xs w-12">Color:</Label>
                   <div 
-                    className="w-6 h-6 border border-gray-300 rounded cursor-pointer"
+                    className="w-6 h-6 border border-border rounded cursor-pointer"
                     style={{ backgroundColor: elements[0]?.style?.borderColor || '#000000' }}
                   />
                   <Input 
@@ -716,7 +716,7 @@ export function SelectionToolbar({
       </div>
 
       {/* Stroke (Border) Group - per side like Figma */}
-      <div className="flex items-center border-r border-gray-200 pr-2 mr-2">
+      <div className="flex items-center border-r border-border pr-2 mr-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 px-2" title="Stroke">
@@ -758,20 +758,20 @@ export function SelectionToolbar({
                 <div className="p-3 space-y-3">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <div className="text-[11px] text-gray-600 mb-1">Top Width</div>
-                      <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={getNum((bw as any).top)} onChange={(e)=>updateWidth('top', Number(e.target.value)||0)} />
+                      <div className="text-[11px] text-muted-foreground mb-1">Top Width</div>
+                      <input className="w-full h-7 border border-border rounded px-1 text-xs" type="number" value={getNum((bw as any).top)} onChange={(e)=>updateWidth('top', Number(e.target.value)||0)} />
                     </div>
                     <div>
-                      <div className="text-[11px] text-gray-600 mb-1">Right Width</div>
-                      <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={getNum((bw as any).right)} onChange={(e)=>updateWidth('right', Number(e.target.value)||0)} />
+                      <div className="text-[11px] text-muted-foreground mb-1">Right Width</div>
+                      <input className="w-full h-7 border border-border rounded px-1 text-xs" type="number" value={getNum((bw as any).right)} onChange={(e)=>updateWidth('right', Number(e.target.value)||0)} />
                     </div>
                     <div>
-                      <div className="text-[11px] text-gray-600 mb-1">Bottom Width</div>
-                      <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={getNum((bw as any).bottom)} onChange={(e)=>updateWidth('bottom', Number(e.target.value)||0)} />
+                      <div className="text-[11px] text-muted-foreground mb-1">Bottom Width</div>
+                      <input className="w-full h-7 border border-border rounded px-1 text-xs" type="number" value={getNum((bw as any).bottom)} onChange={(e)=>updateWidth('bottom', Number(e.target.value)||0)} />
                     </div>
                     <div>
-                      <div className="text-[11px] text-gray-600 mb-1">Left Width</div>
-                      <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={getNum((bw as any).left)} onChange={(e)=>updateWidth('left', Number(e.target.value)||0)} />
+                      <div className="text-[11px] text-muted-foreground mb-1">Left Width</div>
+                      <input className="w-full h-7 border border-border rounded px-1 text-xs" type="number" value={getNum((bw as any).left)} onChange={(e)=>updateWidth('left', Number(e.target.value)||0)} />
                     </div>
                   </div>
                   <div className="space-y-3">
@@ -831,7 +831,7 @@ export function SelectionToolbar({
       </div>
 
       {/* Layer Group */}
-      <div className="flex items-center border-r border-gray-200 pr-2 mr-2">
+      <div className="flex items-center border-r border-border pr-2 mr-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 px-2" title="Layer">

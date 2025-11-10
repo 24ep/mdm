@@ -395,7 +395,7 @@ export function DashboardScheduling({
       {/* Create/Edit Schedule Dialog */}
       {(showCreateDialog || editingSchedule) && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-background rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">
                 {editingSchedule ? 'Edit Schedule' : 'Create Schedule'}

@@ -508,7 +508,7 @@ export function StorageManagement() {
     if (mimeType.startsWith('text/') || mimeType === 'application/pdf') return <FileText className="h-5 w-5 text-red-500" />
     if (mimeType.includes('zip') || mimeType.includes('archive')) return <Archive className="h-5 w-5 text-yellow-500" />
     if (mimeType.startsWith('application/javascript') || mimeType.includes('code')) return <Code className="h-5 w-5 text-green-500" />
-    return <File className="h-5 w-5 text-gray-500" />
+    return <File className="h-5 w-5 text-muted-foreground" />
   }
 
   const filteredFiles = files.filter(file => 
@@ -521,10 +521,10 @@ export function StorageManagement() {
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-background">
       {/* Left Sidebar - Buckets & Sources */}
-      <div className="w-64 border-r bg-white dark:bg-gray-950 flex flex-col">
+      <div className="w-64 border-r bg-background flex flex-col">
         <div className="p-4 border-b">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Sources</h2>
+            <h2 className="text-sm font-semibold text-foreground">Sources</h2>
             <Button
               size="sm"
               variant="ghost"
@@ -539,7 +539,7 @@ export function StorageManagement() {
             size="sm"
             className={cn(
               "w-full justify-start mb-2",
-              !selectedBucket && selectedSourceType === 'all' && "bg-gray-100 dark:bg-gray-800 font-medium"
+              !selectedBucket && selectedSourceType === 'all' && "bg-muted font-medium"
             )}
             onClick={() => {
               setSelectedBucket(null)
@@ -573,20 +573,20 @@ export function StorageManagement() {
                 }}
                 className={cn(
                   "w-full text-left px-3 py-2 rounded-md text-sm transition-colors",
-                  "hover:bg-gray-100 dark:hover:bg-gray-800",
-                  selectedBucket === bucket.id && "bg-gray-100 dark:bg-gray-800 font-medium"
+                  "hover:bg-muted",
+                  selectedBucket === bucket.id && "bg-muted font-medium"
                 )}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <Folder className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                    <Folder className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     <span className="truncate">{bucket.name}</span>
                   </div>
                   {bucket.public && (
                     <Badge variant="outline" className="text-xs ml-2">Public</Badge>
                   )}
                 </div>
-                <div className="text-xs text-gray-500 mt-1 ml-6">
+                <div className="text-xs text-muted-foreground mt-1 ml-6">
                   {bucket.fileCount} files • {formatBytes(bucket.totalSize)}
                 </div>
               </button>
@@ -606,17 +606,17 @@ export function StorageManagement() {
                     }}
                     className={cn(
                       "w-full text-left px-3 py-2 rounded-md text-sm transition-colors",
-                      "hover:bg-gray-100 dark:hover:bg-gray-800",
+                      "hover:bg-muted",
                       !selectedBucket &&
                         selectedSourceType === connection.type &&
-                        "bg-gray-100 dark:bg-gray-800 font-medium"
+                        "bg-muted font-medium"
                     )}
                   >
                     <div className="flex items-center gap-2">
-                      <TypeIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                      <TypeIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                       <span className="truncate">{connection.name}</span>
                     </div>
-                    <div className="text-xs text-gray-500 mt-1 ml-6">
+                    <div className="text-xs text-muted-foreground mt-1 ml-6">
                       {typeInfo?.label || connection.type}
                     </div>
                   </button>
@@ -629,22 +629,22 @@ export function StorageManagement() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header Bar */}
-        <div className="border-b bg-white dark:bg-gray-950 px-6 py-4">
+        <div className="border-b bg-background px-6 py-4">
           <div className="flex items-center justify-between mb-4">
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-sm">
               <button
                 onClick={() => setCurrentPath([])}
-                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                className="text-muted-foreground hover:text-foreground"
               >
                 Storage
               </button>
               {breadcrumb.map((segment, index) => (
                 <div key={index} className="flex items-center gap-2">
-                  <ChevronRight className="h-4 w-4 text-gray-400" />
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   <button
                     onClick={() => setCurrentPath(breadcrumb.slice(1, index + 1))}
-                    className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                    className="text-muted-foreground hover:text-foreground"
                   >
                     {segment}
                   </button>
@@ -695,7 +695,7 @@ export function StorageManagement() {
           {/* Search and Filter */}
           <div className="flex items-center gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search files..."
                 value={searchTerm}
@@ -727,9 +727,9 @@ export function StorageManagement() {
           {!selectedBucket && files.length === 0 && !isLoading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
-                <HardDrive className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <HardDrive className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No files found</h3>
-                <p className="text-gray-500 mb-4">
+                <p className="text-muted-foreground mb-4">
                   {selectedSourceType === 'all'
                     ? 'Files from all storage sources will appear here'
                     : `No files found from ${selectedSourceType} sources`}
@@ -738,18 +738,18 @@ export function StorageManagement() {
             </div>
           ) : !selectedBucket && isLoading && files.length === 0 ? (
             <div className="flex items-center justify-center h-full">
-              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : selectedBucket && isLoading && files.length === 0 ? (
             <div className="flex items-center justify-center h-full">
-              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : filteredFiles.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
-                <Folder className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <Folder className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No files found</h3>
-                <p className="text-gray-500 mb-4">
+                <p className="text-muted-foreground mb-4">
                   {searchTerm ? 'Try a different search term' : 'Upload your first file to get started'}
                 </p>
                 {!searchTerm && (
@@ -776,7 +776,7 @@ export function StorageManagement() {
                             setSelectedFiles(new Set())
                           }
                         }}
-                        className="rounded border-gray-300"
+                        className="rounded border-border"
                       />
                     </TableHead>
                     <TableHead>Name</TableHead>
@@ -791,7 +791,7 @@ export function StorageManagement() {
                     return (
                     <TableRow
                       key={file.id}
-                      className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900"
+                      className="cursor-pointer hover:bg-muted"
                       onClick={(e) => {
                         // Don't open preview if clicking checkbox or menu
                         if ((e.target as HTMLElement).closest('input[type="checkbox"]') || 
@@ -820,7 +820,7 @@ export function StorageManagement() {
                             setSelectedFiles(newSelected)
                           }}
                           onClick={(e) => e.stopPropagation()}
-                          className="rounded border-gray-300"
+                          className="rounded border-border"
                         />
                       </TableCell>
                       <TableCell>
@@ -838,8 +838,8 @@ export function StorageManagement() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-gray-500">{isFolder ? '—' : formatBytes(file.size)}</TableCell>
-                      <TableCell className="text-gray-500">{formatDateTime(file.updatedAt)}</TableCell>
+                      <TableCell className="text-muted-foreground">{isFolder ? '—' : formatBytes(file.size)}</TableCell>
+                      <TableCell className="text-muted-foreground">{formatDateTime(file.updatedAt)}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
@@ -957,7 +957,7 @@ export function StorageManagement() {
                 return (
                 <div
                   key={file.id}
-                  className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer group relative"
+                  className="border rounded-lg p-4 hover:bg-muted cursor-pointer group relative"
                   onClick={(e) => {
                     // Don't open preview if clicking menu
                     if ((e.target as HTMLElement).closest('[role="menuitem"]')) {
@@ -970,7 +970,7 @@ export function StorageManagement() {
                     }
                   }}
                 >
-                  <div className="aspect-square mb-3 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded">
+                  <div className="aspect-square mb-3 flex items-center justify-center bg-muted rounded">
                     {file.mimeType?.startsWith('image/') && file.publicUrl ? (
                       <img
                         src={file.publicUrl}
@@ -987,7 +987,7 @@ export function StorageManagement() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{file.name}</p>
                       <div className="flex items-center gap-2">
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                           {isFolder ? 'Folder' : formatBytes(file.size)}
                         </p>
                         {(file as any).sourceName && (
@@ -1111,8 +1111,8 @@ export function StorageManagement() {
 
         {/* Selected Files Actions Bar */}
         {selectedFiles.size > 0 && (
-          <div className="border-t bg-white dark:bg-gray-950 px-6 py-3 flex items-center justify-between">
-            <span className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="border-t bg-background px-6 py-3 flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">
               {selectedFiles.size} file{selectedFiles.size > 1 ? 's' : ''} selected
             </span>
             <div className="flex items-center gap-2">
@@ -1158,13 +1158,13 @@ export function StorageManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <label className="text-sm font-medium">Public bucket</label>
-                <p className="text-xs text-gray-500">Anyone with the URL can access files</p>
+                <p className="text-xs text-muted-foreground">Anyone with the URL can access files</p>
               </div>
               <button
                 onClick={() => setIsPublicBucket(!isPublicBucket)}
                 className={cn(
                   "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
-                  isPublicBucket ? "bg-green-500" : "bg-gray-200"
+                  isPublicBucket ? "bg-green-500" : "bg-muted"
                 )}
               >
                 <span
@@ -1198,10 +1198,10 @@ export function StorageManagement() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="border-2 border-dashed rounded-lg p-8 text-center">
-              <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <label htmlFor="file-upload" className="cursor-pointer">
                 <span className="text-sm font-medium text-primary">Click to upload</span>
-                <span className="text-sm text-gray-500"> or drag and drop</span>
+                <span className="text-sm text-muted-foreground"> or drag and drop</span>
               </label>
               <input
                 id="file-upload"
@@ -1217,9 +1217,9 @@ export function StorageManagement() {
             {uploadFiles.length > 0 && (
               <div className="space-y-2">
                 {uploadFiles.map((file, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                  <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
                     <span className="text-sm">{file.name}</span>
-                    <span className="text-xs text-gray-500">{formatBytes(file.size)}</span>
+                    <span className="text-xs text-muted-foreground">{formatBytes(file.size)}</span>
                   </div>
                 ))}
               </div>
@@ -1340,44 +1340,44 @@ export function StorageManagement() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Name</label>
+                  <label className="text-sm font-medium text-muted-foreground">Name</label>
                   <p className="text-sm mt-1">{selectedFileForAction.name}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Size</label>
+                  <label className="text-sm font-medium text-muted-foreground">Size</label>
                   <p className="text-sm mt-1">{formatBytes(selectedFileForAction.size)}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">MIME Type</label>
+                  <label className="text-sm font-medium text-muted-foreground">MIME Type</label>
                   <p className="text-sm mt-1">{selectedFileForAction.mimeType || 'Unknown'}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Type</label>
+                  <label className="text-sm font-medium text-muted-foreground">Type</label>
                   <p className="text-sm mt-1">{selectedFileForAction.type || 'file'}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Path</label>
+                  <label className="text-sm font-medium text-muted-foreground">Path</label>
                   <p className="text-sm mt-1">{selectedFileForAction.path || 'Root'}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Bucket</label>
+                  <label className="text-sm font-medium text-muted-foreground">Bucket</label>
                   <p className="text-sm mt-1">{selectedFileForAction.bucketName}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Created</label>
+                  <label className="text-sm font-medium text-muted-foreground">Created</label>
                   <p className="text-sm mt-1">{formatDateTime(selectedFileForAction.createdAt)}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Last Modified</label>
+                  <label className="text-sm font-medium text-muted-foreground">Last Modified</label>
                   <p className="text-sm mt-1">{formatDateTime(selectedFileForAction.updatedAt)}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Uploaded By</label>
+                  <label className="text-sm font-medium text-muted-foreground">Uploaded By</label>
                   <p className="text-sm mt-1">{selectedFileForAction.uploadedByName || 'Unknown'}</p>
                 </div>
                 {selectedFileForAction.publicUrl && (
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Public URL</label>
+                    <label className="text-sm font-medium text-muted-foreground">Public URL</label>
                     <div className="flex items-center gap-2 mt-1">
                       <Input value={selectedFileForAction.publicUrl} readOnly className="text-xs" />
                       <Button
@@ -1413,7 +1413,7 @@ export function StorageManagement() {
               <div className="flex items-center justify-between">
                 <div>
                   <label className="text-sm font-medium">Public Access</label>
-                  <p className="text-xs text-gray-500">Allow public access via URL</p>
+                  <p className="text-xs text-muted-foreground">Allow public access via URL</p>
                 </div>
                 <button
                   onClick={async () => {
@@ -1426,7 +1426,7 @@ export function StorageManagement() {
                   }}
                   className={cn(
                     "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
-                    selectedFileForAction.publicUrl ? "bg-green-500" : "bg-gray-200"
+                    selectedFileForAction.publicUrl ? "bg-green-500" : "bg-muted"
                   )}
                 >
                   <span
@@ -1439,13 +1439,13 @@ export function StorageManagement() {
               </div>
               <div className="border-t pt-4">
                 <label className="text-sm font-medium mb-2 block">Access Control</label>
-                <p className="text-xs text-gray-500 mb-4">Fine-grained permissions coming soon</p>
+                <p className="text-xs text-muted-foreground mb-4">Fine-grained permissions coming soon</p>
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                  <div className="flex items-center justify-between p-2 bg-muted rounded">
                     <span className="text-sm">Owner</span>
                     <Badge variant="outline">Full Access</Badge>
                   </div>
-                  <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                  <div className="flex items-center justify-between p-2 bg-muted rounded">
                     <span className="text-sm">Space Members</span>
                     <Badge variant="outline">View</Badge>
                   </div>
@@ -1510,11 +1510,11 @@ export function StorageManagement() {
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium mb-2 block">Destination</label>
-              <p className="text-xs text-gray-500 mb-4">
+              <p className="text-xs text-muted-foreground mb-4">
                 Current location: {currentPath.length > 0 ? currentPath.join(' / ') : 'Root'}
               </p>
-              <div className="border rounded-lg p-4 bg-gray-50">
-                <p className="text-sm text-gray-500">Folder selection coming soon</p>
+              <div className="border rounded-lg p-4 bg-muted">
+                <p className="text-sm text-muted-foreground">Folder selection coming soon</p>
               </div>
             </div>
           </div>

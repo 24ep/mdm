@@ -230,16 +230,15 @@ export function useWorkflowRealtimeVoice({
             max_response_output_tokens: 4096,
           }
           
-          // For realtime voice, use prompt ID (not workflow)
-          // The prompt ID should be configured in the chatbot settings
-          if (chatbot?.openaiAgentSdkRealtimePromptId) {
-            sessionConfig.prompt = {
-              id: chatbot.openaiAgentSdkRealtimePromptId,
-              version: chatbot.openaiAgentSdkRealtimePromptVersion || '1',
-            }
-            console.log('Using Realtime API with prompt ID:', chatbot.openaiAgentSdkRealtimePromptId)
-          } else {
-            // Fallback to instructions if no prompt ID is provided
+          // Store prompt ID for sending after authentication
+          // According to OpenAI Realtime API docs, prompt should be sent via session.update event
+          // https://platform.openai.com/docs/guides/realtime-models-prompting
+          const promptId = chatbot?.openaiAgentSdkRealtimePromptId
+          const hasValidPromptId = promptId && typeof promptId === 'string' && promptId.trim().length > 0
+          
+          // Use instructions in initial session config if no prompt ID
+          // Prompt ID will be sent via session.update after auth.success
+          if (!hasValidPromptId) {
             sessionConfig.instructions = chatbot?.openaiAgentSdkInstructions || 'You are a helpful assistant.'
             console.warn('No prompt ID configured for Realtime Voice. Using instructions instead.')
           }
@@ -252,6 +251,10 @@ export function useWorkflowRealtimeVoice({
             apiKey: apiKey,
             sessionConfig,
           }))
+          
+          // Store prompt info for sending after auth
+          ;(ws as any)._pendingPromptId = hasValidPromptId ? promptId.trim() : null
+          ;(ws as any)._pendingPromptVersion = hasValidPromptId ? (chatbot.openaiAgentSdkRealtimePromptVersion || '1') : null
         }
         
         ws.onmessage = async (event) => {
@@ -266,6 +269,37 @@ export function useWorkflowRealtimeVoice({
             if (data.type === 'auth.success') {
               console.log('Authenticated with OpenAI Realtime API - connection ready')
               setIsConnected(true)
+              
+              // Send prompt ID via session.update event after authentication
+              // According to OpenAI Realtime API documentation:
+              // https://platform.openai.com/docs/guides/realtime-models-prompting
+              const pendingPromptId = (ws as any)._pendingPromptId
+              const pendingPromptVersion = (ws as any)._pendingPromptVersion
+              
+              if (pendingPromptId) {
+                console.log('📤 Sending prompt ID via session.update:', {
+                  id: pendingPromptId,
+                  version: pendingPromptVersion,
+                })
+                
+                // Send session.update event with prompt configuration
+                // Note: session.type is not needed in session.update - only the fields to update
+                ws.send(JSON.stringify({
+                  type: 'session.update',
+                  session: {
+                    prompt: {
+                      id: pendingPromptId,
+                      version: pendingPromptVersion || '1',
+                    },
+                  },
+                }))
+                
+                console.log('✅ Prompt ID sent to Realtime API:', {
+                  id: pendingPromptId,
+                  version: pendingPromptVersion || '1',
+                })
+              }
+              
               // Wait a bit more to ensure OpenAI WebSocket is fully ready
               await new Promise(resolve => setTimeout(resolve, 200))
               resolve(true)
@@ -274,7 +308,10 @@ export function useWorkflowRealtimeVoice({
             
             // Handle session update confirmation
             if (data.type === 'session.updated') {
-              console.log('Session configuration updated')
+              console.log('✅ Session configuration updated - prompt ID applied')
+              // Clear pending prompt info after successful update
+              delete (ws as any)._pendingPromptId
+              delete (ws as any)._pendingPromptVersion
             }
             
             // Handle connection closed

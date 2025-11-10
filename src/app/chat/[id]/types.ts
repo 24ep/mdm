@@ -123,10 +123,14 @@ export interface ChatbotConfig {
   // Start Screen Prompts (for Agent SDK and other engines)
   startScreenPrompts?: Array<{ label?: string; prompt: string; icon?: string }> // Quick prompt buttons shown when chat starts
   // Start Screen Prompts Styling
+  startScreenPromptsStyle?: 'list' | 'card' // Style type: list or card
   startScreenPromptsPosition?: 'center' | 'bottom' | 'list' // Position of prompts
   startScreenPromptsIconDisplay?: 'suffix' | 'show-all' | 'none' // How to display icons
   startScreenPromptsBackgroundColor?: string // Background color of prompt buttons
   startScreenPromptsFontColor?: string // Font color of prompt buttons
+  startScreenPromptsFontFamily?: string // Font family of prompt buttons
+  startScreenPromptsFontSize?: string // Font size of prompt buttons
+  startScreenPromptsPadding?: string // Padding of prompt buttons
   startScreenPromptsBorderColor?: string // Border color of prompt buttons
   startScreenPromptsBorderWidth?: string // Border width of prompt buttons
   startScreenPromptsBorderRadius?: string // Border radius of prompt buttons

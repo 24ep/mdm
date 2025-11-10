@@ -63,7 +63,7 @@ export function ReportsTreeViewWithDnD(props: ReportsTreeViewWithDnDProps) {
       <ReportsTreeView {...props} />
       <DragOverlay>
         {draggedItem && (
-          <div className="bg-white dark:bg-gray-800 p-2 rounded shadow-lg border">
+          <div className="bg-background p-2 rounded shadow-lg border">
             {draggedItem.type === 'report' && (
               <div className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />

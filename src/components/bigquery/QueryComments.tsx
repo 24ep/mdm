@@ -131,7 +131,7 @@ export function QueryComments({
   const lineComments = getCommentsByLine()
 
   return (
-    <div className={`fixed right-0 top-0 h-full w-96 bg-white border-l shadow-lg z-50 transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+    <div className={`fixed right-0 top-0 h-full w-96 bg-background border-l shadow-lg z-50 transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
       <div className="flex flex-col h-full">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
@@ -224,7 +224,7 @@ export function QueryComments({
                       <Badge variant="outline" className="text-xs">
                         Line {line}
                       </Badge>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-muted-foreground">
                         {comments.length} {comments.length === 1 ? 'comment' : 'comments'}
                       </span>
                     </div>
@@ -248,7 +248,7 @@ export function QueryComments({
           )}
 
           {comments.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
               <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p className="text-sm">No comments yet</p>
               <p className="text-xs mt-1">Add the first comment above</p>
@@ -307,9 +307,9 @@ function CommentItem({
           <>
             <div className="flex items-start justify-between mb-2">
               <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-gray-400" />
+                <User className="h-4 w-4 text-muted-foreground" />
                 <span className="text-xs font-medium">{comment.author}</span>
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-muted-foreground">
                   {formatTimeAgo(new Date(comment.createdAt))}
                 </span>
               </div>
@@ -334,7 +334,7 @@ function CommentItem({
                 </div>
               )}
             </div>
-            <p className="text-sm text-gray-700 whitespace-pre-wrap">{comment.content}</p>
+            <p className="text-sm text-foreground whitespace-pre-wrap">{comment.content}</p>
           </>
         )}
       </CardContent>

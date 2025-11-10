@@ -16,15 +16,36 @@ interface ChatKitIntegrationSectionProps {
 export function ChatKitIntegrationSection({ formData, setFormData }: ChatKitIntegrationSectionProps) {
   const engineType = (formData as any).engineType || 'custom'
   const isChatKitEngine = engineType === 'chatkit'
+  const isOpenAIAgentSDK = engineType === 'openai-agent-sdk'
   const isEnabled = formData.useChatKitInRegularStyle === true
+  const chatbotEnabled = (formData as any).chatbotEnabled !== false // Default to true
   
   return (
     <AccordionItem value="chatkit-integration" className="border-b px-4">
       <AccordionTrigger className="text-lg font-semibold hover:no-underline">
-        ChatKit Integration
+        {isOpenAIAgentSDK ? 'Chatbot Settings' : 'ChatKit Integration'}
       </AccordionTrigger>
       <AccordionContent className="pt-4 pb-6">
-        <SectionGroup title={isChatKitEngine ? "Use Regular Style UI" : "Enable ChatKit in Regular Style"} isFirst>
+        {isOpenAIAgentSDK && (
+          <SectionGroup title="Enable Chatbot" isFirst>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>Enable Chatbot Widget</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Turn the chatbot widget on or off. When disabled, the chatbot will not be displayed.
+                  </p>
+                </div>
+                <Switch 
+                  checked={chatbotEnabled} 
+                  onCheckedChange={(checked) => setFormData({ ...formData, chatbotEnabled: checked } as any)} 
+                />
+              </div>
+            </div>
+          </SectionGroup>
+        )}
+        
+        <SectionGroup title={isChatKitEngine ? "Use Regular Style UI" : "Enable ChatKit in Regular Style"} isFirst={!isOpenAIAgentSDK}>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-1">

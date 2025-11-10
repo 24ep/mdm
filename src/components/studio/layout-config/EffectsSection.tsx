@@ -85,7 +85,7 @@ export function EffectsSection({
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 w-7 p-0 flex-shrink-0 bg-gray-200 hover:bg-gray-300 rounded-[4px]"
+          className="h-7 w-7 p-0 flex-shrink-0 bg-muted hover:bg-muted/80 rounded-[4px]"
           onClick={() => updateProperty('shadow', !effectiveShadow)}
           title="Toggle Shadow"
         >

@@ -18,13 +18,18 @@ interface RegularStyleConfigProps {
 
 export function RegularStyleConfig({ formData, setFormData }: RegularStyleConfigProps) {
   const [accordionValue, setAccordionValue] = useState<string>('chat-window')
+  const engineType = (formData as any).engineType || 'custom'
+  const isOpenAIAgentSDK = engineType === 'openai-agent-sdk'
+  const chatkitOptions = (formData as any).chatkitOptions || {}
 
   return (
     <Accordion type="single" collapsible value={accordionValue} onValueChange={setAccordionValue} className="space-y-0">
       <ChatWindowSection formData={formData} setFormData={setFormData} />
       <WidgetButtonSection formData={formData} setFormData={setFormData} />
-      <ChatKitIntegrationSection formData={formData} setFormData={setFormData} />
-      <RegularHeaderSection formData={formData} setFormData={setFormData} />
+      {!isOpenAIAgentSDK && (
+        <ChatKitIntegrationSection formData={formData} setFormData={setFormData} />
+      )}
+      <RegularHeaderSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
       <MessagesSection formData={formData} setFormData={setFormData} />
       <RegularFooterSection formData={formData} setFormData={setFormData} />
       <StartScreenPromptsSection formData={formData} setFormData={setFormData} />

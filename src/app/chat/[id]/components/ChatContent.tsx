@@ -29,7 +29,7 @@ interface ChatContentProps {
   audioLevel?: number // Real-time audio level (0-100) for visualization
   onStartRecording: () => void
   onStopRecording: () => void
-  onToggleVoiceOutput: () => void
+  onToggleVoiceOutput?: () => void
   scrollAreaRef: React.RefObject<HTMLDivElement>
   messagesEndRef: React.RefObject<HTMLDivElement>
   currentTranscript?: string
@@ -131,7 +131,6 @@ export function ChatContent({
               isSpeaking={isSpeaking}
               onStartRecording={onStartRecording}
               onStopRecording={onStopRecording}
-              onToggleVoiceOutput={onToggleVoiceOutput}
               removeAttachment={removeAttachment}
             />
           </div>
@@ -211,7 +210,6 @@ export function ChatContent({
         isSpeaking={isSpeaking}
         onStartRecording={onStartRecording}
         onStopRecording={onStopRecording}
-        onToggleVoiceOutput={onToggleVoiceOutput}
         removeAttachment={removeAttachment}
       />
     </>

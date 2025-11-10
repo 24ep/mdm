@@ -41,7 +41,7 @@ export function ChatbotHeader({ formData, setFormData }: ChatbotHeaderProps) {
           value={formData.name || ''}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder="Agent name"
-          className="text-2xl font-bold h-auto py-0 border-none shadow-none focus-visible:ring-0 px-0 bg-white"
+          className="text-2xl font-bold h-auto py-0 border-none shadow-none focus-visible:ring-0 px-0 bg-background"
         />
         {formData.description ? (
           <p className="text-sm text-muted-foreground mt-1 truncate">{formData.description}</p>

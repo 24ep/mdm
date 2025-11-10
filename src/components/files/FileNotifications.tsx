@@ -239,9 +239,9 @@ export function FileNotifications({ spaceId }: FileNotificationsProps) {
       case 'processing':
         return 'text-blue-600'
       case 'backup':
-        return 'text-gray-600'
+        return 'text-muted-foreground'
       default:
-        return 'text-gray-600'
+        return 'text-muted-foreground'
     }
   }
 

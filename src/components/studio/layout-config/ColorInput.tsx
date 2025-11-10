@@ -137,7 +137,7 @@ export function ColorInput({
   placeholder,
   inputClassName,
 }: ColorInputProps) {
-  const defaultInputClassName = 'h-7 text-xs pl-7 w-full rounded-[2px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0'
+  const defaultInputClassName = 'h-7 text-xs pl-7 w-full rounded-[2px] bg-input border-0 focus:outline-none focus:ring-0 focus:border-0'
   const finalInputClassName = inputClassName || defaultInputClassName
 
   return (

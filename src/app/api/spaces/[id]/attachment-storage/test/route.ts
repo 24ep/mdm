@@ -4,8 +4,9 @@ import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { Client as MinioClient } from 'minio'
 import { S3Client, ListBucketsCommand } from '@aws-sdk/client-s3'
-import { Client as SftpClient } from 'ssh2-sftp-client'
-import { Client as FtpClient } from 'ftp'
+// Dynamic imports for optional dependencies
+let SftpClient: any
+let FtpClient: any
 
 export async function POST(
   request: NextRequest,
@@ -192,6 +193,12 @@ async function testSFTPConnection(config: any) {
       }
     }
 
+    // Dynamic import for optional dependency
+    if (!SftpClient) {
+      const sftpModule = await import('ssh2-sftp-client')
+      SftpClient = sftpModule.Client
+    }
+
     const sftp = new SftpClient()
     
     try {
@@ -246,6 +253,12 @@ async function testFTPConnection(config: any) {
         success: false,
         error: `Missing required fields: ${missingFields.join(', ')}`
       }
+    }
+
+    // Dynamic import for optional dependency
+    if (!FtpClient) {
+      const ftpModule = await import('ftp')
+      FtpClient = ftpModule.Client
     }
 
     return new Promise((resolve) => {

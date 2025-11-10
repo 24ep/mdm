@@ -277,7 +277,7 @@ export function DataVisualization({ data, columns, onUpdate, className }: DataVi
                   ref={canvasRef}
                   width={config.width}
                   height={config.height}
-                  className="border border-gray-200 rounded-lg"
+                  className="border border-border rounded-lg"
                 />
               </div>
             </CardContent>

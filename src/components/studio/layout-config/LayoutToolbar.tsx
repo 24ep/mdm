@@ -99,7 +99,7 @@ export function LayoutToolbar({
             onClick={onToggleDataModelPanel}
             className={`${isMobileViewport ? 'h-10 w-full' : 'h-8 px-3'} flex items-center gap-2 border-0 rounded-none ${
               showDataModelPanel ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : ''
-            } ${onOpenVersions && !isMobileViewport ? 'border-l border-gray-300 dark:border-gray-700' : ''}`}
+            } ${onOpenVersions && !isMobileViewport ? 'border-l border-border' : ''}`}
           >
             <Database className={isMobileViewport ? "h-5 w-5" : "h-4 w-4"} />
             <span className={isMobileViewport ? "text-sm" : "text-xs"}>Data Models</span>
@@ -111,7 +111,7 @@ export function LayoutToolbar({
           variant="ghost"
           size={isMobileViewport ? "default" : "sm"}
           onClick={() => setWidgetDrawerOpen(true)}
-          className={`${isMobileViewport ? 'h-10 w-full' : 'h-8 px-3'} flex items-center gap-2 border-0 rounded-none ${((onOpenVersions || onToggleDataModelPanel) && !isMobileViewport) ? 'border-l border-gray-300 dark:border-gray-700' : ''}`}
+          className={`${isMobileViewport ? 'h-10 w-full' : 'h-8 px-3'} flex items-center gap-2 border-0 rounded-none ${((onOpenVersions || onToggleDataModelPanel) && !isMobileViewport) ? 'border-l border-border' : ''}`}
         >
           <Box className={isMobileViewport ? "h-5 w-5" : "h-4 w-4"} />
           <span className={isMobileViewport ? "text-sm" : "text-xs"}>Widgets</span>
@@ -124,7 +124,7 @@ export function LayoutToolbar({
         />
         
         {/* Canvas Mode Group */}
-        <div className={`flex ${isMobileViewport ? 'flex-col gap-2 w-full' : 'items-center gap-0'} ${isMobileViewport ? 'mt-2' : ''} ${!isMobileViewport ? 'border-l border-gray-300 dark:border-gray-700' : ''}`}>
+        <div className={`flex ${isMobileViewport ? 'flex-col gap-2 w-full' : 'items-center gap-0'} ${isMobileViewport ? 'mt-2' : ''} ${!isMobileViewport ? 'border-l border-border' : ''}`}>
           {/* Canvas Mode Dropdown */}
           <div className={`flex ${isMobileViewport ? 'flex-col' : 'items-center'} gap-2 ${isMobileViewport ? '' : 'px-2'}`}>
             <span className={`${isMobileViewport ? 'text-sm' : 'text-xs'} whitespace-nowrap font-medium`}>Canvas Mode</span>
@@ -147,7 +147,7 @@ export function LayoutToolbar({
 
           {/* View Grid Dropdown */}
           <Select value={showGrid ? 'on' : 'off'} onValueChange={(value) => setShowGrid(value === 'on')}>
-            <SelectTrigger className={`${isMobileViewport ? 'h-10 w-full' : 'h-8 px-3'} border-0 rounded-none ${!isMobileViewport ? 'border-l border-gray-300 dark:border-gray-700' : ''} ${showGrid ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : ''}`}>
+            <SelectTrigger className={`${isMobileViewport ? 'h-10 w-full' : 'h-8 px-3'} border-0 rounded-none ${!isMobileViewport ? 'border-l border-border' : ''} ${showGrid ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : ''}`}>
               <div className="flex items-center gap-2 whitespace-nowrap">
                 {showGrid ? (
                   <Eye className={isMobileViewport ? "h-5 w-5" : "h-4 w-4"} />
@@ -178,7 +178,7 @@ export function LayoutToolbar({
             value={gridSize.toString()} 
             onValueChange={(value) => setGridSize(parseInt(value))}
           >
-            <SelectTrigger className={`${isMobileViewport ? 'h-10 w-full' : 'h-8 px-3'} flex items-center gap-2 border-0 rounded-none ${!isMobileViewport ? 'border-l border-gray-300 dark:border-gray-700' : ''}`}>
+            <SelectTrigger className={`${isMobileViewport ? 'h-10 w-full' : 'h-8 px-3'} flex items-center gap-2 border-0 rounded-none ${!isMobileViewport ? 'border-l border-border' : ''}`}>
               <Grid3x3 className={isMobileViewport ? "h-5 w-5" : "h-4 w-4"} />
               <span className={isMobileViewport ? "text-sm" : "text-xs"}>{gridSize}px</span>
             </SelectTrigger>
@@ -193,13 +193,13 @@ export function LayoutToolbar({
         </div>
 
         {/* Device Mode Group */}
-        <div className={`flex items-center ${isMobileViewport ? 'justify-center w-full' : 'gap-0'} ${isMobileViewport ? 'mt-2' : ''} ${!isMobileViewport ? 'border-l border-gray-300 dark:border-gray-700' : ''}`}>
+        <div className={`flex items-center ${isMobileViewport ? 'justify-center w-full' : 'gap-0'} ${isMobileViewport ? 'mt-2' : ''} ${!isMobileViewport ? 'border-l border-border' : ''}`}>
           <Button 
             variant="ghost" 
             size={isMobileViewport ? "default" : "sm"} 
             aria-label="Desktop" 
             onClick={() => { setDeviceMode('desktop'); setPreviewScale(1) }}
-            className={`${isMobileViewport ? 'h-10 flex-1' : 'h-8 px-3'} border-0 rounded-none ${deviceMode === 'desktop' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'bg-background hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+            className={`${isMobileViewport ? 'h-10 flex-1' : 'h-8 px-3'} border-0 rounded-none ${deviceMode === 'desktop' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'bg-background hover:bg-muted'}`}
           >
             <Monitor className={isMobileViewport ? "h-5 w-5" : "h-4 w-4"} />
           </Button>
@@ -208,7 +208,7 @@ export function LayoutToolbar({
             size={isMobileViewport ? "default" : "sm"} 
             aria-label="Tablet" 
             onClick={() => { setDeviceMode('tablet'); setPreviewScale(0.75) }}
-            className={`${isMobileViewport ? 'h-10 flex-1' : 'h-8 px-3'} border-0 rounded-none border-l border-gray-300 dark:border-gray-700 ${deviceMode === 'tablet' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'bg-background hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+            className={`${isMobileViewport ? 'h-10 flex-1' : 'h-8 px-3'} border-0 rounded-none border-l border-border ${deviceMode === 'tablet' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'bg-background hover:bg-muted'}`}
           >
             <Tablet className={isMobileViewport ? "h-5 w-5" : "h-4 w-4"} />
           </Button>
@@ -217,7 +217,7 @@ export function LayoutToolbar({
             size={isMobileViewport ? "default" : "sm"} 
             aria-label="Mobile" 
             onClick={() => { setDeviceMode('mobile'); setPreviewScale(0.5) }}
-            className={`${isMobileViewport ? 'h-10 flex-1' : 'h-8 px-3'} border-0 rounded-none border-l border-gray-300 dark:border-gray-700 ${deviceMode === 'mobile' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'bg-background hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+            className={`${isMobileViewport ? 'h-10 flex-1' : 'h-8 px-3'} border-0 rounded-none border-l border-border ${deviceMode === 'mobile' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'bg-background hover:bg-muted'}`}
           >
             <Smartphone className={isMobileViewport ? "h-5 w-5" : "h-4 w-4"} />
           </Button>

@@ -186,7 +186,7 @@ export function MemberManagementPanel({
         <CheckCircle className="h-4 w-4 text-green-500" /> : 
         <Clock className="h-4 w-4 text-yellow-500" />
     }
-    return <AlertTriangle className="h-4 w-4 text-gray-500" />
+    return <AlertTriangle className="h-4 w-4 text-muted-foreground" />
   }
 
   const [showInviteDialog, setShowInviteDialog] = useState(false)

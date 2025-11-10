@@ -167,7 +167,7 @@ export function StrokeSection({
             type="button"
             variant="ghost"
             size="sm"
-            className={`h-7 w-7 p-0 ${borderSides.top ? 'bg-gray-200' : 'bg-gray-100'} hover:bg-gray-300`}
+            className={`h-7 w-7 p-0 ${borderSides.top ? 'bg-muted' : 'bg-muted/50'} hover:bg-muted`}
             onClick={() => toggleBorderSide('top')}
             title="Top border"
           >
@@ -178,7 +178,7 @@ export function StrokeSection({
               type="button"
               variant="ghost"
               size="sm"
-              className={`h-7 w-7 p-0 ${borderSides.left ? 'bg-gray-200' : 'bg-gray-100'} hover:bg-gray-300`}
+              className={`h-7 w-7 p-0 ${borderSides.left ? 'bg-muted' : 'bg-muted/50'} hover:bg-muted`}
               onClick={() => toggleBorderSide('left')}
               title="Left border"
             >
@@ -188,7 +188,7 @@ export function StrokeSection({
               type="button"
               variant="ghost"
               size="sm"
-              className={`h-7 w-7 p-0 ${borderSides.right ? 'bg-gray-200' : 'bg-gray-100'} hover:bg-gray-300`}
+              className={`h-7 w-7 p-0 ${borderSides.right ? 'bg-muted' : 'bg-muted/50'} hover:bg-muted`}
               onClick={() => toggleBorderSide('right')}
               title="Right border"
             >
@@ -199,7 +199,7 @@ export function StrokeSection({
             type="button"
             variant="ghost"
             size="sm"
-            className={`h-7 w-7 p-0 ${borderSides.bottom ? 'bg-gray-200' : 'bg-gray-100'} hover:bg-gray-300`}
+            className={`h-7 w-7 p-0 ${borderSides.bottom ? 'bg-muted' : 'bg-muted/50'} hover:bg-muted`}
             onClick={() => toggleBorderSide('bottom')}
             title="Bottom border"
           >

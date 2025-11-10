@@ -157,7 +157,7 @@ export function AuditLogsAdvanced({ className }: AuditLogsAdvancedProps) {
       case 'UPDATE': return <Settings className="h-4 w-4 text-blue-600" />
       case 'DELETE': return <Database className="h-4 w-4 text-red-600" />
       case 'LOGIN': return <User className="h-4 w-4 text-purple-600" />
-      default: return <FileText className="h-4 w-4 text-gray-600" />
+      default: return <FileText className="h-4 w-4 text-muted-foreground" />
     }
   }
 
@@ -167,7 +167,7 @@ export function AuditLogsAdvanced({ className }: AuditLogsAdvancedProps) {
       case 'UPDATE': return 'bg-blue-100 text-blue-800'
       case 'DELETE': return 'bg-red-100 text-red-800'
       case 'LOGIN': return 'bg-purple-100 text-purple-800'
-      default: return 'bg-gray-100 text-gray-800'
+      default: return 'bg-muted text-foreground'
     }
   }
 
@@ -238,7 +238,7 @@ export function AuditLogsAdvanced({ className }: AuditLogsAdvancedProps) {
           <div className="space-y-4 mb-6">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 placeholder="Search audit logs..."
                 value={searchTerm}

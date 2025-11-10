@@ -8,11 +8,78 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { Rocket, Loader2, Code2 } from 'lucide-react'
+import { Rocket, Loader2 } from 'lucide-react'
 import { Chatbot } from '../types'
 import toast from 'react-hot-toast'
-import { WorkflowCodeModal } from './WorkflowCodeModal'
-import { WorkflowCodeValidationTable } from './WorkflowCodeValidationTable'
+
+// Workflow File Selector Component
+function WorkflowFileSelectorComponent({
+  formData,
+  setFormData,
+}: {
+  formData: Partial<Chatbot>
+  setFormData: React.Dispatch<React.SetStateAction<Partial<Chatbot>>>
+}) {
+  const [availableWorkflows, setAvailableWorkflows] = useState<Array<{ name: string; filename: string; path: string }>>([])
+  const [isLoadingWorkflows, setIsLoadingWorkflows] = useState(false)
+
+  useEffect(() => {
+    loadWorkflows()
+  }, [])
+
+  const loadWorkflows = async () => {
+    setIsLoadingWorkflows(true)
+    try {
+      const response = await fetch('/api/workflows/list')
+      if (response.ok) {
+        const data = await response.json()
+        setAvailableWorkflows(data.workflows || [])
+      } else {
+        console.error('Failed to load workflows')
+      }
+    } catch (error) {
+      console.error('Error loading workflows:', error)
+    } finally {
+      setIsLoadingWorkflows(false)
+    }
+  }
+
+  const selectedWorkflow = (formData as any).openaiAgentSdkWorkflowFile || 'qsncc-workflow'
+
+  return (
+    <div className="space-y-2 pt-2 border-t">
+      <Label>Workflow File *</Label>
+      <Select
+        value={selectedWorkflow}
+        onValueChange={(value) => {
+          setFormData({ ...formData, openaiAgentSdkWorkflowFile: value } as any)
+        }}
+        disabled={isLoadingWorkflows}
+      >
+        <SelectTrigger>
+          <SelectValue placeholder="Select a workflow file" />
+        </SelectTrigger>
+        <SelectContent>
+          {isLoadingWorkflows ? (
+            <SelectItem value="loading" disabled>Loading workflows...</SelectItem>
+          ) : availableWorkflows.length === 0 ? (
+            <SelectItem value="none" disabled>No workflows found</SelectItem>
+          ) : (
+            availableWorkflows.map((workflow) => (
+              <SelectItem key={workflow.name} value={workflow.name}>
+                {workflow.name}
+              </SelectItem>
+            ))
+          )}
+        </SelectContent>
+      </Select>
+      <p className="text-xs text-muted-foreground">
+        Select the workflow file from <code className="bg-muted px-1 rounded">src/lib/workflows</code> to use for this chatbot.
+        The workflow file must export a <code className="bg-muted px-1 rounded">runWorkflow</code> function.
+      </p>
+    </div>
+  )
+}
 
 interface OpenAIAgentSDKConfigProps {
   formData: Partial<Chatbot>
@@ -32,7 +99,6 @@ export function OpenAIAgentSDKConfig({
   const [configApiSupported, setConfigApiSupported] = useState<boolean | null>(null) // null = not checked yet, true = supported, false = not supported
   const [globalApiKeyExists, setGlobalApiKeyExists] = useState(false)
   const [isLoadingGlobalKey, setIsLoadingGlobalKey] = useState(false)
-  const [workflowCodeModalOpen, setWorkflowCodeModalOpen] = useState(false)
   
   const agentId = formData.openaiAgentSdkAgentId || ''
   const isWorkflow = agentId.startsWith('wf_')
@@ -296,6 +362,14 @@ export function OpenAIAgentSDKConfig({
         </div>
       </div>
 
+      {/* Workflow File Selection (for workflows only) */}
+      {isWorkflow && (
+        <WorkflowFileSelectorComponent
+          formData={formData}
+          setFormData={setFormData}
+        />
+      )}
+
       {/* Realtime Voice Prompt Configuration */}
       <div className="space-y-3 pt-2 border-t">
         <h5 className="text-sm font-medium">Realtime Voice Settings</h5>
@@ -328,56 +402,6 @@ export function OpenAIAgentSDKConfig({
           </p>
         </div>
       </div>
-
-      {/* Workflow Code from Agent Builder */}
-      {isWorkflow && (
-        <div className="space-y-3">
-          <div className="space-y-2">
-            <Label>Workflow Code (Optional - Paste from Agent Builder)</Label>
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setWorkflowCodeModalOpen(true)}
-                className="flex items-center gap-2"
-              >
-                <Code2 className="h-4 w-4" />
-                {((formData as any).openaiAgentSdkWorkflowCode || '').trim() 
-                  ? 'Edit Workflow Code' 
-                  : 'Add Workflow Code'}
-              </Button>
-              {((formData as any).openaiAgentSdkWorkflowCode || '').trim() && (
-                <span className="text-xs text-muted-foreground">
-                  Code is configured
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Paste the complete workflow code exported from Agent Builder. The platform will automatically replace variables like process.env.OPENAI_API_KEY with your actual API key.
-            </p>
-          </div>
-
-          {/* Validation Table - Only show if code exists */}
-          {((formData as any).openaiAgentSdkWorkflowCode || '').trim() && (
-            <WorkflowCodeValidationTable
-              code={(formData as any).openaiAgentSdkWorkflowCode || ''}
-              apiKey={formData.openaiAgentSdkApiKey}
-              workflowId={agentId}
-            />
-          )}
-
-          {/* Workflow Code Modal */}
-          <WorkflowCodeModal
-            value={(formData as any).openaiAgentSdkWorkflowCode || ''}
-            onChange={(value) => setFormData({ ...formData, openaiAgentSdkWorkflowCode: value } as any)}
-            apiKey={formData.openaiAgentSdkApiKey}
-            workflowId={agentId}
-            chatbotId={formData.id}
-            open={workflowCodeModalOpen}
-            onOpenChange={setWorkflowCodeModalOpen}
-          />
-        </div>
-      )}
 
       {/* Workflow configuration is automatically used in the background - no UI needed */}
       {false && isWorkflow && (

@@ -951,7 +951,7 @@ export function PerformanceTab({ chatbot }: PerformanceTabProps) {
                           <div className="flex items-center gap-2 mt-1">
                             {costForecast.trend === 'increasing' && <TrendingUpIcon className="h-5 w-5 text-red-500" />}
                             {costForecast.trend === 'decreasing' && <TrendingDown className="h-5 w-5 text-green-500" />}
-                            {costForecast.trend === 'stable' && <BarChart3 className="h-5 w-5 text-gray-500" />}
+                            {costForecast.trend === 'stable' && <BarChart3 className="h-5 w-5 text-muted-foreground" />}
                             <span className="text-lg font-semibold capitalize">{costForecast.trend}</span>
                           </div>
                           <div className="text-xs text-muted-foreground mt-1">

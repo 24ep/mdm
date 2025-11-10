@@ -357,7 +357,7 @@ echo "📊 Status: docker-compose ps"`
             <BookOpen className="h-8 w-8 text-blue-600" />
             Kernel Setup Guide
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-muted-foreground mt-2">
             Comprehensive guide to setting up remote kernel servers for notebook execution
           </p>
         </div>
@@ -429,7 +429,7 @@ echo "📊 Status: docker-compose ps"`
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-gray-600">
+              <p className="text-muted-foreground">
                 Kernel servers are remote execution environments that run your code in isolated, 
                 scalable containers. They provide the computational power for your notebook cells 
                 and can be shared across multiple users and projects.
@@ -438,7 +438,7 @@ echo "📊 Status: docker-compose ps"`
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-3">
                   <h4 className="font-semibold text-green-700">Benefits</h4>
-                  <ul className="space-y-2 text-sm text-gray-600">
+                  <ul className="space-y-2 text-sm text-muted-foreground">
                     <li className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-green-500" />
                       Scalable compute resources
@@ -464,7 +464,7 @@ echo "📊 Status: docker-compose ps"`
                 
                 <div className="space-y-3">
                   <h4 className="font-semibold text-blue-700">Use Cases</h4>
-                  <ul className="space-y-2 text-sm text-gray-600">
+                  <ul className="space-y-2 text-sm text-muted-foreground">
                     <li className="flex items-center gap-2">
                       <Code className="h-4 w-4 text-blue-500" />
                       Data science and analytics
@@ -565,7 +565,7 @@ echo "📊 Status: docker-compose ps"`
                 </Button>
               </div>
 
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="bg-muted p-4 rounded-lg">
                 <pre className="text-sm overflow-x-auto">
                   {setupScripts.python}
                 </pre>
@@ -635,7 +635,7 @@ echo "📊 Status: docker-compose ps"`
                 </Button>
               </div>
 
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="bg-muted p-4 rounded-lg">
                 <pre className="text-sm overflow-x-auto">
                   {setupScripts.r}
                 </pre>
@@ -705,7 +705,7 @@ echo "📊 Status: docker-compose ps"`
                 </Button>
               </div>
 
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="bg-muted p-4 rounded-lg">
                 <pre className="text-sm overflow-x-auto">
                   {setupScripts.julia}
                 </pre>
@@ -775,7 +775,7 @@ echo "📊 Status: docker-compose ps"`
                 </Button>
               </div>
 
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="bg-muted p-4 rounded-lg">
                 <pre className="text-sm overflow-x-auto">
                   {setupScripts.docker}
                 </pre>

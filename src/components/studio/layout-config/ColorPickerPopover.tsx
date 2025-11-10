@@ -670,13 +670,13 @@ export function ColorPickerPopover({
                       className={`h-6 w-6 rounded border-2 transition-all hover:scale-110 ${
                         solidColor.toLowerCase() === color.toLowerCase()
                           ? 'border-blue-500 ring-2 ring-blue-500/20'
-                          : 'border-gray-300 hover:border-gray-400'
+                          : 'border-border hover:border-primary/50'
                       }`}
                       style={{ backgroundColor: color }}
                       title={color}
                     >
                       {solidColor.toLowerCase() === color.toLowerCase() && (
-                        <div className="w-2 h-2 bg-white rounded-full mx-auto shadow-sm" />
+                        <div className="w-2 h-2 bg-background rounded-full mx-auto shadow-sm border border-border" />
                       )}
                     </button>
                   ))}
@@ -694,13 +694,13 @@ export function ColorPickerPopover({
                       className={`h-6 w-6 rounded border-2 transition-all hover:scale-110 ${
                         solidColor.toLowerCase() === color.toLowerCase()
                           ? 'border-blue-500 ring-2 ring-blue-500/20'
-                          : 'border-gray-300 hover:border-gray-400'
+                          : 'border-border hover:border-primary/50'
                       }`}
                       style={{ backgroundColor: color }}
                       title={color}
                     >
                       {solidColor.toLowerCase() === color.toLowerCase() && (
-                        <div className="w-2 h-2 bg-white rounded-full mx-auto shadow-sm" />
+                        <div className="w-2 h-2 bg-background rounded-full mx-auto shadow-sm border border-border" />
                       )}
                     </button>
                   ))}
@@ -718,13 +718,13 @@ export function ColorPickerPopover({
                       className={`h-6 w-6 rounded border-2 transition-all hover:scale-110 relative ${
                         solidColor.toLowerCase() === color.toLowerCase()
                           ? 'border-blue-500 ring-2 ring-blue-500/20'
-                          : 'border-gray-300 hover:border-gray-400'
+                          : 'border-border hover:border-primary/50'
                       }`}
                       style={{ backgroundColor: color }}
                       title={color}
                     >
                       {solidColor.toLowerCase() === color.toLowerCase() && (
-                        <div className="w-2 h-2 bg-white rounded-full mx-auto shadow-sm" />
+                        <div className="w-2 h-2 bg-background rounded-full mx-auto shadow-sm border border-border" />
                       )}
                       <Star className="absolute -top-1 -right-1 h-3 w-3 fill-yellow-400 text-yellow-400" />
                     </button>
@@ -746,7 +746,7 @@ export function ColorPickerPopover({
                           className={`h-5 w-5 rounded border transition-all hover:scale-110 ${
                             solidColor.toLowerCase() === color.toLowerCase()
                               ? 'border-blue-500 ring-1 ring-blue-500/50'
-                              : 'border-gray-300 hover:border-gray-400'
+                              : 'border-border hover:border-primary/50'
                           }`}
                           style={{ backgroundColor: color }}
                           title={color}
@@ -868,7 +868,7 @@ export function ColorPickerPopover({
                   step="0.01"
                   value={opacity}
                   onChange={(e) => handleOpacityChange(parseFloat(e.target.value))}
-                  className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                  className="flex-1 h-2 bg-muted rounded-lg appearance-none cursor-pointer"
                 />
                 <Input
                   type="number"
@@ -1019,7 +1019,7 @@ export function ColorPickerPopover({
                   type="text"
                   value={gradientValue}
                   readOnly
-                  className="h-8 text-xs bg-gray-50 font-mono"
+                  className="h-8 text-xs bg-muted font-mono"
                 />
               </div>
             </div>
@@ -1054,7 +1054,7 @@ export function ColorPickerPopover({
               <div className="space-y-1">
                 <Label className="text-xs">Preview</Label>
                 <div 
-                  className="w-full h-16 rounded border bg-white"
+                  className="w-full h-16 rounded border bg-background"
                   style={getPatternStyle(currentPattern)}
                 />
               </div>

@@ -19,7 +19,7 @@ COPY . .
 
 # Set default envs for build to avoid SSR failures during prerender
 # Note: PostgREST API URL (not Supabase)
-ENV NEXT_PUBLIC_API_URL="http://localhost:3001"
+ENV NEXT_PUBLIC_API_URL="http://localhost:8302"
 
 # Ensure public directory exists (some repos may not include it)
 RUN mkdir -p public
@@ -35,7 +35,7 @@ ENV NODE_ENV production
 # Uncomment the following line in case you want to disable telemetry during runtime.
 # ENV NEXT_TELEMETRY_DISABLED 1
 # Note: PostgREST API URL (not Supabase)
-ENV NEXT_PUBLIC_API_URL="http://localhost:3001"
+ENV NEXT_PUBLIC_API_URL="http://localhost:8302"
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs

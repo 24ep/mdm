@@ -131,7 +131,8 @@ function IconSelectCombobox({ value, onValueChange }: { value: string; onValueCh
                 return (
                   <CommandItem
                     key={option.value}
-                    value={option.value}
+                    value={option.label}
+                    keywords={[option.value.toLowerCase(), option.label.toLowerCase()]}
                     onSelect={() => {
                       onValueChange(option.value === 'none' ? '' : option.value)
                       setOpen(false)
@@ -187,43 +188,45 @@ export function ConfigTab({ formData, setFormData }: ConfigTabProps) {
 
   return (
     <div className="space-y-4 pt-4">
-      {/* Start Conversation / Opener Message */}
-      <div className="space-y-4 border-b pb-4">
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <Label>Show Start Conversation Message</Label>
-            <p className="text-xs text-muted-foreground">Display an initial greeting message when the chat opens</p>
-          </div>
-          <Switch
-            checked={(formData as any).showStartConversation !== false}
-            onCheckedChange={(checked) => setFormData({ ...formData, showStartConversation: checked } as any)}
-          />
-        </div>
-        
-        {(formData as any).showStartConversation !== false && (
-          <div className="space-y-2 pl-4 border-l-2 border-muted">
-            <Label>Start Conversation Message</Label>
-            <Textarea
-              value={formData.conversationOpener || (formData as any).openaiAgentSdkGreeting || ''}
-              onChange={(e) => {
-                const value = e.target.value
-                setFormData({ 
-                  ...formData, 
-                  conversationOpener: value,
-                  // Also update Agent SDK greeting if it's an Agent SDK chatbot
-                  ...(isAgentSDK && { openaiAgentSdkGreeting: value })
-                } as any)
-              }}
-              placeholder="Hello! How can I help you today?"
-              rows={3}
-              className="resize-none"
+      {/* Start Conversation / Opener Message (NOT for ChatKit - uses ChatKit configuration) */}
+      {!isChatKitEngine && (
+        <div className="space-y-4 border-b pb-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Show Start Conversation Message</Label>
+              <p className="text-xs text-muted-foreground">Display an initial greeting message when the chat opens</p>
+            </div>
+            <Switch
+              checked={(formData as any).showStartConversation !== false}
+              onCheckedChange={(checked) => setFormData({ ...formData, showStartConversation: checked } as any)}
             />
-            <p className="text-xs text-muted-foreground">
-              Initial message shown when the chat opens. For Agent SDK workflows, this may be overridden by the workflow configuration.
-            </p>
           </div>
-        )}
-      </div>
+          
+          {(formData as any).showStartConversation !== false && (
+            <div className="space-y-2 pl-4 border-l-2 border-muted">
+              <Label>Start Conversation Message</Label>
+              <Textarea
+                value={formData.conversationOpener || (formData as any).openaiAgentSdkGreeting || ''}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setFormData({ 
+                    ...formData, 
+                    conversationOpener: value,
+                    // Also update Agent SDK greeting if it's an Agent SDK chatbot
+                    ...(isAgentSDK && { openaiAgentSdkGreeting: value })
+                  } as any)
+                }}
+                placeholder="Hello! How can I help you today?"
+                rows={3}
+                className="resize-none"
+              />
+              <p className="text-xs text-muted-foreground">
+                Initial message shown when the chat opens. For Agent SDK workflows, this may be overridden by the workflow configuration.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Start Screen Prompts (for Agent SDK and other engines, NOT for ChatKit) */}
       {!isChatKitEngine && (
@@ -238,6 +241,17 @@ export function ConfigTab({ formData, setFormData }: ConfigTabProps) {
             {((formData as any).startScreenPrompts || []).map((prompt: { label?: string; prompt: string; icon?: string }, index: number) => (
               <div key={index} className="border rounded-lg p-3 space-y-2">
                 <div className="flex gap-2 items-start">
+                  <div className="space-y-1 w-32">
+                    <Label className="text-xs">Icon (optional)</Label>
+                    <IconSelectCombobox
+                      value={prompt.icon || 'none'}
+                      onValueChange={(value) => {
+                        const prompts = [...((formData as any).startScreenPrompts || [])]
+                        prompts[index] = { ...prompts[index], icon: value === 'none' ? undefined : value }
+                        setFormData({ ...formData, startScreenPrompts: prompts } as any)
+                      }}
+                    />
+                  </div>
                   <div className="flex-1 grid grid-cols-2 gap-2">
                     <div className="space-y-1">
                       <Label className="text-xs">Button Label</Label>
@@ -275,17 +289,6 @@ export function ConfigTab({ formData, setFormData }: ConfigTabProps) {
                   >
                     <X className="h-4 w-4" />
                   </Button>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Icon (optional)</Label>
-                  <IconSelectCombobox
-                    value={prompt.icon || 'none'}
-                    onValueChange={(value) => {
-                      const prompts = [...((formData as any).startScreenPrompts || [])]
-                      prompts[index] = { ...prompts[index], icon: value === 'none' ? undefined : value }
-                      setFormData({ ...formData, startScreenPrompts: prompts } as any)
-                    }}
-                  />
                 </div>
               </div>
             ))}
@@ -339,74 +342,78 @@ export function ConfigTab({ formData, setFormData }: ConfigTabProps) {
             onCheckedChange={(checked) => setFormData({ ...formData, enableFileUpload: checked })}
           />
         </div>
-        <div className="flex items-center justify-between">
-          <Label>Show Citations and Attributions</Label>
-          <Switch
-            checked={formData.showCitations}
-            onCheckedChange={(checked) => setFormData({ ...formData, showCitations: checked })}
-          />
-        </div>
-        <div className="space-y-4">
+        {!isChatKitEngine && !isAgentSDK && (
           <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Enable Voice Agent</Label>
-              <p className="text-xs text-muted-foreground">Allow users to interact via voice input and hear responses</p>
-            </div>
+            <Label>Show Citations and Attributions</Label>
             <Switch
-              checked={formData.enableVoiceAgent || false}
-              onCheckedChange={(checked) => setFormData({ ...formData, enableVoiceAgent: checked })}
+              checked={formData.showCitations}
+              onCheckedChange={(checked) => setFormData({ ...formData, showCitations: checked })}
             />
           </div>
-          
-          {formData.enableVoiceAgent && (
-            <div className="space-y-4 pl-4 border-l-2 border-muted">
-              <div className="space-y-2">
-                <Label>Voice Provider</Label>
-                <Select
-                  value={formData.voiceProvider || 'browser'}
-                  onValueChange={(value: 'browser' | 'openai-realtime' | 'agentbuilder') => setFormData({ ...formData, voiceProvider: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="browser">Browser Web Speech API</SelectItem>
-                    <SelectItem value="openai-realtime">OpenAI Realtime API</SelectItem>
-                    <SelectItem value="agentbuilder">Agent Builder Voice</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  {formData.voiceProvider === 'openai-realtime' 
-                    ? 'Uses OpenAI Realtime API for high-quality voice interactions (requires OpenAI API key)'
-                    : formData.voiceProvider === 'agentbuilder'
-                      ? 'Uses Agent Builder voice capabilities (requires Agent Builder engine)'
-                      : 'Uses browser built-in speech recognition and synthesis'}
-                </p>
+        )}
+        {!isChatKitEngine && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Enable Voice Agent</Label>
+                <p className="text-xs text-muted-foreground">Allow users to interact via voice input and hear responses</p>
               </div>
-              
-              <div className="space-y-2">
-                <Label>Voice UI Style</Label>
-                <Select
-                  value={formData.voiceUIStyle || 'chat'}
-                  onValueChange={(value: 'chat' | 'wave') => setFormData({ ...formData, voiceUIStyle: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="chat">Chat-like (Current)</SelectItem>
-                    <SelectItem value="wave">Wave Animation Background</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  {formData.voiceUIStyle === 'wave' 
-                    ? 'Shows wave animation in background with turn on/off voice button and subtitle'
-                    : 'Uses the current chat interface for voice interactions'}
-                </p>
-              </div>
+              <Switch
+                checked={formData.enableVoiceAgent || false}
+                onCheckedChange={(checked) => setFormData({ ...formData, enableVoiceAgent: checked })}
+              />
             </div>
-          )}
-        </div>
+            
+            {formData.enableVoiceAgent && (
+              <div className="space-y-4 pl-4 border-l-2 border-muted">
+                <div className="space-y-2">
+                  <Label>Voice Provider</Label>
+                  <Select
+                    value={formData.voiceProvider || 'browser'}
+                    onValueChange={(value: 'browser' | 'openai-realtime' | 'agentbuilder') => setFormData({ ...formData, voiceProvider: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="browser">Browser Web Speech API</SelectItem>
+                      <SelectItem value="openai-realtime">OpenAI Realtime API</SelectItem>
+                      <SelectItem value="agentbuilder">Agent Builder Voice</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {formData.voiceProvider === 'openai-realtime' 
+                      ? 'Uses OpenAI Realtime API for high-quality voice interactions (requires OpenAI API key)'
+                      : formData.voiceProvider === 'agentbuilder'
+                        ? 'Uses Agent Builder voice capabilities (requires Agent Builder engine)'
+                        : 'Uses browser built-in speech recognition and synthesis'}
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Voice UI Style</Label>
+                  <Select
+                    value={formData.voiceUIStyle || 'chat'}
+                    onValueChange={(value: 'chat' | 'wave') => setFormData({ ...formData, voiceUIStyle: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="chat">Chat-like (Current)</SelectItem>
+                      <SelectItem value="wave">Wave Animation Background</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {formData.voiceUIStyle === 'wave' 
+                      ? 'Shows wave animation in background with turn on/off voice button and subtitle'
+                      : 'Uses the current chat interface for voice interactions'}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {isChatKitEngine && (

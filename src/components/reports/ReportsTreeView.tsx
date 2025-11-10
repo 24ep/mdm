@@ -484,9 +484,9 @@ export function ReportsTreeView({
               className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
             >
               {isExpanded ? (
-                <ChevronDown className="h-4 w-4 text-gray-500" />
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
               ) : (
-                <ChevronRight className="h-4 w-4 text-gray-500" />
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
               )}
             </button>
           ) : (
@@ -508,7 +508,7 @@ export function ReportsTreeView({
             )
           )}
           {node.type === 'report' && (
-            <FileText className="h-4 w-4 text-gray-500" />
+            <FileText className="h-4 w-4 text-muted-foreground" />
           )}
 
           <span className="font-medium flex-1 truncate">{node.name}</span>
@@ -624,7 +624,7 @@ export function ReportsTreeView({
                     onClick={(e) => e.stopPropagation()}
                   />
                 )}
-                <FileText className="h-4 w-4 text-gray-500" />
+                <FileText className="h-4 w-4 text-muted-foreground" />
                 <span className="flex-1 truncate">{report.name}</span>
                 <div className="flex items-center gap-1">
                   <button

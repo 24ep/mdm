@@ -970,7 +970,7 @@ export function ChartRenderer({
                   const pct = max > 0 ? (v / max) : 0
                   return (
                     <div key={i} className="w-full">
-                      <div className="flex items-center justify-between text-xs text-gray-600 mb-1" style={{ fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.xAxis?.tickFontSize ?? 12) + 'px', color: config?.xAxis?.tickColor || '#6b7280' }}>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground mb-1" style={{ fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.xAxis?.tickFontSize ?? 12) + 'px', color: config?.xAxis?.tickColor || '#6b7280' }}>
                         <span>{formatLabelWithType(String(d[dimensions[0] || 'stage']), 'x')}</span>
                         <span>{formatNumber(v, measures[0], 'y')}</span>
                       </div>
@@ -1224,7 +1224,7 @@ export function ChartRenderer({
         const yFor = (lat: number) => (100 - ((lat + 90) / 180) * 100)
         return (
           <div className="w-full h-full p-2">
-            <div className="text-[10px] text-gray-400 mb-1" style={{ fontFamily: 'Roboto, sans-serif' }}>Projected plane (not geo-accurate)</div>
+            <div className="text-[10px] text-muted-foreground mb-1" style={{ fontFamily: 'Roboto, sans-serif' }}>Projected plane (not geo-accurate)</div>
             <svg viewBox="0 0 100 100" className="w-full h-full">
               <rect x="0" y="0" width="100" height="100" fill="#f8fafc" stroke="#e5e7eb" />
               {src.map((d, i) => {

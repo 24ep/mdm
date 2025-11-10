@@ -493,13 +493,4 @@ export class SystemSettingsORM {
   }
 }
 
-// Export all ORM classes
-export {
-  UserORM,
-  SpaceORM,
-  DataModelORM,
-  AttributeORM,
-  DataRecordORM,
-  NotificationORM,
-  SystemSettingsORM
-}
+// All ORM classes are already exported above as individual class exports

@@ -42,7 +42,7 @@ export function QueryValidation({ query, validation }: QueryValidationProps) {
 
       {/* Validation Panel */}
       {(validation.errors.length > 0 || validation.warnings.length > 0) && (
-        <div className="border-t border-gray-200 bg-gray-50 p-3">
+        <div className="border-t border-border bg-muted p-3">
           <div className="space-y-2">
             {validation.errors.length > 0 && (
               <div>

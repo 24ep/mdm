@@ -37,6 +37,15 @@ const nextConfig = {
         )
       )
     }
+    // Exclude native modules from webpack processing
+    config.externals = config.externals || []
+    if (isServer) {
+      config.externals.push({
+        'ssh2-sftp-client': 'commonjs ssh2-sftp-client',
+        'ftp': 'commonjs ftp',
+        'ssh2': 'commonjs ssh2'
+      })
+    }
     return config
   },
 }

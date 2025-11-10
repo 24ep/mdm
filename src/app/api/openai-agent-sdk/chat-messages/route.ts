@@ -188,7 +188,7 @@ export async function POST(request: NextRequest) {
     // Handle workflow requests
     if (isWorkflow) {
       try {
-        // Use static workflow from repository
+        // Handle workflow request (will use workflow code from chatbot config if available)
         return await handleWorkflowRequest({
           agentId,
           apiKey,
@@ -209,6 +209,7 @@ export async function POST(request: NextRequest) {
           chatbotId,
           spaceId,
           session,
+          useWorkflowConfig,
         })
       } catch (error) {
         console.error('OpenAI Agents SDK workflow error:', error)

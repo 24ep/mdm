@@ -118,7 +118,7 @@ export function SidebarBuilder({ items, config, onUpdate, onConfigUpdate }: Side
   const renderSidebarPreview = () => {
     return (
       <div 
-        className="w-full h-64 bg-white border rounded-lg p-4 space-y-2 overflow-auto"
+        className="w-full h-64 bg-background border rounded-lg p-4 space-y-2 overflow-auto"
         style={{ backgroundColor: config.backgroundColor, color: config.textColor }}
       >
         {items.filter(item => item.isVisible !== false).map(item => (

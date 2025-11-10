@@ -83,55 +83,32 @@ export function StartScreenSection({ formData, setFormData, chatkitOptions }: Se
               Add quick prompt buttons that appear when the chat starts. ChatKit supports <strong>label</strong> and <strong>prompt</strong> properties only.
             </p>
             <div className="p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded text-xs text-blue-800 dark:text-blue-200 mb-2">
-              <strong>Note:</strong> The "Name" field is stored but not currently supported by ChatKit API. "Icon" is supported but must be a valid ChatKitIcon value (e.g., "lightbulb", "star", "search", "bolt", etc.).
+              <strong>Note:</strong> "Icon" is supported but must be a valid ChatKitIcon value (e.g., "lightbulb", "star", "search", "bolt", etc.).
             </div>
             <div className="space-y-2">
               {(chatkitOptions?.startScreen?.prompts || []).map((prompt: { name?: string; label?: string; prompt: string; icon?: string }, index: number) => (
                 <div key={index} className="border rounded-lg p-3 space-y-2">
                   <div className="flex gap-2 items-start">
-                    <div className="flex-1 grid grid-cols-2 gap-2">
-                      <div className="space-y-1">
-                        <Label className="text-xs">Name (optional)</Label>
-                        <Input
-                          value={prompt.name || ''}
-                          onChange={(e) => {
-                            const prompts = [...(chatkitOptions?.startScreen?.prompts || [])]
-                            prompts[index] = { ...prompts[index], name: e.target.value }
-                            setFormData({
-                              ...formData,
-                              chatkitOptions: {
-                                ...chatkitOptions,
-                                startScreen: {
-                                  ...chatkitOptions?.startScreen,
-                                  prompts
-                                }
+                    <div className="flex-1 space-y-1">
+                      <Label className="text-xs">Label (optional)</Label>
+                      <Input
+                        value={prompt.label || ''}
+                        onChange={(e) => {
+                          const prompts = [...(chatkitOptions?.startScreen?.prompts || [])]
+                          prompts[index] = { ...prompts[index], label: e.target.value }
+                          setFormData({
+                            ...formData,
+                            chatkitOptions: {
+                              ...chatkitOptions,
+                              startScreen: {
+                                ...chatkitOptions?.startScreen,
+                                prompts
                               }
-                            } as any)
-                          }}
-                          placeholder="Name"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Label (optional)</Label>
-                        <Input
-                          value={prompt.label || ''}
-                          onChange={(e) => {
-                            const prompts = [...(chatkitOptions?.startScreen?.prompts || [])]
-                            prompts[index] = { ...prompts[index], label: e.target.value }
-                            setFormData({
-                              ...formData,
-                              chatkitOptions: {
-                                ...chatkitOptions,
-                                startScreen: {
-                                  ...chatkitOptions?.startScreen,
-                                  prompts
-                                }
-                              }
-                            } as any)
-                          }}
-                          placeholder="Button Label"
-                        />
-                      </div>
+                            }
+                          } as any)
+                        }}
+                        placeholder="Button Label"
+                      />
                     </div>
                     <Button
                       variant="ghost"

@@ -415,15 +415,15 @@ export function PlatformSidebar({
                   return (
                     <div key={groupId}>
                       {isDataManagement && index > 0 && (
-                        <div className="border-t border-gray-200 my-1 mx-2" />
+                        <div className="border-t border-border my-1 mx-2" />
                       )}
                     <Button
                       variant="ghost"
                       className={cn(
                           "w-full justify-center h-10 transition-colors duration-150",
                           (selectedGroup === groupId || (groupId === 'data-management' && activeTab === 'space-selection'))
-                           ? "bg-gray-200 text-gray-900 rounded-sm" 
-                          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-none"
+                           ? "bg-muted text-foreground rounded-sm" 
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground rounded-none"
                       )}
                       onClick={() => handleGroupClick(groupId)}
                       title={group.name}
@@ -446,27 +446,27 @@ export function PlatformSidebar({
                   return (
                     <div key={groupId}>
                       {isDataManagement && (
-                        <div className="border-t border-gray-200 my-2 mx-4" />
+                        <div className="border-t border-border my-2 mx-4" />
                       )}
                     <Button
                       variant="ghost"
                       className={cn(
                         "w-full justify-start text-sm font-medium h-10 px-4 transition-colors duration-150",
                           (selectedGroup === groupId || (groupId === 'data-management' && activeTab === 'space-selection'))
-                          ? "bg-gray-200 text-gray-900 rounded-sm" 
-                          : "text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-none"
+                          ? "bg-muted text-foreground rounded-sm" 
+                          : "text-foreground hover:bg-muted hover:text-foreground rounded-none"
                       )}
                       onClick={() => handleGroupClick(groupId)}
                     >
                       <Icon className="h-4 w-4 mr-3" />
                       <span className="flex-1 text-left">{group.name}</span>
                         {tabs && !isDataManagement && (
-                        <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
+                        <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
                           {tabs.length}
                         </span>
                       )}
                         {!isDataManagement && (
-                      <ChevronRight className="h-4 w-4 ml-2 text-gray-400" />
+                      <ChevronRight className="h-4 w-4 ml-2 text-muted-foreground" />
                         )}
                     </Button>
                     </div>
@@ -481,7 +481,7 @@ export function PlatformSidebar({
                 {/* Back button to deselect group */}
                 <Button
                   variant="ghost"
-                  className="w-full justify-start text-sm font-medium h-9 px-4 rounded-none mb-2 text-gray-600 hover:bg-gray-100"
+                  className="w-full justify-start text-sm font-medium h-9 px-4 rounded-none mb-2 text-muted-foreground hover:bg-muted"
                   onClick={() => onGroupSelect?.('')}
                 >
                   <ChevronRight className="h-4 w-4 mr-2 rotate-180" />
@@ -489,13 +489,13 @@ export function PlatformSidebar({
                 </Button>
                 
                 {/* Group header */}
-                <div className="px-4 py-2 mb-2 border-b border-gray-200">
+                <div className="px-4 py-2 mb-2 border-b border-border">
                   <div className="flex items-center gap-2">
                     {(() => {
                       const Icon = groupMetadata[selectedGroup as keyof typeof groupMetadata]?.icon
-                      return Icon ? <Icon className="h-4 w-4 text-gray-500" /> : null
+                      return Icon ? <Icon className="h-4 w-4 text-muted-foreground" /> : null
                     })()}
-                    <span className="text-sm font-semibold text-gray-900">
+                    <span className="text-sm font-semibold text-foreground">
                       {groupMetadata[selectedGroup as keyof typeof groupMetadata]?.name}
                     </span>
                   </div>
@@ -506,7 +506,7 @@ export function PlatformSidebar({
                   <>
                     {/* Management Section */}
                     <div className="px-4 py-2">
-                      <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                         Management
                       </div>
                       {groupedTabs.system
@@ -518,23 +518,23 @@ export function PlatformSidebar({
                             className={cn(
                               "w-full justify-start text-sm h-9 px-4 transition-colors duration-150",
                               activeTab === tab.id 
-                                ? "bg-gray-200 text-gray-900 rounded-sm" 
-                                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-none"
+                                ? "bg-muted text-foreground rounded-sm" 
+                                : "text-muted-foreground hover:bg-muted hover:text-foreground rounded-none"
                             )}
                             onClick={() => handleTabClick(tab.id, (tab as any).href)}
                           >
-                            <tab.icon className="h-4 w-4 mr-3 text-gray-500" />
+                            <tab.icon className="h-4 w-4 mr-3 text-muted-foreground" />
                             <span className="truncate">{tab.name}</span>
                           </Button>
                         ))}
                     </div>
                     
                     {/* Separator */}
-                    <div className="border-t border-gray-200 my-2 mx-4" />
+                    <div className="border-t border-border my-2 mx-4" />
                     
                     {/* Kernels Section */}
                     <div className="px-4 py-2">
-                      <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                         Kernels
                       </div>
                       {groupedTabs.system
@@ -546,23 +546,23 @@ export function PlatformSidebar({
                             className={cn(
                               "w-full justify-start text-sm h-9 px-4 transition-colors duration-150",
                               activeTab === tab.id 
-                                ? "bg-gray-200 text-gray-900 rounded-sm" 
-                                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-none"
+                                ? "bg-muted text-foreground rounded-sm" 
+                                : "text-muted-foreground hover:bg-muted hover:text-foreground rounded-none"
                             )}
                             onClick={() => handleTabClick(tab.id, (tab as any).href)}
                           >
-                            <tab.icon className="h-4 w-4 mr-3 text-gray-500" />
+                            <tab.icon className="h-4 w-4 mr-3 text-muted-foreground" />
                             <span className="truncate">{tab.name}</span>
                           </Button>
                         ))}
                     </div>
                     
                     {/* Separator */}
-                    <div className="border-t border-gray-200 my-2 mx-4" />
+                    <div className="border-t border-border my-2 mx-4" />
                     
                     {/* System Section */}
                     <div className="px-4 py-2">
-                      <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                         System
                       </div>
                       {groupedTabs.system
@@ -574,23 +574,23 @@ export function PlatformSidebar({
                             className={cn(
                               "w-full justify-start text-sm h-9 px-4 transition-colors duration-150",
                               activeTab === tab.id 
-                                ? "bg-gray-200 text-gray-900 rounded-sm" 
-                                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-none"
+                                ? "bg-muted text-foreground rounded-sm" 
+                                : "text-muted-foreground hover:bg-muted hover:text-foreground rounded-none"
                             )}
                             onClick={() => handleTabClick(tab.id, (tab as any).href)}
                           >
-                            <tab.icon className="h-4 w-4 mr-3 text-gray-500" />
+                            <tab.icon className="h-4 w-4 mr-3 text-muted-foreground" />
                             <span className="truncate">{tab.name}</span>
                           </Button>
                         ))}
                     </div>
                     
                     {/* Separator */}
-                    <div className="border-t border-gray-200 my-2 mx-4" />
+                    <div className="border-t border-border my-2 mx-4" />
                     
                     {/* Security Section */}
                     <div className="px-4 py-2">
-                      <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                         Security
                       </div>
                       {groupedTabs.system
@@ -602,23 +602,23 @@ export function PlatformSidebar({
                             className={cn(
                               "w-full justify-start text-sm h-9 px-4 transition-colors duration-150",
                               activeTab === tab.id 
-                                ? "bg-gray-200 text-gray-900 rounded-md" 
-                                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-none"
+                                ? "bg-muted text-foreground rounded-md" 
+                                : "text-muted-foreground hover:bg-muted hover:text-foreground rounded-none"
                             )}
                             onClick={() => handleTabClick(tab.id, (tab as any).href)}
                           >
-                            <tab.icon className="h-4 w-4 mr-3 text-gray-500" />
+                            <tab.icon className="h-4 w-4 mr-3 text-muted-foreground" />
                             <span className="truncate">{tab.name}</span>
                           </Button>
                         ))}
                     </div>
                     
                     {/* Separator */}
-                    <div className="border-t border-gray-200 my-2 mx-4" />
+                    <div className="border-t border-border my-2 mx-4" />
                     
                     {/* Integrations Section */}
                     <div className="px-4 py-2">
-                      <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                         Integrations
                       </div>
                       {groupedTabs.system
@@ -630,12 +630,12 @@ export function PlatformSidebar({
                     className={cn(
                       "w-full justify-start text-sm h-9 px-4 transition-colors duration-150",
                       activeTab === tab.id 
-                        ? "bg-gray-200 text-gray-900 rounded-sm" 
-                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-none"
+                        ? "bg-muted text-foreground rounded-sm" 
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground rounded-none"
                     )}
                     onClick={() => handleTabClick(tab.id, (tab as any).href)}
                   >
-                    <tab.icon className="h-4 w-4 mr-3 text-gray-500" />
+                    <tab.icon className="h-4 w-4 mr-3 text-muted-foreground" />
                     <span className="truncate">{tab.name}</span>
                   </Button>
                 ))}
@@ -646,7 +646,7 @@ export function PlatformSidebar({
                   <>
                     {Object.entries(toolSections).map(([sectionName, ids], sectionIndex) => (
                       <div key={sectionName} className="px-4 py-2">
-                        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                           {sectionName}
                         </div>
                         {groupedTabs.tools
@@ -658,17 +658,17 @@ export function PlatformSidebar({
                               className={cn(
                                 "w-full justify-start text-sm h-9 px-4 transition-colors duration-150",
                                 activeTab === tab.id 
-                                  ? "bg-gray-200 text-gray-900 rounded-sm" 
-                                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-none"
+                                  ? "bg-muted text-foreground rounded-sm" 
+                                  : "text-muted-foreground hover:bg-muted hover:text-foreground rounded-none"
                               )}
                               onClick={() => handleTabClick(tab.id, (tab as any).href)}
                             >
-                              <tab.icon className="h-4 w-4 mr-3 text-gray-500" />
+                              <tab.icon className="h-4 w-4 mr-3 text-muted-foreground" />
                               <span className="truncate">{tab.name}</span>
                             </Button>
                           ))}
                         {sectionIndex < Object.entries(toolSections).length - 1 && (
-                          <div className="border-t border-gray-200 my-2 mx-0" />
+                          <div className="border-t border-border my-2 mx-0" />
                         )}
                       </div>
                     ))}
@@ -682,12 +682,12 @@ export function PlatformSidebar({
                       className={cn(
                         "w-full justify-start text-sm h-9 px-4 transition-colors duration-150",
                         activeTab === tab.id 
-                          ? "bg-gray-200 text-gray-900 rounded-md" 
-                          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-none"
+                          ? "bg-muted text-foreground rounded-md" 
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground rounded-none"
                       )}
                       onClick={() => handleTabClick(tab.id, (tab as any).href)}
                     >
-                      <tab.icon className="h-4 w-4 mr-3 text-gray-500" />
+                      <tab.icon className="h-4 w-4 mr-3 text-muted-foreground" />
                       <span className="truncate">{tab.name}</span>
                     </Button>
                   ))

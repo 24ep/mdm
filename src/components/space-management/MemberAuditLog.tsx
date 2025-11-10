@@ -52,8 +52,8 @@ const ACTION_ICONS = {
   'permissions_updated': <Edit className="h-4 w-4 text-purple-500" />,
   'invitation_sent': <Mail className="h-4 w-4 text-orange-500" />,
   'invitation_accepted': <UserPlus className="h-4 w-4 text-green-500" />,
-  'space_accessed': <Clock className="h-4 w-4 text-gray-500" />,
-  'default': <AlertTriangle className="h-4 w-4 text-gray-500" />
+  'space_accessed': <Clock className="h-4 w-4 text-muted-foreground" />,
+  'default': <AlertTriangle className="h-4 w-4 text-muted-foreground" />
 }
 
 const ACTION_COLORS = {

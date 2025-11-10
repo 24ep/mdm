@@ -157,12 +157,18 @@ export default function ChatPage() {
   // OpenAI Realtime API voice
   const openaiRealtimeVoice = useOpenAIRealtimeVoice({
     chatbot: voiceProvider === 'openai-realtime' ? chatbot : null,
-    onTranscript: (transcript) => {
-      // For realtime voice, transcriptions show what the user said or what the AI is saying
-      // Update both input field and transcript display
-      setInput(transcript)
-      setCurrentTranscript(transcript) // Update transcript for VoiceWaveUI display
-      console.log('📝 Transcript updated:', transcript)
+    onTranscript: (transcript, isUserInput) => {
+      // For realtime voice, distinguish between user input and AI response
+      if (isUserInput) {
+        // User is speaking - update input field
+        setInput(transcript)
+        setCurrentTranscript(transcript) // Also show in VoiceWaveUI
+      } else {
+        // AI is responding - only show in VoiceWaveUI subtitle, not in input field
+        setCurrentTranscript(transcript)
+        // Don't update input field for AI responses
+      }
+      console.log('📝 Transcript updated:', transcript, isUserInput ? '(user)' : '(AI)')
     },
   })
 
@@ -280,6 +286,14 @@ export default function ChatPage() {
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     )
+  }
+
+  // Check if chatbot is enabled (default to true if not set)
+  const chatbotEnabled = (chatbot as any).chatbotEnabled !== false
+  
+  // If chatbot is disabled, don't render anything
+  if (!chatbotEnabled) {
+    return null
   }
 
   const chatStyle = getChatStyle(chatbot)
@@ -479,6 +493,7 @@ export default function ChatPage() {
             onDeleteThread={deleteThread}
             onUpdateThreadTitle={updateThreadTitle}
             isLoading={threadsLoading}
+            chatbot={chatbot}
           />
         )}
 
@@ -498,7 +513,7 @@ export default function ChatPage() {
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col overflow-hidden relative">
           {/* Top Bar with Menu and Preview Type */}
-          <div className="h-14 border-b bg-white/95 backdrop-blur-sm flex items-center justify-between px-4 z-10">
+          <div className="h-14 border-b bg-background/95 backdrop-blur-sm flex items-center justify-between px-4 z-10">
             <div className="flex items-center gap-2">
               {!threadManagementEnabled && !sidebarOpen && (
                 <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)} className="h-8 w-8 p-0">
@@ -556,7 +571,7 @@ export default function ChatPage() {
     >
       {/* Preview Type Selector - Fixed at top right (only show when not in iframe) */}
       {!isInIframe && (
-        <div className="fixed top-4 right-4 z-[10004] flex items-center gap-2 bg-white/90 backdrop-blur-sm border rounded-md p-2 shadow-lg">
+        <div className="fixed top-4 right-4 z-[10004] flex items-center gap-2 bg-background/90 backdrop-blur-sm border rounded-md p-2 shadow-lg">
           <Label className="text-xs whitespace-nowrap">Preview Type:</Label>
           <Select 
             value={previewDeploymentType} 

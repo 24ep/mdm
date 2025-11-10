@@ -56,6 +56,9 @@ export function PersonaPickerSection({ formData, setFormData, chatkitOptions }: 
                   Define different personas that users can select. Each persona can have a unique name, description, and system prompt.
                 </p>
                 <div className="space-y-2">
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded text-xs text-blue-800 dark:text-blue-200 mb-2">
+                    <strong>Note:</strong> Personas will automatically use the header avatar configuration (icon/image, colors) from the chat header settings.
+                  </div>
                   {personas.map((persona: { id?: string; name?: string; description?: string; systemPrompt?: string }, index: number) => (
                     <div key={index} className="border rounded-lg p-4 space-y-3">
                       <div className="flex items-start justify-between">

@@ -568,7 +568,7 @@ export function ChartDataSourceConfig({
                       <div className="space-y-1">
                         <Label className="text-[10px] text-muted-foreground">Date attribute</Label>
                         <select
-                          className="w-full rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
+                          className="w-full rounded-[2px] px-2 py-1 text-[11px] bg-input border-0 focus:outline-none focus:ring-0 focus:border-0"
                           value={dateRangeConfig.attribute || ''}
                           onChange={(e) => updateProperty('dateRangeConfig', { ...dateRangeConfig, attribute: e.target.value })}
                         >
@@ -584,7 +584,7 @@ export function ChartDataSourceConfig({
                             <Label className="text-[10px] text-muted-foreground">Start date</Label>
                             <input
                               type="date"
-                              className="w-full rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
+                              className="w-full rounded-[2px] px-2 py-1 text-[11px] bg-input border-0 focus:outline-none focus:ring-0 focus:border-0"
                               value={dateRangeConfig.startDate || ''}
                               onChange={(e) => updateProperty('dateRangeConfig', { ...dateRangeConfig, startDate: e.target.value })}
                             />
@@ -593,7 +593,7 @@ export function ChartDataSourceConfig({
                             <Label className="text-[10px] text-muted-foreground">End date</Label>
                             <input
                               type="date"
-                              className="w-full rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
+                              className="w-full rounded-[2px] px-2 py-1 text-[11px] bg-input border-0 focus:outline-none focus:ring-0 focus:border-0"
                               value={dateRangeConfig.endDate || ''}
                               onChange={(e) => updateProperty('dateRangeConfig', { ...dateRangeConfig, endDate: e.target.value })}
                             />
@@ -638,7 +638,7 @@ export function ChartDataSourceConfig({
                             <div className="flex items-center gap-2 justify-between">
                               <span className="text-muted-foreground">Font size</span>
                               <div className="relative w-32">
-                                <input type="number" className="w-32 rounded-[2px] px-2 py-1 pr-8 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" min={8} max={32} value={Number(dimensionStyle.fontSize ?? 12)} onChange={(e) => setDimensionStyle(dim.key, { fontSize: parseInt(e.target.value) || 12 })} />
+                                <input type="number" className="w-32 rounded-[2px] px-2 py-1 pr-8 text-[11px] bg-input border-0 focus:outline-none focus:ring-0 focus:border-0" min={8} max={32} value={Number(dimensionStyle.fontSize ?? 12)} onChange={(e) => setDimensionStyle(dim.key, { fontSize: parseInt(e.target.value) || 12 })} />
                                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
                               </div>
                             </div>
@@ -661,14 +661,14 @@ export function ChartDataSourceConfig({
                             <div className="flex items-center gap-2 justify-between">
                               <span className="text-muted-foreground">Padding</span>
                               <div className="relative w-32">
-                                <input type="number" className="w-32 rounded-[2px] px-2 py-1 pr-8 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" min={0} max={32} value={Number(dimensionStyle.padding ?? 4)} onChange={(e) => setDimensionStyle(dim.key, { padding: parseInt(e.target.value) || 4 })} />
+                                <input type="number" className="w-32 rounded-[2px] px-2 py-1 pr-8 text-[11px] bg-input border-0 focus:outline-none focus:ring-0 focus:border-0" min={0} max={32} value={Number(dimensionStyle.padding ?? 4)} onChange={(e) => setDimensionStyle(dim.key, { padding: parseInt(e.target.value) || 4 })} />
                                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
                               </div>
                             </div>
                             <div className="flex items-center gap-2 justify-between">
                               <span className="text-muted-foreground">Border width</span>
                               <div className="relative w-32">
-                                <input type="number" className="w-32 rounded-[2px] px-2 py-1 pr-8 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" min={0} max={10} value={Number(dimensionStyle.borderWidth ?? 1)} onChange={(e) => setDimensionStyle(dim.key, { borderWidth: parseInt(e.target.value) || 1 })} />
+                                <input type="number" className="w-32 rounded-[2px] px-2 py-1 pr-8 text-[11px] bg-input border-0 focus:outline-none focus:ring-0 focus:border-0" min={0} max={10} value={Number(dimensionStyle.borderWidth ?? 1)} onChange={(e) => setDimensionStyle(dim.key, { borderWidth: parseInt(e.target.value) || 1 })} />
                                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
                               </div>
                             </div>
@@ -684,7 +684,7 @@ export function ChartDataSourceConfig({
                               <>
                                 <div className="flex items-center gap-2 justify-between">
                                   <span className="text-muted-foreground">Text align</span>
-                                  <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" value={String(dimensionStyle.textAlign ?? 'left')} onChange={(e) => setDimensionStyle(dim.key, { textAlign: e.target.value })}>
+                                  <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-input border-0 focus:outline-none focus:ring-0 focus:border-0" value={String(dimensionStyle.textAlign ?? 'left')} onChange={(e) => setDimensionStyle(dim.key, { textAlign: e.target.value })}>
                                     <option value="left">Left</option>
                                     <option value="center">Center</option>
                                     <option value="right">Right</option>
@@ -692,7 +692,7 @@ export function ChartDataSourceConfig({
                                 </div>
                                 <div className="flex items-center gap-2 justify-between">
                                   <span className="text-muted-foreground">Number format</span>
-                                  <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" value={String(dimensionStyle.numberFormat ?? 'auto')} onChange={(e) => setDimensionStyle(dim.key, { numberFormat: e.target.value })}>
+                                  <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-input border-0 focus:outline-none focus:ring-0 focus:border-0" value={String(dimensionStyle.numberFormat ?? 'auto')} onChange={(e) => setDimensionStyle(dim.key, { numberFormat: e.target.value })}>
                                     <option value="auto">Auto</option>
                                     <option value="number">Number</option>
                                     <option value="percent">Percent</option>
@@ -875,7 +875,7 @@ export function ChartDataSourceConfig({
         </span>
         <button
           type="button"
-          className="px-2 py-1 text-[11px] rounded-[2px] bg-gray-100 dark:bg-gray-800 border-0 hover:bg-gray-200 dark:hover:bg-gray-700"
+          className="px-2 py-1 text-[11px] rounded-[2px] bg-input border-0 hover:bg-gray-200 dark:hover:bg-gray-700"
           onClick={() => setIsFilterDialogOpen(true)}
         >
           Edit filters
@@ -995,7 +995,7 @@ export function ChartDataSourceConfig({
             <div className="flex items-center gap-2 py-1" style={{ paddingLeft: `${indent}px` }}>
               <div className="flex items-center gap-2 flex-1 border rounded-[6px] p-2 bg-gray-50 dark:bg-gray-900">
                 <select
-                  className="min-w-[160px] rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
+                  className="min-w-[160px] rounded-[2px] px-2 py-1 text-[11px] bg-input border-0 focus:outline-none focus:ring-0 focus:border-0"
                   value={cond.attribute}
                   onChange={(e) => saveFilters(updateCondition(cond.id, 'attribute', e.target.value, parentGroup))}
                 >
@@ -1004,7 +1004,7 @@ export function ChartDataSourceConfig({
                   ))}
                 </select>
                 <select
-                  className="w-36 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
+                  className="w-36 rounded-[2px] px-2 py-1 text-[11px] bg-input border-0 focus:outline-none focus:ring-0 focus:border-0"
                   value={cond.operator}
                   onChange={(e) => saveFilters(updateCondition(cond.id, 'operator', e.target.value, parentGroup))}
                 >
@@ -1024,7 +1024,7 @@ export function ChartDataSourceConfig({
                 {!['is_null', 'is_not_null'].includes(cond.operator) && (
                   <input
                     type="text"
-                    className="min-w-[160px] rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
+                    className="min-w-[160px] rounded-[2px] px-2 py-1 text-[11px] bg-input border-0 focus:outline-none focus:ring-0 focus:border-0"
                     value={cond.value}
                     onChange={(e) => saveFilters(updateCondition(cond.id, 'value', e.target.value, parentGroup))}
                     placeholder="Value"
@@ -1046,7 +1046,7 @@ export function ChartDataSourceConfig({
             <div className="space-y-1" style={{ paddingLeft: `${indent}px` }}>
               <div className="flex items-center gap-2 border rounded-[6px] p-2 bg-blue-50 dark:bg-blue-900/20">
                 <select
-                  className="w-24 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0 font-semibold"
+                  className="w-24 rounded-[2px] px-2 py-1 text-[11px] bg-input border-0 focus:outline-none focus:ring-0 focus:border-0 font-semibold"
                   value={group.logic}
                   onChange={(e) => saveFilters(updateItem(group.id, { logic: e.target.value as FilterLogic }, parentGroup))}
                 >
@@ -1137,7 +1137,7 @@ export function ChartDataSourceConfig({
         <DialogFooter>
           <button
             type="button"
-            className="px-3 py-1.5 text-[12px] rounded-[2px] bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
+            className="px-3 py-1.5 text-[12px] rounded-[2px] bg-input hover:bg-gray-200 dark:hover:bg-gray-700"
             onClick={() => setIsFilterDialogOpen(false)}
           >
             Done

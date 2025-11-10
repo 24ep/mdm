@@ -94,7 +94,7 @@ export function ChatbotList({
                       <div className="flex flex-col">
                         <span className="font-medium">{chatbot.name}</span>
                         {chatbot.description && (
-                          <span className="text-xs text-gray-500 mt-0.5">{chatbot.description}</span>
+                          <span className="text-xs text-muted-foreground mt-0.5">{chatbot.description}</span>
                         )}
                       </div>
                     </div>
@@ -221,7 +221,7 @@ export function ChatbotList({
                   <div className="flex-1 min-w-0">
                     <CardTitle className="text-lg">{chatbot.name}</CardTitle>
                     {chatbot.description && (
-                      <p className="text-xs text-gray-500 mt-1">{chatbot.description}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{chatbot.description}</p>
                     )}
                     {chatbot.website && (
                       <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">

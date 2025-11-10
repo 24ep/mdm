@@ -10,7 +10,7 @@ import { DataSyncExecutor } from '@/lib/data-sync-executor'
  * Should be called periodically (every 5-15 minutes) via cron job.
  * 
  * Usage:
- * - Cron: */5 * * * * curl -X POST http://localhost:3000/api/automation/scheduler
+ * - Cron: 0,5,10,15,20,25,30,35,40,45,50,55 * * * * curl -X POST http://localhost:3000/api/automation/scheduler
  */
 export async function POST(request: NextRequest) {
   try {

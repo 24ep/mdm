@@ -15,7 +15,7 @@ interface VoiceWaveUIProps {
   audioLevel?: number // Real-time audio level (0-100) for visualization
   onStartRecording: () => void
   onStopRecording: () => void
-  onToggleVoiceOutput: () => void
+  onToggleVoiceOutput?: () => void
   transcript?: string
   messages?: Array<{ role: string; content: string }>
   showMessages?: boolean
@@ -45,7 +45,7 @@ export function VoiceWaveUI({
       onStopRecording()
     } else if (isVoiceOn) {
       setIsVoiceOn(false)
-      onToggleVoiceOutput()
+      onToggleVoiceOutput?.()
     } else {
       setIsVoiceOn(true)
       onStartRecording()

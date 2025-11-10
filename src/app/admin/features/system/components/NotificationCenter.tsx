@@ -228,7 +228,7 @@ export function NotificationCenter() {
       case 'pending':
         return <Clock className="h-4 w-4 text-yellow-500" />
       default:
-        return <AlertTriangle className="h-4 w-4 text-gray-500" />
+        return <AlertTriangle className="h-4 w-4 text-muted-foreground" />
     }
   }
 
@@ -243,7 +243,7 @@ export function NotificationCenter() {
       case 'webhook':
         return 'bg-purple-100 text-purple-800'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-muted text-foreground'
     }
   }
 

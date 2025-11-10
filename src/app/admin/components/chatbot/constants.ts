@@ -128,6 +128,7 @@ export const DEFAULT_CHATBOT_CONFIG: Partial<Chatbot> = {
   enableVoiceAgent: false,
   showMessageFeedback: false,
   showMessageRetry: false,
+  chatbotEnabled: true, // Enabled by default
   deploymentType: 'popover',
   widgetAvatarStyle: 'circle',
   widgetPosition: 'bottom-right',
@@ -346,6 +347,7 @@ export function createDefaultChatbot(name: string): Chatbot {
     enableFileUpload: false,
     showCitations: true,
     enableVoiceAgent: false,
+    chatbotEnabled: true, // Enabled by default
     deploymentType: 'popover',
     widgetAvatarStyle: 'circle',
     widgetPosition: 'bottom-right',

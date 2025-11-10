@@ -805,6 +805,28 @@ export default function SpaceSettingsPage() {
     }
   }
 
+  // Data sources list (from asset management system)
+  const [allDataSources] = useState([
+    {
+      id: 'postgres',
+      name: 'PostgreSQL',
+      description: 'Connect to a PostgreSQL database',
+      icon: '🐘'
+    },
+    {
+      id: 'mysql',
+      name: 'MySQL',
+      description: 'Connect to a MySQL database',
+      icon: '🗄️'
+    },
+    {
+      id: 'api',
+      name: 'REST API',
+      description: 'Connect to a REST API endpoint',
+      icon: '🔌'
+    }
+  ])
+
   // filteredDatabaseTypes is computed from allDataSources (which uses asset management system)
   const filteredDatabaseTypes = useMemo(() => {
     return allDataSources.filter(db => 

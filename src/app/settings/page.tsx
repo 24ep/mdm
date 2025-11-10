@@ -7,7 +7,7 @@ import { useSpace } from '@/contexts/space-context'
 import SpacesManager from './components/SpacesManager'
 import { EnhancedUserManagement } from './components/EnhancedUserManagement'
 import toast from 'react-hot-toast'
-import { MainLayout } from '@/components/layout/main-layout'
+import { MainLayout as MainLayoutComponent } from '@/components/layout/main-layout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -902,7 +902,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <MainLayout>
+    <MainLayoutComponent>
       <Tabs defaultValue="system" orientation="vertical" className="flex h-full">
         {/* Left Sidebar */}
         <div className="w-72 bg-card flex flex-col border-r">
@@ -1329,7 +1329,7 @@ export default function SettingsPage() {
                     {dataModelsLoading ? (
                       <div className="text-center py-8">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-                        <p className="mt-2 text-sm text-gray-600">Loading data models...</p>
+                        <p className="mt-2 text-sm text-muted-foreground">Loading data models...</p>
                       </div>
                     ) : dataModelsError ? (
                       <div className="text-center py-8">
@@ -1345,7 +1345,7 @@ export default function SettingsPage() {
                       </div>
                     ) : filteredDataModels.length === 0 ? (
                       <div className="text-center py-8">
-                        <p className="text-gray-600">No models yet</p>
+                        <p className="text-muted-foreground">No models yet</p>
                         <div className="mt-4 space-y-2">
                           <Button onClick={handleCreateDataModel} className="mr-2">
                             Create Your First Data Model
@@ -1645,7 +1645,7 @@ export default function SettingsPage() {
       {showDataModelDrawer && (
         <div className="fixed inset-0 z-50">
           <div className="fixed inset-0 bg-black/50" onClick={() => setShowDataModelDrawer(false)} style={{ zIndex: Z_INDEX.overlay }} />
-          <div className="fixed right-0 top-0 h-screen w-[960px] bg-white shadow-2xl flex flex-col" style={{ zIndex: Z_INDEX.drawer }}>
+          <div className="fixed right-0 top-0 h-screen w-[960px] bg-background shadow-2xl flex flex-col" style={{ zIndex: Z_INDEX.drawer }}>
             <div className="flex items-center justify-between border-b p-4">
               <h2 className="text-lg font-semibold">{editingDataModel ? 'Edit Data Model' : 'Create New Data Model'}</h2>
               <Button variant="ghost" size="sm" onClick={() => setShowDataModelDrawer(false)}>
@@ -1710,7 +1710,7 @@ export default function SettingsPage() {
                           value={dataModelForm.description}
                           onChange={(e) => setDataModelForm({ ...dataModelForm, description: e.target.value })}
                           placeholder="Enter description (optional)"
-                          className="w-full p-3 border border-gray-300 rounded-md resize-vertical min-h-[120px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full p-3 border border-border rounded-md resize-vertical min-h-[120px] focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                           rows={4}
                         />
                       </div>
@@ -2141,7 +2141,7 @@ export default function SettingsPage() {
                   </div>
                 </TabsContent>
               </Tabs>
-              <div className="flex justify-end space-x-2 p-4 border-t flex-shrink-0 bg-white">
+              <div className="flex justify-end space-x-2 p-4 border-t flex-shrink-0 bg-background">
                 <Button variant="outline" onClick={() => setShowDataModelDrawer(false)}>Cancel</Button>
                 <Button onClick={handleSaveDataModel}>{editingDataModel ? 'Save Changes' : 'Create Data Model'}</Button>
               </div>
@@ -2160,7 +2160,7 @@ export default function SettingsPage() {
           />
           
           {/* Drawer */}
-          <div className="fixed right-0 top-0 h-screen w-[800px] flex flex-col bg-white shadow-xl">
+          <div className="fixed right-0 top-0 h-screen w-[800px] flex flex-col bg-background shadow-xl">
             <div className="flex items-center justify-between border-b p-4">
               <h2 className="text-lg font-semibold">Manage Attributes - {selectedDataModel?.name}</h2>
               <Button
@@ -2298,7 +2298,7 @@ export default function SettingsPage() {
       {showAttributeDetail && (
         <div className="fixed inset-0" style={{ zIndex: Z_INDEX.modal }}>
           <div className="fixed inset-0 bg-black/50" onClick={() => setShowAttributeDetail(false)} />
-          <div className="fixed right-0 top-0 h-screen w-[800px] bg-white shadow-2xl flex flex-col">
+          <div className="fixed right-0 top-0 h-screen w-[800px] bg-background shadow-2xl flex flex-col">
             <div className="flex items-center justify-between border-b p-4 flex-shrink-0">
               <h2 className="text-lg font-semibold">Attribute Details - {editingAttribute?.display_name || 'New Attribute'}</h2>
               <Button
@@ -2361,7 +2361,7 @@ export default function SettingsPage() {
                       value={attributeForm.description}
                       onChange={(e) => setAttributeForm({ ...attributeForm, description: e.target.value })}
                       placeholder="Describe this attribute"
-                      className="flex-1 p-2 border border-gray-300 rounded-md resize-vertical min-h-[80px]"
+                      className="flex-1 p-2 border border-border rounded-md resize-vertical min-h-[80px]"
                       rows={3}
                     />
                   </div>
@@ -2573,7 +2573,7 @@ export default function SettingsPage() {
 
                         {/* Preview Section */}
                         <div className="space-y-2">
-                          <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                          <div className="text-sm text-muted-foreground bg-muted p-2 rounded">
                             <strong>Preview:</strong> {attributeForm.auto_increment_prefix}{String(attributeForm.auto_increment_start).padStart(attributeForm.auto_increment_padding, '0')}{attributeForm.auto_increment_suffix}
                           </div>
                           <div className="text-xs text-gray-500 mt-1">
@@ -2880,7 +2880,7 @@ export default function SettingsPage() {
                   </div>
                 </TabsContent>
               </Tabs>
-              <div className="flex justify-end space-x-2 p-4 border-t flex-shrink-0 bg-white">
+              <div className="flex justify-end space-x-2 p-4 border-t flex-shrink-0 bg-background">
                 <Button variant="outline" onClick={() => setShowAttributeDetail(false)}>
                 Cancel
               </Button>
@@ -2951,6 +2951,6 @@ export default function SettingsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </MainLayout>
+    </MainLayoutComponent>
   )
 }

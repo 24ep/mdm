@@ -4,7 +4,7 @@ import { ChatbotConfig } from '../types'
 
 interface UseOpenAIRealtimeVoiceProps {
   chatbot: ChatbotConfig | null
-  onTranscript: (transcript: string) => void
+  onTranscript: (transcript: string, isUserInput?: boolean) => void
   onAudioChunk?: (audioData: ArrayBuffer) => void
 }
 
@@ -37,22 +37,49 @@ export function useOpenAIRealtimeVoice({
   const currentTranscriptRef = useRef('') // Track current transcript for accumulation
   const audioChunksReceivedRef = useRef(0) // Track how many audio chunks we've received from AI
 
+  // Track previous prompt ID to detect changes
+  const previousPromptIdRef = useRef<string | null | undefined>(null)
+
   useEffect(() => {
     // When voice is enabled, connect and keep connection open for continuous conversation
     if (chatbot?.enableVoiceAgent && chatbot?.voiceProvider === 'openai-realtime') {
       setIsVoiceEnabled(true)
-      // Auto-connect when voice is enabled to keep session open
-      if (!isConnected && !wsRef.current) {
+      
+      // Check if prompt ID has changed or become available
+      const currentPromptId = chatbot?.openaiAgentSdkRealtimePromptId
+      const hasValidPromptId = currentPromptId && typeof currentPromptId === 'string' && currentPromptId.trim().length > 0
+      const previousPromptId = previousPromptIdRef.current
+      const promptIdChanged = currentPromptId !== previousPromptId
+      
+      // If prompt ID changed from empty to valid, or changed to a different ID, reconnect
+      if (promptIdChanged && hasValidPromptId && wsRef.current && isConnected) {
+        console.log('🔄 Prompt ID changed or became available, reconnecting to use new prompt:', {
+          previous: previousPromptId,
+          current: currentPromptId,
+        })
+        disconnect()
+        // Small delay before reconnecting to ensure cleanup
+        setTimeout(() => {
+          connectWebSocket().catch((error) => {
+            console.error('Failed to reconnect WebSocket after prompt ID change:', error)
+          })
+        }, 500)
+      } else if (!isConnected && !wsRef.current) {
+        // Auto-connect when voice is enabled to keep session open
         connectWebSocket().catch((error) => {
           console.error('Failed to auto-connect WebSocket:', error)
         })
       }
+      
+      // Update previous prompt ID
+      previousPromptIdRef.current = currentPromptId
     } else {
       setIsVoiceEnabled(false)
       // Only disconnect if voice is explicitly disabled
       if (chatbot?.enableVoiceAgent === false) {
         disconnect()
       }
+      previousPromptIdRef.current = null
     }
 
     return () => {
@@ -62,7 +89,7 @@ export function useOpenAIRealtimeVoice({
         disconnect()
       }
     }
-  }, [chatbot?.enableVoiceAgent, chatbot?.voiceProvider])
+  }, [chatbot?.enableVoiceAgent, chatbot?.voiceProvider, chatbot?.openaiAgentSdkRealtimePromptId, isConnected])
 
   // Define playAudioChunk function early so it can be used in message handlers
   const playAudioChunk = async (audioData: ArrayBuffer) => {
@@ -252,21 +279,29 @@ export function useOpenAIRealtimeVoice({
           }
           
           console.log('📋 Session configuration:', JSON.stringify(sessionConfig, null, 2))
+          console.log('📋 Chatbot config for voice:', {
+            hasChatbot: !!chatbot,
+            promptId: chatbot?.openaiAgentSdkRealtimePromptId,
+            promptVersion: chatbot?.openaiAgentSdkRealtimePromptVersion,
+            instructions: chatbot?.openaiAgentSdkInstructions,
+          })
           
-          // Use prompt ID if provided (best practice for Realtime API)
-          if (chatbot?.openaiAgentSdkRealtimePromptId) {
-            sessionConfig.prompt = {
-              id: chatbot.openaiAgentSdkRealtimePromptId,
-              version: chatbot.openaiAgentSdkRealtimePromptVersion || '1',
-            }
-            console.log('📋 Using Realtime API with prompt ID:', {
-              id: chatbot.openaiAgentSdkRealtimePromptId,
-              version: chatbot.openaiAgentSdkRealtimePromptVersion || '1',
-            })
-          } else {
-            // Fallback to instructions if no prompt ID is provided
+          // Store prompt ID for sending after authentication
+          // According to OpenAI Realtime API docs, prompt should be sent via session.update event
+          const promptId = chatbot?.openaiAgentSdkRealtimePromptId
+          const hasValidPromptId = promptId && typeof promptId === 'string' && promptId.trim().length > 0
+          
+          // Use instructions in initial session config if no prompt ID
+          // Prompt ID will be sent via session.update after auth.success
+          if (!hasValidPromptId) {
             sessionConfig.instructions = chatbot?.openaiAgentSdkInstructions || 'You are a helpful assistant.'
-            console.warn('⚠️ No prompt ID configured for Realtime Voice. Using instructions instead.')
+            console.warn('⚠️ No valid prompt ID configured for Realtime Voice. Using instructions instead.')
+            console.warn('⚠️ Prompt ID check:', {
+              promptId,
+              hasPromptId: !!promptId,
+              isString: typeof promptId === 'string',
+              isNonEmpty: promptId && promptId.trim().length > 0,
+            })
             console.warn('⚠️ For best results, configure a Realtime Voice Prompt ID in chatbot settings.')
           }
           
@@ -275,6 +310,10 @@ export function useOpenAIRealtimeVoice({
             apiKey: apiKey,
             sessionConfig,
           }))
+          
+          // Store prompt info for sending after auth
+          ;(ws as any)._pendingPromptId = hasValidPromptId ? promptId.trim() : null
+          ;(ws as any)._pendingPromptVersion = hasValidPromptId ? (chatbot.openaiAgentSdkRealtimePromptVersion || '1') : null
         }
         
         ws.onmessage = async (event) => {
@@ -308,6 +347,37 @@ export function useOpenAIRealtimeVoice({
                 console.log('✅ Authenticated with OpenAI Realtime API - session open for continuous conversation')
                 isConnectedRef.current = true
                 setIsConnected(true)
+                
+                // Send prompt ID via session.update event after authentication
+                // According to OpenAI Realtime API documentation:
+                // https://platform.openai.com/docs/guides/realtime-models-prompting
+                const pendingPromptId = (ws as any)._pendingPromptId
+                const pendingPromptVersion = (ws as any)._pendingPromptVersion
+                
+                if (pendingPromptId) {
+                  console.log('📤 Sending prompt ID via session.update:', {
+                    id: pendingPromptId,
+                    version: pendingPromptVersion,
+                  })
+                  
+                  // Send session.update event with prompt configuration
+                  // Note: session.type is not needed in session.update - only the fields to update
+                  ws.send(JSON.stringify({
+                    type: 'session.update',
+                    session: {
+                      prompt: {
+                        id: pendingPromptId,
+                        version: pendingPromptVersion || '1',
+                      },
+                    },
+                  }))
+                  
+                  console.log('✅ Prompt ID sent to Realtime API:', {
+                    id: pendingPromptId,
+                    version: pendingPromptVersion || '1',
+                  })
+                }
+                
                 resolve(true)
               }
               return
@@ -331,7 +401,10 @@ export function useOpenAIRealtimeVoice({
           
             // Handle session update confirmation
             if (data.type === 'session.updated') {
-              console.log('Session configuration updated')
+              console.log('✅ Session configuration updated - prompt ID applied')
+              // Clear pending prompt info after successful update
+              delete (ws as any)._pendingPromptId
+              delete (ws as any)._pendingPromptVersion
             }
             
             // Handle connection closed
@@ -363,7 +436,7 @@ export function useOpenAIRealtimeVoice({
                   console.log('👤 User said:', data.transcript)
                   currentTranscriptRef.current = data.transcript
                   if (onTranscript) {
-                    onTranscript(data.transcript)
+                    onTranscript(data.transcript, true) // true = user input
                   }
                 }
                 break
@@ -374,7 +447,7 @@ export function useOpenAIRealtimeVoice({
                   console.log('👤 User transcript delta:', data.delta)
                   currentTranscriptRef.current += data.delta
                   if (onTranscript) {
-                    onTranscript(currentTranscriptRef.current)
+                    onTranscript(currentTranscriptRef.current, true) // true = user input
                   }
                 }
                 break
@@ -387,7 +460,7 @@ export function useOpenAIRealtimeVoice({
                   // Accumulate AI response transcript
                   currentTranscriptRef.current += data.delta
                   if (onTranscript) {
-                    onTranscript(currentTranscriptRef.current)
+                    onTranscript(currentTranscriptRef.current, false) // false = AI response
                   }
                 }
                 break
@@ -398,26 +471,7 @@ export function useOpenAIRealtimeVoice({
                   console.log('💬 AI response transcript done:', data.transcript)
                   currentTranscriptRef.current = data.transcript
                   if (onTranscript) {
-                    onTranscript(data.transcript)
-                  }
-                }
-                break
-              
-              // Handle text response (if text modality is used)
-              case 'response.text.delta':
-                if (data.delta) {
-                  console.log('AI text response delta:', data.delta)
-                  if (onTranscript) {
-                    onTranscript(data.delta)
-                  }
-                }
-                break
-              
-              case 'response.text.done':
-                if (data.text) {
-                  console.log('AI text response done:', data.text)
-                  if (onTranscript) {
-                    onTranscript(data.text)
+                    onTranscript(data.transcript, false) // false = AI response
                   }
                 }
                 break
@@ -429,10 +483,12 @@ export function useOpenAIRealtimeVoice({
                 setIsSpeaking(true)
                 // Reset audio chunk counter for this response
                 audioChunksReceivedRef.current = 0
+                // Clear processed chunks set to prevent duplicates
+                processedAudioChunksRef.current.clear()
                 // Clear previous transcript when new response starts
                 currentTranscriptRef.current = ''
                 if (onTranscript) {
-                  onTranscript('')
+                  onTranscript('', false) // false = AI response (clearing)
                 }
                 console.log('🎙️ Response generation started', data)
                 break
@@ -440,9 +496,19 @@ export function useOpenAIRealtimeVoice({
               case 'response.audio.delta':
                 // Handle audio chunks - play immediately
                 // The delta contains base64-encoded PCM16 audio data
-                console.log('🔊 Received response.audio.delta, length:', data.delta?.length || 0)
                 if (data.delta) {
                   try {
+                    // Create a unique hash for this chunk to prevent duplicates
+                    const chunkHash = `${data.delta.substring(0, 20)}_${data.delta.length}`
+                    
+                    // Skip if this chunk was already processed
+                    if (processedAudioChunksRef.current.has(chunkHash)) {
+                      return
+                    }
+                    
+                    // Mark as processed
+                    processedAudioChunksRef.current.add(chunkHash)
+                    
                     // Decode base64 to get the raw audio bytes
                     const base64Audio = data.delta
                     const binaryString = atob(base64Audio)
@@ -454,17 +520,6 @@ export function useOpenAIRealtimeVoice({
                     // The audio is already in PCM16 format (Int16)
                     // Convert Uint8Array to Int16Array buffer
                     const audioData = audioBytes.buffer
-                    
-                    // Log first few chunks to verify decoding
-                    if (audioChunksSentRef.current < 5 || audioChunksSentRef.current % 50 === 0) {
-                      console.log('🔊 Decoded audio chunk:', {
-                        chunkNumber: audioChunksSentRef.current + 1,
-                        base64Length: base64Audio.length,
-                        binaryLength: binaryString.length,
-                        audioBytesLength: audioBytes.length,
-                        audioDataLength: audioData.byteLength,
-                      })
-                    }
                     
                     // Play audio automatically
                     playAudioChunk(audioData)
@@ -478,8 +533,6 @@ export function useOpenAIRealtimeVoice({
                       deltaType: typeof data.delta,
                     })
                   }
-                } else {
-                  console.warn('⚠️ response.audio.delta received but data.delta is empty')
                 }
                 break
               

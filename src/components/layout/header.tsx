@@ -21,6 +21,7 @@ import { Bell, Search, Settings, LogOut, User as UserIcon, Moon, Sun, Monitor } 
 import { AnimatedIcon } from '@/components/ui/animated-icon'
 import { NotificationBell } from '@/components/notifications/notification-bell'
 import { SystemSettingsModal } from '@/components/settings/SystemSettingsModal'
+import { ProfileSettingsModal } from '@/components/settings/ProfileSettingsModal'
 
 interface HeaderProps {
   user: {
@@ -34,6 +35,7 @@ interface HeaderProps {
 export function Header({ user }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [showSettingsModal, setShowSettingsModal] = useState(false)
+  const [showProfileModal, setShowProfileModal] = useState(false)
   const router = useRouter()
   const { theme, setTheme } = useTheme()
 
@@ -91,28 +93,15 @@ export function Header({ user }: HeaderProps) {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/profile">
-                <UserIcon className="mr-2 h-4 w-4" />
-                <span>Profile Settings</span>
-              </Link>
+            <DropdownMenuItem 
+              onSelect={(e) => {
+                e.preventDefault()
+                setShowProfileModal(true)
+              }}
+            >
+              <UserIcon className="mr-2 h-4 w-4" />
+              <span>Profile Settings</span>
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel>Theme</DropdownMenuLabel>
-            <DropdownMenuRadioGroup value={theme || 'system'} onValueChange={setTheme}>
-              <DropdownMenuRadioItem value="light">
-                <Sun className="mr-2 h-4 w-4" />
-                <span>Light</span>
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="dark">
-                <Moon className="mr-2 h-4 w-4" />
-                <span>Dark</span>
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="system">
-                <Monitor className="mr-2 h-4 w-4" />
-                <span>System</span>
-              </DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut}>
               <LogOut className="mr-2 h-4 w-4" />
@@ -125,6 +114,11 @@ export function Header({ user }: HeaderProps) {
       <SystemSettingsModal 
         open={showSettingsModal} 
         onOpenChange={setShowSettingsModal} 
+      />
+      <ProfileSettingsModal 
+        open={showProfileModal} 
+        onOpenChange={setShowProfileModal}
+        user={user}
       />
     </header>
   )

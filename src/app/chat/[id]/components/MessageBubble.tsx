@@ -5,6 +5,37 @@ import { ThumbsUp, ThumbsDown, RotateCcw, Bot, User } from 'lucide-react'
 import * as Icons from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Message, ChatbotConfig } from '../types'
+import { MarkdownRenderer } from '@/components/knowledge-base/MarkdownRenderer'
+
+// Component to convert URLs in plain text to clickable links
+function LinkifiedText({ content }: { content: string }) {
+  // URL regex pattern
+  const urlRegex = /(https?:\/\/[^\s]+)/g
+  
+  // Split content by URLs and convert URLs to anchor tags
+  const parts = content.split(urlRegex)
+  
+  return (
+    <p className="text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere">
+      {parts.map((part, index) => {
+        if (urlRegex.test(part)) {
+          return (
+            <a
+              key={index}
+              href={part}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 dark:text-blue-400 underline hover:underline"
+            >
+              {part}
+            </a>
+          )
+        }
+        return <span key={index}>{part}</span>
+      })}
+    </p>
+  )
+}
 
 interface MessageBubbleProps {
   message: Message
@@ -155,6 +186,9 @@ export function MessageBubble({
               : 'rounded-bl-none'
           }`}
           style={{
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word',
+            wordBreak: 'break-word',
             // Apply conversation opener styling if this is the opener message
             ...(message.id === 'opener' ? {
               fontSize: (chatbot as any).conversationOpenerFontSize || chatbot.fontSize,
@@ -258,7 +292,13 @@ export function MessageBubble({
             </div>
           )}
           {message.content && (
-            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+            message.role === 'assistant' ? (
+              <div className="text-sm break-words overflow-wrap-anywhere prose prose-sm max-w-none dark:prose-invert [&_p]:whitespace-pre-wrap [&_p]:mb-2 [&_a]:text-blue-600 [&_a]:dark:text-blue-400 [&_a]:underline [&_a]:hover:underline">
+                <MarkdownRenderer content={message.content} />
+              </div>
+            ) : (
+              <LinkifiedText content={message.content} />
+            )
           )}
           {message.citations && message.citations.length > 0 && (
             <div className="mt-2 pt-2 border-t" style={{ borderColor: chatbot.borderColor }}>

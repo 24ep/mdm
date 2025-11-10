@@ -260,8 +260,8 @@ export function DashboardCollaboration({
     switch (status) {
       case 'online': return 'bg-green-500'
       case 'away': return 'bg-yellow-500'
-      case 'offline': return 'bg-gray-400'
-      default: return 'bg-gray-400'
+      case 'offline': return 'bg-muted'
+      default: return 'bg-muted'
     }
   }
 
@@ -269,8 +269,8 @@ export function DashboardCollaboration({
     switch (role) {
       case 'owner': return 'bg-purple-100 text-purple-800'
       case 'editor': return 'bg-blue-100 text-blue-800'
-      case 'viewer': return 'bg-gray-100 text-gray-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'viewer': return 'bg-muted text-foreground'
+      default: return 'bg-muted text-foreground'
     }
   }
 
@@ -418,7 +418,7 @@ export function DashboardCollaboration({
             <CardContent>
               <div className="space-y-4">
                 {comments.map((comment) => (
-                  <div key={comment.id} className={`p-4 border rounded-lg ${comment.resolved ? 'bg-gray-50' : ''}`}>
+                  <div key={comment.id} className={`p-4 border rounded-lg ${comment.resolved ? 'bg-muted' : ''}`}>
                     <div className="flex items-start justify-between">
                       <div className="flex items-center space-x-2">
                         <Avatar className="h-8 w-8">

@@ -327,7 +327,7 @@ export function APIKeyManagement() {
   const getStatusBadge = (status: string, isConfigured: boolean) => {
     if (!isConfigured) {
       return (
-        <Badge variant="outline" className="bg-gray-100 text-gray-600">
+        <Badge variant="outline" className="bg-muted text-muted-foreground">
           <AlertCircle className="h-3 w-3 mr-1" />
           Not Configured
         </Badge>
@@ -358,7 +358,7 @@ export function APIKeyManagement() {
         )
       default:
         return (
-          <Badge variant="outline" className="bg-gray-100 text-gray-600">
+          <Badge variant="outline" className="bg-muted text-muted-foreground">
             <AlertCircle className="h-3 w-3 mr-1" />
             Inactive
           </Badge>

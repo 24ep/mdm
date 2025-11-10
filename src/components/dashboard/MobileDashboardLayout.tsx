@@ -60,9 +60,9 @@ export function MobileDashboardLayout({
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
+    <div className="h-screen flex flex-col bg-background">
       {/* Mobile Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+      <div className="bg-background border-b border-border px-4 py-3 flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <Button
             variant="ghost"
@@ -75,7 +75,7 @@ export function MobileDashboardLayout({
           <div>
             <h1 className="text-lg font-semibold truncate">{title}</h1>
             {subtitle && (
-              <p className="text-sm text-gray-500 truncate">{subtitle}</p>
+              <p className="text-sm text-muted-foreground truncate">{subtitle}</p>
             )}
           </div>
         </div>
@@ -110,7 +110,7 @@ export function MobileDashboardLayout({
 
       {/* Mobile Menu Overlay */}
       {showMobileMenu && (
-        <div className="absolute top-16 right-4 z-50 bg-white border border-gray-200 rounded-lg shadow-lg p-4 min-w-[200px]">
+        <div className="absolute top-16 right-4 z-50 bg-background border border-border rounded-lg shadow-lg p-4 min-w-[200px]">
           <div className="space-y-2">
             <Button
               variant="ghost"
@@ -197,7 +197,7 @@ export function MobileDashboardLayout({
 
       {/* Mobile Bottom Navigation (for very small screens) */}
       {isMobile && (
-        <div className="bg-white border-t border-gray-200 px-4 py-2">
+        <div className="bg-background border-t border-border px-4 py-2">
           <div className="flex items-center justify-around">
             <Button
               variant="ghost"

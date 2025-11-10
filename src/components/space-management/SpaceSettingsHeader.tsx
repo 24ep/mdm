@@ -29,7 +29,7 @@ export function SpaceSettingsHeader({
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
-            <Settings className="h-6 w-6 text-gray-600 dark:text-gray-400" />
+            <Settings className="h-6 w-6 text-muted-foreground" />
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               {spaceName}
             </h1>
@@ -57,7 +57,7 @@ export function SpaceSettingsHeader({
             )}
           </div>
           {spaceDescription && (
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground">
               {spaceDescription}
             </p>
           )}

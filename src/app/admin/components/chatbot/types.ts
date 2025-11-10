@@ -201,6 +201,7 @@ export interface Chatbot {
   openaiAgentSdkPlaceholder?: string // Input placeholder text for Agent SDK
   openaiAgentSdkBackgroundColor?: string // Background color for Agent SDK chat UI
   openaiAgentSdkWorkflowCode?: string // Custom workflow code from Agent Builder (pasted by user)
+  openaiAgentSdkWorkflowFile?: string // Workflow file name from src/lib/workflows (e.g., "qsncc-workflow")
   // Style config
   logo?: string
   primaryColor: string
@@ -291,10 +292,14 @@ export interface Chatbot {
   // Start Screen Prompts (for Agent SDK and other engines)
   startScreenPrompts?: Array<{ label?: string; prompt: string; icon?: string }> // Quick prompt buttons shown when chat starts
   // Start Screen Prompts Styling
+  startScreenPromptsStyle?: 'list' | 'card' // Style type: list or card
   startScreenPromptsPosition?: 'center' | 'bottom' | 'list' // Position of prompts
   startScreenPromptsIconDisplay?: 'suffix' | 'show-all' | 'none' // How to display icons
   startScreenPromptsBackgroundColor?: string // Background color of prompt buttons
   startScreenPromptsFontColor?: string // Font color of prompt buttons
+  startScreenPromptsFontFamily?: string // Font family of prompt buttons
+  startScreenPromptsFontSize?: string // Font size of prompt buttons
+  startScreenPromptsPadding?: string // Padding of prompt buttons
   startScreenPromptsBorderColor?: string // Border color of prompt buttons
   startScreenPromptsBorderWidth?: string // Border width of prompt buttons
   startScreenPromptsBorderRadius?: string // Border radius of prompt buttons
@@ -317,6 +322,7 @@ export interface Chatbot {
   voiceUIStyle?: 'chat' | 'wave' // Voice UI style: 'chat' for chat-like UI, 'wave' for background wave animation
   showMessageFeedback?: boolean // Show like/dislike buttons on messages
   showMessageRetry?: boolean // Show retry button on messages
+  chatbotEnabled?: boolean // Enable/disable chatbot widget (default: true)
   // Deployment
   deploymentType: 'popover' | 'fullpage' | 'popup-center'
   embedCode?: string

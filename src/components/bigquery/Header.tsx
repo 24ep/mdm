@@ -111,7 +111,7 @@ export function Header({ selectedSpace, spaces, onSpaceChange }: HeaderProps) {
                         />
                         <div className="flex flex-col">
                           <span className="font-medium">{space.name}</span>
-                          <span className="text-xs text-gray-500">{space.slug}</span>
+                          <span className="text-xs text-muted-foreground">{space.slug}</span>
                         </div>
                       </CommandItem>
                     ))}

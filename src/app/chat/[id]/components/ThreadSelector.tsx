@@ -4,9 +4,11 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Plus, Trash2, Edit2, X, Check } from 'lucide-react'
+import { Plus, Trash2, Edit2, X, Check, Bot } from 'lucide-react'
+import * as Icons from 'lucide-react'
 import { formatTimeAgo } from '@/lib/date-formatters'
 import { AgentThread } from '../hooks/useAgentThread'
+import { ChatbotConfig } from '../types'
 
 interface ThreadSelectorProps {
   threads: AgentThread[]
@@ -16,6 +18,7 @@ interface ThreadSelectorProps {
   onDeleteThread: (threadId: string) => void
   onUpdateThreadTitle: (threadId: string, title: string) => Promise<boolean>
   isLoading?: boolean
+  chatbot?: ChatbotConfig
 }
 
 export function ThreadSelector({
@@ -26,9 +29,44 @@ export function ThreadSelector({
   onDeleteThread,
   onUpdateThreadTitle,
   isLoading = false,
+  chatbot,
 }: ThreadSelectorProps) {
   const [editingThreadId, setEditingThreadId] = useState<string | null>(null)
   const [editingTitle, setEditingTitle] = useState('')
+
+  // Render header avatar for each thread item
+  const renderHeaderAvatar = () => {
+    if (!chatbot) return null
+    
+    // Use header avatar config, fallback to message avatar config for backward compatibility
+    const headerAvatarType = chatbot.headerAvatarType || chatbot.avatarType || 'icon'
+    if (headerAvatarType === 'image' && (chatbot.headerLogo || chatbot.headerAvatarImageUrl)) {
+      return (
+        <img 
+          src={chatbot.headerLogo || chatbot.headerAvatarImageUrl || ''} 
+          alt={chatbot.name}
+          className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = 'none'
+          }}
+        />
+      )
+    } else if (headerAvatarType === 'icon') {
+      const IconName = chatbot.headerAvatarIcon || chatbot.avatarIcon || 'Bot'
+      const IconComponent = (Icons as any)[IconName] || Bot
+      const iconColor = chatbot.headerAvatarIconColor || chatbot.avatarIconColor || '#ffffff'
+      const bgColor = chatbot.headerAvatarBackgroundColor || chatbot.avatarBackgroundColor || chatbot.primaryColor || '#3b82f6'
+      return (
+        <div 
+          className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+          style={{ backgroundColor: bgColor }}
+        >
+          <IconComponent className="h-5 w-5" style={{ color: iconColor }} />
+        </div>
+      )
+    }
+    return null
+  }
 
   const handleStartEdit = (thread: AgentThread) => {
     setEditingThreadId(thread.threadId)
@@ -121,16 +159,38 @@ export function ThreadSelector({
                   </div>
                 ) : (
                   <>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium truncate">
-                          {thread.title || 'New Conversation'}
+                    <div className="flex items-start gap-2">
+                      {renderHeaderAvatar()}
+                      <div className="flex items-start justify-between flex-1 min-w-0">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium truncate">
+                            {thread.title || 'New Conversation'}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-0.5 space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {chatbot?.engineType && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                                  {chatbot.engineType === 'openai-agent-sdk' ? 'Agent SDK' :
+                                   chatbot.engineType === 'chatkit' ? 'ChatKit' :
+                                   chatbot.engineType === 'dify' ? 'Dify' :
+                                   chatbot.engineType === 'openai' ? 'OpenAI' :
+                                   chatbot.engineType === 'agentbuilder' ? 'Agent Builder' :
+                                   chatbot.engineType === 'custom' ? 'Custom' :
+                                   chatbot.engineType}
+                                </span>
+                              )}
+                              {chatbot?.engineType === 'openai-agent-sdk' && (chatbot as any).openaiAgentSdkWorkflowFile && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200">
+                                  {(chatbot as any).openaiAgentSdkWorkflowFile}
+                                </span>
+                              )}
+                            </div>
+                            <div>
+                              {thread.lastMessageAt ? formatTimeAgo(thread.lastMessageAt) : 'No messages'}
+                              {thread.messageCount > 0 && ` • ${thread.messageCount} messages`}
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-xs text-gray-500 mt-0.5">
-                          {thread.lastMessageAt ? formatTimeAgo(thread.lastMessageAt) : 'No messages'}
-                          {thread.messageCount > 0 && ` • ${thread.messageCount} messages`}
-                        </div>
-                      </div>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button
                           variant="ghost"
@@ -156,6 +216,7 @@ export function ThreadSelector({
                         >
                           <Trash2 className="h-3 w-3" />
                         </Button>
+                      </div>
                       </div>
                     </div>
                   </>
