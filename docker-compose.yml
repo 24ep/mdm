@@ -66,12 +66,11 @@ services:
     environment:
       - DATABASE_URL=${DATABASE_URL:-postgres://postgres:postgres@postgres-db:5432/postgres}
     depends_on:
-      postgres-db:
-        condition: service_healthy
+      - postgres-db
     command: >
       sh -c "
         echo '⏳ Waiting for database to be ready...' &&
-        sleep 5 &&
+        sleep 10 &&
         echo '🚀 Running create-admin script...' &&
         npm run create-admin &&
         echo '🚀 Running create-comprehensive-data-models script...' &&
