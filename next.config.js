@@ -4,7 +4,66 @@ const nextConfig = {
     domains: ['localhost'],
   },
   output: 'standalone', // Enable for Docker builds - reduces image size significantly
-  webpack: (config, { isServer, webpack }) => {
+  
+  // Optimize build performance and reduce resource usage
+  swcMinify: true, // Use SWC minifier (faster than Terser)
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'],
+    } : false,
+  },
+  
+  // Reduce memory usage during build
+  experimental: {
+    webpackBuildWorker: true, // Enable webpack build worker for parallel processing
+    optimizeCss: true, // Optimize CSS during build
+  },
+  
+  // Optimize webpack configuration
+  webpack: (config, { isServer, webpack, dev }) => {
+    // Reduce memory usage
+    if (!dev) {
+      config.optimization = {
+        ...config.optimization,
+        moduleIds: 'deterministic',
+        runtimeChunk: 'single',
+        splitChunks: {
+          chunks: 'all',
+          cacheGroups: {
+            default: false,
+            vendors: false,
+            // Vendor chunk
+            vendor: {
+              name: 'vendor',
+              chunks: 'all',
+              test: /node_modules/,
+              priority: 20,
+            },
+            // Common chunk
+            common: {
+              name: 'common',
+              minChunks: 2,
+              chunks: 'all',
+              priority: 10,
+              reuseExistingChunk: true,
+              enforce: true,
+            },
+          },
+        },
+      }
+      
+      // Limit parallel processing to reduce memory usage
+      config.parallelism = 2
+      // Reduce memory usage by limiting cache
+      config.cache = {
+        type: 'filesystem',
+        buildDependencies: {
+          config: [__filename],
+        },
+        maxMemoryGenerations: 1, // Limit cache generations
+      }
+    }
+    
     // Make react-icons optional - don't fail build if not installed
     if (!isServer) {
       config.resolve.fallback = {

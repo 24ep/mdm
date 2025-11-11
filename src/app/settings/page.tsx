@@ -7,7 +7,7 @@ import { useSpace } from '@/contexts/space-context'
 import SpacesManager from './components/SpacesManager'
 import { EnhancedUserManagement } from './components/EnhancedUserManagement'
 import toast from 'react-hot-toast'
-import { MainLayout as MainLayoutComponent } from '@/components/layout/main-layout'
+import { MainLayout } from '@/components/layout/main-layout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -902,7 +902,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <MainLayoutComponent>
+    <MainLayout>
       <Tabs defaultValue="system" orientation="vertical" className="flex h-full">
         {/* Left Sidebar */}
         <div className="w-72 bg-card flex flex-col border-r">
@@ -2951,6 +2951,6 @@ export default function SettingsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </MainLayoutComponent>
+    </MainLayout>
   )
 }
