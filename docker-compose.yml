@@ -2,17 +2,15 @@ version: '3.8'
 
 services:
   app:
-    # Image will be built by the deployment platform from Dockerfile
-    # The platform will set the image name automatically
-    # For local development, uncomment the build block below
-    # build: .
-    image: ${DOCKER_IMAGE:-app:latest}
+    # Standalone Docker: build locally and tag image
+    image: mdm-app:latest
+    build: .
     ports:
       - "8301:3000"
     environment:
       - NODE_ENV=production
       - DATABASE_URL=${DATABASE_URL:-postgres://postgres:postgres@postgres-db:5432/postgres}
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://10.0.10.57:8302}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8302}
       - NEXT_PUBLIC_WS_PROXY_URL=${NEXT_PUBLIC_WS_PROXY_URL:-ws://10.0.10.57:3002/api/openai-realtime}
       - NEXT_PUBLIC_WS_PROXY_PORT=${NEXT_PUBLIC_WS_PROXY_PORT:-3002}
       - MINIO_ENDPOINT=${MINIO_ENDPOINT:-minio}
@@ -65,7 +63,7 @@ services:
       # JWT secret for production (generate with: openssl rand -base64 32)
       # For development, JWT is optional - can use API key authentication via middleware
       PGRST_JWT_SECRET: ${PGRST_JWT_SECRET:-}
-      PGRST_OPENAPI_SERVER_PROXY_URI: ${NEXT_PUBLIC_API_URL:-http://10.0.10.57:8302}
+      PGRST_OPENAPI_SERVER_PROXY_URI: ${NEXT_PUBLIC_API_URL:-http://localhost:8302}
       # Max rows per request (safety limit)
       PGRST_DB_MAX_ROWS: 1000
     ports:
