@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "clean": "node scripts/clean-install.js",
+    "install:clean": "node scripts/clean-install.js && npm install --legacy-peer-deps --no-audit",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -28,7 +30,7 @@
     "ws-proxy": "npx tsx lib/websocket-proxy.ts"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.913.0",
+    "@aws-sdk/client-s3": "^3.911.0",
     "@aws-sdk/s3-request-presigner": "^3.911.0",
     "@codemirror/lang-javascript": "^6.2.4",
     "@codemirror/lang-python": "^6.2.1",
