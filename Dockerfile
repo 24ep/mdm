@@ -16,8 +16,8 @@ RUN --mount=type=cache,target=/root/.npm \
     if [ -f package-lock.json ]; then \
       sed -i.bak '/@next\/swc-win32/d' package-lock.json 2>/dev/null || true; \
     fi && \
-    npm ci --prefer-offline --no-audit --legacy-peer-deps || \
-    npm install --prefer-offline --no-audit --legacy-peer-deps
+    (npm ci --prefer-offline --no-audit --legacy-peer-deps 2>/dev/null || \
+     npm install --prefer-offline --no-audit --legacy-peer-deps)
 
 # Rebuild the source code only when needed
 FROM base AS builder
