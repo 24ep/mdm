@@ -79,6 +79,16 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Copy scripts and node_modules for initialization
+COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+# Copy only production node_modules (pg, bcryptjs, etc.) needed for scripts
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+
+# Copy and set up entrypoint script (before switching user)
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
 USER nextjs
 
 EXPOSE 3000
@@ -86,6 +96,9 @@ EXPOSE 3000
 ENV PORT=3000
 # set hostname to localhost
 ENV HOSTNAME="0.0.0.0"
+
+# Use entrypoint to handle initialization before starting the server
+ENTRYPOINT ["/docker-entrypoint.sh"]
 
 # server.js is created by next build from the standalone output
 # https://nextjs.org/docs/pages/api-reference/next-config-js/output

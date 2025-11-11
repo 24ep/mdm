@@ -2,12 +2,11 @@ version: '3.8'
 
 services:
   app:
-    build:
-      context: .
-      args:
-        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://10.0.10.57:8302}
-        - NEXT_PUBLIC_WS_PROXY_URL=${NEXT_PUBLIC_WS_PROXY_URL:-ws://10.0.10.57:3002/api/openai-realtime}
-        - NEXT_PUBLIC_WS_PROXY_PORT=${NEXT_PUBLIC_WS_PROXY_PORT:-3002}
+    # Image will be built by the deployment platform from Dockerfile
+    # The platform will set the image name automatically
+    # For local development, uncomment the build block below
+    # build: .
+    image: ${DOCKER_IMAGE:-app:latest}
     ports:
       - "8301:3000"
     environment:
@@ -29,7 +28,6 @@ services:
       # - ./uploads:/app/uploads
     depends_on:
       - postgres-db
-      - db-init
       - postgrest-api
       - minio
       - vault
@@ -38,8 +36,6 @@ services:
   # PostgreSQL Database
   postgres-db:
     image: postgres:15
-    container_name: postgres-db
-    restart: unless-stopped
     ports:
       - "8303:5432"
     environment:
@@ -54,37 +50,14 @@ services:
       timeout: 5s
       retries: 5
 
-  # Database initialization service
-  db-init:
-    build:
-      context: .
-      args:
-        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://10.0.10.57:8302}
-        - NEXT_PUBLIC_WS_PROXY_URL=${NEXT_PUBLIC_WS_PROXY_URL:-ws://10.0.10.57:3002/api/openai-realtime}
-        - NEXT_PUBLIC_WS_PROXY_PORT=${NEXT_PUBLIC_WS_PROXY_PORT:-3002}
-    container_name: db-init
-    environment:
-      - DATABASE_URL=${DATABASE_URL:-postgres://postgres:postgres@postgres-db:5432/postgres}
-    depends_on:
-      - postgres-db
-    command: >
-      sh -c "
-        echo '⏳ Waiting for database to be ready...' &&
-        sleep 10 &&
-        echo '🚀 Running create-admin script...' &&
-        npm run create-admin &&
-        echo '🚀 Running create-comprehensive-data-models script...' &&
-        node scripts/create-comprehensive-data-models.js &&
-        echo '✅ Database initialization completed!'
-      "
-    restart: "no"
+  # Database initialization is now handled by docker-entrypoint.sh in the app container
+  # This runs automatically when the app starts for the first time
 
   # PostgREST API (External REST API)
   postgrest-api:
     image: postgrest/postgrest:v12.0.2
     depends_on:
       - postgres-db
-    restart: unless-stopped
     environment:
       PGRST_DB_URI: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres-db:5432/${POSTGRES_DB:-postgres}
       PGRST_DB_SCHEMAS: public
@@ -114,8 +87,6 @@ services:
   # HashiCorp Vault
   vault:
     image: hashicorp/vault:latest
-    container_name: vault
-    restart: unless-stopped
     ports:
       - "8306:8200"
     environment:
@@ -135,8 +106,6 @@ services:
   # Redis (for rate limiting and caching in agent SDK)
   redis:
     image: redis:7-alpine
-    container_name: redis
-    restart: unless-stopped
     ports:
       - "8307:6379"
     command: redis-server --appendonly yes
