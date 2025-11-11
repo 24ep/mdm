@@ -901,8 +901,9 @@ export default function SettingsPage() {
       console.error('Failed to save attribute options:', e)
     }
   }
-
+;
   return (
+      null,
       <Tabs defaultValue="system" orientation="vertical" className="flex h-full">
         {/* Left Sidebar */}
         <div className="w-72 bg-card flex flex-col border-r">
@@ -1328,7 +1329,7 @@ export default function SettingsPage() {
                   <div className="space-y-4">
                     {dataModelsLoading ? (
                       <div className="text-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground mx-auto"></div>
                         <p className="mt-2 text-sm text-muted-foreground">Loading data models...</p>
                       </div>
                     ) : dataModelsError ? (
@@ -1405,10 +1406,10 @@ export default function SettingsPage() {
                                 <div className="flex items-center space-x-3">
                                             <div 
                                               {...provided.dragHandleProps}
-                                              className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-100 rounded"
+                                              className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
                                               title="Drag to reorder"
                                             >
-                                              <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                              <svg className="w-4 h-4 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
                                                 <path d="M7 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
                                               </svg>
                                             </div>
@@ -1455,7 +1456,7 @@ export default function SettingsPage() {
                                     size="sm"
                                             onClick={(e) => { e.stopPropagation(); handleTogglePin(model.id); }}
                                             title={model.is_pinned ? "Unpin from Sidebar" : "Pin to Sidebar"}
-                                            className={model.is_pinned ? "text-blue-600" : "text-gray-400"}
+                                            className={model.is_pinned ? "text-blue-600" : "text-muted-foreground"}
                                           >
                                             {model.is_pinned ? <Pin className="h-4 w-4" /> : <PinOff className="h-4 w-4" />}
                                   </Button>
@@ -2084,7 +2085,7 @@ export default function SettingsPage() {
                                   attr.data_type === 'text' ? 'bg-blue-100 text-blue-800' :
                                   attr.data_type === 'email' ? 'bg-green-100 text-green-800' :
                                   attr.data_type === 'select' ? 'bg-purple-100 text-purple-800' :
-                                  'bg-gray-100 text-gray-800'
+                                  'bg-muted text-foreground'
                                 }`}>
                                   {attr.data_type}
                                 </span>
@@ -2251,7 +2252,7 @@ export default function SettingsPage() {
                             attr.data_type === 'text' ? 'bg-blue-100 text-blue-800' :
                             attr.data_type === 'email' ? 'bg-green-100 text-green-800' :
                             attr.data_type === 'select' ? 'bg-purple-100 text-purple-800' :
-                            'bg-gray-100 text-gray-800'
+                            'bg-muted text-foreground'
                           }`}>
                             {attr.data_type}
                           </span>
@@ -2576,7 +2577,7 @@ export default function SettingsPage() {
                           <div className="text-sm text-muted-foreground bg-muted p-2 rounded">
                             <strong>Preview:</strong> {attributeForm.auto_increment_prefix}{String(attributeForm.auto_increment_start).padStart(attributeForm.auto_increment_padding, '0')}{attributeForm.auto_increment_suffix}
                           </div>
-                          <div className="text-xs text-gray-500 mt-1">
+                          <div className="text-xs text-muted-foreground mt-1">
                             Examples: CUST-001, ORD-2024-001, INV_001_V1
                           </div>
                           <div className="mt-2">
@@ -2604,12 +2605,12 @@ export default function SettingsPage() {
                 <TabsContent value="options" className="flex-1 overflow-y-auto p-4 min-h-0">
                   {!(attributeForm.data_type === 'SELECT' || attributeForm.data_type === 'MULTI_SELECT') ? (
                     <div className="flex flex-col items-center justify-center py-12 text-center">
-                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                        <SettingsIcon className="h-8 w-8 text-gray-400" />
+                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                        <SettingsIcon className="h-8 w-8 text-muted-foreground" />
                       </div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">Attribute options not available</h3>
-                      <p className="text-gray-500 mb-6">Options are only available for SELECT and MULTI_SELECT attribute types.</p>
-                      <p className="text-sm text-gray-400">Current type: {attributeForm.data_type}</p>
+                      <h3 className="text-lg font-medium text-foreground mb-2">Attribute options not available</h3>
+                      <p className="text-muted-foreground mb-6">Options are only available for SELECT and MULTI_SELECT attribute types.</p>
+                      <p className="text-sm text-muted-foreground">Current type: {attributeForm.data_type}</p>
                     </div>
                   ) : (
                     <div className="space-y-6">
@@ -2629,12 +2630,12 @@ export default function SettingsPage() {
 
                       {/* Options Management */}
                       {attributeOptions.length === 0 || (attributeOptions.length === 1 && !attributeOptions[0].value && !attributeOptions[0].label) ? (
-                        <div className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center">
-                          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <SettingsIcon className="h-8 w-8 text-gray-400" />
+                        <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
+                          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                            <SettingsIcon className="h-8 w-8 text-muted-foreground" />
                           </div>
-                          <h3 className="text-lg font-medium text-gray-900 mb-2">No options defined</h3>
-                          <p className="text-gray-500 mb-6">Add options to define the available choices for this attribute.</p>
+                          <h3 className="text-lg font-medium text-foreground mb-2">No options defined</h3>
+                          <p className="text-muted-foreground mb-6">Add options to define the available choices for this attribute.</p>
                           <Button onClick={addAttributeOption} className="flex items-center gap-2">
                             <Plus className="h-4 w-4" />
                             Add First Option
@@ -2670,10 +2671,10 @@ export default function SettingsPage() {
                                                 {/* Drag Handle */}
                                                 <div 
                                                   {...provided.dragHandleProps}
-                                                  className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-100 rounded"
+                                                  className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
                                                   title="Drag to reorder"
                                                 >
-                                                  <GripVertical className="h-4 w-4 text-gray-400" />
+                                                  <GripVertical className="h-4 w-4 text-muted-foreground" />
                                                 </div>
 
                                                 {/* Single Row Layout */}

@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { MultiSelect } from '@/components/ui/multi-select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { ScrollableList } from '@/components/ui/scrollable-list'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -614,40 +614,9 @@ export default function DataModelsPage() {
               
               <TabsContent value="attributes" className="space-y-4">
                 <div className="space-y-4">
-                  {/* ATTRIBUTES TAB TEST */}
-                  <div className="p-4 bg-green-500 text-white text-center font-bold">
-                    🎯 ATTRIBUTES TAB IS WORKING - IF YOU SEE THIS, THE TAB IS RENDERING 🎯
-                  </div>
-                  
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-medium">Model Attributes</h3>
                     <div className="flex items-center gap-2">
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => {
-                          console.log('Test button clicked')
-                          console.log('Current attributes:', attributes)
-                          console.log('Show drawer state:', showAttributeDrawer)
-                          console.log('Selected attribute:', selectedAttribute)
-                          
-                          // Test with a mock attribute
-                          const testAttribute = {
-                            id: 'test-1',
-                            data_model_id: 'test-model',
-                            name: 'test_name',
-                            display_name: 'Test Attribute',
-                            type: 'text',
-                            is_required: false,
-                            is_unique: false,
-                            order: 1
-                          }
-                          console.log('Testing with mock attribute:', testAttribute)
-                          openAttributeDrawer(testAttribute)
-                        }}
-                      >
-                        Test Debug
-                      </Button>
                       <Button size="sm" onClick={openCreateAttribute}>
                         <Plus className="h-4 w-4 mr-2" />
                         Add Attribute
@@ -655,199 +624,85 @@ export default function DataModelsPage() {
                     </div>
                   </div>
                   
-                  <div className="space-y-4">
-                    {/* Debug Information */}
-                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <h4 className="font-medium text-yellow-800 mb-2">Debug Information</h4>
-                      <div className="text-sm text-yellow-700">
-                        <div>Attributes Loading: {attributesLoading.toString()}</div>
-                        <div>Attributes Count: {attributes.length}</div>
-                        <div>Show Drawer: {showAttributeDrawer.toString()}</div>
-                        <div>Selected Attribute: {selectedAttribute?.display_name || 'None'}</div>
-                      </div>
-                    </div>
-
-                    {/* Simple Test Buttons */}
-                    <div className="flex gap-2">
-                      <Button 
-                        onClick={() => {
-                          console.log('Test button clicked')
-                          alert('Test button works!')
-                        }}
-                        className="bg-green-500 hover:bg-green-600"
-                      >
-                        Test Button
-                      </Button>
-                      <Button 
-                        onClick={() => {
-                          const testAttr = {
-                            id: 'test-1',
-                            data_model_id: 'test',
-                            name: 'test',
-                            display_name: 'Test Attribute',
-                            type: 'text',
-                            is_required: false,
-                            is_unique: false,
-                            order: 1
-                          }
-                          openAttributeDrawer(testAttr)
-                        }}
-                        className="bg-blue-500 hover:bg-blue-600"
-                      >
-                        Test Drawer
-                      </Button>
-                    </div>
-
-                    {attributesLoading ? (
-                      <div className="text-center py-4">Loading attributes...</div>
-                    ) : (
-                      <div className="h-[500px] overflow-y-auto border border-border rounded-lg bg-background">
-                        <div className="space-y-2 p-4">
-                        {console.log('Rendering attributes:', attributes)}
+                  {attributesLoading ? (
+                    <div className="text-center py-4">Loading attributes...</div>
+                  ) : (
+                    <div className="h-[500px] overflow-y-auto border border-border rounded-lg bg-background">
+                      <div className="space-y-2 p-4">
+                        {attributes.length > 0 && attributes.map((attr) => (
+                          <div 
+                            key={attr.id} 
+                            className="group flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors bg-background shadow-sm"
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              openAttributeDrawer(attr)
+                            }}
+                          >
+                            <div className="flex-1">
+                              <div className="font-medium">{attr.display_name}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {attr.name} • {attr.is_required ? 'Required' : 'Optional'}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                className="flex items-center gap-1 bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  openAttributeDrawer(attr)
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                                <span className="text-xs">Edit</span>
+                              </Button>
+                              
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    className="h-8 w-8 p-0 hover:bg-muted"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48">
+                                  <DropdownMenuItem 
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      openAttributeDrawer(attr)
+                                    }}
+                                    className="text-foreground"
+                                  >
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Edit Attribute
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleAttributeDelete(attr.id)
+                                    }}
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Delete Attribute
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </div>
+                        ))}
                         
-                        {/* Test attribute to verify rendering */}
-                        <div className="group flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors bg-background shadow-sm border-green-500">
-                          <div className="flex-1">
-                            <div className="font-medium text-green-700">TEST ATTRIBUTE</div>
-                            <div className="text-sm text-muted-foreground">
-                              test_name • text • Optional
-                            </div>
+                        {attributes.length === 0 && (
+                          <div className="text-center py-8 text-muted-foreground">
+                            No attributes found for this model.
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              className="flex items-center gap-1 bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                console.log('TEST Edit button clicked')
-                                alert('Test Edit button works!')
-                              }}
-                            >
-                              <Edit className="h-4 w-4" />
-                              <span className="text-xs">Edit</span>
-                            </Button>
-                            
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                            <Button 
-                              size="sm" 
-                                  variant="ghost" 
-                                  className="h-8 w-8 p-0 hover:bg-muted"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-48">
-                                <DropdownMenuItem 
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                    console.log('TEST Edit from dropdown clicked')
-                                    alert('Test Edit from dropdown works!')
-                                  }}
-                                  className="text-foreground"
-                                >
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Edit Attribute
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    console.log('TEST Delete from dropdown clicked')
-                                    alert('Test Delete from dropdown works!')
-                                  }}
-                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete Attribute
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </div>
-                      
-                      {attributes.length > 0 && attributes.map((attr) => {
-                        console.log('Rendering attribute:', attr)
-                        return (
-                        <div 
-                          key={attr.id} 
-                          className="group flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors bg-background shadow-sm"
-                          onClick={(e) => {
-                            console.log('Attribute clicked:', attr.display_name, attr)
-                            e.preventDefault()
-                            e.stopPropagation()
-                            openAttributeDrawer(attr)
-                          }}
-                        >
-                          <div className="flex-1">
-                            <div className="font-medium">{attr.display_name}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {attr.name} • {attr.is_required ? 'Required' : 'Optional'}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              className="flex items-center gap-1 bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                console.log('Edit button clicked for:', attr.display_name)
-                                openAttributeDrawer(attr)
-                              }}
-                            >
-                              <Edit className="h-4 w-4" />
-                              <span className="text-xs">Edit</span>
-                            </Button>
-                            
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                            <Button 
-                              size="sm" 
-                                  variant="ghost" 
-                                  className="h-8 w-8 p-0 hover:bg-muted"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-48">
-                                <DropdownMenuItem 
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                    console.log('Edit from dropdown clicked for:', attr.display_name)
-                                    openAttributeDrawer(attr)
-                                  }}
-                                  className="text-foreground"
-                                >
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Edit Attribute
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    console.log('Delete from dropdown clicked for:', attr.display_name)
-                                handleAttributeDelete(attr.id)
-                              }}
-                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete Attribute
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </div>
-                        )
-                      })}
-                      
-                      {attributes.length === 0 && (
-                        <div className="text-center py-8 text-muted-foreground">
-                          No attributes found for this model.
-                        </div>
-                      )}
-                        </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>

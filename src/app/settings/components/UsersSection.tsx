@@ -379,7 +379,7 @@ export function UsersSection() {
                       u.role === 'SUPER_ADMIN' ? 'bg-red-100 text-red-800' :
                       u.role === 'ADMIN' ? 'bg-orange-100 text-orange-800' :
                       u.role === 'MANAGER' ? 'bg-blue-100 text-blue-800' :
-                      'bg-gray-100 text-gray-800'
+                      'bg-muted text-foreground'
                     }`}>
                       {u.role}
                     </span>
