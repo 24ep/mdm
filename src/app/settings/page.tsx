@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
@@ -902,7 +903,6 @@ export default function SettingsPage() {
   }
 
   return (
-    <MainLayout>
       <Tabs defaultValue="system" orientation="vertical" className="flex h-full">
         {/* Left Sidebar */}
         <div className="w-72 bg-card flex flex-col border-r">
@@ -2951,6 +2951,5 @@ export default function SettingsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </MainLayout>
-  )
+    )
 }

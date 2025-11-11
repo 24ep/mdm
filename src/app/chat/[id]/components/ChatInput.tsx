@@ -214,7 +214,7 @@ export function ChatInput({
                   <X className="h-3 w-3" />
                 </button>
                 {attachment.name && (
-                  <p className="text-xs text-gray-500 mt-1 truncate w-20">{attachment.name}</p>
+                  <p className="text-xs text-muted-foreground mt-1 truncate w-20">{attachment.name}</p>
                 )}
               </div>
             ))}

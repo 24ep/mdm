@@ -92,7 +92,7 @@ export function ThreadSelector({
   }
 
   return (
-    <div className="flex flex-col h-full border-r bg-gray-50 dark:bg-gray-900">
+    <div className="flex flex-col h-full border-r bg-background">
       <div className="p-4 border-b">
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-semibold text-sm">Conversations</h3>
@@ -111,7 +111,7 @@ export function ThreadSelector({
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-1">
           {threads.length === 0 ? (
-            <div className="p-4 text-center text-sm text-gray-500">
+            <div className="p-4 text-center text-sm text-muted-foreground">
               No conversations yet. Start a new one!
             </div>
           ) : (
@@ -121,7 +121,7 @@ export function ThreadSelector({
                 className={`group relative p-2 rounded-lg cursor-pointer transition-colors ${
                   currentThreadId === thread.threadId
                     ? 'bg-blue-100 dark:bg-blue-900'
-                    : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                    : 'hover:bg-muted'
                 }`}
                 onClick={() => onSelectThread(thread.threadId)}
               >
@@ -166,7 +166,7 @@ export function ThreadSelector({
                           <div className="text-sm font-medium truncate">
                             {thread.title || 'New Conversation'}
                           </div>
-                          <div className="text-xs text-gray-500 mt-0.5 space-y-1">
+                          <div className="text-xs text-muted-foreground mt-0.5 space-y-1">
                             <div className="flex items-center gap-2 flex-wrap">
                               {chatbot?.engineType && (
                                 <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">

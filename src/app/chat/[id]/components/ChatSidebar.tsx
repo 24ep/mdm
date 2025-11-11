@@ -32,7 +32,7 @@ export function ChatSidebar({
   onDeleteChat,
 }: ChatSidebarProps) {
   return (
-    <div className={`${sidebarOpen ? 'w-64' : 'w-0'} transition-all duration-300 border-r bg-white/95 backdrop-blur-sm flex flex-col overflow-hidden`}>
+    <div className={`${sidebarOpen ? 'w-64' : 'w-0'} transition-all duration-300 border-r bg-background/95 backdrop-blur-sm flex flex-col overflow-hidden`}>
       {sidebarOpen && (
         <>
           <div className="p-4 border-b flex items-center justify-between">
@@ -60,20 +60,20 @@ export function ChatSidebar({
                 <div
                   key={chat.id}
                   onClick={() => onSelectChat(chat.id)}
-                  className={`p-3 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors group ${
+                  className={`p-3 rounded-lg cursor-pointer hover:bg-muted transition-colors group ${
                     currentChatId === chat.id ? 'bg-blue-50 border border-blue-200' : ''
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <MessageSquare className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                        <MessageSquare className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                         <p className="text-sm font-medium truncate">{chat.title}</p>
                       </div>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         {chat.messages.length} messages
                       </p>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         {chat.createdAt.toLocaleDateString()}
                       </p>
                     </div>
@@ -89,7 +89,7 @@ export function ChatSidebar({
                 </div>
               ))}
               {chatHistory.length === 0 && (
-                <div className="text-center py-8 text-sm text-gray-500">
+                <div className="text-center py-8 text-sm text-muted-foreground">
                   <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   <p>No chat history</p>
                   <p className="text-xs mt-1">Start a new chat to begin</p>

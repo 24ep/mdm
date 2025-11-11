@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Button } from '@/components/ui/button'
@@ -338,7 +339,6 @@ export default function DataModelsPage() {
   }
 
   return (
-    <MainLayout>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -1057,8 +1057,7 @@ export default function DataModelsPage() {
           </div>
         )}
       </div>
-    </MainLayout>
-  )
+    )
 }
 
 

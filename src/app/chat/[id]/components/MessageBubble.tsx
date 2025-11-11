@@ -285,7 +285,7 @@ export function MessageBubble({
                     </video>
                   )}
                   {attachment.name && (
-                    <p className="text-xs text-gray-500 mt-1">{attachment.name}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{attachment.name}</p>
                   )}
                 </div>
               ))}
@@ -370,7 +370,7 @@ export function MessageBubble({
                     }}
                   >
                     <ThumbsUp 
-                      className={`h-4 w-4 ${messageFeedback[message.id] === 'liked' ? 'text-blue-600 fill-blue-600' : 'text-gray-500'}`} 
+                      className={`h-4 w-4 ${messageFeedback[message.id] === 'liked' ? 'text-blue-600 fill-blue-600' : 'text-muted-foreground'}`} 
                     />
                   </Button>
                   <Button
@@ -419,7 +419,7 @@ export function MessageBubble({
                     }}
                   >
                     <ThumbsDown 
-                      className={`h-4 w-4 ${messageFeedback[message.id] === 'disliked' ? 'text-red-600 fill-red-600' : 'text-gray-500'}`} 
+                      className={`h-4 w-4 ${messageFeedback[message.id] === 'disliked' ? 'text-red-600 fill-red-600' : 'text-muted-foreground'}`} 
                     />
                   </Button>
                 </>
@@ -445,7 +445,7 @@ export function MessageBubble({
                   }}
                   disabled={isLoading}
                 >
-                  <RotateCcw className="h-4 w-4 text-gray-500" />
+                  <RotateCcw className="h-4 w-4 text-muted-foreground" />
                 </Button>
               )}
             </div>
