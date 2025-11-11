@@ -254,7 +254,7 @@ export function QueryPerformanceDashboard({ onQueryClick }: QueryPerformanceDash
                   {slowQueries.map((record) => (
                     <div
                       key={record.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted cursor-pointer"
                       onClick={() => onQueryClick?.(record.query)}
                     >
                       <div className="flex-1 min-w-0">
@@ -307,11 +307,11 @@ export function QueryPerformanceDashboard({ onQueryClick }: QueryPerformanceDash
                   {queryStats.map((stat) => (
                     <div
                       key={stat.queryHash}
-                      className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                      className="p-4 border rounded-lg hover:bg-muted cursor-pointer"
                       onClick={() => onQueryClick?.(stat.query)}
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <code className="text-sm text-gray-700 break-all flex-1">
+                        <code className="text-sm text-foreground break-all flex-1">
                           {formatQuery(stat.query, 200)}
                         </code>
                       </div>

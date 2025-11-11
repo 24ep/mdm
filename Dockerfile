@@ -7,17 +7,35 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Install dependencies based on the preferred package manager
-COPY package.json ./
-# Remove package-lock.json if present to avoid Windows-specific package conflicts
-# npm install will regenerate it with the correct platform-specific packages
-RUN rm -f package-lock.json && npm install --legacy-peer-deps
+# Copy package files for better caching
+COPY package.json package-lock.json* ./
+# Remove Windows-specific packages from lock file and install
+# Use BuildKit cache mount for npm cache (faster subsequent builds)
+# Use --prefer-offline and --no-audit for faster installs
+RUN --mount=type=cache,target=/root/.npm \
+    if [ -f package-lock.json ]; then \
+      sed -i.bak '/@next\/swc-win32/d' package-lock.json 2>/dev/null || true; \
+    fi && \
+    npm ci --prefer-offline --no-audit --legacy-peer-deps || \
+    npm install --prefer-offline --no-audit --legacy-peer-deps
 
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
+
+# Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+
+# Copy only necessary files for build (better caching)
+# Copy config files first (they change less frequently)
+COPY package.json next.config.js tsconfig.json ./
+COPY tailwind.config.ts postcss.config.js ./
+
+# Copy source code directories
+COPY public ./public
+COPY src ./src
+COPY prisma ./prisma
+COPY scripts ./scripts
 
 # Accept build arguments for NEXT_PUBLIC_* variables
 # These must be set at build time to be embedded in the client bundle
@@ -30,20 +48,20 @@ ARG NEXT_PUBLIC_WS_PROXY_PORT=3002
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NEXT_PUBLIC_WS_PROXY_URL=${NEXT_PUBLIC_WS_PROXY_URL}
 ENV NEXT_PUBLIC_WS_PROXY_PORT=${NEXT_PUBLIC_WS_PROXY_PORT}
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
-# Ensure public directory exists (some repos may not include it)
-RUN mkdir -p public
-
-# Build the application
-RUN npm run build
+# Build the application with optimizations
+# Use BuildKit cache mount for Next.js cache (faster subsequent builds)
+RUN --mount=type=cache,target=/app/.next/cache \
+    npm run build
 
 # Production image, copy all the files and run next
 FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-# Uncomment the following line in case you want to disable telemetry during runtime.
-# ENV NEXT_TELEMETRY_DISABLED 1
+ENV NEXT_TELEMETRY_DISABLED=1
 # Note: NEXT_PUBLIC_* variables are set at build time and embedded in the bundle
 # Runtime ENV vars here are for reference only (they won't affect client-side code)
 

@@ -3,7 +3,7 @@ const nextConfig = {
   images: {
     domains: ['localhost'],
   },
-  // output: 'standalone', // Commented out for development
+  output: 'standalone', // Enable for Docker builds - reduces image size significantly
   webpack: (config, { isServer, webpack }) => {
     // Make react-icons optional - don't fail build if not installed
     if (!isServer) {

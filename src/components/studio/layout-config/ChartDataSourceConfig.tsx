@@ -1137,7 +1137,7 @@ export function ChartDataSourceConfig({
         <DialogFooter>
           <button
             type="button"
-            className="px-3 py-1.5 text-[12px] rounded-[2px] bg-input hover:bg-gray-200 dark:hover:bg-gray-700"
+            className="px-3 py-1.5 text-[12px] rounded-[2px] bg-input hover:bg-muted"
             onClick={() => setIsFilterDialogOpen(false)}
           >
             Done

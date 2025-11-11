@@ -701,12 +701,12 @@ export default function DataModelsPage() {
                     {attributesLoading ? (
                       <div className="text-center py-4">Loading attributes...</div>
                     ) : (
-                      <div className="h-[500px] overflow-y-auto border border-gray-200 rounded-lg bg-white">
+                      <div className="h-[500px] overflow-y-auto border border-border rounded-lg bg-background">
                         <div className="space-y-2 p-4">
                         {console.log('Rendering attributes:', attributes)}
                         
                         {/* Test attribute to verify rendering */}
-                        <div className="group flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors bg-white shadow-sm border-green-500">
+                        <div className="group flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors bg-background shadow-sm border-green-500">
                           <div className="flex-1">
                             <div className="font-medium text-green-700">TEST ATTRIBUTE</div>
                             <div className="text-sm text-muted-foreground">
@@ -733,7 +733,7 @@ export default function DataModelsPage() {
                             <Button 
                               size="sm" 
                                   variant="ghost" 
-                                  className="h-8 w-8 p-0 hover:bg-gray-100"
+                                  className="h-8 w-8 p-0 hover:bg-muted"
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   <MoreVertical className="h-4 w-4" />
@@ -746,7 +746,7 @@ export default function DataModelsPage() {
                                     console.log('TEST Edit from dropdown clicked')
                                     alert('Test Edit from dropdown works!')
                                   }}
-                                  className="text-gray-700"
+                                  className="text-foreground"
                                 >
                                   <Edit className="h-4 w-4 mr-2" />
                                   Edit Attribute
@@ -772,7 +772,7 @@ export default function DataModelsPage() {
                         return (
                         <div 
                           key={attr.id} 
-                          className="group flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors bg-white shadow-sm"
+                          className="group flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors bg-background shadow-sm"
                           onClick={(e) => {
                             console.log('Attribute clicked:', attr.display_name, attr)
                             e.preventDefault()
@@ -806,7 +806,7 @@ export default function DataModelsPage() {
                             <Button 
                               size="sm" 
                                   variant="ghost" 
-                                  className="h-8 w-8 p-0 hover:bg-gray-100"
+                                  className="h-8 w-8 p-0 hover:bg-muted"
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   <MoreVertical className="h-4 w-4" />
@@ -819,7 +819,7 @@ export default function DataModelsPage() {
                                     console.log('Edit from dropdown clicked for:', attr.display_name)
                                     openAttributeDrawer(attr)
                                   }}
-                                  className="text-gray-700"
+                                  className="text-foreground"
                                 >
                                   <Edit className="h-4 w-4 mr-2" />
                                   Edit Attribute

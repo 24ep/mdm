@@ -30,7 +30,7 @@ export function SpaceSettingsHeader({
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
             <Settings className="h-6 w-6 text-muted-foreground" />
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-2xl font-bold text-foreground">
               {spaceName}
             </h1>
             {isActive !== undefined && (
@@ -39,7 +39,7 @@ export function SpaceSettingsHeader({
                 className={
                   isActive
                     ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
-                    : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                    : "bg-muted text-foreground"
                 }
               >
                 {isActive ? (
