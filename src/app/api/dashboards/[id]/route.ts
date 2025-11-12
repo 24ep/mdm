@@ -220,7 +220,7 @@ export async function PUT(
         RETURNING *
       `
       
-      const { rows } = await query<any>(updateSql, updateValues)
+      const { rows } = await query(updateSql, updateValues)
       
       if (rows.length === 0) {
         return NextResponse.json({ error: 'Dashboard not found' }, { status: 404 })

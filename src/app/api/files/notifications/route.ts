@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       notifications: notificationsResult.rows,
-      unreadCount: parseInt(unreadCountResult.rows[0].count)
+      unreadCount: parseInt((unreadCountResult.rows[0] as any).count)
     })
 
   } catch (error) {

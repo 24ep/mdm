@@ -174,7 +174,7 @@ export function ChatbotEmulator({
         open={configDrawerOpen}
         onOpenChange={setConfigDrawerOpen}
         config={emulatorConfig}
-        onConfigChange={setEmulatorConfig}
+        onConfigChange={(config) => setEmulatorConfig(prev => ({ ...prev, ...config }))}
       />
     </div>
   )

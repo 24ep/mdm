@@ -469,7 +469,7 @@ export function PerformanceTab({ chatbot }: PerformanceTabProps) {
                     <Input
                       type="number"
                       value={rateLimit.maxRequestsPerMinute || ''}
-                      onChange={(e) => setRateLimit({ ...rateLimit, maxRequestsPerMinute: parseInt(e.target.value) || null })}
+                      onChange={(e) => setRateLimit({ ...rateLimit, maxRequestsPerMinute: parseInt(e.target.value) || 0 })}
                       placeholder="60"
                     />
                   </div>
@@ -478,7 +478,7 @@ export function PerformanceTab({ chatbot }: PerformanceTabProps) {
                     <Input
                       type="number"
                       value={rateLimit.maxRequestsPerHour || ''}
-                      onChange={(e) => setRateLimit({ ...rateLimit, maxRequestsPerHour: parseInt(e.target.value) || null })}
+                      onChange={(e) => setRateLimit({ ...rateLimit, maxRequestsPerHour: parseInt(e.target.value) || 0 })}
                       placeholder="1000"
                     />
                   </div>
@@ -487,7 +487,7 @@ export function PerformanceTab({ chatbot }: PerformanceTabProps) {
                     <Input
                       type="number"
                       value={rateLimit.maxRequestsPerDay || ''}
-                      onChange={(e) => setRateLimit({ ...rateLimit, maxRequestsPerDay: parseInt(e.target.value) || null })}
+                      onChange={(e) => setRateLimit({ ...rateLimit, maxRequestsPerDay: parseInt(e.target.value) || 0 })}
                       placeholder="10000"
                     />
                   </div>
@@ -496,7 +496,7 @@ export function PerformanceTab({ chatbot }: PerformanceTabProps) {
                     <Input
                       type="number"
                       value={rateLimit.maxRequestsPerMonth || ''}
-                      onChange={(e) => setRateLimit({ ...rateLimit, maxRequestsPerMonth: parseInt(e.target.value) || null })}
+                      onChange={(e) => setRateLimit({ ...rateLimit, maxRequestsPerMonth: parseInt(e.target.value) || 0 })}
                       placeholder="Unlimited"
                     />
                   </div>
@@ -508,7 +508,7 @@ export function PerformanceTab({ chatbot }: PerformanceTabProps) {
                     <Input
                       type="number"
                       value={rateLimit.burstLimit || ''}
-                      onChange={(e) => setRateLimit({ ...rateLimit, burstLimit: parseInt(e.target.value) || null })}
+                      onChange={(e) => setRateLimit({ ...rateLimit, burstLimit: parseInt(e.target.value) || 0 })}
                       placeholder="Allow burst of N requests"
                     />
                   </div>

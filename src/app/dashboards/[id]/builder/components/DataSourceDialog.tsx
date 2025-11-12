@@ -75,7 +75,7 @@ export function DataSourceDialog({ open, onOpenChange, dataSource, onSave }: Dat
   }
 
   const handleTest = async () => {
-    toast.info('Testing connection...')
+    toast('Testing connection...')
     // Implement actual connection testing here
   }
 

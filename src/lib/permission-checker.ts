@@ -93,7 +93,7 @@ export async function getUserPermissions(
   }
 
   // Remove duplicates
-  return [...new Set(permissions)]
+  return Array.from(new Set(permissions))
 }
 
 /**

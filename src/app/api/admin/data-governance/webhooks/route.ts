@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     }
 
     // TODO: Load from OpenMetadata
-    const webhooks = []
+    const webhooks: any[] = []
 
     return NextResponse.json({ webhooks })
   } catch (error) {

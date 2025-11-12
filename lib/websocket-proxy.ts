@@ -282,12 +282,12 @@ wss.on('connection', (clientWs: WebSocket, request) => {
         }
         
         // Helper function to set up WebSocket handlers
-        function setupOpenAIWebSocketHandlers(
+        const setupOpenAIWebSocketHandlers = (
           openaiWs: WebSocket,
           clientWs: WebSocket,
           clientId: string,
           connection: ClientConnection
-        ) {
+        ) => {
           openaiWs.on('message', (openaiMessage: Buffer) => {
             // Forward OpenAI messages to client
             // OpenAI sends messages as JSON strings, forward them as-is

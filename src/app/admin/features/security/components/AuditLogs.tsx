@@ -129,6 +129,10 @@ export function AuditLogs() {
       const aValue = a[sortBy as keyof AuditLog]
       const bValue = b[sortBy as keyof AuditLog]
       
+      if (aValue == null && bValue == null) return 0
+      if (aValue == null) return 1
+      if (bValue == null) return -1
+      
       if (sortOrder === 'asc') {
         return aValue > bValue ? 1 : -1
       } else {

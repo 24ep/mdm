@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     
     // Test database connection and get users
     try {
-      const result = await query<any>('SELECT id, email, name, role, is_active FROM public.users LIMIT 5')
+      const result = await query('SELECT id, email, name, role, is_active FROM public.users LIMIT 5')
       console.log('Database users:', result.rows);
       
       return NextResponse.json({
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
       console.error('Database error:', dbError);
       return NextResponse.json({
         error: 'Database error',
-        details: dbError.message,
+        details: dbError instanceof Error ? dbError.message : String(dbError),
         session: session
       }, { status: 500 })
     }

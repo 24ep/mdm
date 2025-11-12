@@ -152,7 +152,7 @@ export async function clearCache(chatbotId: string, config: CacheConfig): Promis
   }
 
   // Memory fallback
-  for (const [key] of cacheStore.entries()) {
+  for (const [key] of Array.from(cacheStore.entries())) {
     if (key.startsWith(chatbotPrefix.replace('cache:', ''))) {
       cacheStore.delete(key)
     }

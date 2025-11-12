@@ -20,9 +20,9 @@ export async function GET(request: NextRequest) {
     
     queryStr += ' ORDER BY name ASC'
 
-    const { rows: roles } = await query<any>(queryStr, params)
+    const { rows: roles } = await query(queryStr, params)
 
-    const { rows: rolePerms } = await query<any>(
+    const { rows: rolePerms } = await query(
       `SELECT rp.role_id, p.id as permission_id, p.name, p.resource, p.action
        FROM public.role_permissions rp
        JOIN public.permissions p ON p.id = rp.permission_id`
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     // Note: level and is_system columns don't exist in the database schema
     // They are set as defaults in the response below
     const roleLevel = level === 'global' ? 'global' : 'space'
-    const { rows } = await query<any>(
+    const { rows } = await query(
       'INSERT INTO public.roles (name, description) VALUES ($1, $2) RETURNING id, name, description',
       [name, description || null]
     )

@@ -138,8 +138,9 @@ export async function POST(
           // Range filter or complex filter object
           if ('min' in filterValue || 'max' in filterValue) {
             // Range filter
-            const minValue = filterValue.min || ''
-            const maxValue = filterValue.max || ''
+            const rangeFilter = filterValue as { min?: any; max?: any }
+            const minValue = rangeFilter.min || ''
+            const maxValue = rangeFilter.max || ''
             
             whereConditions.push(`EXISTS (
               SELECT 1 FROM data_record_values drv2 

@@ -8,7 +8,7 @@ import { query } from "@/lib/db"
 
 async function checkUserEmailExists(email: string): Promise<boolean> {
   try {
-    const { rows } = await query<any>(
+    const { rows } = await query(
       'SELECT id FROM public.users WHERE email = $1 LIMIT 1',
       [email]
     )
@@ -25,7 +25,7 @@ async function checkUserEmailExists(email: string): Promise<boolean> {
 
 async function getOrCreateSSOUser(email: string, name: string, provider: string) {
   try {
-    const { rows: existingUsers } = await query<any>(
+    const { rows: existingUsers } = await query(
       'SELECT id, email, name, role FROM public.users WHERE email = $1 LIMIT 1',
       [email]
     )
@@ -150,7 +150,7 @@ async function getSSOConfig() {
 async function getSessionTimeoutSeconds(): Promise<number> {
   try {
     // First, try to get sessionPolicy (structured format from SecurityFeatures)
-    const { rows: policyRows } = await query<any>(
+    const { rows: policyRows } = await query(
       "SELECT value FROM system_settings WHERE key = 'sessionPolicy' LIMIT 1"
     )
     if (policyRows && Array.isArray(policyRows) && policyRows[0]?.value) {
@@ -168,7 +168,7 @@ async function getSessionTimeoutSeconds(): Promise<number> {
     }
     
     // Fall back to flat sessionTimeout format (from SystemSettings)
-    const { rows } = await query<any>(
+    const { rows } = await query(
       "SELECT value FROM system_settings WHERE key = 'sessionTimeout' LIMIT 1"
     )
     if (rows && Array.isArray(rows) && rows[0]?.value) {
@@ -201,7 +201,7 @@ providers.push(
         return null
       }
       try {
-        const { rows } = await query<any>(
+        const { rows } = await query(
           'SELECT id, email, name, password, role FROM public.users WHERE email = $1 LIMIT 1',
           [credentials.email]
         )
@@ -257,23 +257,23 @@ providers.push(
         if (!ldapModule) return null
         const client = ldapModule.createClient({ url: ldapConfig.ldapUrl })
         return new Promise((resolve) => {
-          client.bind(ldapConfig.ldapBindDn || '', ldapConfig.ldapBindPassword || '', async (err) => {
+          client.bind(ldapConfig.ldapBindDn || '', ldapConfig.ldapBindPassword || '', async (err: any) => {
             if (err) { client.unbind(); return resolve(null) }
             const searchFilter = (ldapConfig.ldapSearchFilter || '(uid={{username}})')
               .replace('{{username}}', credentials.email.split('@')[0])
               .replace('{{email}}', credentials.email)
             const opts = { filter: searchFilter, scope: 'sub', attributes: ['dn', 'cn', 'mail', 'uid'] }
-            client.search(ldapConfig.ldapSearchBase || ldapConfig.ldapBaseDn, opts, async (err, res) => {
+            client.search(ldapConfig.ldapSearchBase || ldapConfig.ldapBaseDn, opts, async (err: any, res: any) => {
               if (err) { client.unbind(); return resolve(null) }
               let userDn: string | null = null
-              res.on('searchEntry', (entry) => { userDn = entry.dn.toString() })
+              res.on('searchEntry', (entry: any) => { userDn = entry.dn.toString() })
               res.on('end', async () => {
                 if (!userDn) { client.unbind(); return resolve(null) }
                 const userClient = ldapModule.createClient({ url: ldapConfig.ldapUrl })
-                userClient.bind(userDn, credentials.password, async (err) => {
+                userClient.bind(userDn, credentials.password, async (err: any) => {
                   if (err) { userClient.unbind(); return resolve(null) }
                   userClient.unbind()
-                  const { rows } = await query<any>('SELECT id, email, name, role FROM public.users WHERE email = $1 LIMIT 1', [credentials.email])
+                  const { rows } = await query('SELECT id, email, name, role FROM public.users WHERE email = $1 LIMIT 1', [credentials.email])
                   if (!rows || !Array.isArray(rows) || rows.length === 0) return resolve(null)
                   const user = rows[0]
                   return resolve({ id: user.id, email: user.email, name: user.name, role: user.role })

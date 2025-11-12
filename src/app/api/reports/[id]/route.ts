@@ -44,7 +44,7 @@ export async function GET(
       LIMIT 1
     `
 
-    const result = await query<any>(sql, [session.user.id, params.id])
+    const result = await query(sql, [session.user.id, params.id])
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Report not found' }, { status: 404 })
@@ -136,7 +136,7 @@ export async function PUT(
       RETURNING *
     `
 
-    const result = await query<any>(sql, [
+    const result = await query(sql, [
       name || null,
       description || null,
       category_id || null,
@@ -184,7 +184,7 @@ export async function DELETE(
       RETURNING *
     `
 
-    const result = await query<any>(sql, [params.id, session.user.id])
+    const result = await query(sql, [params.id, session.user.id])
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Report not found or no permission' }, { status: 404 })

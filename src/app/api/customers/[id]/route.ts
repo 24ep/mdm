@@ -70,7 +70,7 @@ export async function PUT(
     }
 
     if (email && email !== currentCustomer.email) {
-      const { rows: existing } = await query<{ id: string }>(
+      const { rows: existing } = await query(
         'SELECT id FROM public.customers WHERE email = $1 AND deleted_at IS NULL AND id <> $2 LIMIT 1',
         [email, params.id]
       )

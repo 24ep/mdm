@@ -153,7 +153,7 @@ export async function delPattern(pattern: string): Promise<void> {
 
   // Memory fallback - simple prefix matching
   const prefix = pattern.replace('*', '')
-  for (const [key] of memoryStore.entries()) {
+  for (const [key] of Array.from(memoryStore.entries())) {
     if (key.startsWith(prefix)) {
       memoryStore.delete(key)
     }

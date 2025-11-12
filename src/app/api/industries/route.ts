@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 
     const [{ rows: industries }, { rows: totals }] = await Promise.all([
       query(dataSql, [...params, limit, offset]),
-      query<{ total: number }>(countSql, params),
+      query(countSql, params),
     ])
 
     const total = totals[0]?.total || 0

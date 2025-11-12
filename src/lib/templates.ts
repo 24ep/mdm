@@ -481,7 +481,7 @@ export class TemplateManager {
   }
 
   getCategories(): string[] {
-    return [...new Set(this.templates.map(t => t.category))]
+    return Array.from(new Set(this.templates.map(t => t.category)))
   }
 
   searchTemplates(query: string): DataModelTemplate[] {

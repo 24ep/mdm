@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
       [spaceId, userId]
     )
 
-    if (memberResult.rows.length === 0 || !['owner', 'admin'].includes(memberResult.rows[0].role)) {
+    if (memberResult.rows.length === 0 || !['owner', 'admin'].includes((memberResult.rows[0] as any).role)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 

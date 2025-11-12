@@ -11,7 +11,7 @@ export async function GET(
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { rows } = await query<any>('SELECT * FROM public.assignments WHERE id = $1 AND deleted_at IS NULL LIMIT 1', [params.id])
+    const { rows } = await query('SELECT * FROM public.assignments WHERE id = $1 AND deleted_at IS NULL LIMIT 1', [params.id])
     if (!rows.length) return NextResponse.json({ error: 'Assignment not found' }, { status: 404 })
     return NextResponse.json(rows[0])
   } catch (error) {
@@ -40,7 +40,7 @@ export async function PUT(
       customerIds,
     } = body
 
-    const currentRes = await query<any>('SELECT * FROM public.assignments WHERE id = $1 LIMIT 1', [params.id])
+    const currentRes = await query('SELECT * FROM public.assignments WHERE id = $1 LIMIT 1', [params.id])
     const currentAssignment = currentRes.rows[0]
 
     if (!currentAssignment) {
@@ -70,7 +70,7 @@ export async function PUT(
     }
     if (!setParts.length) return NextResponse.json(currentAssignment)
     values.push(params.id)
-    const { rows: updatedRows } = await query<any>(
+    const { rows: updatedRows } = await query(
       `UPDATE public.assignments SET ${setParts.join(', ')} WHERE id = $${values.length} RETURNING *`,
       values
     )
@@ -79,7 +79,7 @@ export async function PUT(
     if (customerIds !== undefined) {
       await query('DELETE FROM public.customer_assignments WHERE assignment_id = $1', [params.id])
       if (customerIds.length > 0) {
-        const valuesList = customerIds.map((_, i) => `($1, $${i + 2})`).join(', ')
+        const valuesList = customerIds.map((_: any, i: number) => `($1, $${i + 2})`).join(', ')
         await query(
           `INSERT INTO public.customer_assignments (assignment_id, customer_id) VALUES ${valuesList}`,
           [params.id, ...customerIds]
@@ -106,7 +106,7 @@ export async function DELETE(
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    const { rows } = await query<any>('SELECT * FROM public.assignments WHERE id = $1 LIMIT 1', [params.id])
+    const { rows } = await query('SELECT * FROM public.assignments WHERE id = $1 LIMIT 1', [params.id])
     const assignment = rows[0]
 
     if (!assignment) {

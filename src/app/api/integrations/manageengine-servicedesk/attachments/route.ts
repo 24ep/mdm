@@ -10,15 +10,17 @@ import { createAuditLog } from '@/lib/audit'
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
   let auditLogId: string | null = null
+  let space_id: string | null = null
+  let session: any = null
   
   try {
-    const session = await getServerSession(authOptions)
+    session = await getServerSession(authOptions)
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const formData = await request.formData()
-    const space_id = formData.get('space_id') as string
+    space_id = formData.get('space_id') as string
     const request_id = formData.get('request_id') as string
     const file = formData.get('file') as File
     const description = formData.get('description') as string | null
@@ -72,7 +74,7 @@ export async function POST(request: NextRequest) {
         entityType: 'ServiceDeskIntegration',
         entityId: space_id,
         userId: session.user.id,
-        newValue: { requestId, fileName: file.name, fileSize: file.size },
+        newValue: { request_id: request_id, fileName: file.name, fileSize: file.size },
         ipAddress,
         userAgent
       })
@@ -106,7 +108,7 @@ export async function POST(request: NextRequest) {
           entityId: space_id,
           userId: session.user.id,
           newValue: {
-            requestId,
+            request_id: request_id,
             fileName: file.name,
             fileSize: file.size,
             duration: Date.now() - startTime,
@@ -141,7 +143,7 @@ export async function POST(request: NextRequest) {
           entityId: space_id,
           userId: session.user.id,
           newValue: {
-            requestId,
+            request_id,
             fileName: file.name,
             error: result.error || 'Unknown error',
             duration: Date.now() - startTime,

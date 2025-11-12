@@ -60,7 +60,7 @@ export async function PUT(
     }
 
     if (name && name !== currentCompany.name) {
-      const existing = await query<{ id: string }>(
+      const existing = await query(
         'SELECT id FROM companies WHERE name = $1 AND deleted_at IS NULL AND id <> $2 LIMIT 1',
         [name, params.id]
       )
@@ -101,7 +101,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const cnt = await query<{ total: number }>(
+    const cnt = await query(
       'SELECT COUNT(*)::int AS total FROM customers WHERE company_id = $1 AND deleted_at IS NULL',
       [params.id]
     )

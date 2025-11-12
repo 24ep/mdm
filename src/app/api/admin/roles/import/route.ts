@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if role already exists
-    const { rows: existing } = await query<any>(
+    const { rows: existing } = await query(
       'SELECT id FROM roles WHERE name = $1 AND level = $2',
       [role.name, role.level]
     )
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create role
-    const { rows: newRole } = await query<any>(
+    const { rows: newRole } = await query(
       `INSERT INTO roles (name, description, level, is_system)
        VALUES ($1, $2, $3, $4)
        RETURNING id, name, description, level, is_system`,
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     if (permissions && Array.isArray(permissions)) {
       for (const perm of permissions) {
         // Find permission by name or resource:action
-        const { rows: permRows } = await query<any>(
+        const { rows: permRows } = await query(
           `SELECT id FROM permissions 
            WHERE name = $1 OR (resource = $2 AND action = $3)`,
           [perm.name, perm.resource, perm.action]

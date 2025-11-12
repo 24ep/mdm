@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     // Also check what users exist in the database
     let dbUsers = []
     try {
-      const result = await query<any>('SELECT id, email, name, role, is_active FROM public.users LIMIT 5')
+      const result = await query('SELECT id, email, name, role, is_active FROM public.users LIMIT 5')
       dbUsers = result.rows
     } catch (dbError) {
       console.error('Database query error:', dbError)

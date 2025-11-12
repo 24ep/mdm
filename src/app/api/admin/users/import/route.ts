@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
         const userRole = allowedRoles.includes(role) ? role : 'USER'
 
         // Check if user already exists
-        const existing = await query<any>(
+        const existing = await query(
           'SELECT id FROM users WHERE email = $1 LIMIT 1',
           [email]
         )
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
         const hashedPassword = await bcrypt.hash(password, 12)
 
         // Create user
-        const result = await query<any>(
+        const result = await query(
           `INSERT INTO users (email, name, password, role, is_active, created_at, updated_at)
            VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
            RETURNING id, email, name, role`,

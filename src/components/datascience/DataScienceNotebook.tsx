@@ -548,12 +548,12 @@ export function DataScienceNotebook({
 
   const undo = () => {
     // Implement undo functionality
-    toast.info('Undo functionality coming soon')
+    toast('Undo functionality coming soon')
   }
 
   const redo = () => {
     // Implement redo functionality
-    toast.info('Redo functionality coming soon')
+    toast('Redo functionality coming soon')
   }
 
   const getDefaultContent = (type: CellType): string => {
@@ -974,7 +974,7 @@ export function DataScienceNotebook({
                 toast.success(`${user.name} joined the collaboration`)
               }}
               onUserLeave={(userId) => {
-                toast.info('User left the collaboration')
+                toast('User left the collaboration')
               }}
               onCursorUpdate={(userId, cursor) => {
                 // Handle cursor updates
@@ -986,7 +986,7 @@ export function DataScienceNotebook({
                 // Handle typing stop
               }}
               onMessage={(message) => {
-                toast.info(`New message from ${message.userName}`)
+                toast(`New message from ${message.userName}`)
               }}
               onPermissionChange={(permissions) => {
                 toast.success('Permissions updated')

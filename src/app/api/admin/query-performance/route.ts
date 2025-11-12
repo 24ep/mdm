@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
       rowCount: rowCount || 0,
       timestamp: new Date(),
       userId: session.user.id,
-      userName: session.user.name || null,
+      userName: session.user.name || undefined,
       spaceId: spaceId || null,
       status: status || 'success',
       errorMessage: errorMessage || null

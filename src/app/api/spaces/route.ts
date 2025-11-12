@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
 
     // Check if tags column exists first
-    const tagsColumnCheck = await query<{ exists: boolean }>(`
+    const tagsColumnCheck = await query(`
       SELECT EXISTS (
         SELECT 1 FROM information_schema.columns 
         WHERE table_schema = 'public' 
@@ -54,8 +54,8 @@ export async function GET(request: NextRequest) {
     `
     
     const [{ rows: spaces }, { rows: totalRows }] = await Promise.all([
-      query<any>(listSql),
-      query<{ total: number }>(countSql),
+      query(listSql),
+      query(countSql),
     ])
     
     const total = totalRows[0]?.total || 0
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
       ]
     }
 
-    const { rows } = await query<any>(insertSql, queryParams)
+    const { rows } = await query(insertSql, queryParams)
 
     const newSpace = rows[0]
 

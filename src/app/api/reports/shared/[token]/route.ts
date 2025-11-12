@@ -21,7 +21,7 @@ export async function GET(
         AND r.deleted_at IS NULL
     `
 
-    const result = await query<any>(sql, [params.token])
+    const result = await query(sql, [params.token])
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Link not found or expired' }, { status: 404 })
@@ -75,7 +75,7 @@ export async function POST(
         AND r.deleted_at IS NULL
     `
 
-    const result = await query<any>(sql, [params.token])
+    const result = await query(sql, [params.token])
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Link not found or expired' }, { status: 404 })

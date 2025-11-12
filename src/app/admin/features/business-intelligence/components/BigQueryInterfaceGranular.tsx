@@ -95,7 +95,7 @@ export function BigQueryInterfaceGranular() {
   })
   
   // Footer tabs
-  const [footerTab, setFooterTab] = useState<'results' | 'history' | 'visualization'>('results')
+  const [footerTab, setFooterTab] = useState<'results' | 'history' | 'visualization' | 'validation' | 'statistics'>('results')
   const [showFooter, setShowFooter] = useState(true)
   const [footerHeight, setFooterHeight] = useState(320)
   const [isResizing, setIsResizing] = useState(false)
@@ -130,28 +130,6 @@ export function BigQueryInterfaceGranular() {
     const validation = validateQuery(query)
     setQueryValidation(validation)
   }, [query, validateQuery])
-
-  // Keyboard shortcuts
-  useKeyboardShortcuts({
-    onRunQuery: () => handleExecuteQuery(),
-    onSaveQuery: saveCurrentTab,
-    onCreateNewTab: createNewTab,
-    onCloseTab: () => closeTab(activeTabId),
-    onShowTemplates: () => setShowTemplates(true),
-    onShowBookmarks: () => setShowBookmarks(true),
-    onShowHistory: () => { setFooterTab('history'); setShowFooter(true) },
-    onShowResults: () => { setFooterTab('results'); setShowFooter(true) },
-    onShowVisualization: () => { setFooterTab('visualization'); setShowFooter(true) },
-    onShowShortcuts: () => setShowShortcuts(true),
-    onCloseDialogs: () => {
-      setShowTemplates(false)
-      setShowBookmarks(false)
-      setShowShortcuts(false)
-      closeContextMenu()
-    },
-    tabs,
-    activeTabId
-  })
 
   // Mock data loading functions
   const loadSpaces = async () => {
@@ -279,6 +257,30 @@ export function BigQueryInterfaceGranular() {
     setContextMenu(prev => ({ ...prev, visible: false }))
   }
 
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    onRunQuery: () => handleExecuteQuery(),
+    onSaveQuery: saveCurrentTab,
+    onCreateNewTab: createNewTab,
+    onCloseTab: () => closeTab(activeTabId),
+    onShowTemplates: () => setShowTemplates(true),
+    onShowBookmarks: () => setShowBookmarks(true),
+    onShowHistory: () => { setFooterTab('history'); setShowFooter(true) },
+    onShowResults: () => { setFooterTab('results'); setShowFooter(true) },
+    onShowVisualization: () => { setFooterTab('visualization'); setShowFooter(true) },
+    onShowShortcuts: () => setShowShortcuts(true),
+    onCloseDialogs: () => {
+      setShowTemplates(false)
+      setShowBookmarks(false)
+      setShowShortcuts(false)
+      closeContextMenu()
+    },
+    onRenameTab: () => {},
+    onShowValidation: () => {},
+    tabs,
+    activeTabId
+  })
+
   // Bookmark functions
   const toggleBookmark = (queryId: string) => {
     setBookmarkedQueries(prev => {
@@ -387,7 +389,7 @@ export function BigQueryInterfaceGranular() {
   return (
     <div className="h-screen bg-gray-100 flex flex-col">
       {/* Header */}
-      <Header selectedSpace={selectedSpace} spaces={spaces} />
+      <Header selectedSpace={selectedSpace} spaces={spaces} onSpaceChange={setSelectedSpace} />
 
       {/* Tab Bar */}
       <TabBar
@@ -406,9 +408,9 @@ export function BigQueryInterfaceGranular() {
       <div className="flex-1 flex min-h-0">
         {/* Left Sidebar - Data Explorer */}
         <DataExplorer
-          spaces={spaces}
+          spaces={spaces as any}
           selectedSpace={selectedSpace}
-          onSpaceChange={setSelectedSpace}
+          onTableLeftClick={() => {}}
           onTableRightClick={handleTableRightClick}
         />
 
@@ -444,7 +446,7 @@ export function BigQueryInterfaceGranular() {
         footerHeight={footerHeight}
         isResizing={isResizing}
         footerTab={footerTab}
-        onFooterTabChange={setFooterTab}
+        onFooterTabChange={(tab) => setFooterTab(tab as any)}
         currentResult={currentResult}
         queryHistory={queryHistory}
         onLoadQuery={updateCurrentTabQuery}

@@ -33,9 +33,6 @@ export async function GET(request: NextRequest) {
     // Get import profiles using Prisma
     const profiles = await db.importProfile.findMany({
       where,
-      include: {
-        importProfileSharing: true
-      },
       orderBy: {
         createdAt: 'desc'
       }
@@ -73,7 +70,8 @@ export async function POST(request: NextRequest) {
       attributeMapping, 
       attributeOptions, 
       isPublic, 
-      sharing 
+      sharing,
+      spaceId
     } = body
 
     // Validate required fields
@@ -91,42 +89,29 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         description,
-        dataModel: dataModel,
-        fileTypes: fileTypes,
-        headerRow: headerRow || 1,
-        dataStartRow: dataStartRow || 2,
-        chunkSize: chunkSize || 1000,
-        maxItems: maxItems || null,
-        importType: importType,
-        primaryKeyAttribute: primaryKeyAttribute || null,
-        dateFormat: dateFormat || 'YYYY-MM-DD',
-        timeFormat: timeFormat || 'HH:mm:ss',
-        booleanFormat: booleanFormat || 'true/false',
-        attributeMapping: attributeMapping || {},
-        attributeOptions: attributeOptions || {},
-        isPublic: isPublic || false,
-        createdBy: session.user.id
+        dataModelId: dataModel,
+        mapping: attributeMapping || {},
+        settings: {
+          fileTypes: fileTypes,
+          headerRow: headerRow || 1,
+          dataStartRow: dataStartRow || 2,
+          chunkSize: chunkSize || 1000,
+          maxItems: maxItems || null,
+          importType: importType,
+          primaryKeyAttribute: primaryKeyAttribute || null,
+          dateFormat: dateFormat || 'YYYY-MM-DD',
+          timeFormat: timeFormat || 'HH:mm:ss',
+          booleanFormat: booleanFormat || 'true/false',
+          attributeOptions: attributeOptions || {},
+          isPublic: isPublic || false
+        } as any,
+        createdBy: session.user.id,
+        spaceId: spaceId || null
       }
     })
 
-    // Create sharing configurations if provided using Prisma
-    if (sharing && sharing.length > 0) {
-      const sharingData = sharing.map((share: any) => ({
-        profileId: profile.id,
-        sharingType: share.type,
-        targetId: share.targetId || null,
-        targetGroup: share.targetGroup || null
-      }))
-
-      try {
-        await db.importProfileSharing.createMany({
-          data: sharingData
-        })
-      } catch (sharingError) {
-        console.error('Error creating sharing configurations:', sharingError)
-        // Don't fail the request, just log the error
-      }
-    }
+    // ImportProfileSharing model doesn't exist in Prisma schema
+    // Sharing functionality not implemented
 
     return NextResponse.json({ profile }, { status: 201 })
   } catch (error) {

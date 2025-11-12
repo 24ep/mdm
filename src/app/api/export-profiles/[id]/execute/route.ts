@@ -46,10 +46,10 @@ export async function POST(
 
     // Check if user has access to this profile
     const hasAccess = profile.is_public || 
-                     profile.created_by === user.id ||
+                     profile.created_by === session.user.id ||
                      profile.sharing_config.some((share: any) => 
                        share.sharing_type === 'all_users' ||
-                       (share.sharing_type === 'specific_users' && share.target_id === user.id)
+                       (share.sharing_type === 'specific_users' && share.target_id === session.user.id)
                      )
 
     if (!hasAccess) {
@@ -72,7 +72,7 @@ export async function POST(
     }
 
     // Build the SQL query based on selected columns and filters
-    let selectClause = selectedColumns.map(col => {
+    let selectClause = selectedColumns.map((col: any) => {
       const attr = attributes.find(a => a.name === col)
       return attr ? `${col} as "${attr.display_name || attr.name}"` : col
     }).join(', ')
@@ -138,7 +138,7 @@ export async function POST(
     }
 
     // Return the file
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(new Uint8Array(fileBuffer), {
       status: 200,
       headers: {
         'Content-Type': mimeType,

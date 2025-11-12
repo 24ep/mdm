@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
         ? `chart_report_${elementId}.pdf`
         : `export_${modelId}_${new Date().toISOString().split('T')[0]}.pdf`
 
-      return new NextResponse(pdfBuffer, {
+      return new NextResponse(pdfBuffer as any, {
         status: 200,
         headers: {
           'Content-Type': 'application/pdf',

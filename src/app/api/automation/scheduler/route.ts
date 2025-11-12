@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
-import { executeWorkflow } from '@/lib/workflow-executor'
+// import { executeWorkflow } from '@/lib/workflow-executor' // Function doesn't exist
 import { DataSyncExecutor } from '@/lib/data-sync-executor'
 
 /**
@@ -12,6 +12,12 @@ import { DataSyncExecutor } from '@/lib/data-sync-executor'
  * Usage:
  * - Cron: 0,5,10,15,20,25,30,35,40,45,50,55 * * * * curl -X POST http://localhost:3000/api/automation/scheduler
  */
+
+// Stub function - executeWorkflow doesn't exist in workflow-executor
+async function executeWorkflow(workflowId: string): Promise<{ success: boolean; records_processed?: number; records_updated?: number; error?: string }> {
+  return { success: false, error: 'Workflow execution not implemented' }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const results = {

@@ -313,7 +313,7 @@ export function AIAnalyst() {
 
   const clearChat = () => {
     if (messages.length === 0) {
-      toast.info('Chat is already empty')
+      toast('Chat is already empty')
       return
     }
     
@@ -455,7 +455,7 @@ export function AIAnalyst() {
           totalMessages: messages.length,
           totalAnalysis: analysisResults.length,
           keyInsights: analysisResults.flatMap(r => r.insights).slice(0, 5),
-          dataTypes: [...new Set(analysisResults.map(r => r.type))],
+          dataTypes: Array.from(new Set(analysisResults.map(r => r.type))),
           spaceId: selectedSpace,
           modelUsed: availableModels.find(m => m.id === selectedModel)?.name || 'Unknown'
         },

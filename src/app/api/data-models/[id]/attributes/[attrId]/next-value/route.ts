@@ -19,7 +19,7 @@ export async function POST(
       WHERE id = $1::uuid AND data_model_id = $2::uuid AND is_auto_increment = true
     `
     
-    const { rows: attrRows } = await query<any>(attributeSql, [attrId, dataModelId])
+    const { rows: attrRows } = await query(attributeSql, [attrId, dataModelId])
     
     if (attrRows.length === 0) {
       return NextResponse.json({ error: 'Attribute not found or not auto-increment' }, { status: 404 })

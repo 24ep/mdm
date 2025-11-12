@@ -28,26 +28,31 @@ export async function PUT(
     // Get the file to get its current path and spaceId
     const existingFile = await db.spaceAttachmentStorage.findUnique({
       where: { id: fileId },
-      select: { filePath: true, fileName: true, spaceId: true, bucketId: true }
+      select: { filePath: true, fileName: true, spaceId: true }
     })
 
     if (!existingFile) {
       return NextResponse.json({ error: 'File not found' }, { status: 404 })
     }
 
-    // Get storage configuration for the space
-    const storageConfig = await db.spaceAttachmentStorage.findFirst({
-      where: { spaceId: existingFile.spaceId || existingFile.bucketId }
+    // Get active storage connection
+    const storageConnection = await db.storageConnection.findFirst({
+      where: { 
+        isActive: true,
+        type: { in: ['minio', 's3', 'sftp', 'ftp'] }
+      }
     })
 
-    if (!storageConfig) {
-      return NextResponse.json({ error: 'Storage configuration not found' }, { status: 404 })
+    if (!storageConnection) {
+      return NextResponse.json({ error: 'No active storage connection found' }, { status: 404 })
     }
 
     // Create storage service instance
     const storageService = new AttachmentStorageService({
-      provider: storageConfig.provider as 'minio' | 's3' | 'sftp' | 'ftp',
-      config: storageConfig.config as any
+      provider: storageConnection.type as 'minio' | 's3' | 'sftp' | 'ftp',
+      config: {
+        [storageConnection.type]: storageConnection.config
+      } as any
     })
 
     // Extract the actual file name from the path (last part after /)
@@ -81,7 +86,7 @@ export async function PUT(
         id: updatedFile.id,
         name: updatedFile.fileName,
         path: updatedFile.filePath,
-        updatedAt: updatedFile.updatedAt
+        createdAt: updatedFile.createdAt
       }
     })
   } catch (error: any) {

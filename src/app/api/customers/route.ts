@@ -192,7 +192,7 @@ export async function GET(request: NextRequest) {
 
     const [{ rows: customers }, { rows: countRows }] = await Promise.all([
       query(customersSql, params),
-      query<{ count: number }>(countSql, params),
+      query(countSql, params),
     ])
 
     const total = countRows[0]?.count || 0
@@ -252,7 +252,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (email) {
-      const { rows: existing } = await query<{ id: string }>(
+      const { rows: existing } = await query(
         'SELECT id FROM public.customers WHERE email = $1 AND deleted_at IS NULL LIMIT 1',
         [email]
       )

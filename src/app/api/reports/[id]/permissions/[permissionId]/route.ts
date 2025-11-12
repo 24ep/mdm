@@ -32,7 +32,7 @@ export async function DELETE(
       RETURNING *
     `
 
-    const result = await query<any>(sql, [params.permissionId, params.id])
+    const result = await query(sql, [params.permissionId, params.id])
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Permission not found' }, { status: 404 })

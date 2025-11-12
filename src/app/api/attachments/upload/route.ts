@@ -36,43 +36,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 })
     }
 
-    // Get attachment storage configuration for the space using Prisma
-    const storageConfig = await db.spaceAttachmentStorage.findUnique({
-      where: { spaceId: spaceId }
+    // Get active storage connection
+    const storageConnection = await db.storageConnection.findFirst({
+      where: { 
+        isActive: true,
+        type: { in: ['minio', 's3', 'sftp', 'ftp'] }
+      }
     })
 
-    if (!storageConfig) {
-      console.error('Storage configuration not found')
-      return NextResponse.json({ error: 'Storage configuration not found' }, { status: 500 })
+    if (!storageConnection) {
+      return NextResponse.json({ error: 'No active storage connection found' }, { status: 500 })
     }
 
-    // Validate file size and type based on attribute configuration using Prisma
-    const attribute = await db.dataModelAttribute.findUnique({
-      where: { id: attributeId }
-    })
-
-    if (!attribute) {
-      return NextResponse.json({ error: 'Attribute not found' }, { status: 404 })
-    }
-
-    // Check file size limit
-    const maxFileSize = attribute.maxFileSize ? parseInt(attribute.maxFileSize) * 1024 * 1024 : 10 * 1024 * 1024 // Default 10MB
+    // Basic file size validation (default 10MB limit)
+    const maxFileSize = 10 * 1024 * 1024 // 10MB
     if (file.size > maxFileSize) {
       return NextResponse.json({ 
         error: `File size exceeds limit of ${maxFileSize / (1024 * 1024)}MB` 
       }, { status: 400 })
-    }
-
-    // Check file type if specified
-    if (attribute.allowedFileTypes) {
-      const allowedTypes = attribute.allowedFileTypes.split(',').map(type => type.trim().toLowerCase())
-      const fileExtension = file.name.split('.').pop()?.toLowerCase()
-      
-      if (!fileExtension || !allowedTypes.includes(fileExtension)) {
-        return NextResponse.json({ 
-          error: `File type not allowed. Allowed types: ${attribute.allowedFileTypes}` 
-        }, { status: 400 })
-      }
     }
 
     // Generate unique filename
@@ -83,7 +64,12 @@ export async function POST(request: NextRequest) {
     const fileBuffer = Buffer.from(await file.arrayBuffer())
 
     // Initialize storage service
-    const storageService = new AttachmentStorageService(storageConfig)
+    const storageService = new AttachmentStorageService({
+      provider: storageConnection.type as 'minio' | 's3' | 'sftp' | 'ftp',
+      config: {
+        [storageConnection.type]: storageConnection.config
+      } as any
+    })
 
     // Upload file
     const uploadResult = await storageService.uploadFile(
@@ -92,7 +78,7 @@ export async function POST(request: NextRequest) {
       file.type
     )
 
-    if (!uploadResult.success) {
+    if (!uploadResult.success || !uploadResult.path) {
       return NextResponse.json({ 
         error: uploadResult.error || 'Upload failed' 
       }, { status: 500 })
@@ -102,16 +88,10 @@ export async function POST(request: NextRequest) {
     const attachment = await db.attachmentFile.create({
       data: {
         id: uuidv4(),
-        attributeId: attributeId,
-        originalName: file.name,
-        storedName: uniqueFileName,
+        fileName: file.name,
+        filePath: uploadResult.path,
         fileSize: file.size,
-        contentType: file.type,
-        storageProvider: storageConfig.provider,
-        storagePath: uploadResult.path,
-        storageUrl: uploadResult.url,
-        uploadedBy: session.user.id,
-        uploadedAt: new Date()
+        mimeType: file.type
       }
     })
 
@@ -119,9 +99,9 @@ export async function POST(request: NextRequest) {
       success: true,
       attachment: {
         id: attachment.id,
-        originalName: file.name,
+        fileName: file.name,
         fileSize: file.size,
-        contentType: file.type,
+        mimeType: file.type,
         url: uploadResult.url,
         path: uploadResult.path
       }

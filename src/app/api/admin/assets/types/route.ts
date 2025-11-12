@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
               orderBy: { sortOrder: 'asc' },
             },
           }
-        : false,
+        : undefined,
     })
 
     return NextResponse.json(assetTypes)

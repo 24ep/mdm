@@ -901,10 +901,10 @@ export default function SettingsPage() {
       console.error('Failed to save attribute options:', e)
     }
   }
-;
+
   return (
-      null,
-      <Tabs defaultValue="system" orientation="vertical" className="flex h-full">
+    <>
+    <Tabs defaultValue="system" orientation="vertical" className="flex h-full">
         {/* Left Sidebar */}
         <div className="w-72 bg-card flex flex-col border-r">
           <div className="p-6 border-b">
@@ -1379,6 +1379,7 @@ export default function SettingsPage() {
                         </div>
                       </div>
                     ) : (
+                    <>
                     <DragDropContext onDragEnd={handleDragEnd}>
                     <div className="border rounded-lg overflow-hidden">
                       <table className="w-full text-sm">
@@ -1504,6 +1505,7 @@ export default function SettingsPage() {
                         Create New Data Model
                       </Button>
                     </div>
+                    </>
                     )}
                   </div>
                 </div>
@@ -2952,5 +2954,6 @@ export default function SettingsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </>
     )
 }

@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
       const creds = await secretsManager.getSecret(`servicedesk-integrations/${connectionId}/credentials`)
       apiKey = creds?.apiKey || ''
     } else {
-      apiKey = decryptApiKey(config.api_auth_apikey_value)
+      apiKey = decryptApiKey(config.api_auth_apikey_value) || ''
     }
 
     if (!apiKey) {

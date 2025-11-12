@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     if (forbidden) return forbidden
 
     // Get role usage statistics
-    const { rows: globalRoleUsage } = await query<any>(`
+    const { rows: globalRoleUsage } = await query(`
       SELECT 
         u.role as role_name,
         COUNT(*) as user_count
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
       ORDER BY user_count DESC
     `)
 
-    const { rows: spaceRoleUsage } = await query<any>(`
+    const { rows: spaceRoleUsage } = await query(`
       SELECT 
         sm.role as role_name,
         COUNT(*) as member_count,
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     `)
 
     // Get custom roles usage
-    const { rows: customRoleUsage } = await query<any>(`
+    const { rows: customRoleUsage } = await query(`
       SELECT 
         r.id,
         r.name,
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     `)
 
     // Get permissions distribution
-    const { rows: permissionDistribution } = await query<any>(`
+    const { rows: permissionDistribution } = await query(`
       SELECT 
         p.resource,
         COUNT(DISTINCT rp.role_id) as role_count

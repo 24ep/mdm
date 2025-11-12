@@ -41,8 +41,8 @@ export async function GET(request: NextRequest) {
       ${whereSql}
     `
 
-    const companiesRes = await query<any>(companiesSql, [...params, limit, offset])
-    const countRes = await query<{ total: number }>(countSql, params)
+    const companiesRes = await query(companiesSql, [...params, limit, offset])
+    const countRes = await query(countSql, params)
     const companies = companiesRes.rows
     const total = countRes.rows[0]?.total || 0
     
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if company already exists
-    const existing = await query<{ id: string }>(
+    const existing = await query(
       'SELECT id FROM companies WHERE name = $1 AND deleted_at IS NULL LIMIT 1',
       [name]
     )
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const inserted = await query<any>(
+    const inserted = await query(
       'INSERT INTO companies (name, description) VALUES ($1, $2) RETURNING *',
       [name, description ?? null]
     )

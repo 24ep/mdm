@@ -30,7 +30,7 @@ export async function POST(
     }
 
     // Check if user exists
-    const userCheck = await query<any>(
+    const userCheck = await query(
       'SELECT id FROM users WHERE id = $1',
       [params.id]
     )

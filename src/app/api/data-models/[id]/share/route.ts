@@ -23,7 +23,7 @@ export async function PUT(
     // Get the data model to check permissions using Prisma
     const dataModel = await db.dataModel.findUnique({
       where: { id: params.id },
-      select: { spaceIds: true }
+      include: { spaces: { take: 1 } }
     })
 
     if (!dataModel) {
@@ -31,7 +31,7 @@ export async function PUT(
     }
 
     // Check if user has admin/owner access to the original space
-    const originalSpaceId = dataModel.spaceIds?.[0]
+    const originalSpaceId = dataModel.spaces?.[0]?.spaceId
     if (!originalSpaceId) {
       return NextResponse.json({ error: 'Data model has no original space' }, { status: 400 })
     }
@@ -69,12 +69,28 @@ export async function PUT(
     }
 
     // Update the data model with new space_ids using Prisma
-    const updatedModel = await db.dataModel.update({
-      where: { id: params.id },
-      data: {
-        spaceIds: [originalSpaceId, ...space_ids],
-        updatedAt: new Date()
+    // First, delete existing spaces (except original)
+    await db.dataModelSpace.deleteMany({
+      where: { 
+        dataModelId: params.id,
+        spaceId: { not: originalSpaceId }
       }
+    })
+
+    // Then, create new space relations
+    if (space_ids.length > 0) {
+      await db.dataModelSpace.createMany({
+        data: space_ids.map(spaceId => ({
+          dataModelId: params.id,
+          spaceId: spaceId
+        })),
+        skipDuplicates: true
+      })
+    }
+
+    const updatedModel = await db.dataModel.findUnique({
+      where: { id: params.id },
+      include: { spaces: true }
     })
 
     return NextResponse.json({ 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/database'
-import { uploadFile } from '@/lib/attachment-storage'
+import { AttachmentStorageService } from '@/lib/attachment-storage'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
@@ -34,51 +34,67 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 })
     }
 
-    // Get storage configuration
+    // Get active storage connection
     const storageResult = await query(
-      'SELECT provider, config FROM space_attachment_storage WHERE space_id = $1 AND is_active = true ORDER BY created_at DESC LIMIT 1',
-      [spaceId]
+      'SELECT type, config FROM storage_connections WHERE is_active = true AND type IN (\'minio\', \'s3\', \'sftp\', \'ftp\') ORDER BY created_at DESC LIMIT 1',
+      []
     )
 
     if (storageResult.rows.length === 0) {
-      return NextResponse.json({ error: 'No storage configuration found' }, { status: 500 })
+      return NextResponse.json({ error: 'No active storage connection found' }, { status: 500 })
     }
 
-    const storage = storageResult.rows[0]
+    const storage = storageResult.rows[0] as unknown as { type: string; config: any }
+
+    // Initialize storage service
+    const storageService = new AttachmentStorageService({
+      provider: storage.type as 'minio' | 's3' | 'sftp' | 'ftp',
+      config: {
+        [storage.type]: storage.config
+      } as any
+    })
+
+    // Convert file to buffer
+    const fileBuffer = Buffer.from(await file.arrayBuffer())
+    const fileName = file.name
+    const mimeType = file.type
 
     // Upload file to storage
-    const uploadResult = await uploadFile(file, {
-      provider: storage.provider,
-      config: storage.config,
-      spaceId,
-      dataModelId,
-      attributeId,
-      recordId
-    })
+    const uploadResult = await storageService.uploadFile(fileName, fileBuffer, mimeType)
+
+    if (!uploadResult.success || !uploadResult.path) {
+      return NextResponse.json({ 
+        error: uploadResult.error || 'Upload failed' 
+      }, { status: 500 })
+    }
 
     // Save file metadata to database
     const fileResult = await query(
-      'INSERT INTO attachment_files (space_id, data_model_id, attribute_id, record_id, file_name, file_path, file_size, mime_type, uploaded_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
+      'INSERT INTO attachment_files (file_name, file_path, file_size, mime_type) VALUES ($1, $2, $3, $4) RETURNING *',
       [
-        spaceId,
-        dataModelId,
-        attributeId,
-        recordId || null,
-        uploadResult.fileName,
-        uploadResult.filePath,
-        uploadResult.fileSize,
-        uploadResult.mimeType,
-        userId
+        fileName,
+        uploadResult.path,
+        file.size,
+        mimeType
       ]
     )
 
+    const fileRecord = fileResult.rows[0] as unknown as { 
+      id: string; 
+      file_name: string; 
+      file_path: string; 
+      file_size: number; 
+      mime_type: string; 
+      created_at: Date 
+    }
+
     return NextResponse.json({
-      id: fileResult.rows[0].id,
-      file_name: fileResult.rows[0].file_name,
-      file_path: fileResult.rows[0].file_path,
-      file_size: fileResult.rows[0].file_size,
-      mime_type: fileResult.rows[0].mime_type,
-      uploaded_at: fileResult.rows[0].uploaded_at
+      id: fileRecord.id,
+      file_name: fileRecord.file_name,
+      file_path: fileRecord.file_path,
+      file_size: fileRecord.file_size,
+      mime_type: fileRecord.mime_type,
+      created_at: fileRecord.created_at
     })
 
   } catch (error) {

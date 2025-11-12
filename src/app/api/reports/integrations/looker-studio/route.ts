@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     `
 
     const params = spaceId ? [session.user.id, spaceId] : [session.user.id]
-    const result = await query<any>(sql, params)
+    const result = await query(sql, params)
     
     return NextResponse.json({ configs: result.rows || [] })
   } catch (error) {
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
       RETURNING *
     `
 
-    const result = await query<any>(sql, [
+    const result = await query(sql, [
       name,
       'looker-studio',
       access_type,
@@ -117,7 +117,7 @@ export async function PUT(request: NextRequest) {
       RETURNING *
     `
 
-    const result = await query<any>(sql, [
+    const result = await query(sql, [
       name,
       access_type,
       JSON.stringify(config),

@@ -24,8 +24,8 @@ export async function GET(request: NextRequest) {
     const listSql = `SELECT * FROM public.assignments ${where} ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`
     const countSql = `SELECT COUNT(*)::int AS total FROM public.assignments ${where}`
     const [{ rows: assignments }, { rows: totals }] = await Promise.all([
-      query<any>(listSql, [...params, limit, offset]),
-      query<{ total: number }>(countSql, params),
+      query(listSql, [...params, limit, offset]),
+      query(countSql, params),
     ])
     const total = totals[0]?.total || 0
     return NextResponse.json({ assignments, pagination: { page, limit, total, pages: Math.ceil(total / limit) } })
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { rows: insertRows } = await query<any>(
+    const { rows: insertRows } = await query(
       `INSERT INTO public.assignments (title, description, status, priority, due_date, start_date, assigned_to, created_by)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
       [title, description ?? null, status || 'TODO', priority || 'MEDIUM', dueDate || null, startDate || null, assignedTo || null, session.user.id]
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     const assignment = insertRows[0]
 
     if (customerIds && customerIds.length > 0) {
-      const values = customerIds.map((_, i) => `($1, $${i + 2})`).join(', ')
+      const values = customerIds.map((_: any, i: number) => `($1, $${i + 2})`).join(', ')
       await query(
         `INSERT INTO public.customer_assignments (assignment_id, customer_id) VALUES ${values}`,
         [assignment.id, ...customerIds]

@@ -128,7 +128,7 @@ export async function GET(request: NextRequest) {
     // Get total count
     const countQuery = `SELECT COUNT(DISTINCT af.id) as total ${baseQuery}`
     const countResult = await query(countQuery, queryParams)
-    const total = parseInt(countResult.rows[0].total)
+    const total = parseInt((countResult.rows[0] as any).total)
 
     // Get files with pagination
     const orderBy = sortBy === 'name' ? 'af.file_name' :
@@ -194,7 +194,7 @@ export async function GET(request: NextRequest) {
     `
 
     const filtersResult = await query(filtersQuery, [spaceId])
-    const filters = filtersResult.rows[0]
+    const filters = filtersResult.rows[0] as any
 
     return NextResponse.json({
       files: filesResult.rows,

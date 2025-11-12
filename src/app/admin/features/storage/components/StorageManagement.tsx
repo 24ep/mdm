@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import toast from 'react-hot-toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -67,7 +68,6 @@ import { FileViewer } from '@/components/storage/FileViewer'
 import { Bucket, StorageFile } from '../types'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { StorageProviderType } from '@/lib/storage-config'
-import toast from 'react-hot-toast'
 
 interface StorageConnection {
   id: string
@@ -394,7 +394,7 @@ export function StorageManagement() {
   const handleCopyUrl = (file: StorageFile) => {
     if (file.publicUrl) {
       navigator.clipboard.writeText(file.publicUrl)
-      showSuccess('Public URL copied to clipboard')
+      toast.success('Public URL copied to clipboard')
     }
   }
 

@@ -22,7 +22,7 @@ export async function GET(
     const record = await db.dataRecord.findUnique({
       where: { id: params.id },
       include: {
-        dataRecordValues: true
+        values: true
       }
     })
 
@@ -83,7 +83,7 @@ export async function PUT(
     const record = await db.dataRecord.findUnique({
       where: { id: params.id },
       include: {
-        dataRecordValues: true
+        values: true
       }
     })
 
@@ -127,7 +127,6 @@ export async function DELETE(
     await db.dataRecord.update({
       where: { id: params.id },
       data: {
-        isActive: false,
         deletedAt: new Date()
       }
     })

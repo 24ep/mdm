@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     }
 
     // TODO: Load from OpenMetadata
-    const testSuites = []
+    const testSuites: any[] = []
 
     return NextResponse.json({ testSuites })
   } catch (error) {

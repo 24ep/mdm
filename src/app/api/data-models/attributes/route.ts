@@ -29,8 +29,8 @@ export async function GET(request: NextRequest) {
       WHERE data_model_id = $1::uuid AND is_active = TRUE
     `
     const [{ rows: attributes }, { rows: totals }] = await Promise.all([
-      query<any>(listSql, [dataModelId, limit, offset]),
-      query<{ total: number }>(countSql, [dataModelId]),
+      query(listSql, [dataModelId, limit, offset]),
+      query(countSql, [dataModelId]),
     ])
     const total = totals[0]?.total || 0
     return NextResponse.json({
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
       VALUES ($1::uuid,$2,$3,$4,$5,$6,$7,$8,$9,$10)
       RETURNING *
     `
-    const { rows } = await query<any>(insertSql, [
+    const { rows } = await query(insertSql, [
       data_model_id,
       name,
       display_name,

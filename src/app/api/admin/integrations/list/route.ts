@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       ORDER BY name ASC
     `
 
-    const result = await query<any>(sql)
+    const result = await query(sql)
     
     return NextResponse.json({ 
       integrations: result.rows || [] 

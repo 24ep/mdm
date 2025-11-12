@@ -18,7 +18,7 @@ export async function POST(
     }
 
     // Get original role
-    const { rows: originalRole } = await query<any>(
+    const { rows: originalRole } = await query(
       'SELECT name, description, level, is_system FROM roles WHERE id = $1',
       [params.id]
     )
@@ -30,7 +30,7 @@ export async function POST(
     const role = originalRole[0]
 
     // Create new role
-    const { rows: newRole } = await query<any>(
+    const { rows: newRole } = await query(
       `INSERT INTO roles (name, description, level, is_system)
        VALUES ($1, $2, $3, $4)
        RETURNING id, name, description, level, is_system`,
@@ -38,7 +38,7 @@ export async function POST(
     )
 
     // Copy permissions
-    const { rows: permissions } = await query<any>(
+    const { rows: permissions } = await query(
       'SELECT permission_id FROM role_permissions WHERE role_id = $1',
       [params.id]
     )

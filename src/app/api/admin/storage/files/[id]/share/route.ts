@@ -27,9 +27,7 @@ export async function POST(
       select: { 
         filePath: true, 
         fileName: true, 
-        spaceId: true, 
-        bucketId: true,
-        publicUrl: true 
+        spaceId: true
       }
     })
 
@@ -37,19 +35,24 @@ export async function POST(
       return NextResponse.json({ error: 'File not found' }, { status: 404 })
     }
 
-    let publicUrl = file.publicUrl
+    let publicUrl: string | null = null
 
     if (isPublic) {
-      // Get storage configuration for the space
-      const storageConfig = await db.spaceAttachmentStorage.findFirst({
-        where: { spaceId: file.spaceId || file.bucketId }
+      // Get active storage connection
+      const storageConnection = await db.storageConnection.findFirst({
+        where: { 
+          isActive: true,
+          type: { in: ['minio', 's3', 'sftp', 'ftp'] }
+        }
       })
 
-      if (storageConfig) {
+      if (storageConnection) {
         // Create storage service instance
         const storageService = new AttachmentStorageService({
-          provider: storageConfig.provider as 'minio' | 's3' | 'sftp' | 'ftp',
-          config: storageConfig.config as any
+          provider: storageConnection.type as 'minio' | 's3' | 'sftp' | 'ftp',
+          config: {
+            [storageConnection.type]: storageConnection.config
+          } as any
         })
 
         // Extract the actual file name from the path
@@ -65,24 +68,14 @@ export async function POST(
           publicUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/admin/storage/files/${fileId}/content`
         }
       } else {
-        // Fallback if no storage config
+        // Fallback if no storage connection
         publicUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/admin/storage/files/${fileId}/content`
       }
-    } else {
-      publicUrl = null
     }
-
-    // Update file with public URL
-    const updatedFile = await db.spaceAttachmentStorage.update({
-      where: { id: fileId },
-      data: {
-        publicUrl: publicUrl
-      }
-    })
 
     return NextResponse.json({ 
       file: {
-        id: updatedFile.id,
+        id: fileId,
         isPublic,
         permissionLevel,
         publicUrl: publicUrl

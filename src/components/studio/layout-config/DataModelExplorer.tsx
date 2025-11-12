@@ -697,7 +697,7 @@ export function DataModelExplorer({
                     const attrNames = attrs.map(a => a.name.toLowerCase())
                     const words = sqlStatement.match(/\b[a-zA-Z_][a-zA-Z0-9_]*\b/g) || []
                     const detectedAttrs = words.filter(word => attrNames.includes(word.toLowerCase()))
-                    const uniqueDetected = [...new Set(detectedAttrs)]
+                    const uniqueDetected = Array.from(new Set(detectedAttrs))
                     
                     if (uniqueDetected.length > 0) {
                       return (

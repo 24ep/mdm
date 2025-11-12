@@ -6,7 +6,7 @@ export async function GET(
   { params }: { params: { slug: string } }
 ) {
   try {
-    const { rows } = await query<any>(
+    const { rows } = await query(
       'SELECT * FROM public.data_models WHERE slug = $1 AND deleted_at IS NULL',
       [params.slug]
     )

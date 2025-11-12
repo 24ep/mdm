@@ -335,12 +335,12 @@ export function useNotebookKeyboardShortcuts({
     // Help shortcut
     if (event.key === 'h' && isCtrlOrCmd && isShift) {
       // Ctrl+Shift+H: Show help
-      toast.info('Keyboard shortcuts active! Press Ctrl+? for help')
+      toast('Keyboard shortcuts active! Press Ctrl+? for help')
     }
 
     if (event.key === '?' && isCtrlOrCmd) {
       // Ctrl+?: Show help
-      toast.info(`
+      toast(`
 Keyboard Shortcuts:
 • Ctrl+Enter: Run cell
 • Shift+Enter: Run cell and move to next

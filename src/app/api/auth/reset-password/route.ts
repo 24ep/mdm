@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       )`
     )
 
-    const { rows } = await query<any>('SELECT id FROM public.users WHERE email = $1 LIMIT 1', [email])
+    const { rows } = await query('SELECT id FROM public.users WHERE email = $1 LIMIT 1', [email])
     if (!rows.length) return NextResponse.json({ success: true }) // do not reveal existence
 
     await query('DELETE FROM public.password_resets WHERE user_id = $1', [rows[0].id])
@@ -38,7 +38,7 @@ export async function PUT(request: NextRequest) {
     const { token, password } = await request.json()
     if (!token || !password) return NextResponse.json({ error: 'token and password required' }, { status: 400 })
 
-    const { rows } = await query<any>('SELECT user_id, expires_at, used_at FROM public.password_resets WHERE token = $1 LIMIT 1', [token])
+    const { rows } = await query('SELECT user_id, expires_at, used_at FROM public.password_resets WHERE token = $1 LIMIT 1', [token])
     if (!rows.length) return NextResponse.json({ error: 'Invalid token' }, { status: 400 })
     const pr = rows[0]
     if (pr.used_at || new Date(pr.expires_at) < new Date()) {
