@@ -111,8 +111,7 @@ export async function PUT(
       link,
       workspace,
       embed_url,
-      metadata,
-      is_active
+      metadata
     } = validationResult.data
 
     const sql = `
@@ -126,12 +125,11 @@ export async function PUT(
           workspace = COALESCE($7, workspace),
           embed_url = COALESCE($8, embed_url),
           metadata = COALESCE($9::jsonb, metadata),
-          is_active = COALESCE($10, is_active),
           updated_at = NOW()
-      WHERE id = $11
-        AND (created_by = $12 OR EXISTS (
+      WHERE id = $10
+        AND (created_by = $11 OR EXISTS (
           SELECT 1 FROM report_permissions
-          WHERE report_id = $11 AND user_id = $12 AND permission = 'edit'
+          WHERE report_id = $10 AND user_id = $11 AND permission = 'edit'
         ))
       RETURNING *
     `
@@ -146,7 +144,6 @@ export async function PUT(
       workspace || null,
       embed_url || null,
       metadata ? JSON.stringify(metadata) : null,
-      is_active !== undefined ? is_active : null,
       params.id,
       session.user.id
     ])

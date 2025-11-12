@@ -188,7 +188,7 @@ export async function handleAssistantRequest(options: AssistantHandlerOptions) {
     model: model || 'gpt-4',
     modelParameters: {
       assistant_id: agentId,
-      instructions: instructions || undefined,
+      instructions: instructions || null,
     },
     input: message || '',
     metadata: {
@@ -238,10 +238,6 @@ export async function handleAssistantRequest(options: AssistantHandlerOptions) {
         statusCode: runResponse.status,
         latency,
       },
-    })
-    trace?.update({
-      level: 'ERROR',
-      statusMessage: errorText,
     })
 
     try {

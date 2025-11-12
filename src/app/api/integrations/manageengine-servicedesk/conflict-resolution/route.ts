@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     const secretsManager = getSecretsManager()
     const useVault = secretsManager.getBackend() === 'vault'
     
-    let apiKey: string
+    let apiKey: string | null
     if (useVault && config.api_auth_apikey_value?.startsWith('vault://')) {
       const vaultPath = config.api_auth_apikey_value.replace('vault://', '')
       const connectionId = vaultPath.split('/')[0]
@@ -253,7 +253,7 @@ export async function PUT(request: NextRequest) {
     const secretsManager = getSecretsManager()
     const useVault = secretsManager.getBackend() === 'vault'
     
-    let apiKey: string
+    let apiKey: string | null
     if (useVault && config.api_auth_apikey_value?.startsWith('vault://')) {
       const vaultPath = config.api_auth_apikey_value.replace('vault://', '')
       const connectionId = vaultPath.split('/')[0]
@@ -339,14 +339,15 @@ export async function PUT(request: NextRequest) {
           }
           updateData.priority = priorityMap[serviceDeskTicket.priority.name] || ticket.priority
         }
-      } else if (typeof strategy === 'object' && strategy.custom) {
+      } else if (typeof strategy === 'object' && strategy !== null && 'custom' in strategy) {
         // Custom value - update both
+        const customStrategy = strategy as { custom: any }
         if (field === 'title') {
-          updateData.title = strategy.custom
-          serviceDeskUpdates.subject = strategy.custom
+          updateData.title = customStrategy.custom
+          serviceDeskUpdates.subject = customStrategy.custom
         } else if (field === 'description') {
-          updateData.description = strategy.custom
-          serviceDeskUpdates.description = strategy.custom
+          updateData.description = customStrategy.custom
+          serviceDeskUpdates.description = customStrategy.custom
         }
       }
     }

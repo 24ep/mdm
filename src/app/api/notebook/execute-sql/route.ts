@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
       data: result.data || [],
       columns: result.columns || [],
       rowCount: result.rowCount || 0,
-      columnCount: result.columnCount || result.columns?.length || 0,
+      columnCount: result.columns?.length || 0,
       preview: {
         columns: result.columns || [],
         data: (result.data || []).slice(0, 100).map((row: any) => 

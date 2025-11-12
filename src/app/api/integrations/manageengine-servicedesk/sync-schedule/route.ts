@@ -6,6 +6,7 @@ import { getSecretsManager } from '@/lib/secrets-manager'
 import { decryptApiKey } from '@/lib/encryption'
 import { ManageEngineServiceDeskService } from '@/lib/manageengine-servicedesk'
 import { db } from '@/lib/db'
+import { Prisma } from '@prisma/client'
 
 // Get or update sync schedule configuration
 export async function GET(request: NextRequest) {
@@ -194,7 +195,7 @@ export async function PUT(request: NextRequest) {
             },
             metadata: {
               path: ['serviceDeskRequestId'],
-              not: null
+              not: Prisma.DbNull
             }
           }
         })
@@ -220,7 +221,7 @@ export async function PUT(request: NextRequest) {
         const secretsManager = getSecretsManager()
         const useVault = secretsManager.getBackend() === 'vault'
         
-        let apiKey: string
+        let apiKey: string | null
         if (useVault && config.api_auth_apikey_value?.startsWith('vault://')) {
           const vaultPath = config.api_auth_apikey_value.replace('vault://', '')
           const connectionId = vaultPath.split('/')[0]

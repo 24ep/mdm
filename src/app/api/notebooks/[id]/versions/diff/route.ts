@@ -89,6 +89,7 @@ interface NotebookDiff {
     type: 'content' | 'metadata' | 'output'
     old_value: any
     new_value: any
+    all_changes?: any[]
   }>
   cells_deleted: any[]
   metadata_changes: Record<string, { old: any; new: any }>
@@ -128,10 +129,12 @@ function calculateNotebookDiff(notebook1: any, notebook2: any): NotebookDiff {
     const cell2 = cells2.get(cellId)
     if (cell2) {
       const changes: any[] = []
+      const c1 = cell1 as any
+      const c2 = cell2 as any
 
       // Check content changes
-      const content1 = cell1.type === 'sql' ? (cell1.sqlQuery || cell1.content) : cell1.content
-      const content2 = cell2.type === 'sql' ? (cell2.sqlQuery || cell2.content) : cell2.content
+      const content1 = c1.type === 'sql' ? (c1.sqlQuery || c1.content) : c1.content
+      const content2 = c2.type === 'sql' ? (c2.sqlQuery || c2.content) : c2.content
       if (content1 !== content2) {
         changes.push({
           type: 'content',
@@ -141,44 +144,44 @@ function calculateNotebookDiff(notebook1: any, notebook2: any): NotebookDiff {
       }
 
       // Check type changes
-      if (cell1.type !== cell2.type) {
+      if (c1.type !== c2.type) {
         changes.push({
           type: 'metadata',
-          old_value: cell1.type,
-          new_value: cell2.type
+          old_value: c1.type,
+          new_value: c2.type
         })
       }
 
       // Check output changes
-      if (JSON.stringify(cell1.output) !== JSON.stringify(cell2.output)) {
+      if (JSON.stringify(c1.output) !== JSON.stringify(c2.output)) {
         changes.push({
           type: 'output',
-          old_value: cell1.output,
-          new_value: cell2.output
+          old_value: c1.output,
+          new_value: c2.output
         })
       }
 
       // Check SQL-specific changes
-      if (cell1.type === 'sql' && cell2.type === 'sql') {
-        if (cell1.sqlVariableName !== cell2.sqlVariableName) {
+      if (c1.type === 'sql' && c2.type === 'sql') {
+        if (c1.sqlVariableName !== c2.sqlVariableName) {
           changes.push({
             type: 'metadata',
-            old_value: cell1.sqlVariableName,
-            new_value: cell2.sqlVariableName
+            old_value: c1.sqlVariableName,
+            new_value: c2.sqlVariableName
           })
         }
-        if (cell1.sqlConnection !== cell2.sqlConnection) {
+        if (c1.sqlConnection !== c2.sqlConnection) {
           changes.push({
             type: 'metadata',
-            old_value: cell1.sqlConnection,
-            new_value: cell2.sqlConnection
+            old_value: c1.sqlConnection,
+            new_value: c2.sqlConnection
           })
         }
       }
 
       if (changes.length > 0) {
         diff.cells_modified.push({
-          cell_id: cellId,
+          cell_id: cellId as string,
           type: changes[0].type as any,
           old_value: changes[0].old_value,
           new_value: changes[0].new_value,

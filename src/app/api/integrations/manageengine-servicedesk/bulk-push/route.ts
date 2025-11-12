@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     const secretsManager = getSecretsManager()
     const useVault = secretsManager.getBackend() === 'vault'
     
-    let apiKey: string
+    let apiKey: string | null
     if (useVault && config.api_auth_apikey_value?.startsWith('vault://')) {
       const vaultPath = config.api_auth_apikey_value.replace('vault://', '')
       const connectionId = vaultPath.split('/')[0]

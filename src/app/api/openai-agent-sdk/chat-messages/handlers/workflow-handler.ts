@@ -106,7 +106,7 @@ export async function handleWorkflowRequest(options: WorkflowHandlerOptions) {
     } catch (importError) {
       // Fallback to default workflow if import fails
       console.warn(`Failed to import workflow ${workflowFile}, falling back to qsncc-workflow:`, importError)
-      const defaultModule = await import('@/lib/workflows/qsncc-workflow')
+      const defaultModule = await import('@/lib/workflows/qsncc-workflow') as any
       runWorkflow = defaultModule.runWorkflow || defaultModule.default
     }
     

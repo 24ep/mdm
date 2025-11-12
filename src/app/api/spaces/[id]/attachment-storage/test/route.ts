@@ -195,8 +195,9 @@ async function testSFTPConnection(config: any) {
 
     // Dynamic import for optional dependency
     if (!SftpClient) {
+      // @ts-expect-error - No type definitions available for ssh2-sftp-client
       const sftpModule = await import('ssh2-sftp-client')
-      SftpClient = sftpModule.Client
+      SftpClient = (sftpModule as any).Client || (sftpModule as any).default
     }
 
     const sftp = new SftpClient()
@@ -257,8 +258,9 @@ async function testFTPConnection(config: any) {
 
     // Dynamic import for optional dependency
     if (!FtpClient) {
+      // @ts-expect-error - No type definitions available for ftp
       const ftpModule = await import('ftp')
-      FtpClient = ftpModule.Client
+      FtpClient = (ftpModule as any).Client || (ftpModule as any).default
     }
 
     return new Promise((resolve) => {
@@ -269,10 +271,10 @@ async function testFTPConnection(config: any) {
           // Test by listing the upload directory
           const uploadPath = config.path || '/uploads'
           
-          ftp.list(uploadPath, (err, list) => {
+          ftp.list(uploadPath, (err: any, list: any) => {
             if (err) {
               // If directory doesn't exist, try to create it
-              ftp.mkdir(uploadPath, true, (mkdirErr) => {
+              ftp.mkdir(uploadPath, true, (mkdirErr: any) => {
                 ftp.end()
                 if (mkdirErr) {
                   resolve({
@@ -303,7 +305,7 @@ async function testFTPConnection(config: any) {
         }
       })
 
-      ftp.on('error', (err) => {
+      ftp.on('error', (err: any) => {
         resolve({
           success: false,
           error: err.message || 'FTP connection failed'

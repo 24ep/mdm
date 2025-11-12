@@ -10,15 +10,18 @@ import { createAuditLog } from '@/lib/audit'
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
   let auditLogId: string | null = null
+  let space_id: string | undefined
+  let session: any
   
   try {
-    const session = await getServerSession(authOptions)
+    session = await getServerSession(authOptions)
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const body = await request.json()
-    const { space_id, request_id, hours, minutes, description, billable, technician } = body
+    const { space_id: spaceId, request_id, hours, minutes, description, billable, technician } = body
+    space_id = spaceId
 
     if (!space_id || !request_id || hours === undefined) {
       return NextResponse.json(
@@ -69,7 +72,7 @@ export async function POST(request: NextRequest) {
         entityType: 'ServiceDeskIntegration',
         entityId: space_id,
         userId: session.user.id,
-        newValue: { requestId, hours, minutes },
+        newValue: { requestId: request_id, hours, minutes },
         ipAddress,
         userAgent
       })
@@ -105,7 +108,7 @@ export async function POST(request: NextRequest) {
           entityId: space_id,
           userId: session.user.id,
           newValue: {
-            requestId,
+            requestId: request_id,
             hours,
             minutes,
             duration: Date.now() - startTime,
@@ -140,7 +143,7 @@ export async function POST(request: NextRequest) {
           entityId: space_id,
           userId: session.user.id,
           newValue: {
-            requestId,
+            requestId: request_id,
             error: result.error || 'Unknown error',
             duration: Date.now() - startTime,
             status: 'failed'
@@ -163,7 +166,7 @@ export async function POST(request: NextRequest) {
       await createAuditLog({
         action: 'SERVICEDESK_TIME_LOG_FAILED',
         entityType: 'ServiceDeskIntegration',
-        entityId: request?.body?.space_id || 'unknown',
+        entityId: space_id || 'unknown',
         userId: session?.user?.id || 'unknown',
         newValue: {
           error: error instanceof Error ? error.message : 'Unknown error',

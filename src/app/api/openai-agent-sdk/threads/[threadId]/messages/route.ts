@@ -24,21 +24,14 @@ export async function GET(
         userId: session.user.id,
         deletedAt: null,
       },
-      include: {
-        chatbot: {
-          select: {
-            openaiAgentSdkApiKey: true,
-          },
-        },
-      },
     })
 
     if (!thread) {
       return NextResponse.json({ error: 'Thread not found' }, { status: 404 })
     }
 
-    // Get API key from thread metadata or chatbot config
-    const apiKey = thread.metadata?.apiKey || thread.chatbot?.openaiAgentSdkApiKey
+    // Get API key from thread metadata
+    const apiKey = (thread.metadata as any)?.apiKey
     if (!apiKey) {
       return NextResponse.json({ error: 'API key not found' }, { status: 400 })
     }

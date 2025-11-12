@@ -27,7 +27,7 @@ export async function GET(
       return NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 })
     }
 
-    const userRole = memberResult.rows[0].role
+    const userRole = (memberResult.rows[0] as any).role
 
     // Get storage configuration for this space
     const storageResult = await query(
@@ -49,7 +49,7 @@ export async function GET(
       })
     }
 
-    const storage = storageResult.rows[0]
+    const storage = storageResult.rows[0] as any
     return NextResponse.json({
       provider: storage.provider,
       config: storage.config
@@ -86,7 +86,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 })
     }
 
-    const userRole = memberResult.rows[0].role
+    const userRole = (memberResult.rows[0] as any).role
     if (!['owner', 'admin'].includes(userRole)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
@@ -108,11 +108,12 @@ export async function PUT(
       [spaceId, provider, JSON.stringify(config), userId]
     )
 
+    const row = result.rows[0] as any
     return NextResponse.json({
-      id: result.rows[0].id,
-      provider: result.rows[0].provider,
-      config: result.rows[0].config,
-      is_active: result.rows[0].is_active
+      id: row.id,
+      provider: row.provider,
+      config: row.config,
+      is_active: row.is_active
     })
 
   } catch (error) {

@@ -8,6 +8,7 @@ import { ManageEngineServiceDeskService } from '@/lib/manageengine-servicedesk'
 import { db } from '@/lib/db'
 import { checkServiceDeskRateLimit, getServiceDeskRateLimitConfig } from '@/lib/servicedesk-rate-limiter'
 import { createAuditLog } from '@/lib/audit'
+import { validateTicketData, sanitizeTicketData } from '@/lib/servicedesk-validator'
 
 // Push ticket to ServiceDesk
 export async function POST(request: NextRequest) {
@@ -122,7 +123,7 @@ export async function POST(request: NextRequest) {
     const secretsManager = getSecretsManager()
     const useVault = secretsManager.getBackend() === 'vault'
     
-    let apiKey: string
+    let apiKey: string | null
     if (useVault && config.api_auth_apikey_value?.startsWith('vault://')) {
       const vaultPath = config.api_auth_apikey_value.replace('vault://', '')
       const connectionId = vaultPath.split('/')[0]
