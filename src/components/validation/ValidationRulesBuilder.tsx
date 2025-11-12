@@ -399,7 +399,8 @@ export function ValidationRulesBuilder({ rules, onRulesChange, attributeType }: 
                 </CardHeader>
                 {selectedRule?.id === rule.id && (
                   <CardContent>
-                    <Tabs defaultValue="config" className="w-full">
+                    <div className="w-full">
+                    <Tabs defaultValue="config">
                       <TabsList>
                         <TabsTrigger value="config">Configuration</TabsTrigger>
                         <TabsTrigger value="preview">Preview</TabsTrigger>

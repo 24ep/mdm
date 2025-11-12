@@ -4,10 +4,11 @@ import { requireRole } from '@/lib/rbac'
 import { createAuditLog } from '@/lib/audit'
 
 // GET /api/users/[id] - get user (MANAGER+)
-export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const forbidden = await requireRole(_request, 'MANAGER')
   if (forbidden) return forbidden
   try {
+    const { id } = await params
     const { rows } = await query(`
       SELECT 
         u.id, u.email, u.name, u.role, u.is_active, u.created_at, u.updated_at, u.default_space_id,
@@ -28,7 +29,7 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
       LEFT JOIN spaces s ON u.default_space_id = s.id
       WHERE u.id = $1 
       LIMIT 1
-    `, [params.id])
+    `, [id])
     if (!rows.length) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     return NextResponse.json({ user: rows[0] })
   } catch (error) {
@@ -38,10 +39,11 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
 }
 
 // PUT /api/users/[id] - update user (MANAGER+); can change name, role, activation, password
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const forbidden = await requireRole(request, 'MANAGER')
   if (forbidden) return forbidden
   try {
+    const { id } = await params
     const body = await request.json()
     const { email, name, role, is_active, password, default_space_id, spaces } = body
 
@@ -74,10 +76,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     // Get current data for audit log
-    const currentDataResult = await query('SELECT * FROM users WHERE id = $1', [params.id])
+    const currentDataResult = await query('SELECT * FROM users WHERE id = $1', [id])
     const currentData = currentDataResult.rows[0]
 
-    values.push(params.id)
+    values.push(id)
     const sql = `UPDATE public.users SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $${values.length} RETURNING id, email, name, role, is_active, created_at, updated_at`
 
     const { rows } = await query(sql, values)
@@ -86,14 +88,14 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     // Handle space memberships if provided
     if (spaces && Array.isArray(spaces)) {
       // Remove existing space memberships
-      await query('DELETE FROM space_members WHERE user_id = $1', [params.id])
+      await query('DELETE FROM space_members WHERE user_id = $1', [id])
       
       // Add new space memberships
       for (const space of spaces) {
         if (space.id && space.role) {
           await query(
             'INSERT INTO space_members (user_id, space_id, role) VALUES ($1, $2, $3)',
-            [params.id, space.id, space.role]
+            [id, space.id, space.role]
           )
         }
       }
@@ -103,7 +105,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     await createAuditLog({
       action: 'UPDATE',
       entityType: 'User',
-      entityId: params.id,
+      entityId: id,
       oldValue: currentData,
       newValue: rows[0],
       userId: currentData.id, // The user being updated
@@ -119,11 +121,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 }
 
 // DELETE /api/users/[id] - delete user (MANAGER+)
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const forbidden = await requireRole(request, 'MANAGER')
   if (forbidden) return forbidden
   try {
-    const { rows } = await query('DELETE FROM public.users WHERE id = $1 RETURNING id', [params.id])
+    const { id } = await params
+    const { rows } = await query('DELETE FROM public.users WHERE id = $1 RETURNING id', [id])
     if (!rows.length) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     return NextResponse.json({ success: true })
   } catch (error) {

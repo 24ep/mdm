@@ -423,13 +423,15 @@ export function ConfigTab({ formData, setFormData }: ConfigTabProps) {
             Configure ChatKit-specific features and options.
           </p>
 
-          <Accordion type="single" collapsible value={accordionValue} onValueChange={setAccordionValue} className="space-y-0">
+          <div className="space-y-0">
+          <Accordion type="single" collapsible value={accordionValue} onValueChange={setAccordionValue}>
             <StartScreenSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
             <ThreadItemActionsSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
             <DisclaimerSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
             <ModelPickerSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
             <PersonaPickerSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
           </Accordion>
+        </div>
         </div>
       )}
 

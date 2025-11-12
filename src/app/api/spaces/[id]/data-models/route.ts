@@ -5,13 +5,13 @@ import { query } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { id: spaceId } = params
+    const { id: spaceId } = await params
 
     if (spaceId === 'all') {
       // Get all data models across all spaces
@@ -89,7 +89,7 @@ export async function GET(
     }
   } catch (error) {
     console.error('Error fetching data models:', error)
-    console.error('SpaceId:', params.id)
+    console.error('SpaceId:', spaceId)
     console.error('Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined

@@ -7,7 +7,7 @@ import { AttachmentStorageService } from '@/lib/attachment-storage'
 // POST - Test a storage connection
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -19,8 +19,9 @@ export async function POST(
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
+    const { id } = await params
     const connection = await prisma.storageConnection.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!connection) {
@@ -78,7 +79,7 @@ export async function POST(
 
       // Update connection status
       await prisma.storageConnection.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           status: testResult.success ? 'connected' : 'error',
           lastTested: new Date(),
@@ -91,7 +92,7 @@ export async function POST(
       const errorMessage = error.message || 'Connection test failed'
       
       await prisma.storageConnection.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           status: 'error',
           lastTested: new Date(),

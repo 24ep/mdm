@@ -4,10 +4,10 @@ import { SpacesEditorConfig } from '@/lib/space-studio-manager'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const spaceSlugOrId = params.id
+    const { id: spaceSlugOrId } = await params
     
     // Get space ID from slug
     const spaceResult = await query(

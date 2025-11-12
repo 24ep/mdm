@@ -5,11 +5,11 @@ const prisma = new PrismaClient()
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; key: string } }
+  { params }: { params: Promise<{ id: string; key: string }> }
 ) {
   try {
-    const instanceId = params.id
-    const keyName = decodeURIComponent(params.key)
+    const { id: instanceId, key: keyParam } = await params
+    const keyName = decodeURIComponent(keyParam)
 
     // Find the cache key
     const cacheKey = await prisma.cacheKey.findUnique({

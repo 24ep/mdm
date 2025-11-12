@@ -141,8 +141,9 @@ export default function SpacesEditorPage() {
         )}
 
         {/* Main Content with Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+        <div className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="templates" className="flex items-center gap-2">
               <Database className="h-4 w-4" />
               Templates
@@ -175,7 +176,8 @@ export default function SpacesEditorPage() {
               onViewPage={handleViewPage}
             />
           </TabsContent>
-        </Tabs>
+          </Tabs>
+        </div>
       </div>
     </div>
   )

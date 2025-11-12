@@ -7,7 +7,7 @@ import * as XLSX from 'xlsx'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -15,7 +15,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const profileId = params.id
+    const { id: profileId } = await params
 
     // Get the export profile
     const profileResult = await query(`

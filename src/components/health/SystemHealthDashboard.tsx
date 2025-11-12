@@ -269,7 +269,8 @@ export function SystemHealthDashboard({ spaceId }: HealthDashboardProps) {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="metrics" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="metrics">
         <TabsList>
           <TabsTrigger value="metrics">Metrics</TabsTrigger>
           <TabsTrigger value="alerts">Alerts</TabsTrigger>
@@ -410,6 +411,7 @@ export function SystemHealthDashboard({ spaceId }: HealthDashboardProps) {
           </div>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

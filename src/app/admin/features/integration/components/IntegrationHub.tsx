@@ -326,7 +326,8 @@ export function IntegrationHub() {
         </div>
       </div>
 
-      <Tabs defaultValue="api-client" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="api-client">
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="api-client">API Client</TabsTrigger>
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
@@ -415,6 +416,7 @@ export function IntegrationHub() {
           <APIConfiguration />
         </TabsContent>
       </Tabs>
+      </div>
 
       {/* OAuth Setup Dialog */}
       {selectedProvider && (

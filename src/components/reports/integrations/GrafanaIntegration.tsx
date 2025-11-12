@@ -19,7 +19,7 @@ import {
   Key,
   Link as LinkIcon
 } from 'lucide-react'
-import { toast } from 'sonner'
+import toast from 'react-hot-toast'
 
 interface GrafanaIntegrationProps {
   spaceId?: string

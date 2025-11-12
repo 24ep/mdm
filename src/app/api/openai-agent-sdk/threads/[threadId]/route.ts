@@ -8,7 +8,7 @@ const prisma = new PrismaClient()
 // GET - Get a specific thread
 export async function GET(
   request: NextRequest,
-  { params }: { params: { threadId: string } }
+  { params }: { params: Promise<{ threadId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -16,9 +16,11 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { threadId } = await params
+
     const thread = await prisma.openAIAgentThread.findFirst({
       where: {
-        threadId: params.threadId,
+        threadId,
         userId: session.user.id,
         deletedAt: null,
       },
@@ -41,7 +43,7 @@ export async function GET(
 // PATCH - Update thread (title, metadata, etc.)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { threadId: string } }
+  { params }: { params: Promise<{ threadId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -49,12 +51,13 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { threadId } = await params
     const body = await request.json()
     const { title, metadata } = body
 
     const thread = await prisma.openAIAgentThread.findFirst({
       where: {
-        threadId: params.threadId,
+        threadId,
         userId: session.user.id,
         deletedAt: null,
       },
@@ -85,7 +88,7 @@ export async function PATCH(
 // DELETE - Soft delete a thread
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { threadId: string } }
+  { params }: { params: Promise<{ threadId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -93,9 +96,11 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { threadId } = await params
+
     const thread = await prisma.openAIAgentThread.findFirst({
       where: {
-        threadId: params.threadId,
+        threadId,
         userId: session.user.id,
         deletedAt: null,
       },

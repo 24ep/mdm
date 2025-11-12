@@ -415,7 +415,8 @@ export function PerformanceTab({ chatbot }: PerformanceTabProps) {
   }
 
   return (
-    <Tabs defaultValue="rate-limit" className="w-full">
+    <div className="w-full">
+    <Tabs defaultValue="rate-limit">
       <TabsList className="grid w-full grid-cols-6">
         <TabsTrigger value="rate-limit">
           <Zap className="h-4 w-4 mr-2" />
@@ -986,6 +987,7 @@ export function PerformanceTab({ chatbot }: PerformanceTabProps) {
         <ObservabilityDashboard chatbot={chatbot} />
       </TabsContent>
     </Tabs>
+    </div>
   )
 }
 

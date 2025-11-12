@@ -69,7 +69,8 @@ export function WidgetProperties({
         <p className="text-xs text-muted-foreground">Widget Properties</p>
       </div>
 
-      <Tabs defaultValue={needsDataSource ? "datasource" : "properties"} className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue={needsDataSource ? "datasource" : "properties"}>
         <TabsList className={`grid ${needsDataSource ? 'grid-cols-2' : 'grid-cols-1'} h-8 border-0 bg-transparent gap-1 px-4`}>
           {needsDataSource && (
             <TabsTrigger value="datasource" className="text-xs px-3 data-[state=active]:bg-gray-200 data-[state=active]:border-0 data-[state=active]:border-b-0">
@@ -85,24 +86,26 @@ export function WidgetProperties({
 
         {needsDataSource && (
           <TabsContent value="datasource" className="mt-0 overflow-visible">
-            <Accordion type="single" collapsible defaultValue={'datasource'} className="w-full overflow-visible">
-              <DataSourceSection
+            <div className="w-full overflow-visible">
+              <Accordion type="single" collapsible defaultValue={'datasource'}>
+                <DataSourceSection
                 widget={widget}
                 selectedWidgetId={selectedWidgetId}
                 setPlacedWidgets={setPlacedWidgets}
                 spaceId={spaceId}
               />
-            </Accordion>
+              </Accordion>
+            </div>
           </TabsContent>
         )}
 
         <TabsContent value="properties" className="mt-0">
-          <Accordion 
-            type="single" 
-            collapsible 
-            defaultValue={widget.type.includes('chart') ? 'chart-style' : (widget.type === 'text' ? 'text' : 'layout')} 
-            className="w-full"
-          >
+          <div className="w-full">
+            <Accordion 
+              type="single" 
+              collapsible 
+              defaultValue={widget.type.includes('chart') ? 'chart-style' : (widget.type === 'text' ? 'text' : 'layout')}
+            >
             {/* Text-specific section (replaces Header) */}
             {widget.type === 'text' && (
               <AccordionItem value="text" className="border-0">
@@ -295,8 +298,10 @@ export function WidgetProperties({
               </AccordionContent>
             </AccordionItem>
           </Accordion>
+          </div>
         </TabsContent>
       </Tabs>
+      </div>
 
       {/* Delete Widget */}
       <div className="px-4 pt-2 border-t">

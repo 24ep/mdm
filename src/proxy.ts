@@ -1,8 +1,8 @@
 import { withAuth } from "next-auth/middleware"
 
 export default withAuth(
-  function middleware(req) {
-    // Add any additional middleware logic here
+  function proxy(req) {
+    // Add any additional proxy logic here
   },
   {
     callbacks: {
@@ -23,3 +23,4 @@ export const config = {
     '/((?!api/auth|api/debug|api/public|api/dify|_next/static|_next/image|favicon.ico|auth/signin|[^/]+/auth/signin|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
+

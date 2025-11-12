@@ -342,7 +342,8 @@ export function SecurityFeatures() {
         </div>
       </div>
 
-      <Tabs defaultValue="policies" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="policies">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="policies">Policies</TabsTrigger>
           <TabsTrigger value="events">Events</TabsTrigger>
@@ -650,6 +651,7 @@ export function SecurityFeatures() {
           )}
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

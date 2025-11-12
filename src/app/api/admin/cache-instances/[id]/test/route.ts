@@ -5,10 +5,10 @@ const prisma = new PrismaClient()
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const instanceId = params.id
+    const { id: instanceId } = await params
 
     // Get the cache instance
     const instance = await prisma.cacheInstance.findUnique({

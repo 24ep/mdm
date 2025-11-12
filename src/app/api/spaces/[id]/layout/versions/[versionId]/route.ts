@@ -6,7 +6,7 @@ import { query } from '@/lib/database'
 // GET /api/spaces/[id]/layout/versions/[versionId] - Get a specific version
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string; versionId: string } }
+  { params }: { params: Promise<{ id: string; versionId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -14,8 +14,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const spaceId = params.id
-    const versionId = params.versionId
+    const { id: spaceId, versionId } = await params
     const userId = session.user.id
 
     // Check if user has access to this space
@@ -67,7 +66,7 @@ export async function GET(
 // DELETE /api/spaces/[id]/layout/versions/[versionId] - Delete a version
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; versionId: string } }
+  { params }: { params: Promise<{ id: string; versionId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -75,8 +74,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const spaceId = params.id
-    const versionId = params.versionId
+    const { id: spaceId, versionId } = await params
     const userId = session.user.id
 
     // Check if user has admin/owner access to this space

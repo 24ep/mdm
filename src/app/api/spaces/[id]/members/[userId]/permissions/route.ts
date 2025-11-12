@@ -5,7 +5,7 @@ import { query } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string; userId: string } }
+  { params }: { params: Promise<{ id: string; userId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -13,8 +13,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const spaceId = params.id
-    const userId = params.userId
+    const { id: spaceId, userId } = await params
 
     // Check if current user has permission to view member permissions
     const memberCheck = await query(`
@@ -46,7 +45,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string; userId: string } }
+  { params }: { params: Promise<{ id: string; userId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -54,8 +53,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const spaceId = params.id
-    const userId = params.userId
+    const { id: spaceId, userId } = await params
     const body = await request.json()
     const { permissions } = body
 

@@ -9,7 +9,7 @@ import { createSuccessResponse, createErrorResponse } from '@/lib/api-response'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -17,9 +17,11 @@ export async function GET(
       return NextResponse.json(createErrorResponse('Unauthorized', 'UNAUTHORIZED'), { status: 401 })
     }
 
+    const { id } = await params
+
     const attachments = await db.ticketAttachment.findMany({
       where: {
-        ticketId: params.id
+        ticketId: id
       },
       orderBy: {
         createdAt: 'desc'
@@ -35,7 +37,7 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -43,6 +45,7 @@ export async function POST(
       return NextResponse.json(createErrorResponse('Unauthorized', 'UNAUTHORIZED'), { status: 401 })
     }
 
+    const { id } = await params
     const formData = await request.formData()
     const file = formData.get('file') as File
 
@@ -52,7 +55,7 @@ export async function POST(
 
     // Check if ticket exists
     const ticket = await db.ticket.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { spaces: true }
     })
 
@@ -69,7 +72,7 @@ export async function POST(
     const uniqueFileName = `${uuidv4()}.${fileExtension}`
     
     // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), 'uploads', 'tickets', params.id)
+    const uploadsDir = join(process.cwd(), 'uploads', 'tickets', id)
     await mkdir(uploadsDir, { recursive: true })
     
     // Save file
@@ -80,7 +83,7 @@ export async function POST(
     // Save attachment record
     const attachment = await db.ticketAttachment.create({
       data: {
-        ticketId: params.id,
+        ticketId: id,
         fileName: file.name,
         filePath: filePath,
         fileSize: file.size,
@@ -98,7 +101,7 @@ export async function POST(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -106,6 +109,7 @@ export async function DELETE(
       return NextResponse.json(createErrorResponse('Unauthorized', 'UNAUTHORIZED'), { status: 401 })
     }
 
+    const { id } = await params
     const { searchParams } = new URL(request.url)
     const attachmentId = searchParams.get('attachmentId')
 
@@ -117,13 +121,13 @@ export async function DELETE(
       where: { id: attachmentId }
     })
 
-    if (!attachment || attachment.ticketId !== params.id) {
+    if (!attachment || attachment.ticketId !== id) {
       return NextResponse.json(createErrorResponse('Attachment not found', 'NOT_FOUND'), { status: 404 })
     }
 
     // Only allow deletion by uploader or ticket owner
     const ticket = await db.ticket.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (attachment.uploadedBy !== session.user.id && ticket?.createdBy !== session.user.id) {

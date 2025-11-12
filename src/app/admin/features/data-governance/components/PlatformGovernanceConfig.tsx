@@ -193,7 +193,8 @@ export function PlatformGovernanceConfig() {
         </Button>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <div className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="domains">Data Domains</TabsTrigger>
           <TabsTrigger value="classification">Classification</TabsTrigger>
@@ -529,6 +530,7 @@ export function PlatformGovernanceConfig() {
           </div>
         </TabsContent>
       </Tabs>
+      </div>
 
       {/* Create Domain Dialog */}
       <Dialog open={showDomainDialog} onOpenChange={setShowDomainDialog}>

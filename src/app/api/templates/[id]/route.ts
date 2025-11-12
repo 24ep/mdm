@@ -3,10 +3,11 @@ import { TemplateManager } from '@/lib/template-manager'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const template = await TemplateManager.getTemplate(params.id)
+    const { id } = await params
+    const template = await TemplateManager.getTemplate(id)
 
     if (!template) {
       return NextResponse.json(
@@ -30,11 +31,12 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const template = await request.json()
-    template.id = params.id // Ensure ID matches the route parameter
+    template.id = id // Ensure ID matches the route parameter
 
     await TemplateManager.saveTemplate(template)
 
@@ -54,10 +56,11 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await TemplateManager.deleteTemplate(params.id)
+    const { id } = await params
+    await TemplateManager.deleteTemplate(id)
 
     return NextResponse.json({
       success: true,

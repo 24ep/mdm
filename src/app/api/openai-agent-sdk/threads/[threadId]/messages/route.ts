@@ -9,7 +9,7 @@ const prisma = new PrismaClient()
 // GET - Get messages for a specific thread
 export async function GET(
   request: NextRequest,
-  { params }: { params: { threadId: string } }
+  { params }: { params: Promise<{ threadId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -17,10 +17,12 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { threadId } = await params
+
     // Get thread from database to verify ownership and get API key
     const thread = await prisma.openAIAgentThread.findFirst({
       where: {
-        threadId: params.threadId,
+        threadId,
         userId: session.user.id,
         deletedAt: null,
       },
@@ -45,7 +47,7 @@ export async function GET(
 
     // Fetch messages from OpenAI API
     const openai = new OpenAI({ apiKey })
-    const messagesResponse = await openai.beta.threads.messages.list(params.threadId, {
+    const messagesResponse = await openai.beta.threads.messages.list(threadId, {
       limit: 100,
       order: 'asc', // Oldest first
     })

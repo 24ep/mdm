@@ -327,7 +327,8 @@ export function AttributeDetailDrawer({
         </DrawerHeader>
 
         <div className="flex-1 overflow-hidden">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+          <div className="h-full flex flex-col">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="details" className="flex items-center gap-2">
                 <Database className="h-4 w-4" />
@@ -1064,6 +1065,7 @@ export function AttributeDetailDrawer({
               </div>
             </TabsContent>
           </Tabs>
+          </div>
         </div>
       </DrawerContent>
     </Drawer>

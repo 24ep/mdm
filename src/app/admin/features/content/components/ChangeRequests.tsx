@@ -286,7 +286,8 @@ export function ChangeRequests() {
         </div>
       </div>
 
-      <Tabs defaultValue="all" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="all">
         <TabsList>
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="pending">Pending</TabsTrigger>
@@ -410,6 +411,7 @@ export function ChangeRequests() {
           )
         })}
       </Tabs>
+      </div>
     </div>
   )
 }

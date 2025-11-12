@@ -6,15 +6,16 @@ import { createAuditLog } from '@/lib/audit'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    const { id } = await params
     const { rows } = await query(
       'SELECT * FROM public.data_models WHERE id = $1::uuid AND deleted_at IS NULL',
-      [params.id]
+      [id]
     )
     if (!rows[0]) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     return NextResponse.json({ dataModel: rows[0] })
@@ -26,12 +27,13 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    const { id } = await params
     const body = await request.json()
     const { name, display_name, description, is_active, icon, sort_order, is_pinned, source_type, external_connection_id, external_schema, external_table, external_primary_key } = body
     let { slug } = body as any
@@ -70,7 +72,7 @@ export async function PUT(
       // Ensure unique (excluding current record)
       const { rows: conflict } = await query(
         'SELECT id FROM public.data_models WHERE slug = $1 AND id <> $2 AND deleted_at IS NULL LIMIT 1',
-        [slug, params.id]
+        [slug, id]
       )
       if (conflict.length > 0) {
         return NextResponse.json({ error: 'Slug already in use' }, { status: 409 })
@@ -80,11 +82,11 @@ export async function PUT(
     }
 
     // Get current data for audit log
-    const currentDataResult = await query('SELECT * FROM data_models WHERE id = $1::uuid', [params.id])
+    const currentDataResult = await query('SELECT * FROM data_models WHERE id = $1::uuid', [id])
     const currentData = currentDataResult.rows[0]
 
     const sql = `UPDATE public.data_models SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`
-    values.push(params.id)
+    values.push(id)
     const { rows } = await query(sql, values)
     if (!rows[0]) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
@@ -92,7 +94,7 @@ export async function PUT(
     await createAuditLog({
       action: 'UPDATE',
       entityType: 'DataModel',
-      entityId: params.id,
+      entityId: id,
       oldValue: currentData,
       newValue: rows[0],
       userId: session.user.id,
@@ -109,19 +111,20 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    const { id } = await params
     // Get current data for audit log
-    const currentDataResult = await query('SELECT * FROM data_models WHERE id = $1::uuid', [params.id])
+    const currentDataResult = await query('SELECT * FROM data_models WHERE id = $1::uuid', [id])
     const currentData = currentDataResult.rows[0]
 
     const { rows } = await query(
       'UPDATE public.data_models SET deleted_at = NOW() WHERE id = $1::uuid AND deleted_at IS NULL RETURNING id',
-      [params.id]
+      [id]
     )
     if (!rows[0]) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
@@ -129,7 +132,7 @@ export async function DELETE(
     await createAuditLog({
       action: 'DELETE',
       entityType: 'DataModel',
-      entityId: params.id,
+      entityId: id,
       oldValue: currentData,
       newValue: null,
       userId: session.user.id,

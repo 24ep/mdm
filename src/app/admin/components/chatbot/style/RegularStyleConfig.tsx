@@ -23,7 +23,8 @@ export function RegularStyleConfig({ formData, setFormData }: RegularStyleConfig
   const chatkitOptions = (formData as any).chatkitOptions || {}
 
   return (
-    <Accordion type="single" collapsible value={accordionValue} onValueChange={setAccordionValue} className="space-y-0">
+    <div className="space-y-0">
+    <Accordion type="single" collapsible value={accordionValue} onValueChange={setAccordionValue}>
       <ChatWindowSection formData={formData} setFormData={setFormData} />
       <WidgetButtonSection formData={formData} setFormData={setFormData} />
       {!isOpenAIAgentSDK && (
@@ -34,5 +35,6 @@ export function RegularStyleConfig({ formData, setFormData }: RegularStyleConfig
       <RegularFooterSection formData={formData} setFormData={setFormData} />
       <StartScreenPromptsSection formData={formData} setFormData={setFormData} />
     </Accordion>
+    </div>
   )
 }

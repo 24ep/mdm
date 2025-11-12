@@ -6,7 +6,7 @@ import { query } from '@/lib/db'
 // POST: Prune old versions, keeping only the last N versions
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -14,7 +14,8 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const notebookId = decodeURIComponent(params.id)
+    const { id } = await params
+    const notebookId = decodeURIComponent(id)
     const body = await request.json()
     const { keep_count = 50 } = body // Default: keep last 50 versions
 

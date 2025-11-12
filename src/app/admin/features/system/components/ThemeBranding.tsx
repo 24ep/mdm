@@ -409,7 +409,8 @@ export function ThemeBranding() {
                   </div>
                 )}
 
-                <Tabs defaultValue="colors" className="w-full">
+                <div className="w-full">
+                <Tabs defaultValue="colors">
                   <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="colors">Colors</TabsTrigger>
                     <TabsTrigger value="typography">Typography</TabsTrigger>
@@ -513,6 +514,7 @@ export function ThemeBranding() {
                     </div>
                   </TabsContent>
                 </Tabs>
+                </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setShowCreateTheme(false)}>
@@ -527,7 +529,8 @@ export function ThemeBranding() {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <div className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="system" className="flex items-center gap-2">
             <Globe className="h-4 w-4" />
@@ -695,6 +698,7 @@ export function ThemeBranding() {
           </div>
         </TabsContent>
       </Tabs>
+      </div>
 
       {/* Theme Editor Modal */}
       {selectedTheme && (
@@ -710,7 +714,8 @@ export function ThemeBranding() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-6">
-              <Tabs defaultValue="colors" className="w-full">
+              <div className="w-full">
+              <Tabs defaultValue="colors">
                 <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="colors">Colors</TabsTrigger>
                   <TabsTrigger value="typography">Typography</TabsTrigger>
@@ -810,6 +815,7 @@ export function ThemeBranding() {
                   </div>
                 </TabsContent>
               </Tabs>
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setSelectedTheme(null)}>

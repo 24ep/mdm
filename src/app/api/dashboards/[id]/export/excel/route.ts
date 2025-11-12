@@ -6,11 +6,13 @@ import * as XLSX from 'xlsx'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { id } = await params
 
     // Get dashboard with elements and datasources
     const { rows: dashboards } = await query(`
@@ -31,7 +33,7 @@ export async function POST(
           d.visibility = 'PUBLIC'
         )
       GROUP BY d.id
-    `, [params.id, session.user.id])
+    `, [id, session.user.id])
 
     if (dashboards.length === 0) {
       return NextResponse.json({ error: 'Dashboard not found' }, { status: 404 })
@@ -44,14 +46,14 @@ export async function POST(
       SELECT * FROM dashboard_elements 
       WHERE dashboard_id = $1 
       ORDER BY z_index ASC, position_y ASC, position_x ASC
-    `, [params.id])
+    `, [id])
 
     // Get dashboard datasources
     const { rows: datasources } = await query(`
       SELECT * FROM dashboard_datasources 
       WHERE dashboard_id = $1 AND is_active = true
       ORDER BY created_at ASC
-    `, [params.id])
+    `, [id])
 
     // Create workbook
     const workbook = XLSX.utils.book_new()

@@ -28,7 +28,7 @@ import {
   Link as LinkIcon
 } from 'lucide-react'
 import { useSpace } from '@/contexts/space-context'
-import { toast } from 'sonner'
+import toast from 'react-hot-toast'
 import { PowerBIIntegration } from '@/components/reports/integrations/PowerBIIntegration'
 import { GrafanaIntegration } from '@/components/reports/integrations/GrafanaIntegration'
 import { LookerStudioIntegration } from '@/components/reports/integrations/LookerStudioIntegration'

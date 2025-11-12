@@ -514,7 +514,8 @@ export function APIConfiguration() {
         </div>
       </div>
 
-      <Tabs defaultValue="providers" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="providers">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="providers">AI Providers</TabsTrigger>
           <TabsTrigger value="models">Available Models</TabsTrigger>
@@ -675,6 +676,7 @@ export function APIConfiguration() {
           </div>
         </TabsContent>
       </Tabs>
+      </div>
 
       {/* Configuration Dialog */}
       {selectedProvider && (

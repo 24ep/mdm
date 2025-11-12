@@ -196,7 +196,8 @@ export function AnalyticsDashboard() {
         </div>
       )}
 
-      <Tabs defaultValue="overview" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="overview">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
@@ -349,6 +350,7 @@ export function AnalyticsDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

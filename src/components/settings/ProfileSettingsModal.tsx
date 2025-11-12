@@ -120,7 +120,8 @@ export function ProfileSettingsModal({ open, onOpenChange, user }: ProfileSettin
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="profile" className="w-full">
+        <div className="w-full">
+        <Tabs defaultValue="profile">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="profile">
               <UserIcon className="h-4 w-4 mr-2" />
@@ -396,6 +397,7 @@ export function ProfileSettingsModal({ open, onOpenChange, user }: ProfileSettin
             </Card>
           </TabsContent>
         </Tabs>
+        </div>
 
         {/* Footer Actions */}
         <div className="flex items-center justify-between pt-4 border-t">

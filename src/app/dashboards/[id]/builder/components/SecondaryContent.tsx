@@ -105,7 +105,8 @@ export function SecondaryContent({ activeTab, onClose, onTabChange, onAction }: 
         </Button>
       </div>
       
-      <Tabs defaultValue="prebuilt" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="prebuilt">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="prebuilt">Pre-built</TabsTrigger>
           <TabsTrigger value="custom">Custom</TabsTrigger>
@@ -144,6 +145,7 @@ export function SecondaryContent({ activeTab, onClose, onTabChange, onAction }: 
           </div>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 

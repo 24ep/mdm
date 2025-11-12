@@ -5,7 +5,7 @@ import { changeApproval } from '@/lib/db-change-approval'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -18,7 +18,8 @@ export async function POST(
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
-    await changeApproval.mergeChangeRequest(params.id, session.user.id)
+    const { id } = await params
+    await changeApproval.mergeChangeRequest(id, session.user.id)
 
     return NextResponse.json({
       success: true,

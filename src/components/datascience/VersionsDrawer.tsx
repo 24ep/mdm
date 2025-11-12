@@ -78,7 +78,8 @@ export function VersionsDrawer({ filePath, onClose, onShowVersions }: VersionsDr
             Open History
           </Button>
         </div>
-        <Tabs defaultValue="list" className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 flex flex-col min-h-0">
+        <Tabs defaultValue="list">
           <TabsList className="mx-4 mt-2">
             <TabsTrigger value="list">Version List</TabsTrigger>
             <TabsTrigger value="compare">Compare Versions</TabsTrigger>
@@ -141,6 +142,7 @@ export function VersionsDrawer({ filePath, onClose, onShowVersions }: VersionsDr
             />
           </TabsContent>
         </Tabs>
+        </div>
         <div className="p-3 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-500">
           Showing latest {versions.length} version{versions.length !== 1 ? 's' : ''}
         </div>

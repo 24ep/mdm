@@ -23,7 +23,23 @@ import {
   CheckCircle,
   X
 } from 'lucide-react'
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { EnhancedAttributeDetailDrawer } from './EnhancedAttributeDetailDrawer'
 import { AttributeManagementService, Attribute, AttributeFormData } from '@/lib/attribute-management'
 import toast from 'react-hot-toast'
@@ -31,6 +47,119 @@ import toast from 'react-hot-toast'
 interface DraggableAttributeListProps {
   modelId: string
   onAttributesChange?: (attributes: Attribute[]) => void
+}
+
+function SortableAttributeItem({
+  attr,
+  selectedAttributes,
+  onSelectAttribute,
+  onEditAttribute,
+  onDuplicateAttribute,
+  onDeleteAttribute,
+}: {
+  attr: Attribute
+  selectedAttributes: string[]
+  onSelectAttribute: (id: string, selected: boolean) => void
+  onEditAttribute: (attr: Attribute) => void
+  onDuplicateAttribute: (attr: Attribute) => void
+  onDeleteAttribute: (id: string) => void
+}) {
+  const {
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: attr.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-3 p-3 border rounded-lg transition-colors ${
+        isDragging 
+          ? 'bg-blue-100 shadow-lg border-blue-300' 
+          : 'hover:bg-muted/50'
+      }`}
+    >
+      <Checkbox
+        checked={selectedAttributes.includes(attr.id)}
+        onCheckedChange={(checked) => onSelectAttribute(attr.id, checked as boolean)}
+      />
+      
+      <div
+        {...listeners}
+        className="cursor-move p-1 hover:bg-gray-200 rounded"
+      >
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </div>
+      
+      <div className="flex-1 min-w-0">
+        <div className="font-medium">{attr.display_name}</div>
+        <div className="text-sm text-muted-foreground">
+          {attr.name} • {attr.type}
+          {attr.is_required && ' • Required'}
+          {attr.is_unique && ' • Unique'}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Badge variant="outline">{attr.type}</Badge>
+        
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => onEditAttribute(attr)}
+          className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+        >
+          <Edit className="h-4 w-4" />
+        </Button>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="h-8 w-8 p-0 hover:bg-gray-100"
+              onClick={(e) => {
+                e.stopPropagation()
+                console.log('3-dot button clicked')
+              }}
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48 z-50" side="bottom" sideOffset={5}>
+            <DropdownMenuItem 
+              onClick={(e) => {
+                e.stopPropagation()
+                onDuplicateAttribute(attr)
+              }}
+              className="text-green-700"
+            >
+              <Copy className="h-4 w-4 mr-2" />
+              Duplicate Attribute
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={(e) => {
+                e.stopPropagation()
+                onDeleteAttribute(attr.id)
+              }}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Attribute
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
+  )
 }
 
 export function DraggableAttributeList({ modelId, onAttributesChange }: DraggableAttributeListProps) {
@@ -120,12 +249,23 @@ export function DraggableAttributeList({ modelId, onAttributesChange }: Draggabl
     }
   }
 
-  const handleDragEnd = async (result: any) => {
-    if (!result.destination) return
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
 
-    const items = Array.from(attributes)
-    const [reorderedItem] = items.splice(result.source.index, 1)
-    items.splice(result.destination.index, 0, reorderedItem)
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const oldIndex = filteredAttributes.findIndex((attr) => attr.id === active.id)
+    const newIndex = filteredAttributes.findIndex((attr) => attr.id === over.id)
+
+    if (oldIndex === -1 || newIndex === -1) return
+
+    const items = arrayMove(filteredAttributes, oldIndex, newIndex)
 
     // Update local state immediately for better UX
     const reorderedAttributes = items.map((attr, index) => ({
@@ -315,116 +455,40 @@ export function DraggableAttributeList({ modelId, onAttributesChange }: Draggabl
           Loading attributes...
         </div>
       ) : filteredAttributes.length > 0 ? (
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="attributes">
-            {(provided, snapshot) => (
-              <div
-                {...provided.droppableProps}
-                ref={provided.innerRef}
-                className={`h-[500px] overflow-y-auto space-y-2 p-2 border border-gray-200 rounded-lg bg-white ${snapshot.isDraggingOver ? 'bg-blue-50' : ''}`}
-              >
-                {/* Select All */}
-                <div className="flex items-center gap-2 p-2 border rounded-lg">
-                  <Checkbox
-                    checked={selectedAttributes.length === filteredAttributes.length && filteredAttributes.length > 0}
-                    onCheckedChange={handleSelectAll}
-                  />
-                  <span className="text-sm text-muted-foreground">Select all</span>
-                </div>
-
-                {/* Attributes */}
-                {filteredAttributes.map((attr, index) => (
-                  <Draggable key={attr.id} draggableId={attr.id} index={index}>
-                    {(provided, snapshot) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        className={`flex items-center gap-3 p-3 border rounded-lg transition-colors ${
-                          snapshot.isDragging 
-                            ? 'bg-blue-100 shadow-lg border-blue-300' 
-                            : 'hover:bg-muted/50'
-                        }`}
-                      >
-                        <Checkbox
-                          checked={selectedAttributes.includes(attr.id)}
-                          onCheckedChange={(checked) => handleSelectAttribute(attr.id, checked as boolean)}
-                        />
-                        
-                        <div
-                          {...provided.dragHandleProps}
-                          className="cursor-move p-1 hover:bg-gray-200 rounded"
-                        >
-                          <GripVertical className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium">{attr.display_name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {attr.name} • {attr.type}
-                            {attr.is_required && ' • Required'}
-                            {attr.is_unique && ' • Unique'}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline">{attr.type}</Badge>
-                          
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEditAttribute(attr)}
-                            className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                className="h-8 w-8 p-0 hover:bg-gray-100"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  console.log('3-dot button clicked')
-                                }}
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48 z-50" side="bottom" sideOffset={5}>
-                              <DropdownMenuItem 
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleDuplicateAttribute(attr)
-                                }}
-                                className="text-green-700"
-                              >
-                                <Copy className="h-4 w-4 mr-2" />
-                                Duplicate Attribute
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleDeleteAttribute(attr.id)
-                                }}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete Attribute
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </div>
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={filteredAttributes.map(attr => attr.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="h-[500px] overflow-y-auto space-y-2 p-2 border border-gray-200 rounded-lg bg-white">
+              {/* Select All */}
+              <div className="flex items-center gap-2 p-2 border rounded-lg">
+                <Checkbox
+                  checked={selectedAttributes.length === filteredAttributes.length && filteredAttributes.length > 0}
+                  onCheckedChange={handleSelectAll}
+                />
+                <span className="text-sm text-muted-foreground">Select all</span>
               </div>
-            )}
-          </Droppable>
-        </DragDropContext>
+
+              {/* Attributes */}
+              {filteredAttributes.map((attr) => (
+                <SortableAttributeItem
+                  key={attr.id}
+                  attr={attr}
+                  selectedAttributes={selectedAttributes}
+                  onSelectAttribute={handleSelectAttribute}
+                  onEditAttribute={handleEditAttribute}
+                  onDuplicateAttribute={handleDuplicateAttribute}
+                  onDeleteAttribute={handleDeleteAttribute}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       ) : (
         <div className="text-center py-8 text-muted-foreground">
           <div className="text-4xl mb-2">📝</div>

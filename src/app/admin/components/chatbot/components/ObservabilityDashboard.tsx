@@ -145,7 +145,8 @@ export function ObservabilityDashboard({ chatbot }: ObservabilityDashboardProps)
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       ) : (
-        <Tabs defaultValue="overview" className="w-full">
+        <div className="w-full">
+        <Tabs defaultValue="overview">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">
               <BarChart3 className="h-4 w-4 mr-2" />
@@ -331,6 +332,7 @@ export function ObservabilityDashboard({ chatbot }: ObservabilityDashboardProps)
             )}
           </TabsContent>
         </Tabs>
+        </div>
       )}
     </div>
   )

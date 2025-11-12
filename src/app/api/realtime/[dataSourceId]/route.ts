@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { dataSourceId: string } }
+  { params }: { params: Promise<{ dataSourceId: string }> }
 ) {
   try {
-    const { dataSourceId } = params
+    const { dataSourceId } = await params
 
     // This is a placeholder for WebSocket connection
     // In a real implementation, you would use a WebSocket server like Socket.io
@@ -28,10 +28,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { dataSourceId: string } }
+  { params }: { params: Promise<{ dataSourceId: string }> }
 ) {
   try {
-    const { dataSourceId } = params
+    const { dataSourceId } = await params
     const body = await request.json()
 
     // Handle real-time data updates

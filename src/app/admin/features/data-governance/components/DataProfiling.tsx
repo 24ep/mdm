@@ -163,7 +163,8 @@ export function DataProfiling({ asset, config }: DataProfilingProps) {
             </div>
           </div>
 
-          <Tabs defaultValue="overview" className="w-full">
+          <div className="w-full">
+          <Tabs defaultValue="overview">
             <TabsList>
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="columns">Columns</TabsTrigger>
@@ -311,6 +312,7 @@ export function DataProfiling({ asset, config }: DataProfilingProps) {
               )}
             </TabsContent>
           </Tabs>
+          </div>
         </CardContent>
       </Card>
     </div>

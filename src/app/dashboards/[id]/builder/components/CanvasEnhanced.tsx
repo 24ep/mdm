@@ -12,7 +12,6 @@ import {
 import { ChartRenderer } from '@/components/charts/ChartRenderer'
 import { DashboardElement, DataSource } from '../hooks/useDashboardState'
 import { ToolboxItem } from '../types'
-import { SketchPicker, ColorResult } from 'react-color'
 import { SelectionToolbar } from './SelectionToolbar'
 
 // DnD Kit imports

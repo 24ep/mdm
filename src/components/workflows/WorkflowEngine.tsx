@@ -299,7 +299,8 @@ export function WorkflowEngine({ spaceId }: WorkflowEngineProps) {
         )}
       </div>
 
-      <Tabs defaultValue="workflows" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="workflows">
         <TabsList>
           <TabsTrigger value="workflows">Workflows</TabsTrigger>
           <TabsTrigger value="executions">Executions</TabsTrigger>
@@ -380,7 +381,8 @@ export function WorkflowEngine({ spaceId }: WorkflowEngineProps) {
                 <CardDescription>{selectedWorkflow.description}</CardDescription>
               </CardHeader>
               <CardContent>
-                <Tabs defaultValue="nodes" className="w-full">
+                <div className="w-full">
+                <Tabs defaultValue="nodes">
                   <TabsList>
                     <TabsTrigger value="nodes">Nodes</TabsTrigger>
                     <TabsTrigger value="triggers">Triggers</TabsTrigger>

@@ -590,7 +590,8 @@ export function ComponentConfig({ component, onUpdate }: ComponentConfigProps) {
         </p>
       </div>
 
-      <Tabs defaultValue="data" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="data">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="data" className="flex items-center gap-2">
             <Database className="h-4 w-4" />

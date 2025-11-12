@@ -140,7 +140,8 @@ export function FileManagementDashboard({ spaceId }: FileManagementDashboardProp
       </div>
 
       {/* Main Content */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <div className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4">
           {tabs.map((tab) => (
             <TabsTrigger key={tab.id} value={tab.id} className="flex items-center space-x-2">
@@ -243,6 +244,7 @@ export function FileManagementDashboard({ spaceId }: FileManagementDashboardProp
           <FileQuotas spaceId={spaceId} />
         </TabsContent>
       </Tabs>
+      </div>
 
       {/* Feature Highlights */}
       <Card>

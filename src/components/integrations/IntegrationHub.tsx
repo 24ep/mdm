@@ -269,7 +269,8 @@ export function IntegrationHub({ spaceId }: IntegrationHubProps) {
         )}
       </div>
 
-      <Tabs defaultValue="integrations" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="integrations">
         <TabsList>
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
@@ -358,7 +359,8 @@ export function IntegrationHub({ spaceId }: IntegrationHubProps) {
                 <CardDescription>{selectedIntegration.description}</CardDescription>
               </CardHeader>
               <CardContent>
-                <Tabs defaultValue="config" className="w-full">
+                <div className="w-full">
+                <Tabs defaultValue="config">
                   <TabsList>
                     <TabsTrigger value="config">Configuration</TabsTrigger>
                     <TabsTrigger value="testing">Testing</TabsTrigger>
@@ -420,6 +422,7 @@ export function IntegrationHub({ spaceId }: IntegrationHubProps) {
                     </div>
                   </TabsContent>
                 </Tabs>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -549,6 +552,7 @@ export function IntegrationHub({ spaceId }: IntegrationHubProps) {
           </div>
         </TabsContent>
       </Tabs>
+      </div>
 
       {showCreateDialog && (
         <Card className="fixed inset-0 z-50 m-4 max-w-md">

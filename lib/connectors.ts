@@ -24,7 +24,7 @@ export async function getConnectors(chatbotId: string): Promise<Connector[]> {
     },
   })
 
-  return connectors.map((c) => ({
+  return connectors.map((c: any) => ({
     id: c.id,
     connectorType: c.connectorType as ConnectorType,
     enabled: c.enabled,

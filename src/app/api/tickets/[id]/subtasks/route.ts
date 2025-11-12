@@ -5,7 +5,7 @@ import { db } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -13,9 +13,11 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
+
     const subtasks = await db.ticket.findMany({
       where: {
-        parentId: params.id,
+        parentId: id,
         deletedAt: null
       },
       include: {
@@ -45,7 +47,7 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -53,6 +55,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const { title, description, status, priority, spaceIds } = body
 
@@ -62,7 +65,7 @@ export async function POST(
 
     // Get parent ticket to inherit spaces
     const parentTicket = await db.ticket.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { spaces: true }
     })
 
@@ -72,7 +75,7 @@ export async function POST(
 
     // Get max position for subtasks
     const maxPosition = await db.ticket.findFirst({
-      where: { parentId: params.id },
+      where: { parentId: id },
       orderBy: { position: 'desc' },
       select: { position: true }
     })
@@ -87,7 +90,7 @@ export async function POST(
         description: description || null,
         status: status || 'BACKLOG',
         priority: priority || 'MEDIUM',
-        parentId: params.id,
+        parentId: id,
         createdBy: session.user.id,
         position: (maxPosition?.position || 0) + 1,
         spaces: {

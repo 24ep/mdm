@@ -59,7 +59,8 @@ export default function NotificationsPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="all" className="space-y-6">
+      <div className="space-y-6">
+      <Tabs defaultValue="all">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="all">
             All Notifications
@@ -204,6 +205,7 @@ export default function NotificationsPage() {
           <NotificationSettings />
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }

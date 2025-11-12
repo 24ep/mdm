@@ -456,7 +456,8 @@ export function CacheManagement() {
         </div>
       )}
 
-      <Tabs defaultValue="instances" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="instances">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="instances">Instances</TabsTrigger>
           <TabsTrigger value="keys">Keys</TabsTrigger>
@@ -896,6 +897,7 @@ export function CacheManagement() {
           )}
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

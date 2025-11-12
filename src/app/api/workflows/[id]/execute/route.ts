@@ -7,7 +7,7 @@ export const runtime = 'nodejs' // Required for workflow-executor (uses fs, path
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -15,7 +15,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const workflowId = params.id
+    const { id: workflowId } = await params
 
     // Execute workflow using the executor
     const result = await executeWorkflow(workflowId)

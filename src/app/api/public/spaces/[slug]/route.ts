@@ -3,10 +3,10 @@ import { query } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const identifier = params.slug
+    const { slug: identifier } = await params
 
     const result = await query(
       `SELECT id, name, slug, logo_url, features

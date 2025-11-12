@@ -23,7 +23,7 @@ import {
   Filter,
   Search
 } from 'lucide-react'
-import { toast } from 'sonner'
+import toast from 'react-hot-toast'
 
 interface DataPreviewProps {
   dataSource: {
@@ -178,8 +178,9 @@ export function DataPreview({ dataSource, onDataChange, onValidationChange }: Da
           </div>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="preview" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+          <div className="w-full">
+            <Tabs defaultValue="preview">
+              <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="preview">Preview</TabsTrigger>
               <TabsTrigger value="query">Query</TabsTrigger>
               <TabsTrigger value="schema">Schema</TabsTrigger>
@@ -314,7 +315,8 @@ export function DataPreview({ dataSource, onDataChange, onValidationChange }: Da
                 </div>
               </div>
             </TabsContent>
-          </Tabs>
+            </Tabs>
+          </div>
         </CardContent>
       </Card>
     </div>

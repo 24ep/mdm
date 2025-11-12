@@ -5,11 +5,13 @@ import { query } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { id } = await params
 
     const { rows: dashboards } = await query(`
       SELECT d.*, 
@@ -33,7 +35,7 @@ export async function GET(
           d.visibility = 'PUBLIC'
         )
       GROUP BY d.id
-    `, [params.id, session.user.id])
+    `, [id, session.user.id])
 
     if (dashboards.length === 0) {
       return NextResponse.json({ error: 'Dashboard not found' }, { status: 404 })
@@ -46,21 +48,21 @@ export async function GET(
       SELECT * FROM dashboard_elements 
       WHERE dashboard_id = $1 
       ORDER BY z_index ASC, position_y ASC, position_x ASC
-    `, [params.id])
+    `, [id])
 
     // Get dashboard datasources
     const { rows: datasources } = await query(`
       SELECT * FROM dashboard_datasources 
       WHERE dashboard_id = $1 AND is_active = true
       ORDER BY created_at ASC
-    `, [params.id])
+    `, [id])
 
     // Get dashboard filters
     const { rows: filters } = await query(`
       SELECT * FROM dashboard_filters 
       WHERE dashboard_id = $1 
       ORDER BY position ASC
-    `, [params.id])
+    `, [id])
 
     // Get dashboard permissions
     const { rows: permissions } = await query(`
@@ -69,7 +71,7 @@ export async function GET(
       JOIN users u ON u.id = dp.user_id
       WHERE dp.dashboard_id = $1
       ORDER BY dp.created_at ASC
-    `, [params.id])
+    `, [id])
 
     return NextResponse.json({
       dashboard: {
@@ -88,12 +90,13 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    const { id } = await params
     const body = await request.json()
     const {
       name,
@@ -119,7 +122,7 @@ export async function PUT(
       FROM dashboards d
       LEFT JOIN dashboard_permissions dp ON dp.dashboard_id = d.id AND dp.user_id = $2
       WHERE d.id = $1 AND d.deleted_at IS NULL
-    `, [params.id, session.user.id])
+    `, [id, session.user.id])
 
     if (accessCheck.length === 0) {
       return NextResponse.json({ error: 'Dashboard not found' }, { status: 404 })
@@ -138,7 +141,7 @@ export async function PUT(
     if (visibility === 'PUBLIC') {
       const { rows: existingLink } = await query(
         'SELECT public_link FROM dashboards WHERE id = $1',
-        [params.id]
+        [id]
       )
       
       if (!existingLink[0]?.public_link) {
@@ -210,7 +213,7 @@ export async function PUT(
     }
 
     updateFields.push(`updated_at = NOW()`)
-    updateValues.push(params.id)
+    updateValues.push(id)
 
     if (updateFields.length > 1) { // More than just updated_at
       const updateSql = `
@@ -240,13 +243,13 @@ export async function PUT(
         }
 
         // Remove existing associations
-        await query('DELETE FROM dashboard_spaces WHERE dashboard_id = $1', [params.id])
+        await query('DELETE FROM dashboard_spaces WHERE dashboard_id = $1', [id])
 
         // Add new associations
         for (const spaceId of space_ids) {
           await query(
             'INSERT INTO dashboard_spaces (dashboard_id, space_id) VALUES ($1, $2)',
-            [params.id, spaceId]
+            [id, spaceId]
           )
         }
       }
@@ -255,13 +258,13 @@ export async function PUT(
       if (is_default === true) {
         const { rows: spaces } = await query(
           'SELECT space_id FROM dashboard_spaces WHERE dashboard_id = $1',
-          [params.id]
+          [id]
         )
         
         for (const space of spaces) {
           await query(
             'SELECT public.set_default_dashboard_for_space($1, $2)',
-            [params.id, space.space_id]
+            [id, space.space_id]
           )
         }
       }
@@ -278,11 +281,13 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { id } = await params
 
     // Check if user has permission to delete this dashboard
     const { rows: accessCheck } = await query(`
@@ -290,7 +295,7 @@ export async function DELETE(
       FROM dashboards d
       LEFT JOIN dashboard_permissions dp ON dp.dashboard_id = d.id AND dp.user_id = $2
       WHERE d.id = $1 AND d.deleted_at IS NULL
-    `, [params.id, session.user.id])
+    `, [id, session.user.id])
 
     if (accessCheck.length === 0) {
       return NextResponse.json({ error: 'Dashboard not found' }, { status: 404 })
@@ -307,7 +312,7 @@ export async function DELETE(
     // Soft delete the dashboard
     await query(
       'UPDATE public.dashboards SET deleted_at = NOW() WHERE id = $1',
-      [params.id]
+      [id]
     )
 
     return NextResponse.json({ success: true })

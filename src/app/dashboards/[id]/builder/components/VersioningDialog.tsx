@@ -21,7 +21,7 @@ import {
   GitBranch,
   Save
 } from 'lucide-react'
-import { toast } from 'sonner'
+import toast from 'react-hot-toast'
 
 interface DashboardVersion {
   id: string
@@ -176,7 +176,8 @@ export function VersioningDialog({
           </DialogDescription>
         </DialogHeader>
         
-        <Tabs defaultValue="versions" className="w-full">
+        <div className="w-full">
+        <Tabs defaultValue="versions">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="versions">Version History</TabsTrigger>
             <TabsTrigger value="create">Create Version</TabsTrigger>
@@ -351,6 +352,7 @@ export function VersioningDialog({
             </div>
           </TabsContent>
         </Tabs>
+        </div>
       </DialogContent>
     </Dialog>
   )

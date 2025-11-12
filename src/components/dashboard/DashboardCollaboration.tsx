@@ -24,7 +24,7 @@ import {
   Send,
   MoreVertical
 } from 'lucide-react'
-import { toast } from 'sonner'
+import toast from 'react-hot-toast'
 
 interface Collaborator {
   id: string
@@ -287,7 +287,8 @@ export function DashboardCollaboration({
         </Badge>
       </div>
 
-      <Tabs defaultValue="collaborators" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="collaborators">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="collaborators">Collaborators</TabsTrigger>
           <TabsTrigger value="comments">Comments</TabsTrigger>
@@ -466,6 +467,7 @@ export function DashboardCollaboration({
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

@@ -410,7 +410,8 @@ echo "📊 Status: docker-compose ps"`
       </div>
 
       {/* Main Content */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <div className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="python">Python</TabsTrigger>
@@ -877,6 +878,7 @@ echo "📊 Status: docker-compose ps"`
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

@@ -6,11 +6,13 @@ import { query } from '@/lib/db'
 // GET: Get all spaces associated with a data model
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { id } = await params
 
     const { rows: spaces } = await query(`
       SELECT s.id, s.name, s.slug, dms.created_at
@@ -18,7 +20,7 @@ export async function GET(
       JOIN data_model_spaces dms ON dms.space_id = s.id
       WHERE dms.data_model_id = $1::uuid AND s.deleted_at IS NULL
       ORDER BY s.name
-    `, [params.id])
+    `, [id])
 
     return NextResponse.json({ spaces })
   } catch (error) {
@@ -30,12 +32,13 @@ export async function GET(
 // PUT: Update space associations for a data model
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    const { id } = await params
     const body = await request.json()
     const { space_ids } = body
 
@@ -59,14 +62,14 @@ export async function PUT(
     // Remove all existing associations
     await query(
       'DELETE FROM data_model_spaces WHERE data_model_id = $1::uuid',
-      [params.id]
+      [id]
     )
 
     // Add new associations
     for (const spaceId of space_ids) {
       await query(
         'INSERT INTO data_model_spaces (data_model_id, space_id, created_by) VALUES ($1::uuid, $2::uuid, $3::uuid)',
-        [params.id, spaceId, session.user.id]
+        [id, spaceId, session.user.id]
       )
     }
 

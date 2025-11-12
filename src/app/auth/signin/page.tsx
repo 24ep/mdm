@@ -18,7 +18,7 @@ export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [isSignUp, setIsSignUp] = useState(false)
-  const [ssoProviders, setSsoProviders] = useState({ google: false, azure: false, ldap: false })
+  const [ssoProviders, setSsoProviders] = useState({ google: false, azure: false })
   const router = useRouter()
 
   useEffect(() => {
@@ -101,25 +101,7 @@ export default function SignInPage() {
     }
   }
 
-  const handleLDAPSignIn = async () => {
-    try {
-      const result = await signIn('ldap', {
-        email,
-        password,
-        redirect: false,
-      })
-      if (result?.error) {
-        setError(result.error)
-      } else {
-        // Platform login - redirect to overview page
-        router.push('/')
-      }
-    } catch (error) {
-      setError('An error occurred with LDAP sign-in.')
-    }
-  }
-
-  const hasAnySSO = ssoProviders.google || ssoProviders.azure || ssoProviders.ldap
+  const hasAnySSO = ssoProviders.google || ssoProviders.azure
 
   return (
     <div className="min-h-screen flex">
@@ -290,18 +272,6 @@ export default function SignInPage() {
                         <path d="M11.4 24H0V12.6h11.4V24zM24 24H12.6V12.6H24V24zM11.4 11.4H0V0h11.4v11.4zM24 11.4H12.6V0H24v11.4z"/>
                       </svg>
                       Microsoft Azure
-                    </Button>
-                  )}
-                  
-                  {ssoProviders.ldap && (
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={handleLDAPSignIn}
-                      disabled={isLoading}
-                    >
-                      <Lock className="mr-2 h-4 w-4" />
-                      LDAP
                     </Button>
                   )}
                 </div>

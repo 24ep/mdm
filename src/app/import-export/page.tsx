@@ -278,7 +278,8 @@ export default function ImportExportPage() {
         </div>
 
         {!disabled && (
-        <Tabs defaultValue="import" className="space-y-6">
+        <div className="space-y-6">
+        <Tabs defaultValue="import">
           <TabsList className="flex justify-start w-full p-4 gap-0">
             <TabsTrigger value="import" className="flex items-center gap-2 px-6 py-3 border-b-2 border-transparent data-[state=active]:border-primary">
               <Upload className="h-4 w-4" />
@@ -785,6 +786,7 @@ export default function ImportExportPage() {
             </div>
           </TabsContent>
         </Tabs>
+        </div>
         )}
       </div>
     </MainLayout>

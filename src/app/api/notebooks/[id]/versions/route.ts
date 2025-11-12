@@ -6,7 +6,7 @@ import { query } from '@/lib/db'
 // GET: Retrieve all versions for a notebook
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -14,7 +14,8 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const notebookId = decodeURIComponent(params.id)
+    const { id } = await params
+    const notebookId = decodeURIComponent(id)
 
     // Get all versions for this notebook
     const { rows } = await query(
@@ -78,7 +79,7 @@ export async function GET(
 // POST: Create a new version of a notebook
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -86,7 +87,8 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const notebookId = decodeURIComponent(params.id)
+    const { id } = await params
+    const notebookId = decodeURIComponent(id)
     const body = await request.json()
     const {
       notebook_data,

@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { fqn: string } }
+  { params }: { params: Promise<{ fqn: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -12,7 +12,8 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const fqn = decodeURIComponent(params.fqn)
+    const { fqn: fqnParam } = await params
+    const fqn = decodeURIComponent(fqnParam)
 
     // TODO: Load from OpenMetadata
     const threads: any[] = []
@@ -29,7 +30,7 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { fqn: string } }
+  { params }: { params: Promise<{ fqn: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -37,7 +38,8 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const fqn = decodeURIComponent(params.fqn)
+    const { fqn: fqnParam } = await params
+    const fqn = decodeURIComponent(fqnParam)
     const body = await request.json()
 
     // TODO: Create thread in OpenMetadata

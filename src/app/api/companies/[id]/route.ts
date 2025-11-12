@@ -5,13 +5,15 @@ import { query } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const { id } = await params
 
     const res = await query(
       `SELECT c.*,
@@ -25,7 +27,7 @@ export async function GET(
        FROM companies c
        WHERE c.id = $1 AND c.deleted_at IS NULL
        LIMIT 1`,
-      [params.id]
+      [id]
     )
 
     const company = res.rows[0]
@@ -42,7 +44,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -50,10 +52,11 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const { name, description, is_active } = body
 
-    const current = await query('SELECT * FROM companies WHERE id = $1 LIMIT 1', [params.id])
+    const current = await query('SELECT * FROM companies WHERE id = $1 LIMIT 1', [id])
     const currentCompany = current.rows[0]
     if (!currentCompany) {
       return NextResponse.json({ error: 'Company not found' }, { status: 404 })
@@ -62,7 +65,7 @@ export async function PUT(
     if (name && name !== currentCompany.name) {
       const existing = await query(
         'SELECT id FROM companies WHERE name = $1 AND deleted_at IS NULL AND id <> $2 LIMIT 1',
-        [name, params.id]
+        [name, id]
       )
       if (existing.rows[0]) {
         return NextResponse.json(
@@ -74,14 +77,14 @@ export async function PUT(
 
     const updated = await query(
       'UPDATE companies SET name = $1, description = $2, is_active = $3, updated_at = NOW() WHERE id = $4 RETURNING *',
-      [name ?? currentCompany.name, description ?? currentCompany.description, typeof is_active === 'boolean' ? is_active : currentCompany.is_active, params.id]
+      [name ?? currentCompany.name, description ?? currentCompany.description, typeof is_active === 'boolean' ? is_active : currentCompany.is_active, id]
     )
 
     const updatedCompany = updated.rows[0]
 
     await query(
       'INSERT INTO activities (action, entity_type, entity_id, old_value, new_value, user_id) VALUES ($1,$2,$3,$4,$5,$6)',
-      ['UPDATE', 'Company', params.id, currentCompany, updatedCompany, session.user.id]
+      ['UPDATE', 'Company', id, currentCompany, updatedCompany, session.user.id]
     )
 
     return NextResponse.json(updatedCompany)
@@ -93,7 +96,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -101,9 +104,11 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
+
     const cnt = await query(
       'SELECT COUNT(*)::int AS total FROM customers WHERE company_id = $1 AND deleted_at IS NULL',
-      [params.id]
+      [id]
     )
     if ((cnt.rows[0]?.total || 0) > 0) {
       return NextResponse.json(
@@ -114,12 +119,12 @@ export async function DELETE(
 
     await query(
       'UPDATE companies SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1',
-      [params.id]
+      [id]
     )
 
     await query(
       'INSERT INTO activities (action, entity_type, entity_id, user_id) VALUES ($1,$2,$3,$4)',
-      ['DELETE', 'Company', params.id, session.user.id]
+      ['DELETE', 'Company', id, session.user.id]
     )
 
     return NextResponse.json({ message: 'Company deleted successfully' })

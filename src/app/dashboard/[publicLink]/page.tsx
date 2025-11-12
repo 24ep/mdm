@@ -2,13 +2,13 @@ import { notFound } from 'next/navigation'
 import { db } from '@/lib/db'
 
 interface PublicDashboardPageProps {
-  params: {
+  params: Promise<{
     publicLink: string
-  }
+  }>
 }
 
 export default async function PublicDashboardPage({ params }: PublicDashboardPageProps) {
-  const { publicLink } = params
+  const { publicLink } = await params
 
   // Fetch dashboard by public link using Prisma
   const dashboard = await db.dashboard.findFirst({

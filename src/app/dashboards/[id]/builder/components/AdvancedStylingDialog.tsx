@@ -23,7 +23,7 @@ import {
   Type,
   Grid3X3
 } from 'lucide-react'
-import { toast } from 'sonner'
+import toast from 'react-hot-toast'
 import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 
 interface Theme {
@@ -366,7 +366,8 @@ export function AdvancedStylingDialog({
             </div>
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <div className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="colors">Colors</TabsTrigger>
               <TabsTrigger value="typography">Typography</TabsTrigger>
@@ -564,6 +565,7 @@ export function AdvancedStylingDialog({
               </div>
             </TabsContent>
           </Tabs>
+          </div>
 
           {/* Actions */}
           <div className="flex items-center justify-between pt-4 border-t">

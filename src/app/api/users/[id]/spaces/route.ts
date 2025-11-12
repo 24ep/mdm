@@ -7,12 +7,13 @@ import { requireRole } from '@/lib/rbac'
 // GET /api/users/[id]/spaces - get user's space memberships
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const forbidden = await requireRole(request, 'MANAGER')
   if (forbidden) return forbidden
 
   try {
+    const { id } = await params
     const { rows } = await query(`
       SELECT 
         sm.id,
@@ -26,7 +27,7 @@ export async function GET(
       JOIN spaces s ON sm.space_id = s.id
       WHERE sm.user_id = $1 AND s.deleted_at IS NULL
       ORDER BY s.is_default DESC, s.name ASC
-    `, [params.id])
+    `, [id])
 
     return NextResponse.json({ spaces: rows })
   } catch (error) {
@@ -41,12 +42,13 @@ export async function GET(
 // PUT /api/users/[id]/spaces - update user's space memberships
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const forbidden = await requireRole(request, 'MANAGER')
   if (forbidden) return forbidden
 
   try {
+    const { id } = await params
     const body = await request.json()
     const { spaces } = body
 
@@ -55,14 +57,14 @@ export async function PUT(
     }
 
     // Remove existing space memberships
-    await query('DELETE FROM space_members WHERE user_id = $1', [params.id])
+    await query('DELETE FROM space_members WHERE user_id = $1', [id])
     
     // Add new space memberships
     for (const space of spaces) {
       if (space.space_id && space.role) {
         await query(
           'INSERT INTO space_members (user_id, space_id, role) VALUES ($1, $2, $3)',
-          [params.id, space.space_id, space.role]
+          [id, space.space_id, space.role]
         )
       }
     }
@@ -81,7 +83,7 @@ export async function PUT(
       JOIN spaces s ON sm.space_id = s.id
       WHERE sm.user_id = $1 AND s.deleted_at IS NULL
       ORDER BY s.is_default DESC, s.name ASC
-    `, [params.id])
+    `, [id])
 
     return NextResponse.json({ spaces: rows })
   } catch (error) {

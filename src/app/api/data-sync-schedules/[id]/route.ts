@@ -5,11 +5,13 @@ import { query } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { id } = await params
 
     const { rows } = await query(
       `SELECT 
@@ -21,7 +23,7 @@ export async function GET(
        LEFT JOIN public.external_connections ec ON ec.id = ds.external_connection_id
        LEFT JOIN public.data_models dm ON dm.id = ds.data_model_id
        WHERE ds.id = $1::uuid AND ds.deleted_at IS NULL`,
-      [params.id]
+      [id]
     )
 
     if (rows.length === 0) {
@@ -44,19 +46,20 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    const { id } = await params
     const body = await request.json()
     const { ...updates } = body
 
     // Get existing schedule to check access
     const { rows: existing } = await query(
       'SELECT space_id FROM public.data_sync_schedules WHERE id = $1::uuid',
-      [params.id]
+      [id]
     )
 
     if (existing.length === 0) {
@@ -104,7 +107,7 @@ export async function PUT(
     }
 
     fields.push(`updated_at = NOW()`)
-    values.push(params.id)
+    values.push(id)
 
     const { rows } = await query(
       `UPDATE public.data_sync_schedules 
@@ -123,16 +126,18 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    const { id } = await params
+
     // Get existing schedule to check access
     const { rows: existing } = await query(
       'SELECT space_id FROM public.data_sync_schedules WHERE id = $1::uuid',
-      [params.id]
+      [id]
     )
 
     if (existing.length === 0) {
@@ -150,7 +155,7 @@ export async function DELETE(
       `UPDATE public.data_sync_schedules 
        SET deleted_at = NOW()
        WHERE id = $1::uuid`,
-      [params.id]
+      [id]
     )
 
     return NextResponse.json({ success: true })

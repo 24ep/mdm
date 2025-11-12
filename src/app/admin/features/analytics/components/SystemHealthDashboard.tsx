@@ -243,7 +243,8 @@ export function SystemHealthDashboard() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="services" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="services">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="services">Services</TabsTrigger>
           <TabsTrigger value="metrics">Metrics</TabsTrigger>
@@ -424,6 +425,7 @@ export function SystemHealthDashboard() {
           </div>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

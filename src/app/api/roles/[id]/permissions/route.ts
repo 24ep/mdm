@@ -3,18 +3,19 @@ import { query } from '@/lib/db'
 import { requireRole } from '@/lib/rbac'
 
 // PUT /api/roles/[id]/permissions - replace role permissions with provided list (ADMIN+)
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const forbidden = await requireRole(request, 'ADMIN')
   if (forbidden) return forbidden
   try {
+    const { id } = await params
     const { permissionIds } = await request.json()
     if (!Array.isArray(permissionIds)) return NextResponse.json({ error: 'permissionIds must be an array' }, { status: 400 })
 
     // Use simple transactional sequence
     await query('BEGIN')
-    await query('DELETE FROM public.role_permissions WHERE role_id = $1', [params.id])
+    await query('DELETE FROM public.role_permissions WHERE role_id = $1', [id])
     for (const pid of permissionIds) {
-      await query('INSERT INTO public.role_permissions (role_id, permission_id) VALUES ($1, $2)', [params.id, pid])
+      await query('INSERT INTO public.role_permissions (role_id, permission_id) VALUES ($1, $2)', [id, pid])
     }
     await query('COMMIT')
     return NextResponse.json({ success: true })

@@ -15,7 +15,6 @@ import {
   XCircle,
   AlertCircle,
   Key,
-  Lock,
   Globe
 } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -25,18 +24,11 @@ export function SSOConfiguration() {
   const [config, setConfig] = useState<SSOConfig>({
     googleEnabled: false,
     azureEnabled: false,
-    ldapEnabled: false,
     googleClientId: '',
     googleClientSecret: '',
     azureTenantId: '',
     azureClientId: '',
-    azureClientSecret: '',
-    ldapUrl: '',
-    ldapBaseDn: '',
-    ldapBindDn: '',
-    ldapBindPassword: '',
-    ldapSearchFilter: '(uid={{username}})',
-    ldapSearchBase: ''
+    azureClientSecret: ''
   })
 
   const [isLoading, setIsLoading] = useState(false)
@@ -56,18 +48,11 @@ export function SSOConfiguration() {
           setConfig({
             googleEnabled: data.config.googleEnabled || false,
             azureEnabled: data.config.azureEnabled || false,
-            ldapEnabled: data.config.ldapEnabled || false,
             googleClientId: data.config.googleClientId || '',
             googleClientSecret: data.config.googleClientSecret || '',
             azureTenantId: data.config.azureTenantId || '',
             azureClientId: data.config.azureClientId || '',
-            azureClientSecret: data.config.azureClientSecret || '',
-            ldapUrl: data.config.ldapUrl || '',
-            ldapBaseDn: data.config.ldapBaseDn || '',
-            ldapBindDn: data.config.ldapBindDn || '',
-            ldapBindPassword: data.config.ldapBindPassword || '',
-            ldapSearchFilter: data.config.ldapSearchFilter || '(uid={{username}})',
-            ldapSearchBase: data.config.ldapSearchBase || ''
+            azureClientSecret: data.config.azureClientSecret || ''
           })
         }
       }
@@ -269,112 +254,6 @@ export function SSOConfiguration() {
         )}
       </Card>
 
-      {/* LDAP SSO */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Lock className="h-5 w-5" />
-                LDAP Authentication
-              </CardTitle>
-              <CardDescription>
-                Configure LDAP/Active Directory authentication
-              </CardDescription>
-            </div>
-            <Switch
-              checked={config.ldapEnabled}
-              onCheckedChange={(checked) => 
-                setConfig({ ...config, ldapEnabled: checked })
-              }
-            />
-          </div>
-        </CardHeader>
-        {config.ldapEnabled && (
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="ldapUrl">LDAP URL</Label>
-                <Input
-                  id="ldapUrl"
-                  value={config.ldapUrl}
-                  onChange={(e) => 
-                    setConfig({ ...config, ldapUrl: e.target.value })
-                  }
-                  placeholder="ldap://ldap.example.com:389"
-                />
-              </div>
-              <div>
-                <Label htmlFor="ldapBaseDn">Base DN</Label>
-                <Input
-                  id="ldapBaseDn"
-                  value={config.ldapBaseDn}
-                  onChange={(e) => 
-                    setConfig({ ...config, ldapBaseDn: e.target.value })
-                  }
-                  placeholder="dc=example,dc=com"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="ldapBindDn">Bind DN (Service Account)</Label>
-                <Input
-                  id="ldapBindDn"
-                  value={config.ldapBindDn}
-                  onChange={(e) => 
-                    setConfig({ ...config, ldapBindDn: e.target.value })
-                  }
-                  placeholder="cn=admin,dc=example,dc=com"
-                />
-              </div>
-              <div>
-                <Label htmlFor="ldapBindPassword">Bind Password</Label>
-                <Input
-                  id="ldapBindPassword"
-                  type="password"
-                  value={config.ldapBindPassword}
-                  onChange={(e) => 
-                    setConfig({ ...config, ldapBindPassword: e.target.value })
-                  }
-                  placeholder="Service account password"
-                />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="ldapSearchBase">Search Base</Label>
-              <Input
-                id="ldapSearchBase"
-                value={config.ldapSearchBase}
-                onChange={(e) => 
-                  setConfig({ ...config, ldapSearchBase: e.target.value })
-                }
-                placeholder="ou=users,dc=example,dc=com"
-              />
-            </div>
-            <div>
-              <Label htmlFor="ldapSearchFilter">Search Filter</Label>
-              <Input
-                id="ldapSearchFilter"
-                value={config.ldapSearchFilter}
-                onChange={(e) => 
-                  setConfig({ ...config, ldapSearchFilter: e.target.value })
-                }
-                placeholder="(uid={{username}})"
-              />
-              <p className="text-sm text-muted-foreground mt-1">
-                Use {'{{username}}'} or {'{{email}}'} as placeholders
-              </p>
-            </div>
-            <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-md">
-              <p className="text-sm text-blue-900 dark:text-blue-200">
-                <strong>Note:</strong> When enabled, LDAP authentication will appear on all login pages. 
-                Users can only log in if their email exists in the platform or space.
-              </p>
-            </div>
-          </CardContent>
-        )}
-      </Card>
     </div>
   )
 }

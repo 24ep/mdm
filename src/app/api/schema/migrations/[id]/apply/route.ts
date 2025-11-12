@@ -5,7 +5,7 @@ import { schemaMigration } from '@/lib/schema-migration'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -13,8 +13,9 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     await schemaMigration.initialize()
-    const result = await schemaMigration.applyMigration(params.id, session.user.id)
+    const result = await schemaMigration.applyMigration(id, session.user.id)
 
     return NextResponse.json(result)
   } catch (error: any) {

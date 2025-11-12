@@ -354,7 +354,8 @@ export function AssetManagement() {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <div className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="assets">Assets</TabsTrigger>
           <TabsTrigger value="types">Asset Types</TabsTrigger>
@@ -679,6 +680,7 @@ export function AssetManagement() {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
 
       {/* Asset Dialog */}
       <Dialog open={showAssetDialog} onOpenChange={setShowAssetDialog}>

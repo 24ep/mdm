@@ -5,7 +5,7 @@ import { db } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -13,10 +13,12 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
+
     const [dependencies, dependents] = await Promise.all([
       db.ticketDependency.findMany({
         where: {
-          ticketId: params.id
+          ticketId: id
         },
         include: {
           dependsOn: {
@@ -31,7 +33,7 @@ export async function GET(
       }),
       db.ticketDependency.findMany({
         where: {
-          dependsOnId: params.id
+          dependsOnId: id
         },
         include: {
           ticket: {
@@ -55,7 +57,7 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -63,6 +65,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const { dependsOnId, type } = body
 
@@ -70,7 +73,7 @@ export async function POST(
       return NextResponse.json({ error: 'dependsOnId is required' }, { status: 400 })
     }
 
-    if (params.id === dependsOnId) {
+    if (id === dependsOnId) {
       return NextResponse.json({ error: 'Ticket cannot depend on itself' }, { status: 400 })
     }
 
@@ -78,7 +81,7 @@ export async function POST(
     const existing = await db.ticketDependency.findUnique({
       where: {
         ticketId_dependsOnId: {
-          ticketId: params.id,
+          ticketId: id,
           dependsOnId
         }
       }
@@ -90,7 +93,7 @@ export async function POST(
 
     const dependency = await db.ticketDependency.create({
       data: {
-        ticketId: params.id,
+        ticketId: id,
         dependsOnId,
         type: type || 'BLOCKS'
       },
@@ -114,7 +117,7 @@ export async function POST(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -122,6 +125,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const { searchParams } = new URL(request.url)
     const dependsOnId = searchParams.get('dependsOnId')
 
@@ -132,7 +136,7 @@ export async function DELETE(
     await db.ticketDependency.delete({
       where: {
         ticketId_dependsOnId: {
-          ticketId: params.id,
+          ticketId: id,
           dependsOnId
         }
       }

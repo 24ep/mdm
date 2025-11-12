@@ -292,7 +292,8 @@ export function DataSyncManagement({ spaceId, dataModelId }: DataSyncManagementP
   }
 
   return (
-    <Tabs defaultValue="schedules" className="space-y-6">
+    <div className="space-y-6">
+    <Tabs defaultValue="schedules">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold">Data Synchronization</h3>
@@ -701,6 +702,7 @@ export function DataSyncManagement({ spaceId, dataModelId }: DataSyncManagementP
         <SyncMonitoringDashboard spaceId={spaceId} />
       </TabsContent>
     </Tabs>
+    </div>
   )
 }
 

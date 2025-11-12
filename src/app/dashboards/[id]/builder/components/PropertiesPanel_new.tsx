@@ -104,16 +104,17 @@ export function PropertiesPanel({
         <p className="text-sm text-muted-foreground">{selectedElement.name}</p>
       </div>
       <div className="flex-1 overflow-y-auto p-4">
-        <Tabs defaultValue={isChartElement ? "data" : "layout"} className="w-full">
-          <TabsList className={`grid w-full ${isChartElement ? 'grid-cols-3' : 'grid-cols-1'}`}>
-            {isChartElement && <TabsTrigger value="data">Data</TabsTrigger>}
-            {isChartElement && <TabsTrigger value="chart">Chart</TabsTrigger>}
-            <TabsTrigger value="layout">Layout</TabsTrigger>
-          </TabsList>
-          
-          {isChartElement && (
-          <TabsContent value="data" className="space-y-4">
-            {/* Available Fields (drag to Dimensions or Measures) */}
+        <div className="w-full">
+          <Tabs defaultValue={isChartElement ? "data" : "layout"}>
+            <TabsList className={`grid w-full ${isChartElement ? 'grid-cols-3' : 'grid-cols-1'}`}>
+              {isChartElement && <TabsTrigger value="data">Data</TabsTrigger>}
+              {isChartElement && <TabsTrigger value="chart">Chart</TabsTrigger>}
+              <TabsTrigger value="layout">Layout</TabsTrigger>
+            </TabsList>
+            
+            {isChartElement && (
+              <TabsContent value="data" className="space-y-4">
+                {/* Available Fields (drag to Dimensions or Measures) */}
             <div>
               <Label>Fields</Label>
               <div className="mt-2 grid grid-cols-2 gap-2">
@@ -449,10 +450,10 @@ export function PropertiesPanel({
                       <SelectContent>
                         <SelectItem value="=">=</SelectItem>
                         <SelectItem value="!=">!=</SelectItem>
-                        <SelectItem value=">">></SelectItem>
-                        <SelectItem value="<"><</SelectItem>
-                        <SelectItem value=">=">>=</SelectItem>
-                        <SelectItem value="<="><=</SelectItem>
+                        <SelectItem value=">">{'>'}</SelectItem>
+                        <SelectItem value="<">{'<'}</SelectItem>
+                        <SelectItem value=">=">{'>='}</SelectItem>
+                        <SelectItem value="<=">{'<='}</SelectItem>
                         <SelectItem value="contains">contains</SelectItem>
                       </SelectContent>
                     </Select>
@@ -667,7 +668,8 @@ export function PropertiesPanel({
               <Label>Visible</Label>
             </div>
           </TabsContent>
-        </Tabs>
+          </Tabs>
+        </div>
       </div>
     </div>
   )

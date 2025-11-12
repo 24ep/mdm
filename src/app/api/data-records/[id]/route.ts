@@ -7,10 +7,11 @@ import { isUuid } from '@/lib/validation'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    if (!isUuid(params.id)) {
+    const { id } = await params
+    if (!isUuid(id)) {
       return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
     }
     
@@ -20,7 +21,7 @@ export async function GET(
     }
 
     const record = await db.dataRecord.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         values: true
       }
@@ -39,10 +40,11 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    if (!isUuid(params.id)) {
+    const { id } = await params
+    if (!isUuid(id)) {
       return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
     }
     
@@ -64,7 +66,7 @@ export async function PUT(
         await db.dataRecordValue.upsert({
           where: {
             dataRecordId_attributeId: {
-              dataRecordId: params.id,
+              dataRecordId: id,
               attributeId: v.attribute_id
             }
           },
@@ -72,7 +74,7 @@ export async function PUT(
             value: v.value ?? null
           },
           create: {
-            dataRecordId: params.id,
+            dataRecordId: id,
             attributeId: v.attribute_id,
             value: v.value ?? null
           }
@@ -81,7 +83,7 @@ export async function PUT(
     }
 
     const record = await db.dataRecord.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         values: true
       }
@@ -95,7 +97,7 @@ export async function PUT(
     await createAuditLog({
       action: 'UPDATE',
       entityType: 'DataRecord',
-      entityId: params.id,
+      entityId: id,
       oldValue: null, // We don't have old values in this case
       newValue: record,
       userId: session.user.id,
@@ -112,10 +114,11 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    if (!isUuid(params.id)) {
+    const { id } = await params
+    if (!isUuid(id)) {
       return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
     }
     
@@ -125,7 +128,7 @@ export async function DELETE(
     }
 
     await db.dataRecord.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         deletedAt: new Date()
       }

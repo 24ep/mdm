@@ -326,7 +326,8 @@ export function PerformanceMonitoring() {
         </div>
       )}
 
-      <Tabs defaultValue="overview" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="overview">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="database">Database</TabsTrigger>
@@ -636,6 +637,7 @@ export function PerformanceMonitoring() {
           )}
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

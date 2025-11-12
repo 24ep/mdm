@@ -5,7 +5,7 @@ import { query } from '@/lib/db'
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string; userId: string } }
+  { params }: { params: Promise<{ id: string; userId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -13,8 +13,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const spaceId = params.id
-    const userId = params.userId
+    const { id: spaceId, userId } = await params
     const body = await request.json()
     const { role } = body
 
@@ -64,7 +63,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; userId: string } }
+  { params }: { params: Promise<{ id: string; userId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -72,8 +71,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const spaceId = params.id
-    const userId = params.userId
+    const { id: spaceId, userId } = await params
 
     // Check if current user has permission to remove members
     const memberCheck = await query(`

@@ -5,11 +5,11 @@ import { db } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    console.log('🔍 [ATTRIBUTES API] GET request for data model:', params.id)
-    const dataModelId = params.id
+    const { id: dataModelId } = await params
+    console.log('🔍 [ATTRIBUTES API] GET request for data model:', dataModelId)
     
     // Validate that dataModelId is a valid UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -101,13 +101,13 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const dataModelId = params.id
+    const { id: dataModelId } = await params
 
     // Check if user has permission to create attributes in this space using Prisma ORM
     const dataModel = await db.dataModel.findFirst({

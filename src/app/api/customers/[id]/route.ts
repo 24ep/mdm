@@ -6,7 +6,7 @@ import { createAuditLog } from '@/lib/audit'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -14,9 +14,10 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const { rows } = await query(
       `SELECT * FROM public.customers WHERE id = $1 AND deleted_at IS NULL LIMIT 1`,
-      [params.id]
+      [id]
     )
 
     const customer = rows[0]
@@ -36,7 +37,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -44,6 +45,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const {
       first_name,
@@ -62,7 +64,7 @@ export async function PUT(
 
     const { rows: currentRows } = await query(
       'SELECT * FROM public.customers WHERE id = $1 LIMIT 1',
-      [params.id]
+      [id]
     )
     const currentCustomer = currentRows[0]
     if (!currentCustomer) {
@@ -72,7 +74,7 @@ export async function PUT(
     if (email && email !== currentCustomer.email) {
       const { rows: existing } = await query(
         'SELECT id FROM public.customers WHERE email = $1 AND deleted_at IS NULL AND id <> $2 LIMIT 1',
-        [email, params.id]
+        [email, id]
       )
       if (existing.length > 0) {
         return NextResponse.json(
@@ -114,7 +116,7 @@ export async function PUT(
       business_profile_id,
       title_id,
       call_workflow_status_id,
-      params.id,
+      id,
     ]
 
     const { rows } = await query(updateSql, paramsArr)
@@ -124,7 +126,7 @@ export async function PUT(
     await createAuditLog({
       action: 'UPDATE',
       entityType: 'Customer',
-      entityId: params.id,
+      entityId: id,
       oldValue: currentCustomer,
       newValue: customer,
       userId: session.user.id,
@@ -144,7 +146,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -152,9 +154,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const { rows: currentRows } = await query(
       'SELECT * FROM public.customers WHERE id = $1 LIMIT 1',
-      [params.id]
+      [id]
     )
     const currentCustomer = currentRows[0]
     if (!currentCustomer) {
@@ -163,12 +166,12 @@ export async function DELETE(
 
     await query(
       'UPDATE public.customers SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1',
-      [params.id]
+      [id]
     )
 
     await query(
       'INSERT INTO public.activities (action, entity_type, entity_id, old_value, user_id) VALUES ($1,$2,$3,$4,$5)',
-      ['DELETE', 'Customer', params.id, currentCustomer, session.user.id]
+      ['DELETE', 'Customer', id, currentCustomer, session.user.id]
     )
 
     return NextResponse.json({ message: 'Customer deleted successfully' })

@@ -397,7 +397,8 @@ export function BulkOperationsPanel({ spaceId, dataModelId, onOperationComplete 
         <p className="text-muted-foreground">Perform bulk operations on your data</p>
       </div>
 
-      <Tabs defaultValue="operations" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="operations">
         <TabsList>
           <TabsTrigger value="operations">Operations</TabsTrigger>
           <TabsTrigger value="progress">Progress</TabsTrigger>
@@ -497,6 +498,7 @@ export function BulkOperationsPanel({ spaceId, dataModelId, onOperationComplete 
           </div>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

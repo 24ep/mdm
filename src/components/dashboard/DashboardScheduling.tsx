@@ -26,7 +26,7 @@ import {
   Download,
   Send
 } from 'lucide-react'
-import { toast } from 'sonner'
+import toast from 'react-hot-toast'
 
 interface Schedule {
   id: string
@@ -281,7 +281,8 @@ export function DashboardScheduling({
         </Button>
       </div>
 
-      <Tabs defaultValue="schedules" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="schedules">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="schedules">Schedules</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
@@ -391,6 +392,7 @@ export function DashboardScheduling({
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
 
       {/* Create/Edit Schedule Dialog */}
       {(showCreateDialog || editingSchedule) && (

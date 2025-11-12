@@ -34,7 +34,8 @@ export function ChatKitStyleConfig({ formData, setFormData }: ChatKitStyleConfig
           </p>
         </div>
 
-        <Accordion type="single" collapsible value={accordionValue} onValueChange={setAccordionValue} className="space-y-0">
+        <div className="space-y-0">
+        <Accordion type="single" collapsible value={accordionValue} onValueChange={setAccordionValue}>
           <ChatKitIntegrationSection formData={formData} setFormData={setFormData} />
           <ThemeSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
           <ComposerSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
@@ -45,6 +46,7 @@ export function ChatKitStyleConfig({ formData, setFormData }: ChatKitStyleConfig
           <PopoverSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
           <WidgetSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
         </Accordion>
+      </div>
       </div>
     </div>
   )

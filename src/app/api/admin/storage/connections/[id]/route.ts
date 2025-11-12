@@ -6,7 +6,7 @@ import { prisma } from '@/lib/db'
 // GET - Get a specific storage connection
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -18,8 +18,9 @@ export async function GET(
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
+    const { id } = await params
     const connection = await prisma.storageConnection.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!connection) {
@@ -36,7 +37,7 @@ export async function GET(
 // PUT - Update a storage connection
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -48,10 +49,11 @@ export async function PUT(
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
+    const { id } = await params
     const { name, type, description, isActive, config } = await request.json()
 
     const connection = await prisma.storageConnection.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!connection) {
@@ -66,7 +68,7 @@ export async function PUT(
     if (config !== undefined) updateData.config = config
 
     const updated = await prisma.storageConnection.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData
     })
 
@@ -82,7 +84,7 @@ export async function PUT(
 // DELETE - Delete a storage connection
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -94,8 +96,9 @@ export async function DELETE(
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
+    const { id } = await params
     const connection = await prisma.storageConnection.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!connection) {
@@ -103,7 +106,7 @@ export async function DELETE(
     }
 
     await prisma.storageConnection.delete({
-      where: { id: params.id }
+      where: { id }
     })
 
     return NextResponse.json({ success: true })

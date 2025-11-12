@@ -19,7 +19,7 @@ export default function SpaceSignInPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [loginImageUrl, setLoginImageUrl] = useState<string | null>(null)
-  const [ssoProviders, setSsoProviders] = useState({ google: false, azure: false, ldap: false })
+  const [ssoProviders, setSsoProviders] = useState({ google: false, azure: false })
   const [loginPageConfig, setLoginPageConfig] = useState<any>(null)
 
   useEffect(() => {
@@ -155,7 +155,7 @@ export default function SpaceSignInPage() {
               <Button type="submit" className="w-full" disabled={isLoading}>{isLoading ? 'Signing in...' : 'Sign in'}</Button>
             </form>
 
-            {(ssoProviders.google || ssoProviders.azure || ssoProviders.ldap) && (
+            {(ssoProviders.google || ssoProviders.azure) && (
               <>
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center"><Separator className="w-full" /></div>
@@ -197,25 +197,6 @@ export default function SpaceSignInPage() {
                         <path d="M11.4 24H0V12.6h11.4V24zM24 24H12.6V12.6H24V24zM11.4 11.4H0V0h11.4v11.4zM24 11.4H12.6V0H24v11.4z"/>
                       </svg>
                       Microsoft Azure
-                    </Button>
-                  )}
-                  {ssoProviders.ldap && (
-                    <Button variant="outline" className="w-full" onClick={async () => {
-                      try {
-                        const result = await signIn('ldap', { email, password, redirect: false })
-                        if (result?.error) {
-                          setError(result.error)
-                        } else {
-                          const spaceRes = await fetch(`/api/spaces/${params.space}/default-page`)
-                          const defaultPath = spaceRes.ok ? (await spaceRes.json()).path : '/dashboard'
-                          router.push(`/${params.space}${defaultPath}`)
-                        }
-                      } catch {
-                        setError('An error occurred with LDAP sign-in.')
-                      }
-                    }} disabled={isLoading}>
-                      <Lock className="mr-2 h-4 w-4" />
-                      LDAP
                     </Button>
                   )}
                 </div>

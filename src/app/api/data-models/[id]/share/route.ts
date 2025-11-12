@@ -5,7 +5,7 @@ import { db } from '@/lib/db'
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -13,6 +13,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const { space_ids } = body
 
@@ -22,7 +23,7 @@ export async function PUT(
 
     // Get the data model to check permissions using Prisma
     const dataModel = await db.dataModel.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { spaces: { take: 1 } }
     })
 
@@ -72,7 +73,7 @@ export async function PUT(
     // First, delete existing spaces (except original)
     await db.dataModelSpace.deleteMany({
       where: { 
-        dataModelId: params.id,
+        dataModelId: id,
         spaceId: { not: originalSpaceId }
       }
     })
@@ -81,7 +82,7 @@ export async function PUT(
     if (space_ids.length > 0) {
       await db.dataModelSpace.createMany({
         data: space_ids.map(spaceId => ({
-          dataModelId: params.id,
+          dataModelId: id,
           spaceId: spaceId
         })),
         skipDuplicates: true
@@ -89,7 +90,7 @@ export async function PUT(
     }
 
     const updatedModel = await db.dataModel.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { spaces: true }
     })
 

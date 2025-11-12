@@ -5,13 +5,14 @@ import { query } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { rows } = await query('SELECT * FROM public.assignments WHERE id = $1 AND deleted_at IS NULL LIMIT 1', [params.id])
+    const { id } = await params
+    const { rows } = await query('SELECT * FROM public.assignments WHERE id = $1 AND deleted_at IS NULL LIMIT 1', [id])
     if (!rows.length) return NextResponse.json({ error: 'Assignment not found' }, { status: 404 })
     return NextResponse.json(rows[0])
   } catch (error) {
@@ -22,12 +23,13 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    const { id } = await params
     const body = await request.json()
     const {
       title,
@@ -40,7 +42,7 @@ export async function PUT(
       customerIds,
     } = body
 
-    const currentRes = await query('SELECT * FROM public.assignments WHERE id = $1 LIMIT 1', [params.id])
+    const currentRes = await query('SELECT * FROM public.assignments WHERE id = $1 LIMIT 1', [id])
     const currentAssignment = currentRes.rows[0]
 
     if (!currentAssignment) {
@@ -69,7 +71,7 @@ export async function PUT(
       setParts.push(`${k} = $${values.length}`)
     }
     if (!setParts.length) return NextResponse.json(currentAssignment)
-    values.push(params.id)
+    values.push(id)
     const { rows: updatedRows } = await query(
       `UPDATE public.assignments SET ${setParts.join(', ')} WHERE id = $${values.length} RETURNING *`,
       values
@@ -77,19 +79,19 @@ export async function PUT(
     const updatedAssignment = updatedRows[0]
 
     if (customerIds !== undefined) {
-      await query('DELETE FROM public.customer_assignments WHERE assignment_id = $1', [params.id])
+      await query('DELETE FROM public.customer_assignments WHERE assignment_id = $1', [id])
       if (customerIds.length > 0) {
         const valuesList = customerIds.map((_: any, i: number) => `($1, $${i + 2})`).join(', ')
         await query(
           `INSERT INTO public.customer_assignments (assignment_id, customer_id) VALUES ${valuesList}`,
-          [params.id, ...customerIds]
+          [id, ...customerIds]
         )
       }
     }
 
     await query(
       'INSERT INTO public.activities (action, entity_type, entity_id, old_value, new_value, user_id) VALUES ($1,$2,$3,$4,$5,$6)',
-      ['UPDATE', 'Assignment', params.id, currentAssignment, updatedAssignment, session.user.id]
+      ['UPDATE', 'Assignment', id, currentAssignment, updatedAssignment, session.user.id]
     )
 
     return NextResponse.json(updatedAssignment)
@@ -101,23 +103,24 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    const { rows } = await query('SELECT * FROM public.assignments WHERE id = $1 LIMIT 1', [params.id])
+    const { id } = await params
+    const { rows } = await query('SELECT * FROM public.assignments WHERE id = $1 LIMIT 1', [id])
     const assignment = rows[0]
 
     if (!assignment) {
       return NextResponse.json({ error: 'Assignment not found' }, { status: 404 })
     }
 
-    await query('UPDATE public.assignments SET deleted_at = NOW() WHERE id = $1', [params.id])
+    await query('UPDATE public.assignments SET deleted_at = NOW() WHERE id = $1', [id])
 
     await query(
       'INSERT INTO public.activities (action, entity_type, entity_id, old_value, user_id) VALUES ($1,$2,$3,$4,$5)',
-      ['DELETE', 'Assignment', params.id, assignment, session.user.id]
+      ['DELETE', 'Assignment', id, assignment, session.user.id]
     )
 
     return NextResponse.json({ message: 'Assignment deleted successfully' })

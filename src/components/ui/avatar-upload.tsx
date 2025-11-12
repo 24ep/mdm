@@ -236,7 +236,8 @@ export function AvatarUpload({
             </DialogDescription>
           </DialogHeader>
           
-          <Tabs defaultValue="all" className="w-full">
+          <div className="w-full">
+          <Tabs defaultValue="all">
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="all">All</TabsTrigger>
               <TabsTrigger value="people">People</TabsTrigger>
@@ -324,6 +325,7 @@ export function AvatarUpload({
               </div>
             </TabsContent>
           </Tabs>
+          </div>
         </DialogContent>
       </Dialog>
 

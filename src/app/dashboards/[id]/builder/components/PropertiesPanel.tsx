@@ -60,7 +60,8 @@ export function PropertiesPanel({
         <h3 className="font-semibold" style={{ fontFamily: 'Roboto, sans-serif' }}>Element Properties</h3>
       </div>
       <div className="flex-1 overflow-y-auto p-4">
-        <Tabs defaultValue={isChartElement ? "data" : "layout"} className="w-full">
+        <div className="w-full">
+        <Tabs defaultValue={isChartElement ? "data" : "layout"}>
           <TabsList className={`grid w-full ${isChartElement ? 'grid-cols-3' : 'grid-cols-2'}`}>
             <TabsTrigger value="data">Data</TabsTrigger>
             {isChartElement && <TabsTrigger value="chart">Chart</TabsTrigger>}
@@ -673,6 +674,7 @@ export function PropertiesPanel({
             </div>
           </TabsContent>
         </Tabs>
+        </div>
       </div>
     </div>
   )

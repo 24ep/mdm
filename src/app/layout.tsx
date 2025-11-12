@@ -5,7 +5,7 @@ import { Providers } from './providers'
 import { SidebarProvider } from '@/contexts/sidebar-context'
 import { SpaceProvider } from '@/contexts/space-context'
 import { DynamicFavicon } from '@/components/ui/dynamic-favicon'
-import { Toaster } from 'sonner'
+import { Toaster } from 'react-hot-toast'
 import { Suspense } from 'react'
 import { LoadingPage } from '@/components/ui/loading-spinner'
 

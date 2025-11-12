@@ -42,7 +42,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { SketchPicker, ColorResult } from 'react-color'
+import { HexColorPicker } from 'react-colorful'
 import { EnhancedColorPicker } from '@/components/ui/EnhancedColorPicker'
 import { DashboardElement } from '../hooks/useDashboardState'
 import { MultiSideInput } from '@/components/shared/MultiSideInput'

@@ -6,16 +6,17 @@ import { auditLogger } from '@/lib/utils/audit-logger'
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; permissionId: string } }
+  { params }: { params: Promise<{ id: string; permissionId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    const { id, permissionId } = await params
     // Check if user owns the report
     const ownerCheck = await query(
       'SELECT created_by FROM reports WHERE id = $1',
-      [params.id]
+      [id]
     )
 
     if (ownerCheck.rows.length === 0) {
@@ -32,14 +33,14 @@ export async function DELETE(
       RETURNING *
     `
 
-    const result = await query(sql, [params.permissionId, params.id])
+    const result = await query(sql, [permissionId, id])
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Permission not found' }, { status: 404 })
     }
 
     // Log audit event
-    auditLogger.permissionChanged(params.id, params.permissionId)
+    auditLogger.permissionChanged(id, permissionId)
 
     return NextResponse.json({ success: true })
   } catch (error) {

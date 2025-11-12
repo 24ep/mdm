@@ -5,7 +5,7 @@ import { OpenMetadataClient } from '@/lib/openmetadata-client'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { fqn: string } }
+  { params }: { params: Promise<{ fqn: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -13,7 +13,8 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const fqn = decodeURIComponent(params.fqn)
+    const { fqn: fqnParam } = await params
+    const fqn = decodeURIComponent(fqnParam)
 
     // TODO: Load config from database
     // For now, return mock profile data

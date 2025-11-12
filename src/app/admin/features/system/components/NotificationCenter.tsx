@@ -267,7 +267,8 @@ export function NotificationCenter() {
         </div>
       </div>
 
-      <Tabs defaultValue="templates" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="templates">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
@@ -560,6 +561,7 @@ export function NotificationCenter() {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

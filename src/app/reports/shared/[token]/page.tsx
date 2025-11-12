@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Lock, AlertCircle, ExternalLink } from 'lucide-react'
-import { toast } from 'sonner'
+import toast from 'react-hot-toast'
 import { ReportEmbedPreview } from '@/components/reports/ReportEmbedPreview'
 import type { Report } from '@/app/reports/page'
 

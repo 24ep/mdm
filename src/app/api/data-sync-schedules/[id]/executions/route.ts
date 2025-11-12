@@ -5,12 +5,13 @@ import { query } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    const { id } = await params
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
@@ -18,7 +19,7 @@ export async function GET(
     // Get existing schedule to check access
     const { rows: existing } = await query(
       'SELECT space_id FROM public.data_sync_schedules WHERE id = $1::uuid AND deleted_at IS NULL',
-      [params.id]
+      [id]
     )
 
     if (existing.length === 0) {
@@ -38,14 +39,14 @@ export async function GET(
        WHERE sync_schedule_id = $1::uuid
        ORDER BY started_at DESC
        LIMIT $2 OFFSET $3`,
-      [params.id, limit, offset]
+      [id, limit, offset]
     )
 
     // Get total count
     const { rows: countRows } = await query(
       `SELECT COUNT(*) as total FROM public.data_sync_executions
        WHERE sync_schedule_id = $1::uuid`,
-      [params.id]
+      [id]
     )
 
     return NextResponse.json({

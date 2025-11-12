@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { FileText, Plus, Copy } from 'lucide-react'
-import { toast } from 'sonner'
+import toast from 'react-hot-toast'
 import type { ReportSource } from '@/app/reports/page'
 
 interface ReportTemplate {

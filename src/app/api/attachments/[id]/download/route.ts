@@ -6,7 +6,7 @@ import { AttachmentStorageService } from '@/lib/attachment-storage'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -14,7 +14,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const attachmentId = params.id
+    const { id: attachmentId } = await params
 
     // Get attachment metadata using Prisma
     const attachment = await db.attachmentFile.findUnique({

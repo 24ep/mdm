@@ -5,13 +5,15 @@ import { getLangfuseClient, isLangfuseEnabled } from '@/lib/langfuse'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { chatbotId: string } }
+  { params }: { params: Promise<{ chatbotId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const { chatbotId } = await params
 
     if (!isLangfuseEnabled()) {
       return NextResponse.json({ traces: [] })

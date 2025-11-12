@@ -63,59 +63,37 @@ A comprehensive web application for event organizations to store and manage cust
 
 ### **Prerequisites**
 - Node.js 18+
-- Docker and Docker Compose
+- Docker and Docker Compose (optional, for database)
 
-### **Installation**
+### **Build & Run**
 
-1. **Clone the repository:**
-   ```bash
-   git clone <repository-url>
-   cd customer-data-management
-   ```
-
-2. **Install dependencies:**
+1. **Install dependencies:**
    ```bash
    npm install
    ```
 
-3. **Set up environment variables:**
+2. **Set up environment:**
    ```bash
    cp env.example .env.local
    # Edit .env.local with your configuration
    ```
 
-4. **Start the development stack:**
-   ```bash
-   # Start PostgreSQL, PostgREST, and MinIO with Docker Compose
-   docker-compose up -d
-   ```
-
-5. **Set up the database:**
-   ```bash
-   # Apply database schema
-   npm run db:push
-   
-   # Seed initial data
-   npm run db:seed
-   ```
-
-6. **Start the development server:**
+3. **Start development:**
    ```bash
    npm run dev
    ```
+   Opens at [http://localhost:3000](http://localhost:3000)
 
-7. **Open your browser:**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+4. **Build for production:**
+   ```bash
+   npm run build
+   npm start
+   ```
 
 ## 🐳 **Docker Deployment**
 
-### **Production Deployment**
 ```bash
-# Build and start all services
 docker-compose up -d
-
-# View logs
-docker-compose logs -f app
 ```
 
 ## 📁 **Project Structure**
