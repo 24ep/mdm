@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { executeWorkflow } from '@/lib/workflow-executor'
 
+export const runtime = 'nodejs' // Required for workflow-executor (uses fs, path, os, url modules)
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }

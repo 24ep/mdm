@@ -56,8 +56,8 @@ import {
   ExternalLink
 } from 'lucide-react'
 import { useSpace } from '@/contexts/space-context'
-import { useSpaceStudio } from '@/hooks/use-space-studio'
-import { SpaceStudioPage } from '@/lib/space-studio-manager'
+import { useSpacesEditor } from '@/hooks/use-space-studio'
+import type { SpacesEditorPage } from '@/lib/space-studio-manager'
 
 interface PageComponent {
   id: string
@@ -87,9 +87,9 @@ export default function PageStudioPage() {
     updatePage,
     loading,
     error
-  } = useSpaceStudio(currentSpace?.id || '')
+  } = useSpacesEditor(currentSpace?.id || '')
 
-  const [page, setPage] = useState<SpaceStudioPage | null>(null)
+  const [page, setPage] = useState<SpacesEditorPage | null>(null)
   const [activeTab, setActiveTab] = useState('design')
   const [selectedComponent, setSelectedComponent] = useState<PageComponent | null>(null)
   const [selectedComponents, setSelectedComponents] = useState<string[]>([])

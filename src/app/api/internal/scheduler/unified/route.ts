@@ -4,5 +4,5 @@
  * Redirect wrapper for backward compatibility
  */
 
-export { GET, POST } from '../../../scheduler/unified/route'
+export { POST } from '../../../scheduler/unified/route'
 

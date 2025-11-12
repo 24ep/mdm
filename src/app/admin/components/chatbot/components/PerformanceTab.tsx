@@ -469,7 +469,10 @@ export function PerformanceTab({ chatbot }: PerformanceTabProps) {
                     <Input
                       type="number"
                       value={rateLimit.maxRequestsPerMinute || ''}
-                      onChange={(e) => setRateLimit({ ...rateLimit, maxRequestsPerMinute: parseInt(e.target.value) || null })}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value)
+                        setRateLimit({ ...rateLimit, maxRequestsPerMinute: isNaN(value) ? 60 : value })
+                      }}
                       placeholder="60"
                     />
                   </div>
@@ -478,7 +481,10 @@ export function PerformanceTab({ chatbot }: PerformanceTabProps) {
                     <Input
                       type="number"
                       value={rateLimit.maxRequestsPerHour || ''}
-                      onChange={(e) => setRateLimit({ ...rateLimit, maxRequestsPerHour: parseInt(e.target.value) || null })}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value)
+                        setRateLimit({ ...rateLimit, maxRequestsPerHour: isNaN(value) ? 1000 : value })
+                      }}
                       placeholder="1000"
                     />
                   </div>
@@ -487,7 +493,10 @@ export function PerformanceTab({ chatbot }: PerformanceTabProps) {
                     <Input
                       type="number"
                       value={rateLimit.maxRequestsPerDay || ''}
-                      onChange={(e) => setRateLimit({ ...rateLimit, maxRequestsPerDay: parseInt(e.target.value) || null })}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value)
+                        setRateLimit({ ...rateLimit, maxRequestsPerDay: isNaN(value) ? 10000 : value })
+                      }}
                       placeholder="10000"
                     />
                   </div>

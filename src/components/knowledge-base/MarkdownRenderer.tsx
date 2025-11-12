@@ -2,7 +2,6 @@
 
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import remarkBreaks from 'remark-breaks'
 import rehypeHighlight from 'rehype-highlight'
 import rehypeRaw from 'rehype-raw'
 import rehypeSanitize from 'rehype-sanitize'
@@ -78,14 +77,14 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
     },
   };
 
-  // If first sentence found, render separately: first without remark-breaks, rest with it
+  // If first sentence found, render separately
   if (firstSentenceMatch) {
     const firstSentence = firstSentenceMatch[0];
     const restOfContent = content.slice(firstSentence.length);
     
     return (
       <div className={commonClasses}>
-        {/* First sentence without remark-breaks */}
+        {/* First sentence */}
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[rehypeHighlight, rehypeRaw, rehypeSanitize]}
@@ -93,10 +92,10 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
         >
           {firstSentence}
         </ReactMarkdown>
-        {/* Rest of content with remark-breaks */}
+        {/* Rest of content */}
         {restOfContent && (
           <ReactMarkdown
-            remarkPlugins={[remarkGfm, remarkBreaks]}
+            remarkPlugins={[remarkGfm]}
             rehypePlugins={[rehypeHighlight, rehypeRaw, rehypeSanitize]}
             components={commonComponents}
           >
@@ -107,11 +106,11 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
     );
   }
   
-  // No first sentence found, render normally with remark-breaks
+  // No first sentence found, render normally
   return (
     <div className={commonClasses}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkBreaks]}
+        remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeHighlight, rehypeRaw, rehypeSanitize]}
         components={commonComponents}
       >

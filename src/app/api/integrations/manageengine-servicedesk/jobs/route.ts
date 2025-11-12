@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { getSpaceId } from '@/lib/auth'
+// Helper to extract spaceId from request
+function getSpaceId(request: NextRequest): string | null {
+  const searchParams = request.nextUrl.searchParams
+  return searchParams.get('space_id') || request.headers.get('x-space-id')
+}
 import { 
   createServiceDeskJob, 
   getServiceDeskJobs, 

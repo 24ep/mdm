@@ -38,6 +38,7 @@ export interface StorageData {
   usage?: number
   files?: number
   color?: string
+  [key: string]: any // Index signature for Recharts compatibility
 }
 
 export interface HealthStatus {

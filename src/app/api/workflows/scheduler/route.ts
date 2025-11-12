@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import { executeWorkflow } from '@/lib/workflow-executor'
 
+export const runtime = 'nodejs' // Required for workflow-executor (uses fs, path, os, url modules)
+
 export async function POST(request: NextRequest) {
   try {
     // This endpoint should be called by a cron job or scheduled task

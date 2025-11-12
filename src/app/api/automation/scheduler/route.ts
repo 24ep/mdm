@@ -12,6 +12,8 @@ import { DataSyncExecutor } from '@/lib/data-sync-executor'
  * Usage:
  * - Cron: 0,5,10,15,20,25,30,35,40,45,50,55 * * * * curl -X POST http://localhost:3000/api/automation/scheduler
  */
+export const runtime = 'nodejs' // Required for workflow-executor (uses fs, path, os, url modules)
+
 export async function POST(request: NextRequest) {
   try {
     const results = {

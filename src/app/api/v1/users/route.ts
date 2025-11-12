@@ -4,5 +4,5 @@
  * Redirect wrapper for backward compatibility
  */
 
-export { GET, POST } from '../../users/route'
+export { GET } from '../../users/route'
 

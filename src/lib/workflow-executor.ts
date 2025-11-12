@@ -16,6 +16,8 @@
  * 5. Cleanup temp file
  */
 
+import { query } from './db'
+
 interface ExecuteWorkflowCodeOptions {
   workflowCode: string
   workflowId: string
@@ -27,6 +29,15 @@ interface ExecuteWorkflowCodeOptions {
 interface WorkflowCodeResult {
   success: boolean
   output?: string
+  error?: string
+  records_processed?: number
+  records_updated?: number
+}
+
+interface ExecuteWorkflowResult {
+  success: boolean
+  records_processed?: number
+  records_updated?: number
   error?: string
 }
 
@@ -59,7 +70,11 @@ export async function executeWorkflowCode(
     
     try {
       // Step 3: Import as ES module
-      const module = await import(pathToFileURL(tempFile).href)
+      // Dynamic import with expression is intentional for workflow code execution
+      // This allows loading user-provided workflow code at runtime
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      // @ts-expect-error - Dynamic import with expression is intentional
+      const module = await import(/* @vite-ignore */ /* webpackIgnore: true */ pathToFileURL(tempFile).href)
       
       // Step 4: Get runWorkflow function
       const runWorkflow = module.default || module.runWorkflow
@@ -84,6 +99,58 @@ export async function executeWorkflowCode(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
+    }
+  }
+}
+
+/**
+ * Execute workflow by ID - wrapper function that loads workflow from database
+ */
+export async function executeWorkflow(workflowId: string): Promise<ExecuteWorkflowResult> {
+  try {
+    // Load workflow from database
+    const workflowResult = await query(
+      `SELECT id, name, code, api_key FROM public.workflows WHERE id = $1::uuid AND is_active = true`,
+      [workflowId]
+    )
+
+    if (workflowResult.rows.length === 0) {
+      return {
+        success: false,
+        error: 'Workflow not found or inactive'
+      }
+    }
+
+    const workflow = workflowResult.rows[0]
+    const workflowCode = workflow.code || ''
+    const apiKey = workflow.api_key || process.env.OPENAI_API_KEY || ''
+
+    if (!workflowCode) {
+      return {
+        success: false,
+        error: 'Workflow code is empty'
+      }
+    }
+
+    // Execute workflow code
+    const result = await executeWorkflowCode({
+      workflowCode,
+      workflowId: workflow.id,
+      apiKey,
+      input: '',
+      conversationHistory: []
+    })
+
+    return {
+      success: result.success,
+      records_processed: result.success ? 1 : 0,
+      records_updated: result.success ? 1 : 0,
+      error: result.error
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
     }
   }
 }

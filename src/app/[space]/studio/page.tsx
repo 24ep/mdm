@@ -20,7 +20,7 @@ import { useTemplateInitialization } from '@/hooks/use-template-initialization'
 import { TemplateManagement } from '@/components/studio/template-management'
 import { PagesManagement } from '@/components/studio/pages-management'
 import { Template } from '@/lib/template-generator'
-import { SpacesEditorPage } from '@/lib/space-studio-manager'
+import type { SpacesEditorPage } from '@/lib/space-studio-manager'
 
 export default function SpacesEditorPage() {
   const params = useParams()

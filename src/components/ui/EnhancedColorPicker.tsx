@@ -6,7 +6,7 @@ import type { ColorResult } from 'react-color'
 import { Button } from './button'
 import { Input } from './input'
 import { Label } from './label'
-import { Palette, Gradient } from 'lucide-react'
+import { Palette, Layers } from 'lucide-react'
 import { GradientColorPicker } from './GradientColorPicker'
 
 interface EnhancedColorPickerProps {
@@ -95,7 +95,7 @@ export function EnhancedColorPicker({
             onClick={() => setColorType('gradient')}
             className="h-8 px-2 rounded-l-none"
           >
-            <Gradient className="w-3 h-3" />
+            <Layers className="w-3 h-3" />
           </Button>
         </div>
 

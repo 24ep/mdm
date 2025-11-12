@@ -5,14 +5,13 @@ const nextConfig = {
   },
   output: 'standalone',
   swcMinify: true,
+  experimental: {
+    webpackBuildWorker: true,
+  },
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production' ? {
       exclude: ['error', 'warn'],
     } : false,
-  },
-  experimental: {
-    webpackBuildWorker: true,
-    optimizeCss: true,
   },
   webpack: (config, { isServer, webpack }) => {
     // Ignore @openai/chatkit-react on server-side

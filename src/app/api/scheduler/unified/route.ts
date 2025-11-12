@@ -16,6 +16,8 @@ import { executeNotebookSchedule } from '@/lib/notebook-scheduler'
  * 
  * Authentication: Requires API key via X-API-Key header or valid session
  */
+export const runtime = 'nodejs' // Required for workflow-executor (uses fs, path, os, url modules)
+
 export async function POST(request: NextRequest) {
   try {
     // Authentication: Check for API key (for cron jobs) or session (for manual triggers)

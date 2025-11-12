@@ -525,7 +525,7 @@ If the event detail text says "4–7 Nov 2025" but the Calendar Card or metadata
 - Include official links in all responses
 
 - Be helpful, confident, and positive like a real receptionist`,
-  model: "gpt-5",
+  model: "gpt-4o",
   tools: [
     webSearchPreview,
     mcp
@@ -568,7 +568,7 @@ type WorkflowInput = { input_as_text: string };
 
 // Main code entrypoint
 
-export const runWorkflow = async (workflow: WorkflowInput) => {
+export const runWorkflow = async (workflow: WorkflowInput, _agentId?: string, _apiKey?: string) => {
 
   return await withTrace("qsncc", async () => {
 
@@ -672,6 +672,8 @@ export const runWorkflow = async (workflow: WorkflowInput) => {
 
       };
 
+      return declineAgentResult;
+
     } else {
 
       const classificationResultTemp = await runner.run(
@@ -758,6 +760,8 @@ export const runWorkflow = async (workflow: WorkflowInput) => {
 
         };
 
+        return eventCalendarAgentResult;
+
       } else if (classificationResult.output_parsed.category == "general") {
 
         const generalAgentResultTemp = await runner.run(
@@ -808,6 +812,8 @@ export const runWorkflow = async (workflow: WorkflowInput) => {
 
         };
 
+        return generalAgentResult;
+
       } else {
 
         const generalAgentResultTemp = await runner.run(
@@ -857,6 +863,8 @@ export const runWorkflow = async (workflow: WorkflowInput) => {
           output_text: generalAgentResultTemp.finalOutput ?? ""
 
         };
+
+        return generalAgentResult;
 
       }
 
