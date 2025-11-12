@@ -58,13 +58,21 @@ export function BusinessIntelligence() {
     isPublic: false
   })
 
-  const [newReport, setNewReport] = useState({
+  const [newReport, setNewReport] = useState<{
+    name: string
+    description: string
+    spaceId: string
+    type: 'on_demand' | 'scheduled'
+    schedule: string
+    format: 'pdf' | 'excel' | 'csv'
+    recipients: string
+  }>({
     name: '',
     description: '',
     spaceId: '',
-    type: 'on_demand' as const,
+    type: 'on_demand',
     schedule: '',
-    format: 'pdf' as const,
+    format: 'pdf',
     recipients: ''
   })
 

@@ -336,11 +336,11 @@ export async function PUT(
     
     const currentVersionNumber = currentChatbot?.currentVersion || '1.0.0'
     const latestVersion = currentChatbot?.versions?.[0]
-    const existingConfig = latestVersion?.config || {}
+    const existingConfig = (latestVersion?.config as any) || {}
     
     // Build new version config with all fields
     const newVersionConfig = {
-      ...existingConfig,
+      ...(existingConfig as any),
       name: name || existingConfig.name,
       website: website !== undefined ? website : existingConfig.website,
       description: description !== undefined ? description : existingConfig.description,

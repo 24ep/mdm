@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Button } from '@/components/ui/button'
-import { ConfigurableKanbanBoard } from '@/components/project-management/ConfigurableKanbanBoard'
+import { KanbanBoard } from '@/components/project-management/KanbanBoard'
+import { ConfigurableKanbanBoard, KanbanConfig } from '@/components/project-management/ConfigurableKanbanBoard'
 import { SpreadsheetView } from '@/components/project-management/SpreadsheetView'
 import { GanttChartView } from '@/components/project-management/GanttChartView'
 import { TimesheetView } from '@/components/project-management/TimesheetView'
@@ -17,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Plus, Search, List, Kanban as KanbanIcon, Table, BarChart3, Clock } from 'lucide-react'
+import { Plus, Search, Filter, List, Kanban as KanbanIcon, Table, BarChart3, Clock, FileText, ExternalLink, Loader } from 'lucide-react'
 import { useSpace } from '@/contexts/space-context'
 
 interface Ticket {
@@ -60,7 +61,7 @@ export default function ProjectsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedSpaceId, setSelectedSpaceId] = useState<string>('all')
   const [viewMode, setViewMode] = useState<'kanban' | 'list' | 'spreadsheet' | 'gantt' | 'timesheet'>('kanban')
-  const [kanbanConfig, setKanbanConfig] = useState<{ rows?: string; columns?: string }>({ columns: 'status' })
+  const [kanbanConfig, setKanbanConfig] = useState<KanbanConfig>({ rows: undefined, columns: 'status' })
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
@@ -391,7 +392,7 @@ export default function ProjectsPage() {
           <ConfigurableKanbanBoard
             tickets={filteredTickets}
             config={kanbanConfig}
-            onConfigChange={setKanbanConfig}
+            onConfigChange={(config) => setKanbanConfig(config)}
             onTicketClick={handleTicketClick}
             onAddTicket={handleAddTicket}
             onTicketMove={handleTicketMove}
@@ -429,7 +430,7 @@ export default function ProjectsPage() {
           <TimesheetView
             tickets={filteredTickets}
             onTicketClick={(ticket) => {
-              // Find the full ticket from filteredTickets to get all properties
+              // Find the full ticket from filteredTickets to pass to handleTicketClick
               const fullTicket = filteredTickets.find(t => t.id === ticket.id)
               if (fullTicket) {
                 handleTicketClick(fullTicket)
@@ -479,24 +480,7 @@ export default function ProjectsPage() {
 
         {/* Ticket Detail Modal */}
         <TicketDetailModalEnhanced
-          ticket={selectedTicket ? {
-            ...selectedTicket,
-            spaces: selectedTicket.spaces?.map(s => ({
-              spaceId: s.space.id,
-              space: {
-                id: s.space.id,
-                name: s.space.name,
-              }
-            })),
-            assignees: selectedTicket.assignee ? [{
-              user: {
-                id: selectedTicket.assignee.id,
-                name: selectedTicket.assignee.name,
-                avatar: selectedTicket.assignee.avatar,
-                email: selectedTicket.assignee.email,
-              }
-            }] : undefined,
-          } : null}
+          ticket={selectedTicket as any}
           open={isModalOpen}
           onOpenChange={setIsModalOpen}
           onSave={handleSaveTicket}

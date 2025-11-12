@@ -36,11 +36,11 @@ import {
   AccessControlRule,
   DataSteward,
   BusinessGlossaryTerm,
-  PlatformGovernanceConfig
+  PlatformGovernanceConfig as PlatformGovernanceConfigType
 } from '../types'
 
 export function PlatformGovernanceConfig() {
-  const [config, setConfig] = useState<PlatformGovernanceConfig>({
+  const [config, setConfig] = useState<PlatformGovernanceConfigType>({
     dataDomains: [],
     classificationSchemes: [],
     qualityRules: [],

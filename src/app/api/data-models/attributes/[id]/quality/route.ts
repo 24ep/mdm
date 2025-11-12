@@ -90,7 +90,7 @@ export async function GET(
     }
 
     // Add usage statistics to options
-    const optionsWithStats = attributeOptions.map((option, index) => ({
+    const optionsWithStats = attributeOptions.map((option: any, index: number) => ({
       ...option,
       usage: Math.floor(Math.random() * 100), // Mock usage data
       percentage: Math.floor(Math.random() * 100)

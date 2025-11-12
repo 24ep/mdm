@@ -41,7 +41,7 @@ export async function POST(
       RETURNING *
     `
 
-    const result = await query<any>(sql, [
+    const result = await query(sql, [
       params.id,
       token,
       passwordHash,
@@ -74,7 +74,7 @@ export async function GET(
       ORDER BY created_at DESC
     `
 
-    const result = await query<any>(sql, [params.id, session.user.id])
+    const result = await query(sql, [params.id, session.user.id])
 
     return NextResponse.json({ links: result.rows || [] })
   } catch (error) {

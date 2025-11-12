@@ -65,14 +65,7 @@ export async function POST(request: NextRequest) {
             },
             description: req.description || ''
           },
-          event: req.preRequestScript ? [{
-            listen: 'prerequest',
-            script: {
-              type: 'text/javascript',
-              exec: req.preRequestScript.split('\n')
-            }
-          }] : undefined,
-          event: req.tests && (req.tests as any[]).length > 0 ? [
+          event: [
             ...(req.preRequestScript ? [{
               listen: 'prerequest',
               script: {
@@ -80,7 +73,7 @@ export async function POST(request: NextRequest) {
                 exec: req.preRequestScript.split('\n')
               }
             }] : []),
-            {
+            ...(req.tests && (req.tests as any[]).length > 0 ? [{
               listen: 'test',
               script: {
                 type: 'text/javascript',
@@ -91,8 +84,8 @@ export async function POST(request: NextRequest) {
                   });`
                 }).join('\n')
               }
-            }
-          ] : undefined
+            }] : [])
+          ]
         }))
       }))
     }

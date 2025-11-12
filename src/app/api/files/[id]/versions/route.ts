@@ -90,7 +90,7 @@ export async function POST(
       return NextResponse.json({ error: 'File not found or access denied' }, { status: 404 })
     }
 
-    const file = accessResult.rows[0]
+    const file = accessResult.rows[0] as any
 
     // Get the next version number
     const versionResult = await query(
@@ -98,7 +98,7 @@ export async function POST(
       [fileId]
     )
 
-    const nextVersion = versionResult.rows[0].next_version
+    const nextVersion = (versionResult.rows[0] as any).next_version
 
     // Create new version entry
     const versionInsertResult = await query(
@@ -121,7 +121,7 @@ export async function POST(
     // Mark all other versions as not current
     await query(
       'UPDATE file_versions SET is_current = false WHERE file_id = $1 AND id != $2',
-      [fileId, versionInsertResult.rows[0].id]
+      [fileId, (versionInsertResult.rows[0] as any).id]
     )
 
     return NextResponse.json({

@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       ORDER BY created_at DESC
     `
 
-    const result = await query<any>(sql, [session.user.id])
+    const result = await query(sql, [session.user.id])
     return NextResponse.json({ integrations: result.rows || [] })
   } catch (error) {
     console.error('Error fetching integrations:', error)

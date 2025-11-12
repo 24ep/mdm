@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user's global role
-    const { rows: userRows } = await query<any>(
+    const { rows: userRows } = await query(
       'SELECT role FROM users WHERE id = $1',
       [userId]
     )
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     // Get space role if spaceId provided
     let spaceRole: string | undefined
     if (spaceId) {
-      const { rows: spaceRows } = await query<any>(
+      const { rows: spaceRows } = await query(
         'SELECT role FROM space_members WHERE space_id = $1 AND user_id = $2',
         [spaceId, userId]
       )

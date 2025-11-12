@@ -61,9 +61,20 @@ export function ThemeBranding() {
   const [activeTab, setActiveTab] = useState('system')
   const [selectedSpace, setSelectedSpace] = useState<string>('')
 
-  const [newTheme, setNewTheme] = useState({
+  const [newTheme, setNewTheme] = useState<{
+    name: string
+    type: 'system' | 'space'
+    spaceId: string
+    colors: any
+    typography: any
+    spacing: any
+    borderRadius: any
+    shadows: any
+    animations: any
+    customCSS?: string
+  }>({
     name: '',
-    type: 'system' as const,
+    type: 'system',
     spaceId: '',
     colors: {
       primary: '#3b82f6',
@@ -113,6 +124,7 @@ export function ThemeBranding() {
       lg: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
       xl: '0 20px 25px -5px rgb(0 0 0 / 0.1)'
     },
+    animations: {},
     customCSS: ''
   })
 
@@ -170,6 +182,7 @@ export function ThemeBranding() {
           name: '',
           type: 'system',
           spaceId: '',
+          animations: {},
           colors: {
             primary: '#3b82f6',
             secondary: '#64748b',
@@ -733,12 +746,12 @@ export function ThemeBranding() {
                   <div>
                     <Label htmlFor="font-family">Font Family</Label>
                     <Select 
-                      value={selectedTheme.typography.fontFamily} 
+                      value={selectedTheme.typography?.fontFamily || 'Inter'} 
                       onValueChange={(value) => {
                         const updatedTheme = {
                           ...selectedTheme,
-                          typography: { ...selectedTheme.typography, fontFamily: value }
-                        }
+                          typography: { ...(selectedTheme.typography || {}), fontFamily: value }
+                        } as Theme
                         setSelectedTheme(updatedTheme)
                       }}
                     >
@@ -758,7 +771,7 @@ export function ThemeBranding() {
 
                 <TabsContent value="spacing" className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
-                    {Object.entries(selectedTheme.spacing).map(([key, value]) => (
+                    {Object.entries(selectedTheme.spacing || {}).map(([key, value]) => (
                       <div key={key}>
                         <Label htmlFor={`spacing-${key}`} className="capitalize">{key}</Label>
                         <Input
@@ -767,8 +780,8 @@ export function ThemeBranding() {
                           onChange={(e) => {
                             const updatedTheme = {
                               ...selectedTheme,
-                              spacing: { ...selectedTheme.spacing, [key]: e.target.value }
-                            }
+                              spacing: { ...(selectedTheme.spacing || {}), [key]: e.target.value }
+                            } as Theme
                             setSelectedTheme(updatedTheme)
                           }}
                           placeholder="0.25rem"

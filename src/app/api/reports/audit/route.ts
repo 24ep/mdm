@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
     const userAgent = request.headers.get('user-agent') || 'unknown'
 
-    const result = await query<any>(sql, [
+    const result = await query(sql, [
       session.user.id,
       action,
       resource_type,
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
       LIMIT $2 OFFSET $3
     `
 
-    const result = await query<any>(sql, params)
+    const result = await query(sql, params)
 
     return NextResponse.json({ logs: result.rows || [] })
   } catch (error) {

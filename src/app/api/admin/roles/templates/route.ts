@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     // Get permission IDs from database
     const permissionIds: string[] = []
     for (const perm of template.permissions) {
-      const { rows } = await query<any>(
+      const { rows } = await query(
         'SELECT id FROM permissions WHERE name = $1 OR (resource = $2 AND action = $3)',
         [perm.id, perm.resource, perm.action]
       )
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     const roleName = customName || `${template.name}_custom`
     const roleDescription = customDescription || template.description
 
-    const { rows: newRole } = await query<any>(
+    const { rows: newRole } = await query(
       `INSERT INTO roles (name, description, level, is_system)
        VALUES ($1, $2, $3, $4)
        RETURNING id, name, description, level, is_system`,

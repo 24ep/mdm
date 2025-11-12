@@ -8,7 +8,7 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
   const forbidden = await requireRole(_request, 'MANAGER')
   if (forbidden) return forbidden
   try {
-    const { rows } = await query<any>(`
+    const { rows } = await query(`
       SELECT 
         u.id, u.email, u.name, u.role, u.is_active, u.created_at, u.updated_at, u.default_space_id,
         s.name as default_space_name,
@@ -80,7 +80,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     values.push(params.id)
     const sql = `UPDATE public.users SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $${values.length} RETURNING id, email, name, role, is_active, created_at, updated_at`
 
-    const { rows } = await query<any>(sql, values)
+    const { rows } = await query(sql, values)
     if (!rows.length) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
     // Handle space memberships if provided
@@ -123,7 +123,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   const forbidden = await requireRole(request, 'MANAGER')
   if (forbidden) return forbidden
   try {
-    const { rows } = await query<any>('DELETE FROM public.users WHERE id = $1 RETURNING id', [params.id])
+    const { rows } = await query('DELETE FROM public.users WHERE id = $1 RETURNING id', [params.id])
     if (!rows.length) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     return NextResponse.json({ success: true })
   } catch (error) {

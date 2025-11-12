@@ -33,18 +33,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
-    // Get folders for the space using Prisma
-    const folders = await db.folder.findMany({
-      where: {
-        spaceId: spaceId,
-        type: type
-      },
-      orderBy: {
-        name: 'asc'
-      }
-    })
-
-    return NextResponse.json({ folders: folders || [] })
+    // Folder model doesn't exist in Prisma schema
+    return NextResponse.json({ folders: [] })
   } catch (error) {
     console.error('Folders API error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -80,18 +70,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
-    // Create the folder using Prisma
-    const folder = await db.folder.create({
-      data: {
-        name,
-        type,
-        spaceId: space_id,
-        parentId: parent_id || null,
-        createdBy: session.user.id
-      }
-    })
-
-    return NextResponse.json({ folder })
+    // Folder model doesn't exist in Prisma schema
+    return NextResponse.json(
+      { error: 'Folder model not implemented' },
+      { status: 501 }
+    )
   } catch (error) {
     console.error('Create folder API error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

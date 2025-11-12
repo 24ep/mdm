@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       ORDER BY name
     `
 
-    const result = await query<any>(sql, [])
+    const result = await query(sql, [])
     return NextResponse.json(createSuccessResponse({ folders: result.rows || [] }))
   } catch (error) {
     console.error('Error fetching folders:', error)
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       RETURNING *
     `
 
-    const result = await query<any>(sql, [
+    const result = await query(sql, [
       name,
       description || null,
       parent_id || null,
@@ -96,7 +96,7 @@ export async function PUT(request: NextRequest) {
       RETURNING *
     `
 
-    const result = await query<any>(sql, [
+    const result = await query(sql, [
       name,
       description || null,
       parent_id || null,
@@ -139,7 +139,7 @@ export async function DELETE(request: NextRequest) {
       RETURNING *
     `
 
-    const result = await query<any>(sql, [id, session.user.id])
+    const result = await query(sql, [id, session.user.id])
 
     if (result.rows.length === 0) {
       return NextResponse.json(createErrorResponse('Folder not found', 'NOT_FOUND'), { status: 404 })

@@ -506,7 +506,7 @@ export function NotificationCenter() {
                     <Label htmlFor="vapid-public">VAPID Public Key</Label>
                     <Input
                       id="vapid-public"
-                      value={settings.push.vapidKeys.public}
+                      value={settings.push.vapidKeys?.publicKey || ''}
                       placeholder="VAPID public key"
                     />
                   </div>
@@ -515,7 +515,7 @@ export function NotificationCenter() {
                     <Input
                       id="vapid-private"
                       type="password"
-                      value={settings.push.vapidKeys.private}
+                      value={settings.push.vapidKeys?.privateKey || ''}
                       placeholder="VAPID private key"
                     />
                   </div>

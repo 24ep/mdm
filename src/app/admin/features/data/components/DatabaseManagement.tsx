@@ -189,6 +189,7 @@ export function DatabaseManagement() {
         setShowCreateConnection(false)
         setNewConnection({
           name: '',
+          spaceId: '',
           type: 'postgresql',
           host: '',
           port: 5432,

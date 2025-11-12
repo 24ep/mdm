@@ -253,7 +253,7 @@ export function MemberManagementPanel({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Groups</SelectItem>
-                    {[...new Set(members.map(m => m.group).filter(Boolean))].map(group => {
+                    {Array.from(new Set(members.map(m => m.group).filter(Boolean))).map(group => {
                       const groupValue = String(group || '__no_group__')
                       return (
                         <SelectItem key={groupValue} value={groupValue}>

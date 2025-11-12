@@ -72,8 +72,8 @@ export async function GET(request: NextRequest) {
     `
     
     const [{ rows: dataModels }, { rows: totalRows }] = await Promise.all([
-      query<any>(listSql, [...params, limit, offset]),
-      query<{ total: number }>(countSql, params),
+      query(listSql, [...params, limit, offset]),
+      query(countSql, params),
     ])
     
     const total = totalRows[0]?.total || 0
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     // Create the data model
     const insertSql = `INSERT INTO public.data_models (name, description, created_by, is_active, sort_order)
                        VALUES ($1, $2, $3, $4, $5) RETURNING *`
-    const { rows } = await query<any>(insertSql, [
+    const { rows } = await query(insertSql, [
       name,
       description ?? null,
       session.user.id,

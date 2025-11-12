@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
             })
             testResult = {
               success: response.ok,
-              error: response.ok ? undefined : `HTTP ${response.status}: ${response.statusText}`
+              error: response.ok ? '' : `HTTP ${response.status}: ${response.statusText}`
             }
           } else {
             testResult = { success: false, error: 'API URL and API Key are required' }
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
         case 'sso':
           // Test SSO configuration (basic validation)
           if (config?.ssoUrl && config?.entityId) {
-            testResult = { success: true, message: 'SSO configuration is valid' }
+            testResult = { success: true, error: '' }
           } else {
             testResult = { success: false, error: 'SSO URL and Entity ID are required' }
           }
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
             })
             testResult = {
               success: response.ok || response.status === 401, // 401 means auth works but might need permissions
-              error: response.ok ? undefined : `HTTP ${response.status}: ${response.statusText}`
+              error: response.ok ? '' : `HTTP ${response.status}: ${response.statusText}`
             }
           } else {
             testResult = { success: false, error: 'Base URL and API Key are required' }
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
         case 'powerbi':
           // Test Power BI connection (validate config)
           if (config?.clientId && config?.clientSecret && config?.tenantId) {
-            testResult = { success: true, message: 'Power BI configuration is valid' }
+            testResult = { success: true, error: '' }
           } else {
             testResult = { success: false, error: 'Client ID, Client Secret, and Tenant ID are required' }
           }
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
             })
             testResult = {
               success: response.ok,
-              error: response.ok ? undefined : `HTTP ${response.status}: ${response.statusText}`
+              error: response.ok ? '' : `HTTP ${response.status}: ${response.statusText}`
             }
           } else {
             testResult = { success: false, error: 'API URL, Client ID, and Client Secret are required' }
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
             })
             testResult = {
               success: response.ok,
-              error: response.ok ? undefined : `HTTP ${response.status}: ${response.statusText}`
+              error: response.ok ? '' : `HTTP ${response.status}: ${response.statusText}`
             }
           } else {
             testResult = { success: false, error: 'API URL and API Key are required' }
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
             })
             testResult = {
               success: response.ok,
-              error: response.ok ? undefined : `HTTP ${response.status}: ${response.statusText}`
+              error: response.ok ? '' : `HTTP ${response.status}: ${response.statusText}`
             }
           } else {
             testResult = { success: false, error: 'Vault URL and Token are required' }
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
             })
             testResult = {
               success: response.ok || response.status === 401, // 401 means endpoint exists
-              error: response.ok ? undefined : `HTTP ${response.status}: ${response.statusText}`
+              error: response.ok ? '' : `HTTP ${response.status}: ${response.statusText}`
             }
           } else {
             testResult = { success: false, error: 'Endpoint URL is required' }

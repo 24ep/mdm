@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     
     queryStr += ' ORDER BY resource, action'
     
-    const { rows } = await query<any>(queryStr, params)
+    const { rows } = await query(queryStr, params)
     return NextResponse.json({ permissions: rows })
   } catch (error) {
     console.error('List permissions error:', error)
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
   try {
     const { name, description, resource, action } = await request.json()
     if (!name || !resource || !action) return NextResponse.json({ error: 'name, resource, action required' }, { status: 400 })
-    const { rows } = await query<any>(
+    const { rows } = await query(
       'INSERT INTO public.permissions (name, description, resource, action) VALUES ($1, $2, $3, $4) RETURNING id, name, description, resource, action',
       [name, description || null, resource, action]
     )

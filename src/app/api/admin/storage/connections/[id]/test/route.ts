@@ -54,7 +54,7 @@ export async function POST(
         } else {
           // For now, just validate config structure
           // In production, you'd make an actual API call to test
-          testResult = { success: true }
+          testResult = { success: true, error: '' }
         }
       } else if (['minio', 's3', 'sftp', 'ftp'].includes(connection.type)) {
         // For supported providers, use AttachmentStorageService
@@ -62,13 +62,13 @@ export async function POST(
           provider: connection.type as 'minio' | 's3' | 'sftp' | 'ftp',
           config: {
             [connection.type]: connection.config
-          }
+          } as any
         })
 
         // Try to list files (or perform a simple operation)
         // For now, we'll just validate the config structure
         // In production, you'd make an actual API call
-        testResult = { success: true }
+        testResult = { success: true, error: '' }
       } else {
         testResult = { 
           success: false, 

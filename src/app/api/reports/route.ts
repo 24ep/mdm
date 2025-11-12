@@ -93,9 +93,9 @@ export async function GET(request: NextRequest) {
     `
 
     const [{ rows: reports }, { rows: categories }, { rows: folders }] = await Promise.all([
-      query<any>(reportsSql, params),
-      query<any>(categoriesSql, []),
-      query<any>(foldersSql, [])
+      query(reportsSql, params),
+      query(categoriesSql, []),
+      query(foldersSql, [])
     ])
 
     return NextResponse.json({
@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
       RETURNING *
     `
 
-    const result = await query<any>(insertSql, [
+    const result = await query(insertSql, [
       name,
       description || null,
       source,

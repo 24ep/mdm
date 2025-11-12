@@ -209,7 +209,7 @@ export function DataExploration({
       }, {} as { [key: string]: number }),
       dataTypes: columns.reduce((acc, col) => {
         const types = data.map(row => typeof row[col])
-        acc[col] = [...new Set(types)].join(', ')
+        acc[col] = Array.from(new Set(types)).join(', ')
         return acc
       }, {} as { [key: string]: string })
     }

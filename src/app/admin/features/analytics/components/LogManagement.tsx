@@ -653,7 +653,7 @@ export function LogManagement() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Switch checked={policy.isActive} />
+                      <Switch checked={(policy as any).isActive || false} />
                       <Button
                         size="sm"
                         variant="outline"

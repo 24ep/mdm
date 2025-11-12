@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       AND deleted_at IS NULL
       LIMIT 1
     `
-    const checkResult = await query<any>(checkSql, [name, type])
+    const checkResult = await query(checkSql, [name, type])
 
     if (checkResult.rows.length > 0) {
       // Update existing integration
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
         WHERE id = $2
         RETURNING id, name, type, status, config
       `
-      const updateResult = await query<any>(updateSql, [
+      const updateResult = await query(updateSql, [
         JSON.stringify(config || {}),
         checkResult.rows[0].id
       ])
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
         VALUES ($1, $2, $3, 'pending', $4, NOW(), NOW())
         RETURNING id, name, type, status, config
       `
-      const insertResult = await query<any>(insertSql, [
+      const insertResult = await query(insertSql, [
         name,
         type,
         JSON.stringify(config || {}),

@@ -54,7 +54,7 @@ export async function POST(
         }
       } else {
         try {
-          apiKey = decryptApiKey(instance.adminApiKey)
+          apiKey = decryptApiKey(instance.adminApiKey) || undefined
         } catch (error) {
           console.warn('Failed to decrypt Kong API key:', error)
         }

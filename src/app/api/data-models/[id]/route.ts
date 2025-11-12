@@ -12,7 +12,7 @@ export async function GET(
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { rows } = await query<any>(
+    const { rows } = await query(
       'SELECT * FROM public.data_models WHERE id = $1::uuid AND deleted_at IS NULL',
       [params.id]
     )
@@ -68,7 +68,7 @@ export async function PUT(
         return NextResponse.json({ error: 'Invalid slug' }, { status: 400 })
       }
       // Ensure unique (excluding current record)
-      const { rows: conflict } = await query<{ id: string }>(
+      const { rows: conflict } = await query(
         'SELECT id FROM public.data_models WHERE slug = $1 AND id <> $2 AND deleted_at IS NULL LIMIT 1',
         [slug, params.id]
       )
@@ -85,7 +85,7 @@ export async function PUT(
 
     const sql = `UPDATE public.data_models SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`
     values.push(params.id)
-    const { rows } = await query<any>(sql, values)
+    const { rows } = await query(sql, values)
     if (!rows[0]) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
     // Create audit log
@@ -119,7 +119,7 @@ export async function DELETE(
     const currentDataResult = await query('SELECT * FROM data_models WHERE id = $1::uuid', [params.id])
     const currentData = currentDataResult.rows[0]
 
-    const { rows } = await query<any>(
+    const { rows } = await query(
       'UPDATE public.data_models SET deleted_at = NOW() WHERE id = $1::uuid AND deleted_at IS NULL RETURNING id',
       [params.id]
     )

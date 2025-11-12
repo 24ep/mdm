@@ -35,7 +35,7 @@ export async function PUT(
     const currentData = currentDataResult.rows[0]
 
     values.push(params.id)
-    const { rows } = await query<any>(
+    const { rows } = await query(
       `UPDATE public.data_model_attributes SET ${fields.join(', ')} WHERE id = $${values.length} RETURNING *`,
       values
     )

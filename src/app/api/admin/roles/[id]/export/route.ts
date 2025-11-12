@@ -11,7 +11,7 @@ export async function GET(
     if (forbidden) return forbidden
 
     // Get role
-    const { rows: role } = await query<any>(
+    const { rows: role } = await query(
       'SELECT id, name, description, level, is_system FROM roles WHERE id = $1',
       [params.id]
     )
@@ -21,7 +21,7 @@ export async function GET(
     }
 
     // Get permissions
-    const { rows: permissions } = await query<any>(
+    const { rows: permissions } = await query(
       `SELECT p.id, p.name, p.description, p.resource, p.action
        FROM role_permissions rp
        JOIN permissions p ON p.id = rp.permission_id

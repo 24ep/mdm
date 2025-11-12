@@ -80,7 +80,7 @@ export function extractTableNames(query: string): string[] {
     tables.push(match[1])
   }
 
-  return [...new Set(tables)]
+  return Array.from(new Set(tables))
 }
 
 /**

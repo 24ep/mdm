@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import toast from 'react-hot-toast'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -342,7 +343,7 @@ export function PerformanceMonitoring() {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={metrics}>
+                  <RechartsLineChart data={metrics}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="timestamp" />
                     <YAxis />
@@ -350,7 +351,7 @@ export function PerformanceMonitoring() {
                     <Line type="monotone" dataKey="cpuUsage" stroke="#8884d8" strokeWidth={2} name="CPU %" />
                     <Line type="monotone" dataKey="memoryUsage" stroke="#82ca9d" strokeWidth={2} name="Memory %" />
                     <Line type="monotone" dataKey="diskUsage" stroke="#ffc658" strokeWidth={2} name="Disk %" />
-                  </LineChart>
+                  </RechartsLineChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
@@ -384,7 +385,7 @@ export function PerformanceMonitoring() {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={dbMetrics}>
+                <RechartsLineChart data={dbMetrics}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="timestamp" />
                   <YAxis />
@@ -393,7 +394,7 @@ export function PerformanceMonitoring() {
                   <Line type="monotone" dataKey="connections" stroke="#82ca9d" strokeWidth={2} name="Connections" />
                   <Line type="monotone" dataKey="slowQueries" stroke="#ffc658" strokeWidth={2} name="Slow Queries" />
                   <Line type="monotone" dataKey="cacheHitRate" stroke="#ff7300" strokeWidth={2} name="Cache Hit Rate %" />
-                </LineChart>
+                </RechartsLineChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
@@ -580,11 +581,11 @@ export function PerformanceMonitoring() {
                     <Label>Enable Alerts</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Switch checked={settings.alerts.email} />
+                    <Switch checked={!!settings.alerts.email && settings.alerts.email.length > 0} />
                     <Label>Email Notifications</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Switch checked={settings.alerts.webhook} />
+                    <Switch checked={!!settings.alerts.webhook} />
                     <Label>Webhook Notifications</Label>
                   </div>
                 </CardContent>

@@ -30,7 +30,7 @@ export async function GET(
         ORDER BY dm.sort_order ASC, dm.created_at DESC
       `
       
-      const { rows: dataModels } = await query<any>(listSql, [])
+      const { rows: dataModels } = await query(listSql, [])
       
       // Transform the data to match the expected format
       const transformedDataModels = dataModels.map((dm: any) => ({
@@ -71,7 +71,7 @@ export async function GET(
         ORDER BY dm.sort_order ASC, dm.created_at DESC
       `
       
-      const { rows: dataModels } = await query<any>(listSql, [spaceId])
+      const { rows: dataModels } = await query(listSql, [spaceId])
       
       // Transform the data to match the expected format
       const transformedDataModels = dataModels.map((dm: any) => ({

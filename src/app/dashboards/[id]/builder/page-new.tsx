@@ -245,13 +245,13 @@ export default function DashboardBuilderPage() {
             onUndo={undo}
             onRedo={redo}
             onClearFilters={clearAllFilters}
-            onShowDataSourcePanel={() => toast.info('Data source panel would open here')}
-            onShowShareDialog={() => toast.info('Share dialog would open here')}
-            onShowTemplates={() => toast.info('Templates dialog would open here')}
-            onShowVersioning={() => toast.info('Versioning dialog would open here')}
-            onShowAdvancedStyling={() => toast.info('Advanced styling dialog would open here')}
-            onShowDataPreview={() => toast.info('Data preview dialog would open here')}
-            onShowSettings={() => toast.info('Settings dialog would open here')}
+            onShowDataSourcePanel={() => toast('Data source panel would open here')}
+            onShowShareDialog={() => toast('Share dialog would open here')}
+            onShowTemplates={() => toast('Templates dialog would open here')}
+            onShowVersioning={() => toast('Versioning dialog would open here')}
+            onShowAdvancedStyling={() => toast('Advanced styling dialog would open here')}
+            onShowDataPreview={() => toast('Data preview dialog would open here')}
+            onShowSettings={() => toast('Settings dialog would open here')}
             onPreview={() => router.push(`/dashboards/${dashboard.id}`)}
           />
 

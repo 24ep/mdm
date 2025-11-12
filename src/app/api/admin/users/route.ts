@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already exists
-    const existing = await query<any>(
+    const existing = await query(
       'SELECT id FROM users WHERE email = $1 LIMIT 1',
       [email]
     )
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, 12)
 
     // Create user
-    const result = await query<any>(
+    const result = await query(
       `INSERT INTO users (email, name, password, role, is_active, default_space_id, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
        RETURNING id, email, name, role, is_active, created_at, default_space_id`,

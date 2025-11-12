@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const quota = quotaResult.rows[0]
+    const quota = quotaResult.rows[0] as any
 
     // Calculate usage percentages
     const fileUsagePercentage = quota.max_files > 0 ? Math.round((quota.current_files / quota.max_files) * 100) : 0
@@ -119,7 +119,7 @@ export async function PUT(request: NextRequest) {
       [spaceId, userId]
     )
 
-    if (memberResult.rows.length === 0 || !['owner', 'admin'].includes(memberResult.rows[0].role)) {
+    if (memberResult.rows.length === 0 || !['owner', 'admin'].includes((memberResult.rows[0] as any).role)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 

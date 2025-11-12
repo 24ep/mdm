@@ -25,7 +25,7 @@ export async function GET(
       ORDER BY rp.created_at DESC
     `
 
-    const result = await query<any>(sql, [params.id])
+    const result = await query(sql, [params.id])
     
     const permissions = result.rows.map((row: any) => ({
       id: row.id,
@@ -81,7 +81,7 @@ export async function POST(
       RETURNING *
     `
 
-    const result = await query<any>(sql, [
+    const result = await query(sql, [
       params.id,
       user_id || null,
       role_id || null,

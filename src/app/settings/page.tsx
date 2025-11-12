@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { useSpace } from '@/contexts/space-context'
@@ -902,8 +903,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <div>
-      <Tabs defaultValue="system" orientation="vertical" className="flex h-full">
+    <>
+    <Tabs defaultValue="system" orientation="vertical" className="flex h-full">
         {/* Left Sidebar */}
         <div className="w-72 bg-card flex flex-col border-r">
           <div className="p-6 border-b">
@@ -1177,8 +1178,9 @@ export default function SettingsPage() {
             </TabsContent>
 
             {/* Spaces - removed (moved to Space Settings) */}
-            {/* <TabsContent value="spaces" className="space-y-6 w-full">
+            {/* <TabsContent value="spaces" className="space-y-6 w-full"> */}
               <div className="p-6">
+                {/* Embedded Spaces Manager */}
                 <div>
                   {showErdInline && (
                     <div className="mb-6 border rounded-lg p-4 bg-muted/20">
@@ -1186,17 +1188,19 @@ export default function SettingsPage() {
                         <h3 className="text-lg font-semibold">ERD Diagram</h3>
                         <Button variant="ghost" size="sm" onClick={() => setShowErdInline(false)}>Close</Button>
                       </div>
+                      {/* ERD view removed from Settings; open from Data Models page */}
                     </div>
                   )}
+                  {/* <SpacesManager /> */}
                 </div>
               </div>
-            </TabsContent> */}
+            {/* </TabsContent> */}
 
             {/* Data Model - moved to Space Settings */}
             {false && (
             <TabsContent value="data-model" className="space-y-6 w-full">
-                <div>
-                  <div className="mb-6">
+              <div>
+                <div className="mb-6">
                   <h2 className="text-xl font-semibold flex items-center space-x-2">
                     <Database className="h-5 w-5" />
                     <span>Data Model Management</span>
@@ -1488,24 +1492,25 @@ export default function SettingsPage() {
                             )}
                           </Droppable>
                       </table>
-                      <div className="flex gap-2 mt-4 p-4">
-                        <Button className="flex-1" variant="outline" onClick={() => setShowErdInline(true)}>
-                          <LucideIcons.GitBranch className="mr-2 h-4 w-4" />
-                          ERD View
-                        </Button>
-                        <Button className="flex-1" onClick={handleCreateDataModel}>
-                          <Plus className="mr-2 h-4 w-4" />
-                          Create New Data Model
-                        </Button>
-                      </div>
                     </div>
                     </DragDropContext>
+                    
+                    <div className="flex gap-2">
+                      <Button className="flex-1" variant="outline" onClick={() => setShowErdInline(true)}>
+                        <LucideIcons.GitBranch className="mr-2 h-4 w-4" />
+                        ERD View
+                      </Button>
+                      <Button className="flex-1" onClick={handleCreateDataModel}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Create New Data Model
+                      </Button>
+                    </div>
                     </>
                     )}
                   </div>
                 </div>
                 </div>
-              </TabsContent>
+            </TabsContent>
             )}
 
             {/* API Documentation */}
@@ -2949,6 +2954,6 @@ export default function SettingsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  )
+    </>
+    )
 }

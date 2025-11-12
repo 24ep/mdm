@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { ConfigurableKanbanBoard } from '@/components/project-management/ConfigurableKanbanBoard'
+import { ConfigurableKanbanBoard, KanbanConfig } from '@/components/project-management/ConfigurableKanbanBoard'
 import { SpreadsheetView } from '@/components/project-management/SpreadsheetView'
 import { GanttChartView } from '@/components/project-management/GanttChartView'
 import { TimesheetView } from '@/components/project-management/TimesheetView'
@@ -59,7 +59,7 @@ export function ProjectsManagement() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedSpaceId, setSelectedSpaceId] = useState<string>('all')
   const [viewMode, setViewMode] = useState<'kanban' | 'list' | 'spreadsheet' | 'gantt' | 'timesheet'>('kanban')
-  const [kanbanConfig, setKanbanConfig] = useState({ rows: undefined, columns: 'status' })
+  const [kanbanConfig, setKanbanConfig] = useState<KanbanConfig>({ rows: undefined, columns: 'status' })
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
@@ -327,7 +327,7 @@ export function ProjectsManagement() {
         <ConfigurableKanbanBoard
           tickets={filteredTickets}
           config={kanbanConfig}
-          onConfigChange={setKanbanConfig}
+          onConfigChange={(config) => setKanbanConfig(config)}
           onTicketClick={handleTicketClick}
           onAddTicket={handleAddTicket}
           onTicketMove={handleTicketMove}
@@ -352,9 +352,14 @@ export function ProjectsManagement() {
           onTicketClick={handleTicketClick}
         />
       ) : viewMode === 'timesheet' ? (
-        <TimesheetView
-          tickets={filteredTickets}
-          onTicketClick={handleTicketClick}
+          <TimesheetView
+            tickets={filteredTickets}
+            onTicketClick={(ticket) => {
+              const fullTicket = filteredTickets.find(t => t.id === ticket.id)
+              if (fullTicket) {
+                handleTicketClick(fullTicket)
+              }
+            }}
           onAddTimeLog={async (ticketId, hours, description, loggedAt) => {
             await fetch(`/api/tickets/${ticketId}/time-logs`, {
               method: 'POST',
@@ -398,8 +403,8 @@ export function ProjectsManagement() {
       )}
 
       {/* Ticket Detail Modal */}
-      <TicketDetailModalEnhanced
-        ticket={selectedTicket}
+        <TicketDetailModalEnhanced
+          ticket={selectedTicket as any}
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
         onSave={handleSaveTicket}

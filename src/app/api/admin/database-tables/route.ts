@@ -13,7 +13,7 @@ export async function GET() {
     })
 
     const tables = dataModels.map(model => ({
-      name: model.tableName,
+      name: model.name,
       rows: model.dataRecords.length,
       size: Math.floor(Math.random() * 1000000), // Mock size
       indexes: model.attributes.length,
@@ -21,7 +21,7 @@ export async function GET() {
       isPartitioned: false,
       columns: model.attributes.map(attr => ({
         name: attr.name,
-        type: attr.dataType,
+        type: attr.type,
         nullable: !attr.isRequired,
         defaultValue: attr.defaultValue,
         isPrimaryKey: attr.isPrimaryKey,

@@ -233,19 +233,11 @@ export function AnalyticsDashboard() {
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
-                      data={storageData.map(entry => ({
-                        name: entry.provider,
-                        usage: entry.usage ?? entry.used,
-                        ...entry
-                      }))}
+                      data={storageData as any}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={(props: any) => {
-                        const name = props.name || ''
-                        const percent = props.percent || 0
-                        return `${name} ${(percent * 100).toFixed(0)}%`
-                      }}
+                      label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="usage"
@@ -322,9 +314,9 @@ export function AnalyticsDashboard() {
                         <span className="font-medium capitalize">{item.provider}</span>
                       </div>
                       <div className="text-right">
-                        <div className="font-bold">{item.files.toLocaleString()}</div>
+                        <div className="font-bold">{(item.files || 0).toLocaleString()}</div>
                         <div className="text-sm text-muted-foreground">
-                          {formatBytes(item.usage)}
+                          {formatBytes(item.usage || 0)}
                         </div>
                       </div>
                     </div>

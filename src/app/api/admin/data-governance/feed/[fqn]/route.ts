@@ -15,7 +15,7 @@ export async function GET(
     const fqn = decodeURIComponent(params.fqn)
 
     // TODO: Load from OpenMetadata
-    const threads = []
+    const threads: any[] = []
 
     return NextResponse.json({ threads })
   } catch (error) {

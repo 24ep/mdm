@@ -53,7 +53,7 @@ interface Ticket {
   [key: string]: any // For custom grouping fields
 }
 
-interface KanbanConfig {
+export interface KanbanConfig {
   rows?: string // Field to group by rows (e.g., 'priority', 'assignee')
   columns?: string // Field to group by columns (e.g., 'status')
   grouping?: string // Additional grouping (e.g., 'tags')

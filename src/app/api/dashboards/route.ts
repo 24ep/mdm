@@ -86,8 +86,8 @@ export async function GET(request: NextRequest) {
     `
     
     const [{ rows: dashboards }, { rows: totalRows }] = await Promise.all([
-      query<any>(listSql, [...params, limit, offset]),
-      query<{ total: number }>(countSql, params),
+      query(listSql, [...params, limit, offset]),
+      query(countSql, params),
     ])
     
     const total = totalRows[0]?.total || 0
@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
       RETURNING *
     `
     
-    const { rows } = await query<any>(insertSql, [
+    const { rows } = await query(insertSql, [
       name,
       description || null,
       type,

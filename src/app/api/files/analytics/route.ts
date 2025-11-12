@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
       [spaceId]
     )
 
-    const quota = quotaResult.rows[0] || {
+    const quota = (quotaResult.rows[0] as any) || {
       max_files: 1000,
       max_size: 1073741824,
       current_files: 0,
@@ -166,31 +166,31 @@ export async function GET(request: NextRequest) {
         to: now
       },
       statistics: {
-        totalFiles: parseInt(statsResult.rows[0].total_files),
-        totalSize: parseInt(statsResult.rows[0].total_size),
-        uniqueUploaders: parseInt(statsResult.rows[0].unique_uploaders),
-        avgFileSize: parseFloat(statsResult.rows[0].avg_file_size),
-        earliestUpload: statsResult.rows[0].earliest_upload,
-        latestUpload: statsResult.rows[0].latest_upload
+        totalFiles: parseInt((statsResult.rows[0] as any).total_files),
+        totalSize: parseInt((statsResult.rows[0] as any).total_size),
+        uniqueUploaders: parseInt((statsResult.rows[0] as any).unique_uploaders),
+        avgFileSize: parseFloat((statsResult.rows[0] as any).avg_file_size),
+        earliestUpload: (statsResult.rows[0] as any).earliest_upload,
+        latestUpload: (statsResult.rows[0] as any).latest_upload
       },
-      fileTypes: fileTypesResult.rows.map(row => ({
+      fileTypes: fileTypesResult.rows.map((row: any) => ({
         mimeType: row.mime_type,
         count: parseInt(row.count),
         totalSize: parseInt(row.total_size)
       })),
-      trends: trendsResult.rows.map(row => ({
+      trends: trendsResult.rows.map((row: any) => ({
         date: row.date,
         uploads: parseInt(row.uploads),
         sizeUploaded: parseInt(row.size_uploaded)
       })),
-      topUploaders: topUploadersResult.rows.map(row => ({
+      topUploaders: topUploadersResult.rows.map((row: any) => ({
         id: row.id,
         name: row.name,
         email: row.email,
         fileCount: parseInt(row.file_count),
         totalSize: parseInt(row.total_size)
       })),
-      storageUsage: storageUsageResult.rows.map(row => ({
+      storageUsage: storageUsageResult.rows.map((row: any) => ({
         provider: row.provider,
         fileCount: parseInt(row.file_count),
         totalSize: parseInt(row.total_size)

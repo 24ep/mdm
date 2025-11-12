@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch config
-    const configResult = await query<any>(
+    const configResult = await query(
       'SELECT * FROM report_integrations WHERE id = $1 AND created_by = $2',
       [config_id, session.user.id]
     )

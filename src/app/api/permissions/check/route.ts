@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
       // Get user's roles
-      const { rows: userRows } = await query<any>(
+      const { rows: userRows } = await query(
         'SELECT role FROM users WHERE id = $1',
         [userId]
       )
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       }
       let spaceRole: string | undefined
       if (spaceId) {
-        const { rows: spaceRows } = await query<any>(
+        const { rows: spaceRows } = await query(
           'SELECT role FROM space_members WHERE space_id = $1 AND user_id = $2',
           [spaceId, userId]
         )

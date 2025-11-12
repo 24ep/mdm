@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       ORDER BY usage_count DESC, created_at DESC
     `
 
-    const result = await query<any>(sql, [session.user.id])
+    const result = await query(sql, [session.user.id])
 
     return NextResponse.json({ templates: result.rows || [] })
   } catch (error) {
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       RETURNING *
     `
 
-    const result = await query<any>(sql, [
+    const result = await query(sql, [
       name,
       description || null,
       source,

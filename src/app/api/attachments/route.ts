@@ -11,12 +11,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const attributeId = searchParams.get('attributeId')
     const spaceId = searchParams.get('spaceId')
-
-    if (!attributeId) {
-      return NextResponse.json({ error: 'attributeId is required' }, { status: 400 })
-    }
 
     // Check if user has access to this space using Prisma
     if (spaceId) {
@@ -33,19 +28,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get attachments for the attribute using Prisma
+    // Get attachments using Prisma
     const attachments = await db.attachmentFile.findMany({
-      where: { attributeId: attributeId },
-      include: {
-        dataModelAttribute: {
-          include: {
-            dataModel: {
-              select: { spaceId: true }
-            }
-          }
-        }
-      },
-      orderBy: { uploadedAt: 'desc' }
+      orderBy: { createdAt: 'desc' }
     })
 
     return NextResponse.json({ attachments })

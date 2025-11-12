@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
 
     // Load data model and potential external configuration
-    const { rows: modelRows } = await query<any>(
+    const { rows: modelRows } = await query(
       `SELECT dm.id, dm.source_type, dm.external_connection_id, dm.external_schema, dm.external_table, dm.external_primary_key
              , ec.id as conn_id, ec.db_type, ec.host, ec.port, ec.database, ec.username, ec.password, ec.options
        FROM public.data_models dm
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     // If EXTERNAL model, query external database
     if (model.source_type === 'EXTERNAL' && model.conn_id && model.external_table) {
       // Load attribute mappings
-      const { rows: attrs } = await query<{ name: string; external_column: string | null }>(
+      const { rows: attrs } = await query(
         `SELECT name, external_column FROM public.data_model_attributes WHERE data_model_id = $1::uuid AND deleted_at IS NULL ORDER BY "order" ASC` as any,
         [dataModelId]
       )
@@ -303,8 +303,8 @@ export async function GET(request: NextRequest) {
     console.log('🔍 Count Parameters:', countParams)
 
     const [{ rows: records }, { rows: totalRows }] = await Promise.all([
-      query<any>(baseQuery, params),
-      query<{ total: number }>(countQuery, countParams),
+      query(baseQuery, params),
+      query(countQuery, countParams),
     ])
     
     const total = totalRows[0]?.total || 0
@@ -342,7 +342,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'data_model_id and values[] required' }, { status: 400 })
     }
 
-    const { rows: recordRows } = await query<any>(
+    const { rows: recordRows } = await query(
       'INSERT INTO public.data_records (data_model_id) VALUES ($1) RETURNING *',
       [data_model_id]
     )
@@ -360,7 +360,7 @@ export async function POST(request: NextRequest) {
       await query(insertValuesSql, flatParams)
     }
 
-    const { rows: fullRows } = await query<any>(
+    const { rows: fullRows } = await query(
       'SELECT * FROM public.data_records WHERE id = $1::uuid',
       [record.id]
     )

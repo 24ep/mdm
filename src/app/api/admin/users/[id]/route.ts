@@ -56,7 +56,7 @@ export async function PUT(
     values.push(params.id)
     const sql = `UPDATE users SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $${values.length} RETURNING id, email, name, role, is_active, created_at, default_space_id`
 
-    const { rows } = await query<any>(sql, values)
+    const { rows } = await query(sql, values)
     if (!rows.length) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
@@ -112,7 +112,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
-    const { rows } = await query<any>(
+    const { rows } = await query(
       'DELETE FROM users WHERE id = $1 RETURNING id',
       [params.id]
     )

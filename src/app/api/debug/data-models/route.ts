@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
       }
     }
     
-    const rows = await query<any>(
+    const rows = await query(
       `SELECT dm.id, dm.name, dm.display_name, dm.space_id FROM data_models dm
        WHERE ($1 IS NULL OR dm.space_id = $1)
        ORDER BY dm.created_at ASC`,

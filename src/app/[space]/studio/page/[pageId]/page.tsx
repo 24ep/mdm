@@ -57,7 +57,7 @@ import {
 } from 'lucide-react'
 import { useSpace } from '@/contexts/space-context'
 import { useSpacesEditor } from '@/hooks/use-space-studio'
-import type { SpacesEditorPage } from '@/lib/space-studio-manager'
+import { SpacesEditorPage } from '@/lib/space-studio-manager'
 
 interface PageComponent {
   id: string
@@ -105,7 +105,7 @@ export default function PageStudioPage() {
       if (foundPage) {
         setPage(foundPage)
         // Load components from page data
-        setComponents(foundPage.components || [])
+        setComponents((foundPage as any).components || [])
       }
     }
   }, [pages, pageId])
@@ -156,7 +156,7 @@ export default function PageStudioPage() {
         ...page,
         components,
         updatedAt: new Date().toISOString()
-      })
+      } as any)
       setIsDirty(false)
     } catch (error) {
       console.error('Failed to save page:', error)

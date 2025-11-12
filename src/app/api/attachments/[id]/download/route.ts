@@ -18,52 +18,35 @@ export async function GET(
 
     // Get attachment metadata using Prisma
     const attachment = await db.attachmentFile.findUnique({
-      where: { id: attachmentId },
-      include: {
-        dataModelAttribute: {
-          include: {
-            dataModel: {
-              select: { spaceId: true }
-            }
-          }
-        }
-      }
+      where: { id: attachmentId }
     })
 
     if (!attachment) {
       return NextResponse.json({ error: 'Attachment not found' }, { status: 404 })
     }
 
-    const spaceId = attachment.dataModelAttribute.dataModel.spaceId
-
-    // Check if user has access to this space using Prisma
-    const spaceMember = await db.spaceMember.findFirst({
-      where: {
-        spaceId: spaceId,
-        userId: session.user.id
-      },
-      select: { role: true }
+    // Get active storage connection
+    const storageConnection = await db.storageConnection.findFirst({
+      where: { 
+        isActive: true,
+        type: { in: ['minio', 's3', 'sftp', 'ftp'] }
+      }
     })
 
-    if (!spaceMember) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
-    }
-
-    // Get storage configuration using Prisma
-    const storageConfig = await db.spaceAttachmentStorage.findUnique({
-      where: { spaceId: spaceId }
-    })
-
-    if (!storageConfig) {
-      console.error('Storage configuration not found')
-      return NextResponse.json({ error: 'Storage configuration not found' }, { status: 500 })
+    if (!storageConnection) {
+      return NextResponse.json({ error: 'No active storage connection found' }, { status: 500 })
     }
 
     // Initialize storage service
-    const storageService = new AttachmentStorageService(storageConfig)
+    const storageService = new AttachmentStorageService({
+      provider: storageConnection.type as 'minio' | 's3' | 'sftp' | 'ftp',
+      config: {
+        [storageConnection.type]: storageConnection.config
+      } as any
+    })
 
     // Download file
-    const downloadResult = await storageService.downloadFile(attachment.storedName)
+    const downloadResult = await storageService.downloadFile(attachment.filePath)
 
     if (!downloadResult.success) {
       return NextResponse.json({ 
@@ -84,8 +67,8 @@ export async function GET(
     // Return file with appropriate headers
     return new NextResponse(fileBuffer, {
       headers: {
-        'Content-Type': attachment.contentType,
-        'Content-Disposition': `attachment; filename="${attachment.originalName}"`,
+        'Content-Type': attachment.mimeType,
+        'Content-Disposition': `attachment; filename="${attachment.fileName}"`,
         'Content-Length': attachment.fileSize.toString(),
         'Cache-Control': 'private, max-age=3600'
       }

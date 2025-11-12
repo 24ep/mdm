@@ -52,7 +52,6 @@ import {
   ChevronRight,
   AlertTriangle,
   CheckCircle2,
-  XCircle2,
   Loader2,
   Power,
   PowerOff,

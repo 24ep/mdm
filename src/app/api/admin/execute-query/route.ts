@@ -47,8 +47,8 @@ export async function POST(request: NextRequest) {
       if (!lintResult.valid) {
         await auditLogger.log({
           userId,
-          userName,
-          userEmail,
+          userName: userName || undefined,
+          userEmail: userEmail || undefined,
           action: 'EXECUTE_QUERY',
           resourceType: 'query',
           sqlQuery: trimmedQuery,
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
       if (!skipMasking) {
         const maskingContext = {
           userId,
-          userRole,
+          userRole: userRole || undefined,
           spaceId,
           environment: process.env.NODE_ENV as 'production' | 'development' | 'staging'
         }
@@ -100,8 +100,8 @@ export async function POST(request: NextRequest) {
       // Audit logging
       await auditLogger.log({
         userId,
-        userName,
-        userEmail,
+          userName: userName || undefined,
+          userEmail: userEmail || undefined,
         action: 'EXECUTE_QUERY',
         resourceType: 'query',
         sqlQuery: trimmedQuery,
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
         rowCount: result.rows.length,
         timestamp: new Date(),
         userId,
-        userName,
+        userName: userName || undefined,
         spaceId,
         status: 'success'
       }).catch(err => {
@@ -153,8 +153,8 @@ export async function POST(request: NextRequest) {
       // Audit logging for failed query
       await auditLogger.log({
         userId,
-        userName,
-        userEmail,
+          userName: userName || undefined,
+          userEmail: userEmail || undefined,
         action: 'EXECUTE_QUERY',
         resourceType: 'query',
         sqlQuery: trimmedQuery,
@@ -186,8 +186,8 @@ export async function POST(request: NextRequest) {
     if (userId) {
       await auditLogger.log({
         userId,
-        userName,
-        userEmail,
+          userName: userName || undefined,
+          userEmail: userEmail || undefined,
         action: 'EXECUTE_QUERY',
         resourceType: 'query',
         success: false,

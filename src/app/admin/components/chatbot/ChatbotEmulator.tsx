@@ -30,16 +30,6 @@ export function ChatbotEmulator({
     description: ''
   })
 
-  // Wrapper function to handle partial config updates
-  const handleConfigChange = (config: { backgroundColor?: string; backgroundImage?: string; text?: string; description?: string }) => {
-    setEmulatorConfig(prev => ({
-      backgroundColor: config.backgroundColor ?? prev.backgroundColor,
-      backgroundImage: config.backgroundImage ?? prev.backgroundImage,
-      text: config.text ?? prev.text,
-      description: config.description ?? prev.description
-    }))
-  }
-
   // Send preview mode and emulator config to iframe when it loads or when preview mode changes
   useEffect(() => {
     if (!selectedChatbot?.id || !emulatorRef.current) return
@@ -184,7 +174,7 @@ export function ChatbotEmulator({
         open={configDrawerOpen}
         onOpenChange={setConfigDrawerOpen}
         config={emulatorConfig}
-        onConfigChange={handleConfigChange}
+        onConfigChange={(config) => setEmulatorConfig(prev => ({ ...prev, ...config }))}
       />
     </div>
   )

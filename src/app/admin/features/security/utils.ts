@@ -113,6 +113,10 @@ export function getSecurityEventIcon(type: SecurityEvent['type']): string {
     data_access: 'Database',
     config_change: 'Settings',
     user_action: 'User',
+    failed_login: 'XCircle',
+    suspicious_activity: 'AlertTriangle',
+    password_change: 'Key',
+    '2fa_enabled': 'Shield'
   }
   return iconMap[type] || 'AlertCircle'
 }

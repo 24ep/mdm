@@ -95,8 +95,7 @@ export async function POST(
         filePath: folderPath,
         mimeType: 'folder',
         fileSize: 0,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdAt: new Date()
       }
     })
 

@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
       ORDER BY ep.created_at DESC
     `
 
-    const { rows } = await query<any>(sql, params)
+    const { rows } = await query(sql, params)
     return NextResponse.json({ profiles: rows })
   } catch (error) {
     console.error('Error in GET /api/export-profiles:', error)
@@ -72,40 +72,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Create the export profile using Prisma
-    const profile = await db.exportProfile.create({
-      data: {
-        name,
-        description,
-        dataModel: dataModel,
-        format,
-        columns: columns || [],
-        filters: filters || [],
-        isPublic: isPublic || false,
-        createdBy: session.user.id
-      }
-    })
-
-    // Create sharing configurations if provided using Prisma
-    if (sharing && sharing.length > 0) {
-      const sharingData = sharing.map((share: any) => ({
-        profileId: profile.id,
-        sharingType: share.type,
-        targetId: share.targetId || null,
-        targetGroup: share.targetGroup || null
-      }))
-
-      try {
-        await db.exportProfileSharing.createMany({
-          data: sharingData
-        })
-      } catch (sharingError) {
-        console.error('Error creating sharing configurations:', sharingError)
-        // Don't fail the request, just log the error
-      }
-    }
-
-    return NextResponse.json({ profile }, { status: 201 })
+    // ExportProfile model doesn't exist in Prisma schema
+    return NextResponse.json(
+      { error: 'Export profile model not implemented' },
+      { status: 501 }
+    )
   } catch (error) {
     console.error('Error in POST /api/export-profiles:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

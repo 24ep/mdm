@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     }
 
     // TODO: Load from OpenMetadata
-    const pipelines = []
+    const pipelines: any[] = []
 
     return NextResponse.json({ pipelines })
   } catch (error) {
