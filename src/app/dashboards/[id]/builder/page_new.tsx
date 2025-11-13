@@ -51,7 +51,6 @@ export default function DashboardBuilderPage() {
     saveDashboard,
     updateElement,
     deleteElement,
-    addElement,
     loadDataSources,
     folders,
     activePageId,

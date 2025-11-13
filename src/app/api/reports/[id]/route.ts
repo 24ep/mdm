@@ -111,9 +111,11 @@ export async function PUT(
       link,
       workspace,
       embed_url,
-      metadata,
-      is_active
+      metadata
     } = validationResult.data
+    
+    // Get is_active from body directly as it may not be in the schema
+    const is_active = body.is_active
 
     const sql = `
       UPDATE public.reports

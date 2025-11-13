@@ -11,15 +11,19 @@ import { validateTicketData, sanitizeTicketData } from '@/lib/servicedesk-valida
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
   let auditLogId: string | null = null
+  let space_id: string | undefined = undefined
+  let session: any = null
   
   try {
-    const session = await getServerSession(authOptions)
+    session = await getServerSession(authOptions)
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const body = await request.json()
-    const { space_id, request_id, updates } = body
+    const parsed = body
+    space_id = parsed.space_id
+    const { request_id, updates } = parsed
 
     if (!space_id || !request_id || !updates) {
       return NextResponse.json(
@@ -63,7 +67,7 @@ export async function POST(request: NextRequest) {
     // Validate update data
     if (updates.subject || updates.description) {
       const validationData = {
-        subject: updates.subject || '',
+        title: updates.subject || '',
         description: updates.description || '',
         requesterEmail: updates.requesterEmail || ''
       }
@@ -78,8 +82,9 @@ export async function POST(request: NextRequest) {
         )
       }
       // Sanitize
-      if (updates.subject) updates.subject = sanitizeTicketData(validationData).subject
-      if (updates.description) updates.description = sanitizeTicketData(validationData).description
+      const sanitized = sanitizeTicketData(validationData)
+      if (updates.subject) updates.subject = sanitized.title
+      if (updates.description) updates.description = sanitized.description
     }
 
     // Create initial audit log
@@ -92,7 +97,7 @@ export async function POST(request: NextRequest) {
         entityType: 'ServiceDeskIntegration',
         entityId: space_id,
         userId: session.user.id,
-        newValue: { requestId, updates },
+        newValue: { requestId: request_id, updates },
         ipAddress,
         userAgent
       })
@@ -142,7 +147,7 @@ export async function POST(request: NextRequest) {
           entityId: space_id,
           userId: session.user.id,
           newValue: {
-            requestId,
+            requestId: request_id,
             updates,
             duration: Date.now() - startTime,
             status: 'success'
@@ -176,7 +181,7 @@ export async function POST(request: NextRequest) {
           entityId: space_id,
           userId: session.user.id,
           newValue: {
-            requestId,
+            requestId: request_id,
             error: result.error || 'Unknown error',
             duration: Date.now() - startTime,
             status: 'failed'
@@ -199,7 +204,7 @@ export async function POST(request: NextRequest) {
       await createAuditLog({
         action: 'SERVICEDESK_TICKET_UPDATE_FAILED',
         entityType: 'ServiceDeskIntegration',
-        entityId: request?.body?.space_id || 'unknown',
+        entityId: space_id || 'unknown',
         userId: session?.user?.id || 'unknown',
         newValue: {
           error: error instanceof Error ? error.message : 'Unknown error',

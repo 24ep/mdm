@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Message, ChatbotConfig } from '../types'
 import { MessageBubble } from './MessageBubble'
@@ -34,7 +35,7 @@ export function MessagesList({
   threadId,
 }: MessagesListProps) {
   return (
-    <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+    <ScrollArea className="flex-1 p-4" ref={scrollAreaRef as any}>
       <div className="space-y-4">
         {messages.length === 0 && !isLoading && (chatbot as any).showStartConversation !== false && (() => {
           const openerText = chatbot.openaiAgentSdkGreeting || chatbot.conversationOpener || 'Start a conversation'
@@ -79,7 +80,7 @@ export function MessagesList({
           const promptsPosition = (chatbot as any).startScreenPromptsPosition || 'center'
           const iconDisplay = (chatbot as any).startScreenPromptsIconDisplay || 'suffix'
           const promptsBgColor = (chatbot as any).startScreenPromptsBackgroundColor || chatbot.botMessageBackgroundColor || '#f3f4f6'
-          const promptsFontColor = (chatbot as any).startScreenPromptsFontColor || chatbot.botMessageFontColor || chatbot.fontColor || '#000000'
+          const promptsFontColor = (chatbot as any).startScreenPromptsFontColor || (chatbot as any).botMessageFontColor || chatbot.fontColor || '#000000'
           const promptsBorderColor = (chatbot as any).startScreenPromptsBorderColor || chatbot.bubbleBorderColor || chatbot.borderColor || '#e5e7eb'
           const promptsBorderWidth = (chatbot as any).startScreenPromptsBorderWidth || '1px'
           const promptsBorderRadius = (chatbot as any).startScreenPromptsBorderRadius || '8px'

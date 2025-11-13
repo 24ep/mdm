@@ -195,6 +195,7 @@ async function testSFTPConnection(config: any) {
 
     // Dynamic import for optional dependency
     if (!SftpClient) {
+      // @ts-ignore - ssh2-sftp-client doesn't have type definitions
       const sftpModule = await import('ssh2-sftp-client')
       SftpClient = sftpModule.Client
     }
@@ -257,6 +258,7 @@ async function testFTPConnection(config: any) {
 
     // Dynamic import for optional dependency
     if (!FtpClient) {
+      // @ts-ignore - ftp doesn't have type definitions
       const ftpModule = await import('ftp')
       FtpClient = ftpModule.Client
     }
@@ -269,10 +271,10 @@ async function testFTPConnection(config: any) {
           // Test by listing the upload directory
           const uploadPath = config.path || '/uploads'
           
-          ftp.list(uploadPath, (err, list) => {
+          ftp.list(uploadPath, (err: any, list: any) => {
             if (err) {
               // If directory doesn't exist, try to create it
-              ftp.mkdir(uploadPath, true, (mkdirErr) => {
+              ftp.mkdir(uploadPath, true, (mkdirErr: any) => {
                 ftp.end()
                 if (mkdirErr) {
                   resolve({
@@ -303,7 +305,7 @@ async function testFTPConnection(config: any) {
         }
       })
 
-      ftp.on('error', (err) => {
+      ftp.on('error', (err: any) => {
         resolve({
           success: false,
           error: err.message || 'FTP connection failed'

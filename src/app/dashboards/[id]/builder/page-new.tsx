@@ -144,9 +144,9 @@ export default function DashboardBuilderPage() {
                       y < edgeThreshold || y > height - edgeThreshold
     
     if (isNearEdge) {
-      e.currentTarget.style.cursor = 'resize'
+      (e.currentTarget as HTMLElement).style.cursor = 'resize'
     } else {
-      e.currentTarget.style.cursor = 'move'
+      (e.currentTarget as HTMLElement).style.cursor = 'move'
     }
   }
 

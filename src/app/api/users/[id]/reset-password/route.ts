@@ -60,7 +60,7 @@ export async function POST(
       userId: session.user.id, // The admin who reset the password
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
-      description: `Password reset for user ${user.email} by admin`
+      // description: `Password reset for user ${user.email} by admin`
     })
 
     return NextResponse.json({ 

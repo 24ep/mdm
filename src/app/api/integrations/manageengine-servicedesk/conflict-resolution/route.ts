@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
       const creds = await secretsManager.getSecret(`servicedesk-integrations/${connectionId}/credentials`)
       apiKey = creds?.apiKey || ''
     } else {
-      apiKey = decryptApiKey(config.api_auth_apikey_value)
+      apiKey = decryptApiKey(config.api_auth_apikey_value) || ''
     }
 
     if (!apiKey) {
@@ -260,7 +260,7 @@ export async function PUT(request: NextRequest) {
       const creds = await secretsManager.getSecret(`servicedesk-integrations/${connectionId}/credentials`)
       apiKey = creds?.apiKey || ''
     } else {
-      apiKey = decryptApiKey(config.api_auth_apikey_value)
+      apiKey = decryptApiKey(config.api_auth_apikey_value) || ''
     }
 
     if (!apiKey) {
@@ -339,7 +339,7 @@ export async function PUT(request: NextRequest) {
           }
           updateData.priority = priorityMap[serviceDeskTicket.priority.name] || ticket.priority
         }
-      } else if (typeof strategy === 'object' && strategy.custom) {
+      } else if (strategy !== null && typeof strategy === 'object' && 'custom' in strategy && strategy.custom) {
         // Custom value - update both
         if (field === 'title') {
           updateData.title = strategy.custom

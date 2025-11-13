@@ -233,7 +233,7 @@ export function useWorkflowRealtimeVoice({
           // Store prompt ID for sending after authentication
           // According to OpenAI Realtime API docs, prompt should be sent via session.update event
           // https://platform.openai.com/docs/guides/realtime-models-prompting
-          const promptId = chatbot?.openaiAgentSdkRealtimePromptId
+          const promptId = (chatbot as any)?.openaiAgentSdkRealtimePromptId
           const hasValidPromptId = promptId && typeof promptId === 'string' && promptId.trim().length > 0
           
           // Use instructions in initial session config if no prompt ID
@@ -254,7 +254,7 @@ export function useWorkflowRealtimeVoice({
           
           // Store prompt info for sending after auth
           ;(ws as any)._pendingPromptId = hasValidPromptId ? promptId.trim() : null
-          ;(ws as any)._pendingPromptVersion = hasValidPromptId ? (chatbot.openaiAgentSdkRealtimePromptVersion || '1') : null
+          ;(ws as any)._pendingPromptVersion = hasValidPromptId ? ((chatbot as any).openaiAgentSdkRealtimePromptVersion || '1') : null
         }
         
         ws.onmessage = async (event) => {

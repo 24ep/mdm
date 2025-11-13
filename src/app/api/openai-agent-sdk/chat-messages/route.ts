@@ -220,12 +220,11 @@ export async function POST(request: NextRequest) {
             langfuse.trace({
               name: 'openai-workflow-chat',
               userId: session?.user?.id || undefined,
-              level: 'ERROR',
-              statusMessage: error instanceof Error ? error.message : 'Unknown error',
               metadata: {
                 chatbotId,
                 agentId,
                 error: error instanceof Error ? error.stack : String(error),
+                errorMessage: error instanceof Error ? error.message : 'Unknown error',
               },
             })
           } catch (langfuseError) {
@@ -281,10 +280,9 @@ export async function POST(request: NextRequest) {
             langfuse.trace({
               name: 'openai-assistant-chat',
               userId: session?.user?.id || undefined,
-              level: 'ERROR',
-              statusMessage: error instanceof Error ? error.message : 'Unknown error',
               metadata: {
                 error: error instanceof Error ? error.stack : String(error),
+                errorMessage: error instanceof Error ? error.message : 'Unknown error',
               },
             })
           } catch (langfuseError) {
@@ -314,10 +312,9 @@ export async function POST(request: NextRequest) {
         langfuse.trace({
           name: 'openai-assistant-chat',
           userId: session?.user?.id || undefined,
-          level: 'ERROR',
-          statusMessage: error instanceof Error ? error.message : 'Unknown error',
           metadata: {
             error: error instanceof Error ? error.stack : String(error),
+            errorMessage: error instanceof Error ? error.message : 'Unknown error',
           },
         })
       } catch (langfuseError) {

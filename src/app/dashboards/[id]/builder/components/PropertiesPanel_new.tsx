@@ -449,10 +449,10 @@ export function PropertiesPanel({
                       <SelectContent>
                         <SelectItem value="=">=</SelectItem>
                         <SelectItem value="!=">!=</SelectItem>
-                        <SelectItem value=">">></SelectItem>
-                        <SelectItem value="<"><</SelectItem>
-                        <SelectItem value=">=">>=</SelectItem>
-                        <SelectItem value="<="><=</SelectItem>
+                        <SelectItem value=">">&gt;</SelectItem>
+                        <SelectItem value="<">&lt;</SelectItem>
+                        <SelectItem value=">=">&gt;=</SelectItem>
+                        <SelectItem value="<=">&lt;=</SelectItem>
                         <SelectItem value="contains">contains</SelectItem>
                       </SelectContent>
                     </Select>

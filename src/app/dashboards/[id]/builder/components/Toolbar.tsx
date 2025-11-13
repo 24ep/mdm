@@ -37,11 +37,18 @@ interface ToolbarProps {
   onUndo: () => void
   onRedo: () => void
   onClearFilters: () => void
-  showGrid: boolean
-  setShowGrid: (v: boolean) => void
-  onShowTools: () => void
+  showGrid?: boolean
+  setShowGrid?: (v: boolean) => void
+  onShowTools?: () => void
   onPreview: () => void
-  onRenameDashboard: (name: string) => void
+  onRenameDashboard?: (name: string) => void
+  onShowDataSourcePanel?: () => void
+  onShowShareDialog?: () => void
+  onShowTemplates?: () => void
+  onShowVersioning?: () => void
+  onShowAdvancedStyling?: () => void
+  onShowDataPreview?: () => void
+  onShowSettings?: () => void
 }
 
 export function Toolbar({
@@ -66,7 +73,14 @@ export function Toolbar({
   setShowGrid,
   onShowTools,
   onPreview,
-  onRenameDashboard
+  onRenameDashboard,
+  onShowDataSourcePanel,
+  onShowShareDialog,
+  onShowTemplates,
+  onShowVersioning,
+  onShowAdvancedStyling,
+  onShowDataPreview,
+  onShowSettings
 }: ToolbarProps) {
   const [nameDraft, setNameDraft] = React.useState(dashboard?.name || '')
   const [isEditingName, setIsEditingName] = React.useState(false)
@@ -90,7 +104,7 @@ export function Toolbar({
             value={nameDraft}
             onChange={(e) => setNameDraft(e.target.value)}
             onBlur={() => {
-              onRenameDashboard(nameDraft.trim() || 'Untitled Dashboard')
+              onRenameDashboard?.(nameDraft.trim() || 'Untitled Dashboard')
               setIsEditingName(false)
             }}
             onKeyDown={(e) => {
@@ -116,7 +130,7 @@ export function Toolbar({
       </div>
       <div className="flex items-center space-x-2">
         {/* Grid Toggle */}
-        <Button variant="outline" size="sm" onClick={() => setShowGrid(!showGrid)}>
+        <Button variant="outline" size="sm" onClick={() => setShowGrid?.(!showGrid)}>
           <Grid3X3 className="h-4 w-4 mr-2" />
           {showGrid ? 'Hide Grid' : 'Show Grid'}
         </Button>
@@ -168,7 +182,7 @@ export function Toolbar({
           </Button>
         </div>
 
-        <Button variant="outline" size="sm" onClick={onShowTools}>
+        <Button variant="outline" size="sm" onClick={() => onShowTools?.()}>
           <Wrench className="h-4 w-4 mr-2" />
           Settings
         </Button>

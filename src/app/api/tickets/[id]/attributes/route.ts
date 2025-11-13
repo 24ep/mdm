@@ -23,24 +23,30 @@ export async function POST(
     // Check if ticket exists and user has access
     const ticket = await db.ticket.findUnique({
       where: { id: params.id },
-      include: { space: true }
+      include: { spaces: true }
     })
 
     if (!ticket || ticket.deletedAt) {
       return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
     }
 
+    // Get space ID from ticket
+    const spaceId = ticket.spaces?.[0]?.spaceId
+    if (!spaceId) {
+      return NextResponse.json({ error: 'Ticket has no associated space' }, { status: 404 })
+    }
+
     // Check if user has access to this space
     const spaceAccess = await db.spaceMember.findFirst({
       where: {
-        spaceId: ticket.spaceId,
+        spaceId: spaceId,
         userId: session.user.id
       }
     })
 
     const isSpaceOwner = await db.space.findFirst({
       where: {
-        id: ticket.spaceId,
+        id: spaceId,
         createdBy: session.user.id
       }
     })
@@ -114,24 +120,30 @@ export async function PUT(
     // Check if ticket exists and user has access
     const ticket = await db.ticket.findUnique({
       where: { id: params.id },
-      include: { space: true }
+      include: { spaces: true }
     })
 
     if (!ticket || ticket.deletedAt) {
       return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
     }
 
+    // Get space ID from ticket
+    const spaceId = ticket.spaces?.[0]?.spaceId
+    if (!spaceId) {
+      return NextResponse.json({ error: 'Ticket has no associated space' }, { status: 404 })
+    }
+
     // Check if user has access to this space
     const spaceAccess = await db.spaceMember.findFirst({
       where: {
-        spaceId: ticket.spaceId,
+        spaceId: spaceId,
         userId: session.user.id
       }
     })
 
     const isSpaceOwner = await db.space.findFirst({
       where: {
-        id: ticket.spaceId,
+        id: spaceId,
         createdBy: session.user.id
       }
     })
@@ -180,24 +192,30 @@ export async function DELETE(
     // Check if ticket exists and user has access
     const ticket = await db.ticket.findUnique({
       where: { id: params.id },
-      include: { space: true }
+      include: { spaces: true }
     })
 
     if (!ticket || ticket.deletedAt) {
       return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
     }
 
+    // Get space ID from ticket
+    const spaceId = ticket.spaces?.[0]?.spaceId
+    if (!spaceId) {
+      return NextResponse.json({ error: 'Ticket has no associated space' }, { status: 404 })
+    }
+
     // Check if user has access to this space
     const spaceAccess = await db.spaceMember.findFirst({
       where: {
-        spaceId: ticket.spaceId,
+        spaceId: spaceId,
         userId: session.user.id
       }
     })
 
     const isSpaceOwner = await db.space.findFirst({
       where: {
-        id: ticket.spaceId,
+        id: spaceId,
         createdBy: session.user.id
       }
     })

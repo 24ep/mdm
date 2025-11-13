@@ -8,6 +8,7 @@ import { ManageEngineServiceDeskService } from '@/lib/manageengine-servicedesk'
 import { db } from '@/lib/db'
 import { checkServiceDeskRateLimit, getServiceDeskRateLimitConfig } from '@/lib/servicedesk-rate-limiter'
 import { createAuditLog } from '@/lib/audit'
+import { validateTicketData, sanitizeTicketData } from '@/lib/servicedesk-validator'
 
 // Push ticket to ServiceDesk
 export async function POST(request: NextRequest) {
@@ -129,7 +130,7 @@ export async function POST(request: NextRequest) {
       const creds = await secretsManager.getSecret(`servicedesk-integrations/${connectionId}/credentials`)
       apiKey = creds?.apiKey || ''
     } else {
-      apiKey = decryptApiKey(config.api_auth_apikey_value)
+      apiKey = decryptApiKey(config.api_auth_apikey_value) || ''
     }
 
     if (!apiKey) {

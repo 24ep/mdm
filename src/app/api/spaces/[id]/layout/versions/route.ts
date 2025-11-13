@@ -98,7 +98,7 @@ export async function POST(
       'SELECT get_next_layout_version($1) as next_version',
       [spaceId]
     )
-    const nextVersion = versionResult.rows[0].next_version
+    const nextVersion = (versionResult.rows[0] as any).next_version
 
     // Mark all other versions as not current
     await query(

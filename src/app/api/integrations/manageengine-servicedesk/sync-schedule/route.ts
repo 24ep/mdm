@@ -185,18 +185,20 @@ export async function PUT(request: NextRequest) {
     for (const schedule of dueSchedules) {
       try {
         // Get all tickets with ServiceDesk request ID for this space
-        const tickets = await db.ticket.findMany({
+        const allTickets = await db.ticket.findMany({
           where: {
             spaces: {
               some: {
                 spaceId: schedule.space_id
               }
-            },
-            metadata: {
-              path: ['serviceDeskRequestId'],
-              not: null
             }
           }
+        })
+        
+        // Filter tickets that have serviceDeskRequestId in metadata
+        const tickets = allTickets.filter(ticket => {
+          const metadata = ticket.metadata as any
+          return metadata?.serviceDeskRequestId != null
         })
 
         // Get ServiceDesk configuration
@@ -227,7 +229,7 @@ export async function PUT(request: NextRequest) {
           const creds = await secretsManager.getSecret(`servicedesk-integrations/${connectionId}/credentials`)
           apiKey = creds?.apiKey || ''
         } else {
-          apiKey = decryptApiKey(config.api_auth_apikey_value)
+          apiKey = decryptApiKey(config.api_auth_apikey_value) || ''
         }
 
         if (!apiKey) {

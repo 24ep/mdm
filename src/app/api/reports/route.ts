@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
     const report = result.rows[0]
 
     // Log audit event
-    auditLogger.reportCreated(report.id, { source: validationResult.data.source })
+    auditLogger.reportCreated(report.id, { source: source })
 
     // Associate with spaces
     if (space_ids && space_ids.length > 0) {

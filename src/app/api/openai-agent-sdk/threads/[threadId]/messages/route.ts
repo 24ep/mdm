@@ -27,7 +27,8 @@ export async function GET(
       include: {
         chatbot: {
           select: {
-            openaiAgentSdkApiKey: true,
+            id: true,
+            name: true,
           },
         },
       },
@@ -38,7 +39,8 @@ export async function GET(
     }
 
     // Get API key from thread metadata or chatbot config
-    const apiKey = thread.metadata?.apiKey || thread.chatbot?.openaiAgentSdkApiKey
+    const metadata = thread.metadata as any
+    const apiKey = metadata?.apiKey
     if (!apiKey) {
       return NextResponse.json({ error: 'API key not found' }, { status: 400 })
     }

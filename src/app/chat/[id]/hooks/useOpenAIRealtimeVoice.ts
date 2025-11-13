@@ -36,6 +36,7 @@ export function useOpenAIRealtimeVoice({
   const isConnectedRef = useRef(false) // Use ref to avoid stale closure in onaudioprocess
   const currentTranscriptRef = useRef('') // Track current transcript for accumulation
   const audioChunksReceivedRef = useRef(0) // Track how many audio chunks we've received from AI
+  const processedAudioChunksRef = useRef<Set<string>>(new Set()) // Track processed audio chunks to prevent duplicates
 
   // Track previous prompt ID to detect changes
   const previousPromptIdRef = useRef<string | null | undefined>(null)
@@ -46,7 +47,7 @@ export function useOpenAIRealtimeVoice({
       setIsVoiceEnabled(true)
       
       // Check if prompt ID has changed or become available
-      const currentPromptId = chatbot?.openaiAgentSdkRealtimePromptId
+      const currentPromptId = (chatbot as any)?.openaiAgentSdkRealtimePromptId
       const hasValidPromptId = currentPromptId && typeof currentPromptId === 'string' && currentPromptId.trim().length > 0
       const previousPromptId = previousPromptIdRef.current
       const promptIdChanged = currentPromptId !== previousPromptId
@@ -89,7 +90,7 @@ export function useOpenAIRealtimeVoice({
         disconnect()
       }
     }
-  }, [chatbot?.enableVoiceAgent, chatbot?.voiceProvider, chatbot?.openaiAgentSdkRealtimePromptId, isConnected])
+  }, [chatbot?.enableVoiceAgent, chatbot?.voiceProvider, (chatbot as any)?.openaiAgentSdkRealtimePromptId, isConnected])
 
   // Define playAudioChunk function early so it can be used in message handlers
   const playAudioChunk = async (audioData: ArrayBuffer) => {
@@ -281,14 +282,14 @@ export function useOpenAIRealtimeVoice({
           console.log('📋 Session configuration:', JSON.stringify(sessionConfig, null, 2))
           console.log('📋 Chatbot config for voice:', {
             hasChatbot: !!chatbot,
-            promptId: chatbot?.openaiAgentSdkRealtimePromptId,
-            promptVersion: chatbot?.openaiAgentSdkRealtimePromptVersion,
+            promptId: (chatbot as any)?.openaiAgentSdkRealtimePromptId,
+            promptVersion: (chatbot as any)?.openaiAgentSdkRealtimePromptVersion,
             instructions: chatbot?.openaiAgentSdkInstructions,
           })
           
           // Store prompt ID for sending after authentication
           // According to OpenAI Realtime API docs, prompt should be sent via session.update event
-          const promptId = chatbot?.openaiAgentSdkRealtimePromptId
+          const promptId = (chatbot as any)?.openaiAgentSdkRealtimePromptId
           const hasValidPromptId = promptId && typeof promptId === 'string' && promptId.trim().length > 0
           
           // Use instructions in initial session config if no prompt ID
@@ -313,7 +314,7 @@ export function useOpenAIRealtimeVoice({
           
           // Store prompt info for sending after auth
           ;(ws as any)._pendingPromptId = hasValidPromptId ? promptId.trim() : null
-          ;(ws as any)._pendingPromptVersion = hasValidPromptId ? (chatbot.openaiAgentSdkRealtimePromptVersion || '1') : null
+          ;(ws as any)._pendingPromptVersion = hasValidPromptId ? ((chatbot as any).openaiAgentSdkRealtimePromptVersion || '1') : null
         }
         
         ws.onmessage = async (event) => {
