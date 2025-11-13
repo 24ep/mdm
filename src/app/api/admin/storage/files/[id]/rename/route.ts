@@ -6,7 +6,7 @@ import { AttachmentStorageService } from '@/lib/attachment-storage'
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -18,7 +18,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
-    const fileId = params.id
+    const { id: fileId } = await params
     const { newName } = await request.json()
 
     if (!newName || !newName.trim()) {

@@ -483,7 +483,8 @@ export function EavEntityManager({
         </div>
       </div>
 
-      <Tabs defaultValue="list" className="space-y-4">
+      <div className="space-y-4">
+      <Tabs defaultValue="list">
         <TabsList>
           <TabsTrigger value="list">Entity List</TabsTrigger>
           <TabsTrigger value="form">Entity Form</TabsTrigger>
@@ -633,6 +634,7 @@ export function EavEntityManager({
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

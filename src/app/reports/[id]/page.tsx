@@ -24,7 +24,7 @@ import {
   StarOff
 } from 'lucide-react'
 import { useSpace } from '@/contexts/space-context'
-import { toast } from 'sonner'
+import toast from 'react-hot-toast'
 import type { Report } from '@/app/reports/page'
 import { ReportPermissionsDialog } from '@/components/reports/ReportPermissionsDialog'
 import { ReportEmbedPreview } from '@/components/reports/ReportEmbedPreview'

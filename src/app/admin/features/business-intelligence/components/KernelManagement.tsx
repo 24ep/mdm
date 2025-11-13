@@ -514,7 +514,8 @@ export function KernelManagement() {
       </div>
 
       {/* Main Content */}
-      <Tabs defaultValue="kernels" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="kernels">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="kernels">Kernel Servers</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
@@ -837,6 +838,7 @@ export function KernelManagement() {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
 
       {/* Setup Guide Modal */}
       {showSetupGuide && (

@@ -254,7 +254,8 @@ export function SpaceDashboard({
       )}
 
       {/* Dashboard Content */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <div className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
@@ -382,6 +383,7 @@ export function SpaceDashboard({
           </div>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

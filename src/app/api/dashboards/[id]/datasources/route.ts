@@ -5,18 +5,20 @@ import { query } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { id } = await params
 
     // Get dashboard datasources
     const { rows: datasources } = await query(`
       SELECT * FROM dashboard_datasources 
       WHERE dashboard_id = $1 AND is_active = true
       ORDER BY created_at ASC
-    `, [params.id])
+    `, [id])
 
     // Get available data models for this space
     const { rows: dataModels } = await query(`
@@ -27,7 +29,7 @@ export async function GET(
       JOIN dashboard_spaces ds ON ds.space_id = s.id
       WHERE ds.dashboard_id = $1 AND dm.deleted_at IS NULL
       ORDER BY dm.name
-    `, [params.id])
+    `, [id])
 
     // Get available assignments for this space
     const { rows: assignments } = await query(`
@@ -37,7 +39,7 @@ export async function GET(
       JOIN dashboard_spaces ds ON ds.space_id = s.id
       WHERE ds.dashboard_id = $1 AND a.deleted_at IS NULL
       ORDER BY a.title
-    `, [params.id])
+    `, [id])
 
     return NextResponse.json({
       datasources,
@@ -52,12 +54,13 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    const { id } = await params
     const body = await request.json()
     const { name, source_type, source_id, config, query_config } = body
 
@@ -71,7 +74,7 @@ export async function POST(
       FROM dashboards d
       LEFT JOIN dashboard_permissions dp ON dp.dashboard_id = d.id AND dp.user_id = $2
       WHERE d.id = $1 AND d.deleted_at IS NULL
-    `, [params.id, session.user.id])
+    `, [id, session.user.id])
 
     if (accessCheck.length === 0) {
       return NextResponse.json({ error: 'Dashboard not found' }, { status: 404 })
@@ -93,7 +96,7 @@ export async function POST(
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
     `, [
-      params.id,
+      id,
       name,
       source_type,
       source_id || null,

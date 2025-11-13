@@ -8,7 +8,7 @@ const prisma = new PrismaClient()
 // GET - Export cost data as CSV or JSON
 export async function GET(
   request: NextRequest,
-  { params }: { params: { chatbotId: string } }
+  { params }: { params: Promise<{ chatbotId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -16,13 +16,14 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { chatbotId } = await params
     const { searchParams } = new URL(request.url)
     const format = searchParams.get('format') || 'json' // 'json' or 'csv'
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
 
     const where: any = {
-      chatbotId: params.chatbotId,
+      chatbotId,
     }
 
     if (startDate || endDate) {
@@ -83,13 +84,13 @@ export async function GET(
       return new NextResponse(csv, {
         headers: {
           'Content-Type': 'text/csv',
-          'Content-Disposition': `attachment; filename="cost-export-${params.chatbotId}-${new Date().toISOString().split('T')[0]}.csv"`,
+          'Content-Disposition': `attachment; filename="cost-export-${chatbotId}-${new Date().toISOString().split('T')[0]}.csv"`,
         },
       })
     } else {
       // Return JSON
       return NextResponse.json({
-        chatbotId: params.chatbotId,
+        chatbotId,
         exportedAt: new Date().toISOString(),
         recordCount: records.length,
         records: records.map((record) => ({

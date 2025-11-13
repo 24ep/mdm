@@ -5,7 +5,7 @@ import { db } from '@/lib/db'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -13,6 +13,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const { name, displayName, type, value, jsonValue, isRequired, sortOrder } = body
 
@@ -59,7 +60,7 @@ export async function POST(
     const existing = await db.ticketAttribute.findUnique({
       where: {
         ticketId_name: {
-          ticketId: params.id,
+          ticketId: id,
           name
         }
       }
@@ -73,7 +74,7 @@ export async function POST(
     let finalSortOrder = sortOrder
     if (finalSortOrder === undefined) {
       const maxSort = await db.ticketAttribute.findFirst({
-        where: { ticketId: params.id },
+        where: { ticketId: id },
         orderBy: { sortOrder: 'desc' },
         select: { sortOrder: true }
       })
@@ -82,7 +83,7 @@ export async function POST(
 
     const attribute = await db.ticketAttribute.create({
       data: {
-        ticketId: params.id,
+        ticketId: id,
         name,
         displayName: displayName || name,
         type: type || 'TEXT',
@@ -102,7 +103,7 @@ export async function POST(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -110,6 +111,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const { attributeId, name, displayName, type, value, jsonValue, isRequired, sortOrder } = body
 
@@ -174,7 +176,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -182,6 +184,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const { searchParams } = new URL(request.url)
     const attributeId = searchParams.get('attributeId')
 

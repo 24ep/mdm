@@ -319,8 +319,8 @@ export function GlobalComponentStyles({ globalStyle, onUpdate, isMobileViewport 
       <div className={`${isMobileViewport ? 'text-base' : 'text-sm'} font-semibold mb-2 px-4`}>
         Component Styles
       </div>
-      
-      <Accordion type="multiple" defaultValue={['input', 'button']} className="w-full">
+      <div className="w-full">
+      <Accordion type="multiple" defaultValue={['input', 'button']}>
         <AccordionItem value="input" className="border-0">
           <AccordionTrigger className="text-xs font-semibold py-2 px-4">Input</AccordionTrigger>
           <AccordionContent className="px-0 pt-2 pb-3 border-b">
@@ -433,6 +433,7 @@ export function GlobalComponentStyles({ globalStyle, onUpdate, isMobileViewport 
           </AccordionContent>
         </AccordionItem>
       </Accordion>
+      </div>
     </div>
   )
 }

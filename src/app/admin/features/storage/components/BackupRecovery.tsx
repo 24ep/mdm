@@ -321,7 +321,8 @@ export function BackupRecovery() {
         </div>
       </div>
 
-      <Tabs defaultValue="backups" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="backups">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="backups">Backups</TabsTrigger>
           <TabsTrigger value="schedules">Schedules</TabsTrigger>
@@ -653,6 +654,7 @@ export function BackupRecovery() {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
 
       {/* Restore Progress */}
       {isRestoring && (

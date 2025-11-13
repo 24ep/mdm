@@ -259,7 +259,8 @@ export function AccessibilityManager({ onSettingsChange }: AccessibilityManagerP
         </Button>
       </div>
 
-      <Tabs defaultValue="visual" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="visual">
         <TabsList>
           <TabsTrigger value="visual">Visual</TabsTrigger>
           <TabsTrigger value="audio">Audio</TabsTrigger>
@@ -706,6 +707,7 @@ export function AccessibilityManager({ onSettingsChange }: AccessibilityManagerP
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

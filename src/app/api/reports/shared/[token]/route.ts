@@ -5,9 +5,11 @@ import type { Report } from '@/app/reports/page'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   try {
+    const { token } = await params
+
     const sql = `
       SELECT 
         sl.*,
@@ -21,7 +23,7 @@ export async function GET(
         AND r.deleted_at IS NULL
     `
 
-    const result = await query(sql, [params.token])
+    const result = await query(sql, [token])
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Link not found or expired' }, { status: 404 })
@@ -52,9 +54,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   try {
+    const { token } = await params
     const body = await request.json()
     const { password } = body
 
@@ -75,7 +78,7 @@ export async function POST(
         AND r.deleted_at IS NULL
     `
 
-    const result = await query(sql, [params.token])
+    const result = await query(sql, [token])
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Link not found or expired' }, { status: 404 })

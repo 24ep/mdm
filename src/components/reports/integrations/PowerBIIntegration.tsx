@@ -24,7 +24,7 @@ import {
   Settings,
   Eye
 } from 'lucide-react'
-import { toast } from 'sonner'
+import toast from 'react-hot-toast'
 import { TooltipProvider } from '@/components/ui/tooltip'
 
 interface PowerBIIntegrationProps {

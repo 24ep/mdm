@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import { Lock, Users, Globe, Link, Copy, Check } from 'lucide-react'
-import { toast } from 'sonner'
+import toast from 'react-hot-toast'
 
 interface ShareSettings {
   visibility: 'PRIVATE' | 'RESTRICTED' | 'PUBLIC'

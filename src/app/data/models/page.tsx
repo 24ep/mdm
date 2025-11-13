@@ -500,7 +500,8 @@ export default function DataModelsPage() {
               </DialogDescription>
             </DialogHeader>
             
-            <Tabs defaultValue="model" className="w-full">
+            <div className="w-full">
+            <Tabs defaultValue="model">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="model" className="flex items-center gap-2">
                   <Database className="h-4 w-4" />
@@ -742,6 +743,7 @@ export default function DataModelsPage() {
                 </div>
               </TabsContent>
             </Tabs>
+            </div>
             
             <div className="flex justify-end gap-2 pt-4 border-t">
               <Button variant="outline" onClick={() => setShowModelDialog(false)}>

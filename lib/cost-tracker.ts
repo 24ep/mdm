@@ -260,7 +260,7 @@ export async function getCostStats(
 
   const records = await prisma.chatbotCostRecord.findMany({ where })
 
-  const totalCost = records.reduce((sum, r) => sum + Number(r.cost), 0)
+  const totalCost = records.reduce((sum: number, r: any) => sum + Number(r.cost), 0)
   const totalRequests = records.length
   const averageCost = totalRequests > 0 ? totalCost / totalRequests : 0
 
@@ -345,13 +345,13 @@ export async function getCostForecast(
   // Simple linear regression for trend
   const n = historicalData.length
   const costs = historicalData.map((d) => d.cost)
-  const avgCost = costs.reduce((a, b) => a + b, 0) / n
+  const avgCost = costs.reduce((a: number, b: number) => a + b, 0) / n
 
   // Calculate trend
   const firstHalf = costs.slice(0, Math.floor(n / 2))
   const secondHalf = costs.slice(Math.floor(n / 2))
-  const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length
-  const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length
+  const firstAvg = firstHalf.reduce((a: number, b: number) => a + b, 0) / firstHalf.length
+  const secondAvg = secondHalf.reduce((a: number, b: number) => a + b, 0) / secondHalf.length
 
   let trend: 'increasing' | 'decreasing' | 'stable' = 'stable'
   if (secondAvg > firstAvg * 1.1) trend = 'increasing'
@@ -360,7 +360,7 @@ export async function getCostForecast(
   // Forecast: simple average of recent days
   const recentDays = Math.min(7, historicalData.length)
   const recentCosts = costs.slice(-recentDays)
-  const forecastedDailyAverage = recentCosts.reduce((a, b) => a + b, 0) / recentCosts.length
+  const forecastedDailyAverage = recentCosts.reduce((a: number, b: number) => a + b, 0) / recentCosts.length
   const forecastedCost = forecastedDailyAverage * 30 // Forecast for next 30 days
 
   // Confidence based on data points

@@ -6,7 +6,7 @@ import { query } from '@/lib/db'
 // GET: Get a specific schedule
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string; scheduleId: string } }
+  { params }: { params: Promise<{ id: string; scheduleId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -14,8 +14,8 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const notebookId = decodeURIComponent(params.id)
-    const scheduleId = params.scheduleId
+    const { id: idParam, scheduleId } = await params
+    const notebookId = decodeURIComponent(idParam)
 
     const { rows } = await query(
       `SELECT * FROM public.notebook_schedules
@@ -46,7 +46,7 @@ export async function GET(
 // PUT: Update a schedule
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string; scheduleId: string } }
+  { params }: { params: Promise<{ id: string; scheduleId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -54,8 +54,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const notebookId = decodeURIComponent(params.id)
-    const scheduleId = params.scheduleId
+    const { id: idParam, scheduleId } = await params
+    const notebookId = decodeURIComponent(idParam)
     const body = await request.json()
 
     // Calculate next run time if schedule config changed
@@ -152,7 +152,7 @@ export async function PUT(
 // DELETE: Delete a schedule
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; scheduleId: string } }
+  { params }: { params: Promise<{ id: string; scheduleId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -160,8 +160,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const notebookId = decodeURIComponent(params.id)
-    const scheduleId = params.scheduleId
+    const { id: idParam, scheduleId } = await params
+    const notebookId = decodeURIComponent(idParam)
 
     const { rows } = await query(
       `DELETE FROM public.notebook_schedules
@@ -193,7 +193,7 @@ export async function DELETE(
 // POST: Execute schedule immediately (run now)
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string; scheduleId: string } }
+  { params }: { params: Promise<{ id: string; scheduleId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -201,8 +201,8 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const notebookId = decodeURIComponent(params.id)
-    const scheduleId = params.scheduleId
+    const { id: idParam, scheduleId } = await params
+    const notebookId = decodeURIComponent(idParam)
 
     // Get schedule
     const { rows: scheduleRows } = await query(

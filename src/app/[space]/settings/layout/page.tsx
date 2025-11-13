@@ -134,24 +134,25 @@ export default function LayoutSelectionPage() {
         spaceId={selectedSpace?.id}
       />
 
-      <Tabs value="space-studio" onValueChange={(value) => {
-        if (value !== 'space-studio') {
-          router.push(`/${spaceSlug}/settings?tab=${value}`)
-        }
-      }} className="flex flex-1 overflow-hidden">
-        <SpaceSettingsSidebar
-          activeTab="space-studio"
-          onTabChange={(value) => {
-            if (value !== 'space-studio') {
-              router.push(`/${spaceSlug}/settings?tab=${value}`)
-            }
-          }}
-          showAllTabs={false}
-        />
+      <div className="flex flex-1 overflow-hidden">
+        <Tabs value="space-studio" onValueChange={(value) => {
+          if (value !== 'space-studio') {
+            router.push(`/${spaceSlug}/settings?tab=${value}`)
+          }
+        }}>
+          <SpaceSettingsSidebar
+            activeTab="space-studio"
+            onTabChange={(value) => {
+              if (value !== 'space-studio') {
+                router.push(`/${spaceSlug}/settings?tab=${value}`)
+              }
+            }}
+            showAllTabs={false}
+          />
 
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <TabsContent value="space-studio" className="flex-1 overflow-auto space-y-6 p-6 m-0">
+          {/* Main Content Area */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <TabsContent value="space-studio" className="flex-1 overflow-auto space-y-6 p-6 m-0">
             {/* Layout Selection Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Existing Layouts */}
@@ -240,8 +241,9 @@ export default function LayoutSelectionPage() {
           </Dialog>
             </div>
           </TabsContent>
-        </div>
-      </Tabs>
+          </div>
+        </Tabs>
+      </div>
     </div>
   )
 }

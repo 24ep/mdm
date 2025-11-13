@@ -262,7 +262,8 @@ export default function ERDViewPage() {
         />
 
         {/* Main Content */}
-        <Tabs defaultValue="diagram" className="w-full">
+        <div className="w-full">
+        <Tabs defaultValue="diagram">
           <TabsList>
             <TabsTrigger value="diagram" className="flex items-center gap-2">
               <Database className="h-4 w-4" />
@@ -330,6 +331,7 @@ export default function ERDViewPage() {
             </div>
           </TabsContent>
         </Tabs>
+        </div>
       </div>
     </MainLayout>
   )

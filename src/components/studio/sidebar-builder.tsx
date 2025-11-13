@@ -23,7 +23,23 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react'
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 interface SidebarItem {
   id: string
@@ -51,6 +67,88 @@ interface SidebarBuilderProps {
   onConfigUpdate: (config: SidebarConfig) => void
 }
 
+function SortableSidebarItem({
+  item,
+  onToggleVisibility,
+  onEdit,
+  onDelete,
+}: {
+  item: SidebarItem
+  onToggleVisibility: (id: string) => void
+  onEdit: (item: SidebarItem) => void
+  onDelete: (id: string) => void
+}) {
+  const {
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`p-3 border rounded-lg bg-background ${
+        isDragging ? 'shadow-lg' : ''
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        <div {...listeners}>
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </div>
+        
+        <div className="flex-1 flex items-center gap-2">
+          {item.icon && (
+            <div 
+              className="w-4 h-4 rounded"
+              style={{ backgroundColor: item.color }}
+            />
+          )}
+          <span className="text-sm font-medium">{item.label}</span>
+          <span className="text-xs text-muted-foreground">({item.type})</span>
+        </div>
+
+        <div className="flex items-center gap-1">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => onToggleVisibility(item.id)}
+          >
+            {item.isVisible !== false ? (
+              <Eye className="h-3 w-3" />
+            ) : (
+              <EyeOff className="h-3 w-3" />
+            )}
+          </Button>
+          
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => onEdit(item)}
+          >
+            <Settings className="h-3 w-3" />
+          </Button>
+          
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => onDelete(item.id)}
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function SidebarBuilder({ items, config, onUpdate, onConfigUpdate }: SidebarBuilderProps) {
   const [editingItem, setEditingItem] = useState<SidebarItem | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
@@ -62,13 +160,23 @@ export function SidebarBuilder({ items, config, onUpdate, onConfigUpdate }: Side
     isVisible: true
   })
 
-  const handleDragEnd = (result: any) => {
-    if (!result.destination) return
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
 
-    const newItems = Array.from(items)
-    const [reorderedItem] = newItems.splice(result.source.index, 1)
-    newItems.splice(result.destination.index, 0, reorderedItem)
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
 
+    const oldIndex = items.findIndex((item) => item.id === active.id)
+    const newIndex = items.findIndex((item) => item.id === over.id)
+
+    if (oldIndex === -1 || newIndex === -1) return
+
+    const newItems = arrayMove(items, oldIndex, newIndex)
     onUpdate(newItems)
   }
 
@@ -146,8 +254,9 @@ export function SidebarBuilder({ items, config, onUpdate, onConfigUpdate }: Side
 
   return (
     <div className="p-4 space-y-4">
-      <Tabs defaultValue="items" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+      <div className="w-full">
+        <Tabs defaultValue="items">
+          <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="items">Items</TabsTrigger>
           <TabsTrigger value="style">Style</TabsTrigger>
         </TabsList>
@@ -258,75 +367,28 @@ export function SidebarBuilder({ items, config, onUpdate, onConfigUpdate }: Side
               <CardTitle className="text-sm">Sidebar Items</CardTitle>
             </CardHeader>
             <CardContent>
-              <DragDropContext onDragEnd={handleDragEnd}>
-                <Droppable droppableId="sidebar-items">
-                  {(provided) => (
-                    <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
-                      {items.map((item, index) => (
-                        <Draggable key={item.id} draggableId={item.id} index={index}>
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              className={`p-3 border rounded-lg bg-background ${
-                                snapshot.isDragging ? 'shadow-lg' : ''
-                              }`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <div {...provided.dragHandleProps}>
-                                  <GripVertical className="h-4 w-4 text-muted-foreground" />
-                                </div>
-                                
-                                <div className="flex-1 flex items-center gap-2">
-                                  {item.icon && (
-                                    <div 
-                                      className="w-4 h-4 rounded"
-                                      style={{ backgroundColor: item.color }}
-                                    />
-                                  )}
-                                  <span className="text-sm font-medium">{item.label}</span>
-                                  <span className="text-xs text-muted-foreground">({item.type})</span>
-                                </div>
-
-                                <div className="flex items-center gap-1">
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleToggleVisibility(item.id)}
-                                  >
-                                    {item.isVisible !== false ? (
-                                      <Eye className="h-3 w-3" />
-                                    ) : (
-                                      <EyeOff className="h-3 w-3" />
-                                    )}
-                                  </Button>
-                                  
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => setEditingItem(item)}
-                                  >
-                                    <Settings className="h-3 w-3" />
-                                  </Button>
-                                  
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleDeleteItem(item.id)}
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
-              </DragDropContext>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={items.map(item => item.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-2">
+                    {items.map((item) => (
+                      <SortableSidebarItem
+                        key={item.id}
+                        item={item}
+                        onToggleVisibility={handleToggleVisibility}
+                        onEdit={setEditingItem}
+                        onDelete={handleDeleteItem}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
             </CardContent>
           </Card>
         </TabsContent>
@@ -412,7 +474,8 @@ export function SidebarBuilder({ items, config, onUpdate, onConfigUpdate }: Side
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+        </Tabs>
+      </div>
 
       {/* Edit Item Dialog */}
       {editingItem && (

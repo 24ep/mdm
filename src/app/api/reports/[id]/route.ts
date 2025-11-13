@@ -7,11 +7,13 @@ import { auditLogger } from '@/lib/utils/audit-logger'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { id } = await params
 
     const sql = `
       SELECT r.*,
@@ -44,7 +46,7 @@ export async function GET(
       LIMIT 1
     `
 
-    const result = await query(sql, [session.user.id, params.id])
+    const result = await query(sql, [session.user.id, id])
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Report not found' }, { status: 404 })
@@ -84,12 +86,13 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    const { id } = await params
     const body = await request.json()
     
     // Validate with Zod schema (partial validation for updates)
@@ -149,7 +152,7 @@ export async function PUT(
       embed_url || null,
       metadata ? JSON.stringify(metadata) : null,
       is_active !== undefined ? is_active : null,
-      params.id,
+      id,
       session.user.id
     ])
 
@@ -158,7 +161,7 @@ export async function PUT(
     }
 
     // Log audit event
-    auditLogger.reportUpdated(params.id, { fields: Object.keys(validationResult.data) })
+    auditLogger.reportUpdated(id, { fields: Object.keys(validationResult.data) })
 
     return NextResponse.json({ report: result.rows[0] })
   } catch (error) {
@@ -169,11 +172,13 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { id } = await params
 
     const sql = `
       UPDATE public.reports
@@ -186,14 +191,14 @@ export async function DELETE(
       RETURNING *
     `
 
-    const result = await query(sql, [params.id, session.user.id])
+    const result = await query(sql, [id, session.user.id])
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Report not found or no permission' }, { status: 404 })
     }
 
     // Log audit event
-    auditLogger.reportDeleted(params.id)
+    auditLogger.reportDeleted(id)
 
     return NextResponse.json({ success: true })
   } catch (error) {

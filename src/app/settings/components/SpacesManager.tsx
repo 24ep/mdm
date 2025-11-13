@@ -371,7 +371,8 @@ export default function SpacesManager() {
               <Button variant="outline" onClick={closeDrawer}>Close</Button>
             </div>
             <div className="flex-1 overflow-hidden flex flex-col">
-              <Tabs value={'details'} className="flex-1 flex flex-col">
+              <div className="flex-1 flex flex-col">
+              <Tabs value={'details'}>
                 <div className="border-b px-6 py-3">
                   <TabsList>
                     <TabsTrigger value="details">Space detail</TabsTrigger>
@@ -658,6 +659,7 @@ export default function SpacesManager() {
                   </div>
                 </TabsContent>
               </Tabs>
+              </div>
             </div>
           </div>
         </div>

@@ -1,8 +1,7 @@
 'use client'
 
 import React, { useState, useCallback } from 'react'
-import SketchPicker from 'react-color/es/Sketch'
-import type { ColorResult } from 'react-color'
+import { HexColorPicker } from 'react-colorful'
 import { Button } from './button'
 import { Input } from './input'
 import { Label } from './label'
@@ -42,8 +41,7 @@ export function EnhancedColorPicker({
     setPendingValue(value)
   }, [value])
 
-  const handleSolidColorChange = useCallback((color: ColorResult) => {
-    const hex = color.hex
+  const handleSolidColorChange = useCallback((hex: string) => {
     setPendingValue(hex)
   }, [])
 
@@ -125,11 +123,20 @@ export function EnhancedColorPicker({
         <div className="mt-2 p-3 border border-border rounded-lg bg-popover shadow-lg">
           {colorType === 'solid' ? (
             <div>
-              <SketchPicker
-                color={pendingValue}
-                onChange={handleSolidColorChange}
-                width="100%"
-              />
+              <div className="space-y-3">
+                <HexColorPicker
+                  color={pendingValue}
+                  onChange={handleSolidColorChange}
+                  style={{ width: '100%' }}
+                />
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="w-6 h-6 rounded border-2 border-gray-300" 
+                    style={{ backgroundColor: pendingValue }}
+                  />
+                  <span className="text-sm font-mono text-gray-600">{pendingValue}</span>
+                </div>
+              </div>
               {showApplyCancel && (
                 <div className="flex gap-2 justify-end mt-2">
                   <Button size="sm" variant="outline" onClick={handleCancel}>

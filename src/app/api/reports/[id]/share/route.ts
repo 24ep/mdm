@@ -7,19 +7,20 @@ import { auditLogger } from '@/lib/utils/audit-logger'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    const { id } = await params
     const body = await request.json()
     const { password, expires_at, max_views } = body
 
     // Check if user owns the report
     const ownerCheck = await query(
       'SELECT created_by FROM reports WHERE id = $1',
-      [params.id]
+      [id]
     )
 
     if (ownerCheck.rows.length === 0) {
@@ -42,7 +43,7 @@ export async function POST(
     `
 
     const result = await query(sql, [
-      params.id,
+      id,
       token,
       passwordHash,
       expires_at ? new Date(expires_at) : null,
@@ -51,7 +52,7 @@ export async function POST(
     ])
 
     // Log audit event
-    auditLogger.reportShared(params.id, result.rows[0].id)
+    auditLogger.reportShared(id, result.rows[0].id)
 
     return NextResponse.json({ token, shareLink: result.rows[0] }, { status: 201 })
   } catch (error) {
@@ -62,11 +63,13 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { id } = await params
 
     const sql = `
       SELECT * FROM report_share_links
@@ -74,7 +77,7 @@ export async function GET(
       ORDER BY created_at DESC
     `
 
-    const result = await query(sql, [params.id, session.user.id])
+    const result = await query(sql, [id, session.user.id])
 
     return NextResponse.json({ links: result.rows || [] })
   } catch (error) {

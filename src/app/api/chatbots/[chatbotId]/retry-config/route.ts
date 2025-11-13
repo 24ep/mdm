@@ -8,7 +8,7 @@ const prisma = new PrismaClient()
 // GET - Get retry config
 export async function GET(
   request: NextRequest,
-  { params }: { params: { chatbotId: string } }
+  { params }: { params: Promise<{ chatbotId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -16,8 +16,9 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { chatbotId } = await params
     const config = await prisma.chatbotRetryConfig.findUnique({
-      where: { chatbotId: params.chatbotId },
+      where: { chatbotId },
     })
 
     if (!config) {
@@ -37,7 +38,7 @@ export async function GET(
 // POST/PUT - Create or update retry config
 export async function POST(
   request: NextRequest,
-  { params }: { params: { chatbotId: string } }
+  { params }: { params: Promise<{ chatbotId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -45,6 +46,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { chatbotId } = await params
     const body = await request.json()
     const {
       enabled,
@@ -57,9 +59,9 @@ export async function POST(
     } = body
 
     const config = await prisma.chatbotRetryConfig.upsert({
-      where: { chatbotId: params.chatbotId },
+      where: { chatbotId },
       create: {
-        chatbotId: params.chatbotId,
+        chatbotId,
         enabled: enabled ?? true,
         maxRetries: maxRetries ?? 3,
         initialDelay: initialDelay ?? 1000,

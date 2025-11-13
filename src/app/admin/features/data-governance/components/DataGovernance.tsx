@@ -452,7 +452,8 @@ export function DataGovernance() {
         </div>
       )}
 
-      <Tabs defaultValue="assets" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="assets">
         <TabsList>
           <TabsTrigger value="assets">Data Assets</TabsTrigger>
           <TabsTrigger value="policies">Policies</TabsTrigger>
@@ -677,6 +678,7 @@ export function DataGovernance() {
           <PlatformConfig />
         </TabsContent>
       </Tabs>
+      </div>
 
       <Dialog open={showConfigDialog} onOpenChange={setShowConfigDialog}>
         <DialogContent className="max-w-2xl">

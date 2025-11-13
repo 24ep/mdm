@@ -4,9 +4,10 @@ import { authOptions } from '@/lib/auth'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { fqn: string; threadId: string } }
+  { params }: { params: Promise<{ fqn: string; threadId: string }> }
 ) {
   try {
+    const { fqn, threadId } = await params
     const session = await getServerSession(authOptions)
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

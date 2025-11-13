@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { toast } from 'sonner'
+import toast from 'react-hot-toast'
 
 export interface Dashboard {
   id: string

@@ -6,7 +6,7 @@ import { query } from '@/lib/database'
 // POST /api/spaces/[id]/layout/versions/[versionId]/restore - Restore a version as current
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string; versionId: string } }
+  { params }: { params: Promise<{ id: string; versionId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -14,8 +14,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const spaceId = params.id
-    const versionId = params.versionId
+    const { id: spaceId, versionId } = await params
     const userId = session.user.id
     const { createNewVersion = true } = await request.json().catch(() => ({ createNewVersion: true }))
 

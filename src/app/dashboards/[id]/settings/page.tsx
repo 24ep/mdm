@@ -30,7 +30,7 @@ import {
   Eye,
   Edit
 } from 'lucide-react'
-import { toast } from 'sonner'
+import toast from 'react-hot-toast'
 
 type Dashboard = {
   id: string
@@ -282,7 +282,8 @@ export default function DashboardSettingsPage() {
           </Button>
         </div>
 
-        <Tabs defaultValue="general" className="w-full">
+        <div className="w-full">
+        <Tabs defaultValue="general">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="permissions">Permissions</TabsTrigger>
@@ -538,6 +539,7 @@ export default function DashboardSettingsPage() {
             </Card>
           </TabsContent>
         </Tabs>
+        </div>
 
         {/* Add Permission Dialog */}
         <Dialog open={showAddPermissionDialog} onOpenChange={setShowAddPermissionDialog}>

@@ -27,25 +27,18 @@ export async function GET(request: NextRequest) {
     const config: any = {
       googleEnabled: false,
       azureEnabled: false,
-      ldapEnabled: false,
       googleClientId: '',
       googleClientSecret: '',
       azureTenantId: '',
       azureClientId: '',
-      azureClientSecret: '',
-      ldapUrl: '',
-      ldapBaseDn: '',
-      ldapBindDn: '',
-      ldapBindPassword: '',
-      ldapSearchFilter: '(uid={{username}})',
-      ldapSearchBase: ''
+      azureClientSecret: ''
     }
 
     const secretsManager = getSecretsManager()
     const useVault = secretsManager.getBackend() === 'vault'
     
     // List of sensitive fields that should be encrypted
-    const sensitiveFields = ['googleClientSecret', 'azureClientSecret', 'ldapBindPassword']
+    const sensitiveFields = ['googleClientSecret', 'azureClientSecret']
     
     // Process rows and decrypt sensitive fields
     for (const row of rows) {
@@ -137,7 +130,7 @@ export async function PUT(request: NextRequest) {
     const auditContext = createAuditContext(request, session.user, 'SSO configuration update')
     
     // List of sensitive fields that should be encrypted
-    const sensitiveFields = ['googleClientSecret', 'azureClientSecret', 'ldapBindPassword']
+    const sensitiveFields = ['googleClientSecret', 'azureClientSecret']
     
     // Save each SSO setting
     const updatedSettings: Record<string, any> = {}

@@ -169,7 +169,8 @@ export function SystemSettingsModal({ open, onOpenChange }: SystemSettingsModalP
           </div>
         
           <div className="flex h-full">
-            <Tabs defaultValue="system" className="w-full flex">
+            <div className="w-full flex">
+            <Tabs defaultValue="system">
               {/* Left Sidebar */}
               <div className="w-64 bg-card border-r flex flex-col">
                 <div className="p-6 border-b">
@@ -438,6 +439,7 @@ export function SystemSettingsModal({ open, onOpenChange }: SystemSettingsModalP
                 </div>
               </div>
             </Tabs>
+            </div>
           </div>
         </div>
       </div>

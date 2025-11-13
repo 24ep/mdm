@@ -382,7 +382,8 @@ export function DataProfiling({
 
   return (
     <div className="h-full flex flex-col space-y-4">
-      <Tabs defaultValue="configuration" className="flex-1">
+      <div className="flex-1">
+      <Tabs defaultValue="configuration">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="configuration">Configuration</TabsTrigger>
           <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -840,6 +841,7 @@ export function DataProfiling({
           )}
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

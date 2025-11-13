@@ -5,7 +5,7 @@ import { changeApproval } from '@/lib/db-change-approval'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -13,11 +13,12 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const { comment } = body
 
     const hasEnoughApprovals = await changeApproval.approveChangeRequest(
-      params.id,
+      id,
       session.user.id,
       session.user.name || undefined,
       comment

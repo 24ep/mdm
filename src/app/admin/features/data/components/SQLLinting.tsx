@@ -113,7 +113,8 @@ export function SQLLinting() {
         </p>
       </div>
 
-      <Tabs defaultValue="lint" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="lint">
         <TabsList>
           <TabsTrigger value="lint">Lint Query</TabsTrigger>
           <TabsTrigger value="rules">Lint Rules ({lintRules.length})</TabsTrigger>
@@ -256,6 +257,7 @@ export function SQLLinting() {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

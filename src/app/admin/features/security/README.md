@@ -30,7 +30,6 @@ security/
 ### SSOConfiguration
 - Google SSO setup
 - Azure AD SSO setup
-- LDAP configuration
 - SSO provider management
 
 ### AuditLogs

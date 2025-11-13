@@ -1,35 +1,191 @@
+"use client"
+
 import * as React from "react"
-import * as PopoverPrimitive from "@radix-ui/react-popover"
+import { createPortal } from "react-dom"
 
 import { cn } from "@/lib/utils"
+import { useControlledDialogState } from "@/lib/dialog-utils"
 
-const Popover = PopoverPrimitive.Root
+interface PopoverContextValue {
+  open: boolean
+  setOpen: (open: boolean) => void
+  triggerRef: React.RefObject<HTMLElement>
+}
 
-const PopoverTrigger = PopoverPrimitive.Trigger
+const PopoverContext = React.createContext<PopoverContextValue | undefined>(undefined)
+
+const Popover = ({ children, open: controlledOpen, onOpenChange, defaultOpen = false }: {
+  children: React.ReactNode
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  defaultOpen?: boolean
+}) => {
+  const { open, setOpen } = useControlledDialogState({
+    open: controlledOpen,
+    onOpenChange,
+    defaultOpen
+  })
+  const triggerRef = React.useRef<HTMLElement>(null)
+
+  return (
+    <PopoverContext.Provider value={{ open, setOpen, triggerRef }}>
+      {children}
+    </PopoverContext.Provider>
+  )
+}
+
+const PopoverTrigger = React.forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    asChild?: boolean
+  }
+>(({ className, children, asChild, ...props }, ref) => {
+  const context = React.useContext(PopoverContext)
+  const triggerRef = React.useRef<HTMLButtonElement>(null)
+
+  React.useImperativeHandle(ref, () => triggerRef.current as HTMLButtonElement)
+  React.useEffect(() => {
+    if (context) {
+      (context.triggerRef as React.MutableRefObject<HTMLElement | null>).current = triggerRef.current
+    }
+  }, [context])
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    context?.setOpen(!context.open)
+    props.onClick?.(e)
+  }
+
+  if (asChild && React.isValidElement(children)) {
+    return React.cloneElement(children as React.ReactElement<any>, {
+      ...props,
+      onClick: (e: React.MouseEvent<HTMLButtonElement>) => {
+        handleClick(e)
+        if (typeof (children as any).props?.onClick === 'function') {
+          (children as any).props.onClick(e)
+        }
+      },
+      ref: (node: HTMLButtonElement) => {
+        triggerRef.current = node
+        if (typeof ref === 'function') {
+          ref(node)
+        } else if (ref) {
+          (ref as React.MutableRefObject<HTMLButtonElement | null>).current = node
+        }
+        if ((children as any).ref) {
+          if (typeof (children as any).ref === 'function') {
+            (children as any).ref(node)
+          } else {
+            ((children as any).ref as React.MutableRefObject<HTMLButtonElement | null>).current = node
+          }
+        }
+        if (context) {
+          (context.triggerRef as React.MutableRefObject<HTMLElement | null>).current = node
+        }
+      },
+    })
+  }
+
+  return (
+    <button
+      ref={triggerRef}
+      type="button"
+      onClick={handleClick}
+      className={className}
+      {...props}
+    >
+      {children}
+    </button>
+  )
+})
+PopoverTrigger.displayName = "PopoverTrigger"
 
 const PopoverContent = React.forwardRef<
-  React.ElementRef<typeof PopoverPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
->(({ className, align = "center", sideOffset = 4, ...props }, ref) => (
-  <PopoverPrimitive.Portal>
-    <PopoverPrimitive.Content
-      ref={ref}
-      align={align}
-      sideOffset={sideOffset}
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> & {
+    align?: "start" | "center" | "end"
+    sideOffset?: number
+  }
+>(({ className, align = "center", sideOffset = 4, children, ...props }, ref) => {
+  const context = React.useContext(PopoverContext)
+  const [position, setPosition] = React.useState<{ top: number; left: number } | null>(null)
+  const contentRef = React.useRef<HTMLDivElement>(null)
+
+  React.useImperativeHandle(ref, () => contentRef.current as HTMLDivElement)
+
+  React.useEffect(() => {
+    if (context?.open && context.triggerRef.current) {
+      const rect = context.triggerRef.current.getBoundingClientRect()
+      const contentRect = contentRef.current?.getBoundingClientRect()
+      const width = contentRect?.width || 0
+      
+      let left = rect.left
+      if (align === "center") {
+        left = rect.left + (rect.width / 2) - (width / 2)
+      } else if (align === "end") {
+        left = rect.right - width
+      }
+
+      setPosition({
+        top: rect.bottom + sideOffset,
+        left,
+      })
+    } else {
+      setPosition(null)
+    }
+  }, [context?.open, align, sideOffset])
+
+  React.useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        context?.open &&
+        contentRef.current &&
+        context.triggerRef.current &&
+        !contentRef.current.contains(e.target as Node) &&
+        !context.triggerRef.current.contains(e.target as Node)
+      ) {
+        context.setOpen(false)
+      }
+    }
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && context?.open) {
+        context.setOpen(false)
+      }
+    }
+
+    if (context?.open) {
+      document.addEventListener("mousedown", handleClickOutside)
+      document.addEventListener("keydown", handleEscape)
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+      document.removeEventListener("keydown", handleEscape)
+    }
+  }, [context?.open])
+
+  if (!context?.open || !position) return null
+
+  const content = (
+    <div
+      ref={contentRef}
       className={cn(
-        "z-[9999] min-w-[8rem] rounded-md border bg-popover p-1 text-popover-foreground shadow-lg outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+        "z-[9999] min-w-[8rem] rounded-md border bg-popover p-1 text-popover-foreground shadow-lg outline-none animate-in fade-in-0 zoom-in-95",
         className
       )}
       style={{
-        width: 'var(--radix-popover-trigger-width)',
-        minWidth: 'var(--radix-popover-trigger-width)',
-        maxWidth: 'var(--radix-popover-trigger-width)',
-        ...props.style
+        position: "fixed",
+        top: `${position.top}px`,
+        left: `${position.left}px`,
       }}
       {...props}
-    />
-  </PopoverPrimitive.Portal>
-))
-PopoverContent.displayName = PopoverPrimitive.Content.displayName
+    >
+      {children}
+    </div>
+  )
+
+  return typeof window !== "undefined" ? createPortal(content, document.body) : null
+})
+PopoverContent.displayName = "PopoverContent"
 
 export { Popover, PopoverTrigger, PopoverContent }

@@ -310,7 +310,8 @@ export function StatisticalAnalysis({
 
   return (
     <div className="h-full flex flex-col space-y-4">
-      <Tabs defaultValue="analysis" className="flex-1">
+      <div className="flex-1">
+      <Tabs defaultValue="analysis">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="analysis">Run Analysis</TabsTrigger>
           <TabsTrigger value="results">View Results</TabsTrigger>
@@ -676,6 +677,7 @@ export function StatisticalAnalysis({
           )}
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

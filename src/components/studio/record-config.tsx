@@ -253,7 +253,8 @@ export function RecordConfig({ component, onUpdate }: RecordConfigProps) {
         </p>
       </div>
 
-      <Tabs defaultValue="source" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="source">
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="source">Source</TabsTrigger>
           <TabsTrigger value="fields">Fields</TabsTrigger>

@@ -8,7 +8,7 @@ const prisma = new PrismaClient()
 // GET - Get cache config
 export async function GET(
   request: NextRequest,
-  { params }: { params: { chatbotId: string } }
+  { params }: { params: Promise<{ chatbotId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -16,8 +16,9 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { chatbotId } = await params
     const config = await prisma.chatbotCacheConfig.findUnique({
-      where: { chatbotId: params.chatbotId },
+      where: { chatbotId },
     })
 
     if (!config) {
@@ -37,7 +38,7 @@ export async function GET(
 // POST/PUT - Create or update cache config
 export async function POST(
   request: NextRequest,
-  { params }: { params: { chatbotId: string } }
+  { params }: { params: Promise<{ chatbotId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -45,6 +46,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { chatbotId } = await params
     const body = await request.json()
     const {
       enabled,
@@ -56,9 +58,9 @@ export async function POST(
     } = body
 
     const config = await prisma.chatbotCacheConfig.upsert({
-      where: { chatbotId: params.chatbotId },
+      where: { chatbotId },
       create: {
-        chatbotId: params.chatbotId,
+        chatbotId,
         enabled: enabled ?? true,
         ttl: ttl ?? 3600,
         maxSize: maxSize ?? 1000,
@@ -89,7 +91,7 @@ export async function POST(
 // DELETE - Clear cache
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { chatbotId: string } }
+  { params }: { params: Promise<{ chatbotId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -97,13 +99,14 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { chatbotId } = await params
     const { clearCache } = await import('@/lib/response-cache')
     const config = await prisma.chatbotCacheConfig.findUnique({
-      where: { chatbotId: params.chatbotId },
+      where: { chatbotId },
     })
 
     if (config) {
-      await clearCache(params.chatbotId, {
+      await clearCache(chatbotId, {
         enabled: config.enabled,
         ttl: config.ttl,
         maxSize: config.maxSize,

@@ -5,10 +5,10 @@ const prisma = new PrismaClient()
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: spaceId } = params
+    const { id: spaceId } = await params
 
     // Get space information
     const space = await prisma.space.findUnique({
@@ -102,10 +102,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: spaceId } = params
+    const { id: spaceId } = await params
     const body = await request.json()
     const { widgets } = body
 

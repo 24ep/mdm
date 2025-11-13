@@ -6,7 +6,7 @@ import { SpacesEditorConfig } from '@/lib/space-studio-manager'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { spaceId: string } }
+  { params }: { params: Promise<{ spaceId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -14,7 +14,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const spaceId = params.spaceId
+    const { spaceId } = await params
 
     // Check if user has access to this space
     const accessCheck = await query(
@@ -58,7 +58,7 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { spaceId: string } }
+  { params }: { params: Promise<{ spaceId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -66,7 +66,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const spaceId = params.spaceId
+    const { spaceId } = await params
 
     // Check if user has access to this space
     const accessCheck = await query(

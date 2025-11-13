@@ -6,12 +6,13 @@ import { createAuditLog } from '@/lib/audit'
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    const { id } = await params
     const body = await request.json()
     const { name, display_name, type, is_required, is_unique, default_value, options, validation, order, is_active } = body
 
@@ -31,10 +32,10 @@ export async function PUT(
     if (!fields.length) return NextResponse.json({})
     
     // Get current data for audit log
-    const currentDataResult = await query('SELECT * FROM data_model_attributes WHERE id = $1::uuid', [params.id])
+    const currentDataResult = await query('SELECT * FROM data_model_attributes WHERE id = $1::uuid', [id])
     const currentData = currentDataResult.rows[0]
 
-    values.push(params.id)
+    values.push(id)
     const { rows } = await query(
       `UPDATE public.data_model_attributes SET ${fields.join(', ')} WHERE id = $${values.length} RETURNING *`,
       values
@@ -44,7 +45,7 @@ export async function PUT(
     await createAuditLog({
       action: 'UPDATE',
       entityType: 'DataModelAttribute',
-      entityId: params.id,
+      entityId: id,
       oldValue: currentData,
       newValue: rows[0],
       userId: session.user.id,
@@ -61,12 +62,14 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    await query('UPDATE public.data_model_attributes SET is_active = FALSE, deleted_at = NOW() WHERE id = $1::uuid', [params.id])
+
+    const { id } = await params
+    await query('UPDATE public.data_model_attributes SET is_active = FALSE, deleted_at = NOW() WHERE id = $1::uuid', [id])
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error deleting attribute:', error)

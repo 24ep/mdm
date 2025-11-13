@@ -1273,15 +1273,16 @@ export default function SpaceSettingsPage() {
         spaceId={selectedSpace?.id}
       />
 
-      <Tabs value={tab} onValueChange={setTab} className="flex flex-1 overflow-hidden">
-        <SpaceSettingsSidebar
-          activeTab={tab}
-          onTabChange={setTab}
-          showAllTabs={true}
-        />
+      <div className="flex flex-1 overflow-hidden">
+        <Tabs value={tab} onValueChange={setTab}>
+          <SpaceSettingsSidebar
+            activeTab={tab}
+            onTabChange={setTab}
+            showAllTabs={true}
+          />
 
-        {/* Main Content Area */}
-        <div className="flex-1 overflow-y-auto">
+          {/* Main Content Area */}
+          <div className="flex-1 overflow-y-auto">
             <div className="space-y-6 px-6 pt-6">
               <TabsContent value="details" className="space-y-6 w-full">
                 {/* Space Detail Header */}
@@ -1295,19 +1296,20 @@ export default function SpaceSettingsPage() {
                 </div>
 
                 {/* Details Sub-tabs */}
-                <Tabs defaultValue="basic" className="w-full">
-                  <TabsList className="flex gap-2 justify-start">
-                    <TabsTrigger value="basic" className="flex items-center gap-2 justify-start">
-                      <Settings className="h-4 w-4" />
-                      Basic Information
-                    </TabsTrigger>
-                    <TabsTrigger value="login" className="flex items-center gap-2 justify-start">
-                      <Layout className="h-4 w-4" />
-                      Login Page
-                    </TabsTrigger>
-                  </TabsList>
+                <div className="w-full">
+                  <Tabs defaultValue="basic">
+                    <TabsList className="flex gap-2 justify-start">
+                      <TabsTrigger value="basic" className="flex items-center gap-2 justify-start">
+                        <Settings className="h-4 w-4" />
+                        Basic Information
+                      </TabsTrigger>
+                      <TabsTrigger value="login" className="flex items-center gap-2 justify-start">
+                        <Layout className="h-4 w-4" />
+                        Login Page
+                      </TabsTrigger>
+                    </TabsList>
 
-                  <TabsContent value="basic" className="space-y-6 mt-6">
+                    <TabsContent value="basic" className="space-y-6 mt-6">
                     <Card className="border-0 shadow-sm bg-card">
                       <CardHeader className="pb-4">
                         <CardTitle className="flex items-center space-x-2 text-lg">
@@ -1382,9 +1384,9 @@ export default function SpaceSettingsPage() {
                     </div>
                   </CardContent>
                 </Card>
-                  </TabsContent>
+                    </TabsContent>
 
-                  <TabsContent value="login" className="space-y-6 mt-6">
+                    <TabsContent value="login" className="space-y-6 mt-6">
                     <Card className="border-0 shadow-sm bg-card">
                       <CardHeader className="pb-4">
                         <CardTitle className="flex items-center space-x-2 text-lg">
@@ -1439,8 +1441,9 @@ export default function SpaceSettingsPage() {
                     </div>
                   </CardContent>
                 </Card>
-                  </TabsContent>
-                </Tabs>
+                    </TabsContent>
+                  </Tabs>
+                </div>
               </TabsContent>
 
               <TabsContent value="members" className="space-y-6 w-full">
@@ -1453,94 +1456,96 @@ export default function SpaceSettingsPage() {
                 </div>
 
                 {/* Members Sub-tabs */}
-                <Tabs defaultValue="members" className="w-full">
-                  <TabsList className="flex gap-2 justify-start flex-wrap">
-                    <TabsTrigger value="members" className="justify-start flex items-center gap-2">
-                      <UsersIcon className="h-4 w-4" />
-                      Members
-                    </TabsTrigger>
-                    <TabsTrigger value="groups" className="justify-start flex items-center gap-2">
-                      <Folder className="h-4 w-4" />
-                      Groups
-                    </TabsTrigger>
-                    <TabsTrigger value="roles" className="justify-start flex items-center gap-2">
-                      <Shield className="h-4 w-4" />
-                      Roles
-                    </TabsTrigger>
-                    <TabsTrigger value="permissions" className="justify-start flex items-center gap-2">
-                      <Lock className="h-4 w-4" />
-                      Permissions
-                    </TabsTrigger>
-                    <TabsTrigger value="audit" className="justify-start flex items-center gap-2">
-                      <Archive className="h-4 w-4" />
-                      Audit Log
-                    </TabsTrigger>
-                  </TabsList>
+                <div className="w-full">
+                  <Tabs defaultValue="members">
+                    <TabsList className="flex gap-2 justify-start flex-wrap">
+                      <TabsTrigger value="members" className="justify-start flex items-center gap-2">
+                        <UsersIcon className="h-4 w-4" />
+                        Members
+                      </TabsTrigger>
+                      <TabsTrigger value="groups" className="justify-start flex items-center gap-2">
+                        <Folder className="h-4 w-4" />
+                        Groups
+                      </TabsTrigger>
+                      <TabsTrigger value="roles" className="justify-start flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        Roles
+                      </TabsTrigger>
+                      <TabsTrigger value="permissions" className="justify-start flex items-center gap-2">
+                        <Lock className="h-4 w-4" />
+                        Permissions
+                      </TabsTrigger>
+                      <TabsTrigger value="audit" className="justify-start flex items-center gap-2">
+                        <Archive className="h-4 w-4" />
+                        Audit Log
+                      </TabsTrigger>
+                    </TabsList>
 
-                  <TabsContent value="members" className="space-y-6 mt-6">
-                    <MemberManagementPanel
-                      spaceId={selectedSpace.id}
-                      members={members}
-                      onInvite={handleInviteUser}
-                      onUpdateRole={handleUpdateRole}
-                      onRemoveMember={handleRemoveMember}
-                      onBulkOperation={handleBulkOperation}
-                      canManageMembers={canManageMembers}
-                      loading={false}
-                    />
-                  </TabsContent>
+                    <TabsContent value="members" className="space-y-6 mt-6">
+                      <MemberManagementPanel
+                        spaceId={selectedSpace.id}
+                        members={members}
+                        onInvite={handleInviteUser}
+                        onUpdateRole={handleUpdateRole}
+                        onRemoveMember={handleRemoveMember}
+                        onBulkOperation={handleBulkOperation}
+                        canManageMembers={canManageMembers}
+                        loading={false}
+                      />
+                    </TabsContent>
 
-                  <TabsContent value="groups" className="space-y-6 mt-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Groups</CardTitle>
-                        <CardDescription>
-                          Manage member groups and group assignments
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-center py-8 text-muted-foreground">
-                          <Folder className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                          <p>Group management coming soon...</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
+                    <TabsContent value="groups" className="space-y-6 mt-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Groups</CardTitle>
+                          <CardDescription>
+                            Manage member groups and group assignments
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-center py-8 text-muted-foreground">
+                            <Folder className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                            <p>Group management coming soon...</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
 
-                  <TabsContent value="roles" className="space-y-6 mt-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Roles</CardTitle>
-                        <CardDescription>
-                          Manage role definitions and role assignments
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-center py-8 text-muted-foreground">
-                          <Shield className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                          <p>Role management coming soon...</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
+                    <TabsContent value="roles" className="space-y-6 mt-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Roles</CardTitle>
+                          <CardDescription>
+                            Manage role definitions and role assignments
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-center py-8 text-muted-foreground">
+                            <Shield className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                            <p>Role management coming soon...</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
 
-                  <TabsContent value="permissions" className="space-y-6 mt-6">
-                    <MemberPermissionsPanel
-                      spaceId={selectedSpace.id}
-                      members={members}
-                      onUpdatePermissions={handleUpdatePermissions}
-                      canManagePermissions={canManageMembers}
-                    />
-                  </TabsContent>
+                    <TabsContent value="permissions" className="space-y-6 mt-6">
+                      <MemberPermissionsPanel
+                        spaceId={selectedSpace.id}
+                        members={members}
+                        onUpdatePermissions={handleUpdatePermissions}
+                        canManagePermissions={canManageMembers}
+                      />
+                    </TabsContent>
 
-                  <TabsContent value="audit" className="space-y-6 mt-6">
-                    <MemberAuditLog
-                      spaceId={selectedSpace.id}
-                      auditLogs={auditLogs}
-                      loading={auditLogsLoading}
-                    />
-                  </TabsContent>
-                </Tabs>
+                    <TabsContent value="audit" className="space-y-6 mt-6">
+                      <MemberAuditLog
+                        spaceId={selectedSpace.id}
+                        auditLogs={auditLogs}
+                        loading={auditLogsLoading}
+                      />
+                    </TabsContent>
+                  </Tabs>
+                </div>
               </TabsContent>
 
               
@@ -2901,12 +2906,7 @@ export default function SpaceSettingsPage() {
                           })}
                         >
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select storage provider">
-                              <div className="flex items-center gap-2">
-                                {getStorageProviderIcon(attachmentStorage.provider)}
-                                <span>{getStorageProviderLabel(attachmentStorage.provider)}</span>
-                              </div>
-                            </SelectValue>
+                            <SelectValue placeholder="Select storage provider" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="minio">
@@ -3499,7 +3499,8 @@ export default function SpaceSettingsPage() {
                 border-bottom: none !important; 
               }
             `}</style> */}
-      </Tabs>
+        </Tabs>
+      </div>
 
       {/* Attribute Detail Drawer */}
       <AttributeDetailDrawer

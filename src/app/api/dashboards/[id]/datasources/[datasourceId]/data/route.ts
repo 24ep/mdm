@@ -5,12 +5,13 @@ import { query } from '@/lib/db'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string; datasourceId: string } }
+  { params }: { params: Promise<{ id: string; datasourceId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    const { id, datasourceId } = await params
     const body = await request.json()
     const { filters = {}, limit = 1000, offset = 0 } = body
 
@@ -18,7 +19,7 @@ export async function POST(
     const { rows: datasources } = await query(`
       SELECT * FROM dashboard_datasources 
       WHERE id = $1::uuid AND dashboard_id = $2::uuid AND is_active = true
-    `, [params.datasourceId, params.id])
+    `, [datasourceId, id])
 
     if (datasources.length === 0) {
       return NextResponse.json({ error: 'Datasource not found' }, { status: 404 })

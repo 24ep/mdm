@@ -7,16 +7,15 @@ import { parseJsonBody, handleApiError } from '@/lib/api-middleware'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    console.log('🔍 [DATA API] Request received for data model:', params.id)
+    const { id: dataModelId } = await params
+    console.log('🔍 [DATA API] Request received for data model:', dataModelId)
     const session = await getServerSession(authOptions)
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    const { id: dataModelId } = params
     console.log('🔍 [DATA API] Data model ID:', dataModelId)
     
     // Parse request body safely using shared utility

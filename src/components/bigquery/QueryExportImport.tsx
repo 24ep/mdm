@@ -150,7 +150,8 @@ export function QueryExportImport({ query, queryName, isOpen, onClose, onImport 
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="export" className="w-full">
+        <div className="w-full">
+        <Tabs defaultValue="export">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="export">
               <Download className="h-4 w-4 mr-2" />
@@ -249,6 +250,7 @@ export function QueryExportImport({ query, queryName, isOpen, onClose, onImport 
             </div>
           </TabsContent>
         </Tabs>
+        </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>

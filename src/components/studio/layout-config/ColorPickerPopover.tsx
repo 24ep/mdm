@@ -611,8 +611,9 @@ export function ColorPickerPopover({
         onClick={(e) => e.stopPropagation()}
         style={{ width: '320px', minWidth: '320px', maxWidth: '320px' }}
       >
-        <Tabs value={colorType} onValueChange={(v) => setColorType(v as any)} className="w-full">
-          <TabsList className={`w-full grid h-8 ${allowImageVideo ? 'grid-cols-5' : 'grid-cols-3'}`}>
+        <div className="w-full">
+          <Tabs value={colorType} onValueChange={(v) => setColorType(v as any)}>
+            <TabsList className={`w-full grid h-8 ${allowImageVideo ? 'grid-cols-5' : 'grid-cols-3'}`}>
             <TabsTrigger value="solid" className="text-xs px-2 flex items-center justify-center" title="Solid">
               <Droplet className="h-4 w-4" />
             </TabsTrigger>
@@ -902,7 +903,7 @@ export function ColorPickerPopover({
                       ) : (
                         <Circle className="h-3.5 w-3.5" />
                       )}
-                      <SelectValue>{gradientConfig.type === 'linear' ? 'Linear' : 'Radial'}</SelectValue>
+                      <SelectValue />
                     </div>
                   </SelectTrigger>
                   <SelectContent>
@@ -1032,7 +1033,7 @@ export function ColorPickerPopover({
                 <SelectTrigger className="h-8 text-xs">
                   <div className="flex items-center gap-2">
                     {React.createElement(currentPattern.icon, { className: "h-3.5 w-3.5" })}
-                    <SelectValue>{currentPattern.name}</SelectValue>
+                    <SelectValue />
                   </div>
                 </SelectTrigger>
                 <SelectContent>
@@ -1138,7 +1139,8 @@ export function ColorPickerPopover({
               )}
             </div>
           </TabsContent>
-        </Tabs>
+          </Tabs>
+        </div>
       </PopoverContent>
     </Popover>
   )

@@ -6,16 +6,18 @@ import { DataSyncExecutor } from '@/lib/data-sync-executor'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    const { id } = await params
+
     // Get existing schedule to check access
     const { rows: existing } = await query(
       'SELECT space_id FROM public.data_sync_schedules WHERE id = $1::uuid AND deleted_at IS NULL',
-      [params.id]
+      [id]
     )
 
     if (existing.length === 0) {
@@ -33,7 +35,7 @@ export async function POST(
     const { rows: running } = await query(
       `SELECT id FROM public.data_sync_schedules 
        WHERE id = $1::uuid AND last_run_status = 'RUNNING'`,
-      [params.id]
+      [id]
     )
 
     if (running.length > 0) {
@@ -45,7 +47,7 @@ export async function POST(
 
     // Execute sync
     const executor = new DataSyncExecutor()
-    const result = await executor.executeSync(params.id)
+    const result = await executor.executeSync(id)
 
     return NextResponse.json({
       success: result.success,

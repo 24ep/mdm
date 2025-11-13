@@ -226,17 +226,20 @@ export function DataExplorer({
     <div className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col">
       {/* Header with Tabs */}
       <div className="p-4 border-b border-gray-200">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <div className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="data-explorer" className="text-xs">Data Explorer</TabsTrigger>
             <TabsTrigger value="saved-queries" className="text-xs">Saved Queries</TabsTrigger>
           </TabsList>
         </Tabs>
+        </div>
       </div>
 
       {/* Tab Content */}
       <div className="flex-1 overflow-y-auto">
-        <Tabs value={activeTab} className="h-full">
+        <div className="h-full">
+        <Tabs value={activeTab}>
           {/* Data Explorer Tab */}
           <TabsContent value="data-explorer" className="h-full m-0">
             <div className="p-4">
@@ -498,6 +501,7 @@ export function DataExplorer({
             </div>
           </TabsContent>
         </Tabs>
+        </div>
       </div>
     </div>
   )

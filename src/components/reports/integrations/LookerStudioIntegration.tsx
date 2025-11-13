@@ -17,7 +17,7 @@ import {
   Plus,
   Key
 } from 'lucide-react'
-import { toast } from 'sonner'
+import toast from 'react-hot-toast'
 
 interface LookerStudioIntegrationProps {
   spaceId?: string

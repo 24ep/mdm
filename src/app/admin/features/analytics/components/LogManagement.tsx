@@ -361,7 +361,8 @@ export function LogManagement() {
         </div>
       )}
 
-      <Tabs defaultValue="logs" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="logs">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="logs">Logs</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
@@ -703,6 +704,7 @@ export function LogManagement() {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
 
       {/* Log Details Modal */}
       {selectedLog && (

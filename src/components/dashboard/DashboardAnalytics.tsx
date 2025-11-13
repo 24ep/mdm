@@ -224,7 +224,8 @@ export function DashboardAnalytics({ dashboardId, onExportAnalytics }: Dashboard
         Last updated: {refreshTime.toLocaleString()}
       </div>
 
-      <Tabs defaultValue="overview" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="overview">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
@@ -472,6 +473,7 @@ export function DashboardAnalytics({ dashboardId, onExportAnalytics }: Dashboard
           </div>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

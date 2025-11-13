@@ -6,7 +6,7 @@ import { randomUUID } from 'crypto'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -18,7 +18,7 @@ export async function POST(
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
-    const bucketId = params.id
+    const { id: bucketId } = await params
     const { name, path } = await request.json()
 
     if (!name || typeof name !== 'string' || !name.trim()) {

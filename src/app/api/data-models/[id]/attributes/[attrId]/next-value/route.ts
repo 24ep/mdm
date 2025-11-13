@@ -3,10 +3,10 @@ import { query } from '@/lib/db'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string; attrId: string } }
+  { params }: { params: Promise<{ id: string; attrId: string }> }
 ) {
   try {
-    const { id: dataModelId, attrId } = params
+    const { id: dataModelId, attrId } = await params
 
     // Get the attribute configuration
     const attributeSql = `

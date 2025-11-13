@@ -5,7 +5,7 @@ import { db } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -13,9 +13,11 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
+
     const timeLogs = await db.ticketTimeLog.findMany({
       where: {
-        ticketId: params.id
+        ticketId: id
       },
       include: {
         user: {
@@ -41,7 +43,7 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -49,6 +51,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const { hours, description, loggedAt } = body
 
@@ -58,7 +61,7 @@ export async function POST(
 
     // Check if ticket exists
     const ticket = await db.ticket.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!ticket || ticket.deletedAt) {
@@ -67,7 +70,7 @@ export async function POST(
 
     const timeLog = await db.ticketTimeLog.create({
       data: {
-        ticketId: params.id,
+        ticketId: id,
         userId: session.user.id,
         hours: parseFloat(hours),
         description: description || null,
@@ -94,7 +97,7 @@ export async function POST(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)

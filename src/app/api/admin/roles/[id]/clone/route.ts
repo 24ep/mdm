@@ -4,12 +4,13 @@ import { requirePermission } from '@/lib/api-permissions'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const forbidden = await requirePermission(request, 'system:manage_roles')
     if (forbidden) return forbidden
 
+    const { id } = await params
     const body = await request.json()
     const { name, description } = body
 
@@ -20,7 +21,7 @@ export async function POST(
     // Get original role
     const { rows: originalRole } = await query(
       'SELECT name, description, level, is_system FROM roles WHERE id = $1',
-      [params.id]
+      [id]
     )
 
     if (originalRole.length === 0) {
@@ -40,7 +41,7 @@ export async function POST(
     // Copy permissions
     const { rows: permissions } = await query(
       'SELECT permission_id FROM role_permissions WHERE role_id = $1',
-      [params.id]
+      [id]
     )
 
     for (const perm of permissions) {

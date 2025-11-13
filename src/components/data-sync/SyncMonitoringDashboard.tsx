@@ -236,7 +236,8 @@ export function SyncMonitoringDashboard({ spaceId }: SyncMonitoringDashboardProp
       )}
 
       {/* Main Content Tabs */}
-      <Tabs defaultValue="executions" className="space-y-4">
+      <div className="space-y-4">
+      <Tabs defaultValue="executions">
         <TabsList>
           <TabsTrigger value="executions">Recent Executions</TabsTrigger>
           <TabsTrigger value="alerts">
@@ -356,6 +357,7 @@ export function SyncMonitoringDashboard({ spaceId }: SyncMonitoringDashboardProp
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

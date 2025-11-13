@@ -204,7 +204,8 @@ export function SystemSettings() {
         </Button>
       </div>
 
-      <Tabs defaultValue="general" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="general">
         <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="database">Database</TabsTrigger>
@@ -576,6 +577,7 @@ export function SystemSettings() {
           <AssetManagement />
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

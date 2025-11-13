@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -19,6 +19,7 @@ export async function POST(
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const { password } = body
 
@@ -32,7 +33,7 @@ export async function POST(
     // Check if user exists
     const userCheck = await query(
       'SELECT id FROM users WHERE id = $1',
-      [params.id]
+      [id]
     )
 
     if (!userCheck.rows.length) {
@@ -45,7 +46,7 @@ export async function POST(
     // Update password
     await query(
       'UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2',
-      [hashedPassword, params.id]
+      [hashedPassword, id]
     )
 
     return NextResponse.json({ success: true, message: 'Password reset successfully' })

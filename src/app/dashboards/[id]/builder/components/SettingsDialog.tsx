@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { toast } from 'sonner'
+import toast from 'react-hot-toast'
 import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 
 interface DashboardSettings {
@@ -79,7 +79,8 @@ export function SettingsDialog({ open, onOpenChange, dashboard, onSaveSettings }
           </DialogDescription>
         </DialogHeader>
         
-        <Tabs defaultValue="general" className="w-full">
+        <div className="w-full">
+        <Tabs defaultValue="general">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="appearance">Appearance</TabsTrigger>
@@ -265,6 +266,7 @@ export function SettingsDialog({ open, onOpenChange, dashboard, onSaveSettings }
             </div>
           </TabsContent>
         </Tabs>
+        </div>
         
         <DialogFooter>
           <Button variant="outline" onClick={handleReset}>

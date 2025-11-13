@@ -80,7 +80,8 @@ export default function APIDocsPage() {
           </p>
         </div>
 
-        <Tabs defaultValue="overview" className="space-y-6">
+        <div className="space-y-6">
+        <Tabs defaultValue="overview">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="endpoints">Endpoints</TabsTrigger>
@@ -352,6 +353,7 @@ export default function APIDocsPage() {
             </Card>
           </TabsContent>
         </Tabs>
+        </div>
       </div>
     </MainLayout>
   )

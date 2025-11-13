@@ -309,7 +309,8 @@ export function FileNotifications({ spaceId }: FileNotificationsProps) {
       </div>
 
       {/* Notifications */}
-      <Tabs defaultValue="all" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="all">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="all">
             All ({notifications.length})
@@ -478,6 +479,7 @@ export function FileNotifications({ spaceId }: FileNotificationsProps) {
           )}
         </TabsContent>
       </Tabs>
+      </div>
 
       {/* Bulk Actions */}
       {selectedNotifications.size > 0 && (

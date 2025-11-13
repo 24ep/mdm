@@ -10,13 +10,12 @@ export async function GET(request: NextRequest) {
 
     const config: any = {
       googleEnabled: false,
-      azureEnabled: false,
-      ldapEnabled: false
+      azureEnabled: false
     }
 
     rows.forEach((row: any) => {
       const key = row.key.replace('sso_', '')
-      if (key === 'googleEnabled' || key === 'azureEnabled' || key === 'ldapEnabled') {
+      if (key === 'googleEnabled' || key === 'azureEnabled') {
         try {
           const value = typeof row.value === 'string' ? JSON.parse(row.value) : row.value
           config[key] = value === true || value === 'true'
@@ -36,16 +35,14 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       google: config.googleEnabled,
-      azure: config.azureEnabled,
-      ldap: config.ldapEnabled
+      azure: config.azureEnabled
     })
   } catch (error) {
     console.error('Error fetching SSO providers:', error)
     // Return defaults on error
     return NextResponse.json({
       google: !!process.env.GOOGLE_CLIENT_ID && !!process.env.GOOGLE_CLIENT_SECRET,
-      azure: !!(process.env.AZURE_AD_CLIENT_ID && process.env.AZURE_AD_CLIENT_SECRET && process.env.AZURE_AD_TENANT_ID),
-      ldap: false
+      azure: !!(process.env.AZURE_AD_CLIENT_ID && process.env.AZURE_AD_CLIENT_SECRET && process.env.AZURE_AD_TENANT_ID)
     })
   }
 }

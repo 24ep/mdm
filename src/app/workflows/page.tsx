@@ -514,7 +514,8 @@ export default function WorkflowsPage() {
               </DialogDescription>
             </DialogHeader>
             
-            <Tabs defaultValue="basic" className="w-full">
+            <div className="w-full">
+            <Tabs defaultValue="basic">
               <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="basic" className="flex items-center gap-2">
                   <Settings className="h-4 w-4" />
@@ -951,6 +952,7 @@ export default function WorkflowsPage() {
                 </div>
               </TabsContent>
             </Tabs>
+            </div>
             
             <div className="flex justify-end gap-2 pt-4 border-t">
               <Button variant="outline" onClick={() => setShowWorkflowDialog(false)}>

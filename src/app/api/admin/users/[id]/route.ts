@@ -5,7 +5,7 @@ import { query } from '@/lib/db'
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -18,6 +18,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const { name, email, role, isActive, defaultSpaceId, spaces } = body
 
@@ -53,7 +54,7 @@ export async function PUT(
       return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
     }
 
-    values.push(params.id)
+    values.push(id)
     const sql = `UPDATE users SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $${values.length} RETURNING id, email, name, role, is_active, created_at, default_space_id`
 
     const { rows } = await query(sql, values)
@@ -64,14 +65,14 @@ export async function PUT(
     // Handle space memberships if provided
     if (spaces && Array.isArray(spaces)) {
       // Remove existing space memberships
-      await query('DELETE FROM space_members WHERE user_id = $1', [params.id])
+      await query('DELETE FROM space_members WHERE user_id = $1', [id])
 
       // Add new space memberships
       for (const space of spaces) {
         if (space.spaceId && space.role) {
           await query(
             'INSERT INTO space_members (user_id, space_id, role) VALUES ($1, $2, $3)',
-            [params.id, space.spaceId, space.role]
+            [id, space.spaceId, space.role]
           )
         }
       }
@@ -99,7 +100,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -112,9 +113,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
+    const { id } = await params
     const { rows } = await query(
       'DELETE FROM users WHERE id = $1 RETURNING id',
-      [params.id]
+      [id]
     )
 
     if (!rows.length) {

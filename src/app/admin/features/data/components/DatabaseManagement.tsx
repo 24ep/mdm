@@ -396,7 +396,8 @@ export function DatabaseManagement() {
         </div>
       )}
 
-      <Tabs defaultValue="connections" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="connections">
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="connections">Connections</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
@@ -789,6 +790,7 @@ export function DatabaseManagement() {
           )}
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

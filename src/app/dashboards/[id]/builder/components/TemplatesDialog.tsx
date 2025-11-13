@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Search, BarChart3, PieChart, LineChart, Table, TrendingUp, Users, ShoppingCart } from 'lucide-react'
-import { toast } from 'sonner'
+import toast from 'react-hot-toast'
 
 interface DashboardTemplate {
   id: string

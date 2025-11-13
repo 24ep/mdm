@@ -6,11 +6,13 @@ import { auditLogger } from '@/lib/utils/audit-logger'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { id } = await params
 
     const sql = `
       SELECT 
@@ -25,7 +27,7 @@ export async function GET(
       ORDER BY rp.created_at DESC
     `
 
-    const result = await query(sql, [params.id])
+    const result = await query(sql, [id])
     
     const permissions = result.rows.map((row: any) => ({
       id: row.id,
@@ -46,12 +48,13 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    const { id } = await params
     const body = await request.json()
     const { user_id, role_id, permission } = body
 
@@ -62,7 +65,7 @@ export async function POST(
     // Check if user owns the report
     const ownerCheck = await query(
       'SELECT created_by FROM reports WHERE id = $1',
-      [params.id]
+      [id]
     )
 
     if (ownerCheck.rows.length === 0) {
@@ -82,7 +85,7 @@ export async function POST(
     `
 
     const result = await query(sql, [
-      params.id,
+      id,
       user_id || null,
       role_id || null,
       permission,
@@ -90,7 +93,7 @@ export async function POST(
     ])
 
     // Log audit event
-    auditLogger.permissionChanged(params.id, result.rows[0].id)
+    auditLogger.permissionChanged(id, result.rows[0].id)
 
     return NextResponse.json({ permission: result.rows[0] }, { status: 201 })
   } catch (error) {

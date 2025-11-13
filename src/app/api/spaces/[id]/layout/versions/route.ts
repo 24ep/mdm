@@ -6,7 +6,7 @@ import { query } from '@/lib/database'
 // GET /api/spaces/[id]/layout/versions - List all versions for a space layout
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -14,7 +14,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const spaceId = params.id
+    const { id: spaceId } = await params
     const userId = session.user.id
 
     // Check if user has access to this space
@@ -64,7 +64,7 @@ export async function GET(
 // POST /api/spaces/[id]/layout/versions - Create a new version
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -72,7 +72,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const spaceId = params.id
+    const { id: spaceId } = await params
     const userId = session.user.id
     const { layoutConfig, changeDescription } = await request.json()
 

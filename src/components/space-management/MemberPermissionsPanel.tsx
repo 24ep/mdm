@@ -227,7 +227,8 @@ export function MemberPermissionsPanel({
                     </Button>
                   </div>
 
-                  <Tabs defaultValue="permissions" className="w-full">
+                  <div className="w-full">
+                  <Tabs defaultValue="permissions">
                     <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="permissions">Permissions</TabsTrigger>
                       <TabsTrigger value="summary">Summary</TabsTrigger>
@@ -306,6 +307,7 @@ export function MemberPermissionsPanel({
                       </Card>
                     </TabsContent>
                   </Tabs>
+                  </div>
                 </>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">

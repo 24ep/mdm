@@ -815,7 +815,8 @@ export function TicketDetailModalEnhanced({
           <DialogDescription>Manage ticket details and activities</DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
+        <div className="mt-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="comments">
@@ -1384,6 +1385,7 @@ export function TicketDetailModalEnhanced({
             </TabsContent>
           )}
         </Tabs>
+        </div>
 
         <div className="flex gap-2 pt-4 border-t">
           {serviceDeskConfig?.isConfigured && (

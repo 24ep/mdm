@@ -318,7 +318,8 @@ export function BackupRecoverySystem({ spaceId }: BackupRecoverySystemProps) {
         )}
       </div>
 
-      <Tabs defaultValue="jobs" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="jobs">
         <TabsList>
           <TabsTrigger value="jobs">Backup Jobs</TabsTrigger>
           <TabsTrigger value="files">Backup Files</TabsTrigger>
@@ -425,7 +426,8 @@ export function BackupRecoverySystem({ spaceId }: BackupRecoverySystemProps) {
                 <CardDescription>{selectedJob.description}</CardDescription>
               </CardHeader>
               <CardContent>
-                <Tabs defaultValue="config" className="w-full">
+                <div className="w-full">
+                <Tabs defaultValue="config">
                   <TabsList>
                     <TabsTrigger value="config">Configuration</TabsTrigger>
                     <TabsTrigger value="schedule">Schedule</TabsTrigger>
@@ -599,6 +601,7 @@ export function BackupRecoverySystem({ spaceId }: BackupRecoverySystemProps) {
                     </div>
                   </TabsContent>
                 </Tabs>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -679,6 +682,7 @@ export function BackupRecoverySystem({ spaceId }: BackupRecoverySystemProps) {
           </div>
         </TabsContent>
       </Tabs>
+      </div>
 
       {isBackingUp && (
         <Card className="fixed bottom-4 right-4 w-80">

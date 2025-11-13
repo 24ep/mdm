@@ -18,7 +18,7 @@ import {
   ArrowLeft
 } from 'lucide-react'
 import { useSpace } from '@/contexts/space-context'
-import { toast } from 'sonner'
+import toast from 'react-hot-toast'
 
 interface GrafanaDashboard {
   id: string

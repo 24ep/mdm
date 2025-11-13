@@ -347,7 +347,8 @@ export function BusinessIntelligence() {
         </div>
       </div>
 
-      <Tabs defaultValue="dashboards" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="dashboards">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="dashboards">Dashboards</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
@@ -927,6 +928,7 @@ export function BusinessIntelligence() {
           </div>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

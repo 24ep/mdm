@@ -5,12 +5,13 @@ import { query } from '@/lib/db'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    const { id } = await params
     const body = await request.json()
     const { name, space_ids } = body
 
@@ -24,7 +25,7 @@ export async function POST(
       FROM dashboards d
       LEFT JOIN dashboard_permissions dp ON dp.dashboard_id = d.id AND dp.user_id = $2
       WHERE d.id = $1 AND d.deleted_at IS NULL
-    `, [params.id, session.user.id])
+    `, [id, session.user.id])
 
     if (accessCheck.length === 0) {
       return NextResponse.json({ error: 'Dashboard not found' }, { status: 404 })
@@ -42,7 +43,7 @@ export async function POST(
     // Use the database function to duplicate the dashboard
     const { rows } = await query(
       'SELECT public.duplicate_dashboard($1, $2, $3) as new_dashboard_id',
-      [params.id, name, session.user.id]
+      [id, name, session.user.id]
     )
 
     const newDashboardId = rows[0]?.new_dashboard_id

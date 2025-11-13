@@ -2,13 +2,13 @@ import { notFound } from 'next/navigation'
 import { query } from '@/lib/db'
 
 interface PublicDashboardPageProps {
-  params: {
+  params: Promise<{
     publicLink: string
-  }
+  }>
 }
 
 export default async function PublicDashboardPage({ params }: PublicDashboardPageProps) {
-  const { publicLink } = params
+  const { publicLink } = await params
 
   // Fetch dashboard by public link using raw SQL
   // Note: Dashboard model doesn't exist in Prisma schema

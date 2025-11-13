@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Copy, Check, Calendar, Eye, Lock } from 'lucide-react'
-import { toast } from 'sonner'
+import toast from 'react-hot-toast'
 
 interface ReportShareDialogProps {
   reportId: string

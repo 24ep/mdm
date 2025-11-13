@@ -8,7 +8,7 @@ import { createAuditLog } from '@/lib/audit'
 // POST /api/users/[id]/reset-password - reset user password (MANAGER+)
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const forbidden = await requireRole(request, 'MANAGER')
   if (forbidden) return forbidden
@@ -19,6 +19,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const { newPassword } = body
 
@@ -31,7 +32,7 @@ export async function POST(
     // Check if user exists
     const userResult = await query(
       'SELECT id, email, name FROM users WHERE id = $1',
-      [params.id]
+      [id]
     )
 
     if (userResult.rows.length === 0) {
@@ -47,14 +48,14 @@ export async function POST(
     // Update the password
     await query(
       'UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2',
-      [hashedPassword, params.id]
+      [hashedPassword, id]
     )
 
     // Create audit log
     await createAuditLog({
       action: 'PASSWORD_RESET',
       entityType: 'User',
-      entityId: params.id,
+      entityId: id,
       oldValue: { password: '[HIDDEN]' },
       newValue: { password: '[RESET]' },
       userId: session.user.id, // The admin who reset the password

@@ -245,7 +245,8 @@ export function RelationshipManager({
         )}
       </div>
 
-      <Tabs defaultValue="relationships" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="relationships">
         <TabsList>
           <TabsTrigger value="relationships">Relationships</TabsTrigger>
           <TabsTrigger value="visualization">Visualization</TabsTrigger>
@@ -344,7 +345,8 @@ export function RelationshipManager({
                 <CardDescription>{selectedRelationship.description}</CardDescription>
               </CardHeader>
               <CardContent>
-                <Tabs defaultValue="config" className="w-full">
+                <div className="w-full">
+                <Tabs defaultValue="config">
                   <TabsList>
                     <TabsTrigger value="config">Configuration</TabsTrigger>
                     <TabsTrigger value="preview">Preview</TabsTrigger>
@@ -562,6 +564,7 @@ export function RelationshipManager({
                     </div>
                   </TabsContent>
                 </Tabs>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -611,6 +614,7 @@ export function RelationshipManager({
           </div>
         </TabsContent>
       </Tabs>
+      </div>
 
       {showCreateDialog && (
         <Card className="fixed inset-0 z-50 m-4 max-w-2xl">

@@ -5,7 +5,7 @@ import { dataMasking } from '@/lib/data-masking'
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -13,14 +13,15 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     await dataMasking.initialize()
     
-    await dataMasking.updateMaskingRule(params.id, body)
+    await dataMasking.updateMaskingRule(id, body)
     const rules = await dataMasking.getMaskingRules()
-    const updatedRule = rules.find(r => r.id === params.id)
+    const updatedRule = rules.find(r => r.id === id)
     
-    return NextResponse.json(updatedRule || { id: params.id, ...body })
+    return NextResponse.json(updatedRule || { id, ...body })
   } catch (error: any) {
     console.error('Error updating masking rule:', error)
     return NextResponse.json(
@@ -32,7 +33,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -40,9 +41,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     await dataMasking.initialize()
     
-    await dataMasking.deleteMaskingRule(params.id)
+    await dataMasking.deleteMaskingRule(id)
     
     return NextResponse.json({ success: true, message: 'Rule deleted' })
   } catch (error: any) {

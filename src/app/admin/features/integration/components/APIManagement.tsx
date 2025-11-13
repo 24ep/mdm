@@ -344,7 +344,8 @@ export function APIManagement() {
         </div>
       </div>
 
-      <Tabs defaultValue="keys" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="keys">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="keys">API Keys</TabsTrigger>
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
@@ -782,6 +783,7 @@ export function APIManagement() {
           </div>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

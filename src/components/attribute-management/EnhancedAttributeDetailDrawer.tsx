@@ -14,7 +14,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { ColorInput } from '@/components/studio/layout-config/ColorInput'
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import { 
   Database, 
   Type, 
@@ -322,8 +321,9 @@ export function EnhancedAttributeDetailDrawer({
         </DrawerHeader>
 
         <div className="flex-1 overflow-hidden">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-            <TabsList className={`grid w-full ${isSelectType ? 'grid-cols-4' : 'grid-cols-3'}`}>
+          <div className="h-full flex flex-col">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className={`grid w-full ${isSelectType ? 'grid-cols-4' : 'grid-cols-3'}`}>
               <TabsTrigger value="details" className="flex items-center gap-2">
                 <Database className="h-4 w-4" />
                 Details
@@ -908,7 +908,8 @@ export function EnhancedAttributeDetailDrawer({
                 </Card>
               </div>
             </TabsContent>
-          </Tabs>
+            </Tabs>
+          </div>
         </div>
       </DrawerContent>
     </Drawer>

@@ -319,7 +319,8 @@ export function DataExportImport() {
         </div>
       </div>
 
-      <Tabs defaultValue="export" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="export">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="export">Export</TabsTrigger>
           <TabsTrigger value="import">Import</TabsTrigger>
@@ -618,6 +619,7 @@ export function DataExportImport() {
           </div>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

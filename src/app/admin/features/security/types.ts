@@ -18,7 +18,6 @@ export interface SSOConfig {
   // Enable/Disable toggles
   googleEnabled: boolean
   azureEnabled: boolean
-  ldapEnabled: boolean
   
   // Google SSO
   googleClientId: string
@@ -28,14 +27,6 @@ export interface SSOConfig {
   azureTenantId: string
   azureClientId: string
   azureClientSecret: string
-  
-  // LDAP Configuration
-  ldapUrl: string
-  ldapBaseDn: string
-  ldapBindDn: string
-  ldapBindPassword: string
-  ldapSearchFilter: string
-  ldapSearchBase: string
 }
 
 export interface AuditLog {

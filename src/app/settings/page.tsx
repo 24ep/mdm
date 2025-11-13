@@ -60,7 +60,23 @@ import IconPicker from '@/components/ui/icon-picker'
 import IconPickerPopover from '@/components/ui/icon-picker-popover'
 import { AnimatedIcon } from '@/components/ui/animated-icon'
 import { useSidebar } from '@/contexts/sidebar-context'
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { createPortal } from 'react-dom'
 import { Z_INDEX } from '@/lib/z-index'
 // ERDInlineView no longer used in Settings; shown on Data Models page instead
@@ -72,6 +88,211 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { DynamicModelIcon } from './components/DynamicModelIcon'
 import { UsersSection } from './components/UsersSection'
 import { RolesSection } from './components/RolesSection'
+
+function SortableAttributeOption({
+  option,
+  index,
+  onUpdate,
+  onDelete,
+}: {
+  option: AttributeOption
+  index: number
+  onUpdate: (field: 'color' | 'value' | 'label', value: string) => void
+  onDelete: () => void
+}) {
+  const {
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: `option-${index}` })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`p-4 hover:bg-muted/50 transition-colors ${isDragging ? 'bg-blue-50 shadow-lg' : ''}`}
+    >
+      <div className="flex items-center gap-4">
+        {/* Drag Handle */}
+        <div
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
+          title="Drag to reorder"
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </div>
+
+        {/* Single Row Layout */}
+        <div className="flex-1 flex items-center gap-3">
+          {/* Color Swatch */}
+          <div className="flex items-center gap-2">
+            <ColorInput
+              value={option.color}
+              onChange={(color) => onUpdate('color', color)}
+              allowImageVideo={false}
+              className="relative"
+              placeholder="#000000"
+              inputClassName="h-8 text-xs pl-7"
+            />
+          </div>
+          
+          {/* Attribute Code */}
+          <div className="flex-1 min-w-0">
+            <Input
+              value={option.value}
+              onChange={(e) => onUpdate('value', e.target.value)}
+              placeholder="Option value"
+              className="h-8"
+            />
+          </div>
+
+          {/* Attribute Label */}
+          <div className="flex-1 min-w-0">
+            <Input
+              value={option.label}
+              onChange={(e) => onUpdate('label', e.target.value)}
+              placeholder="Option label"
+              className="h-8"
+            />
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onDelete}
+            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SortableDataModelRow({
+  model,
+  onTogglePin,
+  onEdit,
+  onDelete,
+}: {
+  model: any
+  onTogglePin: (id: string) => void
+  onEdit: (model: any) => void
+  onDelete: (id: string) => void
+}) {
+  const {
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: model.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  return (
+    <tr
+      ref={setNodeRef}
+      style={style}
+      className={`border-t hover:bg-muted/50 cursor-pointer ${isDragging ? 'bg-blue-50' : ''}`}
+    >
+      <td className="p-3">
+        <div className="flex items-center space-x-3">
+          <div
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
+            title="Drag to reorder"
+          >
+            <svg className="w-4 h-4 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M7 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
+            </svg>
+          </div>
+          <DynamicModelIcon name={model.icon} className="mr-2 h-4 w-4" />
+          <div className="flex flex-col">
+            <span className="font-medium">{model.display_name || model.name}</span>
+            {model.space_slugs && model.space_slugs.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1">
+                {model.space_slugs.map((slug: string, slugIndex: number) => (
+                  <span
+                    key={slugIndex}
+                    className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800"
+                  >
+                    {slug}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </td>
+      <td className="p-3">
+        <span className="text-muted-foreground">{model.count?.toLocaleString?.() || 0} records</span>
+      </td>
+      <td className="p-3">
+        {model.tags && model.tags.length > 0 ? (
+          <div className="flex flex-wrap gap-1">
+            {model.tags.map((tag: string, tagIndex: number) => (
+              <span
+                key={tagIndex}
+                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        )}
+      </td>
+      <td className="p-3 text-center">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => { e.stopPropagation(); onTogglePin(model.id); }}
+          title={model.is_pinned ? "Unpin from Sidebar" : "Pin to Sidebar"}
+          className={model.is_pinned ? "text-blue-600" : "text-muted-foreground"}
+        >
+          {model.is_pinned ? <Pin className="h-4 w-4" /> : <PinOff className="h-4 w-4" />}
+        </Button>
+      </td>
+      <td className="p-3">
+        <div className="flex justify-end space-x-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => { e.stopPropagation(); onEdit(model); }}
+            title="Edit Data Model"
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => { e.stopPropagation(); onDelete(model.id); }}
+            title="Delete Data Model"
+            className="text-red-600 hover:text-red-700"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </td>
+    </tr>
+  )
+}
 
 export default function SettingsPage() {
   const { currentSpace } = useSpace()
@@ -586,19 +807,25 @@ export default function SettingsPage() {
     }
   }
 
-  const handleDragEnd = async (result: any) => {
-    if (!result.destination) return
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
 
-    const sourceIndex = result.source.index
-    const destinationIndex = result.destination.index
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
 
-    if (sourceIndex === destinationIndex) return
+    const sourceIndex = filteredDataModels.findIndex((model) => model.id === active.id)
+    const destinationIndex = filteredDataModels.findIndex((model) => model.id === over.id)
+
+    if (sourceIndex === -1 || destinationIndex === -1 || sourceIndex === destinationIndex) return
 
     try {
       // Update sort orders for affected models
-      const newModels = Array.from(dataModels)
-      const [reorderedItem] = newModels.splice(sourceIndex, 1)
-      newModels.splice(destinationIndex, 0, reorderedItem)
+      const newModels = arrayMove(filteredDataModels, sourceIndex, destinationIndex)
 
       // Update sort orders
       const updates = newModels.map((model, index) => ({
@@ -857,12 +1084,16 @@ export default function SettingsPage() {
     ))
   }
 
-  const handleAttributeOptionsDragEnd = (result: any) => {
-    if (!result.destination) return
+  const handleAttributeOptionsDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
 
-    const items = Array.from(attributeOptions)
-    const [reorderedItem] = items.splice(result.source.index, 1)
-    items.splice(result.destination.index, 0, reorderedItem)
+    const oldIndex = attributeOptions.findIndex((_, index) => `option-${index}` === active.id)
+    const newIndex = attributeOptions.findIndex((_, index) => `option-${index}` === over.id)
+
+    if (oldIndex === -1 || newIndex === -1) return
+
+    const items = arrayMove(attributeOptions, oldIndex, newIndex)
 
     // Update order indices
     const updatedItems = items.map((item, index) => ({ ...item, order: index }))
@@ -904,7 +1135,8 @@ export default function SettingsPage() {
 
   return (
     <>
-    <Tabs defaultValue="system" orientation="vertical" className="flex h-full">
+    <div className="flex h-full">
+      <Tabs defaultValue="system">
         {/* Left Sidebar */}
         <div className="w-72 bg-card flex flex-col border-r">
           <div className="p-6 border-b">
@@ -913,7 +1145,7 @@ export default function SettingsPage() {
           </div>
           
           <nav className="flex-1 p-4 space-y-2">
-            <TabsList className="w-full flex-col h-auto bg-transparent space-y-1">
+            <TabsList orientation="vertical" className="w-full flex-col h-auto bg-transparent space-y-1">
               <TabsTrigger 
                 className="justify-start w-full h-12 px-4 py-3 rounded-lg text-left hover:bg-muted/50 transition-colors data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm" 
                 value="system"
@@ -1380,120 +1612,41 @@ export default function SettingsPage() {
                       </div>
                     ) : (
                     <>
-                    <DragDropContext onDragEnd={handleDragEnd}>
-                    <div className="border rounded-lg overflow-hidden">
-                      <table className="w-full text-sm">
-                        <thead className="bg-muted/50">
-                          <tr>
-                            <th className="text-left p-3">Data Model</th>
-                            <th className="text-left p-3">Records</th>
-                            <th className="text-left p-3">Tags</th>
-                            <th className="text-center p-3">Pin</th>
-                            <th className="text-right p-3">Actions</th>
-                          </tr>
-                        </thead>
-                          <Droppable droppableId="data-models">
-                            {(provided) => (
-                              <tbody ref={provided.innerRef} {...provided.droppableProps}>
-                          {filteredDataModels.map((model, index) => (
-                                  <Draggable key={model.id} draggableId={model.id} index={index}>
-                                    {(provided, snapshot) => (
-                                      <tr 
-                                        ref={provided.innerRef}
-                                        {...provided.draggableProps}
-                                        className={`border-t hover:bg-muted/50 cursor-pointer ${snapshot.isDragging ? 'bg-blue-50' : ''}`}
-                                      >
-                              <td className="p-3">
-                                <div className="flex items-center space-x-3">
-                                            <div 
-                                              {...provided.dragHandleProps}
-                                              className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
-                                              title="Drag to reorder"
-                                            >
-                                              <svg className="w-4 h-4 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M7 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
-                                              </svg>
-                                            </div>
-                                            <DynamicModelIcon name={model.icon} className="mr-2 h-4 w-4" />
-                                            <div className="flex flex-col">
-                                              <span className="font-medium">{model.display_name || model.name}</span>
-                                              {model.space_slugs && model.space_slugs.length > 0 && (
-                                                <div className="flex flex-wrap gap-1 mt-1">
-                                                  {model.space_slugs.map((slug: string, slugIndex: number) => (
-                                                    <span
-                                                      key={slugIndex}
-                                                      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800"
-                                                    >
-                                                      {slug}
-                                                    </span>
-                                                  ))}
-                                                </div>
-                                              )}
-                                            </div>
-                                </div>
-                              </td>
-                              <td className="p-3">
-                                          <span className="text-muted-foreground">{model.count?.toLocaleString?.() || 0} records</span>
-                              </td>
-                              <td className="p-3">
-                                {model.tags && model.tags.length > 0 ? (
-                                  <div className="flex flex-wrap gap-1">
-                                    {model.tags.map((tag: string, tagIndex: number) => (
-                                      <span
-                                        key={tagIndex}
-                                        className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800"
-                                      >
-                                        {tag}
-                                      </span>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <span className="text-muted-foreground">—</span>
-                                )}
-                              </td>
-                                        <td className="p-3 text-center">
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm"
-                                            onClick={(e) => { e.stopPropagation(); handleTogglePin(model.id); }}
-                                            title={model.is_pinned ? "Unpin from Sidebar" : "Pin to Sidebar"}
-                                            className={model.is_pinned ? "text-blue-600" : "text-muted-foreground"}
-                                          >
-                                            {model.is_pinned ? <Pin className="h-4 w-4" /> : <PinOff className="h-4 w-4" />}
-                                  </Button>
-                                        </td>
-                                        <td className="p-3">
-                                          <div className="flex justify-end space-x-2">
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm"
-                                              onClick={(e) => { e.stopPropagation(); handleEditDataModel(model); }}
-                                    title="Edit Data Model"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm"
-                                              onClick={(e) => { e.stopPropagation(); handleDeleteDataModel(model.id); }}
-                                    title="Delete Data Model"
-                                    className="text-red-600 hover:text-red-700"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </td>
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleDragEnd}
+                    >
+                      <div className="border rounded-lg overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead className="bg-muted/50">
+                            <tr>
+                              <th className="text-left p-3">Data Model</th>
+                              <th className="text-left p-3">Records</th>
+                              <th className="text-left p-3">Tags</th>
+                              <th className="text-center p-3">Pin</th>
+                              <th className="text-right p-3">Actions</th>
                             </tr>
-                                    )}
-                                  </Draggable>
-                          ))}
-                                {provided.placeholder}
-                        </tbody>
-                            )}
-                          </Droppable>
-                      </table>
-                    </div>
-                    </DragDropContext>
+                          </thead>
+                          <SortableContext
+                            items={filteredDataModels.map(model => model.id)}
+                            strategy={verticalListSortingStrategy}
+                          >
+                            <tbody>
+                              {filteredDataModels.map((model) => (
+                                <SortableDataModelRow
+                                  key={model.id}
+                                  model={model}
+                                  onTogglePin={handleTogglePin}
+                                  onEdit={handleEditDataModel}
+                                  onDelete={handleDeleteDataModel}
+                                />
+                              ))}
+                            </tbody>
+                          </SortableContext>
+                        </table>
+                      </div>
+                    </DndContext>
                     
                     <div className="flex gap-2">
                       <Button className="flex-1" variant="outline" onClick={() => setShowErdInline(true)}>
@@ -1592,8 +1745,9 @@ export default function SettingsPage() {
                 </p>
               </div>
               
-              <Tabs defaultValue="user-management" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
+              <div className="w-full">
+                <Tabs defaultValue="user-management">
+                  <TabsList className="grid w-full grid-cols-2 mb-6">
                   <TabsTrigger value="user-management" className="flex items-center space-x-2">
                     <Users className="h-4 w-4" />
                     <span>User Management</span>
@@ -1637,12 +1791,14 @@ export default function SettingsPage() {
                     </CardContent>
                   </Card>
                 </TabsContent>
-              </Tabs>
+                  </Tabs>
+                </div>
             </TabsContent>
             </div>
           </div>
         </div>
       </Tabs>
+    </div>
 
       {/* Data Model Drawer */}
       {showDataModelDrawer && (
@@ -1656,8 +1812,9 @@ export default function SettingsPage() {
               </Button>
             </div>
             <div className="flex-1 overflow-hidden">
-              <Tabs defaultValue="model" className="h-full flex flex-col">
-                <TabsList className="flex justify-start w-full p-4 gap-0">
+              <div className="h-full flex flex-col">
+                <Tabs defaultValue="model">
+                  <TabsList className="flex justify-start w-full p-4 gap-0">
                   <TabsTrigger value="model" className="flex items-center gap-2 px-6 py-3 border-b-2 border-transparent data-[state=active]:border-primary">
                     <Database className="h-4 w-4" />
                     Model detail
@@ -2143,7 +2300,8 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 </TabsContent>
-              </Tabs>
+                </Tabs>
+              </div>
               <div className="flex justify-end space-x-2 p-4 border-t flex-shrink-0 bg-background">
                 <Button variant="outline" onClick={() => setShowDataModelDrawer(false)}>Cancel</Button>
                 <Button onClick={handleSaveDataModel}>{editingDataModel ? 'Save Changes' : 'Create Data Model'}</Button>
@@ -2313,8 +2471,9 @@ export default function SettingsPage() {
               </Button>
             </div>
             <div className="flex flex-col flex-1 min-h-0">
-              <Tabs defaultValue="details" className="w-full flex-1 flex flex-col min-h-0">
-                <TabsList className="flex justify-start w-full p-4 gap-0">
+              <div className="w-full flex-1 flex flex-col min-h-0">
+                <Tabs defaultValue="details">
+                  <TabsList className="flex justify-start w-full p-4 gap-0">
                   <TabsTrigger value="details" className="flex items-center gap-2 px-6 py-3 border-b-2 border-transparent data-[state=active]:border-primary">
                     <Type className="h-4 w-4" />
                     Attribute detail
@@ -2656,86 +2815,28 @@ export default function SettingsPage() {
                               </div>
                             </div>
                             
-                  <DragDropContext onDragEnd={handleAttributeOptionsDragEnd}>
-                    <Droppable droppableId="attribute-options">
-                      {(provided) => (
-                        <div {...provided.droppableProps} ref={provided.innerRef}>
-                                    <div className="divide-y">
-                              {attributeOptions.map((option, index) => (
-                                <Draggable key={index} draggableId={`option-${index}`} index={index}>
-                                  {(provided, snapshot) => (
-                                            <div 
-                                      ref={provided.innerRef}
-                                      {...provided.draggableProps}
-                                              className={`p-4 hover:bg-muted/50 transition-colors ${snapshot.isDragging ? 'bg-blue-50 shadow-lg' : ''}`}
-                                            >
-                                              <div className="flex items-center gap-4">
-                                                {/* Drag Handle */}
-                                                <div 
-                                                  {...provided.dragHandleProps}
-                                                  className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
-                                                  title="Drag to reorder"
-                                                >
-                                                  <GripVertical className="h-4 w-4 text-muted-foreground" />
-                                                </div>
-
-                                                {/* Single Row Layout */}
-                                                <div className="flex-1 flex items-center gap-3">
-                                                  {/* Color Swatch */}
-                                                  <div className="flex items-center gap-2">
-                                                    <ColorInput
-                                                      value={option.color}
-                                                      onChange={(color) => updateAttributeOption(index, 'color', color)}
-                                                      allowImageVideo={false}
-                                                      className="relative"
-                                                      placeholder="#000000"
-                                                      inputClassName="h-8 text-xs pl-7"
-                                                    />
-                                                  </div>
-                                                  
-                                                  {/* Attribute Code */}
-                                                  <div className="flex-1 min-w-0">
-                                        <Input
-                                          value={option.value}
-                                          onChange={(e) => updateAttributeOption(index, 'value', e.target.value)}
-                                                      placeholder="Option value"
-                                                      className="h-8"
-                                                    />
-                                                  </div>
-
-                                                  {/* Attribute Label */}
-                                                  <div className="flex-1 min-w-0">
-                                        <Input
-                                          value={option.label}
-                                          onChange={(e) => updateAttributeOption(index, 'label', e.target.value)}
-                                                      placeholder="Option label"
-                                                      className="h-8"
-                                                    />
-                                                  </div>
-                                                </div>
-
-                                                {/* Actions */}
-                                                <div className="flex items-center gap-2">
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => removeAttributeOption(index)}
-                                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                        >
-                                          <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                                </div>
-                                              </div>
-                                            </div>
-                                  )}
-                                </Draggable>
-                              ))}
-                              {provided.placeholder}
-                                    </div>
-                        </div>
-                      )}
-                    </Droppable>
-                  </DragDropContext>
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleAttributeOptionsDragEnd}
+                  >
+                    <SortableContext
+                      items={attributeOptions.map((_, index) => `option-${index}`)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="divide-y">
+                        {attributeOptions.map((option, index) => (
+                          <SortableAttributeOption
+                            key={index}
+                            option={option}
+                            index={index}
+                            onUpdate={(field, value) => updateAttributeOption(index, field, value)}
+                            onDelete={() => removeAttributeOption(index)}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
                 </div>
 
                           {/* Add Option Button */}
@@ -2882,7 +2983,8 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 </TabsContent>
-              </Tabs>
+                </Tabs>
+              </div>
               <div className="flex justify-end space-x-2 p-4 border-t flex-shrink-0 bg-background">
                 <Button variant="outline" onClick={() => setShowAttributeDetail(false)}>
                 Cancel

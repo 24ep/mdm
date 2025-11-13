@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
-    const { query: sqlQuery, spaceId, skipLint, skipMasking } = await request.json()
+    const { query: sqlQuery, spaceId, skipMasking } = await request.json()
 
     if (!sqlQuery || !sqlQuery.trim()) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 })
@@ -38,37 +38,34 @@ export async function POST(request: NextRequest) {
 
     const trimmedQuery = sqlQuery.trim()
 
-    // SQL Linting
-    let lintResult = null
-    if (!skipLint) {
-      lintResult = sqlLinter.lint(trimmedQuery)
-      
-      // Block execution if there are errors
-      if (!lintResult.valid) {
-        await auditLogger.log({
-          userId,
-          userName: userName || undefined,
-          userEmail: userEmail || undefined,
-          action: 'EXECUTE_QUERY',
-          resourceType: 'query',
-          sqlQuery: trimmedQuery,
-          spaceId,
-          success: false,
-          errorMessage: 'Query blocked by linting rules',
-          executionTime: Date.now() - startTime,
-          metadata: { lintResult }
-        })
+    // SQL Linting - Always enforce linting, cannot be skipped
+    const lintResult = sqlLinter.lint(trimmedQuery)
+    
+    // Block execution if there are errors
+    if (!lintResult.valid) {
+      await auditLogger.log({
+        userId,
+        userName: userName || undefined,
+        userEmail: userEmail || undefined,
+        action: 'EXECUTE_QUERY',
+        resourceType: 'query',
+        sqlQuery: trimmedQuery,
+        spaceId,
+        success: false,
+        errorMessage: 'Query blocked by linting rules',
+        executionTime: Date.now() - startTime,
+        metadata: { lintResult }
+      })
 
-        return NextResponse.json({
-          success: false,
-          error: 'Query validation failed',
-          lintResult,
-          results: [],
-          columns: [],
-          executionTime: Date.now() - startTime,
-          status: 'error'
-        }, { status: 400 })
-      }
+      return NextResponse.json({
+        success: false,
+        error: 'Query validation failed',
+        lintResult,
+        results: [],
+        columns: [],
+        executionTime: Date.now() - startTime,
+        status: 'error'
+      }, { status: 400 })
     }
 
     // Get IP address and user agent

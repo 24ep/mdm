@@ -1,70 +1,200 @@
 "use client"
 
 import * as React from "react"
-import * as DialogPrimitive from "@radix-ui/react-dialog"
+import { createPortal } from "react-dom"
 import { cn } from "@/lib/utils"
+import { useControlledDialogState, useDialogBodyScrollLock, useDialogEscapeKey } from "@/lib/dialog-utils"
 
-const Drawer = DialogPrimitive.Root
-const DrawerTrigger = DialogPrimitive.Trigger
-const DrawerClose = DialogPrimitive.Close
+interface DrawerContextValue {
+  open: boolean
+  setOpen: (open: boolean) => void
+}
+
+const DrawerContext = React.createContext<DrawerContextValue | undefined>(undefined)
+
+const Drawer = ({ children, open: controlledOpen, onOpenChange, defaultOpen = false }: {
+  children: React.ReactNode
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  defaultOpen?: boolean
+}) => {
+  const { open, setOpen } = useControlledDialogState({
+    open: controlledOpen,
+    onOpenChange,
+    defaultOpen
+  })
+
+  useDialogBodyScrollLock(open)
+
+  return (
+    <DrawerContext.Provider value={{ open, setOpen }}>
+      {children}
+    </DrawerContext.Provider>
+  )
+}
+
+const DrawerTrigger = React.forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    asChild?: boolean
+  }
+>(({ className, children, asChild, ...props }, ref) => {
+  const context = React.useContext(DrawerContext)
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    context?.setOpen(true)
+    props.onClick?.(e)
+  }
+
+  if (asChild && React.isValidElement(children)) {
+    return React.cloneElement(children as React.ReactElement<any>, {
+      ...props,
+      onClick: (e: React.MouseEvent<HTMLButtonElement>) => {
+        handleClick(e)
+        if (typeof (children as any).props?.onClick === 'function') {
+          (children as any).props.onClick(e)
+        }
+      },
+      ref: (node: HTMLButtonElement) => {
+        if (typeof ref === 'function') {
+          ref(node)
+        } else if (ref) {
+          (ref as React.MutableRefObject<HTMLButtonElement | null>).current = node
+        }
+        if ((children as any).ref) {
+          if (typeof (children as any).ref === 'function') {
+            (children as any).ref(node)
+          } else {
+            ((children as any).ref as React.MutableRefObject<HTMLButtonElement | null>).current = node
+          }
+        }
+      },
+    })
+  }
+
+  return (
+    <button
+      ref={ref}
+      type="button"
+      onClick={handleClick}
+      className={className}
+      {...props}
+    >
+      {children}
+    </button>
+  )
+})
+DrawerTrigger.displayName = "DrawerTrigger"
+
+const DrawerClose = React.forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    asChild?: boolean
+  }
+>(({ className, children, asChild, ...props }, ref) => {
+  const context = React.useContext(DrawerContext)
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    context?.setOpen(false)
+    props.onClick?.(e)
+  }
+
+  if (asChild && React.isValidElement(children)) {
+    return React.cloneElement(children as React.ReactElement<any>, {
+      ...props,
+      onClick: (e: React.MouseEvent<HTMLButtonElement>) => {
+        handleClick(e)
+        if (typeof (children as any).props?.onClick === 'function') {
+          (children as any).props.onClick(e)
+        }
+      },
+      ref: (node: HTMLButtonElement) => {
+        if (typeof ref === 'function') {
+          ref(node)
+        } else if (ref) {
+          (ref as React.MutableRefObject<HTMLButtonElement | null>).current = node
+        }
+        if ((children as any).ref) {
+          if (typeof (children as any).ref === 'function') {
+            (children as any).ref(node)
+          } else {
+            ((children as any).ref as React.MutableRefObject<HTMLButtonElement | null>).current = node
+          }
+        }
+      },
+    })
+  }
+
+  return (
+    <button
+      ref={ref}
+      type="button"
+      onClick={handleClick}
+      className={className}
+      {...props}
+    >
+      {children}
+    </button>
+  )
+})
+DrawerClose.displayName = "DrawerClose"
 
 const DrawerOverlay = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Overlay>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => {
-  const [isDragging, setIsDragging] = React.useState(false)
-  
-  React.useEffect(() => {
-    const handleDragStart = () => setIsDragging(true)
-    const handleDragEnd = () => setIsDragging(false)
-    
-    document.addEventListener('dragstart', handleDragStart)
-    document.addEventListener('dragend', handleDragEnd)
-    
-    return () => {
-      document.removeEventListener('dragstart', handleDragStart)
-      document.removeEventListener('dragend', handleDragEnd)
-    }
-  }, [])
-  
+  const context = React.useContext(DrawerContext)
+
+  if (!context?.open) return null
+
   return (
-    <DialogPrimitive.Overlay
+    <div
       ref={ref}
       className={cn(
-        "fixed inset-0 z-[9998] bg-background/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0",
+        "fixed inset-0 z-[9998] bg-background/80 backdrop-blur-sm animate-in fade-in-0",
         className
       )}
-      style={{
-        ...(props as any).style,
-        pointerEvents: isDragging ? 'none' : 'auto',
-      }}
       {...props}
     />
   )
 })
-DrawerOverlay.displayName = DialogPrimitive.Overlay.displayName
+DrawerOverlay.displayName = "DrawerOverlay"
 
 const DrawerContent = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { widthClassName?: string }
->(({ className, children, widthClassName = "w-[500px]", ...props }, ref) => (
-  <DialogPrimitive.Portal>
-    <DrawerOverlay />
-    <DialogPrimitive.Content
-      ref={ref}
-      className={cn(
-        "fixed inset-y-0 right-0 z-[9999] h-full bg-background border-l border-border shadow-xl outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:slide-in-from-right data-[state=closed]:slide-out-to-right",
-        widthClassName,
-        className
-      )}
-      data-drawer-content
-      {...props}
-    >
-      {children}
-    </DialogPrimitive.Content>
-  </DialogPrimitive.Portal>
-))
-DrawerContent.displayName = DialogPrimitive.Content.displayName
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> & { widthClassName?: string }
+>(({ className, children, widthClassName = "w-[500px]", ...props }, ref) => {
+  const context = React.useContext(DrawerContext)
+
+  useDialogEscapeKey(
+    context?.open ?? false,
+    () => context?.setOpen(false),
+    true
+  )
+
+  if (!context?.open) return null
+
+  const content = (
+    <>
+      <DrawerOverlay />
+      <div
+        ref={ref}
+        className={cn(
+          "fixed inset-y-0 right-0 z-[9999] h-full bg-background border-l border-border shadow-xl outline-none animate-in slide-in-from-right",
+          widthClassName,
+          className
+        )}
+        data-drawer-content
+        {...props}
+      >
+        {children}
+      </div>
+    </>
+  )
+
+  return typeof window !== "undefined" ? createPortal(content, document.body) : null
+})
+DrawerContent.displayName = "DrawerContent"
 
 const DrawerHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div className={cn("border-b px-4 py-3", className)} {...props} />

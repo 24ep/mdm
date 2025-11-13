@@ -11,7 +11,7 @@ import { existsSync } from 'fs'
 // POST /api/users/[id]/avatar - upload user avatar
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -19,8 +19,10 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
+
     // Check if user can update this profile (own profile or MANAGER+)
-    const isOwnProfile = session.user.id === params.id
+    const isOwnProfile = session.user.id === id
     const isManager = session.user.role && ['MANAGER', 'ADMIN', 'SUPER_ADMIN'].includes(session.user.role)
     
     if (!isOwnProfile && !isManager) {
@@ -53,7 +55,7 @@ export async function POST(
     // Check if user exists
     const userResult = await query(
       'SELECT id, email, name, avatar FROM users WHERE id = $1',
-      [params.id]
+      [id]
     )
 
     if (userResult.rows.length === 0) {
@@ -64,7 +66,7 @@ export async function POST(
 
     // Generate unique filename
     const fileExtension = file.name.split('.').pop() || 'jpg'
-    const fileName = `avatar_${params.id}_${Date.now()}.${fileExtension}`
+    const fileName = `avatar_${id}_${Date.now()}.${fileExtension}`
     
     // Create uploads directory if it doesn't exist
     const uploadsDir = join(process.cwd(), 'public', 'uploads', 'avatars')
@@ -82,14 +84,14 @@ export async function POST(
     const avatarUrl = `/uploads/avatars/${fileName}`
     await query(
       'UPDATE users SET avatar = $1, updated_at = NOW() WHERE id = $2',
-      [avatarUrl, params.id]
+      [avatarUrl, id]
     )
 
     // Create audit log
     await createAuditLog({
       action: 'UPDATE',
       entityType: 'User',
-      entityId: params.id,
+      entityId: id,
       oldValue: { avatar: user.avatar },
       newValue: { avatar: avatarUrl },
       userId: session.user.id,
@@ -115,7 +117,7 @@ export async function POST(
 // PUT /api/users/[id]/avatar - set avatar from URL (library selection)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -123,8 +125,10 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
+
     // Check if user can update this profile (own profile or MANAGER+)
-    const isOwnProfile = session.user.id === params.id
+    const isOwnProfile = session.user.id === id
     const isManager = session.user.role && ['MANAGER', 'ADMIN', 'SUPER_ADMIN'].includes(session.user.role)
     
     if (!isOwnProfile && !isManager) {
@@ -151,7 +155,7 @@ export async function PUT(
     // Check if user exists
     const userResult = await query(
       'SELECT id, email, name, avatar FROM users WHERE id = $1',
-      [params.id]
+      [id]
     )
 
     if (userResult.rows.length === 0) {
@@ -163,14 +167,14 @@ export async function PUT(
     // Update user avatar in database
     await query(
       'UPDATE users SET avatar = $1, updated_at = NOW() WHERE id = $2',
-      [avatarUrl, params.id]
+      [avatarUrl, id]
     )
 
     // Create audit log
     await createAuditLog({
       action: 'UPDATE',
       entityType: 'User',
-      entityId: params.id,
+      entityId: id,
       oldValue: { avatar: user.avatar },
       newValue: { avatar: avatarUrl },
       userId: session.user.id,
@@ -196,7 +200,7 @@ export async function PUT(
 // DELETE /api/users/[id]/avatar - remove user avatar
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -204,8 +208,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
+
     // Check if user can update this profile (own profile or MANAGER+)
-    const isOwnProfile = session.user.id === params.id
+    const isOwnProfile = session.user.id === id
     const isManager = session.user.role && ['MANAGER', 'ADMIN', 'SUPER_ADMIN'].includes(session.user.role)
     
     if (!isOwnProfile && !isManager) {
@@ -215,7 +221,7 @@ export async function DELETE(
     // Check if user exists and get current avatar
     const userResult = await query(
       'SELECT id, email, name, avatar FROM users WHERE id = $1',
-      [params.id]
+      [id]
     )
 
     if (userResult.rows.length === 0) {
@@ -227,14 +233,14 @@ export async function DELETE(
     // Remove avatar from database
     await query(
       'UPDATE users SET avatar = NULL, updated_at = NOW() WHERE id = $1',
-      [params.id]
+      [id]
     )
 
     // Create audit log
     await createAuditLog({
       action: 'UPDATE',
       entityType: 'User',
-      entityId: params.id,
+      entityId: id,
       oldValue: { avatar: user.avatar },
       newValue: { avatar: null },
       userId: session.user.id,

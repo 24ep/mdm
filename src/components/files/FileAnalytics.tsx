@@ -254,7 +254,8 @@ export function FileAnalytics({ spaceId }: FileAnalyticsProps) {
       </div>
 
       {/* Charts */}
-      <Tabs defaultValue="trends" className="w-full">
+      <div className="w-full">
+      <Tabs defaultValue="trends">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="trends">Upload Trends</TabsTrigger>
           <TabsTrigger value="types">File Types</TabsTrigger>
@@ -416,6 +417,7 @@ export function FileAnalytics({ spaceId }: FileAnalyticsProps) {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

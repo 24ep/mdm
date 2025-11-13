@@ -315,7 +315,8 @@ export function MLPipeline({
 
   return (
     <div className="h-full flex flex-col space-y-4">
-      <Tabs defaultValue="training" className="flex-1">
+      <div className="flex-1">
+      <Tabs defaultValue="training">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="training">Model Training</TabsTrigger>
           <TabsTrigger value="evaluation">Evaluation</TabsTrigger>
@@ -698,6 +699,7 @@ export function MLPipeline({
           </div>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

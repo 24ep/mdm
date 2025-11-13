@@ -4,16 +4,18 @@ import { requirePermission } from '@/lib/api-permissions'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const forbidden = await requirePermission(request, 'system:manage_roles')
     if (forbidden) return forbidden
 
+    const { id } = await params
+
     // Get role
     const { rows: role } = await query(
       'SELECT id, name, description, level, is_system FROM roles WHERE id = $1',
-      [params.id]
+      [id]
     )
 
     if (role.length === 0) {
@@ -26,7 +28,7 @@ export async function GET(
        FROM role_permissions rp
        JOIN permissions p ON p.id = rp.permission_id
        WHERE rp.role_id = $1`,
-      [params.id]
+      [id]
     )
 
     const exportData = {

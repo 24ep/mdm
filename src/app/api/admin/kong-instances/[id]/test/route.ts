@@ -11,7 +11,7 @@ const prisma = new PrismaClient()
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -23,8 +23,9 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    const { id } = await params
     const instance = await prisma.kongInstance.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!instance) {
@@ -76,7 +77,7 @@ export async function POST(
 
     // Update status
     await prisma.kongInstance.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         status: isConnected ? 'connected' : 'disconnected',
         lastConnected: isConnected ? new Date() : null,
