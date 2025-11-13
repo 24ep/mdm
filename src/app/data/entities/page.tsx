@@ -374,8 +374,8 @@ export default function DataEntitiesPage() {
           attributes={attributes}
           columnOrder={columnOrder}
           hiddenColumns={hiddenColumns}
-          onColumnOrderChange={setColumnOrder}
-          onHiddenColumnsChange={setHiddenColumns}
+          onColumnOrderChange={(order: string[]) => setColumnOrder(order)}
+          onHiddenColumnsChange={(hidden: Record<string, boolean>) => setHiddenColumns(hidden)}
         />
       </div>
     </MainLayout>
