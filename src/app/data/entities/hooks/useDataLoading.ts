@@ -93,7 +93,7 @@ export function useDataLoading({
       setLoading(true)
       try {
          const params = new URLSearchParams({
-           data_model_id: modelId,
+           data_model_id: modelId as string,
            page: pagination.page.toString(),
            limit: pagination.limit.toString(),
          })
@@ -146,7 +146,7 @@ export function useDataLoading({
     // Load a one-time unfiltered snapshot for option generation
     async function loadBaseSnapshot() {
       try {
-        const params = new URLSearchParams({ data_model_id: modelId, page: '1', limit: '1000' })
+        const params = new URLSearchParams({ data_model_id: modelId as string, page: '1', limit: '1000' })
         const res = await fetch(`/api/data-records?${params.toString()}`)
         if (res.ok) {
           const data = await res.json()

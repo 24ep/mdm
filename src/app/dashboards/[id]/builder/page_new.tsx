@@ -52,12 +52,7 @@ export default function DashboardBuilderPage() {
     updateElement,
     deleteElement,
     loadDataSources,
-    folders,
-    activePageId,
-    setActivePageId,
-    addPage,
-    renamePage,
-    deletePage
+    folders
   } = useDashboardState(currentSpace?.id)
 
   // Initialize active page when dashboard loads
@@ -66,10 +61,10 @@ export default function DashboardBuilderPage() {
       if (!activePageId) {
         setActivePageId(dashboard.pages[0].id)
       }
-    } else {
+    } else if (dashboard) {
       // Initialize with a default page if none
       const defaultPage = { id: `page_1`, name: 'Page 1', order: 0 }
-      const updated = { ...dashboard, pages: [defaultPage] }
+      const updated = { ...dashboard, pages: [defaultPage] } as any
       setDashboard(updated)
       setDashboardHistory(updated)
       setActivePageId(defaultPage.id)
@@ -117,6 +112,7 @@ export default function DashboardBuilderPage() {
   } = useDragAndDrop(gridSize, snapToGrid, updateElement)
 
   // UI State
+  const [activePageId, setActivePageId] = useState<string | null>(null)
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
   const [uiActiveFilters, setUiActiveFilters] = useState<Record<string, any>>({})
   // Removed dashboard-level data source dialog state (chart-level only)
@@ -719,7 +715,6 @@ export default function DashboardBuilderPage() {
         {/* Properties Panel */}
         <PropertiesPanel
           selectedElement={selectedElement}
-          dataSources={dataSources}
           gridSize={gridSize}
           canvasWidth={canvasWidth}
           canvasHeight={canvasHeight}

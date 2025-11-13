@@ -147,7 +147,7 @@ export function AttributeVisibilityDrawer(props: AttributeVisibilityDrawerProps)
                           </Button>
                         </div>
                       </div>
-                    )
+                    ))
                   )}
                 </ScrollableList>
               </div>
