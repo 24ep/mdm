@@ -16,6 +16,10 @@ const nextConfig = {
   //   // Allow build to continue even with TypeScript errors (useful for Docker builds)
   //   ignoreBuildErrors: true,
   // },
+  // Disable output file tracing for local builds to avoid Windows permission issues
+  output: process.env.NODE_ENV === 'production' && process.env.DOCKER_BUILD ? 'standalone' : undefined,
+  // Add empty turbopack config to silence Next.js 16 warning (we use webpack)
+  turbopack: {},
   webpack: (config, { isServer, webpack }) => {
     if (isServer) {
       // Ignore client-only packages on server

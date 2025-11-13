@@ -4,7 +4,7 @@ import { requireRole } from '@/lib/rbac'
 import { createAuditLog } from '@/lib/audit'
 
 // GET /api/users/[id] - get user (MANAGER+)
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const forbidden = await requireRole(request, 'MANAGER')
   if (forbidden) return forbidden
   try {

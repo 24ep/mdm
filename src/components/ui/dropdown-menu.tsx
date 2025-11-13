@@ -128,8 +128,9 @@ const DropdownMenuContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & {
     sideOffset?: number
+    align?: "start" | "center" | "end"
   }
->(({ className, sideOffset = 4, children, ...props }, ref) => {
+>(({ className, sideOffset = 4, align = "start", children, ...props }, ref) => {
   const context = React.useContext(DropdownMenuContext)
   const [position, setPosition] = React.useState<{ top: number; left: number } | null>(null)
   const contentRef = React.useRef<HTMLDivElement>(null)
@@ -138,15 +139,41 @@ const DropdownMenuContent = React.forwardRef<
 
   React.useEffect(() => {
     if (context?.open && context.triggerRef.current) {
-      const rect = context.triggerRef.current.getBoundingClientRect()
+      const updatePosition = () => {
+        if (!context.triggerRef.current || !contentRef.current) return
+        
+        const triggerRect = context.triggerRef.current.getBoundingClientRect()
+        const contentRect = contentRef.current.getBoundingClientRect()
+        
+        let left = triggerRect.left
+        
+        if (align === "end") {
+          left = triggerRect.right - contentRect.width
+        } else if (align === "center") {
+          left = triggerRect.left + (triggerRect.width - contentRect.width) / 2
+        }
+        
+        setPosition({
+          top: triggerRect.bottom + sideOffset,
+          left: left,
+        })
+      }
+      
+      // Initial position (will be adjusted after content is measured)
+      const triggerRect = context.triggerRef.current.getBoundingClientRect()
       setPosition({
-        top: rect.bottom + sideOffset,
-        left: rect.left,
+        top: triggerRect.bottom + sideOffset,
+        left: triggerRect.left,
       })
+      
+      // Update position after content is rendered and measured
+      const timeoutId = setTimeout(updatePosition, 0)
+      
+      return () => clearTimeout(timeoutId)
     } else {
       setPosition(null)
     }
-  }, [context?.open, sideOffset])
+  }, [context?.open, sideOffset, align])
 
   React.useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {

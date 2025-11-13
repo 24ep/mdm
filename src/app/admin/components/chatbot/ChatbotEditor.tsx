@@ -71,8 +71,9 @@ export function ChatbotEditor({
 
   // Otherwise, use the Tabs component with TabsList
   return (
-    <Tabs value={activeTab} onValueChange={(v) => onTabChange(v as any)} className="w-full">
-      <TabsList className="w-full flex justify-start gap-2">
+    <div className="w-full">
+      <Tabs value={activeTab} onValueChange={(v) => onTabChange(v as any)}>
+        <TabsList className="w-full flex justify-start gap-2">
         <TabsTrigger value="engine">
           <Settings className="h-4 w-4 mr-2" />
           Engine
@@ -119,6 +120,7 @@ export function ChatbotEditor({
       <TabsContent value="performance" className="space-y-4 pt-4">
         <PerformanceTab chatbot={selectedChatbot} />
       </TabsContent>
-    </Tabs>
+      </Tabs>
+    </div>
   )
 }

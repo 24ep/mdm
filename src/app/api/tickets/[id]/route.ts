@@ -128,7 +128,7 @@ export async function PUT(
 
     // Check if ticket exists and user has access
     const existingTicket = await db.ticket.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { spaces: true }
     })
 
@@ -285,7 +285,7 @@ export async function DELETE(
     const { id } = await params
     // Check if ticket exists and user has access
     const existingTicket = await db.ticket.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { spaces: true }
     })
 
