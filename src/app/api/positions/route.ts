@@ -29,23 +29,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get positions with pagination using Prisma
-    const [positions, total] = await Promise.all([
-      db.position.findMany({
-        where,
-        select: {
-          id: true,
-          name: true,
-          description: true
-        },
-        orderBy: {
-          name: 'asc'
-        },
-        skip,
-        take: limit
-      }),
-      db.position.count({ where })
-    ])
+    // Note: Position model doesn't exist in Prisma schema
+    // Returning empty result for now
+    const positions: any[] = []
+    const total = 0
 
     return NextResponse.json({
       positions: positions || [],

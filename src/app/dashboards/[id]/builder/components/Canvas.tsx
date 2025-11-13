@@ -17,7 +17,7 @@ import { SelectionToolbar } from './SelectionToolbar'
 interface CanvasProps {
   dashboard: any
   selectedElement: DashboardElement | null
-  selectedElements: DashboardElement[]
+  selectedElements?: DashboardElement[]
   draggedItem: ToolboxItem | null
   isDragging: boolean
   draggedElement: DashboardElement | null
@@ -27,12 +27,12 @@ interface CanvasProps {
   canvasWidth: number
   canvasHeight: number
   showPixelMode: boolean
-  showCanvasBorder: boolean
-  showGrid: boolean
+  showCanvasBorder?: boolean
+  showGrid?: boolean
   snapToGrid: boolean
   activeFilters: Record<string, any>
   realtimeData: any
-  canvasBackground: {
+  canvasBackground?: {
     type: 'color' | 'gradient' | 'image'
     color: string
     gradient: { from: string; to: string; angle: number }
@@ -41,23 +41,23 @@ interface CanvasProps {
   onElementClick: (element: DashboardElement, e?: React.MouseEvent) => void
   onElementMouseDown: (e: React.MouseEvent, element: DashboardElement) => void
   onElementMouseMove: (e: React.MouseEvent, element: DashboardElement) => void
-  onCanvasMouseDown: (e: React.MouseEvent) => void
-  onCanvasMouseMove: (e: React.MouseEvent) => void
-  onCanvasMouseUp: () => void
-  isSelecting: boolean
-  selectionRect: { x: number; y: number; width: number; height: number } | null
-  onStartResize: (element: DashboardElement, direction: string, clientX: number, clientY: number) => void
+  onCanvasMouseDown?: (e: React.MouseEvent) => void
+  onCanvasMouseMove?: (e: React.MouseEvent) => void
+  onCanvasMouseUp?: () => void
+  isSelecting?: boolean
+  selectionRect?: { x: number; y: number; width: number; height: number } | null
+  onStartResize?: (element: DashboardElement, direction: string, clientX: number, clientY: number) => void
   onDragOver: (e: React.DragEvent) => void
   onDrop: (e: React.DragEvent) => void
   onDeleteElement: (elementId: string) => void
-  onBulkDelete: () => void
-  onDuplicate: () => void
+  onBulkDelete?: () => void
+  onDuplicate?: () => void
   onExportCSV: (element: DashboardElement) => void
   onExportJSON: (element: DashboardElement) => void
   onExportPDF: (element: DashboardElement) => void
   onChartInteraction: (element: DashboardElement, interactionData: any) => void
   gridToPixel: (gridValue: number, gridSize: number, canvasSize: number) => number
-  onUpdateElement: (elementId: string, updates: Partial<DashboardElement>) => void
+  onUpdateElement?: (elementId: string, updates: Partial<DashboardElement>) => void
   onClearSelection?: () => void
   activePageId?: string | null
   fullpageBackground?: boolean
@@ -146,7 +146,7 @@ export function Canvas({
     rotationDeg = Math.round(rotationDeg)
     // Update element config (merge with existing)
     const el = document.querySelector(`[data-element-id="${rotatingElementId}"]`) // not used; kept placeholder
-    onUpdateElement(rotatingElementId, { config: { rotation: rotationDeg } } as any)
+    onUpdateElement?.(rotatingElementId, { config: { rotation: rotationDeg } } as any)
   }
 
   const endRotate = () => {
@@ -163,7 +163,7 @@ export function Canvas({
       lastPosRef.current = { x: e.clientX, y: e.clientY }
     }
     // Call the prop handler for multi-select
-    onCanvasMouseDown(e)
+    onCanvasMouseDown?.(e)
   }
 
   const handleCanvasMouseMove = (e: React.MouseEvent) => {
@@ -173,14 +173,14 @@ export function Canvas({
     setPan(prev => ({ x: prev.x + dx, y: prev.y + dy }))
     lastPosRef.current = { x: e.clientX, y: e.clientY }
     // Call the prop handler for multi-select
-    onCanvasMouseMove(e)
+    onCanvasMouseMove?.(e)
   }
 
   const handleCanvasMouseUp = () => {
     setIsPanning(false)
     lastPosRef.current = null
     // Call the prop handler for multi-select
-    onCanvasMouseUp()
+    onCanvasMouseUp?.()
   }
 
   const selectedRect = React.useMemo(() => {
@@ -236,13 +236,13 @@ export function Canvas({
           fontSize: `${dashboard.font_size}px`,
           transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom / 100})`,
           transformOrigin: 'top left',
-          backgroundColor: canvasBackground.type === 'color' ? canvasBackground.color : undefined,
-          backgroundImage: canvasBackground.type === 'gradient'
-            ? `linear-gradient(${canvasBackground.gradient.angle}deg, ${canvasBackground.gradient.from}, ${canvasBackground.gradient.to})`
-            : (canvasBackground.type === 'image' && canvasBackground.image.url ? `url(${canvasBackground.image.url})` : undefined),
-          backgroundSize: canvasBackground.type === 'image' ? canvasBackground.image.size : undefined,
-          backgroundRepeat: canvasBackground.type === 'image' ? canvasBackground.image.repeat : undefined,
-          backgroundPosition: canvasBackground.type === 'image' ? canvasBackground.image.position : undefined
+          backgroundColor: canvasBackground?.type === 'color' ? canvasBackground?.color : undefined,
+          backgroundImage: canvasBackground?.type === 'gradient'
+            ? `linear-gradient(${canvasBackground?.gradient.angle}deg, ${canvasBackground?.gradient.from}, ${canvasBackground?.gradient.to})`
+            : (canvasBackground?.type === 'image' && canvasBackground?.image.url ? `url(${canvasBackground?.image.url})` : undefined),
+          backgroundSize: canvasBackground?.type === 'image' ? canvasBackground?.image.size : undefined,
+          backgroundRepeat: canvasBackground?.type === 'image' ? canvasBackground?.image.repeat : undefined,
+          backgroundPosition: canvasBackground?.type === 'image' ? canvasBackground?.image.position : undefined
         }}
         onDragOver={onDragOver}
         onDrop={onDrop}
@@ -293,7 +293,7 @@ export function Canvas({
         {(dashboard.elements || []).filter((el: any) => !activePageId || el.page_id === activePageId).map((element: DashboardElement) => (
           <div key={element.id}>
             {/* Element Name Label - Only show when selected */}
-            {(selectedElement?.id === element.id || selectedElements.some(el => el.id === element.id)) && (
+            {(selectedElement?.id === element.id || selectedElements?.some(el => el.id === element.id)) && (
               <div
                 className="absolute bg-blue-500 text-white text-xs px-2 py-1 rounded-sm pointer-events-none z-20"
                 style={{
@@ -313,7 +313,7 @@ export function Canvas({
             {/* Element Container */}
             <div
             className={`absolute group ${
-              (selectedElement?.id === element.id || selectedElements.some(el => el.id === element.id)) && !isDragging && !isResizing
+              (selectedElement?.id === element.id || selectedElements?.some(el => el.id === element.id)) && !isDragging && !isResizing
                 ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-white shadow-lg' 
                 : ''
             } ${isDragging && draggedElement?.id === element.id ? 'cursor-grabbing' : 
@@ -1070,7 +1070,7 @@ print(data.describe())`
                     style={{ top: -8, left: -8 }}
                     onMouseDown={(e) => {
                       e.stopPropagation()
-                      onStartResize(element, 'top-left', e.clientX, e.clientY)
+                      onStartResize?.(element, 'top-left', e.clientX, e.clientY)
                     }}
                   />
                   <div
@@ -1078,7 +1078,7 @@ print(data.describe())`
                     style={{ top: -8, right: -8 }}
                     onMouseDown={(e) => {
                       e.stopPropagation()
-                      onStartResize(element, 'top-right', e.clientX, e.clientY)
+                      onStartResize?.(element, 'top-right', e.clientX, e.clientY)
                     }}
                   />
                   <div
@@ -1086,7 +1086,7 @@ print(data.describe())`
                     style={{ bottom: -8, left: -8 }}
                     onMouseDown={(e) => {
                       e.stopPropagation()
-                      onStartResize(element, 'bottom-left', e.clientX, e.clientY)
+                      onStartResize?.(element, 'bottom-left', e.clientX, e.clientY)
                     }}
                   />
                   <div
@@ -1094,7 +1094,7 @@ print(data.describe())`
                     style={{ bottom: -8, right: -8 }}
                     onMouseDown={(e) => {
                       e.stopPropagation()
-                      onStartResize(element, 'bottom-right', e.clientX, e.clientY)
+                      onStartResize?.(element, 'bottom-right', e.clientX, e.clientY)
                     }}
                   />
                   
@@ -1104,7 +1104,7 @@ print(data.describe())`
                     style={{ top: -8, left: '50%', transform: 'translateX(-50%)' }}
                     onMouseDown={(e) => {
                       e.stopPropagation()
-                      onStartResize(element, 'top', e.clientX, e.clientY)
+                      onStartResize?.(element, 'top', e.clientX, e.clientY)
                     }}
                   />
                   <div
@@ -1112,7 +1112,7 @@ print(data.describe())`
                     style={{ bottom: -8, left: '50%', transform: 'translateX(-50%)' }}
                     onMouseDown={(e) => {
                       e.stopPropagation()
-                      onStartResize(element, 'bottom', e.clientX, e.clientY)
+                      onStartResize?.(element, 'bottom', e.clientX, e.clientY)
                     }}
                   />
                   <div
@@ -1120,7 +1120,7 @@ print(data.describe())`
                     style={{ left: -8, top: '50%', transform: 'translateY(-50%)' }}
                     onMouseDown={(e) => {
                       e.stopPropagation()
-                      onStartResize(element, 'left', e.clientX, e.clientY)
+                      onStartResize?.(element, 'left', e.clientX, e.clientY)
                     }}
                   />
                   <div
@@ -1128,7 +1128,7 @@ print(data.describe())`
                     style={{ right: -8, top: '50%', transform: 'translateY(-50%)' }}
                     onMouseDown={(e) => {
                       e.stopPropagation()
-                      onStartResize(element, 'right', e.clientX, e.clientY)
+                      onStartResize?.(element, 'right', e.clientX, e.clientY)
                     }}
                   />
                 </>
@@ -1156,8 +1156,8 @@ print(data.describe())`
           selectedElements={selectedElements}
           onUpdateElement={onUpdateElement}
           onBulkUpdate={(updates) => {
-            selectedElements.forEach(element => {
-              onUpdateElement(element.id, updates)
+            selectedElements?.forEach(element => {
+              onUpdateElement?.(element.id, updates)
             })
           }}
           onDelete={onBulkDelete}

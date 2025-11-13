@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, Dispatch, SetStateAction } from 'react'
 import { SortConfig } from '../types'
 
 interface UseFiltersAndSortReturn {
@@ -7,7 +7,7 @@ interface UseFiltersAndSortReturn {
   optionSearch: Record<string, string>
   setSortConfig: (config: SortConfig | null) => void
   setFilters: (filters: Record<string, any>) => void
-  setOptionSearch: (search: Record<string, string>) => void
+  setOptionSearch: Dispatch<SetStateAction<Record<string, string>>>
   handleSort: (attributeName: string) => void
   handleFilter: (attributeName: string, value: any) => void
   clearFilters: () => void

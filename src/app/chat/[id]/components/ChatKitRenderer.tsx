@@ -107,7 +107,7 @@ export function ChatKitRenderer({
           error instanceof Error && 
           (error.message.includes('Cannot find module') || 
            error.message.includes('Failed to fetch dynamically imported module') ||
-           error.code === 'MODULE_NOT_FOUND')
+           (error as any).code === 'MODULE_NOT_FOUND')
         
         if (isModuleNotFound) {
           console.warn('ChatKit module (@openai/chatkit-react) is not installed. Please run: npm install @openai/chatkit-react')
@@ -132,7 +132,7 @@ export function ChatKitRenderer({
     return (
       <ChatKitWrapper
         chatkitModule={chatkitModule}
-        chatbot={chatbot}
+        chatbot={chatbot as any}
         onError={setChatkitError}
         previewDeploymentType={previewDeploymentType}
         isInIframe={isInIframe}

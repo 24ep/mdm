@@ -10,15 +10,19 @@ import { createAuditLog } from '@/lib/audit'
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
   let auditLogId: string | null = null
+  let space_id: string | undefined = undefined
+  let session: any = null
   
   try {
-    const session = await getServerSession(authOptions)
+    session = await getServerSession(authOptions)
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const body = await request.json()
-    const { space_id, request_id, linked_request_id, link_type } = body
+    const parsed = body
+    space_id = parsed.space_id
+    const { request_id, linked_request_id, link_type } = parsed
 
     if (!space_id || !request_id || !linked_request_id) {
       return NextResponse.json(
@@ -69,7 +73,7 @@ export async function POST(request: NextRequest) {
         entityType: 'ServiceDeskIntegration',
         entityId: space_id,
         userId: session.user.id,
-        newValue: { requestId, linkedRequestId: linked_request_id, linkType: link_type },
+        newValue: { requestId: request_id, linkedRequestId: linked_request_id, linkType: link_type },
         ipAddress,
         userAgent
       })
@@ -102,7 +106,7 @@ export async function POST(request: NextRequest) {
           entityId: space_id,
           userId: session.user.id,
           newValue: {
-            requestId,
+            requestId: request_id,
             linkedRequestId: linked_request_id,
             linkType: link_type || 'relates_to',
             duration: Date.now() - startTime,
@@ -137,7 +141,7 @@ export async function POST(request: NextRequest) {
           entityId: space_id,
           userId: session.user.id,
           newValue: {
-            requestId,
+            requestId: request_id,
             error: result.error || 'Unknown error',
             duration: Date.now() - startTime,
             status: 'failed'
@@ -160,7 +164,7 @@ export async function POST(request: NextRequest) {
       await createAuditLog({
         action: 'SERVICEDESK_TICKET_LINK_FAILED',
         entityType: 'ServiceDeskIntegration',
-        entityId: request?.body?.space_id || 'unknown',
+        entityId: space_id || 'unknown',
         userId: session?.user?.id || 'unknown',
         newValue: {
           error: error instanceof Error ? error.message : 'Unknown error',

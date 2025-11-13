@@ -160,10 +160,10 @@ export function ChatKitWrapper({
       hasColor = true
       
       // Add icon color if provided - convert to hex
-      if (chatkitOptions.theme.color.accent?.icon) {
-        const iconHex = convertToHex(chatkitOptions.theme.color.accent.icon)
+      if ((chatkitOptions.theme.color.accent as any)?.icon) {
+        const iconHex = convertToHex((chatkitOptions.theme.color.accent as any).icon)
         if (iconHex) {
-          colorObj.accent.icon = iconHex
+          ;(colorObj.accent as any).icon = iconHex
         }
       }
       
@@ -296,7 +296,7 @@ export function ChatKitWrapper({
     
     const { control } = useChatKit({
       api: {
-        async getClientSecret(existing) {
+        async getClientSecret(existing: any) {
           try {
               if (existing) {
                 const res = await fetch('/api/chatkit/session', {

@@ -97,7 +97,7 @@ export async function POST(
       userId: session.user.id,
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
-      description: `Avatar updated for user ${user.email}`
+      // description: `Avatar updated for user ${user.email}`
     })
 
     return NextResponse.json({ 
@@ -180,7 +180,7 @@ export async function PUT(
       userId: session.user.id,
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
-      description: `Avatar updated from library for user ${user.email}`
+      // description: `Avatar updated from library for user ${user.email}`
     })
 
     return NextResponse.json({ 
@@ -246,7 +246,7 @@ export async function DELETE(
       userId: session.user.id,
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
-      description: `Avatar removed for user ${user.email}`
+      // description: `Avatar removed for user ${user.email}`
     })
 
     return NextResponse.json({ 

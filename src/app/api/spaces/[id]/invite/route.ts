@@ -122,7 +122,7 @@ async function sendInvitationEmail(
       }
     }
 
-    const transporter = nodemailer.createTransporter(smtpConfig)
+    const transporter = nodemailer.createTransport(smtpConfig)
 
     const invitationUrl = `${process.env.NEXTAUTH_URL}/invite/${token}`
     

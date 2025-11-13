@@ -151,7 +151,7 @@ export default function CustomersPage() {
       
       // Group attributes by data model
       const grouped: Record<string, any[]> = {
-        customer: attributes.map(attr => ({ ...attr, dataModelName: 'Customer' }))
+        customer: attributes.map((attr: any) => ({ ...attr, dataModelName: 'Customer' }))
       }
       setGroupedAttributes(grouped)
     } catch (error) {
@@ -181,7 +181,7 @@ export default function CustomersPage() {
       
       // Group related attributes by data model
       const groupedByModel: Record<string, any[]> = {}
-      relatedAttrs.forEach(attr => {
+      relatedAttrs.forEach((attr: any) => {
         const modelName = attr.related_model || 'Unknown'
         if (!groupedByModel[modelName.toLowerCase()]) {
           groupedByModel[modelName.toLowerCase()] = []

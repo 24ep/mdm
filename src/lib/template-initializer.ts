@@ -57,7 +57,7 @@ export class TemplateInitializer {
 
     try {
       // Common data models that should have templates
-      const commonDataModels: DataModel[] = [
+      const commonDataModels = [
         {
           id: 'users',
           name: 'users',
@@ -139,12 +139,12 @@ export class TemplateInitializer {
             { id: '4', name: 'end_date', display_name: 'End Date', type: 'DATETIME', required: true, unique: false },
             { id: '5', name: 'location', display_name: 'Location', type: 'TEXT', required: false, unique: false },
             { id: '6', name: 'status', display_name: 'Status', type: 'SELECT', required: false, unique: false },
-            { id: '7', name: 'created_at', display_name: 'Created', type: 'DATETIME', required: false, unique: false }
+            { id: '7', name: 'created_at', display_name: 'Created', type: 'DATETIME', required: false, unique: false } as any
           ],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }
-      ]
+      ] as any
 
       // Generate Entity Table template for each data model
       for (const dataModel of commonDataModels) {

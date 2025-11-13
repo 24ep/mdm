@@ -195,7 +195,12 @@ export function useDragAndDrop(
         width: 0,
         height: 0,
         positionX: 0,
-        positionY: 0
+        positionY: 0,
+        pxX: 0,
+        pxY: 0,
+        pxW: 0,
+        pxH: 0,
+        lockAspect: false
       })
     }
 

@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { db } from '@/lib/db'
+import { query } from '@/lib/db'
 
 interface PublicDashboardPageProps {
   params: Promise<{
@@ -10,21 +10,33 @@ interface PublicDashboardPageProps {
 export default async function PublicDashboardPage({ params }: PublicDashboardPageProps) {
   const { publicLink } = await params
 
-  // Fetch dashboard by public link using Prisma
-  const dashboard = await db.dashboard.findFirst({
-    where: {
-      publicLink: publicLink,
-      visibility: 'PUBLIC'
-    },
-    include: {
-      elements: true,
-      datasources: true
-    }
-  })
+  // Fetch dashboard by public link using raw SQL
+  // Note: Dashboard model doesn't exist in Prisma schema
+  const { rows } = await query(
+    `SELECT * FROM dashboards WHERE public_link = $1 AND visibility = 'PUBLIC' LIMIT 1`,
+    [publicLink]
+  )
 
-  if (!dashboard) {
+  if (rows.length === 0) {
     notFound()
   }
+
+  const dashboard = rows[0] as any
+
+  // Fetch dashboard elements
+  const { rows: elements } = await query(
+    `SELECT * FROM dashboard_elements WHERE dashboard_id = $1 ORDER BY position`,
+    [dashboard.id]
+  )
+
+  // Fetch dashboard datasources
+  const { rows: datasources } = await query(
+    `SELECT * FROM dashboard_datasources WHERE dashboard_id = $1`,
+    [dashboard.id]
+  )
+
+  dashboard.elements = elements
+  dashboard.datasources = datasources
 
   return (
     <div className="min-h-screen bg-gray-50">

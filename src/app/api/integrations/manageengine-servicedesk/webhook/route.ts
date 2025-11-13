@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
         action: 'SERVICEDESK_WEBHOOK_RECEIVED',
         entityType: 'ServiceDeskIntegration',
         entityId: 'webhook',
-        userId: undefined, // Webhook doesn't have user context
+        userId: 'system', // Webhook doesn't have user context
         newValue: { eventType: event_type, requestId: serviceDeskRequest.id },
         ipAddress,
         userAgent
@@ -206,7 +206,7 @@ export async function POST(request: NextRequest) {
         action: 'SERVICEDESK_WEBHOOK_PROCESSED',
         entityType: 'ServiceDeskIntegration',
         entityId: spaceId || 'unknown',
-        userId: undefined,
+        userId: 'system',
         newValue: {
           eventType: event_type,
           requestId: serviceDeskRequest.id,
@@ -235,7 +235,7 @@ export async function POST(request: NextRequest) {
         action: 'SERVICEDESK_WEBHOOK_PROCESS_FAILED',
         entityType: 'ServiceDeskIntegration',
         entityId: 'webhook',
-        userId: undefined,
+        userId: 'system',
         newValue: {
           error: error instanceof Error ? error.message : 'Unknown error',
           duration: Date.now() - (startTime || Date.now()),

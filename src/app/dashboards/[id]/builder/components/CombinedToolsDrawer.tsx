@@ -54,7 +54,7 @@ interface CombinedToolsDrawerProps {
 
   // Settings
   dashboard: { id: string; name: string; description?: string }
-  onSaveSettings: (updates: { name?: string; description?: string }) => void
+  onSaveSettings: (updates: { name?: string; description?: string; fullpage_background?: boolean }) => void
   refreshIntervalMs?: number
   onSaveCanvasSettings?: (updates: { refresh_interval_ms?: number }) => void
   pageNavPlacement?: 'top' | 'left' | 'right' | 'button' | 'icon'
@@ -251,7 +251,7 @@ export function CombinedToolsDrawer({
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Canvas/Page Background</Label>
                 <div className="flex items-center gap-2">
-                  <Switch id="fullpage-bg" onCheckedChange={(v) => onSaveSettings({ fullpage_background: v as any })} />
+                  <Switch id="fullpage-bg" onCheckedChange={(v) => onSaveSettings({ fullpage_background: v })} />
                   <Label htmlFor="fullpage-bg">Use full page background (no canvas border)</Label>
                 </div>
               </div>

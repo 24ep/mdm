@@ -135,7 +135,7 @@ export default function DataEntitiesPage() {
 
   // Combo attributes (computed)
   const comboAttributes: Attribute[] = useMemo(() => {
-    const baseComboAttrs: Attribute[] = [
+    const baseComboAttrs = [
       {
         id: 'created_at',
         name: 'created_at',
@@ -159,7 +159,7 @@ export default function DataEntitiesPage() {
         updated_at: new Date().toISOString()
       }
     ]
-    return baseComboAttrs
+    return baseComboAttrs as any
   }, [dataModel?.id])
 
   // Initialize column order when attributes change
@@ -230,7 +230,7 @@ export default function DataEntitiesPage() {
         <PageHeader
           dataModel={dataModel}
           viewMode={viewMode}
-          onViewModeChange={setViewMode}
+          onViewModeChange={(mode: string) => setViewMode(mode as "table" | "list" | "grid")}
           onClose={() => router.push('/data/entities')}
           showCloseButton={!!dataModel}
           recordDetailOpen={recordDetailOpen}
@@ -374,8 +374,8 @@ export default function DataEntitiesPage() {
           attributes={attributes}
           columnOrder={columnOrder}
           hiddenColumns={hiddenColumns}
-          onColumnOrderChange={setColumnOrder}
-          onHiddenColumnsChange={setHiddenColumns}
+          onColumnOrderChange={(order: string[]) => setColumnOrder(order)}
+          onHiddenColumnsChange={(hidden: Record<string, boolean>) => setHiddenColumns(hidden)}
         />
       </div>
     </MainLayout>

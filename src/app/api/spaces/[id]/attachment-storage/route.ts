@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { db } from '@/lib/db'
+import { db, query } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
@@ -143,20 +143,16 @@ export async function PUT(
       }, { status: 400 })
     }
 
-    // Upsert the configuration
-    await db.spaceAttachmentStorage.upsert({
-      where: { spaceId },
-      update: {
-        provider,
-        config: config as any,
-        updatedAt: new Date()
-      },
-      create: {
-        spaceId,
-        provider,
-        config: config as any
-      }
-    })
+    // Upsert the configuration using raw SQL
+    // Note: SpaceAttachmentStorage model doesn't have provider/config fields in schema
+    // Using raw SQL to work with the actual table structure
+    await query(
+      `INSERT INTO space_attachment_storage (space_id, provider, config, created_by, is_active, updated_at)
+       VALUES ($1, $2, $3, $4, true, NOW())
+       ON CONFLICT (space_id) 
+       DO UPDATE SET provider = $2, config = $3, updated_at = NOW()`,
+      [spaceId, provider, JSON.stringify(config), session.user.id]
+    )
 
     return NextResponse.json({ success: true })
 

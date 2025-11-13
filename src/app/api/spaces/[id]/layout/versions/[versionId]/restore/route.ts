@@ -48,7 +48,7 @@ export async function POST(
       return NextResponse.json({ error: 'Version not found' }, { status: 404 })
     }
 
-    const versionToRestore = versionResult.rows[0]
+    const versionToRestore = versionResult.rows[0] as any
 
     if (createNewVersion) {
       // Create a new version from the restored one (preserves history)
@@ -63,7 +63,7 @@ export async function POST(
         'SELECT get_next_layout_version($1) as next_version',
         [spaceId]
       )
-      const nextVersion = nextVersionResult.rows[0].next_version
+      const nextVersion = (nextVersionResult.rows[0] as any).next_version
 
       // Create new version with restored config
       const insertResult = await query(
@@ -81,7 +81,7 @@ export async function POST(
       )
 
       return NextResponse.json({
-        version: insertResult.rows[0],
+        version: insertResult.rows[0] as any,
         restored: true
       })
     } else {

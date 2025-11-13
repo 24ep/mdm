@@ -4,8 +4,8 @@ import { requireRole } from '@/lib/rbac'
 import { createAuditLog } from '@/lib/audit'
 
 // GET /api/users/[id] - get user (MANAGER+)
-export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const forbidden = await requireRole(_request, 'MANAGER')
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+  const forbidden = await requireRole(request, 'MANAGER')
   if (forbidden) return forbidden
   try {
     const { id } = await params
@@ -109,8 +109,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       oldValue: currentData,
       newValue: rows[0],
       userId: currentData.id, // The user being updated
-      ipAddress: _request.headers.get('x-forwarded-for') || _request.headers.get('x-real-ip') || 'unknown',
-      userAgent: _request.headers.get('user-agent') || 'unknown'
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown'
     })
 
     return NextResponse.json({ user: rows[0] })

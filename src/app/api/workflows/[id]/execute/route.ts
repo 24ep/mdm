@@ -28,7 +28,7 @@ export async function POST(
 
     return NextResponse.json({
       message: 'Workflow executed successfully',
-      execution_id: result.execution_id,
+      execution_id: (result as any).execution_id,
       records_processed: result.records_processed,
       records_updated: result.records_updated
     })

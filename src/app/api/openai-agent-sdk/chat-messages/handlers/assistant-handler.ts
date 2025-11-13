@@ -188,7 +188,7 @@ export async function handleAssistantRequest(options: AssistantHandlerOptions) {
     model: model || 'gpt-4',
     modelParameters: {
       assistant_id: agentId,
-      instructions: instructions || undefined,
+      instructions: instructions || null,
     },
     input: message || '',
     metadata: {
@@ -232,17 +232,13 @@ export async function handleAssistantRequest(options: AssistantHandlerOptions) {
     const latency = Date.now() - startTime
     
     generation?.end({
-      level: 'ERROR',
-      statusMessage: errorText,
       metadata: {
         statusCode: runResponse.status,
         latency,
+        error: errorText,
       },
     })
-    trace?.update({
-      level: 'ERROR',
-      statusMessage: errorText,
-    })
+    // Note: Error information is already captured in the generation span above
 
     try {
       const errorData = JSON.parse(errorText)

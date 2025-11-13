@@ -100,7 +100,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Version not found' }, { status: 404 })
     }
 
-    if (versionResult.rows[0].is_current) {
+    if ((versionResult.rows[0] as any).is_current) {
       return NextResponse.json({ error: 'Cannot delete current version' }, { status: 400 })
     }
 

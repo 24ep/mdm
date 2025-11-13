@@ -49,11 +49,11 @@ import { MultiSideInput } from '@/components/shared/MultiSideInput'
 
 interface SelectionToolbarProps {
   selectedElement: DashboardElement | null
-  selectedElements: DashboardElement[]
-  onUpdateElement: (elementId: string, updates: Partial<DashboardElement>) => void
+  selectedElements?: DashboardElement[]
+  onUpdateElement?: (elementId: string, updates: Partial<DashboardElement>) => void
   onBulkUpdate: (updates: Partial<DashboardElement>) => void
-  onDelete: () => void
-  onDuplicate: () => void
+  onDelete?: () => void
+  onDuplicate?: () => void
   zoom: number
   pan: { x: number; y: number }
   selectedRect?: { x: number; y: number; w: number }
@@ -116,8 +116,8 @@ export function SelectionToolbar({
     document.head.appendChild(link)
   }
 
-  const isMultiSelect = selectedElements.length > 1
-  const elements = isMultiSelect ? selectedElements : (selectedElement ? [selectedElement] : [])
+  const isMultiSelect = (selectedElements?.length ?? 0) > 1
+  const elements = isMultiSelect ? (selectedElements ?? []) : (selectedElement ? [selectedElement] : [])
 
   if (elements.length === 0) return null
 
@@ -130,7 +130,7 @@ export function SelectionToolbar({
         } 
       })
     } else if (selectedElement) {
-      onUpdateElement(selectedElement.id, {
+      onUpdateElement?.(selectedElement.id, {
         style: {
           ...selectedElement.style,
           textAlign: alignment
@@ -153,7 +153,7 @@ export function SelectionToolbar({
         } 
       })
     } else if (selectedElement) {
-      onUpdateElement(selectedElement.id, {
+      onUpdateElement?.(selectedElement.id, {
         style: {
           ...selectedElement.style,
           rotation: newRotation
@@ -171,7 +171,7 @@ export function SelectionToolbar({
         } 
       })
     } else if (selectedElement) {
-      onUpdateElement(selectedElement.id, {
+      onUpdateElement?.(selectedElement.id, {
         style: {
           ...selectedElement.style,
           [`flip${direction.charAt(0).toUpperCase() + direction.slice(1)}`]: true
@@ -233,9 +233,9 @@ export function SelectionToolbar({
               const style = e0?.style || {}
               const updateStyle = (partial: any) => {
                 if (isMultiSelect) {
-                  elements.forEach(el => onUpdateElement(el.id, { style: { ...(el.style||{}), ...partial } }))
+                  elements.forEach(el => onUpdateElement?.(el.id, { style: { ...(el.style||{}), ...partial } }))
                 } else if (selectedElement) {
-                  onUpdateElement(selectedElement.id, { style: { ...(selectedElement.style||{}), ...partial } })
+                  onUpdateElement?.(selectedElement.id, { style: { ...(selectedElement.style||{}), ...partial } })
                 }
               }
               return (
@@ -319,9 +319,9 @@ export function SelectionToolbar({
               const updatePad = (side:'top'|'right'|'bottom'|'left', value:number) => {
                 const newPad = { ...current, [side]: value }
                 if (isMultiSelect) {
-                  elements.forEach(el => onUpdateElement(el.id, { style: { ...(el.style||{}), padding: newPad } }))
+                  elements.forEach(el => onUpdateElement?.(el.id, { style: { ...(el.style||{}), padding: newPad } }))
                 } else if (selectedElement) {
-                  onUpdateElement(selectedElement.id, { style: { ...(selectedElement.style||{}), padding: newPad } })
+                  onUpdateElement?.(selectedElement.id, { style: { ...(selectedElement.style||{}), padding: newPad } })
                 }
               }
               return (
@@ -368,9 +368,9 @@ export function SelectionToolbar({
               const updateShadow = (partial:any) => {
                 const next = { ...shadow, ...partial }
                 if (isMultiSelect) {
-                  elements.forEach(el => onUpdateElement(el.id, { style: { ...(el.style||{}), boxShadow: next } }))
+                  elements.forEach(el => onUpdateElement?.(el.id, { style: { ...(el.style||{}), boxShadow: next } }))
                 } else if (selectedElement) {
-                  onUpdateElement(selectedElement.id, { style: { ...(selectedElement.style||{}), boxShadow: next } })
+                  onUpdateElement?.(selectedElement.id, { style: { ...(selectedElement.style||{}), boxShadow: next } })
                 }
               }
               return (
@@ -409,9 +409,9 @@ export function SelectionToolbar({
                       const updateFilter = (partial:any) => {
                         const next = { ...fc, ...partial }
                         if (isMultiSelect) {
-                          elements.forEach(el => onUpdateElement(el.id, { style: { ...(el.style||{}), filterConfig: next } }))
+                          elements.forEach(el => onUpdateElement?.(el.id, { style: { ...(el.style||{}), filterConfig: next } }))
                         } else if (selectedElement) {
-                          onUpdateElement(selectedElement.id, { style: { ...(selectedElement.style||{}), filterConfig: next } })
+                          onUpdateElement?.(selectedElement.id, { style: { ...(selectedElement.style||{}), filterConfig: next } })
                         }
                       }
                       return (
@@ -511,7 +511,7 @@ export function SelectionToolbar({
                   if (isMultiSelect) {
                     onBulkUpdate({ style: { ...elements[0].style, backgroundColor: color } })
                   } else if (selectedElement) {
-                    onUpdateElement(selectedElement.id, { style: { ...selectedElement.style, backgroundColor: color } })
+                    onUpdateElement?.(selectedElement.id, { style: { ...selectedElement.style, backgroundColor: color } })
                   }
                 }}
                 label="Background Color"
@@ -535,7 +535,7 @@ export function SelectionToolbar({
                       if (isMultiSelect) {
                         onBulkUpdate({ style: { ...elements[0].style, fontSize } })
                       } else if (selectedElement) {
-                        onUpdateElement(selectedElement.id, { style: { ...selectedElement.style, fontSize } })
+                        onUpdateElement?.(selectedElement.id, { style: { ...selectedElement.style, fontSize } })
                       }
                     }}
                     className="h-6 text-xs"
@@ -550,7 +550,7 @@ export function SelectionToolbar({
                       if (isMultiSelect) {
                         onBulkUpdate({ style: { ...elements[0].style, fontWeight } })
                       } else if (selectedElement) {
-                        onUpdateElement(selectedElement.id, { style: { ...selectedElement.style, fontWeight } })
+                        onUpdateElement?.(selectedElement.id, { style: { ...selectedElement.style, fontWeight } })
                       }
                     }}
                     className="h-6 text-xs border border-border rounded px-1"
@@ -573,7 +573,7 @@ export function SelectionToolbar({
                       if (isMultiSelect) {
                         onBulkUpdate({ style: { ...elements[0].style, color } })
                       } else if (selectedElement) {
-                        onUpdateElement(selectedElement.id, { style: { ...selectedElement.style, color } })
+                        onUpdateElement?.(selectedElement.id, { style: { ...selectedElement.style, color } })
                       }
                     }}
                     className="h-6 text-xs"
@@ -615,7 +615,7 @@ export function SelectionToolbar({
                     if (isMultiSelect) {
                       onBulkUpdate({ style: newStyle })
                     } else if (selectedElement) {
-                      onUpdateElement(selectedElement.id, { style: newStyle })
+                      onUpdateElement?.(selectedElement.id, { style: newStyle })
                     }
                   }}
                 />
@@ -686,7 +686,7 @@ export function SelectionToolbar({
                     if (isMultiSelect) {
                       onBulkUpdate({ style: newStyle })
                     } else if (selectedElement) {
-                      onUpdateElement(selectedElement.id, { style: newStyle })
+                      onUpdateElement?.(selectedElement.id, { style: newStyle })
                     }
                   }}
                 />
@@ -703,7 +703,7 @@ export function SelectionToolbar({
                       if (isMultiSelect) {
                         onBulkUpdate({ style: { ...elements[0].style, borderColor: color } })
                       } else if (selectedElement) {
-                        onUpdateElement(selectedElement.id, { style: { ...selectedElement.style, borderColor: color } })
+                        onUpdateElement?.(selectedElement.id, { style: { ...selectedElement.style, borderColor: color } })
                       }
                     }}
                     className="h-6 text-xs"
@@ -735,23 +735,23 @@ export function SelectionToolbar({
               const getColor = (side: 'top'|'right'|'bottom'|'left') => (typeof bc === 'object' ? (bc as any)[side] : '') || ''
               const updateWidth = (side: 'top'|'right'|'bottom'|'left', value: number) => {
                 if (isMultiSelect) {
-                  elements.forEach(el => onUpdateElement(el.id, { style: { ...(el.style||{}), borderWidth: { ...(el.style?.borderWidth||{}), [side]: value } } }))
+                  elements.forEach(el => onUpdateElement?.(el.id, { style: { ...(el.style||{}), borderWidth: { ...(el.style?.borderWidth||{}), [side]: value } } }))
                 } else if (selectedElement) {
-                  onUpdateElement(selectedElement.id, { style: { ...(selectedElement.style||{}), borderWidth: { ...(selectedElement.style?.borderWidth||{}), [side]: value } } })
+                  onUpdateElement?.(selectedElement.id, { style: { ...(selectedElement.style||{}), borderWidth: { ...(selectedElement.style?.borderWidth||{}), [side]: value } } })
                 }
               }
               const updateColor = (side: 'top'|'right'|'bottom'|'left', value: string) => {
                 if (isMultiSelect) {
-                  elements.forEach(el => onUpdateElement(el.id, { style: { ...(el.style||{}), borderColor: { ...(typeof el.style?.borderColor==='object'? el.style.borderColor:{}), [side]: value } } }))
+                  elements.forEach(el => onUpdateElement?.(el.id, { style: { ...(el.style||{}), borderColor: { ...(typeof el.style?.borderColor==='object'? el.style.borderColor:{}), [side]: value } } }))
                 } else if (selectedElement) {
-                  onUpdateElement(selectedElement.id, { style: { ...(selectedElement.style||{}), borderColor: { ...(typeof selectedElement.style?.borderColor==='object'? selectedElement.style.borderColor:{}), [side]: value } } })
+                  onUpdateElement?.(selectedElement.id, { style: { ...(selectedElement.style||{}), borderColor: { ...(typeof selectedElement.style?.borderColor==='object'? selectedElement.style.borderColor:{}), [side]: value } } })
                 }
               }
               const updateAllColor = (value: string) => {
                 if (isMultiSelect) {
-                  elements.forEach(el => onUpdateElement(el.id, { style: { ...(el.style||{}), borderColor: value } }))
+                  elements.forEach(el => onUpdateElement?.(el.id, { style: { ...(el.style||{}), borderColor: value } }))
                 } else if (selectedElement) {
-                  onUpdateElement(selectedElement.id, { style: { ...(selectedElement.style||{}), borderColor: value } })
+                  onUpdateElement?.(selectedElement.id, { style: { ...(selectedElement.style||{}), borderColor: value } })
                 }
               }
               return (
@@ -868,7 +868,7 @@ export function SelectionToolbar({
           variant="ghost" 
           size="sm" 
           className="h-8 w-8 p-0"
-          onClick={onDuplicate}
+          onClick={() => onDuplicate?.()}
           title="Duplicate"
         >
           <Copy className="w-4 h-4" />
@@ -878,7 +878,7 @@ export function SelectionToolbar({
           variant="ghost" 
           size="sm" 
           className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-          onClick={onDelete}
+          onClick={() => onDelete?.()}
           title="Delete"
         >
           <Trash2 className="w-4 h-4" />
@@ -899,7 +899,7 @@ export function SelectionToolbar({
       {isMultiSelect && (
         <div className="flex items-center border-l border-gray-200 pl-2 ml-2">
           <div className="text-xs text-gray-600 font-medium">
-            {selectedElements.length} selected
+            {selectedElements?.length ?? 0} selected
           </div>
         </div>
       )}

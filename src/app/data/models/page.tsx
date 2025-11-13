@@ -82,10 +82,10 @@ export default function DataModelsPage() {
     
     // Filter by selected folder
     if (selectedFolder) {
-      filteredModels = filteredModels.filter(m => m.folder_id === selectedFolder)
+      filteredModels = filteredModels.filter(m => (m as any).folder_id === selectedFolder)
     } else {
       // Show only root level models when no folder is selected
-      filteredModels = filteredModels.filter(m => !m.folder_id)
+      filteredModels = filteredModels.filter(m => !(m as any).folder_id)
     }
     
     return filteredModels

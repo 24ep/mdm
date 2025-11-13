@@ -4,5 +4,6 @@
  * Redirect wrapper for backward compatibility
  */
 
-export { POST } from '../../../data-models/[id]/data/route'
+// Re-export POST handler from the main route
+export { POST } from '@/app/api/data-models/[id]/data/route'
 

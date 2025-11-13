@@ -28,8 +28,8 @@ export async function GET(request: NextRequest) {
     ])
 
     return NextResponse.json({
-      companies: (compRow?.value as Record<string, number>) || {},
-      industries: (indRow?.value as Record<string, number>) || {},
+      companies: (compRow?.value as unknown as Record<string, number>) || {},
+      industries: (indRow?.value as unknown as Record<string, number>) || {},
     })
   } catch (error) {
     console.error('GET /api/user-frequencies error', error)
@@ -78,15 +78,15 @@ export async function POST(request: NextRequest) {
     if (companies.length > 0) {
       await db.systemSetting.upsert({
         where: { key: compKey },
-        update: { value: compMap, updatedAt: new Date() },
-        create: { key: compKey, value: compMap }
+        update: { value: JSON.stringify(compMap), updatedAt: new Date() },
+        create: { key: compKey, value: JSON.stringify(compMap) }
       })
     }
     if (industries.length > 0) {
       await db.systemSetting.upsert({
         where: { key: indKey },
-        update: { value: indMap, updatedAt: new Date() },
-        create: { key: indKey, value: indMap }
+        update: { value: JSON.stringify(indMap), updatedAt: new Date() },
+        create: { key: indKey, value: JSON.stringify(indMap) }
       })
     }
 

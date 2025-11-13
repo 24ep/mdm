@@ -128,8 +128,8 @@ export async function PUT(
 
     // Check if ticket exists and user has access
     const existingTicket = await db.ticket.findUnique({
-      where: { id },
-      include: { space: true }
+      where: { id: params.id },
+      include: { spaces: true }
     })
 
     if (!existingTicket || existingTicket.deletedAt) {
@@ -139,14 +139,14 @@ export async function PUT(
     // Check if user has access to this space
     const spaceAccess = await db.spaceMember.findFirst({
       where: {
-        spaceId: existingTicket.spaceId,
+        spaceId: existingTicket.spaces?.[0]?.spaceId,
         userId: session.user.id
       }
     })
 
     const isSpaceOwner = await db.space.findFirst({
       where: {
-        id: existingTicket.spaceId,
+        id: existingTicket.spaces?.[0]?.spaceId,
         createdBy: session.user.id
       }
     })
@@ -179,12 +179,16 @@ export async function PUT(
       where: { id },
       data: updateData,
       include: {
-        assignee: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true
+        assignees: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true
+              }
+            }
           }
         },
         creator: {
@@ -230,14 +234,18 @@ export async function PUT(
       const ticketWithAttributes = await db.ticket.findUnique({
         where: { id },
         include: {
-          assignee: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              avatar: true
+        assignees: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true
+              }
             }
-          },
+          }
+        },
           creator: {
             select: {
               id: true,
@@ -277,8 +285,8 @@ export async function DELETE(
     const { id } = await params
     // Check if ticket exists and user has access
     const existingTicket = await db.ticket.findUnique({
-      where: { id },
-      include: { space: true }
+      where: { id: params.id },
+      include: { spaces: true }
     })
 
     if (!existingTicket || existingTicket.deletedAt) {
@@ -288,14 +296,14 @@ export async function DELETE(
     // Check if user has access to this space
     const spaceAccess = await db.spaceMember.findFirst({
       where: {
-        spaceId: existingTicket.spaceId,
+        spaceId: existingTicket.spaces?.[0]?.spaceId,
         userId: session.user.id
       }
     })
 
     const isSpaceOwner = await db.space.findFirst({
       where: {
-        id: existingTicket.spaceId,
+        id: existingTicket.spaces?.[0]?.spaceId,
         createdBy: session.user.id
       }
     })

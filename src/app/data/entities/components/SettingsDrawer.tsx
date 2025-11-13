@@ -14,12 +14,20 @@ import { Eye, EyeOff, GripVertical, Plus } from 'lucide-react'
 type SettingsDrawerProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  renderTrigger: () => React.ReactNode
+  renderTrigger?: () => React.ReactNode
   // Single context bag to avoid a massive prop surface; kept as any for now
-  ctx: any
+  ctx?: any
+  // Direct props (alternative to ctx)
+  attributes?: any[]
+  columnOrder?: string[]
+  hiddenColumns?: Record<string, boolean>
+  onColumnOrderChange?: (order: string[]) => void
+  onHiddenColumnsChange?: (hidden: Record<string, boolean>) => void
 }
 
-export function SettingsDrawer({ open, onOpenChange, renderTrigger, ctx }: SettingsDrawerProps) {
+export function SettingsDrawer({ open, onOpenChange, renderTrigger, ctx, attributes: directAttributes, columnOrder: directColumnOrder, hiddenColumns: directHiddenColumns, onColumnOrderChange, onHiddenColumnsChange }: SettingsDrawerProps) {
+  // Use ctx if provided, otherwise use direct props
+  const useCtx = !!ctx
   const {
     tableDensity,
     setTableDensity,
@@ -38,12 +46,12 @@ export function SettingsDrawer({ open, onOpenChange, renderTrigger, ctx }: Setti
     setLabelOverrides,
     editingComboId,
     setEditingComboId,
-    hiddenColumns,
+    hiddenColumns: ctxHiddenColumns,
     toggleColumnHidden,
-    attributes,
+    attributes: ctxAttributes,
     comboColumns,
     setComboColumns,
-    setColumnOrder,
+    setColumnOrder: ctxSetColumnOrder,
     showNewComboForm,
     setShowNewComboForm,
     newComboName,
@@ -59,11 +67,16 @@ export function SettingsDrawer({ open, onOpenChange, renderTrigger, ctx }: Setti
     groupingRows,
     setGroupingRows,
     addComboColumn,
-  } = ctx
+  } = ctx || {} as any
+  
+  // Use direct props if ctx is not provided
+  const attributes = useCtx ? ctxAttributes : (directAttributes || [])
+  const hiddenColumns = useCtx ? ctxHiddenColumns : (directHiddenColumns || {})
+  const setColumnOrder = useCtx ? ctxSetColumnOrder : (onColumnOrderChange || (() => {}))
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerTrigger asChild>{renderTrigger()}</DrawerTrigger>
+      {renderTrigger && <DrawerTrigger asChild>{renderTrigger()}</DrawerTrigger>}
       <DrawerContent widthClassName="w-[720px]">
         <DrawerHeader>
           <DrawerTitle>Table Settings</DrawerTitle>

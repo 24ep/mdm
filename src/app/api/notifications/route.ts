@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
       notifications,
       total,
       unreadCount,
-      hasMore: filters.offset + filters.limit < total,
+      hasMore: (filters.offset || 0) + (filters.limit || 50) < total,
     });
 
   } catch (error) {

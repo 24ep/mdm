@@ -112,6 +112,7 @@ function SortableElement({
   activeFilters,
   realtimeData,
   isDragging,
+  draggedElement,
   isResizing
 }: {
   element: DashboardElement
@@ -132,6 +133,7 @@ function SortableElement({
   activeFilters: Record<string, any>
   realtimeData: any
   isDragging: boolean
+  draggedElement: DashboardElement | null
   isResizing: boolean
 }) {
   const {
@@ -183,18 +185,22 @@ function SortableElement({
     if (kind === 'CHART' || kind.startsWith('SHAPE_')) {
       return (
         <ChartRenderer
-          element={element}
-          data={realtimeData}
-          activeFilters={activeFilters}
-          onUpdateElement={onUpdateElement}
+          type={element.type || 'CHART'}
+          chartType={element.chart_type || 'bar'}
+          data={realtimeData || []}
+          dimensions={element.data_config?.dimensions || []}
+          measures={element.data_config?.measures || []}
+          filters={element.data_config?.filters || []}
+          title={element.name || ''}
+          config={element.config || {}}
         />
       )
     }
 
     if (kind === 'KPI' || kind === 'METRIC') {
-      const value = element.data_config?.value || 1234
-      const label = element.data_config?.label || 'Total Sales'
-      const change = element.data_config?.change || '+12.5%'
+      const value = (element.data_config as any)?.value || 1234
+      const label = (element.data_config as any)?.label || 'Total Sales'
+      const change = (element.data_config as any)?.change || '+12.5%'
       const isPositive = change.startsWith('+')
       
       return (
@@ -211,9 +217,9 @@ function SortableElement({
     }
 
     if (kind === 'PROGRESS') {
-      const value = element.data_config?.value || 75
-      const label = element.data_config?.label || 'Progress'
-      const max = element.data_config?.max || 100
+      const value = (element.data_config as any)?.value || 75
+      const label = (element.data_config as any)?.label || 'Progress'
+      const max = (element.data_config as any)?.max || 100
       const percentage = Math.min(100, Math.max(0, (value / max) * 100))
       
       return (
@@ -231,9 +237,9 @@ function SortableElement({
     }
 
     if (kind === 'GAUGE') {
-      const value = element.data_config?.value || 75
-      const label = element.data_config?.label || 'Performance'
-      const max = element.data_config?.max || 100
+      const value = (element.data_config as any)?.value || 75
+      const label = (element.data_config as any)?.label || 'Performance'
+      const max = (element.data_config as any)?.max || 100
       const percentage = Math.min(100, Math.max(0, (value / max) * 100))
       const angle = (percentage / 100) * 180 - 90
       
@@ -274,7 +280,7 @@ function SortableElement({
             textAlign: element.style?.textAlign || 'left'
           }}
         >
-          {element.data_config?.text || 'Text Element'}
+          {(element.data_config as any)?.text || 'Text Element'}
         </div>
       )
     }
@@ -283,8 +289,8 @@ function SortableElement({
       return (
         <div className="w-full h-full flex items-center justify-center p-4">
           <img 
-            src={element.data_config?.url || '/api/placeholder/200/150'} 
-            alt={element.data_config?.alt || 'Image'} 
+            src={(element.data_config as any)?.url || '/api/placeholder/200/150'} 
+            alt={(element.data_config as any)?.alt || 'Image'} 
             className="max-w-full max-h-full object-contain rounded"
           />
         </div>
@@ -301,7 +307,7 @@ function SortableElement({
             color: element.style?.color || '#111827'
           }}
           dangerouslySetInnerHTML={{ 
-            __html: element.data_config?.html || '<p>Rich text content</p>' 
+            __html: (element.data_config as any)?.html || '<p>Rich text content</p>' 
           }}
         />
       )
@@ -311,7 +317,7 @@ function SortableElement({
       return (
         <div className="w-full h-full p-4">
           <iframe 
-            src={element.data_config?.url || 'https://example.com'} 
+            src={(element.data_config as any)?.url || 'https://example.com'} 
             className="w-full h-full border-0 rounded"
             title="Embedded Content"
           />
@@ -320,7 +326,7 @@ function SortableElement({
     }
 
     if (kind === 'YOUTUBE') {
-      const videoId = element.data_config?.videoId || 'dQw4w9WgXcQ'
+      const videoId = (element.data_config as any)?.videoId || 'dQw4w9WgXcQ'
       return (
         <div className="w-full h-full p-4">
           <iframe 
@@ -337,7 +343,7 @@ function SortableElement({
       return (
         <div className="w-full h-full p-4">
           <video 
-            src={element.data_config?.url || '/api/placeholder/video.mp4'} 
+            src={(element.data_config as any)?.url || '/api/placeholder/video.mp4'} 
             className="w-full h-full object-contain rounded"
             controls
           />
@@ -350,7 +356,7 @@ function SortableElement({
         <div 
           className="w-full h-full p-4 overflow-auto"
           dangerouslySetInnerHTML={{ 
-            __html: element.data_config?.html || '<div>Custom HTML content</div>' 
+            __html: (element.data_config as any)?.html || '<div>Custom HTML content</div>' 
           }}
         />
       )
@@ -368,7 +374,7 @@ function SortableElement({
     }
 
     if (kind === 'ICON') {
-      const iconName = element.data_config?.icon || 'star'
+      const iconName = (element.data_config as any)?.icon || 'star'
       return (
         <div className="w-full h-full flex items-center justify-center p-4">
           <div 
@@ -425,7 +431,7 @@ function SortableElement({
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
             style={{ fontFamily: element.style?.fontFamily || 'Roboto, sans-serif' }}
           >
-            {element.data_config?.text || 'Button'}
+            {(element.data_config as any)?.text || 'Button'}
           </button>
         </div>
       )
@@ -444,7 +450,6 @@ function SortableElement({
   return (
     <div
       ref={setNodeRef}
-      style={style}
       className={`absolute group ${
         isSelected || isMultiSelected
           ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-white shadow-lg' 
@@ -631,7 +636,6 @@ export function CanvasEnhanced({
 }: CanvasProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [dragOverlayElement, setDragOverlayElement] = useState<DashboardElement | null>(null)
-  const canvasRef = useRef<HTMLDivElement>(null)
   const { setNodeRef: setCanvasDroppableRef } = useDroppable({ id: 'canvas' })
 
   // Handle drag start
@@ -721,7 +725,13 @@ export function CanvasEnhanced({
           borderWidth: 0,
           borderRadius: 0,
         },
-        data_config: {},
+        data_config: {
+          data_model_id: null,
+          query: '',
+          dimensions: [],
+          measures: [],
+          filters: [],
+        },
         is_visible: true,
       }
       
@@ -748,14 +758,13 @@ export function CanvasEnhanced({
     x: selectedElement.config?.freeform?.x != null ? selectedElement.config.freeform.x : (selectedElement.position_x / gridSize) * canvasWidth,
     y: selectedElement.config?.freeform?.y != null ? selectedElement.config.freeform.y : (selectedElement.position_y / gridSize) * canvasHeight,
     w: selectedElement.config?.freeform?.w != null ? selectedElement.config.freeform.w : (selectedElement.width / gridSize) * canvasWidth,
-    h: selectedElement.config?.freeform?.h != null ? selectedElement.config.freeform.h : (selectedElement.height / gridSize) * canvasHeight,
-  } : null
+  } : undefined
 
   return (
       <div className="flex-1 relative overflow-hidden bg-gray-50">
         {/* Canvas */}
         <div
-          ref={(node) => { canvasRef.current = node as HTMLDivElement; setCanvasDroppableRef(node as HTMLElement) }}
+          ref={(node) => { setCanvasDroppableRef(node as HTMLElement) }}
           id="canvas"
           className="relative w-full h-full"
           style={{
@@ -821,6 +830,7 @@ export function CanvasEnhanced({
                 activeFilters={activeFilters}
                 realtimeData={realtimeData}
                 isDragging={isDragging}
+                draggedElement={draggedElement}
                 isResizing={isResizing}
               />
             ))}

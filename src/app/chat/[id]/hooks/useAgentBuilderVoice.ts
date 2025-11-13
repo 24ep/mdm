@@ -59,7 +59,7 @@ export function useAgentBuilderVoice({
           try {
             const formData = new FormData()
             formData.append('audio', event.data, 'audio.webm')
-            formData.append('engineId', chatbot?.selectedEngineId || '')
+            formData.append('engineId', (chatbot as any)?.selectedEngineId || '')
             
             const response = await fetch('/api/agentbuilder/voice', {
               method: 'POST',
