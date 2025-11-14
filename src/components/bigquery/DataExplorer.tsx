@@ -139,7 +139,7 @@ export function DataExplorer({
             const spaceId = spaceRelation.space.id
             if (!grouped[spaceId]) {
               grouped[spaceId] = {
-                space: spaceRelation.space,
+                space: spaceRelation.space as any,
                 dataModels: []
               }
             }

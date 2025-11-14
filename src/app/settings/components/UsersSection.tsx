@@ -29,7 +29,16 @@ export function UsersSection() {
 
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<any | null>(null)
-  const [form, setForm] = useState({ 
+  const [form, setForm] = useState<{ 
+    email: string
+    name: string
+    password: string
+    role: string
+    is_active: boolean
+    default_space_id: string
+    spaces: Array<{ id: any; name: any; role: string }>
+    avatar: string
+  }>({ 
     email: '', 
     name: '', 
     password: '', 

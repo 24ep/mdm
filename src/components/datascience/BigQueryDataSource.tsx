@@ -139,8 +139,8 @@ export function BigQueryDataSource({ onDataLoad, onQueryExecute }: BigQueryDataS
     
     const csvContent = [
       metadata.columns.join(','),
-      ...dataPreview.map(row => 
-        metadata.columns.map(col => `"${row[col] || ''}"`).join(',')
+      ...dataPreview.map((row: any) => 
+        metadata.columns.map((col: string) => `"${row[col] || ''}"`).join(',')
       )
     ].join('\n')
     

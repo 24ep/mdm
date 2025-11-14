@@ -18,7 +18,13 @@ export default function InvitationDemoPage() {
   }>>([])
 
   const handleInvite = async (user: any, role: string) => {
-    const invitation = {
+    const invitation: {
+      id: string
+      user: any
+      role: string
+      timestamp: Date
+      type: 'existing' | 'new'
+    } = {
       id: Math.random().toString(36).substr(2, 9),
       user,
       role,

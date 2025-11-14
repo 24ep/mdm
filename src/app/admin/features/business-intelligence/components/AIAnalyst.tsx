@@ -613,8 +613,8 @@ export function AIAnalyst() {
                   </Button>
                 </div>
                 <div className="flex gap-2">
-                  <Select value={selectedModel} onValueChange={setSelectedModel} disabled={isLoadingModels}>
-                    <SelectTrigger className="h-8 text-xs bg-gray-800 border-gray-700 text-gray-300">
+                  <Select value={selectedModel} onValueChange={setSelectedModel}>
+                    <SelectTrigger className="h-8 text-xs bg-gray-800 border-gray-700 text-gray-300" disabled={isLoadingModels}>
                       <SelectValue placeholder="Model" />
                     </SelectTrigger>
                     <SelectContent className="bg-gray-800 border-gray-700">
@@ -704,8 +704,8 @@ export function AIAnalyst() {
                   </Button>
                 </>
               )}
-              <Select value={selectedSpace} onValueChange={setSelectedSpace} disabled={isLoadingSpaces}>
-                <SelectTrigger className="h-8 w-32 text-xs bg-gray-800 border-gray-700 text-gray-300">
+              <Select value={selectedSpace} onValueChange={setSelectedSpace}>
+                <SelectTrigger className="h-8 w-32 text-xs bg-gray-800 border-gray-700 text-gray-300" disabled={isLoadingSpaces}>
                   <SelectValue placeholder="Space" />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 border-gray-700">
@@ -940,8 +940,8 @@ function ChatView({
   setInput: (value: string) => void
   isLoading: boolean
   onSubmit: (e: React.FormEvent) => void
-  messagesEndRef: React.RefObject<HTMLDivElement>
-  textareaRef: React.RefObject<HTMLTextAreaElement>
+  messagesEndRef: React.RefObject<HTMLDivElement | null>
+  textareaRef: React.RefObject<HTMLTextAreaElement | null>
   showReportDrawer: boolean
   reportData: any
   isGeneratingReport: boolean

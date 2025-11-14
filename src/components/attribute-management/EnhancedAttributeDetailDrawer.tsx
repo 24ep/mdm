@@ -91,14 +91,17 @@ export function EnhancedAttributeDetailDrawer({
   useEffect(() => {
     if (attribute) {
       setEditForm(attribute)
-      setOptions(attribute.options || [])
+      setOptions((attribute.options || []).map(opt => ({
+        ...opt,
+        color: opt.color || '#3B82F6'
+      })))
       loadAttributeActivity()
       loadQualityStats()
       
       // Load increment configuration
-      if (attribute.increment_config) {
+      if ((attribute as any).increment_config) {
         try {
-          const config = JSON.parse(attribute.increment_config)
+          const config = JSON.parse((attribute as any).increment_config)
           setIncrementConfig(config)
         } catch (error) {
           console.error('Error parsing increment config:', error)
@@ -150,10 +153,11 @@ export function EnhancedAttributeDetailDrawer({
     if (!newOption.value || !newOption.label) return
 
     try {
-      const updatedOptions = [...options, newOption]
+      const updatedOptions = [...options, { ...newOption, order: options.length }]
       setOptions(updatedOptions)
       
       // Update the attribute with new options
+      if (!attribute) return
       const response = await fetch(`/api/data-models/attributes/${attribute.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -188,9 +192,10 @@ export function EnhancedAttributeDetailDrawer({
 
     try {
       const updatedOptions = [...options]
-      updatedOptions[index] = editingOptionData
+      updatedOptions[index] = { ...editingOptionData, order: options[index]?.order ?? index }
       setOptions(updatedOptions)
       
+      if (!attribute) return
       const response = await fetch(`/api/data-models/attributes/${attribute.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -218,6 +223,7 @@ export function EnhancedAttributeDetailDrawer({
       const updatedOptions = options.filter((_, i) => i !== index)
       setOptions(updatedOptions)
       
+      if (!attribute) return
       const response = await fetch(`/api/data-models/attributes/${attribute.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -382,9 +388,8 @@ export function EnhancedAttributeDetailDrawer({
                       <Select
                         value={editForm.type || ''}
                         onValueChange={(value) => handleFormChange('type', value)}
-                        disabled={!permissions.canEdit}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger disabled={!permissions.canEdit}>
                           <SelectValue placeholder="Select type" />
                         </SelectTrigger>
                         <SelectContent>
@@ -808,7 +813,7 @@ export function EnhancedAttributeDetailDrawer({
                           <div className="space-y-2">
                             <h4 className="text-sm font-medium text-gray-900">Quality Issues</h4>
                             <div className="space-y-1">
-                              {qualityStats.qualityIssues.map((issue, index) => (
+                              {qualityStats.qualityIssues.map((issue: any, index: number) => (
                                 <div key={index} className="flex items-center justify-between p-2 border rounded text-sm">
                                   <div className="flex items-center gap-2">
                                     <div className={`w-2 h-2 rounded-full ${

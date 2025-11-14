@@ -30,8 +30,8 @@ interface ChatContentProps {
   onStartRecording: () => void
   onStopRecording: () => void
   onToggleVoiceOutput?: () => void
-  scrollAreaRef: React.RefObject<HTMLDivElement>
-  messagesEndRef: React.RefObject<HTMLDivElement>
+  scrollAreaRef: React.RefObject<HTMLDivElement | null>
+  messagesEndRef: React.RefObject<HTMLDivElement | null>
   currentTranscript?: string
   chatbotId?: string
   threadId?: string | null

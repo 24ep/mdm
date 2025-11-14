@@ -4,7 +4,7 @@ import crypto from 'crypto'
 
 export async function POST(request: NextRequest) {
   try {
-    const headersList = headers()
+    const headersList = await headers()
     const signature = headersList.get('x-hub-signature-256') || headersList.get('x-gitlab-token')
     const body = await request.text()
 

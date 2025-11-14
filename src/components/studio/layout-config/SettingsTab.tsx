@@ -510,8 +510,8 @@ export function SettingsTab({
              <Label className={isMobileViewport ? "text-sm" : "text-xs"}>Background Type</Label>
              <Select
                value={currentLoginConfig.backgroundType || 'gradient'}
-               onValueChange={(value: 'color' | 'image' | 'gradient') => {
-                 setLoginPageConfig({ ...currentLoginConfig, backgroundType: value } as LoginPageConfig)
+               onValueChange={(value: string) => {
+                 setLoginPageConfig({ ...currentLoginConfig, backgroundType: value as 'color' | 'image' | 'gradient' } as LoginPageConfig)
                }}
              >
               <SelectTrigger className={isMobileViewport ? "h-10 mt-1" : "h-8 mt-1"}>

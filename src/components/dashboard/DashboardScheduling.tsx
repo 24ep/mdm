@@ -24,7 +24,8 @@ import {
   XCircle,
   AlertCircle,
   Download,
-  Send
+  Send,
+  X
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 

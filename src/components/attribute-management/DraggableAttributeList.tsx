@@ -134,7 +134,7 @@ function SortableAttributeItem({
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48 z-50" side="bottom" sideOffset={5}>
+          <DropdownMenuContent align="end" className="w-48 z-50" sideOffset={5}>
             <DropdownMenuItem 
               onClick={(e) => {
                 e.stopPropagation()

@@ -526,9 +526,10 @@ export default function ChatPage() {
               <Label className="text-xs whitespace-nowrap">Preview Type:</Label>
               <Select 
                 value={previewDeploymentType} 
-                onValueChange={(value: 'popover' | 'fullpage' | 'popup-center') => {
-                  setPreviewDeploymentType(value)
-                  if (value === 'popover' || value === 'popup-center') {
+                onValueChange={(value: string) => {
+                  const deploymentType = value as 'popover' | 'fullpage' | 'popup-center'
+                  setPreviewDeploymentType(deploymentType)
+                  if (deploymentType === 'popover' || deploymentType === 'popup-center') {
                     setIsOpen(false)
                   } else {
                     setIsOpen(true)
@@ -575,9 +576,10 @@ export default function ChatPage() {
           <Label className="text-xs whitespace-nowrap">Preview Type:</Label>
           <Select 
             value={previewDeploymentType} 
-            onValueChange={(value: 'popover' | 'fullpage' | 'popup-center') => {
-              setPreviewDeploymentType(value)
-              if (value === 'popover' || value === 'popup-center') {
+            onValueChange={(value: string) => {
+              const deploymentType = value as 'popover' | 'fullpage' | 'popup-center'
+              setPreviewDeploymentType(deploymentType)
+              if (deploymentType === 'popover' || deploymentType === 'popup-center') {
                 setIsOpen(false)
               } else {
                 setIsOpen(true)

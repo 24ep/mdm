@@ -617,7 +617,7 @@ export function APIClient() {
               {/* Request Mode Toggle */}
               <div className="flex items-center gap-2">
                 <Label>Mode:</Label>
-                <Select value={requestMode} onValueChange={(value: 'rest' | 'graphql') => setRequestMode(value)}>
+                <Select value={requestMode} onValueChange={(value: string) => setRequestMode(value as 'rest' | 'graphql')}>
                   <SelectTrigger className="w-[120px]">
                     <SelectValue />
                   </SelectTrigger>
@@ -646,8 +646,8 @@ export function APIClient() {
                 {requestMode === 'rest' && (
                   <Select
                     value={currentRequest.method}
-                    onValueChange={(value: HTTPMethod) =>
-                      setCurrentRequest(prev => ({ ...prev, method: value }))
+                    onValueChange={(value: string) =>
+                      setCurrentRequest(prev => ({ ...prev, method: value as HTTPMethod }))
                     }
                   >
                     <SelectTrigger className="w-[120px]">
@@ -854,8 +854,8 @@ export function APIClient() {
                 <TabsContent value="auth" className="space-y-4">
                   <Select
                     value={authConfig.type}
-                    onValueChange={(value: AuthType) =>
-                      setAuthConfig(prev => ({ ...prev, type: value }))
+                    onValueChange={(value: string) =>
+                      setAuthConfig(prev => ({ ...prev, type: value as AuthType }))
                     }
                   >
                     <SelectTrigger>
@@ -936,8 +936,8 @@ export function APIClient() {
                         <Label>Location</Label>
                         <Select
                           value={authConfig.apiKeyLocation || 'header'}
-                          onValueChange={(value: 'header' | 'query') =>
-                            setAuthConfig(prev => ({ ...prev, apiKeyLocation: value }))
+                          onValueChange={(value: string) =>
+                            setAuthConfig(prev => ({ ...prev, apiKeyLocation: value as 'header' | 'query' }))
                           }
                         >
                           <SelectTrigger>

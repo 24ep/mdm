@@ -182,7 +182,7 @@ export function QueryPlan({ query, isVisible }: QueryPlanProps) {
     setExpandedSteps(newExpanded)
   }
 
-  const renderStep = (step: QueryStep, depth: number = 0): JSX.Element => {
+  const renderStep = (step: QueryStep, depth: number = 0): React.ReactElement => {
     const isExpanded = expandedSteps.has(step.id)
     const hasChildren = step.children && step.children.length > 0
 

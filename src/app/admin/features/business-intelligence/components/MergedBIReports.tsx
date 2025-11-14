@@ -485,7 +485,8 @@ export function MergedBIReports() {
         </div>
       </div>
 
-      <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as 'bi' | 'reports')} className="w-full">
+      <div className="w-full">
+        <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as 'bi' | 'reports')}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="bi">Business Intelligence</TabsTrigger>
           <TabsTrigger value="reports">Reports & Dashboards</TabsTrigger>
@@ -514,7 +515,8 @@ export function MergedBIReports() {
             </div>
           </div>
 
-          <Tabs value={biTab} onValueChange={(v) => setBiTab(v as any)} className="w-full">
+          <div className="w-full">
+            <Tabs value={biTab} onValueChange={(v) => setBiTab(v as any)}>
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="dashboards">Dashboards</TabsTrigger>
               <TabsTrigger value="reports">Reports</TabsTrigger>
@@ -971,6 +973,7 @@ export function MergedBIReports() {
               </div>
             </TabsContent>
           </Tabs>
+          </div>
         </TabsContent>
 
         <TabsContent value="reports" className="space-y-6">
@@ -1181,6 +1184,7 @@ export function MergedBIReports() {
           />
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

@@ -77,9 +77,8 @@ export function UserSelectField({
     <Select
       value={value}
       onValueChange={onChange}
-      disabled={disabled || loading}
     >
-      <SelectTrigger className={error ? 'border-red-500' : ''}>
+      <SelectTrigger className={error ? 'border-red-500' : ''} disabled={disabled || loading}>
         <SelectValue placeholder={placeholder}>
           {selectedUser && (
             <div className="flex items-center space-x-2">

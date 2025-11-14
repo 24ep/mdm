@@ -39,8 +39,8 @@ export function DatabaseTypeSelect({
 
   if (isLoading) {
     return (
-      <Select disabled>
-        <SelectTrigger>
+      <Select>
+        <SelectTrigger disabled>
           <SelectValue placeholder="Loading..." />
         </SelectTrigger>
       </Select>
@@ -48,8 +48,8 @@ export function DatabaseTypeSelect({
   }
 
   return (
-    <Select value={value} onValueChange={onValueChange} disabled={disabled}>
-      <SelectTrigger>
+    <Select value={value} onValueChange={onValueChange}>
+      <SelectTrigger disabled={disabled}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>

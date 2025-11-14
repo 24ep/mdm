@@ -1228,12 +1228,12 @@ export default function CustomersPage() {
                     <div className="text-sm text-muted-foreground">Loading attributes...</div>
                   </div>
                 ) : (
-                  <Accordion 
-                    type="multiple" 
-                    value={openAccordionSections}
-                    onValueChange={setOpenAccordionSections}
-                    className="w-full"
-                  >
+                  <div className="w-full">
+                    <Accordion 
+                      type="multiple" 
+                      value={openAccordionSections}
+                      onValueChange={(value) => setOpenAccordionSections(Array.isArray(value) ? value : [value])}
+                    >
                     {Object.entries(groupedAttributes).map(([modelKey, attributes]) => (
                       <AccordionItem key={modelKey} value={modelKey} className="border-b">
                         <AccordionTrigger className="text-sm font-medium text-gray-900 hover:no-underline">
@@ -1347,6 +1347,7 @@ export default function CustomersPage() {
                       </div>
                     )}
                   </Accordion>
+                  </div>
                 )}
               </div>
               

@@ -44,19 +44,19 @@ export default function SpaceSelectionPage() {
   ))
 
   const handleSpaceSelect = async (space: Space) => {
-    await setCurrentSpace(space)
+    await setCurrentSpace(space as any)
     router.push(`/${space.slug || space.id}/dashboard`)
   }
 
   const handleSpaceStudio = (space: Space, e: React.MouseEvent) => {
     e.stopPropagation() // Prevent card click
-    setCurrentSpace(space)
+    setCurrentSpace(space as any)
     router.push(`/${space.slug || space.id}/studio`)
   }
 
   const handleSpaceSettings = (space: Space, e: React.MouseEvent) => {
     e.stopPropagation() // Prevent card click
-    setCurrentSpace(space)
+    setCurrentSpace(space as any)
     router.push(`/${space.slug || space.id}/settings`)
   }
 

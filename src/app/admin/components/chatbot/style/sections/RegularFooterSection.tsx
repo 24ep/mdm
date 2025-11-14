@@ -243,7 +243,7 @@ export function RegularFooterSection({ formData, setFormData }: RegularFooterSec
               <Label>Send Button Position</Label>
               <Select
                 value={formData.sendButtonPosition || 'outside'}
-                onValueChange={(v: 'inside' | 'outside') => setFormData({ ...formData, sendButtonPosition: v })}
+                onValueChange={(v: string) => setFormData({ ...formData, sendButtonPosition: v as 'inside' | 'outside' })}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -314,7 +314,7 @@ export function RegularFooterSection({ formData, setFormData }: RegularFooterSec
             <Label>Button Order</Label>
             <Select
               value={formData.fileUploadLayout || 'attach-first'}
-              onValueChange={(v: 'attach-first' | 'input-first') => setFormData({ ...formData, fileUploadLayout: v })}
+              onValueChange={(v: string) => setFormData({ ...formData, fileUploadLayout: v as 'attach-first' | 'input-first' })}
             >
               <SelectTrigger>
                 <SelectValue />

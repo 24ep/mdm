@@ -150,11 +150,12 @@ export function StorageConnections() {
     }
   }
 
-  const handleTypeChange = (type: StorageProviderType) => {
+  const handleTypeChange = (type: string) => {
+    const storageType = type as StorageProviderType
     setFormData({
       ...formData,
-      type,
-      config: getDefaultConfig(type),
+      type: storageType,
+      config: getDefaultConfig(storageType),
     })
   }
 

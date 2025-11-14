@@ -57,9 +57,8 @@ export function SQLCellDataSource({ cell, onConnectionChange, canEdit = true }: 
       <Select
         value={selectedSpaceId}
         onValueChange={handleSpaceChange}
-        disabled={!canEdit || spacesLoading}
       >
-        <SelectTrigger className="h-7 w-40 text-xs">
+        <SelectTrigger className="h-7 w-40 text-xs" disabled={!canEdit || spacesLoading}>
           <SelectValue placeholder={spacesLoading ? "Loading..." : "Select space"} />
         </SelectTrigger>
         <SelectContent>
@@ -76,9 +75,8 @@ export function SQLCellDataSource({ cell, onConnectionChange, canEdit = true }: 
         <Select
           value={selectedDataModelId}
           onValueChange={handleDataModelChange}
-          disabled={!canEdit || modelsLoading}
         >
-          <SelectTrigger className="h-7 w-48 text-xs">
+          <SelectTrigger className="h-7 w-48 text-xs" disabled={!canEdit || modelsLoading}>
             <SelectValue placeholder={modelsLoading ? "Loading..." : "Select data model"} />
           </SelectTrigger>
           <SelectContent>

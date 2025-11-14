@@ -112,9 +112,8 @@ export function DataSourceDialog({ open, onOpenChange, dataSource, onSave }: Dat
                   name: selectedModel ? selectedModel.display_name : formData.name
                 })
               }}
-              disabled={loading}
             >
-              <SelectTrigger>
+              <SelectTrigger disabled={loading}>
                 <SelectValue placeholder={loading ? "Loading data models..." : "Select a data model"} />
               </SelectTrigger>
               <SelectContent>

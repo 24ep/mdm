@@ -40,6 +40,9 @@ type Attribute = {
   is_required: boolean
   is_unique: boolean
   order: number
+  options?: any[]
+  created_at: string
+  updated_at: string
 }
 
 export default function DataModelsPage() {

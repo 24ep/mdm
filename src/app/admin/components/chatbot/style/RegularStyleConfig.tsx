@@ -24,7 +24,7 @@ export function RegularStyleConfig({ formData, setFormData }: RegularStyleConfig
 
   return (
     <div className="space-y-0">
-    <Accordion type="single" collapsible value={accordionValue} onValueChange={setAccordionValue}>
+    <Accordion type="single" collapsible value={accordionValue} onValueChange={(value) => setAccordionValue(typeof value === 'string' ? value : value[0] || '')}>
       <ChatWindowSection formData={formData} setFormData={setFormData} />
       <WidgetButtonSection formData={formData} setFormData={setFormData} />
       {!isOpenAIAgentSDK && (

@@ -234,7 +234,7 @@ export function DashboardCollaboration({
         author: currentUser,
         content: newComment,
         timestamp: new Date().toISOString(),
-        elementId: selectedElement,
+        elementId: selectedElement || undefined,
         resolved: false,
         replies: []
       }

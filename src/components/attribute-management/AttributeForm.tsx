@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ColorPicker } from '@/components/ui/color-picker'
+import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 import { 
   Plus, 
   Trash2, 
@@ -60,7 +61,10 @@ export function AttributeForm({ initialData, onSubmit, onCancel, loading = false
     if (initialData) {
       setFormData(prev => ({ ...prev, ...initialData }))
       if (initialData.options) {
-        setOptions(initialData.options.length > 0 ? initialData.options : [
+        setOptions(initialData.options.length > 0 ? initialData.options.map(opt => ({
+          ...opt,
+          color: opt.color || '#3B82F6'
+        })) : [
           { value: '', label: '', color: '#3B82F6', order: 0 }
         ])
       }

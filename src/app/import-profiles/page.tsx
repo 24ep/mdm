@@ -308,7 +308,9 @@ export default function ImportProfilesPage() {
         type: s.sharing_type as 'all_users' | 'group' | 'specific_users',
         targetId: s.target_id,
         targetGroup: s.target_group
-      }))
+      })),
+      optionImportMapping: {},
+      selectedAttributes: []
     })
     setEditDialogOpen(true)
   }

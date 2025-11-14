@@ -370,7 +370,7 @@ export function ConfigTab({ formData, setFormData }: ConfigTabProps) {
                   <Label>Voice Provider</Label>
                   <Select
                     value={formData.voiceProvider || 'browser'}
-                    onValueChange={(value: 'browser' | 'openai-realtime' | 'agentbuilder') => setFormData({ ...formData, voiceProvider: value })}
+                    onValueChange={(value: string) => setFormData({ ...formData, voiceProvider: value as 'browser' | 'openai-realtime' | 'agentbuilder' })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -394,7 +394,7 @@ export function ConfigTab({ formData, setFormData }: ConfigTabProps) {
                   <Label>Voice UI Style</Label>
                   <Select
                     value={formData.voiceUIStyle || 'chat'}
-                    onValueChange={(value: 'chat' | 'wave') => setFormData({ ...formData, voiceUIStyle: value })}
+                    onValueChange={(value: string) => setFormData({ ...formData, voiceUIStyle: value as 'chat' | 'wave' })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -424,7 +424,7 @@ export function ConfigTab({ formData, setFormData }: ConfigTabProps) {
           </p>
 
           <div className="space-y-0">
-          <Accordion type="single" collapsible value={accordionValue} onValueChange={setAccordionValue}>
+          <Accordion type="single" collapsible value={accordionValue} onValueChange={(value) => setAccordionValue(typeof value === 'string' ? value : value[0] || '')}>
             <StartScreenSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
             <ThreadItemActionsSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
             <DisclaimerSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />

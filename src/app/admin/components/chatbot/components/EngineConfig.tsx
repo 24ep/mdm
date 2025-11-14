@@ -121,13 +121,14 @@ export function EngineConfig({ formData, setFormData }: EngineConfigProps) {
         <Label>Engine Type *</Label>
         <Select
           value={engineType}
-          onValueChange={(v: 'custom' | 'agentbuilder' | 'openai' | 'chatkit' | 'dify' | 'openai-agent-sdk') => {
+          onValueChange={(v: string) => {
+            const engineTypeValue = v as 'custom' | 'agentbuilder' | 'openai' | 'chatkit' | 'dify' | 'openai-agent-sdk'
             setFormData({ 
               ...formData, 
-              engineType: v,
+              engineType: engineTypeValue,
               selectedModelId: undefined,
               selectedEngineId: undefined,
-              apiEndpoint: v === 'custom' ? formData.apiEndpoint : ''
+              apiEndpoint: engineTypeValue === 'custom' ? formData.apiEndpoint : ''
             })
           }}
         >
@@ -151,9 +152,8 @@ export function EngineConfig({ formData, setFormData }: EngineConfigProps) {
           <Select
             value={formData.selectedModelId || ''}
             onValueChange={(v) => setFormData({ ...formData, selectedModelId: v })}
-            disabled={isLoadingModels}
           >
-            <SelectTrigger>
+            <SelectTrigger disabled={isLoadingModels}>
               <SelectValue placeholder={isLoadingModels ? "Loading models..." : "Select OpenAI model"} />
             </SelectTrigger>
             <SelectContent>
@@ -192,9 +192,8 @@ export function EngineConfig({ formData, setFormData }: EngineConfigProps) {
           <Select
             value={formData.selectedEngineId || ''}
             onValueChange={(v) => setFormData({ ...formData, selectedEngineId: v })}
-            disabled={isLoadingEngines}
           >
-            <SelectTrigger>
+            <SelectTrigger disabled={isLoadingEngines}>
               <SelectValue placeholder={isLoadingEngines ? "Loading engines..." : "Select AgentBuilder engine"} />
             </SelectTrigger>
             <SelectContent>
@@ -307,11 +306,11 @@ export function EngineConfig({ formData, setFormData }: EngineConfigProps) {
               <Label>Response Mode</Label>
               <Select
                 value={formData.difyOptions?.responseMode || 'streaming'}
-                onValueChange={(v: 'streaming' | 'blocking') => setFormData({
+                onValueChange={(v: string) => setFormData({
                   ...formData,
                   difyOptions: {
                     ...formData.difyOptions,
-                    responseMode: v
+                    responseMode: v as 'streaming' | 'blocking'
                   }
                 } as any)}
               >
