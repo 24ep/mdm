@@ -88,6 +88,7 @@ export default function WorkflowsPage() {
   const [triggerFilter, setTriggerFilter] = useState('all')
   const [showWorkflowDialog, setShowWorkflowDialog] = useState(false)
   const [editingWorkflow, setEditingWorkflow] = useState<Workflow | null>(null)
+  const [availableSyncSchedules, setAvailableSyncSchedules] = useState<any[]>([])
   const [form, setForm] = useState({
     name: '',
     description: '',

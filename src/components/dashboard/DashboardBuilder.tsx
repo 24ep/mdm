@@ -9,7 +9,6 @@ import {
   Settings, 
   Trash2, 
   Move, 
-  Resize, 
   BarChart3, 
   PieChart, 
   TrendingUp,

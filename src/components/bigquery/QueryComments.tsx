@@ -59,7 +59,7 @@ export function QueryComments({
 
   const handleAddComment = () => {
     if (!newComment.trim()) {
-      showError(ToastMessages.VALIDATION_ERROR)
+      showError('Validation error')
       return
     }
 
@@ -82,7 +82,7 @@ export function QueryComments({
 
   const handleUpdateComment = (commentId: string) => {
     if (!editContent.trim()) {
-      showError(ToastMessages.VALIDATION_ERROR)
+      showError('Validation error')
       return
     }
 

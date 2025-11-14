@@ -26,7 +26,7 @@ export function StartScreenPromptsSection({ formData, setFormData }: StartScreen
               <Label>Style Type</Label>
               <Select
                 value={(formData as any).startScreenPromptsStyle || 'card'}
-                onValueChange={(value: 'list' | 'card') => setFormData({ ...formData, startScreenPromptsStyle: value } as any)}
+                onValueChange={(value: string) => setFormData({ ...formData, startScreenPromptsStyle: value as 'list' | 'card' } as any)}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -42,7 +42,7 @@ export function StartScreenPromptsSection({ formData, setFormData }: StartScreen
               <Label>Position</Label>
               <Select
                 value={(formData as any).startScreenPromptsPosition || 'center'}
-                onValueChange={(value: 'center' | 'bottom' | 'list') => setFormData({ ...formData, startScreenPromptsPosition: value } as any)}
+                onValueChange={(value: string) => setFormData({ ...formData, startScreenPromptsPosition: value as 'center' | 'bottom' | 'list' } as any)}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -61,7 +61,7 @@ export function StartScreenPromptsSection({ formData, setFormData }: StartScreen
               <Label>Icon Display</Label>
               <Select
                 value={(formData as any).startScreenPromptsIconDisplay || 'suffix'}
-                onValueChange={(value: 'suffix' | 'show-all' | 'none') => setFormData({ ...formData, startScreenPromptsIconDisplay: value } as any)}
+                onValueChange={(value: string) => setFormData({ ...formData, startScreenPromptsIconDisplay: value as 'suffix' | 'show-all' | 'none' } as any)}
               >
                 <SelectTrigger>
                   <SelectValue />

@@ -302,7 +302,7 @@ export function MessagesSection({ formData, setFormData }: MessagesSectionProps)
                   <Label>Message Name Position</Label>
                   <Select
                     value={formData.messageNamePosition || 'top-of-message'}
-                    onValueChange={(v: 'top-of-message' | 'top-of-avatar' | 'right-of-avatar') => setFormData({ ...formData, messageNamePosition: v })}
+                    onValueChange={(v: string) => setFormData({ ...formData, messageNamePosition: v as 'top-of-message' | 'top-of-avatar' | 'right-of-avatar' })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -336,7 +336,7 @@ export function MessagesSection({ formData, setFormData }: MessagesSectionProps)
                 <Label>Message Avatar Position</Label>
                 <Select
                   value={formData.messageAvatarPosition || 'top-of-message'}
-                  onValueChange={(v: 'top-of-message' | 'left-of-message') => setFormData({ ...formData, messageAvatarPosition: v })}
+                  onValueChange={(v: string) => setFormData({ ...formData, messageAvatarPosition: v as 'top-of-message' | 'left-of-message' })}
                 >
                   <SelectTrigger>
                     <SelectValue />

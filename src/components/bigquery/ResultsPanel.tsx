@@ -348,6 +348,11 @@ export function ResultsPanel({
                 data={prepareChartData()}
                 chartType={chartType}
                 config={chartConfig}
+                type={chartType}
+                dimensions={chartConfig.dimensions}
+                measures={chartConfig.measures}
+                filters={[]}
+                title={chartConfig.title}
               />
             </div>
           </div>
@@ -357,6 +362,8 @@ export function ResultsPanel({
             <ValidationPanel
               validation={validation}
               onJumpToLine={onJumpToLine}
+              isVisible={true}
+              onClose={() => {}}
             />
           </div>
         )}

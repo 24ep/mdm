@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     // Validate with Zod schema
     const validationResult = folderSchema.safeParse(body)
     if (!validationResult.success) {
-      return NextResponse.json(createErrorResponse('Validation failed', 'VALIDATION_ERROR', validationResult.error.errors), { status: 400 })
+      return NextResponse.json(createErrorResponse('Validation failed', 'VALIDATION_ERROR', validationResult.error.issues), { status: 400 })
     }
 
     const { name, description, parent_id } = validationResult.data
@@ -84,7 +84,7 @@ export async function PUT(request: NextRequest) {
     // Validate with Zod schema
     const validationResult = folderSchema.safeParse(folderData)
     if (!validationResult.success) {
-      return NextResponse.json(createErrorResponse('Validation failed', 'VALIDATION_ERROR', validationResult.error.errors), { status: 400 })
+      return NextResponse.json(createErrorResponse('Validation failed', 'VALIDATION_ERROR', validationResult.error.issues), { status: 400 })
     }
 
     const { name, description, parent_id } = validationResult.data

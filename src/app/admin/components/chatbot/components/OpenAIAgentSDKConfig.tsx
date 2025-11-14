@@ -54,16 +54,15 @@ function WorkflowFileSelectorComponent({
         onValueChange={(value) => {
           setFormData({ ...formData, openaiAgentSdkWorkflowFile: value } as any)
         }}
-        disabled={isLoadingWorkflows}
       >
-        <SelectTrigger>
+        <SelectTrigger disabled={isLoadingWorkflows}>
           <SelectValue placeholder="Select a workflow file" />
         </SelectTrigger>
         <SelectContent>
           {isLoadingWorkflows ? (
-            <SelectItem value="loading" disabled>Loading workflows...</SelectItem>
+            <div className="px-2 py-1.5 text-sm text-muted-foreground">Loading workflows...</div>
           ) : availableWorkflows.length === 0 ? (
-            <SelectItem value="none" disabled>No workflows found</SelectItem>
+            <div className="px-2 py-1.5 text-sm text-muted-foreground">No workflows found</div>
           ) : (
             availableWorkflows.map((workflow) => (
               <SelectItem key={workflow.name} value={workflow.name}>

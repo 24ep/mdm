@@ -15,8 +15,8 @@ interface MessagesListProps {
   setMessageFeedback: React.Dispatch<React.SetStateAction<Record<string, 'liked' | 'disliked' | null>>>
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>
   sendMessage: (content: string, attachments?: Array<{ type: 'image' | 'video', url: string, name?: string }>) => Promise<void>
-  scrollAreaRef: React.RefObject<HTMLDivElement>
-  messagesEndRef: React.RefObject<HTMLDivElement>
+  scrollAreaRef: React.RefObject<HTMLDivElement | null>
+  messagesEndRef: React.RefObject<HTMLDivElement | null>
   chatbotId?: string
   threadId?: string | null
 }

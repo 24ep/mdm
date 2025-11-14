@@ -7,11 +7,13 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let spaceId: string | undefined
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { id: spaceId } = await params
+    const { id } = await params
+    spaceId = id
 
     if (spaceId === 'all') {
       // Get all data models across all spaces

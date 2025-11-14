@@ -28,7 +28,6 @@ import {
   Settings,
   RefreshCw,
   Archive,
-  Restore,
   Cloud,
   Server
 } from 'lucide-react'
@@ -450,9 +449,8 @@ export function BackupRecoverySystem({ spaceId }: BackupRecoverySystemProps) {
                         <Select
                           value={selectedJob.type}
                           onValueChange={(type) => updateBackupJob(selectedJob.id, { type: type as any })}
-                          disabled={!canEditBackup}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger disabled={!canEditBackup}>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -493,9 +491,8 @@ export function BackupRecoverySystem({ spaceId }: BackupRecoverySystemProps) {
                         <Select
                           value={selectedJob.schedule}
                           onValueChange={(schedule) => updateBackupJob(selectedJob.id, { schedule: schedule as any })}
-                          disabled={!canEditBackup}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger disabled={!canEditBackup}>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>

@@ -36,7 +36,9 @@ import {
   MoreVertical,
   Eye,
   EyeOff,
-  Palette
+  Palette,
+  Settings,
+  Plus
 } from 'lucide-react'
 
 interface Attribute {
@@ -100,9 +102,9 @@ export function AttributeDetailDrawer({
       loadQualityStats()
       
       // Load increment configuration
-      if (attribute.increment_config) {
+      if ((attribute as any).increment_config) {
         try {
-          const config = JSON.parse(attribute.increment_config)
+          const config = JSON.parse((attribute as any).increment_config)
           setIncrementConfig(config)
         } catch (error) {
           console.error('Error parsing increment config:', error)
@@ -154,10 +156,11 @@ export function AttributeDetailDrawer({
     if (!newOption.value || !newOption.label) return
 
     try {
-      const currentOptions = attribute?.options || []
+      const currentOptions = (attribute as any)?.options || []
       const updatedOptions = [...currentOptions, newOption]
       
       // Update the attribute with new options
+      if (!attribute) return
       const response = await fetch(`/api/data-models/attributes/${attribute.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -169,7 +172,7 @@ export function AttributeDetailDrawer({
         setNewOption({ value: '', label: '', color: '#3B82F6' })
         // Refresh the attribute data
         if (onSave) {
-          onSave({ ...attribute, options: updatedOptions })
+          onSave({ ...attribute, options: updatedOptions } as any)
         }
       }
     } catch (error) {
@@ -191,10 +194,11 @@ export function AttributeDetailDrawer({
     if (!editingOptionData.value || !editingOptionData.label) return
 
     try {
-      const currentOptions = attribute?.options || []
+      const currentOptions = (attribute as any)?.options || []
       const updatedOptions = [...currentOptions]
       updatedOptions[index] = editingOptionData
       
+      if (!attribute) return
       const response = await fetch(`/api/data-models/attributes/${attribute.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -204,7 +208,7 @@ export function AttributeDetailDrawer({
       if (response.ok) {
         setEditingOption(null)
         if (onSave) {
-          onSave({ ...attribute, options: updatedOptions })
+          onSave({ ...attribute, options: updatedOptions } as any)
         }
       }
     } catch (error) {
@@ -219,9 +223,10 @@ export function AttributeDetailDrawer({
 
   const handleRemoveOption = async (index: number) => {
     try {
-      const currentOptions = attribute?.options || []
-      const updatedOptions = currentOptions.filter((_, i) => i !== index)
+      const currentOptions = (attribute as any)?.options || []
+      const updatedOptions = currentOptions.filter((_: any, i: number) => i !== index)
       
+      if (!attribute) return
       const response = await fetch(`/api/data-models/attributes/${attribute.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -230,7 +235,7 @@ export function AttributeDetailDrawer({
 
       if (response.ok) {
         if (onSave) {
-          onSave({ ...attribute, options: updatedOptions })
+          onSave({ ...attribute, options: updatedOptions } as any)
         }
       }
     } catch (error) {
@@ -724,7 +729,7 @@ export function AttributeDetailDrawer({
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      {attribute.options && attribute.options.length > 0 && attribute.options.map((option, index) => (
+                      {(attribute as any).options && (attribute as any).options.length > 0 && (attribute as any).options.map((option: any, index: number) => (
                         <div key={index} className="flex items-center gap-3 p-3 border rounded-lg">
                           {/* Color Swatch */}
                           <div className="flex items-center gap-2">
@@ -735,9 +740,9 @@ export function AttributeDetailDrawer({
                                   setEditingOptionData({ ...editingOptionData, color })
                                 } else {
                                   // Update the option directly
-                                  const updatedOptions = [...(attribute.options || [])]
+                                  const updatedOptions = [...((attribute as any).options || [])]
                                   updatedOptions[index] = { ...updatedOptions[index], color }
-                                  onSave({ ...attribute, options: updatedOptions })
+                                  onSave({ ...attribute, options: updatedOptions } as any)
                                 }
                               }}
                               allowImageVideo={false}
@@ -899,7 +904,7 @@ export function AttributeDetailDrawer({
                       </div>
                     )}
                     
-                    {(!attribute.options || attribute.options.length === 0) && !showNewOption && (
+                    {(!(attribute as any).options || (attribute as any).options.length === 0) && !showNewOption && (
                       <div className="text-center py-8 text-muted-foreground">
                         <Settings className="h-12 w-12 mx-auto mb-2 opacity-50" />
                         <p className="text-lg font-medium">No options yet</p>
@@ -961,7 +966,7 @@ export function AttributeDetailDrawer({
                           <div className="space-y-2">
                             <h4 className="text-sm font-medium text-gray-900">Quality Issues</h4>
                             <div className="space-y-1">
-                              {qualityStats.qualityIssues.map((issue, index) => (
+                              {qualityStats.qualityIssues.map((issue: any, index: number) => (
                                 <div key={index} className="flex items-center justify-between p-2 border rounded text-sm">
                                   <div className="flex items-center gap-2">
                                     <div className={`w-2 h-2 rounded-full ${

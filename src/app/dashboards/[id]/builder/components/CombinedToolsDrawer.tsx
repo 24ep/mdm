@@ -111,7 +111,8 @@ export function CombinedToolsDrawer({
           <DrawerTitle>Tools</DrawerTitle>
         </DrawerHeader>
         <div className="px-4 pb-4">
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
+          <div className="w-full">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
             <TabsList className="grid w-full grid-cols-4 mb-4">
               <TabsTrigger value="share">Share</TabsTrigger>
               <TabsTrigger value="versions">Versions</TabsTrigger>
@@ -270,6 +271,7 @@ export function CombinedToolsDrawer({
               </div>
             </TabsContent>
           </Tabs>
+          </div>
         </div>
       </DrawerContent>
     </Drawer>

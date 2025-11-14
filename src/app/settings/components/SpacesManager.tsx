@@ -97,7 +97,7 @@ export default function SpacesManager() {
       const result = await response.json()
       toast.success('Space created successfully')
       setIsCreateDialogOpen(false)
-      setFormData({ name: '', description: '', is_default: false })
+      setFormData({ name: '', description: '', is_default: false, slug: '' })
       await refreshSpaces()
       
       if (spaces.length === 0 || result.space.is_default) {
@@ -318,7 +318,7 @@ export default function SpacesManager() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => { openDrawer(space, 'members'); setInviteForm({ user_id: '', role: 'member' }) }}
+                        onClick={() => { openDrawer(space); setInviteForm({ user_id: '', role: 'member' }) }}
                         title="Quick Invite"
                       >
                         <UserPlus className="h-4 w-4" />
@@ -365,7 +365,7 @@ export default function SpacesManager() {
           <div className="absolute right-0 top-0 h-full w-full max-w-3xl bg-background shadow-xl flex flex-col">
             <div className="flex items-center justify-between border-b px-6 py-4">
               <div>
-                <h3 className="text-xl font-semibold">{selectedSpace.name}</h3>
+                <h3 className="text-xl font-semibold">{selectedSpace!.name}</h3>
                 <p className="text-sm text-muted-foreground">Configure this space</p>
               </div>
               <Button variant="outline" onClick={closeDrawer}>Close</Button>
@@ -376,7 +376,7 @@ export default function SpacesManager() {
                 <div className="border-b px-6 py-3">
                   <TabsList>
                     <TabsTrigger value="details">Space detail</TabsTrigger>
-                    <TabsTrigger value="members" onClick={() => loadMembers(selectedSpace.id)}>Space member</TabsTrigger>
+                    <TabsTrigger value="members" onClick={() => loadMembers(selectedSpace!.id)}>Space member</TabsTrigger>
                     <TabsTrigger value="sidebar">Sidebar</TabsTrigger>
                   </TabsList>
                 </div>
@@ -388,14 +388,14 @@ export default function SpacesManager() {
                       <Button variant={brandingMode==='icon'?'default':'outline'} size="sm" onClick={async()=>{
                         setBrandingMode('icon')
                         if (selectedSpace?.logo_url) {
-                          await fetch(`/api/spaces/${selectedSpace.id}`, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ logo_url: null }) })
+                          await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ logo_url: null }) })
                           await refreshSpaces()
                         }
                       }}>Use icon</Button>
                       <Button variant={brandingMode==='logo'?'default':'outline'} size="sm" onClick={async()=>{
                         setBrandingMode('logo')
                         if (selectedSpace?.icon) {
-                          await fetch(`/api/spaces/${selectedSpace.id}`, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ icon: null }) })
+                          await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ icon: null }) })
                           await refreshSpaces()
                         }
                       }}>Use logo</Button>
@@ -408,9 +408,9 @@ export default function SpacesManager() {
                       {['Building2','LayoutDashboard','Users','ClipboardList','Workflow','Settings','Download','Briefcase','Calendar','Tag','Bell','Folder','Globe','Home','Inbox','Layers','Map','Package','PieChart','Shield','Star','Store','ThumbsUp','TrendingUp'].map((ic) => (
                         <button
                           key={ic}
-                          className={`flex items-center justify-center h-9 w-9 rounded border ${selectedSpace.icon===ic ? 'bg-primary/10 border-primary' : 'border-muted'}`}
+                          className={`flex items-center justify-center h-9 w-9 rounded border ${selectedSpace!.icon===ic ? 'bg-primary/10 border-primary' : 'border-muted'}`}
                           onClick={async () => {
-                            const res = await fetch(`/api/spaces/${selectedSpace.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ icon: ic, logo_url: null }) })
+                            const res = await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ icon: ic, logo_url: null }) })
                             if (res.ok) { toast.success('Icon selected'); await refreshSpaces() } else { toast.error('Failed to set icon') }
                           }}
                           title={ic}
@@ -425,8 +425,8 @@ export default function SpacesManager() {
                   <div className="space-y-2">
                     <Label className={brandingMode==='logo'?'':'opacity-50'}>Logo</Label>
                     <div className="flex items-center gap-3">
-                      {selectedSpace.logo_url ? (
-                        <img src={selectedSpace.logo_url} alt={selectedSpace.name} className="h-10 w-10 rounded" />
+                      {selectedSpace!.logo_url ? (
+                        <img src={selectedSpace!.logo_url} alt={selectedSpace!.name} className="h-10 w-10 rounded" />
                       ) : (
                         <div className="h-10 w-10 rounded bg-muted" />
                       )}
@@ -439,26 +439,26 @@ export default function SpacesManager() {
                         const uploadRes = await fetch('/api/upload/logo', { method: 'POST', body: fd })
                         if (!uploadRes.ok) { toast.error('Upload failed'); return }
                         const { url } = await uploadRes.json()
-                        const res = await fetch(`/api/spaces/${selectedSpace.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ logo_url: url, icon: null }) })
+                        const res = await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ logo_url: url, icon: null }) })
                         if (res.ok) { toast.success('Logo updated'); await refreshSpaces() } else { toast.error('Failed to save logo url') }
                       }}>
                         <Input type="file" accept="image/*" disabled={brandingMode!=='logo'} />
                       </form>
                     </div>
-                    <Input defaultValue={selectedSpace.logo_url || ''} placeholder="https://..." disabled={brandingMode!=='logo'} onBlur={async (e) => {
+                    <Input defaultValue={selectedSpace!.logo_url || ''} placeholder="https://..." disabled={brandingMode!=='logo'} onBlur={async (e) => {
                       const logo_url = e.currentTarget.value.trim()
-                      if (logo_url === (selectedSpace.logo_url || '')) return
-                      const res = await fetch(`/api/spaces/${selectedSpace.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ logo_url, icon: null }) })
+                      if (logo_url === (selectedSpace!.logo_url || '')) return
+                      const res = await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ logo_url, icon: null }) })
                       if (res.ok) { toast.success('Logo updated'); await refreshSpaces() } else { toast.error('Failed to update logo') }
                     }} />
                     <p className="text-xs text-muted-foreground">Upload an image or paste a URL. Shown in sidebar and UI.</p>
                   </div>
                     <div>
                       <Label htmlFor="space-name">Name</Label>
-                      <Input id="space-name" defaultValue={selectedSpace.name} onBlur={async (e) => {
+                      <Input id="space-name" defaultValue={selectedSpace!.name} onBlur={async (e) => {
                         const name = e.currentTarget.value.trim()
-                        if (!name || name === selectedSpace.name) return
-                        const res = await fetch(`/api/spaces/${selectedSpace.id}`, {
+                        if (!name || name === selectedSpace!.name) return
+                        const res = await fetch(`/api/spaces/${selectedSpace!.id}`, {
                           method: 'PUT', headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ name })
                         })
@@ -467,10 +467,10 @@ export default function SpacesManager() {
                     </div>
                     <div>
                       <Label htmlFor="space-desc">Description</Label>
-                      <Textarea id="space-desc" defaultValue={selectedSpace.description || ''} rows={3} onBlur={async (e) => {
+                      <Textarea id="space-desc" defaultValue={selectedSpace!.description || ''} rows={3} onBlur={async (e) => {
                         const description = e.currentTarget.value
-                        if (description === (selectedSpace.description || '')) return
-                        const res = await fetch(`/api/spaces/${selectedSpace.id}`, {
+                        if (description === (selectedSpace!.description || '')) return
+                        const res = await fetch(`/api/spaces/${selectedSpace!.id}`, {
                           method: 'PUT', headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ description })
                         })
@@ -479,16 +479,16 @@ export default function SpacesManager() {
                     </div>
                     <div>
                       <Label htmlFor="space-slug">Custom URL (slug)</Label>
-                      <Input id="space-slug" defaultValue={selectedSpace.slug || ''} onBlur={async (e) => {
+                      <Input id="space-slug" defaultValue={selectedSpace!.slug || ''} onBlur={async (e) => {
                         const slug = e.currentTarget.value.trim()
-                        if (slug === (selectedSpace.slug || '')) return
-                        const res = await fetch(`/api/spaces/${selectedSpace.id}`, {
+                        if (slug === (selectedSpace!.slug || '')) return
+                        const res = await fetch(`/api/spaces/${selectedSpace!.id}`, {
                           method: 'PUT', headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ slug })
                         })
                         if (res.ok) { toast.success('Slug updated'); await refreshSpaces() } else { toast.error('Failed to update slug') }
                       }} />
-                      <p className="text-xs text-muted-foreground mt-1">URL will be /s/{selectedSpace.slug || 'your-slug'}/dashboard</p>
+                      <p className="text-xs text-muted-foreground mt-1">URL will be /s/{selectedSpace!.slug || 'your-slug'}/dashboard</p>
                     </div>
                   </div>
                 </TabsContent>
@@ -512,13 +512,13 @@ export default function SpacesManager() {
                         <SelectContent>
                           <SelectItem value="member">Member</SelectItem>
                           <SelectItem value="admin">Admin</SelectItem>
-                          {selectedSpace.user_role === 'owner' && <SelectItem value="owner">Owner</SelectItem>}
+                          {selectedSpace!.user_role === 'owner' && <SelectItem value="owner">Owner</SelectItem>}
                         </SelectContent>
                       </Select>
                     </div>
                     <Button disabled={!canManageMembers || !inviteForm.user_id} onClick={async () => {
-                      const res = await fetch(`/api/spaces/${selectedSpace.id}/members`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(inviteForm) })
-                      if (res.ok) { toast.success('User invited'); await loadMembers(selectedSpace.id) } else { toast.error('Failed to invite') }
+                      const res = await fetch(`/api/spaces/${selectedSpace!.id}/members`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(inviteForm) })
+                      if (res.ok) { toast.success('User invited'); await loadMembers(selectedSpace!.id) } else { toast.error('Failed to invite') }
                     }}>Invite</Button>
                   </div>
                   <div className="border rounded-md">
@@ -533,14 +533,14 @@ export default function SpacesManager() {
                         <div>
                           {canManageMembers && m.role !== 'owner' ? (
                             <Select value={m.role} onValueChange={async (role) => {
-                              const r = await fetch(`/api/spaces/${selectedSpace.id}/members/${m.user_id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role }) })
-                              if (r.ok) { toast.success('Role updated'); await loadMembers(selectedSpace.id) } else { toast.error('Failed to update') }
+                              const r = await fetch(`/api/spaces/${selectedSpace!.id}/members/${m.user_id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role }) })
+                              if (r.ok) { toast.success('Role updated'); await loadMembers(selectedSpace!.id) } else { toast.error('Failed to update') }
                             }}>
                               <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="member">Member</SelectItem>
                                 <SelectItem value="admin">Admin</SelectItem>
-                                {selectedSpace.user_role === 'owner' && <SelectItem value="owner">Owner</SelectItem>}
+                                {selectedSpace!.user_role === 'owner' && <SelectItem value="owner">Owner</SelectItem>}
                               </SelectContent>
                             </Select>
                           ) : (
@@ -551,8 +551,8 @@ export default function SpacesManager() {
                           {canManageMembers && m.role !== 'owner' && (
                             <Button variant="outline" size="sm" className="text-red-600" onClick={async () => {
                               if (!confirm('Remove this member?')) return
-                              const r = await fetch(`/api/spaces/${selectedSpace.id}/members/${m.user_id}`, { method: 'DELETE' })
-                              if (r.ok) { toast.success('Member removed'); await loadMembers(selectedSpace.id) } else { toast.error('Failed to remove') }
+                              const r = await fetch(`/api/spaces/${selectedSpace!.id}/members/${m.user_id}`, { method: 'DELETE' })
+                              if (r.ok) { toast.success('Member removed'); await loadMembers(selectedSpace!.id) } else { toast.error('Failed to remove') }
                             }}>Remove</Button>
                           )}
                         </div>

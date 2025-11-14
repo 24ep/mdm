@@ -371,7 +371,8 @@ export function OpenAIAgentSDKAdvancedFeatures({ chatbot }: OpenAIAgentSDKAdvanc
   }
 
   return (
-    <Accordion type="multiple" className="w-full space-y-0">
+    <div className="w-full space-y-0">
+      <Accordion type="multiple">
       {/* Custom Functions Accordion */}
       <AccordionItem value="custom-functions" className="border-b px-4">
         <AccordionTrigger className="text-lg font-semibold hover:no-underline">
@@ -447,7 +448,7 @@ export function OpenAIAgentSDKAdvancedFeatures({ chatbot }: OpenAIAgentSDKAdvanc
                       <Label>Execution Type</Label>
                       <Select
                         value={functionForm.executionType}
-                        onValueChange={(value: 'api' | 'inline' | 'webhook') => setFunctionForm({ ...functionForm, executionType: value })}
+                        onValueChange={(value: string) => setFunctionForm({ ...functionForm, executionType: value as 'api' | 'inline' | 'webhook' })}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -584,7 +585,7 @@ export function OpenAIAgentSDKAdvancedFeatures({ chatbot }: OpenAIAgentSDKAdvanc
                   <Label>Coordination Strategy</Label>
                   <Select
                     value={multiAgentForm.coordinationStrategy}
-                    onValueChange={(value: 'sequential' | 'parallel' | 'conditional') => setMultiAgentForm({ ...multiAgentForm, coordinationStrategy: value })}
+                    onValueChange={(value: string) => setMultiAgentForm({ ...multiAgentForm, coordinationStrategy: value as 'sequential' | 'parallel' | 'conditional' })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -672,7 +673,7 @@ export function OpenAIAgentSDKAdvancedFeatures({ chatbot }: OpenAIAgentSDKAdvanc
                       <Label>Handler Type</Label>
                       <Select
                         value={hookForm.handlerType}
-                        onValueChange={(value: 'api' | 'inline' | 'webhook') => setHookForm({ ...hookForm, handlerType: value })}
+                        onValueChange={(value: string) => setHookForm({ ...hookForm, handlerType: value as 'api' | 'inline' | 'webhook' })}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -953,6 +954,7 @@ export function OpenAIAgentSDKAdvancedFeatures({ chatbot }: OpenAIAgentSDKAdvanc
         </AccordionContent>
       </AccordionItem>
     </Accordion>
+    </div>
   )
 }
 

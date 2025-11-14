@@ -284,9 +284,8 @@ export function DataModelManagement() {
             <Select
               value={selectedSpaceId}
               onValueChange={setSelectedSpaceId}
-              disabled={spacesLoading}
             >
-              <SelectTrigger className="w-[300px]">
+              <SelectTrigger className="w-[300px]" disabled={spacesLoading}>
                 <SelectValue placeholder="Select a space" />
               </SelectTrigger>
               <SelectContent>

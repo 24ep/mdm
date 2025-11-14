@@ -37,7 +37,7 @@ export default function NotebookPage() {
   const [activeTab, setActiveTab] = useState('notebook')
   const [selectedSpace, setSelectedSpace] = useState<string>('')
   const nb = useMemo(() => mockNotebook(params.id), [params.id])
-  const [controls, setControls] = useState<{ toggleSidebar: () => void; save: () => void; openSettings: () => void } | null>(null)
+  const [controls, setControls] = useState<{ toggleSidebar: () => void; save: () => void; openSettings: () => void; renameProject?: (name: string) => void } | null>(null)
   const [title, setTitle] = useState(nb.name)
   
   // keep title in sync if notebook changes

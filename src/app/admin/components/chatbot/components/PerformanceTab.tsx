@@ -593,7 +593,7 @@ export function PerformanceTab({ chatbot }: PerformanceTabProps) {
                   <Label>Cache Strategy</Label>
                   <Select
                     value={cacheConfig.strategy}
-                    onValueChange={(value: 'exact' | 'semantic' | 'fuzzy') => setCacheConfig({ ...cacheConfig, strategy: value })}
+                    onValueChange={(value: string) => setCacheConfig({ ...cacheConfig, strategy: value as 'exact' | 'semantic' | 'fuzzy' })}
                   >
                     <SelectTrigger>
                       <SelectValue />

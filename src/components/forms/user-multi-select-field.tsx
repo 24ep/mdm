@@ -110,9 +110,8 @@ export function UserMultiSelectField({
     <div className="space-y-2">
       <Select
         onValueChange={handleUserToggle}
-        disabled={disabled || loading}
       >
-        <SelectTrigger className={error ? 'border-red-500' : ''}>
+        <SelectTrigger className={error ? 'border-red-500' : ''} disabled={disabled || loading}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>

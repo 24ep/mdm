@@ -480,7 +480,7 @@ export default function ReportViewPage() {
       />
 
       {/* Embed Preview */}
-      {report && (report.embed_url || report.link || (report.access_type === 'SDK' && report.metadata)) && (
+      {report && (report.embed_url || report.link || ((report as any).access_type === 'SDK' && report.metadata)) && (
         <ReportEmbedPreview
           report={report}
           open={showPreview}

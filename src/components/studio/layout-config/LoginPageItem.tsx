@@ -174,8 +174,8 @@ export function LoginPageItem({
             <Label className={`${isMobileViewport ? 'text-sm' : 'text-xs'} font-medium`}>Background Type</Label>
             <Select
               value={currentConfig.backgroundType || 'gradient'}
-              onValueChange={(value: 'color' | 'image' | 'gradient') => {
-                setLoginPageConfig({ ...currentConfig, backgroundType: value })
+              onValueChange={(value: string) => {
+                setLoginPageConfig({ ...currentConfig, backgroundType: value as 'color' | 'image' | 'gradient' })
               }}
             >
               <SelectTrigger className={`${isMobileViewport ? 'h-10' : 'h-8'} text-xs`}>

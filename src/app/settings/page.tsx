@@ -89,6 +89,8 @@ import { DynamicModelIcon } from './components/DynamicModelIcon'
 import { UsersSection } from './components/UsersSection'
 import { RolesSection } from './components/RolesSection'
 
+type AttributeOption = { value: string; label: string; color: string; order: number }
+
 function SortableAttributeOption({
   option,
   index,
@@ -487,7 +489,6 @@ export default function SettingsPage() {
     auto_increment_start: 1,
     auto_increment_padding: 3
   })
-  type AttributeOption = { value: string; label: string; color: string; order: number }
   const [attributeOptions, setAttributeOptions] = useState<AttributeOption[]>([])
   
   // Data Entity configuration state
@@ -1650,7 +1651,7 @@ export default function SettingsPage() {
                     
                     <div className="flex gap-2">
                       <Button className="flex-1" variant="outline" onClick={() => setShowErdInline(true)}>
-                        <LucideIcons.GitBranch className="mr-2 h-4 w-4" />
+                        <GitBranch className="mr-2 h-4 w-4" />
                         ERD View
                       </Button>
                       <Button className="flex-1" onClick={handleCreateDataModel}>

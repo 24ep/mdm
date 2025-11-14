@@ -169,10 +169,10 @@ export function CellOutput({
     }
 
     // Check for tables
-    if (output.tables && output.tables.length > 0) {
+    if ((output as any).tables && (output as any).tables.length > 0) {
       return (
         <div className="space-y-4">
-          {output.tables.map((table, index) => (
+          {(output as any).tables.map((table: any, index: number) => (
             <div key={index}>
               {renderTableOutput(table.data || table)}
             </div>
@@ -182,11 +182,11 @@ export function CellOutput({
     }
 
     // Check for charts
-    if (output.charts && output.charts.length > 0) {
+    if ((output as any).charts && (output as any).charts.length > 0) {
       // Charts can be rendered as images or HTML
       return (
         <div className="space-y-4">
-          {output.charts.map((chart, index) => (
+          {(output as any).charts.map((chart: any, index: number) => (
             <div key={index} className="border rounded p-4">
               <div className="text-sm font-medium mb-2">{chart.title}</div>
               <div className="text-xs text-gray-500">Chart visualization (type: {chart.type})</div>
@@ -197,8 +197,8 @@ export function CellOutput({
     }
 
     // Check for HTML output
-    if (output.html) {
-      return renderHTMLOutput(output.html)
+    if ((output as any).html) {
+      return renderHTMLOutput((output as any).html)
     }
 
     // Check for stdout (ExecutionResult format)
@@ -214,9 +214,9 @@ export function CellOutput({
       return renderTextOutput(resultStr)
     }
 
-    // Check for output.output (legacy format)
-    if (output.output) {
-      return renderTextOutput(output.output)
+    // Check for (output as any).output (legacy format)
+    if ((output as any).output) {
+      return renderTextOutput((output as any).output)
     }
 
     return null
@@ -228,11 +228,11 @@ export function CellOutput({
     output.stderr || 
     output.stdout || 
     (output.result !== undefined && output.result !== null) ||
-    output.output || 
+    (output as any).output || 
     (output.images && output.images.length > 0) || 
-    (output.tables && output.tables.length > 0) ||
-    (output.charts && output.charts.length > 0) ||
-    output.html
+    ((output as any).tables && (output as any).tables.length > 0) ||
+    ((output as any).charts && (output as any).charts.length > 0) ||
+    (output as any).html
   )
 
   if (!hasContent) {
@@ -285,8 +285,8 @@ export function CellOutput({
             size="sm"
             variant="ghost"
             onClick={() => copyToClipboard(
-              output.output || 
-              (output.error ? (typeof output.error === 'string' ? output.error : output.error.message) : '') ||
+              (output as any).output || 
+              ((output as any).error ? (typeof (output as any).error === 'string' ? (output as any).error : (output as any).error.message) : '') ||
               ''
             )}
             className="h-6 w-6 p-0"
@@ -298,8 +298,8 @@ export function CellOutput({
             size="sm"
             variant="ghost"
             onClick={() => downloadOutput(
-              output.output || 
-              (output.error ? (typeof output.error === 'string' ? output.error : output.error.message) : '') ||
+              (output as any).output || 
+              ((output as any).error ? (typeof (output as any).error === 'string' ? (output as any).error : (output as any).error.message) : '') ||
               '',
               `output_${Date.now()}.txt`
             )}
