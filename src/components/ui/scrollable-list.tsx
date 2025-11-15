@@ -31,7 +31,7 @@ export function ScrollableList({
         "overflow-y-auto scrollbar-custom",
         heightClass,
         !showScrollbar && "scrollbar-hide",
-        bordered && "border rounded-lg",
+        bordered && "border border-border rounded-lg",
         padded && "p-4",
         className
       )}

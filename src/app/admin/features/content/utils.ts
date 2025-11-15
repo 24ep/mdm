@@ -3,41 +3,11 @@
  * Helper functions for content operations
  */
 
-import { KnowledgeNotebook, Attachment, ChangeRequest, Ticket } from './types'
+import { Attachment, ChangeRequest, Ticket } from './types'
 import { formatFileSize } from '@/lib/formatters'
 
 // Re-export shared utilities
 export { formatFileSize }
-
-/**
- * Filter knowledge notebooks by search query
- */
-export function filterNotebooksBySearch(
-  notebooks: KnowledgeNotebook[],
-  query: string
-): KnowledgeNotebook[] {
-  if (!query.trim()) return notebooks
-  
-  const lowerQuery = query.toLowerCase()
-  return notebooks.filter(notebook =>
-    notebook.name?.toLowerCase().includes(lowerQuery) ||
-    notebook.description?.toLowerCase().includes(lowerQuery) ||
-    notebook.tags?.some(tag => tag.toLowerCase().includes(lowerQuery))
-  )
-}
-
-/**
- * Sort knowledge notebooks by name
- */
-export function sortNotebooksByName(
-  notebooks: KnowledgeNotebook[],
-  order: 'asc' | 'desc' = 'asc'
-): KnowledgeNotebook[] {
-  return [...notebooks].sort((a, b) => {
-    const comparison = a.name.localeCompare(b.name)
-    return order === 'asc' ? comparison : -comparison
-  })
-}
 
 /**
  * Filter attachments by search query

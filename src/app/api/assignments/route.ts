@@ -3,17 +3,34 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { triggerAssignmentNotification } from '@/lib/notification-triggers'
+import { logger } from '@/lib/logger'
+import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.user) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+    }
 
-    const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '10')
-    const status = searchParams.get('status') || ''
-    const assignedTo = searchParams.get('assignedTo') || ''
+    // Validate query parameters
+    const queryValidation = validateQuery(request, z.object({
+      page: z.string().optional().transform((val) => parseInt(val || '1')).pipe(z.number().int().positive()).optional().default(1),
+      limit: z.string().optional().transform((val) => parseInt(val || '10')).pipe(z.number().int().positive().max(100)).optional().default(10),
+      status: z.string().optional().default(''),
+      assignedTo: commonSchemas.id.optional(),
+    }))
+    
+    if (!queryValidation.success) {
+      return addSecurityHeaders(queryValidation.response)
+    }
+    
+    const { page, limit = 10, status = '', assignedTo } = queryValidation.data
+    logger.apiRequest('GET', '/api/assignments', { userId: session.user.id, page, limit, status })
 
     const offset = (page - 1) * limit
     const filters: string[] = ['deleted_at IS NULL']
@@ -28,36 +45,51 @@ export async function GET(request: NextRequest) {
       query(countSql, params),
     ])
     const total = totals[0]?.total || 0
-    return NextResponse.json({ assignments, pagination: { page, limit, total, pages: Math.ceil(total / limit) } })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/assignments', 200, duration, { total })
+    return addSecurityHeaders(NextResponse.json({ assignments, pagination: { page, limit, total, pages: Math.ceil(total / limit) } }))
   } catch (error) {
-    console.error('Error fetching assignments:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/assignments', 500, duration)
+    return handleApiError(error, 'Assignments API GET')
   }
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.user) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+    }
 
-    const body = await request.json()
+    // Validate request body
+    const bodyValidation = await validateBody(request, z.object({
+      title: z.string().min(1, 'Title is required'),
+      description: z.string().optional(),
+      status: z.string().optional().default('TODO'),
+      priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional().default('MEDIUM'),
+      dueDate: z.string().datetime().optional().nullable(),
+      startDate: z.string().datetime().optional().nullable(),
+      assignedTo: commonSchemas.id.optional().nullable(),
+      customerIds: z.array(commonSchemas.id).optional().default([]),
+    }))
+    
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+    
     const {
       title,
       description,
-      status,
-      priority,
+      status = 'TODO',
+      priority = 'MEDIUM',
       dueDate,
       startDate,
       assignedTo,
-      customerIds,
-    } = body
-
-    if (!title) {
-      return NextResponse.json(
-        { error: 'Title is required' },
-        { status: 400 }
-      )
-    }
+      customerIds = [],
+    } = bodyValidation.data
+    logger.apiRequest('POST', '/api/assignments', { userId: session.user.id, title, status, priority })
 
     const { rows: insertRows } = await query(
       `INSERT INTO public.assignments (title, description, status, priority, due_date, start_date, assigned_to, created_by)
@@ -92,9 +124,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(assignment, { status: 201 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/assignments', 201, duration, { assignmentId: assignment.id })
+    return addSecurityHeaders(NextResponse.json(assignment, { status: 201 }))
   } catch (error) {
-    console.error('Error creating assignment:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/assignments', 500, duration)
+    return handleApiError(error, 'Assignments API POST')
   }
 }

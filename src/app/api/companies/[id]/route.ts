@@ -2,18 +2,34 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
+import { logger } from '@/lib/logger'
+import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id } = paramValidation.data
+    logger.apiRequest('GET', `/api/companies/${id}`, { userId: session.user.id })
 
     const res = await query(
       `SELECT c.*,
@@ -32,13 +48,17 @@ export async function GET(
 
     const company = res.rows[0]
     if (!company) {
-      return NextResponse.json({ error: 'Company not found' }, { status: 404 })
+      logger.warn('Company not found', { companyId: id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Company not found' }, { status: 404 }))
     }
 
-    return NextResponse.json(company)
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', `/api/companies/${id}`, 200, duration)
+    return addSecurityHeaders(NextResponse.json(company))
   } catch (error) {
-    console.error('Error fetching company:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Company API GET')
   }
 }
 
@@ -46,20 +66,43 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id } = await params
-    const body = await request.json()
-    const { name, description, is_active } = body
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id } = paramValidation.data
+
+    // Validate request body
+    const bodyValidation = await validateBody(request, z.object({
+      name: z.string().optional(),
+      description: z.string().optional(),
+      is_active: z.boolean().optional(),
+    }))
+    
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+    
+    const { name, description, is_active } = bodyValidation.data
+    logger.apiRequest('PUT', `/api/companies/${id}`, { userId: session.user.id })
 
     const current = await query('SELECT * FROM companies WHERE id = $1 LIMIT 1', [id])
     const currentCompany = current.rows[0]
     if (!currentCompany) {
-      return NextResponse.json({ error: 'Company not found' }, { status: 404 })
+      logger.warn('Company not found for update', { companyId: id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Company not found' }, { status: 404 }))
     }
 
     if (name && name !== currentCompany.name) {
@@ -68,10 +111,11 @@ export async function PUT(
         [name, id]
       )
       if (existing.rows[0]) {
-        return NextResponse.json(
+        logger.warn('Company with this name already exists', { name, companyId: id })
+        return addSecurityHeaders(NextResponse.json(
           { error: 'Company with this name already exists' },
           { status: 400 }
-        )
+        ))
       }
     }
 
@@ -87,10 +131,13 @@ export async function PUT(
       ['UPDATE', 'Company', id, currentCompany, updatedCompany, session.user.id]
     )
 
-    return NextResponse.json(updatedCompany)
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', `/api/companies/${id}`, 200, duration)
+    return addSecurityHeaders(NextResponse.json(updatedCompany))
   } catch (error) {
-    console.error('Error updating company:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Company API PUT')
   }
 }
 
@@ -98,23 +145,35 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id } = paramValidation.data
+    logger.apiRequest('DELETE', `/api/companies/${id}`, { userId: session.user.id })
 
     const cnt = await query(
       'SELECT COUNT(*)::int AS total FROM customers WHERE company_id = $1 AND deleted_at IS NULL',
       [id]
     )
     if ((cnt.rows[0]?.total || 0) > 0) {
-      return NextResponse.json(
+      logger.warn('Cannot delete company with associated customers', { companyId: id, customerCount: cnt.rows[0]?.total })
+      return addSecurityHeaders(NextResponse.json(
         { error: 'Cannot delete company with associated customers' },
         { status: 400 }
-      )
+      ))
     }
 
     await query(
@@ -127,9 +186,12 @@ export async function DELETE(
       ['DELETE', 'Company', id, session.user.id]
     )
 
-    return NextResponse.json({ message: 'Company deleted successfully' })
+    const duration = Date.now() - startTime
+    logger.apiResponse('DELETE', `/api/companies/${id}`, 200, duration)
+    return addSecurityHeaders(NextResponse.json({ message: 'Company deleted successfully' }))
   } catch (error) {
-    console.error('Error deleting company:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('DELETE', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Company API DELETE')
   }
 }

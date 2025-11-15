@@ -4,30 +4,49 @@ import { authOptions } from '@/lib/auth'
 import { db, query } from '@/lib/db'
 import { Prisma } from '@prisma/client'
 import { parseJsonBody, handleApiError } from '@/lib/api-middleware'
+import { logger } from '@/lib/logger'
+import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
+import { z } from 'zod'
+import { addSecurityHeaders } from '@/lib/security-headers'
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
-    const { id: dataModelId } = await params
-    console.log('🔍 [DATA API] Request received for data model:', dataModelId)
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id: dataModelId } = paramValidation.data
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
-    console.log('🔍 [DATA API] Data model ID:', dataModelId)
     
-    // Parse request body safely using shared utility
-    const requestBody = await parseJsonBody<{
-      customQuery?: string
-      filters?: any
-      limit?: number
-      offset?: number
-    }>(request) || {}
+    logger.apiRequest('POST', `/api/data-models/${dataModelId}/data`, { userId: session.user.id })
     
-    const { customQuery, filters, limit, offset } = requestBody
-    console.log('🔍 [DATA API] Request params:', { customQuery, filters, limit, offset })
+    // Validate request body
+    const bodySchema = z.object({
+      customQuery: z.string().optional(),
+      filters: z.any().optional(),
+      limit: z.number().int().positive().max(1000).optional(),
+      offset: z.number().int().nonnegative().optional(),
+    })
+    
+    const bodyValidation = await validateBody(request, bodySchema)
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+    
+    const { customQuery, filters, limit, offset } = bodyValidation.data
+    logger.debug('Request params', { customQuery: customQuery?.substring(0, 100), filters, limit, offset })
 
     // Get data model and attributes using Prisma ORM - best practice
     const dataModel = await db.dataModel.findFirst({
@@ -50,15 +69,18 @@ export async function POST(
     })
 
     if (!dataModel) {
-      console.error('❌ [DATA API] Data model not found:', dataModelId)
-      return NextResponse.json({ 
+      logger.warn('Data model not found', { dataModelId })
+      return addSecurityHeaders(NextResponse.json({ 
         error: 'Data model not found',
         details: `No data model found with ID: ${dataModelId}`
-      }, { status: 404 })
+      }, { status: 404 }))
     }
     
-    console.log('✅ [DATA API] Data model found:', dataModel.name)
-    console.log('✅ [DATA API] Attributes count:', dataModel.attributes.length)
+    logger.info('Data model found', { 
+      dataModelId, 
+      name: dataModel.name, 
+      attributeCount: dataModel.attributes.length 
+    })
 
     // Transform attributes to match expected format
     const attributes = dataModel.attributes.map(attr => ({
@@ -72,6 +94,7 @@ export async function POST(
 
     // Handle custom query - if provided, use raw SQL (for complex queries)
     if (customQuery) {
+      logger.dbQuery(customQuery.substring(0, 200))
       const { rows: dataRows } = await query(customQuery, [dataModelId])
       const transformedData = dataRows.map(row => ({
         id: row.id,
@@ -80,7 +103,12 @@ export async function POST(
         updated_at: row.updated_at
       }))
       
-      return NextResponse.json({
+      const duration = Date.now() - startTime
+      logger.apiResponse('POST', `/api/data-models/${dataModelId}/data`, 200, duration, {
+        recordCount: transformedData.length,
+        customQuery: true,
+      })
+      return addSecurityHeaders(NextResponse.json({
         success: true,
         data: transformedData,
         metadata: {
@@ -94,7 +122,7 @@ export async function POST(
           customQuery,
           fetchedAt: new Date().toISOString()
         }
-      })
+      }))
     }
 
     // Check if we have filters - if so, use raw SQL for JSONB filtering
@@ -273,10 +301,18 @@ export async function POST(
         }
       })
 
-      console.log('✅ [DATA API] Filtered data records found:', transformedData.length)
-      console.log('✅ [DATA API] Total filtered count:', total)
+      logger.info('Filtered data records found', { 
+        dataModelId, 
+        count: transformedData.length, 
+        total 
+      })
 
-      return NextResponse.json({
+      const duration = Date.now() - startTime
+      logger.apiResponse('POST', `/api/data-models/${dataModelId}/data`, 200, duration, {
+        recordCount: transformedData.length,
+        total,
+      })
+      return addSecurityHeaders(NextResponse.json({
         success: true,
         data: transformedData,
         metadata: {
@@ -336,9 +372,12 @@ export async function POST(
       }
     })
     
-    console.log('✅ [DATA API] Data records found:', dataRecords.length)
-    console.log('✅ [DATA API] Total count:', total)
-    console.log('✅ [DATA API] Transformed data count:', transformedData.length)
+    logger.info('Data records found', { 
+      dataModelId, 
+      recordCount: dataRecords.length, 
+      total, 
+      transformedCount: transformedData.length 
+    })
 
     const response = {
       success: true,
@@ -356,9 +395,15 @@ export async function POST(
       }
     }
     
-    console.log('✅ [DATA API] Sending response with', transformedData.length, 'records')
-    return NextResponse.json(response)
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', `/api/data-models/${dataModelId}/data`, 200, duration, {
+      recordCount: transformedData.length,
+      total,
+    })
+    return addSecurityHeaders(NextResponse.json(response))
   } catch (error) {
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', request.nextUrl.pathname, 500, duration)
     return handleApiError(error, 'DataModelDataAPI')
   }
 }

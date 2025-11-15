@@ -3,23 +3,44 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { NotificationFilters, CreateNotificationRequest } from '@/types/notifications';
+import { logger } from '@/lib/logger';
+import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation';
+import { handleApiError } from '@/lib/api-middleware';
+import { addSecurityHeaders } from '@/lib/security-headers';
+import { z } from 'zod';
 
 // GET /api/notifications - Get notifications for the current user
 export async function GET(request: NextRequest) {
+  const startTime = Date.now();
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }));
     }
 
-    const { searchParams } = new URL(request.url);
+    logger.apiRequest('GET', '/api/notifications', { userId: session.user.id });
+
+    const querySchema = z.object({
+      type: z.string().optional(),
+      status: z.string().optional(),
+      priority: z.string().optional(),
+      limit: z.string().optional().transform((val) => val ? parseInt(val) : 50).pipe(z.number().int().positive().max(100)),
+      offset: z.string().optional().transform((val) => val ? parseInt(val) : 0).pipe(z.number().int().nonnegative()),
+      search: z.string().optional(),
+    });
+
+    const queryValidation = validateQuery(request, querySchema);
+    if (!queryValidation.success) {
+      return addSecurityHeaders(queryValidation.response);
+    }
+
     const filters: NotificationFilters = {
-      type: searchParams.get('type') as any,
-      status: searchParams.get('status') as any,
-      priority: searchParams.get('priority') as any,
-      limit: parseInt(searchParams.get('limit') || '50'),
-      offset: parseInt(searchParams.get('offset') || '0'),
-      search: searchParams.get('search') || undefined,
+      type: queryValidation.data.type as any,
+      status: queryValidation.data.status as any,
+      priority: queryValidation.data.priority as any,
+      limit: queryValidation.data.limit,
+      offset: queryValidation.data.offset,
+      search: queryValidation.data.search,
     };
 
     // Build the query
@@ -91,31 +112,53 @@ export async function GET(request: NextRequest) {
     const { rows: unreadRows } = await query(unreadCountQuery, [session.user.id]);
     const unreadCount = parseInt(unreadRows[0].unread);
 
-    return NextResponse.json({
+    const duration = Date.now() - startTime;
+    logger.apiResponse('GET', '/api/notifications', 200, duration, {
+      notificationCount: notifications.length,
+      total,
+      unreadCount,
+    });
+    return addSecurityHeaders(NextResponse.json({
       notifications,
       total,
       unreadCount,
       hasMore: (filters.offset || 0) + (filters.limit || 50) < total,
-    });
-
+    }));
   } catch (error) {
-    console.error('Error fetching notifications:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch notifications' },
-      { status: 500 }
-    );
+    const duration = Date.now() - startTime;
+    logger.apiResponse('GET', '/api/notifications', 500, duration);
+    return handleApiError(error, 'Notifications API GET');
   }
 }
 
 // POST /api/notifications - Create a new notification
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }));
     }
 
-    const body: CreateNotificationRequest = await request.json();
+    logger.apiRequest('POST', '/api/notifications', { userId: session.user.id });
+
+    const bodySchema = z.object({
+      user_id: commonSchemas.id,
+      type: z.string().min(1),
+      title: z.string().min(1),
+      message: z.string().min(1),
+      priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional().default('MEDIUM'),
+      data: z.any().optional(),
+      action_url: z.string().url().optional(),
+      action_label: z.string().optional(),
+      expires_at: z.string().datetime().optional().nullable(),
+    });
+
+    const bodyValidation = await validateBody(request, bodySchema);
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response);
+    }
+
     const {
       user_id,
       type,
@@ -126,23 +169,16 @@ export async function POST(request: NextRequest) {
       action_url,
       action_label,
       expires_at,
-    } = body;
-
-    // Validate required fields
-    if (!user_id || !type || !title || !message) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
-    }
+    } = bodyValidation.data;
 
     // Check if user has permission to create notifications for this user
     // For now, users can only create notifications for themselves
     if (user_id !== session.user.id && session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN') {
-      return NextResponse.json(
+      logger.warn('Insufficient permissions to create notification', { targetUserId: user_id, userId: session.user.id });
+      return addSecurityHeaders(NextResponse.json(
         { error: 'Insufficient permissions' },
         { status: 403 }
-      );
+      ));
     }
 
     // Create notification using the database function
@@ -175,13 +211,15 @@ export async function POST(request: NextRequest) {
 
     const { rows: notificationRows } = await query(fetchQuery, [notificationId]);
 
-    return NextResponse.json(notificationRows[0], { status: 201 });
-
+    const duration = Date.now() - startTime;
+    logger.apiResponse('POST', '/api/notifications', 201, duration, {
+      notificationId: notificationRows[0].id,
+      type,
+    });
+    return addSecurityHeaders(NextResponse.json(notificationRows[0], { status: 201 }));
   } catch (error) {
-    console.error('Error creating notification:', error);
-    return NextResponse.json(
-      { error: 'Failed to create notification' },
-      { status: 500 }
-    );
+    const duration = Date.now() - startTime;
+    logger.apiResponse('POST', '/api/notifications', 500, duration);
+    return handleApiError(error, 'Notifications API POST');
   }
 }

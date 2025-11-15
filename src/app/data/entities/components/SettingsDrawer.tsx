@@ -102,13 +102,13 @@ export function SettingsDrawer({ open, onOpenChange, renderTrigger, ctx, attribu
 
             <TabsContent value="columns">
               <h4 className="font-medium mb-2">Columns</h4>
-              <div className="space-y-2 max-h-[60vh] overflow-y-auto border rounded-md p-2">
+              <div className="space-y-2 max-h-[60vh] overflow-y-auto border border-border rounded-md p-2">
                 {orderedAllAttributes.map((attr: any) => (
                   <div
                     key={attr.id}
                     className={
-                      "flex flex-col gap-2 border rounded px-2 py-1 transition-colors select-none " +
-                      (dragOverId === attr.id ? "bg-gray-100 " : "bg-white ")
+                      "flex flex-col gap-2 border border-border rounded px-2 py-1 transition-colors select-none " +
+                      (dragOverId === attr.id ? "bg-gray-100 dark:bg-gray-800 " : "bg-white dark:bg-gray-900 ")
                     }
                   >
                     <div
@@ -157,7 +157,7 @@ export function SettingsDrawer({ open, onOpenChange, renderTrigger, ctx, attribu
                     </div>
 
                     {attr.type === 'COMBO' && editingComboId === attr.id && (
-                      <div className="rounded border bg-white p-2">
+                      <div className="rounded border border-border bg-white dark:bg-gray-900 p-2">
                         {(() => {
                           const cc = comboColumns.find((c: any) => c.id === attr.id)
                           if (!cc) return null
@@ -251,7 +251,7 @@ export function SettingsDrawer({ open, onOpenChange, renderTrigger, ctx, attribu
                   </div>
 
                   {showNewComboForm && (
-                    <div className="border rounded-lg p-4 bg-gray-50">
+                    <div className="border border-border rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
                       <h5 className="font-medium mb-3">Create New Combination Column</h5>
                       <div className="space-y-3">
                         <div className={`grid grid-cols-1 gap-2 items-end ${newComboType === 'left-right' ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
@@ -343,7 +343,7 @@ export function SettingsDrawer({ open, onOpenChange, renderTrigger, ctx, attribu
                     </div>
                   )}
 
-                  <div className="border rounded-lg">
+                  <div className="border border-border rounded-lg">
                     <Table>
                       <TableHeader>
                         <TableRow>

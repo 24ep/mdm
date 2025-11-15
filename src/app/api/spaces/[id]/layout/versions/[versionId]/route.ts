@@ -2,20 +2,37 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/database'
+import { logger } from '@/lib/logger'
+import { validateParams, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 // GET /api/spaces/[id]/layout/versions/[versionId] - Get a specific version
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; versionId: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id: spaceId, versionId } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+      versionId: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id: spaceId, versionId } = paramValidation.data
     const userId = session.user.id
+    logger.apiRequest('GET', `/api/spaces/${spaceId}/layout/versions/${versionId}`, { userId })
 
     // Check if user has access to this space
     const accessResult = await query(
@@ -27,7 +44,8 @@ export async function GET(
     )
 
     if (accessResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 })
+      logger.warn('Space not found or access denied for layout version', { spaceId, versionId, userId })
+      return addSecurityHeaders(NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 }))
     }
 
     // Get the specific version
@@ -50,16 +68,19 @@ export async function GET(
     )
 
     if (versionResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Version not found' }, { status: 404 })
+      logger.warn('Layout version not found', { spaceId, versionId })
+      return addSecurityHeaders(NextResponse.json({ error: 'Version not found' }, { status: 404 }))
     }
 
-    return NextResponse.json({
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', `/api/spaces/${spaceId}/layout/versions/${versionId}`, 200, duration)
+    return addSecurityHeaders(NextResponse.json({
       version: versionResult.rows[0]
-    })
-
+    }))
   } catch (error) {
-    console.error('Error fetching layout version:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Layout Version API GET')
   }
 }
 
@@ -68,14 +89,26 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; versionId: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id: spaceId, versionId } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+      versionId: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id: spaceId, versionId } = paramValidation.data
     const userId = session.user.id
+    logger.apiRequest('DELETE', `/api/spaces/${spaceId}/layout/versions/${versionId}`, { userId })
 
     // Check if user has admin/owner access to this space
     const accessResult = await query(
@@ -87,7 +120,8 @@ export async function DELETE(
     )
 
     if (accessResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Space not found or insufficient permissions' }, { status: 403 })
+      logger.warn('Space not found or insufficient permissions for layout version deletion', { spaceId, versionId, userId })
+      return addSecurityHeaders(NextResponse.json({ error: 'Space not found or insufficient permissions' }, { status: 403 }))
     }
 
     // Prevent deleting current version
@@ -97,11 +131,13 @@ export async function DELETE(
     )
 
     if (versionResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Version not found' }, { status: 404 })
+      logger.warn('Layout version not found for deletion', { spaceId, versionId })
+      return addSecurityHeaders(NextResponse.json({ error: 'Version not found' }, { status: 404 }))
     }
 
     if ((versionResult.rows[0] as any).is_current) {
-      return NextResponse.json({ error: 'Cannot delete current version' }, { status: 400 })
+      logger.warn('Attempted to delete current layout version', { spaceId, versionId })
+      return addSecurityHeaders(NextResponse.json({ error: 'Cannot delete current version' }, { status: 400 }))
     }
 
     // Delete the version
@@ -110,11 +146,13 @@ export async function DELETE(
       [versionId, spaceId]
     )
 
-    return NextResponse.json({ success: true })
-
+    const duration = Date.now() - startTime
+    logger.apiResponse('DELETE', `/api/spaces/${spaceId}/layout/versions/${versionId}`, 200, duration)
+    return addSecurityHeaders(NextResponse.json({ success: true }))
   } catch (error) {
-    console.error('Error deleting layout version:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('DELETE', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Layout Version API DELETE')
   }
 }
 

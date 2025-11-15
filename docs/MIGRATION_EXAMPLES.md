@@ -1,348 +1,216 @@
-# Migration Examples - Using New Utilities
+# Migration Examples
 
-**Date:** 2025-01-XX  
-**Status:** ✅ Example Migrations Complete
+This document shows examples of files that have been migrated to use the new best practices utilities.
 
----
+## Migrated Files
 
-## 📋 Summary
-
-Example files have been migrated to demonstrate usage of the new shared utilities. These serve as templates for migrating the remaining files.
-
----
-
-## ✅ Migrated Files
-
-### 1. `src/components/reports/ReportsTreeView.tsx` ✅
-
-**Changes:**
-- ✅ Migrated from `toast` (sonner) to `toast-utils`
-- ✅ Added validation using `validation-utils`
-- ✅ Replaced modal state with `useModal` hook
+### 1. `src/app/api/data-models/[id]/attributes/route.ts`
 
 **Before:**
 ```typescript
-import { toast } from 'sonner'
-const [showCategoryDialog, setShowCategoryDialog] = useState(false)
-
-if (!categoryForm.name.trim()) {
-  toast.error('Category name is required')
-  return
+export async function GET(request: NextRequest, { params }) {
+  const { id: dataModelId } = await params
+  console.log('GET request for data model:', dataModelId)
+  
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  if (!uuidRegex.test(dataModelId)) {
+    console.error('Invalid UUID format:', dataModelId)
+    return NextResponse.json({ error: 'Invalid data model ID format' }, { status: 400 })
+  }
+  
+  // ... rest of code
 }
-toast.success('Category created successfully')
-setShowCategoryDialog(false)
 ```
 
 **After:**
 ```typescript
-import { showSuccess, showError, ToastMessages } from '@/lib/toast-utils'
-import { validateRequired } from '@/lib/validation-utils'
-import { useModal } from '@/hooks/common'
+import { logger } from '@/lib/logger'
+import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
-const categoryDialog = useModal()
-
-const nameError = validateRequired(categoryForm.name.trim(), 'Category name')
-if (nameError) {
-  showError(nameError)
-  return
+export async function GET(request: NextRequest, { params }) {
+  const startTime = Date.now()
+  try {
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id: dataModelId } = paramValidation.data
+    logger.apiRequest('GET', `/api/data-models/${dataModelId}/attributes`)
+    
+    // ... rest of code
+    
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', `/api/data-models/${dataModelId}/attributes`, 200, duration)
+    return addSecurityHeaders(NextResponse.json(response))
+  } catch (error) {
+    return handleApiError(error, 'ATTRIBUTES API')
+  }
 }
-showSuccess(ToastMessages.CREATED)
-categoryDialog.close()
 ```
 
-**Benefits:**
-- Consistent toast messages using `ToastMessages` constants
-- Reusable validation logic
-- Cleaner modal state management
+**Key Changes:**
+- ✅ Replaced `console.log` with `logger`
+- ✅ Added parameter validation using `validateParams`
+- ✅ Added security headers to all responses
+- ✅ Added API request/response logging
+- ✅ Improved error handling with `handleApiError`
 
----
-
-### 2. `src/app/api/reports/categories/route.ts` ✅
-
-**Changes:**
-- ✅ Migrated to use standardized API response format
+### 2. `src/app/api/data-models/[id]/data/route.ts`
 
 **Before:**
 ```typescript
-if (!session?.user) {
-  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export async function POST(request: NextRequest, { params }) {
+  const { id: dataModelId } = await params
+  console.log('Request received for data model:', dataModelId)
+  
+  const body = await request.json()
+  const { customQuery, filters, limit, offset } = body
+  console.log('Request params:', { customQuery, filters, limit, offset })
+  
+  // ... rest of code
 }
-return NextResponse.json({ categories: result.rows || [] })
 ```
 
 **After:**
 ```typescript
-import { createSuccessResponse, createErrorResponse } from '@/lib/api-response'
+import { logger } from '@/lib/logger'
+import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
-if (!session?.user) {
-  return NextResponse.json(
-    createErrorResponse('Unauthorized', 'UNAUTHORIZED'), 
-    { status: 401 }
-  )
-}
-return NextResponse.json(createSuccessResponse({ categories: result.rows || [] }))
-```
-
-**Benefits:**
-- Consistent response structure across all APIs
-- Standardized error codes
-- Better error handling on frontend
-
----
-
-## 📚 Migration Patterns
-
-### Toast Notifications
-
-**Pattern:**
-```typescript
-// Old
-import toast from 'react-hot-toast' // or 'sonner'
-toast.success('Saved successfully')
-toast.error('Failed to save')
-
-// New
-import { showSuccess, showError, ToastMessages } from '@/lib/toast-utils'
-showSuccess(ToastMessages.SAVED)
-showError(ToastMessages.SAVE_ERROR)
-```
-
-**Common Messages:**
-- `ToastMessages.SAVED` - "Saved successfully"
-- `ToastMessages.CREATED` - "Created successfully"
-- `ToastMessages.UPDATED` - "Updated successfully"
-- `ToastMessages.DELETED` - "Deleted successfully"
-- `ToastMessages.SAVE_ERROR` - "Failed to save"
-- `ToastMessages.CREATE_ERROR` - "Failed to create"
-- `ToastMessages.UPDATE_ERROR` - "Failed to update"
-- `ToastMessages.DELETE_ERROR` - "Failed to delete"
-
----
-
-### Validation
-
-**Pattern:**
-```typescript
-// Old
-if (!name || name.trim() === '') {
-  showError('Name is required')
-  return
-}
-if (name.length < 3) {
-  showError('Name must be at least 3 characters')
-  return
-}
-
-// New
-import { validateRequired, validateLength } from '@/lib/validation-utils'
-
-const nameError = validateRequired(name.trim(), 'Name')
-if (nameError) {
-  showError(nameError)
-  return
-}
-
-const lengthError = validateLength(name, 3, 100, 'Name')
-if (lengthError) {
-  showError(lengthError)
-  return
-}
-
-// Or use validateAll for multiple validations
-const { isValid, errors } = validateAll([
-  () => validateRequired(name, 'Name'),
-  () => validateLength(name, 3, 100, 'Name'),
-  () => validateEmail(email)
-])
-if (!isValid) {
-  showError(errors[0])
-  return
-}
-```
-
-**Available Validators:**
-- `validateEmail(email)` - Email format
-- `validateUrl(url)` - URL format
-- `validateUuid(uuid)` - UUID format
-- `validateRequired(value, fieldName)` - Required field
-- `validateFieldName(name)` - Field name format
-- `validateRange(value, min, max, fieldName)` - Number range
-- `validateLength(value, min, max, fieldName)` - String length
-- `validatePattern(value, pattern, errorMessage)` - Regex pattern
-- `validateFileType(fileName, allowedTypes)` - File type
-- `validateFileSize(fileSize, maxSizeBytes)` - File size
-
----
-
-### Modal State
-
-**Pattern:**
-```typescript
-// Old
-const [isOpen, setIsOpen] = useState(false)
-const open = () => setIsOpen(true)
-const close = () => setIsOpen(false)
-
-// New
-import { useModal } from '@/hooks/common'
-const { isOpen, open, close, toggle } = useModal()
-```
-
-**Usage:**
-```typescript
-<Dialog open={isOpen} onOpenChange={(open) => open ? open() : close()}>
-  <Button onClick={open}>Open</Button>
-  <Button onClick={close}>Close</Button>
-</Dialog>
-```
-
----
-
-### API Responses
-
-**Pattern:**
-```typescript
-// Old
-if (!session?.user) {
-  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-}
-return NextResponse.json({ data: result })
-
-// New
-import { createSuccessResponse, createErrorResponse } from '@/lib/api-response'
-
-if (!session?.user) {
-  return NextResponse.json(
-    createErrorResponse('Unauthorized', 'UNAUTHORIZED'),
-    { status: 401 }
-  )
-}
-return NextResponse.json(createSuccessResponse({ data: result }))
-```
-
-**Response Structure:**
-```typescript
-// Success
-{
-  success: true,
-  data: { ... },
-  meta: {
-    timestamp: "2025-01-XXT..."
-  }
-}
-
-// Error
-{
-  success: false,
-  error: {
-    message: "Error message",
-    code: "ERROR_CODE",
-    details: { ... }
-  },
-  meta: {
-    timestamp: "2025-01-XXT..."
+export async function POST(request: NextRequest, { params }) {
+  const startTime = Date.now()
+  try {
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id: dataModelId } = paramValidation.data
+    logger.apiRequest('POST', `/api/data-models/${dataModelId}/data`)
+    
+    const bodySchema = z.object({
+      customQuery: z.string().optional(),
+      filters: z.any().optional(),
+      limit: z.number().int().positive().max(1000).optional(),
+      offset: z.number().int().nonnegative().optional(),
+    })
+    
+    const bodyValidation = await validateBody(request, bodySchema)
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+    
+    const { customQuery, filters, limit, offset } = bodyValidation.data
+    logger.debug('Request params', { customQuery: customQuery?.substring(0, 100), filters, limit, offset })
+    
+    // ... rest of code
+  } catch (error) {
+    return handleApiError(error, 'DataModelDataAPI')
   }
 }
 ```
 
----
+**Key Changes:**
+- ✅ Replaced `console.log` with `logger`
+- ✅ Added parameter validation
+- ✅ Added request body validation with Zod schema
+- ✅ Added security headers
+- ✅ Added API logging
 
-### Pagination
+## Migration Checklist
 
-**Pattern:**
-```typescript
-// Old
-const [page, setPage] = useState(1)
-const [limit, setLimit] = useState(20)
-const nextPage = () => setPage(prev => prev + 1)
-const prevPage = () => setPage(prev => Math.max(1, prev - 1))
+When migrating a file, follow these steps:
 
-// New
-import { usePagination } from '@/hooks/common'
-const { page, limit, nextPage, prevPage, goToPage, setLimit } = usePagination({
-  initialPage: 1,
-  initialLimit: 20
-})
-```
+1. **Add imports:**
+   ```typescript
+   import { logger } from '@/lib/logger'
+   import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
+   import { handleApiError } from '@/lib/api-middleware'
+   import { addSecurityHeaders } from '@/lib/security-headers'
+   import { z } from 'zod'
+   ```
 
----
+2. **Replace console.log:**
+   ```typescript
+   // Before
+   console.log('Message', data)
+   console.error('Error', error)
+   
+   // After
+   logger.info('Message', { data })
+   logger.error('Error occurred', error, { context })
+   ```
 
-### Form State
+3. **Add parameter validation:**
+   ```typescript
+   const resolvedParams = await params
+   const paramValidation = validateParams(resolvedParams, z.object({
+     id: commonSchemas.id,
+   }))
+   
+   if (!paramValidation.success) {
+     return addSecurityHeaders(paramValidation.response)
+   }
+   
+   const { id } = paramValidation.data
+   ```
 
-**Pattern:**
-```typescript
-// Old - Manual form state management
-const [values, setValues] = useState({ name: '', email: '' })
-const [errors, setErrors] = useState({})
-const handleChange = (field) => (value) => {
-  setValues(prev => ({ ...prev, [field]: value }))
-}
+4. **Add body validation:**
+   ```typescript
+   const bodySchema = z.object({
+     name: z.string().min(1),
+     email: z.string().email(),
+   })
+   
+   const bodyValidation = await validateBody(request, bodySchema)
+   if (!bodyValidation.success) {
+     return addSecurityHeaders(bodyValidation.response)
+   }
+   
+   const { name, email } = bodyValidation.data
+   ```
 
-// New
-import { useFormState } from '@/hooks/common'
-import { validateRequired, validateEmail } from '@/lib/validation-utils'
+5. **Add API logging:**
+   ```typescript
+   const startTime = Date.now()
+   logger.apiRequest('POST', '/api/endpoint')
+   
+   // ... handler code ...
+   
+   const duration = Date.now() - startTime
+   logger.apiResponse('POST', '/api/endpoint', 200, duration)
+   ```
 
-const { values, errors, handleChange, handleSubmit, isValid } = useFormState({
-  initialValues: { name: '', email: '' },
-  validate: (values) => ({
-    name: validateRequired(values.name, 'Name'),
-    email: validateEmail(values.email) ? null : 'Invalid email'
-  }),
-  onSubmit: async (values) => {
-    await saveData(values)
-  }
-})
-```
+6. **Add security headers:**
+   ```typescript
+   return addSecurityHeaders(NextResponse.json({ data }))
+   ```
 
----
+7. **Improve error handling:**
+   ```typescript
+   } catch (error) {
+     return handleApiError(error, 'API Context')
+   }
+   ```
 
-## 🔄 Remaining Migration Tasks
+## Next Steps
 
-### Toast Migration (149 files)
-- [ ] Replace `toast.success()` with `showSuccess()`
-- [ ] Replace `toast.error()` with `showError()`
-- [ ] Use `ToastMessages` constants where applicable
-
-### Validation Migration (5+ files)
-- [ ] Replace local validation with `validation-utils`
-- [ ] Use `validateAll()` for multiple validations
-
-### API Response Migration (50+ routes)
-- [ ] Migrate API routes to use `createSuccessResponse()` / `createErrorResponse()`
-- [ ] Update frontend to expect standardized format
-
-### Hook Migration (37+ files)
-- [ ] Replace modal state with `useModal`
-- [ ] Replace pagination logic with `usePagination`
-- [ ] Replace form state with `useFormState`
-
-### Data Fetching Migration (5+ hooks)
-- [ ] Migrate to `useUnifiedDataFetch` where applicable
-- [ ] Align existing hooks with unified pattern
-
----
-
-## 📊 Migration Progress
-
-| Category | Total Files | Migrated | Remaining | Progress |
-|----------|-------------|----------|-----------|----------|
-| Toast | 149 | 1 | 148 | 1% |
-| Validation | 5+ | 1 | 4+ | 20% |
-| API Responses | 50+ | 1 | 49+ | 2% |
-| Common Hooks | 37+ | 1 | 36+ | 3% |
-| Data Fetching | 5+ | 0 | 5+ | 0% |
-
----
-
-## 🎯 Next Steps
-
-1. **Continue Toast Migration** - Start with high-traffic components
-2. **Migrate More API Routes** - Focus on frequently used endpoints
-3. **Adopt Common Hooks** - Replace modal/pagination patterns gradually
-4. **Update Data Fetching** - Migrate hooks to unified pattern
-
----
-
-**Last Updated:** 2025-01-XX  
-**Status:** ✅ Examples Complete - Ready for Full Migration
-
+Continue migrating other API routes following the same pattern. Priority files:
+- `src/app/api/data-models/[id]/attributes/[attrId]/route.ts`
+- `src/app/api/users/[id]/route.ts`
+- `src/app/api/tickets/[id]/route.ts`
+- Other frequently used API routes

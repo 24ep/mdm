@@ -41,11 +41,11 @@ export function EnhancedResultsTable({ currentResult, formatDuration, formatByte
 
   if (!currentResult) {
     return (
-      <div className="h-full flex items-center justify-center bg-gray-50">
+      <div className="h-full flex items-center justify-center bg-muted">
         <div className="text-center">
-          <Table className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-          <h3 className="text-lg font-medium mb-2 text-gray-700">No Results</h3>
-          <p className="text-sm text-gray-500">Run a query to see results here</p>
+          <Table className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          <h3 className="text-lg font-medium mb-2 text-foreground">No Results</h3>
+          <p className="text-sm text-muted-foreground">Run a query to see results here</p>
         </div>
       </div>
     )
@@ -129,10 +129,10 @@ export function EnhancedResultsTable({ currentResult, formatDuration, formatByte
   return (
     <div className="h-full flex flex-col">
       {/* Toolbar */}
-      <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 space-y-3">
+      <div className="px-4 py-3 border-b border-border bg-muted space-y-3">
         {/* Top row: Stats and page size */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs text-gray-500">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span>{processedResults.length} of {currentResult.results.length} rows</span>
             {currentResult.executionTime && (
               <span>• {formatDuration(currentResult.executionTime)}</span>
@@ -145,7 +145,7 @@ export function EnhancedResultsTable({ currentResult, formatDuration, formatByte
             )}
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500">Rows per page:</span>
+            <span className="text-xs text-muted-foreground">Rows per page:</span>
             <Select value={pageSize.toString()} onValueChange={(v) => {
               setPageSize(parseInt(v))
               setCurrentPage(1)
@@ -167,7 +167,7 @@ export function EnhancedResultsTable({ currentResult, formatDuration, formatByte
         {/* Search and filters */}
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-2 top-2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-2 top-2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search in results..."
               value={searchTerm}
@@ -196,19 +196,19 @@ export function EnhancedResultsTable({ currentResult, formatDuration, formatByte
       <ScrollArea className="flex-1">
         <div className="p-4">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50 sticky top-0">
+            <table className="min-w-full divide-y divide-border">
+              <thead className="bg-muted sticky top-0">
                 <tr>
                   {currentResult.columns.map(col => (
                     <th
                       key={col}
                       scope="col"
-                      className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
                     >
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleSort(col)}
-                          className="hover:text-gray-700 flex items-center gap-1"
+                          className="hover:text-foreground flex items-center gap-1"
                         >
                           {col}
                           {sortConfig.column === col && (
@@ -284,7 +284,7 @@ export function EnhancedResultsTable({ currentResult, formatDuration, formatByte
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="text-xs text-gray-500 px-2">
+            <span className="text-xs text-muted-foreground px-2">
               Page {currentPage} of {totalPages}
             </span>
             <Button

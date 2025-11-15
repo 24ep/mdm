@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { EnhancedColorPicker } from '@/components/ui/EnhancedColorPicker'
 import { PlacedWidget } from './widgets'
+import { Z_INDEX } from '@/lib/z-index'
 
 interface FloatingToolbarProps {
   selectedWidget: PlacedWidget | null
@@ -130,13 +131,13 @@ export function FloatingToolbar({
       top: '12px',
       transform: `translateX(-50%) scale(${zoom / 100})`,
       transformOrigin: 'top center',
-      zIndex: 1000,
+      zIndex: Z_INDEX.floatingToolbar,
     }
   }, [zoom])
 
   return (
     <div 
-      className="bg-white border border-gray-200 rounded-lg shadow-lg p-2 flex items-center gap-1 pointer-events-auto"
+      className="bg-background border border-border rounded-lg shadow-lg p-2 flex items-center gap-1 pointer-events-auto"
       style={toolbarStyle}
       onClick={(e) => e.stopPropagation()}
     >
@@ -155,7 +156,7 @@ export function FloatingToolbar({
       )}
 
       {/* Typography Group */}
-      <div className="flex items-center border-r border-gray-200 pr-2 mr-2">
+      <div className="flex items-center border-r border-border pr-2 mr-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 px-2" title="Typography">
@@ -173,18 +174,18 @@ export function FloatingToolbar({
               return (
                 <div className="p-3 space-y-3">
                   <div>
-                    <div className="text-[11px] text-gray-600 mb-1">Font Size</div>
+                    <div className="text-[11px] text-muted-foreground mb-1">Font Size</div>
                     <input 
-                      className="w-full h-7 border border-gray-300 rounded px-1 text-xs" 
+                      className="w-full h-7 border border-border rounded px-1 text-xs bg-background text-foreground" 
                       type="number" 
                       value={Number(style.fontSize ?? props.fontSize ?? 14)} 
                       onChange={(e) => handleUpdateProperty(['properties', 'style', 'fontSize'], Number(e.target.value) || 14)} 
                     />
                   </div>
                   <div>
-                    <div className="text-[11px] text-gray-600 mb-1">Font Weight</div>
+                    <div className="text-[11px] text-muted-foreground mb-1">Font Weight</div>
                     <select 
-                      className="w-full h-7 border border-gray-300 rounded px-1 text-xs" 
+                      className="w-full h-7 border border-border rounded px-1 text-xs bg-background text-foreground" 
                       value={String(style.fontWeight ?? props.fontWeight ?? 'normal')} 
                       onChange={(e) => handleUpdateProperty(['properties', 'style', 'fontWeight'], e.target.value)}
                     >
@@ -209,7 +210,7 @@ export function FloatingToolbar({
       </div>
 
       {/* Style Group */}
-      <div className="flex items-center border-r border-gray-200 pr-2 mr-2">
+      <div className="flex items-center border-r border-border pr-2 mr-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 px-2" title="Style">
@@ -235,21 +236,21 @@ export function FloatingToolbar({
 
             {/* Border Settings */}
             <div className="p-3">
-              <div className="text-xs font-medium text-gray-700 mb-2">Border</div>
+              <div className="text-xs font-medium text-foreground mb-2">Border</div>
               <div className="space-y-2">
                 <div>
-                  <div className="text-[11px] text-gray-600 mb-1">Width</div>
+                  <div className="text-[11px] text-muted-foreground mb-1">Width</div>
                   <input 
-                    className="w-full h-7 border border-gray-300 rounded px-1 text-xs" 
+                    className="w-full h-7 border border-border rounded px-1 text-xs bg-background text-foreground" 
                     type="number" 
                     value={Number(widget.properties?.borderWidth ?? 0)} 
                     onChange={(e) => handleUpdateProperty(['properties', 'borderWidth'], Number(e.target.value) || 0)} 
                   />
                 </div>
                 <div>
-                  <div className="text-[11px] text-gray-600 mb-1">Radius</div>
+                  <div className="text-[11px] text-muted-foreground mb-1">Radius</div>
                   <input 
-                    className="w-full h-7 border border-gray-300 rounded px-1 text-xs" 
+                    className="w-full h-7 border border-border rounded px-1 text-xs bg-background text-foreground" 
                     type="number" 
                     value={Number(widget.properties?.borderRadius ?? 0)} 
                     onChange={(e) => handleUpdateProperty(['properties', 'borderRadius'], Number(e.target.value) || 0)} 
@@ -270,7 +271,7 @@ export function FloatingToolbar({
       </div>
 
       {/* Padding Group */}
-      <div className="flex items-center border-r border-gray-200 pr-2 mr-2">
+      <div className="flex items-center border-r border-border pr-2 mr-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 px-2" title="Padding">
@@ -289,36 +290,36 @@ export function FloatingToolbar({
               return (
                 <div className="p-3 grid grid-cols-2 gap-2">
                   <div>
-                    <div className="text-[11px] text-gray-600 mb-1">Top</div>
+                    <div className="text-[11px] text-muted-foreground mb-1">Top</div>
                     <input 
-                      className="w-full h-7 border border-gray-300 rounded px-1 text-xs" 
+                      className="w-full h-7 border border-border rounded px-1 text-xs bg-background text-foreground" 
                       type="number" 
                       value={Number(current.top || 0)} 
                       onChange={(e) => handleUpdateProperty(['properties', 'padding'], { ...current, top: Number(e.target.value) || 0 })} 
                     />
                   </div>
                   <div>
-                    <div className="text-[11px] text-gray-600 mb-1">Right</div>
+                    <div className="text-[11px] text-muted-foreground mb-1">Right</div>
                     <input 
-                      className="w-full h-7 border border-gray-300 rounded px-1 text-xs" 
+                      className="w-full h-7 border border-border rounded px-1 text-xs bg-background text-foreground" 
                       type="number" 
                       value={Number(current.right || 0)} 
                       onChange={(e) => handleUpdateProperty(['properties', 'padding'], { ...current, right: Number(e.target.value) || 0 })} 
                     />
                   </div>
                   <div>
-                    <div className="text-[11px] text-gray-600 mb-1">Bottom</div>
+                    <div className="text-[11px] text-muted-foreground mb-1">Bottom</div>
                     <input 
-                      className="w-full h-7 border border-gray-300 rounded px-1 text-xs" 
+                      className="w-full h-7 border border-border rounded px-1 text-xs bg-background text-foreground" 
                       type="number" 
                       value={Number(current.bottom || 0)} 
                       onChange={(e) => handleUpdateProperty(['properties', 'padding'], { ...current, bottom: Number(e.target.value) || 0 })} 
                     />
                   </div>
                   <div>
-                    <div className="text-[11px] text-gray-600 mb-1">Left</div>
+                    <div className="text-[11px] text-muted-foreground mb-1">Left</div>
                     <input 
-                      className="w-full h-7 border border-gray-300 rounded px-1 text-xs" 
+                      className="w-full h-7 border border-border rounded px-1 text-xs bg-background text-foreground" 
                       type="number" 
                       value={Number(current.left || 0)} 
                       onChange={(e) => handleUpdateProperty(['properties', 'padding'], { ...current, left: Number(e.target.value) || 0 })} 
@@ -332,7 +333,7 @@ export function FloatingToolbar({
       </div>
 
       {/* Effects Group */}
-      <div className="flex items-center border-r border-gray-200 pr-2 mr-2">
+      <div className="flex items-center border-r border-border pr-2 mr-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 px-2" title="Effects">
@@ -349,36 +350,36 @@ export function FloatingToolbar({
               return (
                 <div className="p-3 grid grid-cols-2 gap-2">
                   <div>
-                    <div className="text-[11px] text-gray-600 mb-1">Offset X</div>
+                    <div className="text-[11px] text-muted-foreground mb-1">Offset X</div>
                     <input 
-                      className="w-full h-7 border border-gray-300 rounded px-1 text-xs" 
+                      className="w-full h-7 border border-border rounded px-1 text-xs bg-background text-foreground" 
                       type="number" 
                       value={Number(shadow.offsetX ?? 0)} 
                       onChange={(e) => handleUpdateProperty(['properties', 'shadow'], { ...shadow, offsetX: Number(e.target.value) || 0 })} 
                     />
                   </div>
                   <div>
-                    <div className="text-[11px] text-gray-600 mb-1">Offset Y</div>
+                    <div className="text-[11px] text-muted-foreground mb-1">Offset Y</div>
                     <input 
-                      className="w-full h-7 border border-gray-300 rounded px-1 text-xs" 
+                      className="w-full h-7 border border-border rounded px-1 text-xs bg-background text-foreground" 
                       type="number" 
                       value={Number(shadow.offsetY ?? 0)} 
                       onChange={(e) => handleUpdateProperty(['properties', 'shadow'], { ...shadow, offsetY: Number(e.target.value) || 0 })} 
                     />
                   </div>
                   <div>
-                    <div className="text-[11px] text-gray-600 mb-1">Blur</div>
+                    <div className="text-[11px] text-muted-foreground mb-1">Blur</div>
                     <input 
-                      className="w-full h-7 border border-gray-300 rounded px-1 text-xs" 
+                      className="w-full h-7 border border-border rounded px-1 text-xs bg-background text-foreground" 
                       type="number" 
                       value={Number(shadow.blur ?? 0)} 
                       onChange={(e) => handleUpdateProperty(['properties', 'shadow'], { ...shadow, blur: Number(e.target.value) || 0 })} 
                     />
                   </div>
                   <div>
-                    <div className="text-[11px] text-gray-600 mb-1">Spread</div>
+                    <div className="text-[11px] text-muted-foreground mb-1">Spread</div>
                     <input 
-                      className="w-full h-7 border border-gray-300 rounded px-1 text-xs" 
+                      className="w-full h-7 border border-border rounded px-1 text-xs bg-background text-foreground" 
                       type="number" 
                       value={Number(shadow.spread ?? 0)} 
                       onChange={(e) => handleUpdateProperty(['properties', 'shadow'], { ...shadow, spread: Number(e.target.value) || 0 })} 
@@ -400,7 +401,7 @@ export function FloatingToolbar({
       </div>
 
       {/* Transform Group */}
-      <div className="flex items-center border-r border-gray-200 pr-2 mr-2">
+      <div className="flex items-center border-r border-border pr-2 mr-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 px-2">
@@ -434,7 +435,7 @@ export function FloatingToolbar({
 
       {/* Layer Group */}
       {(onBringToFront || onSendToBack || onBringForward || onSendBackward) && (
-        <div className="flex items-center border-r border-gray-200 pr-2 mr-2">
+        <div className="flex items-center border-r border-border pr-2 mr-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="h-8 px-2" title="Layer">
@@ -553,8 +554,8 @@ export function FloatingToolbar({
 
       {/* Element Type Indicator */}
       {widgets.length === 1 && (
-        <div className="flex items-center border-l border-gray-200 pl-2 ml-2">
-          <div className="flex items-center gap-2 text-xs text-gray-600">
+        <div className="flex items-center border-l border-border pl-2 ml-2">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Square className="w-4 h-4" />
             <span className="capitalize">{widget.type.replace('-', ' ')}</span>
           </div>
@@ -563,8 +564,8 @@ export function FloatingToolbar({
 
       {/* Multi-select indicator */}
       {isMultiSelect && (
-        <div className="flex items-center border-l border-gray-200 pl-2 ml-2">
-          <div className="text-xs text-gray-600 font-medium">
+        <div className="flex items-center border-l border-border pl-2 ml-2">
+          <div className="text-xs text-muted-foreground font-medium">
             {selectedWidgets.length} selected
           </div>
         </div>

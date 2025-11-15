@@ -4,16 +4,34 @@ import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { reportSchema } from '@/lib/validation/report-schemas'
 import { auditLogger } from '@/lib/utils/audit-logger'
+import { logger } from '@/lib/logger'
+import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.user) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+    }
 
-    const { id } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id } = paramValidation.data
+    logger.apiRequest('GET', `/api/reports/${id}`, { userId: session.user.id })
 
     const sql = `
       SELECT r.*,
@@ -49,7 +67,8 @@ export async function GET(
     const result = await query(sql, [session.user.id, id])
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Report not found' }, { status: 404 })
+      logger.warn('Report not found', { reportId: id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Report not found' }, { status: 404 }))
     }
 
     const report = result.rows[0]
@@ -77,10 +96,13 @@ export async function GET(
       report.metadata = metadata
     }
 
-    return NextResponse.json({ report })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', `/api/reports/${id}`, 200, duration)
+    return addSecurityHeaders(NextResponse.json({ report }))
   } catch (error) {
-    console.error('Error fetching report:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Reports API GET')
   }
 }
 
@@ -88,22 +110,33 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.user) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+    }
 
-    const { id } = await params
-    const body = await request.json()
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
     
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id } = paramValidation.data
+    logger.apiRequest('PUT', `/api/reports/${id}`, { userId: session.user.id })
+
     // Validate with Zod schema (partial validation for updates)
     const updateSchema = reportSchema.partial()
-    const validationResult = updateSchema.safeParse(body)
-    if (!validationResult.success) {
-      return NextResponse.json({ 
-        error: 'Validation failed', 
-        details: validationResult.error.issues 
-      }, { status: 400 })
+    const bodyValidation = await validateBody(request, updateSchema)
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
     }
+    
+    const validationResult = { success: true, data: bodyValidation.data }
 
     const {
       name,
@@ -118,7 +151,8 @@ export async function PUT(
     } = validationResult.data
     
     // Get is_active from body directly as it may not be in the schema
-    const is_active = body.is_active
+    const bodyData = bodyValidation.data as any
+    const is_active = bodyData.is_active
 
     const sql = `
       UPDATE public.reports
@@ -157,16 +191,20 @@ export async function PUT(
     ])
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Report not found or no permission' }, { status: 404 })
+      logger.warn('Report not found or no permission for update', { reportId: id, userId: session.user.id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Report not found or no permission' }, { status: 404 }))
     }
 
     // Log audit event
     auditLogger.reportUpdated(id, { fields: Object.keys(validationResult.data) })
 
-    return NextResponse.json({ report: result.rows[0] })
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', `/api/reports/${id}`, 200, duration)
+    return addSecurityHeaders(NextResponse.json({ report: result.rows[0] }))
   } catch (error) {
-    console.error('Error updating report:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Reports API PUT')
   }
 }
 
@@ -174,11 +212,24 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.user) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+    }
 
-    const { id } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id } = paramValidation.data
+    logger.apiRequest('DELETE', `/api/reports/${id}`, { userId: session.user.id })
 
     const sql = `
       UPDATE public.reports
@@ -194,16 +245,20 @@ export async function DELETE(
     const result = await query(sql, [id, session.user.id])
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Report not found or no permission' }, { status: 404 })
+      logger.warn('Report not found or no permission for deletion', { reportId: id, userId: session.user.id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Report not found or no permission' }, { status: 404 }))
     }
 
     // Log audit event
     auditLogger.reportDeleted(id)
 
-    return NextResponse.json({ success: true })
+    const duration = Date.now() - startTime
+    logger.apiResponse('DELETE', `/api/reports/${id}`, 200, duration)
+    return addSecurityHeaders(NextResponse.json({ success: true }))
   } catch (error) {
-    console.error('Error deleting report:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('DELETE', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Reports API DELETE')
   }
 }
 

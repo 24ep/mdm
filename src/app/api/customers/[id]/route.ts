@@ -3,18 +3,34 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { createAuditLog } from '@/lib/audit'
+import { logger } from '@/lib/logger'
+import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id } = paramValidation.data
+    logger.apiRequest('GET', `/api/customers/${id}`, { userId: session.user.id })
     const { rows } = await query(
       `SELECT * FROM public.customers WHERE id = $1 AND deleted_at IS NULL LIMIT 1`,
       [id]
@@ -22,16 +38,17 @@ export async function GET(
 
     const customer = rows[0]
     if (!customer) {
-      return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
+      logger.warn('Customer not found', { customerId: id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Customer not found' }, { status: 404 }))
     }
 
-    return NextResponse.json(customer)
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', `/api/customers/${id}`, 200, duration)
+    return addSecurityHeaders(NextResponse.json(customer))
   } catch (error) {
-    console.error('Error fetching customer:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Customer API GET')
   }
 }
 
@@ -39,14 +56,44 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id } = await params
-    const body = await request.json()
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id } = paramValidation.data
+
+    // Validate request body
+    const bodyValidation = await validateBody(request, z.object({
+      first_name: z.string().optional(),
+      last_name: z.string().optional(),
+      email: z.string().email().optional(),
+      phone: z.string().optional(),
+      company_id: commonSchemas.id.optional(),
+      source_id: commonSchemas.id.optional(),
+      industry_id: commonSchemas.id.optional(),
+      event_id: commonSchemas.id.optional(),
+      position_id: commonSchemas.id.optional(),
+      business_profile_id: commonSchemas.id.optional(),
+      title_id: commonSchemas.id.optional(),
+      call_workflow_status_id: commonSchemas.id.optional(),
+    }))
+    
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+    
     const {
       first_name,
       last_name,
@@ -60,7 +107,8 @@ export async function PUT(
       business_profile_id,
       title_id,
       call_workflow_status_id,
-    } = body
+    } = bodyValidation.data
+    logger.apiRequest('PUT', `/api/customers/${id}`, { userId: session.user.id })
 
     const { rows: currentRows } = await query(
       'SELECT * FROM public.customers WHERE id = $1 LIMIT 1',
@@ -68,7 +116,8 @@ export async function PUT(
     )
     const currentCustomer = currentRows[0]
     if (!currentCustomer) {
-      return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
+      logger.warn('Customer not found for update', { customerId: id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Customer not found' }, { status: 404 }))
     }
 
     if (email && email !== currentCustomer.email) {
@@ -77,10 +126,11 @@ export async function PUT(
         [email, id]
       )
       if (existing.length > 0) {
-        return NextResponse.json(
+        logger.warn('Customer with this email already exists', { email, customerId: id })
+        return addSecurityHeaders(NextResponse.json(
           { error: 'Customer with this email already exists' },
           { status: 400 }
-        )
+        ))
       }
     }
 
@@ -134,13 +184,13 @@ export async function PUT(
       userAgent: request.headers.get('user-agent') || 'unknown'
     })
 
-    return NextResponse.json(customer)
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', `/api/customers/${id}`, 200, duration)
+    return addSecurityHeaders(NextResponse.json(customer))
   } catch (error) {
-    console.error('Error updating customer:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Customer API PUT')
   }
 }
 
@@ -148,20 +198,32 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id } = paramValidation.data
+    logger.apiRequest('DELETE', `/api/customers/${id}`, { userId: session.user.id })
     const { rows: currentRows } = await query(
       'SELECT * FROM public.customers WHERE id = $1 LIMIT 1',
       [id]
     )
     const currentCustomer = currentRows[0]
     if (!currentCustomer) {
-      return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
+      logger.warn('Customer not found for deletion', { customerId: id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Customer not found' }, { status: 404 }))
     }
 
     await query(
@@ -174,12 +236,12 @@ export async function DELETE(
       ['DELETE', 'Customer', id, currentCustomer, session.user.id]
     )
 
-    return NextResponse.json({ message: 'Customer deleted successfully' })
+    const duration = Date.now() - startTime
+    logger.apiResponse('DELETE', `/api/customers/${id}`, 200, duration)
+    return addSecurityHeaders(NextResponse.json({ message: 'Customer deleted successfully' }))
   } catch (error) {
-    console.error('Error deleting customer:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    const duration = Date.now() - startTime
+    logger.apiResponse('DELETE', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Customer API DELETE')
   }
 }

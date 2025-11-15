@@ -9,11 +9,11 @@ const pathToTabMap: Record<string, string> = {
   '/tools/notebook': 'notebook',
   '/tools/ai-analyst': 'ai-analyst',
   '/tools/ai-chat-ui': 'ai-chat-ui',
-  '/tools/knowledge-base': 'knowledge-base',
   '/tools/projects': 'projects',
   '/tools/bi': 'bi',
   '/tools/storage': 'storage',
   '/tools/data-governance': 'data-governance',
+  '/tools/api-client': 'api-client',
 }
 
 export default function ToolsLayout({

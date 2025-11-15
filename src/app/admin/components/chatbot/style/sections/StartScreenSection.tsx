@@ -87,7 +87,7 @@ export function StartScreenSection({ formData, setFormData, chatkitOptions }: Se
             </div>
             <div className="space-y-2">
               {(chatkitOptions?.startScreen?.prompts || []).map((prompt: { name?: string; label?: string; prompt: string; icon?: string }, index: number) => (
-                <div key={index} className="border rounded-lg p-3 space-y-2">
+                <div key={index} className="border border-border rounded-lg p-3 space-y-2">
                   <div className="flex gap-2 items-start">
                     <div className="flex-1 space-y-1">
                       <Label className="text-xs">Label (optional)</Label>

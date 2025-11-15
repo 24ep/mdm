@@ -2,23 +2,34 @@ import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/database'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { logger } from '@/lib/logger'
+import { validateQuery, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { searchParams } = new URL(request.url)
-    const spaceId = searchParams.get('spaceId')
-    const period = searchParams.get('period') || '30d' // 7d, 30d, 90d, 1y
-
-    if (!spaceId) {
-      return NextResponse.json({ error: 'Space ID is required' }, { status: 400 })
+    // Validate query parameters
+    const queryValidation = validateQuery(request, z.object({
+      spaceId: commonSchemas.id,
+      period: z.enum(['7d', '30d', '90d', '1y']).optional().default('30d'),
+    }))
+    
+    if (!queryValidation.success) {
+      return addSecurityHeaders(queryValidation.response)
     }
+    
+    const { spaceId, period = '30d' } = queryValidation.data
+    logger.apiRequest('GET', '/api/files/analytics', { userId, spaceId, period })
 
     // Check if user has access to this space
     const memberResult = await query(
@@ -27,7 +38,8 @@ export async function GET(request: NextRequest) {
     )
 
     if (memberResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 })
+      logger.warn('Space not found or access denied for file analytics', { spaceId, userId })
+      return addSecurityHeaders(NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 }))
     }
 
     // Calculate date range based on period
@@ -198,8 +210,49 @@ export async function GET(request: NextRequest) {
       quota: quotaUsage
     })
 
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/files/analytics', 200, duration, { period })
+    return addSecurityHeaders(NextResponse.json({
+      period,
+      dateRange: {
+        from: startDate,
+        to: now
+      },
+      statistics: {
+        totalFiles: parseInt((statsResult.rows[0] as any).total_files),
+        totalSize: parseInt((statsResult.rows[0] as any).total_size),
+        uniqueUploaders: parseInt((statsResult.rows[0] as any).unique_uploaders),
+        avgFileSize: parseFloat((statsResult.rows[0] as any).avg_file_size),
+        earliestUpload: (statsResult.rows[0] as any).earliest_upload,
+        latestUpload: (statsResult.rows[0] as any).latest_upload
+      },
+      fileTypes: fileTypesResult.rows.map((row: any) => ({
+        mimeType: row.mime_type,
+        count: parseInt(row.count),
+        totalSize: parseInt(row.total_size)
+      })),
+      trends: trendsResult.rows.map((row: any) => ({
+        date: row.date,
+        uploads: parseInt(row.uploads),
+        sizeUploaded: parseInt(row.size_uploaded)
+      })),
+      topUploaders: topUploadersResult.rows.map((row: any) => ({
+        id: row.id,
+        name: row.name,
+        email: row.email,
+        fileCount: parseInt(row.file_count),
+        totalSize: parseInt(row.total_size)
+      })),
+      storageUsage: storageUsageResult.rows.map((row: any) => ({
+        provider: row.provider,
+        fileCount: parseInt(row.file_count),
+        totalSize: parseInt(row.total_size)
+      })),
+      quota: quotaUsage
+    }))
   } catch (error) {
-    console.error('Error fetching file analytics:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/files/analytics', 500, duration)
+    return handleApiError(error, 'File Analytics API GET')
   }
 }

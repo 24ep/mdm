@@ -4,20 +4,37 @@ import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { reportSchema } from '@/lib/validation/report-schemas'
 import { auditLogger } from '@/lib/utils/audit-logger'
+import { logger } from '@/lib/logger'
+import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.user) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+    }
 
-    const { searchParams } = new URL(request.url)
-    const source = searchParams.get('source')
-    const spaceId = searchParams.get('space_id')
-    const search = searchParams.get('search') || ''
-    const categoryId = searchParams.get('category_id')
-    const status = searchParams.get('status')
-    const dateFrom = searchParams.get('date_from')
-    const dateTo = searchParams.get('date_to')
+    // Validate query parameters
+    const queryValidation = validateQuery(request, z.object({
+      source: z.string().optional(),
+      space_id: commonSchemas.id.optional(),
+      search: z.string().optional().default(''),
+      category_id: commonSchemas.id.optional(),
+      status: z.string().optional(),
+      date_from: z.string().optional(),
+      date_to: z.string().optional(),
+    }))
+    
+    if (!queryValidation.success) {
+      return addSecurityHeaders(queryValidation.response)
+    }
+    
+    const { source, space_id: spaceId, search = '', category_id: categoryId, status, date_from: dateFrom, date_to: dateTo } = queryValidation.data
+    logger.apiRequest('GET', '/api/reports', { userId: session.user.id, source, spaceId, search })
 
     const params: any[] = [session.user.id]
     const filters: string[] = ['r.deleted_at IS NULL']
@@ -98,23 +115,51 @@ export async function GET(request: NextRequest) {
       query(foldersSql, [])
     ])
 
-    return NextResponse.json({
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/reports', 200, duration, { 
+      reportsCount: reports.length, 
+      categoriesCount: categories.length,
+      foldersCount: folders.length
+    })
+    return addSecurityHeaders(NextResponse.json({
       reports: reports || [],
       categories: categories || [],
       folders: folders || []
-    })
+    }))
   } catch (error) {
-    console.error('Error fetching reports:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/reports', 500, duration)
+    return handleApiError(error, 'Reports API GET')
   }
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.user) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+    }
 
-    const body = await request.json()
+    // Validate request body
+    const bodyValidation = await validateBody(request, z.object({
+      name: z.string().min(1, 'Name is required'),
+      description: z.string().optional(),
+      source: z.string().min(1, 'Source is required'),
+      category_id: commonSchemas.id.optional(),
+      folder_id: commonSchemas.id.optional(),
+      owner: z.string().optional(),
+      link: z.string().url().optional(),
+      workspace: z.string().optional(),
+      embed_url: z.string().url().optional(),
+      metadata: z.any().optional(),
+      space_ids: z.array(commonSchemas.id).optional().default([]),
+    }))
+    
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+    
     const {
       name,
       description,
@@ -126,12 +171,9 @@ export async function POST(request: NextRequest) {
       workspace,
       embed_url,
       metadata,
-      space_ids
-    } = body
-
-    if (!name || !source) {
-      return NextResponse.json({ error: 'Name and source are required' }, { status: 400 })
-    }
+      space_ids = []
+    } = bodyValidation.data
+    logger.apiRequest('POST', '/api/reports', { userId: session.user.id, name, source })
 
     const insertSql = `
       INSERT INTO public.reports (
@@ -173,10 +215,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ report }, { status: 201 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/reports', 201, duration, { reportId: report.id })
+    return addSecurityHeaders(NextResponse.json({ report }, { status: 201 }))
   } catch (error) {
-    console.error('Error creating report:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/reports', 500, duration)
+    return handleApiError(error, 'Reports API POST')
   }
 }
 

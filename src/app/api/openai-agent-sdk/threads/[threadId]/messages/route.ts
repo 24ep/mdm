@@ -55,7 +55,7 @@ export async function GET(
     })
 
     // Format messages for frontend
-    const messages = messagesResponse.data.map((msg) => ({
+    const messages = (messagesResponse.data || []).map((msg) => ({
       id: msg.id,
       role: msg.role,
       content: msg.content,

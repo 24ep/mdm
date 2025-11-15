@@ -14,6 +14,7 @@ import { getEffectiveType } from './chartDataSourceUtils'
 import { useDataModels, useAttributes } from './useChartDataSource'
 import { AttributeDropZone } from './AttributeDropZone'
 import { ColorInput } from './ColorInput'
+import { Z_INDEX } from '@/lib/z-index'
 
 // Aggregation types for value/metric dimensions
 export type AggregationType = 'SUM' | 'AVG' | 'COUNT' | 'COUNT_DISTINCT' | 'MIN' | 'MAX' | 'MEDIAN' | 'STDDEV' | 'VARIANCE' | 'NONE'
@@ -502,7 +503,8 @@ export function ChartDataSourceConfig({
             </SelectTrigger>
             <SelectContent 
               position="popper"
-              className="z-[10000] max-h-[200px]"
+              className="max-h-[200px]"
+              style={{ zIndex: Z_INDEX.popover }}
               sideOffset={4}
             >
               {dataModels.map((model: any) => {
@@ -633,7 +635,7 @@ export function ChartDataSourceConfig({
                             <Paintbrush className="h-3 w-3 text-muted-foreground" />
                           </button>
                         </PopoverTrigger>
-                        <PopoverContent className="z-[10002] p-2 whitespace-nowrap min-w-40" align="end" sideOffset={6} style={{ width: 'max-content' }} onClick={(e) => e.stopPropagation()}>
+                        <PopoverContent className="p-2 whitespace-nowrap min-w-40" align="end" sideOffset={6} style={{ width: 'max-content', zIndex: Z_INDEX.popover }} onClick={(e) => e.stopPropagation()}>
                           <div className="flex flex-col gap-2 text-[11px]">
                             <div className="flex items-center gap-2 justify-between">
                               <span className="text-muted-foreground">Font size</span>

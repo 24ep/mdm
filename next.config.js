@@ -12,10 +12,11 @@ const nextConfig = {
       },
     ],
   },
-  // typescript: {
-  //   // Allow build to continue even with TypeScript errors (useful for Docker builds)
-  //   ignoreBuildErrors: true,
-  // },
+  typescript: {
+    // In production, fail on TypeScript errors for better code quality
+    // Set to true only during development if needed
+    ignoreBuildErrors: process.env.NODE_ENV === 'development',
+  },
   // Disable output file tracing for local builds to avoid Windows permission issues
   output: process.env.NODE_ENV === 'production' && process.env.DOCKER_BUILD ? 'standalone' : undefined,
   // Add empty turbopack config to silence Next.js 16 warning (we use webpack)

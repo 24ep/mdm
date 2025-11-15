@@ -2,16 +2,31 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { logger } from '@/lib/logger'
+import { validateQuery, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { searchParams } = new URL(request.url)
-    const spaceId = searchParams.get('spaceId')
+    // Validate query parameters
+    const queryValidation = validateQuery(request, z.object({
+      spaceId: commonSchemas.id.optional(),
+    }))
+    
+    if (!queryValidation.success) {
+      return addSecurityHeaders(queryValidation.response)
+    }
+    
+    const { spaceId } = queryValidation.data
+    logger.apiRequest('GET', '/api/attachments', { userId: session.user.id, spaceId })
 
     // Check if user has access to this space using Prisma
     if (spaceId) {
@@ -24,7 +39,8 @@ export async function GET(request: NextRequest) {
       })
 
       if (!spaceMember) {
-        return NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 })
+        logger.warn('Space not found or access denied for attachments', { spaceId, userId: session.user.id })
+        return addSecurityHeaders(NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 }))
       }
     }
 
@@ -33,10 +49,12 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' }
     })
 
-    return NextResponse.json({ attachments })
-
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/attachments', 200, duration, { count: attachments.length })
+    return addSecurityHeaders(NextResponse.json({ attachments }))
   } catch (error) {
-    console.error('Error in attachments GET:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/attachments', 500, duration)
+    return handleApiError(error, 'Attachments API GET')
   }
 }

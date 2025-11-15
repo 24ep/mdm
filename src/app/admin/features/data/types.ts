@@ -172,6 +172,7 @@ export interface DataModel {
   primary_color?: string
   tags?: string[]
   shared_spaces?: any[]
+  space_ids?: string[]
   created_at?: string
   updated_at?: string
 }

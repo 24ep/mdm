@@ -350,7 +350,7 @@ export function ValidationRulesBuilder({ rules, onRulesChange, attributeType }: 
           {rules.map((rule) => {
             const validation = validateRule(rule)
             return (
-              <Card key={rule.id} className={!validation.valid ? 'border-red-200' : ''}>
+              <Card key={rule.id} className={!validation.valid ? 'border-red-200 dark:border-red-800' : ''}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -450,6 +450,7 @@ export function ValidationRulesBuilder({ rules, onRulesChange, attributeType }: 
                         </div>
                       </TabsContent>
                     </Tabs>
+                    </div>
                   </CardContent>
                 )}
               </Card>

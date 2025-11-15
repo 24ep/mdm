@@ -3,18 +3,34 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { SpacesEditorConfig } from '@/lib/space-studio-manager'
+import { logger } from '@/lib/logger'
+import { validateParams } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id: spaceSlugOrId } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: z.string().min(1),
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id: spaceSlugOrId } = paramValidation.data
+    logger.apiRequest('GET', `/api/spaces/${spaceSlugOrId}/default-page`, { userId: session.user.id })
     
     // Get space ID from slug or id
     const spaceResult = await query(
@@ -23,7 +39,8 @@ export async function GET(
     )
 
     if (spaceResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Space not found' }, { status: 404 })
+      logger.warn('Space not found for default page', { spaceSlugOrId })
+      return addSecurityHeaders(NextResponse.json({ error: 'Space not found' }, { status: 404 }))
     }
 
     const spaceId = spaceResult.rows[0].id
@@ -70,22 +87,28 @@ export async function GET(
           }
         }
       } catch (e) {
-        console.error('Error parsing spaces editor config:', e)
+        logger.error('Error parsing spaces editor config', e, { spaceId })
         // Fallback to dashboard
       }
     }
 
-    return NextResponse.json({ 
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', `/api/spaces/${spaceSlugOrId}/default-page`, 200, duration, {
+      path: defaultPath,
+      hasPageId: !!pageId,
+    })
+    return addSecurityHeaders(NextResponse.json({ 
       path: defaultPath,
       pageId: pageId
-    })
+    }))
   } catch (error) {
-    console.error('Error fetching default page:', error)
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
     // Return default dashboard on error
-    return NextResponse.json({ 
+    return addSecurityHeaders(NextResponse.json({ 
       path: '/dashboard',
       pageId: null
-    })
+    }))
   }
 }
 

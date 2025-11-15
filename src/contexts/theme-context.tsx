@@ -80,6 +80,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const applyTheme = (themeConfig: ThemeConfig) => {
     const root = document.documentElement
+    
+    // Ensure the dark class is added/removed based on theme mode
+    // This is critical for Tailwind's dark mode to work
+    if (themeConfig.mode === 'dark') {
+      root.classList.add('dark')
+    } else {
+      root.classList.remove('dark')
+    }
+    
     root.style.setProperty('--background', themeConfig.colors.background)
     root.style.setProperty('--foreground', themeConfig.colors.foreground)
     root.style.setProperty('--card', themeConfig.colors.card)

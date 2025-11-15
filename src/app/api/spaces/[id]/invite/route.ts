@@ -3,24 +3,47 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import nodemailer from 'nodemailer'
+import { logger } from '@/lib/logger'
+import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { env } from '@/lib/env'
+import { z } from 'zod'
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id: spaceId } = await params
-    const body = await request.json()
-    const { email, role = 'member' } = body
-
-    if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 })
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
     }
+    
+    const { id: spaceId } = paramValidation.data
+    logger.apiRequest('POST', `/api/spaces/${spaceId}/invite`, { userId: session.user.id })
+
+    const bodySchema = z.object({
+      email: commonSchemas.email,
+      role: z.enum(['owner', 'admin', 'member', 'viewer']).optional().default('member'),
+    })
+
+    const bodyValidation = await validateBody(request, bodySchema)
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+
+    const { email, role = 'member' } = bodyValidation.data
 
     // Check if current user has permission to invite members
     const memberCheck = await query(`
@@ -29,7 +52,8 @@ export async function POST(
     `, [spaceId, session.user.id])
 
     if (memberCheck.rows.length === 0 || !['owner', 'admin'].includes(memberCheck.rows[0].role)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      logger.warn('Insufficient permissions to invite member', { spaceId, userId: session.user.id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 }))
     }
 
     // Get space details
@@ -38,7 +62,8 @@ export async function POST(
     `, [spaceId])
 
     if (spaceResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Space not found' }, { status: 404 })
+      logger.warn('Space not found for invitation', { spaceId })
+      return addSecurityHeaders(NextResponse.json({ error: 'Space not found' }, { status: 404 }))
     }
 
     const space = spaceResult.rows[0]
@@ -58,7 +83,8 @@ export async function POST(
       `, [spaceId, user.id])
 
       if (existingMember.rows.length > 0) {
-        return NextResponse.json({ error: 'User is already a member of this space' }, { status: 400 })
+        logger.warn('User is already a member of space', { spaceId, email })
+        return addSecurityHeaders(NextResponse.json({ error: 'User is already a member of this space' }, { status: 400 }))
       }
 
       // Add user to space
@@ -67,11 +93,17 @@ export async function POST(
         VALUES ($1, $2, $3)
       `, [spaceId, user.id, role])
 
-      return NextResponse.json({
+      const duration = Date.now() - startTime
+      logger.apiResponse('POST', `/api/spaces/${spaceId}/invite`, 200, duration, {
+        action: 'added_existing_user',
+        email,
+        role,
+      })
+      return addSecurityHeaders(NextResponse.json({
         success: true,
         message: 'User added to space successfully',
         user: user
-      })
+      }))
     }
 
     // User doesn't exist, send invitation email
@@ -86,17 +118,21 @@ export async function POST(
     // Send invitation email
     await sendInvitationEmail(email, space.name, invitationToken, session.user.name || 'Admin')
 
-    return NextResponse.json({
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', `/api/spaces/${spaceId}/invite`, 200, duration, {
+      action: 'sent_invitation',
+      email,
+      role,
+    })
+    return addSecurityHeaders(NextResponse.json({
       success: true,
       message: 'Invitation sent successfully',
       email: email
-    })
+    }))
   } catch (error) {
-    console.error('Error sending invitation:', error)
-    return NextResponse.json(
-      { error: 'Failed to send invitation' },
-      { status: 500 }
-    )
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Space Invite API')
   }
 }
 
@@ -113,21 +149,21 @@ async function sendInvitationEmail(
   try {
     // Get SMTP settings from environment or database
     const smtpConfig = {
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: process.env.SMTP_SECURE === 'true',
+      host: env.SMTP_HOST || 'smtp.gmail.com',
+      port: parseInt(env.SMTP_PORT || '587'),
+      secure: env.SMTP_SECURE === 'true',
       auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASSWORD
+        user: env.SMTP_USER,
+        pass: env.SMTP_PASSWORD
       }
     }
 
     const transporter = nodemailer.createTransport(smtpConfig)
 
-    const invitationUrl = `${process.env.NEXTAUTH_URL}/invite/${token}`
+    const invitationUrl = `${env.NEXTAUTH_URL}/invite/${token}`
     
     const mailOptions = {
-      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      from: env.SMTP_FROM || env.SMTP_USER,
       to: email,
       subject: `You're invited to join ${spaceName}`,
       html: `
@@ -154,8 +190,9 @@ async function sendInvitationEmail(
     }
 
     await transporter.sendMail(mailOptions)
+    logger.info('Invitation email sent', { email, spaceName })
   } catch (error) {
-    console.error('Error sending invitation email:', error)
+    logger.error('Error sending invitation email', error, { email, spaceName })
     throw error
   }
 }

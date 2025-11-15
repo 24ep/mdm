@@ -195,7 +195,7 @@ export default function DashboardPage() {
               <p className="text-muted-foreground">
                 {defaultDashboard 
                   ? `Welcome to ${defaultDashboard.name}` 
-                  : 'Welcome to your customer data management system'
+                  : 'Welcome to your unified data platform'
                 }
               </p>
             )}
@@ -334,7 +334,7 @@ export default function DashboardPage() {
                         .map((element) => (
                           <div
                             key={element.id}
-                            className="absolute border rounded-lg shadow-sm bg-white"
+                            className="absolute border border-border rounded-lg shadow-sm bg-white dark:bg-gray-900"
                             style={{
                               left: `${(element.position_x / defaultDashboard.grid_size) * 100}%`,
                               top: `${(element.position_y / defaultDashboard.grid_size) * 100}%`,
@@ -352,7 +352,7 @@ export default function DashboardPage() {
                                 </Badge>
                               </div>
                               {/* Placeholder for actual chart/table content */}
-                              <div className="mt-4 flex items-center justify-center h-20 bg-gray-50 rounded border-2 border-dashed border-gray-300">
+                              <div className="mt-4 flex items-center justify-center h-20 bg-gray-50 dark:bg-gray-800 rounded border-2 border-dashed border-gray-300 dark:border-gray-700">
                                 <div className="text-center text-gray-500">
                                   <BarChart3 className="h-8 w-8 mx-auto mb-2" />
                                   <p className="text-xs">{element.name}</p>

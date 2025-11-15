@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         message: 'Comment added to ServiceDesk successfully',
-        data: result.data,
+        data: result?.data || null,
         rateLimit: {
           remaining: rateLimitResult.remaining,
           resetTime: rateLimitResult.resetTime

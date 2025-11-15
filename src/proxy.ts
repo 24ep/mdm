@@ -1,8 +1,27 @@
 import { withAuth } from "next-auth/middleware"
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { addSecurityHeaders, handleCors } from '@/lib/security-headers'
 
 export default withAuth(
-  function proxy(req) {
-    // Add any additional proxy logic here
+  function proxy(req: NextRequest & { nextauth: { token: any } }) {
+    // Handle CORS for API routes
+    if (req.nextUrl.pathname.startsWith('/api/')) {
+      const corsResponse = handleCors(req, {
+        origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
+        credentials: true,
+      })
+      
+      if (corsResponse) {
+        return corsResponse
+      }
+    }
+
+    // Create response
+    const response = NextResponse.next()
+
+    // Add security headers to all responses
+    return addSecurityHeaders(response)
   },
   {
     callbacks: {

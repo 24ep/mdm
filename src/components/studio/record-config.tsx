@@ -226,7 +226,7 @@ export function RecordConfig({ component, onUpdate }: RecordConfigProps) {
     const IconComponent = fieldTypeIcons[field.type] || Type
     
     return (
-      <div className="flex items-center gap-2 p-2 border rounded">
+      <div className="flex items-center gap-2 p-2 border border-border rounded">
         <IconComponent className="h-4 w-4 text-muted-foreground" />
         <div className="flex-1">
           <div className="text-sm font-medium">{field.displayName}</div>
@@ -712,6 +712,7 @@ export function RecordConfig({ component, onUpdate }: RecordConfigProps) {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
 
       {/* Preview Button */}
       <div className="flex justify-end">

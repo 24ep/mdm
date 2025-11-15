@@ -1,5 +1,6 @@
 'use client'
 
+import { useCallback } from 'react'
 import { CheckCircle, XCircle, AlertCircle } from 'lucide-react'
 import { validateSQLQuery } from '@/lib/query-execution/utils'
 
@@ -84,7 +85,7 @@ export function QueryValidation({ query, validation }: QueryValidationProps) {
 
 // Validation logic hook - uses shared query validation utilities
 export function useQueryValidation() {
-  const validateQuery = (sql: string) => {
+  const validateQuery = useCallback((sql: string) => {
     if (!sql.trim()) {
       return { isValid: true, errors: [], warnings: [] }
     }
@@ -112,7 +113,7 @@ export function useQueryValidation() {
     }
     
     return validation
-  }
+  }, [])
 
   return { validateQuery }
 }

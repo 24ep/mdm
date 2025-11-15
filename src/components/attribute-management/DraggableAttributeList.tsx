@@ -81,7 +81,7 @@ function SortableAttributeItem({
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-3 p-3 border rounded-lg transition-colors ${
+      className={`flex items-center gap-3 p-3 border border-border rounded-lg transition-colors ${
         isDragging 
           ? 'bg-blue-100 shadow-lg border-blue-300' 
           : 'hover:bg-muted/50'
@@ -464,9 +464,9 @@ export function DraggableAttributeList({ modelId, onAttributesChange }: Draggabl
             items={filteredAttributes.map(attr => attr.id)}
             strategy={verticalListSortingStrategy}
           >
-            <div className="h-[500px] overflow-y-auto space-y-2 p-2 border border-gray-200 rounded-lg bg-white">
+            <div className="h-[500px] overflow-y-auto space-y-2 p-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900">
               {/* Select All */}
-              <div className="flex items-center gap-2 p-2 border rounded-lg">
+              <div className="flex items-center gap-2 p-2 border border-border rounded-lg">
                 <Checkbox
                   checked={selectedAttributes.length === filteredAttributes.length && filteredAttributes.length > 0}
                   onCheckedChange={handleSelectAll}
@@ -521,7 +521,7 @@ export function DraggableAttributeList({ modelId, onAttributesChange }: Draggabl
               value={importData}
               onChange={(e) => setImportData(e.target.value)}
               placeholder="Paste JSON data here..."
-              className="w-full h-64 p-3 border rounded-lg font-mono text-sm"
+              className="w-full h-64 p-3 border border-border rounded-lg font-mono text-sm"
             />
           </div>
           <DialogFooter>

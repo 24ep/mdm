@@ -212,7 +212,7 @@ const DropdownMenuContent = React.forwardRef<
       <div
         ref={contentRef}
         className={cn(
-          "z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95",
+          "z-50 min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 [background-color:hsl(var(--popover))]",
           className
         )}
         style={{
@@ -369,7 +369,7 @@ const DropdownMenuSubContent = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg animate-in fade-in-0 zoom-in-95",
+      "z-50 min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg animate-in fade-in-0 zoom-in-95 [background-color:hsl(var(--popover))]",
       className
     )}
     {...props}

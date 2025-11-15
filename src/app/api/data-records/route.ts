@@ -4,23 +4,35 @@ import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { createExternalClient } from '@/lib/external-db'
 import { isUuid } from '@/lib/validation'
+import { logger } from '@/lib/logger'
+import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const { searchParams } = new URL(request.url)
-    const dataModelId = searchParams.get('data_model_id')
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
-
-    if (!dataModelId) {
-      return NextResponse.json({ error: 'data_model_id is required' }, { status: 400 })
+    if (!session?.user) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
-    if (!isUuid(dataModelId)) {
-      return NextResponse.json({ error: 'Invalid data_model_id' }, { status: 400 })
+
+    // Validate query parameters
+    const queryValidation = validateQuery(request, z.object({
+      data_model_id: commonSchemas.id,
+      page: z.string().optional().transform((val) => parseInt(val || '1')).pipe(z.number().int().positive()).optional().default(1),
+      limit: z.string().optional().transform((val) => parseInt(val || '20')).pipe(z.number().int().positive().max(100)).optional().default(20),
+      sort_by: z.string().optional(),
+      sort_direction: z.enum(['asc', 'desc']).optional().default('desc'),
+    }).passthrough()) // Allow filter_* params to pass through
+    
+    if (!queryValidation.success) {
+      return addSecurityHeaders(queryValidation.response)
     }
+    
+    const { data_model_id: dataModelId, page, limit = 20, sort_by: sortBy, sort_direction: sortDirectionRaw } = queryValidation.data
+    logger.apiRequest('GET', '/api/data-records', { userId: session.user.id, dataModelId, page, limit })
 
     const offset = (page - 1) * limit
 
@@ -35,10 +47,12 @@ export async function GET(request: NextRequest) {
     )
     const model = modelRows[0]
     if (!model) {
-      return NextResponse.json({ error: 'data_model not found' }, { status: 404 })
+      logger.warn('Data model not found', { dataModelId })
+      return addSecurityHeaders(NextResponse.json({ error: 'data_model not found' }, { status: 404 }))
     }
     
     // Extract filters from search params
+    const { searchParams } = new URL(request.url)
     const filters: Record<string, string> = {}
     searchParams.forEach((value, key) => {
       if (key.startsWith('filter_')) {
@@ -48,14 +62,9 @@ export async function GET(request: NextRequest) {
     })
 
     // Sort params
-    const sortBy = (searchParams.get('sort_by') || '').trim()
-    const sortDirectionRaw = (searchParams.get('sort_direction') || 'desc').trim().toLowerCase()
     const sortDirection = sortDirectionRaw === 'asc' ? 'ASC' : 'DESC'
     
-    console.log('🔍 Fetching records for model:', dataModelId)
-    console.log('🔍 Page:', page, 'Limit:', limit, 'Offset:', offset)
-    console.log('🔍 Filters:', filters)
-    console.log('🔍 Sort:', { sortBy, sortDirection })
+    logger.debug('Fetching records for model', { dataModelId, page, limit, offset, filters, sortBy, sortDirection })
     
     // If EXTERNAL model, query external database
     if (model.source_type === 'EXTERNAL' && model.conn_id && model.external_table) {
@@ -172,10 +181,12 @@ export async function GET(request: NextRequest) {
           ),
         }))
 
-        return NextResponse.json({
+        const duration = Date.now() - startTime
+        logger.apiResponse('GET', '/api/data-records', 200, duration, { total, recordsCount: mapped.length, sourceType: 'EXTERNAL' })
+        return addSecurityHeaders(NextResponse.json({
           records: mapped,
           pagination: { page, limit, total, pages: Math.ceil(total / limit) },
-        })
+        }))
       } finally {
         await client.close()
       }
@@ -297,10 +308,11 @@ export async function GET(request: NextRequest) {
     
     const countParams = params.slice(0, whereParamCount)
     
-    console.log('🔍 Main Query:', baseQuery)
-    console.log('🔍 Main Parameters:', params)
-    console.log('🔍 Count Query:', countQuery)
-    console.log('🔍 Count Parameters:', countParams)
+    logger.debug('Executing data records query', { 
+      query: baseQuery.substring(0, 200), 
+      paramCount: params.length,
+      countQuery: countQuery.substring(0, 200)
+    })
 
     const [{ rows: records }, { rows: totalRows }] = await Promise.all([
       query(baseQuery, params),
@@ -309,38 +321,48 @@ export async function GET(request: NextRequest) {
     
     const total = totalRows[0]?.total || 0
     
-    console.log('🔍 Records found:', records.length)
-    console.log('🔍 Total records:', total)
-    
-    if (records.length > 0) {
-      const sampleRecord = records[0]
-      console.log('🔍 Sample record ID:', sampleRecord.id)
-      console.log('🔍 Sample record values:', sampleRecord.values)
-      console.log('🔍 Sample record values keys:', Object.keys(sampleRecord.values || {}))
-      console.log('🔍 Sample record values count:', Object.keys(sampleRecord.values || {}).length)
-    }
+    logger.debug('Records query completed', { 
+      recordsFound: records.length, 
+      total,
+      sampleRecordId: records.length > 0 ? records[0].id : null
+    })
 
-    return NextResponse.json({
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/data-records', 200, duration, { total, recordsCount: records.length })
+    return addSecurityHeaders(NextResponse.json({
       records: records || [],
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
-    })
+    }))
   } catch (error) {
-    console.error('Error fetching records:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/data-records', 500, duration)
+    return handleApiError(error, 'Data Records API GET')
   }
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const body = await request.json()
-    const { data_model_id, values } = body
-
-    if (!data_model_id || !Array.isArray(values)) {
-      return NextResponse.json({ error: 'data_model_id and values[] required' }, { status: 400 })
+    if (!session?.user) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
+
+    // Validate request body
+    const bodyValidation = await validateBody(request, z.object({
+      data_model_id: commonSchemas.id,
+      values: z.array(z.object({
+        attribute_id: commonSchemas.id,
+        value: z.any().optional().nullable(),
+      })),
+    }))
+    
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+    
+    const { data_model_id, values } = bodyValidation.data
+    logger.apiRequest('POST', '/api/data-records', { userId: session.user.id, dataModelId: data_model_id, valuesCount: values.length })
 
     const { rows: recordRows } = await query(
       'INSERT INTO public.data_records (data_model_id) VALUES ($1) RETURNING *',
@@ -364,10 +386,13 @@ export async function POST(request: NextRequest) {
       'SELECT * FROM public.data_records WHERE id = $1::uuid',
       [record.id]
     )
-    return NextResponse.json({ record: fullRows[0] }, { status: 201 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/data-records', 201, duration, { recordId: record.id })
+    return addSecurityHeaders(NextResponse.json({ record: fullRows[0] }, { status: 201 }))
   } catch (error) {
-    console.error('Error creating record:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/data-records', 500, duration)
+    return handleApiError(error, 'Data Records API POST')
   }
 }
 

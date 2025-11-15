@@ -22,16 +22,17 @@ export interface AvatarImageProps
   extends React.ImgHTMLAttributes<HTMLImageElement> {}
 
 const AvatarImage = React.forwardRef<HTMLImageElement, AvatarImageProps>(
-  ({ className, ...props }, ref) => {
+  ({ className, src, ...props }, ref) => {
     const [error, setError] = React.useState(false)
     
-    if (error) return null
+    if (error || !src || src === '') return null
     
     return (
       <img
         ref={ref}
         className={cn("aspect-square h-full w-full", className)}
         onError={() => setError(true)}
+        src={src}
         {...props}
       />
     )

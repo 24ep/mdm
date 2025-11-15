@@ -30,6 +30,7 @@ import {
   SortableContext as SortableContextType,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { Z_INDEX } from '@/lib/z-index'
 
 interface CanvasProps {
   dashboard: any
@@ -462,7 +463,7 @@ function SortableElement({
         top: element.config?.freeform?.y != null ? element.config.freeform.y : (element.position_y / gridSize) * canvasHeight,
         width: element.config?.freeform?.w != null ? element.config.freeform.w : (element.width / gridSize) * canvasWidth,
         height: element.config?.freeform?.h != null ? element.config.freeform.h : (element.height / gridSize) * canvasHeight,
-        zIndex: isSortableDragging ? 1000 : element.z_index,
+        zIndex: isSortableDragging ? Z_INDEX.sortableDragging : element.z_index,
         borderColor: element.style?.borderColor,
         borderWidth: typeof element.style?.borderWidth === 'object' 
           ? `${element.style.borderWidth.top || 0}px ${element.style.borderWidth.right || 0}px ${element.style.borderWidth.bottom || 0}px ${element.style.borderWidth.left || 0}px`

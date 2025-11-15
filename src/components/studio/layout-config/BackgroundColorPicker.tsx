@@ -60,7 +60,7 @@ export function BackgroundColorPicker({
                         console.error(err)
                       }
                     }}
-                    className={`w-6 h-6 rounded border-2 ${backgroundColor === color ? 'border-blue-500 scale-110' : 'border-border hover:border-gray-400'} transition-all cursor-pointer`}
+                    className={`w-6 h-6 rounded border-2 ${backgroundColor === color ? 'border-blue-500 scale-110' : 'border-border hover:border-foreground/20'} transition-all cursor-pointer`}
                     style={{ backgroundColor: color }}
                     title={color}
                   />

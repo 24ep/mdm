@@ -2,21 +2,48 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/database'
+import { logger } from '@/lib/logger'
+import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 // POST /api/spaces/[id]/layout/versions/[versionId]/restore - Restore a version as current
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; versionId: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id: spaceId, versionId } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+      versionId: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id: spaceId, versionId } = paramValidation.data
     const userId = session.user.id
-    const { createNewVersion = true } = await request.json().catch(() => ({ createNewVersion: true }))
+    logger.apiRequest('POST', `/api/spaces/${spaceId}/layout/versions/${versionId}/restore`, { userId })
+
+    const bodySchema = z.object({
+      createNewVersion: z.boolean().optional().default(true),
+    })
+
+    const bodyValidation = await validateBody(request, bodySchema)
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+
+    const { createNewVersion = true } = bodyValidation.data
 
     // Check if user has access to this space
     const accessResult = await query(
@@ -28,7 +55,8 @@ export async function POST(
     )
 
     if (accessResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 })
+      logger.warn('Space not found or access denied for layout version restore', { spaceId, versionId, userId })
+      return addSecurityHeaders(NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 }))
     }
 
     // Get the version to restore
@@ -45,7 +73,8 @@ export async function POST(
     )
 
     if (versionResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Version not found' }, { status: 404 })
+      logger.warn('Layout version not found for restore', { spaceId, versionId })
+      return addSecurityHeaders(NextResponse.json({ error: 'Version not found' }, { status: 404 }))
     }
 
     const versionToRestore = versionResult.rows[0] as any
@@ -80,10 +109,15 @@ export async function POST(
         ]
       )
 
-      return NextResponse.json({
+      const duration = Date.now() - startTime
+      logger.apiResponse('POST', `/api/spaces/${spaceId}/layout/versions/${versionId}/restore`, 200, duration, {
+        newVersionNumber: nextVersion,
+        createNewVersion: true,
+      })
+      return addSecurityHeaders(NextResponse.json({
         version: insertResult.rows[0] as any,
         restored: true
-      })
+      }))
     } else {
       // Just mark this version as current (overwrites current)
       await query(
@@ -96,15 +130,19 @@ export async function POST(
         [versionId, spaceId]
       )
 
-      return NextResponse.json({
+      const duration = Date.now() - startTime
+      logger.apiResponse('POST', `/api/spaces/${spaceId}/layout/versions/${versionId}/restore`, 200, duration, {
+        createNewVersion: false,
+      })
+      return addSecurityHeaders(NextResponse.json({
         version: versionToRestore,
         restored: true
-      })
+      }))
     }
-
   } catch (error) {
-    console.error('Error restoring layout version:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Layout Version Restore API')
   }
 }
 

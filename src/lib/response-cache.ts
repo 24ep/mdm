@@ -1,7 +1,25 @@
 import crypto from 'crypto'
 import { PrismaClient } from '@prisma/client'
 import { get, set, del, delPattern, isRedisAvailable } from '../../lib/redis-client'
-import '../../lib/redis-init' // Ensure Redis is initialized
+
+// Conditionally import redis-init only if not in build mode
+// This prevents Redis from initializing during build
+// Only import if we're in development OR have clear runtime indicators
+if (typeof process !== 'undefined') {
+  const isDevelopment = process.env?.NODE_ENV !== 'production'
+  const hasRuntime = process.env?.PORT || 
+                     process.env?.VERCEL || 
+                     process.env?.NETLIFY ||
+                     process.env?.NEXT_RUNTIME ||
+                     process.env?.HOSTNAME
+  
+  // Only import if development mode OR we have runtime indicators
+  if (isDevelopment || hasRuntime) {
+    import('../../lib/redis-init').catch(() => {
+      // Silently fail - Redis is optional
+    })
+  }
+}
 
 const prisma = new PrismaClient()
 

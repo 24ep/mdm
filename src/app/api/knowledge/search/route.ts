@@ -1,0 +1,200 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { query } from '@/lib/db'
+import { logAPIRequest } from '@/shared/lib/security/audit-logger'
+import { applyRateLimit } from '@/app/api/v1/middleware'
+import { parsePaginationParams, createPaginationResponse } from '@/shared/lib/api/pagination'
+
+export async function GET(request: NextRequest) {
+  const rateLimitResponse = await applyRateLimit(request)
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
+
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const searchQuery = searchParams.get('q')
+    const collectionId = searchParams.get('collectionId')
+    const spaceId = searchParams.get('spaceId')
+    const { page, limit, offset } = parsePaginationParams(request)
+
+    if (!searchQuery || !searchQuery.trim()) {
+      return NextResponse.json(
+        { error: 'Search query is required' },
+        { status: 400 }
+      )
+    }
+
+    // Build search query using PostgreSQL full-text search
+    // First, get accessible collections
+    let collectionWhere = `kc.deleted_at IS NULL`
+    const collectionParams: any[] = []
+    let paramIndex = 1
+
+    if (collectionId) {
+      collectionWhere += ` AND kc.id = $${paramIndex}`
+      collectionParams.push(collectionId)
+      paramIndex++
+    } else if (spaceId) {
+      collectionWhere += ` AND kc.space_id = $${paramIndex}`
+      collectionParams.push(spaceId)
+      paramIndex++
+    }
+
+    // Get accessible collections
+    const accessibleCollections = await query(
+      `SELECT kc.id
+       FROM knowledge_collections kc
+       WHERE ${collectionWhere}
+       AND (
+         kc.created_by = $${paramIndex} OR
+         EXISTS (
+           SELECT 1 FROM knowledge_collection_members kcm
+           WHERE kcm.collection_id = kc.id
+           AND kcm.user_id = $${paramIndex}
+         ) OR
+         kc.is_private = false
+       )`,
+      [...collectionParams, session.user.id]
+    )
+
+    const collectionIds = accessibleCollections.rows.map((r: any) => r.id)
+
+    if (collectionIds.length === 0) {
+      return NextResponse.json({
+        documents: [],
+        collections: [],
+        total: 0,
+        page,
+        limit,
+        totalPages: 0,
+      })
+    }
+
+    // Search documents using full-text search
+    const searchTerm = searchQuery.trim().split(/\s+/).map((term: string) => `${term}:*`).join(' & ')
+    
+    const documentsQuery = `
+      SELECT 
+        kd.id,
+        kd.title,
+        kd.content,
+        kd.collection_id,
+        kd.created_at,
+        kd.updated_at,
+        kc.name as collection_name,
+        kc.icon as collection_icon,
+        kc.color as collection_color,
+        ts_rank(
+          to_tsvector('english', COALESCE(kd.title, '') || ' ' || COALESCE(kd.content, '')),
+          plainto_tsquery('english', $1)
+        ) as rank,
+        json_build_object(
+          'id', u.id,
+          'name', u.name,
+          'email', u.email,
+          'avatar', u.avatar
+        ) as creator
+      FROM knowledge_documents kd
+      JOIN knowledge_collections kc ON kc.id = kd.collection_id
+      LEFT JOIN users u ON u.id = kd.created_by
+      WHERE kd.deleted_at IS NULL
+      AND kd.collection_id = ANY($2::uuid[])
+      AND (
+        kd.is_public = true OR
+        kc.created_by = $3 OR
+        EXISTS (
+          SELECT 1 FROM knowledge_collection_members kcm
+          WHERE kcm.collection_id = kc.id
+          AND kcm.user_id = $3
+        )
+      )
+      AND (
+        to_tsvector('english', COALESCE(kd.title, '') || ' ' || COALESCE(kd.content, ''))
+        @@ plainto_tsquery('english', $1)
+      )
+      ORDER BY rank DESC, kd.updated_at DESC
+      LIMIT $4 OFFSET $5
+    `
+
+    const documentsResult = await query(documentsQuery, [
+      searchQuery,
+      collectionIds,
+      session.user.id,
+      limit,
+      offset,
+    ])
+
+    // Get total count
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM knowledge_documents kd
+      JOIN knowledge_collections kc ON kc.id = kd.collection_id
+      WHERE kd.deleted_at IS NULL
+      AND kd.collection_id = ANY($1::uuid[])
+      AND (
+        kd.is_public = true OR
+        kc.created_by = $2 OR
+        EXISTS (
+          SELECT 1 FROM knowledge_collection_members kcm
+          WHERE kcm.collection_id = kc.id
+          AND kcm.user_id = $2
+        )
+      )
+      AND (
+        to_tsvector('english', COALESCE(kd.title, '') || ' ' || COALESCE(kd.content, ''))
+        @@ plainto_tsquery('english', $3)
+      )
+    `
+
+    const countResult = await query(countQuery, [
+      collectionIds,
+      session.user.id,
+      searchQuery,
+    ])
+
+    const total = parseInt(countResult.rows[0]?.total || '0')
+
+    const documents = documentsResult.rows.map((row: any) => ({
+      id: row.id,
+      title: row.title,
+      content: row.content?.substring(0, 200) + (row.content?.length > 200 ? '...' : ''),
+      collectionId: row.collection_id,
+      collection: {
+        name: row.collection_name,
+        icon: row.collection_icon,
+        color: row.collection_color,
+      },
+      creator: row.creator,
+      rank: parseFloat(row.rank),
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }))
+
+    await logAPIRequest(
+      session.user.id,
+      'GET',
+      '/api/knowledge/search',
+      200
+    )
+
+    const response = createPaginationResponse(documents, total, page, limit)
+    return NextResponse.json({
+      documents: response.data,
+      ...response,
+    })
+  } catch (error) {
+    console.error('Error searching:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+

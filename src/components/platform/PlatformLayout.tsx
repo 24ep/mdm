@@ -1,24 +1,11 @@
 'use client'
 
 import { useState, useEffect, useRef, Fragment, useMemo, useCallback } from 'react'
-import { useSession, signOut } from 'next-auth/react'
-import { useTheme } from 'next-themes'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-} from '@/components/ui/dropdown-menu'
-import { User, Moon, Sun, Monitor, LogOut } from 'lucide-react'
 import { PlatformSidebar } from './PlatformSidebar'
+import { TopMenuBar } from './TopMenuBar'
+import { Z_INDEX } from '@/lib/z-index'
 
 type BreadcrumbItem = string | { label: string; href?: string; onClick?: () => void }
 
@@ -35,7 +22,7 @@ interface PlatformLayoutProps {
 const getGroupForTab = (tab: string): string | null => {
   const groupedTabs: Record<string, string[]> = {
     overview: ['overview', 'analytics'],
-    tools: ['bigquery', 'notebook', 'ai-analyst', 'ai-chat-ui', 'knowledge-base', 'projects', 'bi', 'reports', 'storage', 'data-governance'],
+    tools: ['bigquery', 'notebook', 'ai-analyst', 'ai-chat-ui', 'knowledge-base', 'marketplace', 'infrastructure', 'projects', 'bi', 'reports', 'storage', 'data-governance'],
     system: ['users', 'roles', 'permission-tester', 'space-layouts', 'space-settings', 'assets', 'data', 'attachments', 'kernels', 'health', 'logs', 'audit', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache', 'backup', 'security', 'performance', 'settings', 'page-templates', 'notifications', 'themes', 'export', 'integrations', 'api'],
     'data-management': ['space-selection']
   }
@@ -64,7 +51,8 @@ const generateBreadcrumbs = (activeTab: string): BreadcrumbItem[] => {
   const toolSections: Record<string, string[]> = {
     'AI & Assistants': ['ai-analyst', 'ai-chat-ui'],
     'Data Tools': ['bigquery', 'notebook', 'storage', 'data-governance'],
-    'Knowledge': ['knowledge-base'],
+    'Knowledge & Collaboration': ['knowledge-base'],
+    'Platform Services': ['marketplace', 'infrastructure'],
     'Project Management': ['projects'],
     'Reporting': ['bi', 'reports']
   }
@@ -85,6 +73,8 @@ const generateBreadcrumbs = (activeTab: string): BreadcrumbItem[] => {
     'ai-analyst': 'AI Analyst',
     'ai-chat-ui': 'AI Chat UI',
     'knowledge-base': 'Knowledge Base',
+    'marketplace': 'Marketplace',
+    'infrastructure': 'Infrastructure',
     'projects': 'Project Management',
     'bi': 'BI & Reports',
     'reports': 'Reports & Dashboard',
@@ -182,10 +172,10 @@ export function PlatformLayout({
   onSpaceChange,
   breadcrumbItems
 }: PlatformLayoutProps) {
-  const { data: session } = useSession()
   const router = useRouter()
-  const { theme, setTheme } = useTheme()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true)
+  const [secondarySidebarCollapsed, setSecondarySidebarCollapsed] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   
   // Memoize group calculation to avoid unnecessary recalculations
   const currentGroup = useMemo(() => getGroupForTab(activeTab), [activeTab])
@@ -193,10 +183,6 @@ export function PlatformLayout({
   // Initialize selectedGroup based on activeTab
   const [selectedGroup, setSelectedGroup] = useState<string | null>(currentGroup)
   const isGroupManuallySelected = useRef(false)
-
-  const handleSignOut = useCallback(async () => {
-    await signOut({ callbackUrl: '/auth/signin' })
-  }, [])
 
   // Set selected group based on active tab when activeTab changes
   // Only update if the group was not manually selected by the user clicking on a group
@@ -221,170 +207,179 @@ export function PlatformLayout({
     setSidebarCollapsed(prev => !prev)
   }, [])
 
-  return (
-    <div className="flex h-screen bg-background">
-      {/* Primary Sidebar - Groups */}
-      <div className={`transition-all duration-150 ease-in-out ${sidebarCollapsed ? 'w-16' : 'w-64'} flex-shrink-0 border-r border-gray-200`}>
-        <PlatformSidebar
-          activeTab={activeTab}
-          onTabChange={onTabChange}
-          selectedSpace={selectedSpace}
-          onSpaceChange={onSpaceChange}
-          collapsed={sidebarCollapsed}
-          selectedGroup={selectedGroup}
-          onGroupSelect={handleGroupSelect}
-          mode="primary"
-          onToggleCollapse={handleToggleCollapse}
-        />
-      </div>
+  const handleToggleSecondaryCollapse = useCallback(() => {
+    setSecondarySidebarCollapsed(prev => !prev)
+  }, [])
 
-      {/* Secondary Sidebar - Submenu Items */}
-      {selectedGroup && selectedGroup !== '' && (
-        <div className="w-64 flex-shrink-0 border-r border-gray-200 transition-all duration-150 ease-in-out">
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl/Cmd + B - Toggle primary sidebar
+      if ((e.ctrlKey || e.metaKey) && e.key === 'b' && !e.shiftKey) {
+        e.preventDefault()
+        setSidebarCollapsed(prev => !prev)
+      }
+      // Ctrl/Cmd + Shift + B - Toggle secondary sidebar
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'B') {
+        e.preventDefault()
+        if (currentGroup && currentGroup !== '') {
+          setSecondarySidebarCollapsed(prev => !prev)
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [currentGroup])
+
+  return (
+    <div className="flex flex-col h-screen bg-background">
+      {/* Top Menu Bar - Full Width Above Everything */}
+      <TopMenuBar activeTab={activeTab} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+      
+      {/* Content Area with Sidebars */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Primary Sidebar - Groups */}
+        <div 
+          className={`transition-all duration-150 ease-in-out ${sidebarCollapsed ? 'w-16' : 'w-64'} flex-shrink-0 border-r border-border`}
+          style={{ 
+            position: 'relative',
+            zIndex: Z_INDEX.sidebar,
+            pointerEvents: 'auto'
+          }}
+        >
           <PlatformSidebar
             activeTab={activeTab}
             onTabChange={onTabChange}
             selectedSpace={selectedSpace}
             onSpaceChange={onSpaceChange}
-            collapsed={false}
+            collapsed={sidebarCollapsed}
             selectedGroup={selectedGroup}
             onGroupSelect={handleGroupSelect}
-            mode="secondary"
+            mode="primary"
+            onToggleCollapse={handleToggleCollapse}
           />
         </div>
-      )}
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Breadcrumb Bar */}
-        <div className="h-10 border-b bg-background flex items-center justify-between px-4">
-          <div className="flex items-center gap-2 text-sm">
-            <button
-              onClick={handleToggleCollapse}
-              className="p-1 hover:bg-muted rounded"
-              title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            >
-              {sidebarCollapsed ? (
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              ) : (
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              )}
-            </button>
-            <nav aria-label="Breadcrumb" className="truncate text-muted-foreground">
-              <ol className="flex items-center space-x-2">
-                {(() => {
-                  // Generate breadcrumbs, filtering out any items that contain "admin"
-                  const crumbs = breadcrumbItems && breadcrumbItems.length
-                    ? breadcrumbItems
-                    : generateBreadcrumbs(activeTab)
-                  
-                  // Filter out any breadcrumb items that contain "admin" (case-insensitive)
-                  return crumbs.filter(item => {
+        {/* Secondary Sidebar - Submenu Items */}
+        {/* Show secondary sidebar for all pages with a valid group (always visible) */}
+        {currentGroup && currentGroup !== '' && (
+          <div 
+            className={`${secondarySidebarCollapsed ? 'w-0' : 'w-64'} flex-shrink-0 border-r border-border transition-all duration-150 ease-in-out overflow-hidden`}
+            style={{ 
+              position: 'relative',
+              zIndex: Z_INDEX.sidebar,
+              pointerEvents: 'auto'
+            }}
+          >
+            {!secondarySidebarCollapsed && (
+              <PlatformSidebar
+                activeTab={activeTab}
+                onTabChange={onTabChange}
+                selectedSpace={selectedSpace}
+                onSpaceChange={onSpaceChange}
+                collapsed={false}
+                selectedGroup={currentGroup}
+                onGroupSelect={handleGroupSelect}
+                mode="secondary"
+                onToggleCollapse={handleToggleSecondaryCollapse}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+              />
+            )}
+            {secondarySidebarCollapsed && (
+              <div className="h-full flex items-center justify-center border-r border-border">
+                <button
+                  onClick={handleToggleSecondaryCollapse}
+                  className="p-2 hover:bg-muted rounded"
+                  title="Expand secondary sidebar"
+                  aria-label="Expand secondary sidebar"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Breadcrumb Bar */}
+          <div className="h-10 bg-background flex items-center px-4">
+            <div className="flex items-center gap-2 text-sm">
+              <button
+                onClick={handleToggleCollapse}
+                className="p-1 hover:bg-muted rounded"
+                title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              >
+                {sidebarCollapsed ? (
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                ) : (
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                )}
+              </button>
+              <nav aria-label="Breadcrumb" className="truncate text-muted-foreground">
+                <ol className="flex items-center space-x-2">
+                  {(() => {
+                    // Generate breadcrumbs, filtering out any items that contain "admin"
+                    const crumbs = breadcrumbItems && breadcrumbItems.length
+                      ? breadcrumbItems
+                      : generateBreadcrumbs(activeTab)
+                    
+                    // Filter out any breadcrumb items that contain "admin" (case-insensitive)
+                    return crumbs.filter(item => {
+                      const label = typeof item === 'string' ? item : item.label
+                      return label && !label.toLowerCase().includes('admin')
+                    })
+                  })().map((item, idx, arr) => {
+                    const isLast = idx === arr.length - 1
                     const label = typeof item === 'string' ? item : item.label
-                    return label && !label.toLowerCase().includes('admin')
-                  })
-                })().map((item, idx, arr) => {
-                  const isLast = idx === arr.length - 1
-                  const label = typeof item === 'string' ? item : item.label
-                  const href = typeof item === 'object' ? item.href : undefined
-                  const onClick = typeof item === 'object' ? item.onClick : undefined
-                  const isClickable = !isLast && (href || onClick)
-                  
-                  return (
-                    <Fragment key={`breadcrumb-${idx}`}>
-                      <li className={`truncate ${isLast ? 'font-medium text-foreground' : 'whitespace-nowrap'}`}>
-                        {isClickable ? (
-                          href ? (
-                            <Link 
-                              href={href}
-                              className="hover:text-foreground hover:underline transition-colors"
-                            >
-                              {label}
-                            </Link>
+                    const href = typeof item === 'object' ? item.href : undefined
+                    const onClick = typeof item === 'object' ? item.onClick : undefined
+                    const isClickable = !isLast && (href || onClick)
+                    
+                    return (
+                      <Fragment key={`breadcrumb-${idx}`}>
+                        <li className={`truncate ${isLast ? 'font-medium text-foreground' : 'whitespace-nowrap'}`}>
+                          {isClickable ? (
+                            href ? (
+                              <Link 
+                                href={href}
+                                className="hover:text-foreground hover:underline transition-colors"
+                              >
+                                {label}
+                              </Link>
+                            ) : (
+                              <button
+                                onClick={onClick}
+                                className="hover:text-foreground hover:underline transition-colors text-left"
+                              >
+                                {label}
+                              </button>
+                            )
                           ) : (
-                            <button
-                              onClick={onClick}
-                              className="hover:text-foreground hover:underline transition-colors text-left"
-                            >
-                              {label}
-                            </button>
-                          )
-                        ) : (
-                          <span>{label}</span>
-                        )}
-                      </li>
-                      {!isLast && <li className="text-muted-foreground">/</li>}
-                    </Fragment>
-                  )
-                })}
-              </ol>
-            </nav>
+                            <span>{label}</span>
+                          )}
+                        </li>
+                        {!isLast && <li className="text-muted-foreground">/</li>}
+                      </Fragment>
+                    )
+                  })}
+                </ol>
+              </nav>
+            </div>
           </div>
-          
-          {/* User Avatar */}
-          <div className="flex items-center">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={(session as any)?.user?.image || ''} alt={(session as any)?.user?.name || 'User'} />
-                    <AvatarFallback>
-                      {((session as any)?.user?.name || (session as any)?.user?.email || 'U')?.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      {(session as any)?.user?.name || 'User'}
-                    </p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      {(session as any)?.user?.email}
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/profile">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profile Settings</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel>Theme</DropdownMenuLabel>
-                <DropdownMenuRadioGroup value={theme || 'system'} onValueChange={setTheme}>
-                  <DropdownMenuRadioItem value="light">
-                    <Sun className="mr-2 h-4 w-4" />
-                    <span>Light</span>
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="dark">
-                    <Moon className="mr-2 h-4 w-4" />
-                    <span>Dark</span>
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="system">
-                    <Monitor className="mr-2 h-4 w-4" />
-                    <span>System</span>
-                  </DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Logout</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
 
-        {/* Content Area */}
-        <div className="flex-1 overflow-auto">
-          {children}
+          {/* Content Area */}
+          <div className="flex-1 overflow-auto">
+            {children}
+          </div>
         </div>
       </div>
     </div>

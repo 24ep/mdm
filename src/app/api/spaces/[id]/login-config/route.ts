@@ -1,13 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import { SpacesEditorConfig } from '@/lib/space-studio-manager'
+import { logger } from '@/lib/logger'
+import { validateParams } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
-    const { id: spaceSlugOrId } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: z.string().min(1),
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id: spaceSlugOrId } = paramValidation.data
+    logger.apiRequest('GET', `/api/spaces/${spaceSlugOrId}/login-config`)
     
     // Get space ID from slug
     const spaceResult = await query(
@@ -16,7 +32,8 @@ export async function GET(
     )
 
     if (spaceResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Space not found' }, { status: 404 })
+      logger.warn('Space not found for login config', { spaceSlugOrId })
+      return addSecurityHeaders(NextResponse.json({ error: 'Space not found' }, { status: 404 }))
     }
 
     const spaceId = spaceResult.rows[0].id
@@ -31,25 +48,27 @@ export async function GET(
     if (configResult.rows.length > 0) {
       try {
         const config: SpacesEditorConfig = JSON.parse(configResult.rows[0].value)
-        return NextResponse.json({ 
+        const duration = Date.now() - startTime
+        logger.apiResponse('GET', `/api/spaces/${spaceSlugOrId}/login-config`, 200, duration)
+        return addSecurityHeaders(NextResponse.json({ 
           loginPageConfig: config.loginPageConfig || null,
           postAuthRedirectPageId: config.postAuthRedirectPageId || null
-        })
+        }))
       } catch (e) {
-        console.error('Error parsing config:', e)
+        logger.error('Error parsing config', e, { spaceId: spaceResult.rows[0].id })
       }
     }
 
-    return NextResponse.json({ 
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', `/api/spaces/${spaceSlugOrId}/login-config`, 200, duration)
+    return addSecurityHeaders(NextResponse.json({ 
       loginPageConfig: null,
       postAuthRedirectPageId: null
-    })
+    }))
   } catch (error) {
-    console.error('Error fetching login config:', error)
-    return NextResponse.json({ 
-      loginPageConfig: null,
-      postAuthRedirectPageId: null
-    })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Space Login Config API')
   }
 }
 

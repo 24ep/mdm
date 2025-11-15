@@ -299,10 +299,17 @@ class QueryPerformanceTracker {
 // Export singleton instance
 export const queryPerformanceTracker = new QueryPerformanceTracker()
 
-// Initialize table on module load
-if (typeof window === 'undefined') {
-  queryPerformanceTracker.initializeTable().catch(console.error)
+// Initialize table on module load (skip during build time)
+if (typeof window === 'undefined' && typeof process !== 'undefined' && process.env?.NEXT_PHASE !== 'phase-production-build') {
+  queryPerformanceTracker.initializeTable().catch((error) => {
+    // Silently handle errors during initialization - database might not be available
+    if (process.env.NODE_ENV !== 'production' || process.env.DEBUG) {
+      console.error('Failed to initialize query_performance table:', error)
+    }
+  })
 }
+
+
 
 
 

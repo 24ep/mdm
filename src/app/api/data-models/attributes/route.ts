@@ -2,20 +2,33 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
+import { logger } from '@/lib/logger'
+import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const { searchParams } = new URL(request.url)
-    const dataModelId = searchParams.get('data_model_id')
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
-
-    if (!dataModelId) {
-      return NextResponse.json({ error: 'data_model_id is required' }, { status: 400 })
+    if (!session?.user) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
+
+    // Validate query parameters
+    const queryValidation = validateQuery(request, z.object({
+      data_model_id: commonSchemas.id,
+      page: z.string().optional().transform((val) => parseInt(val || '1')).pipe(z.number().int().positive()).optional().default(1),
+      limit: z.string().optional().transform((val) => parseInt(val || '20')).pipe(z.number().int().positive().max(100)).optional().default(20),
+    }))
+    
+    if (!queryValidation.success) {
+      return addSecurityHeaders(queryValidation.response)
+    }
+    
+    const { data_model_id: dataModelId, page, limit = 20 } = queryValidation.data
+    logger.apiRequest('GET', '/api/data-models/attributes', { userId: session.user.id, dataModelId, page, limit })
 
     const offset = (page - 1) * limit
     const listSql = `
@@ -33,27 +46,47 @@ export async function GET(request: NextRequest) {
       query(countSql, [dataModelId]),
     ])
     const total = totals[0]?.total || 0
-    return NextResponse.json({
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/data-models/attributes', 200, duration, { total })
+    return addSecurityHeaders(NextResponse.json({
       attributes: attributes || [],
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
-    })
+    }))
   } catch (error) {
-    console.error('Error fetching attributes:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/data-models/attributes', 500, duration)
+    return handleApiError(error, 'Data Model Attributes API GET')
   }
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const body = await request.json()
-    const { data_model_id, name, display_name, type, is_required, is_unique, default_value, options, validation, order } = body
-
-    if (!data_model_id || !name || !display_name || !type) {
-      return NextResponse.json({ error: 'Required fields missing' }, { status: 400 })
+    if (!session?.user) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
+
+    // Validate request body
+    const bodyValidation = await validateBody(request, z.object({
+      data_model_id: commonSchemas.id,
+      name: z.string().min(1, 'Name is required'),
+      display_name: z.string().min(1, 'Display name is required'),
+      type: z.string().min(1, 'Type is required'),
+      is_required: z.boolean().optional().default(false),
+      is_unique: z.boolean().optional().default(false),
+      default_value: z.any().optional().nullable(),
+      options: z.any().optional().nullable(),
+      validation: z.any().optional().nullable(),
+      order: z.number().int().nonnegative().optional().default(0),
+    }))
+    
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+    
+    const { data_model_id, name, display_name, type, is_required = false, is_unique = false, default_value, options, validation, order = 0 } = bodyValidation.data
+    logger.apiRequest('POST', '/api/data-models/attributes', { userId: session.user.id, dataModelId: data_model_id, name })
 
     // Map type to uppercase for database enum
     const typeMapping: Record<string, string> = {
@@ -91,10 +124,13 @@ export async function POST(request: NextRequest) {
       validation ? JSON.stringify(validation) : null,
       order ?? 0,
     ])
-    return NextResponse.json({ attribute: rows[0] }, { status: 201 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/data-models/attributes', 201, duration, { attributeId: rows[0].id })
+    return addSecurityHeaders(NextResponse.json({ attribute: rows[0] }, { status: 201 }))
   } catch (error) {
-    console.error('Error creating attribute:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/data-models/attributes', 500, duration)
+    return handleApiError(error, 'Data Model Attributes API POST')
   }
 }
 

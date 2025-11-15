@@ -131,10 +131,10 @@ export function QueryComments({
   const lineComments = getCommentsByLine()
 
   return (
-    <div className={`fixed right-0 top-0 h-full w-96 bg-background border-l shadow-lg z-50 transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+    <div className={`fixed right-0 top-0 h-full w-96 bg-background border-l border-border shadow-lg z-50 transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b">
+        <div className="flex items-center justify-between p-4 border-b border-border">
           <div className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5" />
             <h3 className="font-semibold">Comments & Notes</h3>

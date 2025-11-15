@@ -253,7 +253,7 @@ export function QueryPlan({ query, isVisible }: QueryPlanProps) {
       </Button>
 
       {plan && (
-        <Card className="border-blue-200 bg-blue-50 mt-2">
+        <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 mt-2">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Query Execution Plan</CardTitle>
           </CardHeader>

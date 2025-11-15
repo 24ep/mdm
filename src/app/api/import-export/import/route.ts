@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { uploadJobFile } from '@/shared/lib/jobs/storage-helper'
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,7 +47,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create import job
+    // Convert file to buffer
+    const fileBuffer = Buffer.from(await file.arrayBuffer())
+
+    // Upload file to storage
+    const uniqueFileName = `import-${Date.now()}-${file.name}`
+    const uploadResult = await uploadJobFile(uniqueFileName, fileBuffer, file.type, 'import')
+
+    if (!uploadResult.success) {
+      return NextResponse.json(
+        { error: uploadResult.error || 'Failed to upload file to storage' },
+        { status: 500 }
+      )
+    }
+
+    // Create import job with file path
     const importJob = await db.importJob.create({
       data: {
         dataModelId,
@@ -56,15 +71,36 @@ export async function POST(request: NextRequest) {
         status: 'PENDING',
         mapping: mapping || {},
         createdBy: session.user.id,
-        spaceId: spaceId || null
+        spaceId: spaceId || null,
+        // Store file path in a custom field (we'll need to add this to schema or use result field)
+        result: {
+          filePath: uploadResult.path,
+          fileUrl: uploadResult.url,
+        },
       }
     })
 
-    // TODO: In a production system, you would:
-    // 1. Upload the file to storage (S3, MinIO, etc.)
-    // 2. Queue a background job to process the import
-    // 3. Process the file and import data into the data model
-    // For now, we just create the job record
+    // Store file path in a way we can retrieve it
+    // Since Prisma schema might not have file_path, we'll store it in result JSON
+    // Or we can update the job after creation
+    await db.importJob.update({
+      where: { id: importJob.id },
+      data: {
+        result: {
+          filePath: uploadResult.path,
+          fileUrl: uploadResult.url,
+        },
+      },
+    })
+
+    // Queue job for processing
+    const { jobQueue } = await import('@/shared/lib/jobs/job-queue')
+    await jobQueue.add({
+      id: importJob.id,
+      type: 'import',
+      status: 'PENDING',
+      progress: 0,
+    })
 
     return NextResponse.json({ 
       job: importJob,

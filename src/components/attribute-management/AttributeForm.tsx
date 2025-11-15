@@ -301,7 +301,7 @@ export function AttributeForm({ initialData, onSubmit, onCancel, loading = false
           <CardContent>
             <div className="space-y-2">
               {options.map((option, index) => (
-                <div key={index} className="flex items-center gap-3 p-3 border rounded-lg">
+                <div key={index} className="flex items-center gap-3 p-3 border border-border rounded-lg">
                   {/* Color Swatch */}
                   <div className="flex items-center gap-2">
                     <ColorInput

@@ -2,18 +2,34 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
+import { logger } from '@/lib/logger'
+import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id: workflowId } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id: workflowId } = paramValidation.data
+    logger.apiRequest('GET', `/api/workflows/${workflowId}`, { userId: session.user.id })
 
     // Get workflow details
     const { rows: workflowRows } = await query(
@@ -85,17 +101,23 @@ export async function GET(
       [workflowId]
     )
 
-    return NextResponse.json({
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', `/api/workflows/${workflowId}`, 200, duration, {
+      conditionCount: conditions.length,
+      actionCount: actions.length,
+      executionCount: executions.length,
+    })
+    return addSecurityHeaders(NextResponse.json({
       workflow,
       conditions,
       actions,
       schedule: scheduleRows[0] || null,
       recent_executions: executions
-    })
-
+    }))
   } catch (error) {
-    console.error('Error fetching workflow:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Workflows API GET')
   }
 }
 
@@ -103,14 +125,40 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id: workflowId } = await params
-    const body = await request.json()
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id: workflowId } = paramValidation.data
+    logger.apiRequest('PUT', `/api/workflows/${workflowId}`, { userId: session.user.id })
+
+    const bodySchema = z.object({
+      name: z.string().min(1).optional(),
+      description: z.string().optional().nullable(),
+      trigger_type: z.enum(['MANUAL', 'SCHEDULED', 'EVENT_BASED']).optional(),
+      status: z.enum(['active', 'inactive']).optional(),
+      conditions: z.array(z.any()).optional().default([]),
+      actions: z.array(z.any()).optional().default([]),
+      schedule: z.any().optional().nullable().default(null),
+    })
+
+    const bodyValidation = await validateBody(request, bodySchema)
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+
     const {
       name,
       description,
@@ -119,7 +167,7 @@ export async function PUT(
       conditions = [],
       actions = [],
       schedule = null
-    } = body
+    } = bodyValidation.data
 
     // Update workflow
     const { rows: workflowRows } = await query(
@@ -131,7 +179,8 @@ export async function PUT(
     )
 
     if (workflowRows.length === 0) {
-      return NextResponse.json({ error: 'Workflow not found' }, { status: 404 })
+      logger.warn('Workflow not found for update', { workflowId })
+      return addSecurityHeaders(NextResponse.json({ error: 'Workflow not found' }, { status: 404 }))
     }
 
     const workflow = workflowRows[0]
@@ -215,11 +264,16 @@ export async function PUT(
       }
     }
 
-    return NextResponse.json({ workflow })
-
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', `/api/workflows/${workflowId}`, 200, duration, {
+      conditionCount: conditions.length,
+      actionCount: actions.length,
+    })
+    return addSecurityHeaders(NextResponse.json({ workflow }))
   } catch (error) {
-    console.error('Error updating workflow:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Workflows API PUT')
   }
 }
 
@@ -227,13 +281,24 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id: workflowId } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id: workflowId } = paramValidation.data
+    logger.apiRequest('DELETE', `/api/workflows/${workflowId}`, { userId: session.user.id })
 
     // Soft delete workflow
     const { rows } = await query(
@@ -245,13 +310,16 @@ export async function DELETE(
     )
 
     if (rows.length === 0) {
-      return NextResponse.json({ error: 'Workflow not found' }, { status: 404 })
+      logger.warn('Workflow not found for deletion', { workflowId })
+      return addSecurityHeaders(NextResponse.json({ error: 'Workflow not found' }, { status: 404 }))
     }
 
-    return NextResponse.json({ message: 'Workflow deleted successfully' })
-
+    const duration = Date.now() - startTime
+    logger.apiResponse('DELETE', `/api/workflows/${workflowId}`, 200, duration)
+    return addSecurityHeaders(NextResponse.json({ message: 'Workflow deleted successfully' }))
   } catch (error) {
-    console.error('Error deleting workflow:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('DELETE', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Workflows API DELETE')
   }
 }

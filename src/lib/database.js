@@ -1,7 +1,7 @@
 // Database connection utility for PostgreSQL
 // This replaces Supabase client for direct PostgreSQL connections
 
-const { Pool } = require('pg');
+import { Pool } from 'pg';
 
 // Database configuration
 const dbConfig = {
@@ -26,7 +26,7 @@ pool.on('error', (err) => {
 });
 
 // Database query helper
-async function query(text, params = []) {
+export async function query(text, params = []) {
   const start = Date.now();
   try {
     const res = await pool.query(text, params);
@@ -40,22 +40,14 @@ async function query(text, params = []) {
 }
 
 // Get client from pool for transactions
-async function getClient() {
+export async function getClient() {
   return await pool.connect();
 }
 
 // Close all connections
-async function close() {
+export async function close() {
   await pool.end();
 }
 
-// Export functions
-module.exports = {
-  query,
-  getClient,
-  close,
-  pool
-};
-
-// For ES modules (if needed)
-export { query, getClient, close, pool };
+// Export pool for direct access if needed
+export { pool };

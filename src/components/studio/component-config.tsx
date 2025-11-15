@@ -651,6 +651,7 @@ export function ComponentConfig({ component, onUpdate }: ComponentConfigProps) {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

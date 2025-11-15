@@ -44,7 +44,7 @@ export function Header({ user }: HeaderProps) {
   }
 
   return (
-    <header className="flex h-16 items-center justify-between border-b bg-background px-6">
+    <header className="flex h-16 items-center justify-between border-b border-border bg-background px-6">
       <div className="flex items-center space-x-4">
         <div className="relative">
           <AnimatedIcon 
@@ -71,7 +71,7 @@ export function Header({ user }: HeaderProps) {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
               <Avatar className="h-8 w-8">
-                <AvatarImage src="" alt={user.name} />
+                <AvatarImage src={undefined} alt={user.name} />
                 <AvatarFallback>
                   {user.name?.charAt(0) || user.email?.charAt(0) || 'U'}
                 </AvatarFallback>

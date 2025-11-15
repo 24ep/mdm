@@ -7,49 +7,68 @@ import { createAuditLog } from '@/lib/audit'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
+import { logger } from '@/lib/logger'
+import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 // POST /api/users/[id]/avatar - upload user avatar
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id } = paramValidation.data
+    logger.apiRequest('POST', `/api/users/${id}/avatar`, { userId: session.user.id })
 
     // Check if user can update this profile (own profile or MANAGER+)
     const isOwnProfile = session.user.id === id
     const isManager = session.user.role && ['MANAGER', 'ADMIN', 'SUPER_ADMIN'].includes(session.user.role)
     
     if (!isOwnProfile && !isManager) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      logger.warn('Forbidden avatar upload attempt', { targetUserId: id, userId: session.user.id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
     }
 
     const formData = await request.formData()
     const file = formData.get('avatar') as File
 
     if (!file) {
-      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 })
+      return addSecurityHeaders(NextResponse.json({ error: 'No file uploaded' }, { status: 400 }))
     }
 
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
     if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json({ 
+      logger.warn('Invalid file type for avatar upload', { fileType: file.type, userId: id })
+      return addSecurityHeaders(NextResponse.json({ 
         error: 'Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.' 
-      }, { status: 400 })
+      }, { status: 400 }))
     }
 
     // Validate file size (max 5MB)
     const maxSize = 5 * 1024 * 1024 // 5MB
     if (file.size > maxSize) {
-      return NextResponse.json({ 
+      logger.warn('File too large for avatar upload', { fileSize: file.size, userId: id })
+      return addSecurityHeaders(NextResponse.json({ 
         error: 'File too large. Maximum size is 5MB.' 
-      }, { status: 400 })
+      }, { status: 400 }))
     }
 
     // Check if user exists
@@ -59,7 +78,8 @@ export async function POST(
     )
 
     if (userResult.rows.length === 0) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      logger.warn('User not found for avatar upload', { userId: id })
+      return addSecurityHeaders(NextResponse.json({ error: 'User not found' }, { status: 404 }))
     }
 
     const user = userResult.rows[0]
@@ -100,17 +120,20 @@ export async function POST(
       // description: `Avatar updated for user ${user.email}`
     })
 
-    return NextResponse.json({ 
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', `/api/users/${id}/avatar`, 200, duration, {
+      fileSize: file.size,
+      fileType: file.type,
+    })
+    return addSecurityHeaders(NextResponse.json({ 
       success: true, 
       avatar: avatarUrl,
       message: 'Avatar uploaded successfully' 
-    })
+    }))
   } catch (error) {
-    console.error('Error uploading avatar:', error)
-    return NextResponse.json(
-      { error: 'Failed to upload avatar' },
-      { status: 500 }
-    )
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'User Avatar API POST')
   }
 }
 
@@ -119,38 +142,54 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id } = paramValidation.data
+    logger.apiRequest('PUT', `/api/users/${id}/avatar`, { userId: session.user.id })
 
     // Check if user can update this profile (own profile or MANAGER+)
     const isOwnProfile = session.user.id === id
     const isManager = session.user.role && ['MANAGER', 'ADMIN', 'SUPER_ADMIN'].includes(session.user.role)
     
     if (!isOwnProfile && !isManager) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      logger.warn('Forbidden avatar update attempt', { targetUserId: id, userId: session.user.id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
     }
 
-    const body = await request.json()
-    const { avatarUrl } = body
+    const bodySchema = z.object({
+      avatarUrl: z.string().refine(
+        (url) => {
+          try {
+            new URL(url)
+            return true
+          } catch {
+            return url.startsWith('/') || url.startsWith('./')
+          }
+        },
+        { message: 'Invalid avatar URL format' }
+      ),
+    })
 
-    if (!avatarUrl || typeof avatarUrl !== 'string') {
-      return NextResponse.json({ error: 'Avatar URL is required' }, { status: 400 })
+    const bodyValidation = await validateBody(request, bodySchema)
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
     }
 
-    // Validate URL format
-    try {
-      new URL(avatarUrl)
-    } catch {
-      // If not a full URL, check if it's a relative path
-      if (!avatarUrl.startsWith('/') && !avatarUrl.startsWith('./')) {
-        return NextResponse.json({ error: 'Invalid avatar URL format' }, { status: 400 })
-      }
-    }
+    const { avatarUrl } = bodyValidation.data
 
     // Check if user exists
     const userResult = await query(
@@ -159,7 +198,8 @@ export async function PUT(
     )
 
     if (userResult.rows.length === 0) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      logger.warn('User not found for avatar update', { userId: id })
+      return addSecurityHeaders(NextResponse.json({ error: 'User not found' }, { status: 404 }))
     }
 
     const user = userResult.rows[0]
@@ -183,17 +223,17 @@ export async function PUT(
       // description: `Avatar updated from library for user ${user.email}`
     })
 
-    return NextResponse.json({ 
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', `/api/users/${id}/avatar`, 200, duration)
+    return addSecurityHeaders(NextResponse.json({ 
       success: true, 
       avatar: avatarUrl,
       message: 'Avatar set successfully' 
-    })
+    }))
   } catch (error) {
-    console.error('Error setting avatar:', error)
-    return NextResponse.json(
-      { error: 'Failed to set avatar' },
-      { status: 500 }
-    )
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'User Avatar API PUT')
   }
 }
 
@@ -202,20 +242,32 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id } = paramValidation.data
+    logger.apiRequest('DELETE', `/api/users/${id}/avatar`, { userId: session.user.id })
 
     // Check if user can update this profile (own profile or MANAGER+)
     const isOwnProfile = session.user.id === id
     const isManager = session.user.role && ['MANAGER', 'ADMIN', 'SUPER_ADMIN'].includes(session.user.role)
     
     if (!isOwnProfile && !isManager) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      logger.warn('Forbidden avatar deletion attempt', { targetUserId: id, userId: session.user.id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
     }
 
     // Check if user exists and get current avatar
@@ -225,7 +277,8 @@ export async function DELETE(
     )
 
     if (userResult.rows.length === 0) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      logger.warn('User not found for avatar deletion', { userId: id })
+      return addSecurityHeaders(NextResponse.json({ error: 'User not found' }, { status: 404 }))
     }
 
     const user = userResult.rows[0]
@@ -249,15 +302,15 @@ export async function DELETE(
       // description: `Avatar removed for user ${user.email}`
     })
 
-    return NextResponse.json({ 
+    const duration = Date.now() - startTime
+    logger.apiResponse('DELETE', `/api/users/${id}/avatar`, 200, duration)
+    return addSecurityHeaders(NextResponse.json({ 
       success: true, 
       message: 'Avatar removed successfully' 
-    })
+    }))
   } catch (error) {
-    console.error('Error removing avatar:', error)
-    return NextResponse.json(
-      { error: 'Failed to remove avatar' },
-      { status: 500 }
-    )
+    const duration = Date.now() - startTime
+    logger.apiResponse('DELETE', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'User Avatar API DELETE')
   }
 }

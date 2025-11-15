@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         message: 'Time logged to ServiceDesk successfully',
-        data: result.data,
+        data: result?.data || null,
         rateLimit: {
           remaining: rateLimitResult.remaining,
           resetTime: rateLimitResult.resetTime

@@ -2,22 +2,33 @@ import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/database'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { logger } from '@/lib/logger'
+import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { searchParams } = new URL(request.url)
-    const spaceId = searchParams.get('spaceId')
-
-    if (!spaceId) {
-      return NextResponse.json({ error: 'Space ID is required' }, { status: 400 })
+    // Validate query parameters
+    const queryValidation = validateQuery(request, z.object({
+      spaceId: commonSchemas.id,
+    }))
+    
+    if (!queryValidation.success) {
+      return addSecurityHeaders(queryValidation.response)
     }
+    
+    const { spaceId } = queryValidation.data
+    logger.apiRequest('GET', '/api/files/quotas', { userId, spaceId })
 
     // Check if user has access to this space
     const memberResult = await query(
@@ -26,7 +37,8 @@ export async function GET(request: NextRequest) {
     )
 
     if (memberResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 })
+      logger.warn('Space not found or access denied for file quotas', { spaceId, userId })
+      return addSecurityHeaders(NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 }))
     }
 
     // Get quota information
@@ -92,26 +104,60 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/files/quotas', 200, duration)
+    return addSecurityHeaders(NextResponse.json({
+      quota: {
+        ...quota,
+        usage: {
+          files: {
+            current: quota.current_files,
+            max: quota.max_files,
+            percentage: fileUsagePercentage,
+            isWarning: isFileWarning
+          },
+          size: {
+            current: quota.current_size,
+            max: quota.max_size,
+            percentage: sizeUsagePercentage,
+            isWarning: isSizeWarning
+          }
+        }
+      }
+    }))
   } catch (error) {
-    console.error('Error fetching quotas:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/files/quotas', 500, duration)
+    return handleApiError(error, 'File Quotas API GET')
   }
 }
 
 export async function PUT(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { spaceId, maxFiles, maxSize, allowedFileTypes, warningThreshold, isEnforced } = await request.json()
-
-    if (!spaceId) {
-      return NextResponse.json({ error: 'Space ID is required' }, { status: 400 })
+    // Validate request body
+    const bodyValidation = await validateBody(request, z.object({
+      spaceId: commonSchemas.id,
+      maxFiles: z.number().int().nonnegative().optional(),
+      maxSize: z.number().int().nonnegative().optional(),
+      allowedFileTypes: z.array(z.string()).optional(),
+      warningThreshold: z.number().int().min(1).max(100).optional(),
+      isEnforced: z.boolean().optional(),
+    }))
+    
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
     }
+    
+    const { spaceId, maxFiles, maxSize, allowedFileTypes, warningThreshold, isEnforced } = bodyValidation.data
+    logger.apiRequest('PUT', '/api/files/quotas', { userId, spaceId })
 
     // Check if user has admin access to this space
     const memberResult = await query(
@@ -120,20 +166,8 @@ export async function PUT(request: NextRequest) {
     )
 
     if (memberResult.rows.length === 0 || !['owner', 'admin'].includes((memberResult.rows[0] as any).role)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
-
-    // Validate quota values
-    if (maxFiles && maxFiles < 0) {
-      return NextResponse.json({ error: 'Max files must be positive' }, { status: 400 })
-    }
-
-    if (maxSize && maxSize < 0) {
-      return NextResponse.json({ error: 'Max size must be positive' }, { status: 400 })
-    }
-
-    if (warningThreshold && (warningThreshold < 1 || warningThreshold > 100)) {
-      return NextResponse.json({ error: 'Warning threshold must be between 1 and 100' }, { status: 400 })
+      logger.warn('Insufficient permissions for file quota update', { spaceId, userId })
+      return addSecurityHeaders(NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 }))
     }
 
     // Update quota
@@ -187,15 +221,18 @@ export async function PUT(request: NextRequest) {
     )
 
     if (updateResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Quota not found' }, { status: 404 })
+      logger.warn('File quota not found for update', { spaceId })
+      return addSecurityHeaders(NextResponse.json({ error: 'Quota not found' }, { status: 404 }))
     }
 
-    return NextResponse.json({
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', '/api/files/quotas', 200, duration, { quotaId: updateResult.rows[0].id })
+    return addSecurityHeaders(NextResponse.json({
       quota: updateResult.rows[0]
-    })
-
+    }))
   } catch (error) {
-    console.error('Error updating quotas:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', '/api/files/quotas', 500, duration)
+    return handleApiError(error, 'File Quotas API PUT')
   }
 }

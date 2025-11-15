@@ -445,19 +445,19 @@ export function DataExploration({
                     </CardHeader>
                     <CardContent className="space-y-2">
                       <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Total Rows:</span>
+                        <span className="text-sm text-muted-foreground">Total Rows:</span>
                         <span className="text-sm font-medium">{analysisResults.profile.totalRows}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Total Columns:</span>
+                        <span className="text-sm text-muted-foreground">Total Columns:</span>
                         <span className="text-sm font-medium">{analysisResults.profile.totalColumns}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Numeric Columns:</span>
+                        <span className="text-sm text-muted-foreground">Numeric Columns:</span>
                         <span className="text-sm font-medium">{analysisResults.profile.numericColumns}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Categorical Columns:</span>
+                        <span className="text-sm text-muted-foreground">Categorical Columns:</span>
                         <span className="text-sm font-medium">{analysisResults.profile.categoricalColumns}</span>
                       </div>
                     </CardContent>
@@ -470,7 +470,7 @@ export function DataExploration({
                     <CardContent className="space-y-2">
                       {Object.entries(analysisResults.profile.missingValues).map(([col, count]) => (
                         <div key={col} className="flex justify-between">
-                          <span className="text-sm text-gray-600 truncate">{col}:</span>
+                          <span className="text-sm text-muted-foreground truncate">{col}:</span>
                           <span className={cn(
                             "text-sm font-medium",
                             count > 0 ? "text-orange-600" : "text-green-600"
@@ -499,19 +499,19 @@ export function DataExploration({
                         <div className="grid grid-cols-3 gap-4 text-sm">
                           <div className="space-y-1">
                             <div className="flex justify-between">
-                              <span className="text-gray-600">Count:</span>
+                              <span className="text-muted-foreground">Count:</span>
                               <span className="font-medium">{stats.count}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-gray-600">Mean:</span>
+                              <span className="text-muted-foreground">Mean:</span>
                               <span className="font-medium">{stats.mean}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-gray-600">Median:</span>
+                              <span className="text-muted-foreground">Median:</span>
                               <span className="font-medium">{stats.median}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-gray-600">Mode:</span>
+                              <span className="text-muted-foreground">Mode:</span>
                               <span className="font-medium">{stats.mode}</span>
                             </div>
                           </div>
@@ -566,8 +566,8 @@ export function DataExploration({
               
               {analysisResults?.correlations && (
                 <div className="overflow-x-auto">
-                  <table className="min-w-full border border-gray-200 rounded-lg">
-                    <thead className="bg-gray-50">
+                  <table className="min-w-full border border-border rounded-lg">
+                    <thead className="bg-muted">
                       <tr>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Column</th>
                         {numericColumns.map(col => (
@@ -577,7 +577,7 @@ export function DataExploration({
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-background divide-y divide-border">
                       {numericColumns.map(rowCol => (
                         <tr key={rowCol}>
                           <td className="px-3 py-2 text-sm font-medium text-gray-900">{rowCol}</td>

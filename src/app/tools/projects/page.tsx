@@ -1,11 +1,16 @@
 'use client'
 
-import { ProjectsManagement } from '@/app/admin/features/content'
+import { TicketsList } from '@/features/tickets'
 
 export default function ProjectsPage() {
   return (
-    <div className="p-6">
-      <ProjectsManagement />
+    <div className="h-screen">
+      <TicketsList 
+        spaceId={null}
+        viewMode="kanban"
+        showFilters={true}
+        showSpaceSelector={true}
+      />
     </div>
   )
 }

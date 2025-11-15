@@ -313,7 +313,7 @@ export function DashboardCollaboration({
                 <select
                   value={newCollaboratorRole}
                   onChange={(e) => setNewCollaboratorRole(e.target.value)}
-                  className="px-3 py-2 border rounded-md"
+                  className="px-3 py-2 border border-border rounded-md"
                 >
                   <option value="viewer">Viewer</option>
                   <option value="editor">Editor</option>
@@ -334,7 +334,7 @@ export function DashboardCollaboration({
             <CardContent>
               <div className="space-y-3">
                 {collaborators.map((collaborator) => (
-                  <div key={collaborator.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div key={collaborator.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
                     <div className="flex items-center space-x-3">
                       <div className="relative">
                         <Avatar className="h-10 w-10">
@@ -390,7 +390,7 @@ export function DashboardCollaboration({
                   <select
                     value={selectedElement || ''}
                     onChange={(e) => setSelectedElement(e.target.value || null)}
-                    className="w-full px-3 py-2 border rounded-md"
+                    className="w-full px-3 py-2 border border-border rounded-md"
                   >
                     <option value="">General comment</option>
                     <option value="element-1">Chart 1</option>
@@ -419,7 +419,7 @@ export function DashboardCollaboration({
             <CardContent>
               <div className="space-y-4">
                 {comments.map((comment) => (
-                  <div key={comment.id} className={`p-4 border rounded-lg ${comment.resolved ? 'bg-muted' : ''}`}>
+                  <div key={comment.id} className={`p-4 border border-border rounded-lg ${comment.resolved ? 'bg-muted' : ''}`}>
                     <div className="flex items-start justify-between">
                       <div className="flex items-center space-x-2">
                         <Avatar className="h-8 w-8">

@@ -2,19 +2,36 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
+import { logger } from '@/lib/logger'
+import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.user) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+    }
 
-    const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '10')
-    const search = searchParams.get('search') || ''
-    const spaceId = searchParams.get('space_id')
-    const type = searchParams.get('type') || ''
-    const visibility = searchParams.get('visibility') || ''
+    // Validate query parameters
+    const queryValidation = validateQuery(request, z.object({
+      page: z.string().optional().transform((val) => parseInt(val || '1')).pipe(z.number().int().positive()).optional().default(1),
+      limit: z.string().optional().transform((val) => parseInt(val || '10')).pipe(z.number().int().positive().max(100)).optional().default(10),
+      search: z.string().optional().default(''),
+      space_id: commonSchemas.id.optional(),
+      type: z.string().optional().default(''),
+      visibility: z.string().optional().default(''),
+    }))
+    
+    if (!queryValidation.success) {
+      return addSecurityHeaders(queryValidation.response)
+    }
+    
+    const { page, limit = 10, search = '', space_id: spaceId, type = '', visibility = '' } = queryValidation.data
+    logger.apiRequest('GET', '/api/dashboards', { userId: session.user.id, page, limit, search })
 
     const offset = (page - 1) * limit
     const params: any[] = [session.user.id]
@@ -91,22 +108,48 @@ export async function GET(request: NextRequest) {
     ])
     
     const total = totalRows[0]?.total || 0
-    return NextResponse.json({
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/dashboards', 200, duration, { total })
+    return addSecurityHeaders(NextResponse.json({
       dashboards: dashboards || [],
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
-    })
+    }))
   } catch (error) {
-    console.error('Error fetching dashboards:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/dashboards', 500, duration)
+    return handleApiError(error, 'Dashboards API GET')
   }
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.user) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+    }
 
-    const body = await request.json()
+    // Validate request body
+    const bodyValidation = await validateBody(request, z.object({
+      name: z.string().min(1, 'Name is required'),
+      description: z.string().optional(),
+      type: z.string().optional().default('CUSTOM'),
+      visibility: z.enum(['PRIVATE', 'PUBLIC', 'SHARED']).optional().default('PRIVATE'),
+      space_ids: z.array(commonSchemas.id).min(1, 'At least one space ID is required'),
+      refresh_rate: z.number().int().positive().optional().default(300),
+      is_realtime: z.boolean().optional().default(false),
+      background_color: z.string().optional().default('#ffffff'),
+      font_family: z.string().optional().default('Inter'),
+      font_size: z.number().int().positive().optional().default(14),
+      grid_size: z.number().int().positive().optional().default(12),
+      layout_config: z.any().optional().default({}),
+      style_config: z.any().optional().default({}),
+    }))
+    
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+    
     const { 
       name, 
       description, 
@@ -121,15 +164,8 @@ export async function POST(request: NextRequest) {
       grid_size = 12,
       layout_config = {},
       style_config = {}
-    } = body
-
-    if (!name) {
-      return NextResponse.json({ error: 'Name is required' }, { status: 400 })
-    }
-
-    if (!space_ids || !Array.isArray(space_ids) || space_ids.length === 0) {
-      return NextResponse.json({ error: 'At least one space ID is required' }, { status: 400 })
-    }
+    } = bodyValidation.data
+    logger.apiRequest('POST', '/api/dashboards', { userId: session.user.id, name, type, visibility })
 
     // Check if user has access to all spaces
     const placeholders = space_ids.map((_, i) => `$${i + 1}`).join(',')
@@ -195,9 +231,12 @@ export async function POST(request: NextRequest) {
       [dashboard.id, session.user.id, 'ADMIN']
     )
 
-    return NextResponse.json({ dashboard }, { status: 201 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/dashboards', 201, duration, { dashboardId: dashboard.id })
+    return addSecurityHeaders(NextResponse.json({ dashboard }, { status: 201 }))
   } catch (error) {
-    console.error('Error creating dashboard:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/dashboards', 500, duration)
+    return handleApiError(error, 'Dashboards API POST')
   }
 }

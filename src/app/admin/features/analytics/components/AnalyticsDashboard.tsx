@@ -52,10 +52,10 @@ export function AnalyticsDashboard() {
       const response = await fetch(`/api/admin/analytics?range=${timeRange}`)
       if (response.ok) {
         const data = await response.json()
-        setMetrics(data.metrics)
-        setActivityData(data.activityData)
-        setStorageData(data.storageData)
-        setPerformanceData(data.performanceData)
+        setMetrics(data.metrics || null)
+        setActivityData(data.activityData || [])
+        setStorageData(data.storageData || [])
+        setPerformanceData(data.performanceData || [])
         setLastUpdated(new Date())
       }
     } catch (error) {

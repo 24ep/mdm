@@ -2,20 +2,45 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
+import { logger } from '@/lib/logger'
+import { validateParams, validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id: spaceId } = await params
-    const { searchParams } = new URL(request.url)
-    const days = parseInt(searchParams.get('days') || '30')
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id: spaceId } = paramValidation.data
+    logger.apiRequest('GET', `/api/spaces/${spaceId}/members/activity`, { userId: session.user.id })
+
+    const querySchema = z.object({
+      days: z.string().optional().transform((val) => val ? parseInt(val) : 30).pipe(z.number().int().positive().max(365)),
+    })
+
+    const queryValidation = validateQuery(request, querySchema)
+    if (!queryValidation.success) {
+      return addSecurityHeaders(queryValidation.response)
+    }
+
+    const { days } = queryValidation.data
 
     // Check if user has access to this space
     const memberCheck = await query(`
@@ -24,7 +49,8 @@ export async function GET(
     `, [spaceId, session.user.id])
 
     if (memberCheck.rows.length === 0) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+      logger.warn('Access denied to member activity', { spaceId, userId: session.user.id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Access denied' }, { status: 403 }))
     }
 
     // Get member activity data
@@ -75,18 +101,21 @@ export async function GET(
       ORDER BY activity_date DESC
     `, [spaceId])
 
-    return NextResponse.json({
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', `/api/spaces/${spaceId}/members/activity`, 200, duration, {
+      activityCount: activityData.rows.length,
+      period: days,
+    })
+    return addSecurityHeaders(NextResponse.json({
       activity: activityData.rows,
       statistics: stats.rows[0],
       dailyActivity: dailyActivity.rows,
       period: days
-    })
+    }))
   } catch (error) {
-    console.error('Error fetching member activity:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch member activity' },
-      { status: 500 }
-    )
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Space Members Activity API GET')
   }
 }
 
@@ -94,15 +123,36 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id: spaceId } = await params
-    const body = await request.json()
-    const { action, metadata } = body
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id: spaceId } = paramValidation.data
+    logger.apiRequest('POST', `/api/spaces/${spaceId}/members/activity`, { userId: session.user.id })
+
+    const bodySchema = z.object({
+      action: z.string().optional(),
+      metadata: z.any().optional(),
+    })
+
+    const bodyValidation = await validateBody(request, bodySchema)
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+
+    const { action, metadata } = bodyValidation.data
 
     // Update user's last activity
     await query(`
@@ -119,12 +169,12 @@ export async function POST(
       `, [session.user.id, spaceId, action, JSON.stringify(metadata || {})])
     }
 
-    return NextResponse.json({ success: true })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', `/api/spaces/${spaceId}/members/activity`, 200, duration, { action })
+    return addSecurityHeaders(NextResponse.json({ success: true }))
   } catch (error) {
-    console.error('Error logging activity:', error)
-    return NextResponse.json(
-      { error: 'Failed to log activity' },
-      { status: 500 }
-    )
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Space Members Activity API POST')
   }
 }

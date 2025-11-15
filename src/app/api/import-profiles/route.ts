@@ -2,18 +2,33 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { logger } from '@/lib/logger'
+import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { searchParams } = new URL(request.url)
-    const dataModel = searchParams.get('dataModel')
-    const isPublic = searchParams.get('isPublic')
-    const importType = searchParams.get('importType')
+    // Validate query parameters
+    const queryValidation = validateQuery(request, z.object({
+      dataModel: z.string().optional(),
+      isPublic: z.string().transform((val) => val === 'true').optional(),
+      importType: z.string().optional(),
+    }))
+    
+    if (!queryValidation.success) {
+      return addSecurityHeaders(queryValidation.response)
+    }
+    
+    const { dataModel, isPublic, importType } = queryValidation.data
+    logger.apiRequest('GET', '/api/import-profiles', { userId: session.user.id, dataModel, importType })
 
     // Build where clause for filtering using Prisma
     const where: any = {}
@@ -38,51 +53,71 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    return NextResponse.json({ profiles })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/import-profiles', 200, duration, { count: profiles.length })
+    return addSecurityHeaders(NextResponse.json({ profiles }))
   } catch (error) {
-    console.error('Error in GET /api/import-profiles:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/import-profiles', 500, duration)
+    return handleApiError(error, 'Import Profiles API GET')
   }
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const body = await request.json()
+    // Validate request body
+    const bodyValidation = await validateBody(request, z.object({
+      name: z.string().min(1, 'Name is required'),
+      description: z.string().optional(),
+      dataModel: z.string().min(1, 'Data model is required'),
+      fileTypes: z.array(z.string()).min(1, 'At least one file type is required'),
+      headerRow: z.number().int().positive().optional().default(1),
+      dataStartRow: z.number().int().positive().optional().default(2),
+      chunkSize: z.number().int().positive().optional().default(1000),
+      maxItems: z.number().int().positive().optional().nullable(),
+      importType: z.enum(['insert', 'upsert', 'delete']),
+      primaryKeyAttribute: z.string().optional().nullable(),
+      dateFormat: z.string().optional().default('YYYY-MM-DD'),
+      timeFormat: z.string().optional().default('HH:mm:ss'),
+      booleanFormat: z.string().optional().default('true/false'),
+      attributeMapping: z.record(z.any()).optional().default({}),
+      attributeOptions: z.record(z.any()).optional().default({}),
+      isPublic: z.boolean().optional().default(false),
+      sharing: z.any().optional(),
+      spaceId: commonSchemas.id.optional().nullable(),
+    }))
+    
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+    
     const { 
       name, 
       description, 
       dataModel, 
       fileTypes, 
-      headerRow, 
-      dataStartRow, 
-      chunkSize, 
+      headerRow = 1, 
+      dataStartRow = 2, 
+      chunkSize = 1000, 
       maxItems, 
       importType, 
       primaryKeyAttribute, 
-      dateFormat, 
-      timeFormat, 
-      booleanFormat, 
-      attributeMapping, 
-      attributeOptions, 
-      isPublic, 
+      dateFormat = 'YYYY-MM-DD', 
+      timeFormat = 'HH:mm:ss', 
+      booleanFormat = 'true/false', 
+      attributeMapping = {}, 
+      attributeOptions = {}, 
+      isPublic = false, 
       sharing,
       spaceId
-    } = body
-
-    // Validate required fields
-    if (!name || !dataModel || !fileTypes || fileTypes.length === 0) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
-    }
-
-    // Validate import type
-    if (!['insert', 'upsert', 'delete'].includes(importType)) {
-      return NextResponse.json({ error: 'Invalid import type' }, { status: 400 })
-    }
+    } = bodyValidation.data
+    logger.apiRequest('POST', '/api/import-profiles', { userId: session.user.id, name, dataModel, importType })
 
     // Create the import profile using Prisma
     const profile = await db.importProfile.create({
@@ -113,9 +148,12 @@ export async function POST(request: NextRequest) {
     // ImportProfileSharing model doesn't exist in Prisma schema
     // Sharing functionality not implemented
 
-    return NextResponse.json({ profile }, { status: 201 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/import-profiles', 201, duration, { profileId: profile.id })
+    return addSecurityHeaders(NextResponse.json({ profile }, { status: 201 }))
   } catch (error) {
-    console.error('Error in POST /api/import-profiles:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/import-profiles', 500, duration)
+    return handleApiError(error, 'Import Profiles API POST')
   }
 }

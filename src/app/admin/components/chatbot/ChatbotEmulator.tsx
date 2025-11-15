@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { ExternalLink, Settings } from 'lucide-react'
 import { Chatbot } from './types'
 import { EmulatorConfigDrawer } from './EmulatorConfigDrawer'
+import { Z_INDEX } from '@/lib/z-index'
 
 interface ChatbotEmulatorProps {
   selectedChatbot: Chatbot | null
@@ -161,7 +162,7 @@ export function ChatbotEmulator({
             src={`/chat/${selectedChatbot.id}`}
             className="w-full h-full border-0"
             title="Chat Emulator"
-            style={{ position: 'relative', zIndex: 1 }}
+            style={{ position: 'relative', zIndex: Z_INDEX.content }}
           />
         </div>
       ) : (

@@ -3,17 +3,6 @@
  * Centralized type definitions for the content feature
  */
 
-export interface KnowledgeNotebook {
-  id: string
-  name: string
-  description?: string
-  createdAt: Date
-  updatedAt: Date
-  createdBy: string
-  tags?: string[]
-  documentCount?: number
-}
-
 export interface Attachment {
   id: string
   name: string

@@ -3,6 +3,60 @@
  * Supports both Redis and in-memory storage for development/production flexibility
  */
 
+// Early build-time detection at module level
+// This is evaluated immediately when the module loads
+// Uses conservative logic: only return false (not build) if we have CLEAR runtime indicators
+const IS_BUILD_TIME = (() => {
+  if (typeof process === 'undefined') return false
+  
+  // Check for Next.js build phases (most reliable indicator)
+  const nextPhase = process.env?.NEXT_PHASE
+  if (nextPhase === 'phase-production-build' || 
+      nextPhase === 'phase-production-compile' ||
+      nextPhase === 'phase-export' ||
+      nextPhase?.includes('build') ||
+      nextPhase?.includes('compile')) {
+    return true
+  }
+  
+  // Check if we're running a build command
+  const args = process.argv || []
+  const hasBuildCommand = args.some(arg => {
+    if (typeof arg !== 'string') return false
+    const lowerArg = arg.toLowerCase()
+    return lowerArg.includes('build') || 
+           lowerArg.includes('next-build') ||
+           lowerArg.includes('next build')
+  })
+  
+  if (hasBuildCommand) {
+    return true
+  }
+  
+  // INVERTED LOGIC: Only return false (not build) if we have CLEAR runtime indicators
+  // If we can't definitively say we're in runtime, assume we're in build (return true)
+  const hasClearRuntime = process.env?.NEXT_RUNTIME || 
+                         process.env?.VERCEL || 
+                         process.env?.NETLIFY ||
+                         process.env?.PORT ||
+                         process.env?.HOSTNAME ||
+                         (process.env?.NODE_ENV === 'development' && process.env?.PORT)
+  
+  // If we have clear runtime indicators, we're NOT in build
+  if (hasClearRuntime) {
+    return false
+  }
+  
+  // If we're in production without clear runtime indicators, assume build
+  if (process.env?.NODE_ENV === 'production') {
+    return true
+  }
+  
+  // If we can't determine, be conservative and assume build (suppress logs)
+  // This prevents errors during build when detection is uncertain
+  return true
+})()
+
 let redisClient: any = null
 let redisAvailable = false
 
@@ -12,43 +66,192 @@ const memoryStore = new Map<string, { value: any; expiresAt?: number }>()
 /**
  * Initialize Redis client if available
  */
+// Helper to check if we're in build mode
+// Use the module-level constant for fast checks
+function isBuildTime(): boolean {
+  return IS_BUILD_TIME
+}
+
+// Helper function to check if we're in build time at execution time (for use in callbacks)
+// Uses inverted logic: only return false (not build) if we have CLEAR runtime indicators
+// This is more conservative and prevents false negatives during build
+function checkBuildTimeAtRuntime(): boolean {
+  if (typeof process === 'undefined') return false
+  
+  // Check for Next.js build phases (most reliable indicator)
+  const nextPhase = process.env?.NEXT_PHASE
+  if (nextPhase === 'phase-production-build' || 
+      nextPhase === 'phase-production-compile' ||
+      nextPhase === 'phase-export' ||
+      nextPhase?.includes('build') ||
+      nextPhase?.includes('compile')) {
+    return true
+  }
+  
+  // Check if we're running a build command
+  const args = process.argv || []
+  const hasBuildCommand = args.some(arg => {
+    if (typeof arg !== 'string') return false
+    const lowerArg = arg.toLowerCase()
+    return lowerArg.includes('build') || 
+           lowerArg.includes('next-build') ||
+           lowerArg.includes('next build')
+  })
+  
+  if (hasBuildCommand) {
+    return true
+  }
+  
+  // INVERTED LOGIC: Only return false (not build) if we have CLEAR runtime indicators
+  // If we can't definitively say we're in runtime, assume we're in build (return true)
+  const hasClearRuntime = process.env?.NEXT_RUNTIME || 
+                         process.env?.VERCEL || 
+                         process.env?.NETLIFY ||
+                         process.env?.PORT ||
+                         process.env?.HOSTNAME ||
+                         (process.env?.NODE_ENV === 'development' && process.env?.PORT)
+  
+  // If we have clear runtime indicators, we're NOT in build
+  if (hasClearRuntime) {
+    return false
+  }
+  
+  // If we're in production without clear runtime indicators, assume build
+  if (process.env?.NODE_ENV === 'production') {
+    return true
+  }
+  
+  // If we can't determine, be conservative and assume build (suppress logs)
+  // This prevents errors during build when detection is uncertain
+  return true
+}
+
 export async function initRedis(): Promise<void> {
+  // CRITICAL: Skip Redis initialization during build time
+  // Check at the very beginning and return immediately
+  if (IS_BUILD_TIME) {
+    redisAvailable = false
+    redisClient = null
+    return
+  }
+  
   try {
+    // Double-check before any async operations
+    if (IS_BUILD_TIME) {
+      redisAvailable = false
+      redisClient = null
+      return
+    }
+    
     // Only try to use Redis if REDIS_URL is configured
     if (process.env.REDIS_URL) {
+      // Triple-check before importing ioredis (which might trigger connections)
+      if (IS_BUILD_TIME) {
+        redisAvailable = false
+        redisClient = null
+        return
+      }
+      
       const redis = await import('ioredis')
+      
+      // Final check before creating client instance
+      if (IS_BUILD_TIME) {
+        redisAvailable = false
+        redisClient = null
+        return
+      }
+      
+      // Create client with all error suppression enabled
       redisClient = new redis.default(process.env.REDIS_URL, {
         maxRetriesPerRequest: 3,
         retryStrategy: (times: number) => {
           if (times > 3) {
-            console.warn('[Redis] Max retries reached, falling back to in-memory store')
+            // Check build time at execution time using shared helper function
+            const isBuildNow = checkBuildTimeAtRuntime()
+            
+            // Only log if definitely not in build - completely silent during build
+            if (!isBuildNow) {
+              console.warn('[Redis] Max retries reached, falling back to in-memory store')
+            }
             redisAvailable = false
             return null
           }
           return Math.min(times * 50, 2000)
         },
+        // Disable automatic reconnection during build
+        enableReadyCheck: !IS_BUILD_TIME,
+        lazyConnect: true, // Don't connect immediately
+        // Additional options to prevent connection attempts
+        connectTimeout: IS_BUILD_TIME ? 0 : 10000,
+        enableOfflineQueue: !IS_BUILD_TIME,
       })
 
+      // ALWAYS set up a silent error handler during build, or conditional during runtime
+      // Use a function that checks build time at execution time, not definition time
       redisClient.on('error', (err: Error) => {
-        console.warn('[Redis] Error:', err.message)
+        // Check build time at error time using shared helper function
+        const isBuildNow = checkBuildTimeAtRuntime()
+        
+        // Only log if definitely not in build - completely silent during build
+        if (!isBuildNow) {
+          console.warn('[Redis] Error:', err.message || err.toString())
+        }
         redisAvailable = false
       })
 
-      redisClient.on('connect', () => {
-        console.log('[Redis] Connected successfully')
-        redisAvailable = true
-      })
+      // Only set up connect handler if not in build time
+      if (!IS_BUILD_TIME) {
+        redisClient.on('connect', () => {
+          console.log('[Redis] Connected successfully')
+          redisAvailable = true
+        })
+      }
 
-      // Test connection
-      await redisClient.ping()
-      redisAvailable = true
+      // Only test connection if not in build time
+      if (!IS_BUILD_TIME) {
+        try {
+          await redisClient.connect()
+          await redisClient.ping()
+          redisAvailable = true
+        } catch (connectError) {
+          // Suppress connection errors during build
+          if (!IS_BUILD_TIME) {
+            console.warn('[Redis] Connection test failed:', connectError)
+          }
+          redisAvailable = false
+        }
+      } else {
+        // During build, don't attempt connection at all
+        redisAvailable = false
+        // Close any connection attempts immediately
+        if (redisClient && typeof redisClient.disconnect === 'function') {
+          try {
+            redisClient.disconnect()
+          } catch {
+            // Ignore disconnect errors
+          }
+        }
+      }
     } else {
-      console.log('[Redis] REDIS_URL not configured, using in-memory store')
+      // Suppress message during build time
+      if (!IS_BUILD_TIME) {
+        console.log('[Redis] REDIS_URL not configured, using in-memory store')
+      }
       redisAvailable = false
     }
   } catch (error) {
-    console.warn('[Redis] Failed to initialize, using in-memory store:', error)
+    // Check build time at error time using shared helper function
+    const isBuildNow = checkBuildTimeAtRuntime()
+    
+    // Only log if definitely not in build - completely silent during build
+    if (!isBuildNow) {
+      console.warn('[Redis] Failed to initialize, using in-memory store:', error)
+    }
     redisAvailable = false
+    // Ensure client is null during build
+    if (isBuildNow) {
+      redisClient = null
+    }
   }
 }
 

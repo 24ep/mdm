@@ -100,14 +100,36 @@ export function CodeEditor({
   
   // Fetch database schema for SQL autocomplete
   useEffect(() => {
+    // Skip during build time - API won't be available
+    if (typeof process !== 'undefined' && process.env?.NEXT_PHASE === 'phase-production-build') {
+      // Set default autocomplete during build
+      const defaultAutocomplete = createSQLAutocomplete(undefined, 'postgresql')
+      setSqlAutocomplete(defaultAutocomplete)
+      return
+    }
+    
     if (isSQL && options.enableAutoComplete !== false) {
-      fetchDatabaseSchema().then(schema => {
-        setDbSchema(schema)
-        const autocomplete = createSQLAutocomplete(schema, 'postgresql')
-        setSqlAutocomplete(autocomplete)
-      }).catch(err => {
-        console.error('Failed to load database schema:', err)
-      })
+      fetchDatabaseSchema()
+        .then(schema => {
+          if (schema && schema.tables && Array.isArray(schema.tables)) {
+            setDbSchema(schema)
+            const autocomplete = createSQLAutocomplete(schema, 'postgresql')
+            setSqlAutocomplete(autocomplete)
+          } else {
+            // Fallback to default autocomplete
+            const defaultAutocomplete = createSQLAutocomplete(undefined, 'postgresql')
+            setSqlAutocomplete(defaultAutocomplete)
+          }
+        })
+        .catch(err => {
+          // Suppress errors during build time
+          if (typeof process === 'undefined' || process.env?.NEXT_PHASE !== 'phase-production-build') {
+            console.error('Failed to load database schema:', err)
+          }
+          // Fallback to default autocomplete on error
+          const defaultAutocomplete = createSQLAutocomplete(undefined, 'postgresql')
+          setSqlAutocomplete(defaultAutocomplete)
+        })
     }
   }, [isSQL, options.enableAutoComplete])
 
@@ -139,7 +161,38 @@ export function CodeEditor({
     }
     
     try {
-      const sqlExtension = sql({ dialect: 'postgresql', upperCaseKeywords: true })
+      // Call sql function with error handling
+      let sqlExtension
+      try {
+        sqlExtension = sql({ dialect: 'postgresql', upperCaseKeywords: true })
+        
+        // Verify the extension was created successfully
+        if (!sqlExtension || (Array.isArray(sqlExtension) && sqlExtension.length === 0)) {
+          throw new Error('SQL extension returned empty result')
+        }
+      } catch (sqlError: any) {
+        // Log the error for debugging
+        console.warn('Failed to initialize SQL extension:', sqlError?.message || sqlError)
+        // Fallback to basic editor without SQL extension
+        return [
+          EditorView.lineWrapping,
+          EditorView.theme({
+            '&': {
+              fontSize: options.fontSize || 14,
+              fontFamily: options.fontFamily || 'Monaco, Menlo, "Ubuntu Mono", monospace',
+              height: height === '100%' ? '100%' : undefined,
+              minHeight: height === '100%' ? undefined : height
+            },
+            '.cm-content': {
+              padding: '8px',
+              minHeight: height === '100%' ? '100%' : height
+            },
+            '.cm-scroller': {
+              overflow: 'auto'
+            }
+          })
+        ]
+      }
       
       // Define syntax highlighting styles
       const highlightStyle = HighlightStyle.define([
@@ -193,7 +246,10 @@ export function CodeEditor({
         })
       ]
     } catch (error) {
-      console.error('Error initializing SQL extensions:', error)
+      // Suppress errors during build time - SQL extensions may not be available during SSR/build
+      if (typeof process === 'undefined' || process.env?.NEXT_PHASE !== 'phase-production-build') {
+        console.error('Error initializing SQL extensions:', error)
+      }
       return [
         EditorView.lineWrapping,
         EditorView.theme({
@@ -1009,11 +1065,7 @@ ORDER BY date DESC;`,
   return (
     <div className={`w-full ${isFullHeight ? 'h-full flex flex-col' : ''} ${className} overflow-hidden`}>
       {/* Editor Header */}
-      <div className={`flex items-center justify-between px-3 py-2 text-xs border-b ${
-        theme === 'dark' 
-          ? 'bg-gray-800 border-gray-700 text-gray-300' 
-          : 'bg-gray-50 border-gray-200 text-gray-600'
-      }`}>
+      <div className={`flex items-center justify-between px-3 py-2 text-xs border-b bg-muted border-border text-muted-foreground`}>
         <div className="flex items-center gap-4">
           <span className="font-medium">{language.toUpperCase()}</span>
           {!readOnly && (
@@ -1040,11 +1092,7 @@ ORDER BY date DESC;`,
 
       {/* Find & Replace Panel */}
       {showFindReplace && options.enableFindReplace && (
-        <div className={`px-3 py-2 border-b ${
-          theme === 'dark' 
-            ? 'bg-gray-800 border-gray-700' 
-            : 'bg-gray-50 border-gray-200'
-        }`}>
+        <div className={`px-3 py-2 border-b bg-muted border-border`}>
           <div className="flex items-center gap-2">
             <input
               type="text"
@@ -1054,44 +1102,36 @@ ORDER BY date DESC;`,
                 setFindText(e.target.value)
                 findTextInCode(e.target.value)
               }}
-              className={`px-2 py-1 text-xs border rounded ${
-                theme === 'dark' 
-                  ? 'bg-gray-700 border-gray-600 text-gray-100' 
-                  : 'bg-white border-gray-300 text-gray-900'
-              }`}
+              className={`px-2 py-1 text-xs border border-border rounded bg-background text-foreground`}
             />
             <input
               type="text"
               placeholder="Replace with..."
               value={replaceText}
               onChange={(e) => setReplaceText(e.target.value)}
-              className={`px-2 py-1 text-xs border rounded ${
-                theme === 'dark' 
-                  ? 'bg-gray-700 border-gray-600 text-gray-100' 
-                  : 'bg-white border-gray-300 text-gray-900'
-              }`}
+              className={`px-2 py-1 text-xs border border-border rounded bg-background text-foreground`}
             />
             <button
               onClick={goToPreviousFind}
               disabled={findResults.length === 0}
-              className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 disabled:opacity-50 rounded"
+              className="px-2 py-1 text-xs bg-muted hover:bg-accent text-foreground disabled:opacity-50 rounded"
             >
               ↑
             </button>
             <button
               onClick={goToNextFind}
               disabled={findResults.length === 0}
-              className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 disabled:opacity-50 rounded"
+              className="px-2 py-1 text-xs bg-muted hover:bg-accent text-foreground disabled:opacity-50 rounded"
             >
               ↓
             </button>
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-muted-foreground">
               {findResults.length > 0 ? `${currentFindIndex + 1}/${findResults.length}` : '0/0'}
             </span>
             <button
               onClick={() => replaceTextInCode(findText, replaceText)}
               disabled={!findText || !replaceText}
-              className="px-2 py-1 text-xs bg-green-100 hover:bg-green-200 text-green-700 disabled:opacity-50 rounded"
+              className="px-2 py-1 text-xs bg-green-100 dark:bg-green-900 hover:bg-green-200 dark:hover:bg-green-800 text-green-700 dark:text-green-300 disabled:opacity-50 rounded"
             >
               Replace All
             </button>
@@ -1110,11 +1150,7 @@ ORDER BY date DESC;`,
         {showLineNumbers && (
           <div 
             ref={lineNumbersRef}
-            className={`${
-              theme === 'dark' 
-                ? 'bg-gray-900 border-r border-gray-700 text-gray-500' 
-                : 'bg-gray-50 border-r border-gray-200 text-gray-500'
-            } px-2 py-3 text-xs select-none ${isFullHeight ? 'overflow-y-auto' : 'overflow-hidden'}`}
+            className={`bg-muted border-r border-border text-muted-foreground px-2 py-3 text-xs select-none ${isFullHeight ? 'overflow-y-auto' : 'overflow-hidden'}`}
             style={{ 
               fontFamily: getFontFamily(),
               fontSize: getFontSize(),
@@ -1147,11 +1183,7 @@ ORDER BY date DESC;`,
         <div className={`flex-1 relative ${isFullHeight ? 'min-h-0' : ''}`}>
           {/* Syntax Highlighting Overlay */}
           <div 
-            className={`absolute inset-0 pointer-events-none p-0 ${isFullHeight ? 'overflow-y-auto' : 'overflow-hidden'} ${
-              theme === 'dark' 
-                ? 'bg-gray-900' 
-                : 'bg-white'
-            }`}
+            className={`absolute inset-0 pointer-events-none p-0 ${isFullHeight ? 'overflow-y-auto' : 'overflow-hidden'} bg-background`}
             style={{
               fontFamily: getFontFamily(),
               fontSize: getFontSize(),
@@ -1166,21 +1198,19 @@ ORDER BY date DESC;`,
           {/* Code Snippets dropdown */}
           {showSnippets && options.enableSnippets && snippetSuggestions.length > 0 && (
             <div 
-              className={`absolute z-50 bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto ${
-                theme === 'dark' ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'
-              }`}
+              className={`absolute z-50 rounded-lg shadow-lg max-h-64 overflow-y-auto bg-background border border-border`}
               style={{
                 top: '50px',
                 left: '10px',
                 minWidth: '300px'
               }}
             >
-              <div className="p-2 border-b border-gray-200 bg-gray-50">
+              <div className={`p-2 border-b bg-muted border-border`}>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">Code Snippets</span>
+                  <span className={`text-sm font-medium text-foreground`}>Code Snippets</span>
                   <button
                     onClick={() => setShowSnippets(false)}
-                    className="text-gray-400 hover:text-gray-600"
+                    className={`text-muted-foreground hover:text-foreground`}
                   >
                     ✕
                   </button>
@@ -1189,9 +1219,7 @@ ORDER BY date DESC;`,
               {snippetSuggestions.map((snippet, index) => (
                 <div
                   key={index}
-                  className={`px-3 py-2 text-sm cursor-pointer hover:bg-blue-100 border-b border-gray-100 ${
-                    theme === 'dark' ? 'hover:bg-gray-700 text-gray-100' : 'hover:bg-blue-100 text-gray-900'
-                  }`}
+                  className={`px-3 py-2 text-sm cursor-pointer border-b border-border hover:bg-accent text-foreground hover:text-accent-foreground`}
                   onClick={() => {
                     // Insert snippet
                     const textarea = textareaRef.current
@@ -1210,7 +1238,7 @@ ORDER BY date DESC;`,
                   }}
                 >
                   <div className="font-medium">{snippet.trigger}</div>
-                  <div className="text-xs text-gray-500">{snippet.description}</div>
+                  <div className="text-xs text-muted-foreground">{snippet.description}</div>
                 </div>
               ))}
             </div>
@@ -1219,9 +1247,7 @@ ORDER BY date DESC;`,
           {/* Auto-completion dropdown */}
           {showAutoComplete && options.enableAutoComplete && autoCompleteSuggestions.length > 0 && (
             <div 
-              className={`absolute z-50 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto ${
-                theme === 'dark' ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'
-              }`}
+              className={`absolute z-50 bg-background border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto`}
               style={{
                 top: autoCompletePosition.top,
                 left: autoCompletePosition.left,
@@ -1231,9 +1257,7 @@ ORDER BY date DESC;`,
               {autoCompleteSuggestions.map((suggestion, index) => (
                 <div
                   key={index}
-                  className={`px-3 py-2 text-sm cursor-pointer hover:bg-blue-100 ${
-                    theme === 'dark' ? 'hover:bg-gray-700 text-gray-100' : 'hover:bg-blue-100 text-gray-900'
-                  }`}
+                  className={`px-3 py-2 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground text-foreground`}
                   onClick={() => {
                     // Insert suggestion
                     const textarea = textareaRef.current
@@ -1266,10 +1290,10 @@ ORDER BY date DESC;`,
               key={index}
               className={`absolute z-40 px-2 py-1 text-xs rounded shadow-lg ${
                 error.severity === 'error' 
-                  ? 'bg-red-100 text-red-800 border border-red-300' 
+                  ? 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-300 dark:border-red-800' 
                   : error.severity === 'warning'
-                  ? 'bg-yellow-100 text-yellow-800 border border-yellow-300'
-                  : 'bg-blue-100 text-blue-800 border border-blue-300'
+                  ? 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 border border-yellow-300 dark:border-yellow-800'
+                  : 'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 border border-blue-300 dark:border-blue-800'
               }`}
               style={{
                 top: `${(error.line - 1) * 20 + 12}px`,
@@ -1295,11 +1319,7 @@ ORDER BY date DESC;`,
             onMouseUp={handleSelectionChange}
             placeholder={placeholder}
             readOnly={readOnly}
-            className={`w-full h-full resize-none border-0 focus:ring-0 focus:outline-none p-0 relative z-10 ${
-              theme === 'dark' 
-                ? 'bg-transparent text-transparent placeholder-gray-500 caret-white' 
-                : 'bg-transparent text-transparent placeholder-gray-400 caret-gray-900'
-            }`}
+            className={`w-full h-full resize-none border-0 focus:ring-0 focus:outline-none p-0 relative z-10 bg-transparent text-transparent placeholder:text-muted-foreground caret-foreground`}
             style={{
               fontFamily: getFontFamily(),
               fontSize: getFontSize(),

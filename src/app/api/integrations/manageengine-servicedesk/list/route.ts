@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
         success: true,
         tickets: result.data?.requests || [],
         total: result.data?.response_status?.total_count || 0,
-        data: result.data,
+        data: result?.data || null,
         rateLimit: {
           remaining: rateLimitResult.remaining,
           resetTime: rateLimitResult.resetTime

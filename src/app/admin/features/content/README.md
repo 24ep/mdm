@@ -19,11 +19,10 @@ content/
 
 ## Components
 
-### KnowledgeBase
-- Knowledge notebook management
-- Document organization
-- Search and filtering
-- Tag management
+### KnowledgeBase ❌ REMOVED
+- **This component has been removed. Use OutlineKnowledgeBase from @/features/knowledge instead.**
+- Old localStorage-based knowledge base
+- Replaced by new database-backed Outline-like system
 
 ### AttachmentManager
 - File attachment management
@@ -52,22 +51,30 @@ content/
 ```typescript
 // Import components
 import {
-  KnowledgeBase,
+  // KnowledgeBase, // @deprecated - Use OutlineKnowledgeBase from @/features/knowledge instead
   AttachmentManager,
   ChangeRequests,
   ProjectsManagement,
 } from '@/app/admin/features/content'
 
 // Import types
-import { KnowledgeNotebook, Attachment, ChangeRequest, Ticket } from '@/app/admin/features/content'
+import { 
+  // KnowledgeNotebook, // @deprecated - Use KnowledgeCollection from @/features/knowledge instead
+  Attachment, 
+  ChangeRequest, 
+  Ticket 
+} from '@/app/admin/features/content'
+
+// For knowledge base, use the new system:
+import { OutlineKnowledgeBase, KnowledgeCollection } from '@/features/knowledge'
 
 // Import utilities
-import { formatFileSize, filterNotebooksBySearch, getChangeRequestStatusColor } from '@/app/admin/features/content'
+import { formatFileSize, getChangeRequestStatusColor } from '@/app/admin/features/content'
 ```
 
 ## Types
 
-- `KnowledgeNotebook` - Knowledge base notebook
+- ~~`KnowledgeNotebook`~~ ⚠️ **DEPRECATED** - Use `KnowledgeCollection` from `@/features/knowledge` instead
 - `Attachment` - File attachment
 - `ChangeRequest` - Change request configuration
 - `Ticket` - Project ticket
@@ -75,8 +82,6 @@ import { formatFileSize, filterNotebooksBySearch, getChangeRequestStatusColor } 
 ## Utilities
 
 - `formatFileSize(bytes)` - Format file size in human-readable format
-- `filterNotebooksBySearch(notebooks, query)` - Filter notebooks by search query
-- `sortNotebooksByName(notebooks, order)` - Sort notebooks by name
 - `filterAttachmentsBySearch(attachments, query)` - Filter attachments by search query
 - `filterAttachmentsByType(attachments, mimeType)` - Filter attachments by MIME type
 - `isAttachmentPublic(attachment)` - Check if attachment is public

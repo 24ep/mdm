@@ -20,10 +20,15 @@ export function applyAggregations(
   data: any[],
   config: AggregationConfig
 ): any[] {
+  // Guard against null/undefined data
+  if (!data || !Array.isArray(data)) {
+    return []
+  }
+
   const { dimensions, measures } = config
 
   // If no dimensions, we can't group - return data as-is or apply aggregations across all rows
-  if (dimensions.length === 0) {
+  if (!dimensions || dimensions.length === 0) {
     if (Object.keys(measures).length === 0) {
       return data
     }

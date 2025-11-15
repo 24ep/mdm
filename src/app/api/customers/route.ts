@@ -3,21 +3,36 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { triggerCustomerNotification } from '@/lib/notification-triggers'
+import { logger } from '@/lib/logger'
+import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
+    // Validate query parameters - use passthrough for complex filters
+    const queryValidation = validateQuery(request, z.object({
+      page: z.string().optional().transform((val) => parseInt(val || '1')).pipe(z.number().int().positive()).optional().default(1),
+      limit: z.string().optional().transform((val) => parseInt(val || '10')).pipe(z.number().int().positive().max(100)).optional().default(10),
+      search: z.string().optional().default(''),
+      status: z.string().optional().default(''),
+      sort: z.string().optional().default(''),
+      order: z.enum(['asc', 'desc']).optional().default('asc'),
+    }).passthrough())
+    
+    if (!queryValidation.success) {
+      return addSecurityHeaders(queryValidation.response)
+    }
+    
     const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '10')
-    const search = searchParams.get('search') || ''
-    const status = searchParams.get('status') || ''
-    const sort = searchParams.get('sort') || ''
-    const order = searchParams.get('order') || 'asc'
+    const { page, limit = 10, search = '', status: statusParam = '', sort = '', order = 'asc' } = queryValidation.data
     
     // Multi-select filters
     const companies = searchParams.get('companies')?.split(',').filter(Boolean) || []
@@ -41,9 +56,11 @@ export async function GET(request: NextRequest) {
     const position = searchParams.get('position') || ''
     const source = searchParams.get('source') || ''
     const industry = searchParams.get('industry') || ''
-    const statusFilter = searchParams.get('status') || ''
+    const statusFilter = statusParam || ''
     const lastContactFrom = searchParams.get('last_contact_from') || ''
     const lastContactTo = searchParams.get('last_contact_to') || ''
+    
+    logger.apiRequest('GET', '/api/customers', { userId: session.user.id, page, limit, search })
 
     const offset = (page - 1) * limit
 
@@ -206,7 +223,9 @@ export async function GET(request: NextRequest) {
       industries: customer.industry_name ? { name: customer.industry_name } : null,
     }))
 
-    return NextResponse.json({
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/customers', 200, duration, { total })
+    return addSecurityHeaders(NextResponse.json({
       customers: transformedCustomers,
       pagination: {
         page,
@@ -214,21 +233,42 @@ export async function GET(request: NextRequest) {
         total,
         pages: Math.ceil(total / limit),
       },
-    })
+    }))
   } catch (error) {
-    console.error('Error fetching customers:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/customers', 500, duration)
+    return handleApiError(error, 'Customers API GET')
   }
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const body = await request.json()
+    // Validate request body
+    const bodyValidation = await validateBody(request, z.object({
+      first_name: z.string().min(1, 'First name is required'),
+      last_name: z.string().min(1, 'Last name is required'),
+      email: z.string().email().optional(),
+      phone: z.string().optional(),
+      company_id: commonSchemas.id.optional(),
+      source_id: commonSchemas.id.optional(),
+      industry_id: commonSchemas.id.optional(),
+      event_id: commonSchemas.id.optional(),
+      position_id: commonSchemas.id.optional(),
+      business_profile_id: commonSchemas.id.optional(),
+      title_id: commonSchemas.id.optional(),
+      call_workflow_status_id: commonSchemas.id.optional(),
+    }))
+    
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+    
     const {
       first_name,
       last_name,
@@ -242,14 +282,8 @@ export async function POST(request: NextRequest) {
       business_profile_id,
       title_id,
       call_workflow_status_id,
-    } = body
-
-    if (!first_name || !last_name) {
-      return NextResponse.json(
-        { error: 'First name and last name are required' },
-        { status: 400 }
-      )
-    }
+    } = bodyValidation.data
+    logger.apiRequest('POST', '/api/customers', { userId: session.user.id, first_name, last_name, email })
 
     if (email) {
       const { rows: existing } = await query(
@@ -257,10 +291,11 @@ export async function POST(request: NextRequest) {
         [email]
       )
       if (existing.length > 0) {
-        return NextResponse.json(
+        logger.warn('Customer with this email already exists', { email })
+        return addSecurityHeaders(NextResponse.json(
           { error: 'Customer with this email already exists' },
           { status: 400 }
-        )
+        ))
       }
     }
 
@@ -297,12 +332,12 @@ export async function POST(request: NextRequest) {
       ['CREATE', 'Customer', customer.id, customer, session.user.id]
     )
 
-    return NextResponse.json(customer, { status: 201 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/customers', 201, duration, { customerId: customer.id })
+    return addSecurityHeaders(NextResponse.json(customer, { status: 201 }))
   } catch (error) {
-    console.error('Error creating customer:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/customers', 500, duration)
+    return handleApiError(error, 'Customers API POST')
   }
 }

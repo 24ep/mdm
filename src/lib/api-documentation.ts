@@ -38,13 +38,19 @@ export interface APIResponse {
 }
 
 export interface APISchema {
-  type: string
+  type?: string
   properties?: Record<string, APISchema>
   items?: APISchema
   required?: string[]
   enum?: any[]
   format?: string
   example?: any
+  minimum?: number
+  maximum?: number
+  default?: any
+  $ref?: string
+  minItems?: number
+  [key: string]: any // Allow additional OpenAPI schema properties
 }
 
 export interface APISecurity {
@@ -318,6 +324,434 @@ export const API_ENDPOINTS: APIEndpoint[] = [
       }
     ],
     security: [{ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }]
+  },
+
+  // V1 API - Tickets
+  {
+    path: '/api/v1/tickets',
+    method: 'GET',
+    summary: 'Get tickets',
+    description: 'Retrieve a paginated list of tickets with filtering, sorting, and search',
+    tags: ['Tickets'],
+    parameters: [
+      {
+        name: 'spaceId',
+        in: 'query',
+        required: false,
+        description: 'Filter by space ID',
+        schema: { type: 'string', format: 'uuid' }
+      },
+      {
+        name: 'page',
+        in: 'query',
+        required: false,
+        description: 'Page number (default: 1)',
+        schema: { type: 'integer', minimum: 1, default: 1 }
+      },
+      {
+        name: 'limit',
+        in: 'query',
+        required: false,
+        description: 'Items per page (default: 20)',
+        schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 }
+      },
+      {
+        name: 'search',
+        in: 'query',
+        required: false,
+        description: 'Search query',
+        schema: { type: 'string' }
+      },
+      {
+        name: 'sortBy',
+        in: 'query',
+        required: false,
+        description: 'Field to sort by',
+        schema: { type: 'string', enum: ['created_at', 'updated_at', 'title', 'status', 'priority'] }
+      },
+      {
+        name: 'sortOrder',
+        in: 'query',
+        required: false,
+        description: 'Sort order',
+        schema: { type: 'string', enum: ['asc', 'desc'], default: 'desc' }
+      },
+      {
+        name: 'status',
+        in: 'query',
+        required: false,
+        description: 'Filter by status',
+        schema: { type: 'string' }
+      },
+      {
+        name: 'priority',
+        in: 'query',
+        required: false,
+        description: 'Filter by priority',
+        schema: { type: 'string' }
+      }
+    ],
+    responses: [
+      {
+        status: 200,
+        description: 'List of tickets',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                tickets: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/Ticket' }
+                },
+                total: { type: 'integer' },
+                page: { type: 'integer' },
+                limit: { type: 'integer' },
+                totalPages: { type: 'integer' }
+              }
+            }
+          }
+        }
+      },
+      {
+        status: 401,
+        description: 'Unauthorized'
+      },
+      {
+        status: 403,
+        description: 'Forbidden'
+      }
+    ],
+    security: [{ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }]
+  },
+  {
+    path: '/api/v1/tickets',
+    method: 'POST',
+    summary: 'Create a ticket',
+    description: 'Create a new ticket',
+    tags: ['Tickets'],
+    requestBody: {
+      description: 'Ticket creation data',
+      required: true,
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            required: ['title', 'spaceId'],
+            properties: {
+              title: { type: 'string' },
+              description: { type: 'string' },
+              status: { type: 'string', enum: ['BACKLOG', 'TODO', 'IN_PROGRESS', 'DONE', 'CANCELLED'] },
+              priority: { type: 'string', enum: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] },
+              dueDate: { type: 'string', format: 'date-time' },
+              startDate: { type: 'string', format: 'date-time' },
+              estimate: { type: 'number' },
+              spaceId: { type: 'string', format: 'uuid' },
+              assignedTo: { type: 'string', format: 'uuid' }
+            }
+          }
+        }
+      }
+    },
+    responses: [
+      {
+        status: 201,
+        description: 'Ticket created successfully',
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/Ticket' }
+          }
+        }
+      },
+      {
+        status: 400,
+        description: 'Bad request'
+      },
+      {
+        status: 401,
+        description: 'Unauthorized'
+      }
+    ],
+    security: [{ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }]
+  },
+  {
+    path: '/api/v1/tickets/bulk',
+    method: 'POST',
+    summary: 'Bulk operations on tickets',
+    description: 'Perform bulk operations (delete, update status, update priority, assign) on multiple tickets',
+    tags: ['Tickets'],
+    requestBody: {
+      description: 'Bulk operation data',
+      required: true,
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            required: ['operation', 'ticketIds'],
+            properties: {
+              operation: {
+                type: 'string',
+                enum: ['delete', 'update_status', 'update_priority', 'assign']
+              },
+              ticketIds: {
+                type: 'array',
+                items: { type: 'string', format: 'uuid' },
+                minItems: 1
+              },
+              data: {
+                type: 'object',
+                properties: {
+                  status: { type: 'string' },
+                  priority: { type: 'string' },
+                  assigneeId: { type: 'string', format: 'uuid' }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    responses: [
+      {
+        status: 200,
+        description: 'Bulk operation completed',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                success: { type: 'boolean' },
+                affected: { type: 'integer' },
+                message: { type: 'string' }
+              }
+            }
+          }
+        }
+      },
+      {
+        status: 400,
+        description: 'Bad request'
+      },
+      {
+        status: 401,
+        description: 'Unauthorized'
+      },
+      {
+        status: 403,
+        description: 'Forbidden'
+      }
+    ],
+    security: [{ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }]
+  },
+
+  // V1 API - Dashboards
+  {
+    path: '/api/v1/dashboards',
+    method: 'GET',
+    summary: 'Get dashboards',
+    description: 'Retrieve a paginated list of dashboards with filtering, sorting, and search',
+    tags: ['Dashboards'],
+    parameters: [
+      {
+        name: 'spaceId',
+        in: 'query',
+        required: false,
+        description: 'Filter by space ID',
+        schema: { type: 'string', format: 'uuid' }
+      },
+      {
+        name: 'page',
+        in: 'query',
+        required: false,
+        description: 'Page number',
+        schema: { type: 'integer', minimum: 1, default: 1 }
+      },
+      {
+        name: 'limit',
+        in: 'query',
+        required: false,
+        description: 'Items per page',
+        schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 }
+      },
+      {
+        name: 'search',
+        in: 'query',
+        required: false,
+        description: 'Search query',
+        schema: { type: 'string' }
+      }
+    ],
+    responses: [
+      {
+        status: 200,
+        description: 'List of dashboards',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                dashboards: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/Dashboard' }
+                },
+                total: { type: 'integer' },
+                page: { type: 'integer' },
+                limit: { type: 'integer' }
+              }
+            }
+          }
+        }
+      }
+    ],
+    security: [{ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }]
+  },
+  {
+    path: '/api/v1/dashboards/bulk',
+    method: 'POST',
+    summary: 'Bulk operations on dashboards',
+    description: 'Perform bulk operations (delete, update status) on multiple dashboards',
+    tags: ['Dashboards'],
+    requestBody: {
+      description: 'Bulk operation data',
+      required: true,
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            required: ['operation', 'dashboardIds'],
+            properties: {
+              operation: {
+                type: 'string',
+                enum: ['delete', 'update_status']
+              },
+              dashboardIds: {
+                type: 'array',
+                items: { type: 'string', format: 'uuid' },
+                minItems: 1
+              },
+              data: {
+                type: 'object',
+                properties: {
+                  isActive: { type: 'boolean' }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    responses: [
+      {
+        status: 200,
+        description: 'Bulk operation completed'
+      }
+    ],
+    security: [{ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }]
+  },
+
+  // V1 API - Workflows
+  {
+    path: '/api/v1/workflows',
+    method: 'GET',
+    summary: 'Get workflows',
+    description: 'Retrieve a paginated list of workflows with filtering, sorting, and search',
+    tags: ['Workflows'],
+    parameters: [
+      {
+        name: 'spaceId',
+        in: 'query',
+        required: false,
+        description: 'Filter by space ID',
+        schema: { type: 'string', format: 'uuid' }
+      },
+      {
+        name: 'page',
+        in: 'query',
+        required: false,
+        description: 'Page number',
+        schema: { type: 'integer', minimum: 1, default: 1 }
+      },
+      {
+        name: 'limit',
+        in: 'query',
+        required: false,
+        description: 'Items per page',
+        schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 }
+      },
+      {
+        name: 'status',
+        in: 'query',
+        required: false,
+        description: 'Filter by status',
+        schema: { type: 'string' }
+      }
+    ],
+    responses: [
+      {
+        status: 200,
+        description: 'List of workflows',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                workflows: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/Workflow' }
+                },
+                total: { type: 'integer' },
+                page: { type: 'integer' },
+                limit: { type: 'integer' }
+              }
+            }
+          }
+        }
+      }
+    ],
+    security: [{ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }]
+  },
+  {
+    path: '/api/v1/workflows/bulk',
+    method: 'POST',
+    summary: 'Bulk operations on workflows',
+    description: 'Perform bulk operations (delete, update status) on multiple workflows',
+    tags: ['Workflows'],
+    requestBody: {
+      description: 'Bulk operation data',
+      required: true,
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            required: ['operation', 'workflowIds'],
+            properties: {
+              operation: {
+                type: 'string',
+                enum: ['delete', 'update_status']
+              },
+              workflowIds: {
+                type: 'array',
+                items: { type: 'string', format: 'uuid' },
+                minItems: 1
+              },
+              data: {
+                type: 'object',
+                properties: {
+                  status: { type: 'string' }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    responses: [
+      {
+        status: 200,
+        description: 'Bulk operation completed'
+      }
+    ],
+    security: [{ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }]
   }
 ]
 
@@ -392,6 +826,51 @@ export function generateOpenAPISpec(): any {
             error: { type: 'string' },
             message: { type: 'string' },
             code: { type: 'integer' }
+          }
+        },
+        Ticket: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            title: { type: 'string' },
+            description: { type: 'string' },
+            status: { type: 'string', enum: ['BACKLOG', 'TODO', 'IN_PROGRESS', 'DONE', 'CANCELLED'] },
+            priority: { type: 'string', enum: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] },
+            dueDate: { type: 'string', format: 'date-time' },
+            startDate: { type: 'string', format: 'date-time' },
+            estimate: { type: 'number' },
+            assignee: { type: 'object' },
+            assignees: { type: 'array' },
+            spaces: { type: 'array' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' }
+          }
+        },
+        Dashboard: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            name: { type: 'string' },
+            description: { type: 'string' },
+            layout: { type: 'object' },
+            widgets: { type: 'array' },
+            isActive: { type: 'boolean' },
+            spaceId: { type: 'string', format: 'uuid' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' }
+          }
+        },
+        Workflow: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            name: { type: 'string' },
+            description: { type: 'string' },
+            status: { type: 'string' },
+            steps: { type: 'array' },
+            spaceId: { type: 'string', format: 'uuid' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' }
           }
         }
       }

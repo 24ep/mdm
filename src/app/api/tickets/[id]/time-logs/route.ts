@@ -2,18 +2,34 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { logger } from '@/lib/logger'
+import { validateParams, validateBody, validateQuery, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id } = paramValidation.data
+    logger.apiRequest('GET', `/api/tickets/${id}/time-logs`, { userId: session.user.id })
 
     const timeLogs = await db.ticketTimeLog.findMany({
       where: {
@@ -34,10 +50,15 @@ export async function GET(
       }
     })
 
-    return NextResponse.json({ timeLogs })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', `/api/tickets/${id}/time-logs`, 200, duration, {
+      timeLogCount: timeLogs.length
+    })
+    return addSecurityHeaders(NextResponse.json({ timeLogs }))
   } catch (error) {
-    console.error('Error fetching time logs:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Ticket Time Logs API GET')
   }
 }
 
@@ -45,19 +66,37 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id } = await params
-    const body = await request.json()
-    const { hours, description, loggedAt } = body
-
-    if (!hours || hours <= 0) {
-      return NextResponse.json({ error: 'Valid hours are required' }, { status: 400 })
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
     }
+    
+    const { id } = paramValidation.data
+    logger.apiRequest('POST', `/api/tickets/${id}/time-logs`, { userId: session.user.id })
+
+    const bodySchema = z.object({
+      hours: z.number().positive('Valid hours are required'),
+      description: z.string().optional().nullable(),
+      loggedAt: z.string().datetime().optional().transform((val) => val ? new Date(val) : new Date()),
+    })
+
+    const bodyValidation = await validateBody(request, bodySchema)
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+
+    const { hours, description, loggedAt } = bodyValidation.data
 
     // Check if ticket exists
     const ticket = await db.ticket.findUnique({
@@ -65,16 +104,17 @@ export async function POST(
     })
 
     if (!ticket || ticket.deletedAt) {
-      return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
+      logger.warn('Ticket not found for time log creation', { ticketId: id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Ticket not found' }, { status: 404 }))
     }
 
     const timeLog = await db.ticketTimeLog.create({
       data: {
         ticketId: id,
         userId: session.user.id,
-        hours: parseFloat(hours),
+        hours: hours,
         description: description || null,
-        loggedAt: loggedAt ? new Date(loggedAt) : new Date()
+        loggedAt: loggedAt || new Date()
       },
       include: {
         user: {
@@ -88,10 +128,16 @@ export async function POST(
       }
     })
 
-    return NextResponse.json(timeLog, { status: 201 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', `/api/tickets/${id}/time-logs`, 201, duration, {
+      timeLogId: timeLog.id,
+      hours,
+    })
+    return addSecurityHeaders(NextResponse.json(timeLog, { status: 201 }))
   } catch (error) {
-    console.error('Error creating time log:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Ticket Time Logs API POST')
   }
 }
 
@@ -99,35 +145,56 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { searchParams } = new URL(request.url)
-    const timeLogId = searchParams.get('timeLogId')
-
-    if (!timeLogId) {
-      return NextResponse.json({ error: 'timeLogId is required' }, { status: 400 })
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
     }
+    
+    const { id } = paramValidation.data
+    logger.apiRequest('DELETE', `/api/tickets/${id}/time-logs`, { userId: session.user.id })
+
+    const querySchema = z.object({
+      timeLogId: commonSchemas.id,
+    })
+
+    const queryValidation = validateQuery(request, querySchema)
+    if (!queryValidation.success) {
+      return addSecurityHeaders(queryValidation.response)
+    }
+
+    const { timeLogId } = queryValidation.data
 
     const timeLog = await db.ticketTimeLog.findUnique({
       where: { id: timeLogId }
     })
 
     if (!timeLog || timeLog.userId !== session.user.id) {
-      return NextResponse.json({ error: 'Time log not found or unauthorized' }, { status: 404 })
+      logger.warn('Time log not found or unauthorized', { ticketId: id, timeLogId, userId: session.user.id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Time log not found or unauthorized' }, { status: 404 }))
     }
 
     await db.ticketTimeLog.delete({
       where: { id: timeLogId }
     })
 
-    return NextResponse.json({ success: true })
+    const duration = Date.now() - startTime
+    logger.apiResponse('DELETE', `/api/tickets/${id}/time-logs`, 200, duration, { timeLogId })
+    return addSecurityHeaders(NextResponse.json({ success: true }))
   } catch (error) {
-    console.error('Error deleting time log:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('DELETE', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Ticket Time Logs API DELETE')
   }
 }
 

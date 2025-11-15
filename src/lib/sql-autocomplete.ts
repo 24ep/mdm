@@ -62,6 +62,11 @@ export function createSQLAutocomplete(schema?: DatabaseSchema, dialect: 'postgre
     // Guard against null context
     if (!context) return null
     
+    // Guard against invalid schema
+    if (schema && (!schema.tables || !Array.isArray(schema.tables))) {
+      schema = undefined
+    }
+    
     const word = context.matchBefore(/\w*/)
     if (!word && !context.explicit) return null
 
@@ -156,17 +161,8 @@ export function createSQLAutocomplete(schema?: DatabaseSchema, dialect: 'postgre
  * Fetch database schema for autocomplete
  */
 export async function fetchDatabaseSchema(spaceId?: string): Promise<DatabaseSchema> {
-  try {
-    const response = await fetch(`/api/db/schema${spaceId ? `?spaceId=${spaceId}` : ''}`)
-    if (response.ok) {
-      return await response.json()
-    }
-  } catch (error) {
-    console.error('Failed to fetch database schema:', error)
-  }
-
-  // Return default schema with common tables
-  return {
+  // Default schema to return if fetch fails
+  const defaultSchema: DatabaseSchema = {
     tables: [
       {
         name: 'users',
@@ -196,6 +192,76 @@ export async function fetchDatabaseSchema(spaceId?: string): Promise<DatabaseSch
         ]
       }
     ]
+  }
+
+  try {
+    // During build time, fetch might not be available or API might not be running
+    // Also skip during SSR/build to avoid runtime errors
+    // Check multiple conditions to ensure we're in a browser environment
+    if (
+      typeof fetch === 'undefined' || 
+      typeof window === 'undefined' ||
+      (typeof process !== 'undefined' && process.env?.NEXT_PHASE === 'phase-production-build')
+    ) {
+      return defaultSchema
+    }
+
+    let response
+    try {
+      response = await fetch(`/api/db/schema${spaceId ? `?spaceId=${spaceId}` : ''}`)
+    } catch (fetchError) {
+      // If fetch fails (e.g., during build), return default schema
+      return defaultSchema
+    }
+    
+    if (!response || !response.ok) {
+      return defaultSchema
+    }
+
+    let data
+    try {
+      data = await response.json()
+    } catch (parseError) {
+      console.error('Failed to parse schema response:', parseError)
+      return defaultSchema
+    }
+    
+    // Validate the response structure
+    if (!data || typeof data !== 'object') {
+      return defaultSchema
+    }
+
+    // Handle case where API returns { data: { tables, functions } } or { tables, functions }
+    // Safely check for data.data first - ensure data exists and has data property
+    let schema = data
+    // Extra defensive check: ensure data is defined and is an object before accessing properties
+    if (data && typeof data === 'object' && data !== null && 'data' in data) {
+      // Only access data.data if data exists and has the 'data' property
+      // Use optional chaining and nullish coalescing for extra safety
+      const nestedData = (data as any)?.data
+      if (nestedData && typeof nestedData === 'object' && nestedData !== null) {
+        schema = nestedData
+      }
+    }
+
+    // Ensure schema has required structure
+    if (!schema || typeof schema !== 'object' || !schema) {
+      return defaultSchema
+    }
+
+    // Ensure tables is an array
+    if (!schema.tables || !Array.isArray(schema.tables)) {
+      return defaultSchema
+    }
+
+    return {
+      tables: schema.tables || [],
+      functions: (schema.functions && Array.isArray(schema.functions)) ? schema.functions : undefined,
+      keywords: (schema.keywords && Array.isArray(schema.keywords)) ? schema.keywords : undefined
+    }
+  } catch (error) {
+    console.error('Failed to fetch database schema:', error)
+    return defaultSchema
   }
 }
 

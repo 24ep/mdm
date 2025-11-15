@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
+import { logger } from '@/lib/logger'
+import { validateParams, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 const prisma = new PrismaClient()
 
@@ -7,8 +12,19 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
-    const { id: spaceId } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id: spaceId } = paramValidation.data
+    logger.apiRequest('GET', `/api/spaces/${spaceId}/stats`)
 
     // Get space statistics
     const space = await prisma.space.findUnique({
@@ -29,7 +45,8 @@ export async function GET(
     })
 
     if (!space) {
-      return NextResponse.json({ error: 'Space not found' }, { status: 404 })
+      logger.warn('Space not found for stats', { spaceId })
+      return addSecurityHeaders(NextResponse.json({ error: 'Space not found' }, { status: 404 }))
     }
 
     const totalRecords = space.dataModels.reduce((sum, dm) => sum + dm.dataModel.dataRecords.length, 0)
@@ -43,9 +60,16 @@ export async function GET(
       lastActivity: space.updatedAt
     }
 
-    return NextResponse.json({ stats })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', `/api/spaces/${spaceId}/stats`, 200, duration, {
+      totalUsers: stats.totalUsers,
+      totalDataModels: stats.totalDataModels,
+      totalRecords: stats.totalRecords,
+    })
+    return addSecurityHeaders(NextResponse.json({ stats }))
   } catch (error) {
-    console.error('Error fetching space stats:', error)
-    return NextResponse.json({ error: 'Failed to fetch space stats' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Space Stats API')
   }
 }

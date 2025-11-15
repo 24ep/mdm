@@ -2,20 +2,35 @@ import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/database'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { logger } from '@/lib/logger'
+import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { searchParams } = new URL(request.url)
-    const unreadOnly = searchParams.get('unreadOnly') === 'true'
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const offset = parseInt(searchParams.get('offset') || '0')
+    // Validate query parameters
+    const queryValidation = validateQuery(request, z.object({
+      unreadOnly: z.string().transform((val) => val === 'true').optional(),
+      limit: z.string().optional().transform((val) => parseInt(val || '50')).pipe(z.number().int().positive().max(100)).optional().default(50),
+      offset: z.string().optional().transform((val) => parseInt(val || '0')).pipe(z.number().int().nonnegative()).optional().default(0),
+    }))
+    
+    if (!queryValidation.success) {
+      return addSecurityHeaders(queryValidation.response)
+    }
+    
+    const { unreadOnly = false, limit = 50, offset = 0 } = queryValidation.data
+    logger.apiRequest('GET', '/api/files/notifications', { userId, unreadOnly, limit, offset })
 
     let whereClause = 'WHERE user_id = $1'
     let queryParams: any[] = [userId]
@@ -52,27 +67,44 @@ export async function GET(request: NextRequest) {
       [userId]
     )
 
-    return NextResponse.json({
-      notifications: notificationsResult.rows,
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/files/notifications', 200, duration, { 
+      count: notificationsResult.rows.length,
       unreadCount: parseInt((unreadCountResult.rows[0] as any).count)
     })
-
+    return addSecurityHeaders(NextResponse.json({
+      notifications: notificationsResult.rows,
+      unreadCount: parseInt((unreadCountResult.rows[0] as any).count)
+    }))
   } catch (error) {
-    console.error('Error fetching notifications:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/files/notifications', 500, duration)
+    return handleApiError(error, 'File Notifications API GET')
   }
 }
 
 export async function PUT(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { notificationIds, markAllAsRead = false } = await request.json()
+    // Validate request body
+    const bodyValidation = await validateBody(request, z.object({
+      notificationIds: z.array(commonSchemas.id).optional(),
+      markAllAsRead: z.boolean().optional().default(false),
+    }))
+    
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+    
+    const { notificationIds, markAllAsRead = false } = bodyValidation.data
+    logger.apiRequest('PUT', '/api/files/notifications', { userId, markAllAsRead, notificationIdsCount: notificationIds?.length || 0 })
 
     if (markAllAsRead) {
       // Mark all notifications as read
@@ -90,27 +122,42 @@ export async function PUT(request: NextRequest) {
         [userId, ...notificationIds]
       )
     } else {
-      return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+      logger.warn('Invalid request for file notifications update', { userId })
+      return addSecurityHeaders(NextResponse.json({ error: 'Invalid request' }, { status: 400 }))
     }
 
-    return NextResponse.json({ success: true })
-
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', '/api/files/notifications', 200, duration)
+    return addSecurityHeaders(NextResponse.json({ success: true }))
   } catch (error) {
-    console.error('Error updating notifications:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', '/api/files/notifications', 500, duration)
+    return handleApiError(error, 'File Notifications API PUT')
   }
 }
 
 export async function DELETE(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { notificationIds, deleteAll = false } = await request.json()
+    // Validate request body
+    const bodyValidation = await validateBody(request, z.object({
+      notificationIds: z.array(commonSchemas.id).optional(),
+      deleteAll: z.boolean().optional().default(false),
+    }))
+    
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+    
+    const { notificationIds, deleteAll = false } = bodyValidation.data
+    logger.apiRequest('DELETE', '/api/files/notifications', { userId, deleteAll, notificationIdsCount: notificationIds?.length || 0 })
 
     if (deleteAll) {
       // Delete all notifications
@@ -127,13 +174,16 @@ export async function DELETE(request: NextRequest) {
         [userId, ...notificationIds]
       )
     } else {
-      return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+      logger.warn('Invalid request for file notifications deletion', { userId })
+      return addSecurityHeaders(NextResponse.json({ error: 'Invalid request' }, { status: 400 }))
     }
 
-    return NextResponse.json({ success: true })
-
+    const duration = Date.now() - startTime
+    logger.apiResponse('DELETE', '/api/files/notifications', 200, duration)
+    return addSecurityHeaders(NextResponse.json({ success: true }))
   } catch (error) {
-    console.error('Error deleting notifications:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('DELETE', '/api/files/notifications', 500, duration)
+    return handleApiError(error, 'File Notifications API DELETE')
   }
 }

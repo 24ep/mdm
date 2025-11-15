@@ -6,6 +6,7 @@ import { ComponentConfig, UnifiedPage } from './types'
 import { builtInPagesMap } from './constants'
 import { Canvas } from './Canvas'
 import { getMenuItemKey } from './utils'
+import { Z_INDEX } from '@/lib/z-index'
 
 interface PreviewProps {
   isMobileViewport: boolean
@@ -181,8 +182,8 @@ export function Preview({
   const canvasHeight = dims.height - canvasTopOffset - canvasBottomOffset
 
   return (
-    <div className="flex-1 bg-muted/30 relative overflow-auto min-h-0" style={{ zIndex: 1 }}>
-      <div className={`w-full h-full flex items-start justify-center ${isMobileViewport ? 'p-2' : 'p-6'}`} style={{ position: 'relative', zIndex: 1 }}>
+    <div className="flex-1 bg-muted/30 relative overflow-auto min-h-0" style={{ zIndex: Z_INDEX.content }}>
+      <div className={`w-full h-full flex items-start justify-center ${isMobileViewport ? 'p-2' : 'p-6'}`} style={{ position: 'relative', zIndex: Z_INDEX.content }}>
         <div className={`bg-background border relative`} style={{ width: `${dims.width}px`, height: `${dims.height}px`, transform: `scale(${previewScale})`, transformOrigin: 'center top', margin: '0 auto' }}>
           <div className="absolute inset-0">
             {/* Global header (top of body) */}
@@ -204,8 +205,8 @@ export function Preview({
                   <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-semibold`}>My Workspace</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center">
-                    <span className="text-gray-600 text-xs">U</span>
+                  <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center">
+                    <span className="text-muted-foreground text-xs">U</span>
                   </div>
                 </div>
               </div>
@@ -223,13 +224,13 @@ export function Preview({
                 className={`w-full absolute bottom-0 left-0 flex items-center justify-between ${isMobile ? 'px-3' : 'px-6'} cursor-pointer ${selectedComponent === 'footer' ? 'ring-2 ring-blue-500 ring-offset-2' : ''} shadow-sm`}
                 onClick={() => setSelectedComponent('footer')}
               >
-                <span className={`${isMobile ? 'text-xs' : 'text-xs'} text-gray-500`}>
+                <span className={`${isMobile ? 'text-xs' : 'text-xs'} text-muted-foreground`}>
                   © 2024 My Workspace. All rights reserved.
                 </span>
                 <div className="flex items-center gap-4">
-                  <span className={`${isMobile ? 'text-xs' : 'text-xs'} text-gray-500 hover:text-gray-700 cursor-pointer`}>Privacy</span>
-                  <span className={`${isMobile ? 'text-xs' : 'text-xs'} text-gray-500 hover:text-gray-700 cursor-pointer`}>Terms</span>
-                  <span className={`${isMobile ? 'text-xs' : 'text-xs'} text-gray-500 hover:text-gray-700 cursor-pointer`}>Help</span>
+                  <span className={`${isMobile ? 'text-xs' : 'text-xs'} text-muted-foreground hover:text-foreground cursor-pointer`}>Privacy</span>
+                  <span className={`${isMobile ? 'text-xs' : 'text-xs'} text-muted-foreground hover:text-foreground cursor-pointer`}>Terms</span>
+                  <span className={`${isMobile ? 'text-xs' : 'text-xs'} text-muted-foreground hover:text-foreground cursor-pointer`}>Help</span>
                 </div>
               </div>
             )}
@@ -247,7 +248,7 @@ export function Preview({
                       width: `${sidebarWidth}px`,
                       backgroundColor: componentConfigs.sidebar?.backgroundColor,
                       color: componentConfigs.sidebar?.textColor,
-                      borderRight: '1px solid rgba(0,0,0,0.08)'
+                      borderRight: '1px solid hsl(var(--border) / 0.5)'
                     }}
                     className={`${isMobile ? 'w-full h-auto border-r-0 border-b' : 'h-full'} cursor-pointer ${selectedComponent === 'sidebar' ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}
                     onClick={() => setSelectedComponent('sidebar')}
@@ -345,7 +346,7 @@ export function Preview({
                         if (filteredItems.length === 0) {
                           return (
                             <div className={`${isMobile ? 'py-3' : 'py-4'} text-center`}>
-                              <div className={`text-xs text-gray-400 italic`}>
+                              <div className={`text-xs text-muted-foreground italic`}>
                                 No menu items
                               </div>
                             </div>

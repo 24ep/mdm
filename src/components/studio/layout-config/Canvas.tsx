@@ -9,6 +9,7 @@ import { useCanvasResize } from './useCanvasResize'
 import { PlacedWidget, WidgetType } from './widgets'
 import { widgetsPalette } from './widgets'
 import toast from 'react-hot-toast'
+import { Z_INDEX } from '@/lib/z-index'
 
 export interface CanvasProps {
   canvasRef: React.RefObject<HTMLDivElement>
@@ -220,7 +221,7 @@ export function Canvas({
       className={`absolute inset-0 ${selectedComponent === 'canvas' ? 'ring-2 ring-blue-500 ring-offset-2' : ''} ${isDraggingWidget ? 'cursor-move' : 'cursor-default'}`}
       style={{
         position: 'absolute',
-        zIndex: 10, // Ensure canvas is above background but below overlays during drag
+        zIndex: Z_INDEX.canvasElementSelected, // Ensure canvas is above background but below overlays during drag
         backgroundImage: showGrid
           ? 'linear-gradient(to right, rgba(0,0,0,0.04) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.04) 1px, transparent 1px)'
           : 'none',
@@ -247,7 +248,7 @@ export function Canvas({
           e.dataTransfer.dropEffect = 'copy'
           e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.05)'
           // Ensure canvas is on top during drag
-          e.currentTarget.style.zIndex = '10000'
+          e.currentTarget.style.zIndex = String(Z_INDEX.sortableDragging)
         } else {
           e.dataTransfer.dropEffect = 'none'
         }
@@ -255,7 +256,7 @@ export function Canvas({
       onDragLeave={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget as Node)) {
           e.currentTarget.style.backgroundColor = 'transparent'
-          e.currentTarget.style.zIndex = '10'
+          e.currentTarget.style.zIndex = String(Z_INDEX.canvasElementSelected)
         }
       }}
       onClick={(e) => {
@@ -271,7 +272,7 @@ export function Canvas({
         e.preventDefault()
         e.stopPropagation()
         e.currentTarget.style.backgroundColor = 'transparent'
-        e.currentTarget.style.zIndex = '10'
+        e.currentTarget.style.zIndex = String(Z_INDEX.canvasElementSelected)
         
         if (!canvasRef.current) return
         

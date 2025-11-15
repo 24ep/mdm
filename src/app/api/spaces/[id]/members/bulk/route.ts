@@ -2,24 +2,49 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
+import { logger } from '@/lib/logger'
+import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id: spaceId } = await params
-    const body = await request.json()
-    const { operation, userIds, data } = body
-
-    if (!operation || !userIds || !Array.isArray(userIds) || userIds.length === 0) {
-      return NextResponse.json({ error: 'Invalid request parameters' }, { status: 400 })
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
     }
+    
+    const { id: spaceId } = paramValidation.data
+    logger.apiRequest('POST', `/api/spaces/${spaceId}/members/bulk`, { userId: session.user.id })
+
+    const bodySchema = z.object({
+      operation: z.enum(['change_role', 'remove', 'activate', 'deactivate', 'export']),
+      userIds: z.array(commonSchemas.id).min(1),
+      data: z.object({
+        role: z.enum(['owner', 'admin', 'member', 'viewer']).optional(),
+      }).optional(),
+    })
+
+    const bodyValidation = await validateBody(request, bodySchema)
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+
+    const { operation, userIds, data } = bodyValidation.data
 
     // Check if current user has permission to manage members
     const memberCheck = await query(`
@@ -28,7 +53,8 @@ export async function POST(
     `, [spaceId, session.user.id])
 
     if (memberCheck.rows.length === 0 || !['owner', 'admin'].includes(memberCheck.rows[0].role)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      logger.warn('Insufficient permissions for bulk operation', { spaceId, userId: session.user.id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 }))
     }
 
     let result: any = {}
@@ -36,7 +62,8 @@ export async function POST(
     switch (operation) {
       case 'change_role':
         if (!data?.role) {
-          return NextResponse.json({ error: 'Role is required for change_role operation' }, { status: 400 })
+          logger.warn('Role missing for change_role operation', { spaceId, operation })
+          return addSecurityHeaders(NextResponse.json({ error: 'Role is required for change_role operation' }, { status: 400 }))
         }
         
         // Update roles for selected users
@@ -122,18 +149,22 @@ export async function POST(
         break
 
       default:
-        return NextResponse.json({ error: 'Invalid operation' }, { status: 400 })
+        logger.warn('Invalid bulk operation', { spaceId, operation })
+        return addSecurityHeaders(NextResponse.json({ error: 'Invalid operation' }, { status: 400 }))
     }
 
-    return NextResponse.json({
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', `/api/spaces/${spaceId}/members/bulk`, 200, duration, {
+      operation,
+      userCount: userIds.length,
+    })
+    return addSecurityHeaders(NextResponse.json({
       success: true,
       result
-    })
+    }))
   } catch (error) {
-    console.error('Error performing bulk operation:', error)
-    return NextResponse.json(
-      { error: 'Failed to perform bulk operation' },
-      { status: 500 }
-    )
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Space Members Bulk API')
   }
 }

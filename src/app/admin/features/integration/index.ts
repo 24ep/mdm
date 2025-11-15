@@ -7,7 +7,6 @@
 export { IntegrationHub } from './components/IntegrationHub'
 export { IntegrationList } from './components/IntegrationList'
 export { APIManagement } from './components/APIManagement'
-export { APIClient } from './components/APIClient'
 
 // Types
 export type {
@@ -18,16 +17,6 @@ export type {
   Webhook,
   APIUsage,
   RateLimit,
-  HTTPMethod,
-  AuthType,
-  HTTPHeader,
-  AuthConfig,
-  RequestBody,
-  APIRequest,
-  APIResponse,
-  RequestHistory,
-  RequestCollection,
-  Environment,
 } from './types'
 
 // Utils

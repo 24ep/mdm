@@ -274,7 +274,7 @@ export function AuditLogsAdvanced({ className }: AuditLogsAdvancedProps) {
 
             {/* Advanced Filters */}
             {showFilters && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 border rounded-lg bg-muted/50">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 border border-border rounded-lg bg-muted/50">
                 <div>
                   <Label htmlFor="entityType">Entity Type</Label>
                   <Select value={filters.entityType} onValueChange={(value) => handleFilterChange('entityType', value)}>

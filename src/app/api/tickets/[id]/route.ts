@@ -2,18 +2,34 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { logger } from '@/lib/logger'
+import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id } = paramValidation.data
+    logger.apiRequest('GET', `/api/tickets/${id}`, { userId: session.user.id })
     const ticket = await db.ticket.findUnique({
       where: {
         id,
@@ -60,12 +76,14 @@ export async function GET(
     })
 
     if (!ticket) {
-      return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
+      logger.warn('Ticket not found', { ticketId: id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Ticket not found' }, { status: 404 }))
     }
 
     // Check if user has access to any of the ticket's spaces
     if (!ticket.spaces || ticket.spaces.length === 0) {
-      return NextResponse.json({ error: 'Ticket has no associated spaces' }, { status: 404 })
+      logger.warn('Ticket has no associated spaces', { ticketId: id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Ticket has no associated spaces' }, { status: 404 }))
     }
 
     let hasAccess = false
@@ -91,13 +109,17 @@ export async function GET(
     }
 
     if (!hasAccess) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+      logger.warn('Access denied to ticket', { ticketId: id, userId: session.user.id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Access denied' }, { status: 403 }))
     }
 
-    return NextResponse.json(ticket)
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', `/api/tickets/${id}`, 200, duration)
+    return addSecurityHeaders(NextResponse.json(ticket))
   } catch (error) {
-    console.error('Error fetching ticket:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Tickets API GET')
   }
 }
 
@@ -105,14 +127,43 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id } = await params
-    const body = await request.json()
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id } = paramValidation.data
+    logger.apiRequest('PUT', `/api/tickets/${id}`, { userId: session.user.id })
+    
+    const bodySchema = z.object({
+      title: z.string().optional(),
+      description: z.string().optional(),
+      status: z.string().optional(),
+      priority: z.string().optional(),
+      dueDate: z.string().datetime().optional().nullable(),
+      startDate: z.string().datetime().optional().nullable(),
+      assignedTo: z.string().uuid().optional().nullable(),
+      labels: z.array(z.string()).optional(),
+      estimate: z.number().optional(),
+      attributes: z.array(z.any()).optional(),
+    })
+    
+    const bodyValidation = await validateBody(request, bodySchema)
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+    
     const {
       title,
       description,
@@ -124,7 +175,7 @@ export async function PUT(
       labels,
       estimate,
       attributes
-    } = body
+    } = bodyValidation.data
 
     // Check if ticket exists and user has access
     const existingTicket = await db.ticket.findUnique({
@@ -133,7 +184,8 @@ export async function PUT(
     })
 
     if (!existingTicket || existingTicket.deletedAt) {
-      return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
+      logger.warn('Ticket not found for update', { ticketId: id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Ticket not found' }, { status: 404 }))
     }
 
     // Check if user has access to this space
@@ -152,7 +204,8 @@ export async function PUT(
     })
 
     if (!spaceAccess && !isSpaceOwner) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+      logger.warn('Access denied to update ticket', { ticketId: id, userId: session.user.id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Access denied' }, { status: 403 }))
     }
 
     // Prepare update data
@@ -262,13 +315,18 @@ export async function PUT(
         }
       })
 
-      return NextResponse.json(ticketWithAttributes)
+      const duration = Date.now() - startTime
+      logger.apiResponse('PUT', `/api/tickets/${id}`, 200, duration)
+      return addSecurityHeaders(NextResponse.json(ticketWithAttributes))
     }
 
-    return NextResponse.json(ticket)
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', `/api/tickets/${id}`, 200, duration)
+    return addSecurityHeaders(NextResponse.json(ticket))
   } catch (error) {
-    console.error('Error updating ticket:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Tickets API PUT')
   }
 }
 
@@ -276,13 +334,24 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id } = paramValidation.data
+    logger.apiRequest('DELETE', `/api/tickets/${id}`, { userId: session.user.id })
     // Check if ticket exists and user has access
     const existingTicket = await db.ticket.findUnique({
       where: { id },
@@ -290,7 +359,8 @@ export async function DELETE(
     })
 
     if (!existingTicket || existingTicket.deletedAt) {
-      return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
+      logger.warn('Ticket not found for deletion', { ticketId: id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Ticket not found' }, { status: 404 }))
     }
 
     // Check if user has access to this space
@@ -309,7 +379,8 @@ export async function DELETE(
     })
 
     if (!spaceAccess && !isSpaceOwner) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+      logger.warn('Access denied to delete ticket', { ticketId: id, userId: session.user.id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Access denied' }, { status: 403 }))
     }
 
     // Soft delete
@@ -318,10 +389,13 @@ export async function DELETE(
       data: { deletedAt: new Date() }
     })
 
-    return NextResponse.json({ success: true })
+    const duration = Date.now() - startTime
+    logger.apiResponse('DELETE', `/api/tickets/${id}`, 200, duration)
+    return addSecurityHeaders(NextResponse.json({ success: true }))
   } catch (error) {
-    console.error('Error deleting ticket:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('DELETE', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Tickets API DELETE')
   }
 }
 

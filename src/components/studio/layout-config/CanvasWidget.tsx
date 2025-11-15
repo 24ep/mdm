@@ -7,6 +7,7 @@ import { WidgetRenderer } from './WidgetRenderer'
 import { ResizeHandles } from './ResizeHandles'
 import { WidgetContextMenu } from './WidgetContextMenu'
 import { DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Z_INDEX } from '@/lib/z-index'
 
 interface CanvasWidgetProps {
   widget: PlacedWidget
@@ -199,7 +200,7 @@ export function CanvasWidget({
 
   return (
     <div
-      className={`absolute select-none ${isSelected ? 'z-10' : isMultiSelected ? 'z-10' : 'z-0'} ${isDraggingWidget && isSelected ? 'opacity-80 shadow-2xl' : 'opacity-100'} ${isDraggingWidget && isSelected ? 'scale-105' : 'scale-100'}`}
+      className={`absolute select-none ${isDraggingWidget && isSelected ? 'opacity-80 shadow-2xl' : 'opacity-100'} ${isDraggingWidget && isSelected ? 'scale-105' : 'scale-100'}`}
       data-widget-id={widget.id}
       draggable={false}
       onMouseDown={handleMouseDown}
@@ -214,7 +215,9 @@ export function CanvasWidget({
         transition: 'none',
         willChange: dragStateRef.current.isDragging && dragStateRef.current.widgetId === widget.id ? 'transform, opacity' : 'auto',
         transform: dragStateRef.current.isDragging && dragStateRef.current.widgetId === widget.id ? 'scale(1.02)' : 'scale(1)',
-        zIndex: dragStateRef.current.isDragging && dragStateRef.current.widgetId === widget.id ? 50 : (isSelected ? 10 : 0),
+        zIndex: dragStateRef.current.isDragging && dragStateRef.current.widgetId === widget.id 
+          ? Z_INDEX.canvasElementDragging 
+          : (isSelected ? Z_INDEX.canvasElementSelected : Z_INDEX.canvasElement),
         opacity: isHidden ? 0.3 : (isDraggingWidget && isSelected ? 0.8 : 1),
         pointerEvents: isHidden ? 'none' : 'auto',
       }}
@@ -235,7 +238,7 @@ export function CanvasWidget({
     >
       {/* Lock indicator */}
       {isLocked && (
-        <div className="absolute top-1 right-1 z-50 bg-yellow-100 dark:bg-yellow-900/30 rounded-full p-1">
+        <div className="absolute top-1 right-1 bg-yellow-100 dark:bg-yellow-900/30 rounded-full p-1" style={{ zIndex: Z_INDEX.canvasLockIndicator }}>
           <Lock className="h-3 w-3 text-yellow-600 dark:text-yellow-400" />
         </div>
       )}

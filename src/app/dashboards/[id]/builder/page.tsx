@@ -19,6 +19,7 @@ import { PropertiesPanel } from './components/PropertiesPanel'
 import { TemplatesDialog } from './components/TemplatesDialog'
 import { FilterPanel } from './components/FilterPanel'
 import { CombinedToolsDrawer } from './components/CombinedToolsDrawer'
+import { Z_INDEX } from '@/lib/z-index'
 import { useInteractiveFiltering } from './hooks/useInteractiveFiltering'
 import { exportElement } from './utils/exportUtils'
 import { TOOLBOX_GROUPS } from './constants/toolbox'
@@ -1090,8 +1091,9 @@ export default function DashboardBuilderPage() {
       {/* Global drag overlay preview */}
       {activeToolboxItem && dragPointer && (
         <div
-          className="pointer-events-none fixed z-[9999] opacity-50"
+          className="pointer-events-none fixed opacity-50"
           style={{
+            zIndex: Z_INDEX.modal,
             left: dragPointer.x + 8,
             top: dragPointer.y + 8,
             width: 160,

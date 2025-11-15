@@ -173,7 +173,7 @@ export function ResultsPanel({
 
   return (
     <div 
-      className={`bg-white border-t border-gray-200 flex flex-col ${
+      className={`bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 flex flex-col ${
         isResizing ? '' : 'transition-all duration-200 ease-in-out'
       }`}
       style={{ 
@@ -187,7 +187,7 @@ export function ResultsPanel({
     >
       {/* Resize Handle */}
       <div 
-        className={`h-3 cursor-ns-resize relative group border-t border-gray-300 z-10 ${
+        className={`h-3 cursor-ns-resize relative group border-t border-gray-300 dark:border-gray-700 z-10 ${
           isResizing 
             ? 'bg-blue-500' 
             : 'bg-gray-200 hover:bg-blue-400 transition-colors'
@@ -220,7 +220,7 @@ export function ResultsPanel({
       </div>
 
       {/* Results Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
         <div className="flex items-center gap-4">
           <Tabs value={footerTab} onValueChange={(value) => onFooterTabChange(value as any)}>
             <TabsList className="flex gap-1">

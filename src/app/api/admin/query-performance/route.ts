@@ -2,68 +2,104 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { queryPerformanceTracker } from '@/lib/query-performance'
+import { logger } from '@/lib/logger'
+import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
+
+    logger.apiRequest('GET', '/api/admin/query-performance', { userId: session.user.id })
 
     // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      logger.warn('Insufficient permissions for query performance', { userId: session.user.id, role: session.user.role })
+      return addSecurityHeaders(NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 }))
     }
 
-    const { searchParams } = new URL(request.url)
-    const type = searchParams.get('type') || 'recent'
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const days = parseInt(searchParams.get('days') || '7')
-    const queryHash = searchParams.get('queryHash') || undefined
+    const querySchema = z.object({
+      type: z.enum(['slow', 'stats', 'trends', 'top-by-time', 'most-frequent', 'recent']).optional().default('recent'),
+      limit: z.string().transform(Number).pipe(z.number().int().positive().max(1000)).optional().default('50'),
+      days: z.string().transform(Number).pipe(z.number().int().positive().max(365)).optional().default('7'),
+      queryHash: z.string().optional(),
+    })
 
+    const queryValidation = validateQuery(request, querySchema)
+    if (!queryValidation.success) {
+      return addSecurityHeaders(queryValidation.response)
+    }
+
+    const { type, limit, days, queryHash } = queryValidation.data
+
+    let data: any
     switch (type) {
       case 'slow':
-        const slowQueries = await queryPerformanceTracker.getSlowQueries(limit)
-        return NextResponse.json({ success: true, data: slowQueries })
+        data = await queryPerformanceTracker.getSlowQueries(limit)
+        break
 
       case 'stats':
-        const stats = await queryPerformanceTracker.getQueryStats(queryHash, days)
-        return NextResponse.json({ success: true, data: stats })
+        data = await queryPerformanceTracker.getQueryStats(queryHash, days)
+        break
 
       case 'trends':
-        const trends = await queryPerformanceTracker.getPerformanceTrends(days)
-        return NextResponse.json({ success: true, data: trends })
+        data = await queryPerformanceTracker.getPerformanceTrends(days)
+        break
 
       case 'top-by-time':
-        const topByTime = await queryPerformanceTracker.getTopQueriesByExecutionTime(limit)
-        return NextResponse.json({ success: true, data: topByTime })
+        data = await queryPerformanceTracker.getTopQueriesByExecutionTime(limit)
+        break
 
       case 'most-frequent':
-        const mostFrequent = await queryPerformanceTracker.getMostFrequentQueries(limit)
-        return NextResponse.json({ success: true, data: mostFrequent })
+        data = await queryPerformanceTracker.getMostFrequentQueries(limit)
+        break
 
       case 'recent':
       default:
-        const recent = await queryPerformanceTracker.getRecentQueries(limit)
-        return NextResponse.json({ success: true, data: recent })
+        data = await queryPerformanceTracker.getRecentQueries(limit)
+        break
     }
+
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/admin/query-performance', 200, duration, { type })
+    return addSecurityHeaders(NextResponse.json({ success: true, data }))
   } catch (error: any) {
-    console.error('Error fetching query performance:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch query performance data', details: error.message },
-      { status: 500 }
-    )
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/admin/query-performance', 500, duration)
+    return handleApiError(error, 'Query Performance API GET')
   }
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const body = await request.json()
+    logger.apiRequest('POST', '/api/admin/query-performance', { userId: session.user.id })
+
+    const bodySchema = z.object({
+      query: z.string().min(1),
+      executionTime: z.number().nonnegative(),
+      rowCount: z.number().int().nonnegative().optional(),
+      status: z.string().optional(),
+      errorMessage: z.string().optional().nullable(),
+      spaceId: z.string().uuid().optional().nullable(),
+    })
+
+    const bodyValidation = await validateBody(request, bodySchema)
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+
     const {
       query: sqlQuery,
       executionTime,
@@ -71,11 +107,7 @@ export async function POST(request: NextRequest) {
       status,
       errorMessage,
       spaceId
-    } = body
-
-    if (!sqlQuery || executionTime === undefined) {
-      return NextResponse.json({ error: 'Query and execution time are required' }, { status: 400 })
-    }
+    } = bodyValidation.data
 
     await queryPerformanceTracker.recordQueryExecution({
       query: sqlQuery,
@@ -89,15 +121,18 @@ export async function POST(request: NextRequest) {
       errorMessage: errorMessage || null
     })
 
-    return NextResponse.json({ success: true })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/admin/query-performance', 200, duration)
+    return addSecurityHeaders(NextResponse.json({ success: true }))
   } catch (error: any) {
-    console.error('Error recording query performance:', error)
-    return NextResponse.json(
-      { error: 'Failed to record query performance', details: error.message },
-      { status: 500 }
-    )
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/admin/query-performance', 500, duration)
+    return handleApiError(error, 'Query Performance API POST')
   }
 }
+
+
+
 
 
 

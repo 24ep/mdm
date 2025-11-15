@@ -2,17 +2,34 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
+import { logger } from '@/lib/logger'
+import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.user) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+    }
 
-    const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '10')
-    const search = searchParams.get('search') || ''
-    let spaceId = searchParams.get('space_id')
+    // Validate query parameters
+    const queryValidation = validateQuery(request, z.object({
+      page: z.string().optional().transform((val) => parseInt(val || '1')).pipe(z.number().int().positive()).optional().default(1),
+      limit: z.string().optional().transform((val) => parseInt(val || '10')).pipe(z.number().int().positive().max(100)).optional().default(10),
+      search: z.string().optional().default(''),
+      space_id: commonSchemas.id.optional(),
+    }))
+    
+    if (!queryValidation.success) {
+      return addSecurityHeaders(queryValidation.response)
+    }
+    
+    const { page, limit, search = '', space_id } = queryValidation.data
+    let spaceId = space_id
     
     if (!spaceId) {
       // Fallback to user's default space
@@ -25,18 +42,12 @@ export async function GET(request: NextRequest) {
       )
       spaceId = defaultSpace[0]?.id || null
       if (!spaceId) {
-        return NextResponse.json({ error: 'Space ID is required' }, { status: 400 })
+        logger.warn('Space ID is required', { userId: session.user.id })
+        return addSecurityHeaders(NextResponse.json({ error: 'Space ID is required' }, { status: 400 }))
       }
     }
 
-    // Validate that spaceId is a valid UUID format
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-    if (!uuidRegex.test(spaceId)) {
-      return NextResponse.json({ 
-        error: 'Invalid space ID format',
-        details: 'Space ID must be a valid UUID'
-      }, { status: 400 })
-    }
+    logger.apiRequest('GET', '/api/data-models', { userId: session.user.id, page, limit, search, spaceId })
 
     const offset = (page - 1) * limit
     const params: any[] = [spaceId]
@@ -77,31 +88,40 @@ export async function GET(request: NextRequest) {
     ])
     
     const total = totalRows[0]?.total || 0
-    return NextResponse.json({
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/data-models', 200, duration, { total })
+    return addSecurityHeaders(NextResponse.json({
       dataModels: dataModels || [],
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
-    })
+    }))
   } catch (error) {
-    console.error('Error fetching data models:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/data-models', 500, duration)
+    return handleApiError(error, 'Data Models API GET')
   }
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const body = await request.json()
-    const { name, description, space_ids } = body
-
-    if (!name) {
-      return NextResponse.json({ error: 'Name is required' }, { status: 400 })
+    if (!session?.user) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    if (!space_ids || !Array.isArray(space_ids) || space_ids.length === 0) {
-      return NextResponse.json({ error: 'At least one space ID is required' }, { status: 400 })
+    // Validate request body
+    const bodyValidation = await validateBody(request, z.object({
+      name: z.string().min(1, 'Name is required'),
+      description: z.string().optional(),
+      space_ids: z.array(commonSchemas.id).min(1, 'At least one space ID is required'),
+    }))
+    
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
     }
+    
+    const { name, description, space_ids } = bodyValidation.data
+    logger.apiRequest('POST', '/api/data-models', { userId: session.user.id, name, spaceIds: space_ids })
 
     // Check if user has access to all spaces
     const placeholders = space_ids.map((_, i) => `$${i + 1}`).join(',')
@@ -129,25 +149,19 @@ export async function POST(request: NextRequest) {
 
     // Associate the data model with all specified spaces
     for (const spaceId of space_ids) {
-      // Validate that spaceId is a valid UUID format
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-      if (!uuidRegex.test(spaceId)) {
-        return NextResponse.json({ 
-          error: 'Invalid space ID format',
-          details: `Space ID ${spaceId} must be a valid UUID`
-        }, { status: 400 })
-      }
-      
       await query(
         'INSERT INTO data_model_spaces (data_model_id, space_id, created_by) VALUES ($1, $2, $3)',
         [dataModel.id, spaceId, session.user.id]
       )
     }
 
-    return NextResponse.json({ dataModel }, { status: 201 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/data-models', 201, duration, { dataModelId: dataModel.id })
+    return addSecurityHeaders(NextResponse.json({ dataModel }, { status: 201 }))
   } catch (error) {
-    console.error('Error creating data model:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/data-models', 500, duration)
+    return handleApiError(error, 'Data Models API POST')
   }
 }
 

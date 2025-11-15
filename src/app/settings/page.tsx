@@ -210,7 +210,7 @@ function SortableDataModelRow({
     <tr
       ref={setNodeRef}
       style={style}
-      className={`border-t hover:bg-muted/50 cursor-pointer ${isDragging ? 'bg-blue-50' : ''}`}
+      className={`border-t border-border hover:bg-muted/50 cursor-pointer ${isDragging ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
     >
       <td className="p-3">
         <div className="flex items-center space-x-3">
@@ -362,7 +362,7 @@ export default function SettingsPage() {
           <div className="text-sm text-muted-foreground">No changes yet.</div>
         )}
         {items.map((it) => (
-          <div key={it.id} className="flex items-start py-3 border-b last:border-b-0">
+          <div key={it.id} className="flex items-start py-3 border-b border-border last:border-b-0">
             <div className={`w-2 h-2 rounded-full mr-3 mt-2 ${it.action === 'UPDATE' ? 'bg-yellow-500' : it.action === 'DELETE' ? 'bg-red-500' : 'bg-blue-500'}`}></div>
             <div className="flex-1">
               <div className="flex items-center justify-between">
@@ -1806,7 +1806,7 @@ export default function SettingsPage() {
         <div className="fixed inset-0 z-50">
           <div className="fixed inset-0 bg-black/50" onClick={() => setShowDataModelDrawer(false)} style={{ zIndex: Z_INDEX.overlay }} />
           <div className="fixed right-0 top-0 h-screen w-[960px] bg-background shadow-2xl flex flex-col" style={{ zIndex: Z_INDEX.drawer }}>
-            <div className="flex items-center justify-between border-b p-4">
+            <div className="flex items-center justify-between border-b border-border p-4">
               <h2 className="text-lg font-semibold">{editingDataModel ? 'Edit Data Model' : 'Create New Data Model'}</h2>
               <Button variant="ghost" size="sm" onClick={() => setShowDataModelDrawer(false)}>
                 <X className="h-4 w-4" />
@@ -2173,14 +2173,14 @@ export default function SettingsPage() {
                 <TabsContent value="attributes" className="flex-1 overflow-auto p-4">
                   {/* Reuse existing Manage Attributes table for selectedDataModel */}
                   <div className="border rounded-lg">
-                    <div className="p-4 border-b bg-muted/50 flex items-center justify-between">
+                    <div className="p-4 border-b border-border bg-muted/50 flex items-center justify-between">
                       <h3 className="font-medium">Attributes</h3>
                       <Button onClick={handleCreateAttribute} size="sm">
                         <Plus className="mr-2 h-4 w-4" />
                         Add Attribute
                       </Button>
           </div>
-                    <div className="p-4 border-b space-y-3">
+                    <div className="p-4 border-b border-border space-y-3">
                       <div className="flex gap-3">
                         <Input
                           placeholder="Search attributes..."
@@ -2235,7 +2235,7 @@ export default function SettingsPage() {
                           ) : filteredAttributes.map((attr) => (
                             <tr 
                               key={attr.id} 
-                              className="border-t hover:bg-muted/50 cursor-pointer"
+                              className="border-t border-border hover:bg-muted/50 cursor-pointer"
                               onClick={() => handleEditAttribute(attr)}
                             >
                               <td className="p-3 font-medium">{attr.display_name}</td>
@@ -2262,7 +2262,7 @@ export default function SettingsPage() {
                                       handleEditAttribute(attr)
                                     }}
                                     title="Edit Attribute"
-                                    className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                                    className="bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"
                                   >
                                     <Edit className="h-4 w-4" />
                                     <span className="ml-1">Edit</span>
@@ -2275,7 +2275,7 @@ export default function SettingsPage() {
                                       handleDeleteAttribute(attr.id)
                                     }}
                                     title="Delete Attribute"
-                                    className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200"
+                                    className="bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800"
                                   >
                                     <Trash2 className="h-4 w-4" />
                                     <span className="ml-1">Delete</span>
@@ -2291,7 +2291,7 @@ export default function SettingsPage() {
                 <TabsContent value="history" className="flex-1 overflow-auto p-4">
                   <div className="space-y-4">
                     <div className="border rounded-lg">
-                      <div className="p-4 border-b bg-muted/50">
+                      <div className="p-4 border-b border-border bg-muted/50">
                         <h3 className="font-medium">Change History</h3>
                         <p className="text-sm text-muted-foreground">Track all changes made to this data model and its attributes</p>
                         </div>
@@ -2303,7 +2303,7 @@ export default function SettingsPage() {
                 </TabsContent>
                 </Tabs>
               </div>
-              <div className="flex justify-end space-x-2 p-4 border-t flex-shrink-0 bg-background">
+              <div className="flex justify-end space-x-2 p-4 border-t border-border flex-shrink-0 bg-background">
                 <Button variant="outline" onClick={() => setShowDataModelDrawer(false)}>Cancel</Button>
                 <Button onClick={handleSaveDataModel}>{editingDataModel ? 'Save Changes' : 'Create Data Model'}</Button>
               </div>
@@ -2323,7 +2323,7 @@ export default function SettingsPage() {
           
           {/* Drawer */}
           <div className="fixed right-0 top-0 h-screen w-[800px] flex flex-col bg-background shadow-xl">
-            <div className="flex items-center justify-between border-b p-4">
+            <div className="flex items-center justify-between border-b border-border p-4">
               <h2 className="text-lg font-semibold">Manage Attributes - {selectedDataModel?.name}</h2>
               <Button
                 variant="ghost"
@@ -2671,7 +2671,7 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Auto Increment Configuration */}
-                  <div className="space-y-4 border-t pt-4">
+                  <div className="space-y-4 border-t border-border pt-4">
                     {/* Auto Increment Switch Section */}
                     <div className="flex items-center space-x-2">
                       <Switch
@@ -2807,7 +2807,7 @@ export default function SettingsPage() {
                         <div className="space-y-4">
                           {/* Options Table */}
                 <div className="border rounded-lg overflow-hidden">
-                            <div className="p-4 border-b bg-muted/50">
+                            <div className="p-4 border-b border-border bg-muted/50">
                               <div className="flex items-center justify-between">
                                 <h4 className="font-medium">Options ({attributeOptions.length})</h4>
                                 <div className="text-sm text-muted-foreground">
@@ -2892,7 +2892,7 @@ export default function SettingsPage() {
                 <TabsContent value="history" className="flex-1 overflow-y-auto p-4 min-h-0">
                   <div className="space-y-4">
                     <div className="border rounded-lg">
-                      <div className="p-4 border-b bg-muted/50">
+                      <div className="p-4 border-b border-border bg-muted/50">
                         <h3 className="font-medium">Attribute Change History</h3>
                         <p className="text-sm text-muted-foreground">Track all changes made to this attribute</p>
                       </div>
@@ -2986,7 +2986,7 @@ export default function SettingsPage() {
                 </TabsContent>
                 </Tabs>
               </div>
-              <div className="flex justify-end space-x-2 p-4 border-t flex-shrink-0 bg-background">
+              <div className="flex justify-end space-x-2 p-4 border-t border-border flex-shrink-0 bg-background">
                 <Button variant="outline" onClick={() => setShowAttributeDetail(false)}>
                 Cancel
               </Button>

@@ -1,5 +1,5 @@
 # Software Requirements Specification (SRS)
-## Customer Data Management System
+## Unified Data Platform
 
 ### Document Information
 - **Document Title**: Software Requirements Specification
@@ -13,7 +13,7 @@
 ## 1. Introduction
 
 ### 1.1 Purpose
-This Software Requirements Specification (SRS) document describes the functional and non-functional requirements for the Customer Data Management System, a comprehensive web application designed for event organizations to store, manage, and analyze customer data.
+This Software Requirements Specification (SRS) document describes the functional and non-functional requirements for the Unified Data Platform, a comprehensive web application designed for event organizations to store, manage, and analyze customer data.
 
 ### 1.2 Scope
 The system provides a complete solution for customer data management including:
@@ -45,7 +45,7 @@ The system provides a complete solution for customer data management including:
 ## 2. Overall Description
 
 ### 2.1 Product Perspective
-The Customer Data Management System is a standalone web application that integrates with external services including:
+The Unified Data Platform is a standalone web application that integrates with external services including:
 - PostgreSQL for database
 - PostgREST for API access
 - MinIO for file storage

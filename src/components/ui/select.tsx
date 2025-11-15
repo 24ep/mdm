@@ -6,6 +6,7 @@ import { Check, ChevronDown, ChevronUp } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { SCROLLABLE_HEIGHTS } from "@/lib/constants"
+import { Z_INDEX } from "@/lib/z-index"
 
 interface SelectContextValue {
   value: string
@@ -150,11 +151,12 @@ const SelectContent = React.forwardRef<
     <div
       ref={contentRef}
       className={cn(
-        `relative z-[9999] ${SCROLLABLE_HEIGHTS.SMALL} min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-lg animate-in fade-in-0 zoom-in-95`,
+        `relative ${SCROLLABLE_HEIGHTS.SMALL} min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover text-popover-foreground shadow-lg animate-in fade-in-0 zoom-in-95 [background-color:hsl(var(--popover))]`,
         className
       )}
       style={{
         position: "fixed",
+        zIndex: Z_INDEX.popover,
         top: `${positionState.top}px`,
         left: `${positionState.left}px`,
         width: position === "popper" ? `${positionState.width}px` : "auto",

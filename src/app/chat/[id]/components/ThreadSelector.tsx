@@ -41,9 +41,11 @@ export function ThreadSelector({
     // Use header avatar config, fallback to message avatar config for backward compatibility
     const headerAvatarType = chatbot.headerAvatarType || chatbot.avatarType || 'icon'
     if (headerAvatarType === 'image' && (chatbot.headerLogo || chatbot.headerAvatarImageUrl)) {
+      const imageSrc = chatbot.headerLogo || chatbot.headerAvatarImageUrl
+      if (!imageSrc) return null
       return (
         <img 
-          src={chatbot.headerLogo || chatbot.headerAvatarImageUrl || ''} 
+          src={imageSrc} 
           alt={chatbot.name}
           className="w-8 h-8 rounded-full object-cover flex-shrink-0"
           onError={(e) => {

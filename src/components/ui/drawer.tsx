@@ -4,6 +4,7 @@ import * as React from "react"
 import { createPortal } from "react-dom"
 import { cn } from "@/lib/utils"
 import { useControlledDialogState, useDialogBodyScrollLock, useDialogEscapeKey } from "@/lib/dialog-utils"
+import { Z_INDEX } from "@/lib/z-index"
 
 interface DrawerContextValue {
   open: boolean
@@ -151,9 +152,10 @@ const DrawerOverlay = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "fixed inset-0 z-[9998] bg-background/80 backdrop-blur-sm animate-in fade-in-0",
+        "fixed inset-0 bg-background/80 backdrop-blur-sm animate-in fade-in-0",
         className
       )}
+      style={{ zIndex: Z_INDEX.overlay }}
       {...props}
     />
   )
@@ -180,10 +182,11 @@ const DrawerContent = React.forwardRef<
       <div
         ref={ref}
         className={cn(
-          "fixed inset-y-0 right-0 z-[9999] h-full bg-background border-l border-border shadow-xl outline-none animate-in slide-in-from-right",
+          "fixed inset-y-0 right-0 h-full bg-background border-l border-border shadow-xl outline-none animate-in slide-in-from-right",
           widthClassName,
           className
         )}
+        style={{ zIndex: Z_INDEX.drawer }}
         data-drawer-content
         {...props}
       >
@@ -197,7 +200,7 @@ const DrawerContent = React.forwardRef<
 DrawerContent.displayName = "DrawerContent"
 
 const DrawerHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("border-b px-4 py-3", className)} {...props} />
+  <div className={cn("border-b border-border px-4 py-3", className)} {...props} />
 )
 const DrawerTitle = ({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => (
   <h2 className={cn("text-base font-semibold", className)} {...props} />

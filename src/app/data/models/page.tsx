@@ -636,7 +636,7 @@ export default function DataModelsPage() {
                         {attributes.length > 0 && attributes.map((attr) => (
                           <div 
                             key={attr.id} 
-                            className="group flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors bg-background shadow-sm"
+                            className="group flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors bg-background shadow-sm"
                             onClick={(e) => {
                               e.preventDefault()
                               e.stopPropagation()
@@ -653,7 +653,7 @@ export default function DataModelsPage() {
                               <Button 
                                 size="sm" 
                                 variant="outline"
-                                className="flex items-center gap-1 bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
+                                className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300"
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   openAttributeDrawer(attr)
@@ -724,7 +724,7 @@ export default function DataModelsPage() {
                       {attributes
                         .filter(attr => attr.type === 'SELECT' || attr.type === 'MULTI_SELECT')
                         .map((attr) => (
-                          <div key={attr.id} className="border rounded-lg p-4">
+                          <div key={attr.id} className="border border-border rounded-lg p-4">
                             <div className="flex items-center justify-between mb-3">
                               <h4 className="font-medium">{attr.display_name}</h4>
                               <Button size="sm" variant="outline">
@@ -795,7 +795,7 @@ export default function DataModelsPage() {
                   <select
                     value={attributeForm.data_type}
                     onChange={(e) => setAttributeForm({ ...attributeForm, data_type: e.target.value })}
-                    className="w-full p-2 border rounded-md"
+                    className="w-full p-2 border border-border rounded-md"
                   >
                     <option value="text">Text</option>
                     <option value="number">Number</option>

@@ -59,7 +59,7 @@ export default async function PublicDashboardPage({ params }: PublicDashboardPag
                   gridRow: `span ${element.height || 3}`
                 }}
               >
-                <div className="h-full bg-white border rounded-lg p-4 shadow-sm">
+                <div className="h-full bg-white dark:bg-gray-900 border border-border rounded-lg p-4 shadow-sm">
                   <h3 className="font-medium text-sm mb-2">{element.name}</h3>
                   <div className="text-xs text-muted-foreground mb-4">
                     {element.type} - {element.chart_type || 'Chart'}

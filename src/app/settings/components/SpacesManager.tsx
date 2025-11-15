@@ -363,7 +363,7 @@ export default function SpacesManager() {
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/40" onClick={closeDrawer} />
           <div className="absolute right-0 top-0 h-full w-full max-w-3xl bg-background shadow-xl flex flex-col">
-            <div className="flex items-center justify-between border-b px-6 py-4">
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
               <div>
                 <h3 className="text-xl font-semibold">{selectedSpace!.name}</h3>
                 <p className="text-sm text-muted-foreground">Configure this space</p>
@@ -373,7 +373,7 @@ export default function SpacesManager() {
             <div className="flex-1 overflow-hidden flex flex-col">
               <div className="flex-1 flex flex-col">
               <Tabs value={'details'}>
-                <div className="border-b px-6 py-3">
+                <div className="border-b border-border px-6 py-3">
                   <TabsList>
                     <TabsTrigger value="details">Space detail</TabsTrigger>
                     <TabsTrigger value="members" onClick={() => loadMembers(selectedSpace!.id)}>Space member</TabsTrigger>
@@ -526,7 +526,7 @@ export default function SpacesManager() {
                       <div>User</div><div>Email</div><div>System role</div><div>Space role</div><div>Actions</div>
                     </div>
                     {members.map((m: any) => (
-                      <div key={m.id || m.user_id} className="grid grid-cols-5 gap-2 px-3 py-2 items-center border-b last:border-b-0">
+                      <div key={m.id || m.user_id} className="grid grid-cols-5 gap-2 px-3 py-2 items-center border-b border-border last:border-b-0">
                         <div className="font-medium">{m.user_name || 'Unknown'}</div>
                         <div>{m.user_email || 'N/A'}</div>
                         <div><Badge variant="outline">{m.user_system_role || 'N/A'}</Badge></div>
@@ -711,7 +711,7 @@ function MenuEditor({ space, onSaved }: { space: any, onSaved: () => Promise<voi
       </div>
       <div className="border rounded">
         {menu.map((item, idx) => (
-          <div key={idx} className="flex items-center gap-2 p-2 border-b last:border-b-0">
+          <div key={idx} className="flex items-center gap-2 p-2 border-b border-border last:border-b-0">
             <button className="cursor-grab px-2 text-xs" draggable onDragStart={(e)=>{ e.dataTransfer.setData('text/plain', String(idx)) }} onDragOver={(e)=>e.preventDefault()} onDrop={(e)=>{ const from = parseInt(e.dataTransfer.getData('text/plain')||'-1',10); if(from>=0){ onReorder(from, idx) } }}>↕</button>
             <Input className="w-48" defaultValue={item.title} onBlur={(e)=>updateItem(idx,{ title: e.currentTarget.value })} />
             <Input className="flex-1" placeholder="/path or leave blank for label" defaultValue={item.href || ''} onBlur={(e)=>updateItem(idx,{ href: e.currentTarget.value || undefined })} />

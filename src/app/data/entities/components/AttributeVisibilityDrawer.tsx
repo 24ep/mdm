@@ -108,7 +108,7 @@ export function AttributeVisibilityDrawer(props: AttributeVisibilityDrawerProps)
                     tabAttributes.map((attr: any) => (
                       <div 
                         key={attr.id}
-                        className={`flex items-center gap-3 p-2 border rounded transition-all duration-200 ${
+                        className={`flex items-center gap-3 p-2 border border-border rounded transition-all duration-200 ${
                           attrDragId === attr.id ? 'opacity-50 scale-95' : ''
                         } ${
                           attrDragOverId === attr.id ? 'border-blue-500 bg-blue-50' : ''

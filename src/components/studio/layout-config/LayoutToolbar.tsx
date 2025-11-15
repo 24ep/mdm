@@ -10,6 +10,7 @@ import { Monitor, Smartphone, Tablet, Save, Box, Grid3x3, Move, Eye, EyeOff, His
 import { ComponentConfig } from './types'
 import { LayoutTitle } from './LayoutTitle'
 import { widgetsPalette } from './widgets'
+import { Z_INDEX } from '@/lib/z-index'
 
 interface LayoutToolbarProps {
   isMobileViewport: boolean
@@ -61,7 +62,7 @@ export function LayoutToolbar({
   return (
     <div 
       className={`${isMobileViewport ? 'p-3' : 'p-2'} flex ${isMobileViewport ? 'flex-col gap-3' : 'items-center justify-between'} border-b bg-background w-full`} 
-      style={{ position: 'relative', zIndex: 10 }}
+      style={{ position: 'relative', zIndex: Z_INDEX.canvasElementSelected }}
     >
       <div className={`flex ${isMobileViewport ? 'flex-wrap gap-2' : 'items-center gap-2'} flex-1`}>
         {!isMobileViewport && (

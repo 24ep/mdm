@@ -171,7 +171,7 @@ export function DashboardTemplates({ onSelectTemplate, onCreateBlank }: Dashboar
             placeholder="Search templates..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-3 py-2 border rounded-md"
+            className="w-full px-3 py-2 border border-border rounded-md"
           />
         </div>
         <div className="flex gap-2">

@@ -6,6 +6,12 @@ import { sqlLinter } from '@/lib/sql-linter'
 import { auditLogger } from '@/lib/db-audit'
 import { dataMasking } from '@/lib/data-masking'
 import { queryPerformanceTracker } from '@/lib/query-performance'
+import { logger } from '@/lib/logger'
+import { validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { env } from '@/lib/env'
+import { z } from 'zod'
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
@@ -17,7 +23,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
     userId = session.user.id
@@ -25,16 +31,26 @@ export async function POST(request: NextRequest) {
     userEmail = session.user.email || null
     userRole = session.user.role || null
 
+    logger.apiRequest('POST', '/api/admin/execute-query', { userId, userRole })
+
     // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(userRole || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      logger.warn('Insufficient permissions for query execution', { userId, userRole })
+      return addSecurityHeaders(NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 }))
     }
 
-    const { query: sqlQuery, spaceId, skipMasking } = await request.json()
+    const bodySchema = z.object({
+      query: z.string().min(1),
+      spaceId: z.string().uuid().optional().nullable(),
+      skipMasking: z.boolean().optional().default(false),
+    })
 
-    if (!sqlQuery || !sqlQuery.trim()) {
-      return NextResponse.json({ error: 'Query is required' }, { status: 400 })
+    const bodyValidation = await validateBody(request, bodySchema)
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
     }
+
+    const { query: sqlQuery, spaceId, skipMasking } = bodyValidation.data
 
     const trimmedQuery = sqlQuery.trim()
 
@@ -89,7 +105,7 @@ export async function POST(request: NextRequest) {
           userId,
           userRole: userRole || undefined,
           spaceId,
-          environment: process.env.NODE_ENV as 'production' | 'development' | 'staging'
+          environment: env.NODE_ENV as 'production' | 'development' | 'test'
         }
         maskedResults = dataMasking.maskResultSet(result.rows, undefined, maskingContext)
       }
@@ -128,11 +144,16 @@ export async function POST(request: NextRequest) {
         spaceId,
         status: 'success'
       }).catch(err => {
-        console.error('Failed to record query performance:', err)
+        logger.error('Failed to record query performance', err, { userId })
         // Don't fail the request if performance tracking fails
       })
 
-      return NextResponse.json({
+      const duration = Date.now() - startTime
+      logger.apiResponse('POST', '/api/admin/execute-query', 200, duration, {
+        rowCount: result.rows.length,
+        executionTime: executionTime,
+      })
+      return addSecurityHeaders(NextResponse.json({
         success: true,
         results: maskedResults,
         columns,
@@ -163,7 +184,9 @@ export async function POST(request: NextRequest) {
         userAgent
       })
 
-      return NextResponse.json({
+      const duration = Date.now() - startTime
+      logger.apiResponse('POST', '/api/admin/execute-query', 500, duration)
+      return addSecurityHeaders(NextResponse.json({
         success: false,
         results: [],
         columns: [],
@@ -174,7 +197,7 @@ export async function POST(request: NextRequest) {
           score: lintResult.score,
           summary: lintResult.summary
         } : null
-      })
+      }))
     }
   } catch (error: any) {
     const executionTime = Date.now() - startTime
@@ -193,10 +216,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    console.error('Error executing query:', error)
-    return NextResponse.json(
-      { error: 'Failed to execute query', details: error.message },
-      { status: 500 }
-    )
+    logger.apiResponse('POST', '/api/admin/execute-query', 500, executionTime)
+    return handleApiError(error, 'Admin Execute Query API')
   }
 }

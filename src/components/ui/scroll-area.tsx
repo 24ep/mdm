@@ -12,6 +12,7 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>(
     <div
       ref={ref}
       className={cn("relative overflow-auto", className)}
+      style={{ pointerEvents: 'auto' }}
       {...props}
     >
       {children}

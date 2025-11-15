@@ -74,7 +74,7 @@ export function CanvasBackgroundConfig({ background, onUpdate }: CanvasBackgroun
       width: '100%',
       height: '120px',
       borderRadius: '8px',
-      border: '1px solid #e5e7eb',
+      border: '1px solid hsl(var(--border))',
       position: 'relative',
       overflow: 'hidden'
     }

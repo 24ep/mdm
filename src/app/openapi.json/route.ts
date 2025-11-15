@@ -6,10 +6,10 @@ export async function GET() {
   const spec = {
     openapi: '3.0.3',
     info: {
-      title: 'Customer Data Management API',
+      title: 'Unified Data Platform API',
       version: '1.0.0',
       description:
-        'OpenAPI specification for the Customer Data Management System. Authentication uses NextAuth/Supabase sessions and/or Bearer tokens where applicable.',
+        'OpenAPI specification for the Unified Data Platform. Authentication uses NextAuth/Supabase sessions and/or Bearer tokens where applicable.',
     },
     servers: [
       { url: '/' },

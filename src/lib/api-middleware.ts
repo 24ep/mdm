@@ -6,6 +6,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { logger } from './logger'
+import { addSecurityHeaders } from './security-headers'
 
 /**
  * API Handler type
@@ -70,9 +72,12 @@ export function handleApiError(
   const message = error instanceof Error ? error.message : 'Unknown error'
   const stack = error instanceof Error ? error.stack : undefined
   
-  console.error(`[${context || 'API'}] Error:`, error)
+  logger.error(`[${context || 'API'}] Error`, error, {
+    statusCode,
+    message,
+  })
   
-  return NextResponse.json(
+  const response = NextResponse.json(
     {
       error: 'Internal server error',
       details: process.env.NODE_ENV === 'development' ? message : undefined,
@@ -80,6 +85,8 @@ export function handleApiError(
     },
     { status: statusCode }
   )
+  
+  return addSecurityHeaders(response)
 }
 
 /**
@@ -117,7 +124,7 @@ export async function parseJsonBody<T = any>(request: NextRequest): Promise<T | 
     if (!bodyText) return null
     return JSON.parse(bodyText) as T
   } catch (error) {
-    console.warn('Failed to parse request body:', error)
+    logger.warn('Failed to parse request body', { error, url: request.url })
     return null
   }
 }

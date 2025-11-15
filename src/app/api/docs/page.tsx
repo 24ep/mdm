@@ -76,7 +76,7 @@ export default function APIDocsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">API Documentation</h1>
           <p className="text-muted-foreground">
-            Complete API reference for the Customer Data Management System
+            Complete API reference for the Unified Data Platform
           </p>
         </div>
 
@@ -98,7 +98,7 @@ export default function APIDocsPage() {
                   <span>API Overview</span>
                 </CardTitle>
                 <CardDescription>
-                  The Customer Data Management System provides a RESTful API for programmatic access to all system features.
+                  The Unified Data Platform provides a RESTful API for programmatic access to all system features.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">

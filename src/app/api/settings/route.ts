@@ -3,11 +3,21 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { createAuditLog } from '@/lib/audit'
+import { logger } from '@/lib/logger'
+import { validateBody } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.user) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+    }
+
+    logger.apiRequest('GET', '/api/settings', { userId: session.user.id })
 
     const { rows } = await query('SELECT key, value FROM system_settings ORDER BY key ASC')
     const settingsObject = (rows || []).reduce((acc: Record<string, any>, setting: any) => {
@@ -15,27 +25,38 @@ export async function GET(request: NextRequest) {
       return acc
     }, {})
 
-    return NextResponse.json(settingsObject)
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/settings', 200, duration, {
+      settingCount: Object.keys(settingsObject).length
+    })
+    return addSecurityHeaders(NextResponse.json(settingsObject))
   } catch (error) {
-    console.error('Error fetching settings:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/settings', 500, duration)
+    return handleApiError(error, 'Settings API GET')
   }
 }
 
 export async function PUT(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const body = await request.json()
-    const { settings } = body
-
-    if (!settings || typeof settings !== 'object') {
-      return NextResponse.json(
-        { error: 'Settings object is required' },
-        { status: 400 }
-      )
+    if (!session?.user) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
+
+    logger.apiRequest('PUT', '/api/settings', { userId: session.user.id })
+
+    const bodySchema = z.object({
+      settings: z.record(z.string(), z.any()),
+    })
+
+    const bodyValidation = await validateBody(request, bodySchema)
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+
+    const { settings } = bodyValidation.data
 
     // Get current settings for audit log
     const currentSettingsResult = await query('SELECT key, value FROM system_settings')
@@ -68,9 +89,14 @@ export async function PUT(request: NextRequest) {
       userAgent: request.headers.get('user-agent') || 'unknown'
     })
 
-    return NextResponse.json(updatedSettings)
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', '/api/settings', 200, duration, {
+      updatedCount: Object.keys(updatedSettings).length
+    })
+    return addSecurityHeaders(NextResponse.json(updatedSettings))
   } catch (error) {
-    console.error('Error updating settings:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', '/api/settings', 500, duration)
+    return handleApiError(error, 'Settings API PUT')
   }
 }

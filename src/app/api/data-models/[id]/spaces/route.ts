@@ -2,17 +2,35 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
+import { logger } from '@/lib/logger'
+import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 // GET: Get all spaces associated with a data model
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.user) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+    }
 
-    const { id } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id } = paramValidation.data
+    logger.apiRequest('GET', `/api/data-models/${id}/spaces`, { userId: session.user.id })
 
     const { rows: spaces } = await query(`
       SELECT s.id, s.name, s.slug, dms.created_at
@@ -22,10 +40,13 @@ export async function GET(
       ORDER BY s.name
     `, [id])
 
-    return NextResponse.json({ spaces })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', `/api/data-models/${id}/spaces`, 200, duration, { count: spaces.length })
+    return addSecurityHeaders(NextResponse.json({ spaces }))
   } catch (error) {
-    console.error('Error fetching data model spaces:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Data Model Spaces API GET')
   }
 }
 
@@ -34,17 +55,35 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const { id } = await params
-    const body = await request.json()
-    const { space_ids } = body
-
-    if (!Array.isArray(space_ids)) {
-      return NextResponse.json({ error: 'space_ids must be an array' }, { status: 400 })
+    if (!session?.user) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
+
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id } = paramValidation.data
+
+    // Validate request body
+    const bodyValidation = await validateBody(request, z.object({
+      space_ids: z.array(commonSchemas.id),
+    }))
+    
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+    
+    const { space_ids } = bodyValidation.data
+    logger.apiRequest('PUT', `/api/data-models/${id}/spaces`, { userId: session.user.id, spaceIdsCount: space_ids.length })
 
     // Check if user has access to all spaces
     if (space_ids.length > 0) {
@@ -55,7 +94,8 @@ export async function PUT(
       )
 
       if (spaceAccess.length !== space_ids.length) {
-        return NextResponse.json({ error: 'Access denied to one or more spaces' }, { status: 403 })
+        logger.warn('Access denied to one or more spaces during data model space update', { dataModelId: id, spaceIds: space_ids, userId: session.user.id })
+        return addSecurityHeaders(NextResponse.json({ error: 'Access denied to one or more spaces' }, { status: 403 }))
       }
     }
 
@@ -73,9 +113,12 @@ export async function PUT(
       )
     }
 
-    return NextResponse.json({ success: true })
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', `/api/data-models/${id}/spaces`, 200, duration, { spaceIdsCount: space_ids.length })
+    return addSecurityHeaders(NextResponse.json({ success: true }))
   } catch (error) {
-    console.error('Error updating data model spaces:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Data Model Spaces API PUT')
   }
 }

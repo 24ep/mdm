@@ -1,5 +1,5 @@
 # Test Cases Documentation
-## Customer Data Management System
+## Unified Data Platform
 
 ### Document Information
 - **Document Title**: Test Cases Documentation
@@ -13,7 +13,7 @@
 ## 1. Test Overview
 
 ### 1.1 Test Scope
-This document outlines comprehensive test cases for the Customer Data Management System, covering functional, integration, performance, security, and usability testing.
+This document outlines comprehensive test cases for the Unified Data Platform, covering functional, integration, performance, security, and usability testing.
 
 ### 1.2 Test Objectives
 - Verify all functional requirements are met

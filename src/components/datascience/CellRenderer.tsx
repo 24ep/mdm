@@ -272,7 +272,7 @@ export function CellRenderer({
     }, { dark: true })
 
     return (
-      <div className="relative">
+      <div className="relative code-editor-wrapper">
         <CodeMirror
           value={cell.content}
           height="auto"
@@ -344,8 +344,8 @@ export function CellRenderer({
         />
 
         {cell.output && showOutput && (
-          <div className="border-t border-[#e5e7eb] dark:border-gray-700 bg-gray-50 dark:bg-gray-800" style={{ borderWidth: '1px', borderStyle: 'solid', borderRadius: '0px' }}>
-            <div className="px-4 py-2 text-xs text-gray-600 dark:text-gray-400 font-mono bg-gray-100 dark:bg-gray-800 border-b border-[#e5e7eb] dark:border-gray-700" style={{ borderWidth: '1px', borderStyle: 'solid' }}>
+          <div className="cell-output border-t border-border bg-gray-50 dark:bg-gray-800 animate-fade-in" style={{ borderWidth: '1px', borderStyle: 'solid', borderRadius: '0px' }}>
+            <div className="px-4 py-2 text-xs text-gray-600 dark:text-gray-400 font-mono bg-gray-100 dark:bg-gray-800 border-b border-border" style={{ borderWidth: '1px', borderStyle: 'solid' }}>
               Out[{cell.executionCount || index + 1}]:
             </div>
             <div style={{ padding: '4px' }}>
@@ -480,7 +480,6 @@ export function CellRenderer({
         onFocus={onFocus}
         onSelect={onSelect}
         onTitleChange={onTitleChange}
-        onExecute={onExecute}
         canEdit={canEdit}
         canExecute={canExecute}
       />
@@ -490,17 +489,19 @@ export function CellRenderer({
   return (
     <div
       className={cn(
-        "group relative transition-all duration-200",
+        "cell-container group relative",
         "mx-2 my-2",
         // Match table widget cell design: 0px border radius, 1px solid border, 4px padding
         "rounded-none",
         // All cells: white/transparent background with 1px solid border
         cell.type === 'markdown' || cell.type === 'raw' 
-          ? "bg-transparent border border-[#e5e7eb] dark:border-gray-700" 
+          ? "bg-transparent border border-border" 
           : // Code/SQL cells: light grey background with border
-            "bg-gray-100 dark:bg-gray-800 border border-[#e5e7eb] dark:border-gray-700",
+            "bg-gray-100 dark:bg-gray-800 border border-border",
         // Selected state
-        isSelected ? "ring-2 ring-blue-200 dark:ring-blue-800" : "",
+        isSelected ? "ring-2 ring-blue-200 dark:ring-blue-800 ring-offset-1" : "",
+        // Active state
+        isActive ? "border-blue-300 dark:border-blue-700" : "",
       )}
       style={{
         borderWidth: '1px',
@@ -511,7 +512,7 @@ export function CellRenderer({
     >
       {/* Cell Controls - Always visible on the right side */}
       {canEdit && (
-        <div className="absolute right-2 top-2 flex items-center gap-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-1">
+        <div className="absolute right-2 top-2 flex items-center gap-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity bg-background rounded-lg shadow-sm border border-border p-1">
           {/* Move Up Button */}
           {onMove && (
             <Button
@@ -521,7 +522,7 @@ export function CellRenderer({
                 e.stopPropagation()
                 onMove(cell.id, 'up')
               }}
-              className="h-7 w-7 p-0 hover:bg-gray-200 dark:hover:bg-gray-700"
+              className="toolbar-button h-7 w-7 p-0 hover:bg-gray-200 dark:hover:bg-gray-700"
               title="Move up (Ctrl+↑)"
             >
               <ArrowUp className="h-4 w-4 text-gray-600 dark:text-gray-400" />
@@ -536,7 +537,7 @@ export function CellRenderer({
                 e.stopPropagation()
                 onMove(cell.id, 'down')
               }}
-              className="h-7 w-7 p-0 hover:bg-gray-200 dark:hover:bg-gray-700"
+              className="toolbar-button h-7 w-7 p-0 hover:bg-gray-200 dark:hover:bg-gray-700"
               title="Move down (Ctrl+↓)"
             >
               <ArrowDown className="h-4 w-4 text-gray-600 dark:text-gray-400" />
@@ -551,7 +552,7 @@ export function CellRenderer({
                 e.stopPropagation()
                 onDelete(cell.id)
               }}
-              className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900"
+              className="toolbar-button h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900"
               title="Delete cell (Del)"
             >
               <Trash2 className="h-4 w-4" />
@@ -567,11 +568,11 @@ export function CellRenderer({
         <div className="flex-1 min-w-0">
           {/* Cell Toolbar - Match table widget design */}
           {cell.type === 'code' && (
-          <div className="flex items-center justify-between px-4 py-2 border-b border-[#e5e7eb] dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50" style={{ borderWidth: '1px', borderStyle: 'solid', borderRadius: '0px' }}>
+          <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-gray-50 dark:bg-gray-700/50" style={{ borderWidth: '1px', borderStyle: 'solid', borderRadius: '0px' }}>
             <div className="flex items-center space-x-3">
               {/* Execution count - inline in toolbar */}
               <div className={cn(
-                "text-xs font-mono font-medium px-2 py-1 rounded",
+                "execution-badge text-xs font-mono font-medium px-2 py-1 rounded",
                 cell.executionCount 
                   ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30" 
                   : "text-gray-400 dark:text-gray-500"
@@ -584,10 +585,12 @@ export function CellRenderer({
                   {cell.type}
                 </span>
                 {cell.status !== 'idle' && (
-                  <div className="flex items-center gap-2">
-                    {getStatusIcon(cell.status)}
+                  <div className="flex items-center gap-2 animate-fade-in">
+                    <span className={cn("status-indicator", cell.status === 'running' && "running")}>
+                      {getStatusIcon(cell.status)}
+                    </span>
                     {cell.executionTime && (
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">
                         {cell.executionTime}ms
                       </span>
                     )}
@@ -609,12 +612,13 @@ export function CellRenderer({
                   className="text-sm bg-transparent border-b border-transparent focus:border-blue-400 outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 w-32"
                   disabled={!canEdit}
                   onClick={(e) => e.stopPropagation()}
+                  onFocus={(e) => e.stopPropagation()}
                 />
               )}
               {cell.tags && cell.tags.length > 0 && (
                 <div className="flex items-center space-x-1">
                   {cell.tags.map((tag, idx) => (
-                    <span key={idx} className="text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded">
+                    <span key={idx} className="cell-tag text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded">
                       {tag}
                     </span>
                   ))}
@@ -686,10 +690,13 @@ export function CellRenderer({
                     onExecute(cell.id)
                   }}
                   disabled={!canExecute || cell.status === 'running'}
-                  className="h-7 w-7 p-0 hover:bg-blue-100 dark:hover:bg-blue-900 rounded-full"
+                  className="toolbar-button h-7 w-7 p-0 hover:bg-blue-100 dark:hover:bg-blue-900 rounded-full transition-all"
                   title="Run cell (Ctrl+Enter)"
                 >
-                  <Play className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" fill="currentColor" />
+                  <Play className={cn(
+                    "h-3.5 w-3.5 text-blue-600 dark:text-blue-400 transition-transform",
+                    cell.status === 'running' && "animate-spin"
+                  )} fill="currentColor" />
                 </Button>
               )}
               {onSearch && (
@@ -758,7 +765,7 @@ export function CellRenderer({
 
           {/* SQL Cell - Match table widget design */}
           {cell.type === 'sql' && (
-            <div className="px-4 py-2 border-b border-[#e5e7eb] dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50" style={{ borderWidth: '1px', borderStyle: 'solid', borderRadius: '0px' }}>
+            <div className="px-4 py-2 border-b border-border bg-gray-50 dark:bg-gray-700/50" style={{ borderWidth: '1px', borderStyle: 'solid', borderRadius: '0px' }}>
               <div className="flex items-center gap-3 flex-wrap justify-between">
                 <div className="flex items-center gap-3 flex-wrap">
                   {/* Execution count - inline in toolbar */}
@@ -788,9 +795,10 @@ export function CellRenderer({
                     className="text-sm bg-transparent border-b border-transparent focus:border-blue-400 outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 w-32"
                     disabled={!canEdit}
                     onClick={(e) => e.stopPropagation()}
+                    onFocus={(e) => e.stopPropagation()}
                   />
                 ) : cell.title ? (
-                  <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
+                  <span className="text-sm text-gray-700 dark:text-gray-300 font-medium transition-colors">
                     {cell.title}
                   </span>
                 ) : null}
@@ -858,23 +866,23 @@ export function CellRenderer({
       {showComments && (
         <div className="fixed inset-0 z-50" onClick={() => setShowComments(false)}>
           <div className="absolute inset-0 bg-black/30" />
-          <div className="absolute top-0 right-0 h-full w-96 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-xl flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 font-medium text-sm">Comments</div>
+          <div className="absolute top-0 right-0 h-full w-96 bg-background border-l border-border shadow-xl flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="px-4 py-3 border-b border-border font-medium text-sm">Comments</div>
             <div className="flex-1 overflow-y-auto p-3 space-y-2">
               {(cell.comments || []).slice(0, commentsLimit).map((c) => (
-                <div key={c.id} className="p-2 rounded border border-gray-200 dark:border-gray-700 text-sm">
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{c.author} • {new Date(c.timestamp).toLocaleString()}</div>
-                  <div className="text-gray-800 dark:text-gray-200">{c.content}</div>
+                <div key={c.id} className="p-2 rounded border border-border text-sm">
+                  <div className="text-xs text-muted-foreground mb-1">{c.author} • {new Date(c.timestamp).toLocaleString()}</div>
+                  <div className="text-foreground">{c.content}</div>
                 </div>
               ))}
               {((cell.comments?.length || 0) > commentsLimit) && (
                 <Button size="sm" variant="outline" className="w-full" onClick={() => setCommentsLimit(commentsLimit + 5)}>Load more</Button>
               )}
               {((cell.comments?.length || 0) === 0) && (
-                <div className="text-xs text-gray-500">No comments yet.</div>
+                <div className="text-xs text-muted-foreground">No comments yet.</div>
               )}
             </div>
-            <div className="p-3 border-t border-gray-200 dark:border-gray-700">
+            <div className="p-3 border-t border-border">
               <div className="flex items-center gap-2">
                 <input
                   value={newComment}

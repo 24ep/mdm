@@ -245,7 +245,7 @@ export function TableWidgetRenderer({ widget, props, style, chartData, dataLoadi
         if (styleCfg.valueViz === 'data_bar') {
           return (
             <div className="relative w-full flex items-center gap-2">
-              <div className="flex-1 h-4 bg-gray-100 dark:bg-gray-800 rounded-[2px] overflow-hidden">
+              <div className="flex-1 h-4 bg-muted rounded-[2px] overflow-hidden">
                 <div className="h-full rounded-[2px]" style={{ width: `${pct}%`, background: color }} />
               </div>
               {showNumber && <span className="text-xs font-medium">{textEl}</span>}

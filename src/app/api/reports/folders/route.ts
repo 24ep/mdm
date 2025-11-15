@@ -5,13 +5,21 @@ import { query } from '@/lib/db'
 import { createSuccessResponse, createErrorResponse } from '@/lib/api-response'
 import { folderSchema } from '@/lib/validation/report-schemas'
 import { auditLogger } from '@/lib/utils/audit-logger'
+import { logger } from '@/lib/logger'
+import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json(createErrorResponse('Unauthorized', 'UNAUTHORIZED'), { status: 401 })
+      return addSecurityHeaders(NextResponse.json(createErrorResponse('Unauthorized', 'UNAUTHORIZED'), { status: 401 }))
     }
+
+    logger.apiRequest('GET', '/api/reports/folders', { userId: session.user.id })
 
     const sql = `
       SELECT * FROM report_folders
@@ -20,29 +28,34 @@ export async function GET(request: NextRequest) {
     `
 
     const result = await query(sql, [])
-    return NextResponse.json(createSuccessResponse({ folders: result.rows || [] }))
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/reports/folders', 200, duration, {
+      folderCount: result.rows.length
+    })
+    return addSecurityHeaders(NextResponse.json(createSuccessResponse({ folders: result.rows || [] })))
   } catch (error) {
-    console.error('Error fetching folders:', error)
-    return NextResponse.json(createErrorResponse('Internal server error', 'INTERNAL_ERROR'), { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/reports/folders', 500, duration)
+    return handleApiError(error, 'Report Folders API GET')
   }
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json(createErrorResponse('Unauthorized', 'UNAUTHORIZED'), { status: 401 })
+      return addSecurityHeaders(NextResponse.json(createErrorResponse('Unauthorized', 'UNAUTHORIZED'), { status: 401 }))
     }
 
-    const body = await request.json()
-    
-    // Validate with Zod schema
-    const validationResult = folderSchema.safeParse(body)
-    if (!validationResult.success) {
-      return NextResponse.json(createErrorResponse('Validation failed', 'VALIDATION_ERROR', validationResult.error.issues), { status: 400 })
+    logger.apiRequest('POST', '/api/reports/folders', { userId: session.user.id })
+
+    const bodyValidation = await validateBody(request, folderSchema)
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
     }
 
-    const { name, description, parent_id } = validationResult.data
+    const { name, description, parent_id } = bodyValidation.data
 
     const sql = `
       INSERT INTO report_folders (name, description, parent_id, created_by)
@@ -60,34 +73,39 @@ export async function POST(request: NextRequest) {
     // Log audit event
     auditLogger.folderCreated(result.rows[0].id)
 
-    return NextResponse.json(createSuccessResponse({ folder: result.rows[0] }), { status: 201 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/reports/folders', 201, duration, {
+      folderId: result.rows[0].id
+    })
+    return addSecurityHeaders(NextResponse.json(createSuccessResponse({ folder: result.rows[0] }), { status: 201 }))
   } catch (error) {
-    console.error('Error creating folder:', error)
-    return NextResponse.json(createErrorResponse('Internal server error', 'INTERNAL_ERROR'), { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/reports/folders', 500, duration)
+    return handleApiError(error, 'Report Folders API POST')
   }
 }
 
 export async function PUT(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json(createErrorResponse('Unauthorized', 'UNAUTHORIZED'), { status: 401 })
+      return addSecurityHeaders(NextResponse.json(createErrorResponse('Unauthorized', 'UNAUTHORIZED'), { status: 401 }))
     }
 
-    const body = await request.json()
-    const { id, ...folderData } = body
+    logger.apiRequest('PUT', '/api/reports/folders', { userId: session.user.id })
 
-    if (!id) {
-      return NextResponse.json(createErrorResponse('ID is required', 'VALIDATION_ERROR'), { status: 400 })
+    const bodySchema = z.object({
+      id: z.string().min(1),
+    }).merge(folderSchema)
+
+    const bodyValidation = await validateBody(request, bodySchema)
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
     }
 
-    // Validate with Zod schema
-    const validationResult = folderSchema.safeParse(folderData)
-    if (!validationResult.success) {
-      return NextResponse.json(createErrorResponse('Validation failed', 'VALIDATION_ERROR', validationResult.error.issues), { status: 400 })
-    }
-
-    const { name, description, parent_id } = validationResult.data
+    const { id, ...folderData } = bodyValidation.data
+    const { name, description, parent_id } = folderData
 
     const sql = `
       UPDATE report_folders
@@ -105,32 +123,43 @@ export async function PUT(request: NextRequest) {
     ])
 
     if (result.rows.length === 0) {
-      return NextResponse.json(createErrorResponse('Folder not found', 'NOT_FOUND'), { status: 404 })
+      logger.warn('Folder not found for update', { folderId: id, userId: session.user.id })
+      return addSecurityHeaders(NextResponse.json(createErrorResponse('Folder not found', 'NOT_FOUND'), { status: 404 }))
     }
 
     // Log audit event
     auditLogger.folderUpdated(id)
 
-    return NextResponse.json(createSuccessResponse({ folder: result.rows[0] }))
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', '/api/reports/folders', 200, duration, { folderId: id })
+    return addSecurityHeaders(NextResponse.json(createSuccessResponse({ folder: result.rows[0] })))
   } catch (error) {
-    console.error('Error updating folder:', error)
-    return NextResponse.json(createErrorResponse('Internal server error', 'INTERNAL_ERROR'), { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', '/api/reports/folders', 500, duration)
+    return handleApiError(error, 'Report Folders API PUT')
   }
 }
 
 export async function DELETE(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json(createErrorResponse('Unauthorized', 'UNAUTHORIZED'), { status: 401 })
+      return addSecurityHeaders(NextResponse.json(createErrorResponse('Unauthorized', 'UNAUTHORIZED'), { status: 401 }))
     }
 
-    const { searchParams } = new URL(request.url)
-    const id = searchParams.get('id')
+    logger.apiRequest('DELETE', '/api/reports/folders', { userId: session.user.id })
 
-    if (!id) {
-      return NextResponse.json(createErrorResponse('ID is required', 'VALIDATION_ERROR'), { status: 400 })
+    const querySchema = z.object({
+      id: z.string().min(1),
+    })
+
+    const queryValidation = validateQuery(request, querySchema)
+    if (!queryValidation.success) {
+      return addSecurityHeaders(queryValidation.response)
     }
+
+    const { id } = queryValidation.data
 
     const sql = `
       UPDATE report_folders
@@ -142,16 +171,20 @@ export async function DELETE(request: NextRequest) {
     const result = await query(sql, [id, session.user.id])
 
     if (result.rows.length === 0) {
-      return NextResponse.json(createErrorResponse('Folder not found', 'NOT_FOUND'), { status: 404 })
+      logger.warn('Folder not found for deletion', { folderId: id, userId: session.user.id })
+      return addSecurityHeaders(NextResponse.json(createErrorResponse('Folder not found', 'NOT_FOUND'), { status: 404 }))
     }
 
     // Log audit event
     auditLogger.folderDeleted(id)
 
-    return NextResponse.json(createSuccessResponse({ deleted: true }))
+    const duration = Date.now() - startTime
+    logger.apiResponse('DELETE', '/api/reports/folders', 200, duration, { folderId: id })
+    return addSecurityHeaders(NextResponse.json(createSuccessResponse({ deleted: true })))
   } catch (error) {
-    console.error('Error deleting folder:', error)
-    return NextResponse.json(createErrorResponse('Internal server error', 'INTERNAL_ERROR'), { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('DELETE', '/api/reports/folders', 500, duration)
+    return handleApiError(error, 'Report Folders API DELETE')
   }
 }
 

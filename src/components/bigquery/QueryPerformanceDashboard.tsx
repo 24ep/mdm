@@ -207,7 +207,7 @@ export function QueryPerformanceDashboard({ onQueryClick }: QueryPerformanceDash
                   {slowQueries.slice(0, 10).map((record) => (
                     <div
                       key={record.id}
-                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted cursor-pointer"
+                      className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted cursor-pointer"
                       onClick={() => onQueryClick?.(record.query)}
                     >
                       <div className="flex-1 min-w-0">
@@ -388,6 +388,9 @@ export function QueryPerformanceDashboard({ onQueryClick }: QueryPerformanceDash
     </div>
   )
 }
+
+
+
 
 
 

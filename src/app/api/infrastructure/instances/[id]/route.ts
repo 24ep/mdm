@@ -1,0 +1,225 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { query } from '@/lib/db'
+import { logAPIRequest } from '@/shared/lib/security/audit-logger'
+import { checkPermission } from '@/shared/lib/security/permission-checker'
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { id } = params
+
+    const result = await query(
+      `SELECT 
+        ii.*,
+        json_build_object(
+          'id', s.id,
+          'name', s.name,
+          'slug', s.slug
+        ) as space
+      FROM infrastructure_instances ii
+      LEFT JOIN spaces s ON s.id = ii.space_id
+      WHERE ii.id = $1 AND ii.deleted_at IS NULL`,
+      [id]
+    )
+
+    if (result.rows.length === 0) {
+      return NextResponse.json({ error: 'Instance not found' }, { status: 404 })
+    }
+
+    const row = result.rows[0]
+    const instance = {
+      id: row.id,
+      name: row.name,
+      type: row.type,
+      host: row.host,
+      port: row.port,
+      protocol: row.protocol,
+      connectionType: row.connection_type,
+      connectionConfig: row.connection_config,
+      status: row.status,
+      lastHealthCheck: row.last_health_check,
+      healthStatus: row.health_status,
+      osType: row.os_type,
+      osVersion: row.os_version,
+      resources: row.resources,
+      tags: row.tags,
+      spaceId: row.space_id,
+      space: row.space,
+      createdBy: row.created_by,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }
+
+    await logAPIRequest(
+      session.user.id,
+      'GET',
+      `/api/infrastructure/instances/${id}`,
+      200
+    )
+
+    return NextResponse.json({ instance })
+  } catch (error) {
+    console.error('Error fetching instance:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { id } = params
+    const body = await request.json()
+
+    const permission = await checkPermission({
+      resource: 'infrastructure',
+      action: 'update',
+      resourceId: id,
+    })
+
+    if (!permission.allowed) {
+      return NextResponse.json(
+        { error: 'Forbidden', reason: permission.reason },
+        { status: 403 }
+      )
+    }
+
+    const updates: string[] = []
+    const values: any[] = []
+    let paramIndex = 1
+
+    if (body.name !== undefined) {
+      updates.push(`name = $${paramIndex}`)
+      values.push(body.name)
+      paramIndex++
+    }
+    if (body.status !== undefined) {
+      updates.push(`status = $${paramIndex}`)
+      values.push(body.status)
+      paramIndex++
+    }
+    if (body.connectionConfig !== undefined) {
+      updates.push(`connection_config = $${paramIndex}`)
+      values.push(JSON.stringify(body.connectionConfig))
+      paramIndex++
+    }
+    if (body.healthStatus !== undefined) {
+      updates.push(`health_status = $${paramIndex}`)
+      values.push(JSON.stringify(body.healthStatus))
+      paramIndex++
+    }
+    if (body.lastHealthCheck !== undefined) {
+      updates.push(`last_health_check = $${paramIndex}`)
+      values.push(body.lastHealthCheck ? new Date(body.lastHealthCheck) : null)
+      paramIndex++
+    }
+
+    if (updates.length === 0) {
+      return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
+    }
+
+    updates.push(`updated_at = NOW()`)
+    values.push(id)
+
+    const updateQuery = `
+      UPDATE infrastructure_instances
+      SET ${updates.join(', ')}
+      WHERE id = $${paramIndex} AND deleted_at IS NULL
+      RETURNING id
+    `
+
+    const result = await query(updateQuery, values)
+
+    if (result.rows.length === 0) {
+      return NextResponse.json({ error: 'Instance not found' }, { status: 404 })
+    }
+
+    await logAPIRequest(
+      session.user.id,
+      'PUT',
+      `/api/infrastructure/instances/${id}`,
+      200
+    )
+
+    return NextResponse.json({ message: 'Instance updated successfully' })
+  } catch (error) {
+    console.error('Error updating instance:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { id } = params
+
+    const permission = await checkPermission({
+      resource: 'infrastructure',
+      action: 'delete',
+      resourceId: id,
+    })
+
+    if (!permission.allowed) {
+      return NextResponse.json(
+        { error: 'Forbidden', reason: permission.reason },
+        { status: 403 }
+      )
+    }
+
+    const result = await query(
+      `UPDATE infrastructure_instances
+       SET deleted_at = NOW(), updated_at = NOW()
+       WHERE id = $1 AND deleted_at IS NULL
+       RETURNING id`,
+      [id]
+    )
+
+    if (result.rows.length === 0) {
+      return NextResponse.json({ error: 'Instance not found' }, { status: 404 })
+    }
+
+    await logAPIRequest(
+      session.user.id,
+      'DELETE',
+      `/api/infrastructure/instances/${id}`,
+      200
+    )
+
+    return NextResponse.json({ message: 'Instance deleted successfully' })
+  } catch (error) {
+    console.error('Error deleting instance:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+

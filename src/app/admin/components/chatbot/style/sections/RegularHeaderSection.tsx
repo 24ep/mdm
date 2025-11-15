@@ -153,7 +153,7 @@ export function RegularHeaderSection({ formData, setFormData, chatkitOptions }: 
                 <Label>Preview</Label>
                 <div className="border rounded-lg p-4 flex items-center justify-center bg-muted/50">
                   <img
-                    src={formData.headerLogo || chatkitOptions?.header?.logo || ''}
+                    src={formData.headerLogo || chatkitOptions?.header?.logo || undefined}
                     alt="Header logo preview"
                     className="max-w-full max-h-32 object-contain"
                     onError={(e) => {

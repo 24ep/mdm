@@ -1,8 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { useSpace } from '@/contexts/space-context'
 import { MainLayout } from '@/components/layout/main-layout'
+import { WorkflowsList } from '@/features/workflows'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'

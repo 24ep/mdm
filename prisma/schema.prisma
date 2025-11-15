@@ -42,6 +42,16 @@ model User {
   chatbotVersions    ChatbotVersion[]    @relation("ChatbotVersionCreator")
   agentThreads       OpenAIAgentThread[] @relation("UserAgentThreads")
   costRecords        ChatbotCostRecord[] @relation("UserCostRecords")
+  serviceInstallations ServiceInstallation[] @relation("UserServiceInstallations")
+  infrastructureInstances InfrastructureInstance[] @relation("UserInfrastructureInstances")
+  serviceManagementAssignments ServiceManagementAssignment[] @relation("UserServiceManagementAssignments")
+  pluginReviews PluginReview[] @relation("UserPluginReviews")
+  pluginReviewHelpful PluginReviewHelpful[] @relation("UserPluginReviewHelpful")
+  apiWorkspaces ApiWorkspace[] @relation("UserApiWorkspaces")
+  apiCollections ApiCollection[] @relation("UserApiCollections")
+  apiRequests ApiRequest[] @relation("UserApiRequests")
+  apiEnvironments ApiEnvironment[] @relation("UserApiEnvironments")
+  apiRequestHistory ApiRequestHistory[] @relation("UserApiRequestHistory")
 
   @@map("users")
 }
@@ -82,6 +92,11 @@ model Space {
   exportJobs          ExportJob[]              @relation("SpaceExportJobs")
   chatbots            Chatbot[]                @relation("SpaceChatbots")
   agentThreads        OpenAIAgentThread[]      @relation("SpaceAgentThreads")
+  serviceInstallations ServiceInstallation[]    @relation("SpaceServiceInstallations")
+  infrastructureInstances InfrastructureInstance[] @relation("SpaceInfrastructureInstances")
+  pluginReviews PluginReview[] @relation("SpacePluginReviews")
+  knowledgeCollections KnowledgeCollection[] @relation("SpaceKnowledgeCollections")
+  apiWorkspaces ApiWorkspace[] @relation("SpaceApiWorkspaces")
 
   @@map("spaces")
 }
@@ -1030,103 +1045,6 @@ model IntakeSubmission {
   @@map("intake_submissions")
 }
 
-// API Client Models
-model ApiClientCollection {
-  id          String             @id @default(uuid()) @db.Uuid
-  userId      String             @map("user_id") @db.Uuid
-  name        String
-  description String?
-  requests    ApiClientRequest[] @relation("CollectionRequests")
-  createdAt   DateTime           @default(now()) @map("created_at")
-  updatedAt   DateTime           @updatedAt @map("updated_at")
-
-  @@map("api_client_collections")
-}
-
-model ApiClientRequest {
-  id               String   @id @default(uuid()) @db.Uuid
-  collectionId     String?  @map("collection_id") @db.Uuid
-  userId           String   @map("user_id") @db.Uuid
-  name             String
-  method           String // GET, POST, PUT, etc.
-  url              String
-  headers          Json     @default("[]")
-  auth             Json? // Auth configuration
-  body             Json? // Request body configuration
-  preRequestScript String?  @map("pre_request_script") @db.Text
-  tests            Json?    @default("[]") // Test assertions
-  description      String?  @db.Text
-  tags             String[] @default([])
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  collection ApiClientCollection? @relation("CollectionRequests", fields: [collectionId], references: [id], onDelete: Cascade)
-  history    ApiClientHistory[]   @relation("RequestHistory")
-
-  @@map("api_client_requests")
-}
-
-model ApiClientHistory {
-  id                 String   @id @default(uuid()) @db.Uuid
-  requestId          String   @map("request_id") @db.Uuid
-  userId             String   @map("user_id") @db.Uuid
-  method             String
-  url                String
-  requestHeaders     Json     @default("{}") @map("request_headers")
-  requestBody        String?  @map("request_body") @db.Text
-  responseStatus     Int?     @map("response_status")
-  responseStatusText String?  @map("response_status_text")
-  responseHeaders    Json?    @map("response_headers")
-  responseBody       String?  @map("response_body") @db.Text
-  responseSize       Int?     @map("response_size")
-  responseTime       Int?     @map("response_time") // milliseconds
-  error              String?  @db.Text
-  testResults        Json?    @map("test_results") // Test execution results
-  timestamp          DateTime @default(now())
-
-  // Relations
-  request ApiClientRequest @relation("RequestHistory", fields: [requestId], references: [id], onDelete: Cascade)
-
-  @@index([requestId])
-  @@index([userId])
-  @@index([timestamp])
-  @@map("api_client_history")
-}
-
-model ApiClientEnvironment {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @map("user_id") @db.Uuid
-  name      String
-  variables Json     @default("[]") // Array of {key, value, enabled}
-  isActive  Boolean  @default(false) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("api_client_environments")
-}
-
-model ApiClientTemplate {
-  id               String   @id @default(uuid()) @db.Uuid
-  name             String
-  description      String?  @db.Text
-  category         String // REST, GraphQL, WebSocket, etc.
-  method           String?
-  url              String?
-  headers          Json     @default("[]")
-  auth             Json?
-  body             Json?
-  preRequestScript String?  @map("pre_request_script") @db.Text
-  tests            Json?    @default("[]")
-  tags             String[] @default([])
-  isPublic         Boolean  @default(false) @map("is_public")
-  usageCount       Int      @default(0) @map("usage_count")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
-
-  @@map("api_client_templates")
-}
-
 model ImportProfile {
   id          String    @id @default(uuid()) @db.Uuid
   name        String
@@ -1633,4 +1551,547 @@ model StorageConnection {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("storage_connections")
+}
+
+// Marketplace Models
+model ServiceRegistry {
+  id                String   @id @default(uuid()) @db.Uuid
+  name              String
+  slug              String   @unique
+  description       String?  @db.Text
+  version           String
+  provider          String
+  providerUrl       String?  @map("provider_url")
+  category          String?   // 'business-intelligence', 'service-management', etc.
+  status            String   @default("pending") // 'pending', 'approved', 'rejected', 'deprecated'
+  capabilities      Json?    @default("{}")
+  apiBaseUrl        String?  @map("api_base_url")
+  apiAuthType       String?  @map("api_auth_type") // 'oauth2', 'api_key', 'bearer', 'none'
+  apiAuthConfig     Json?    @default("{}") @map("api_auth_config")
+  uiType            String?  @map("ui_type") // 'iframe', 'react_component', 'web_component'
+  uiConfig          Json?    @default("{}") @map("ui_config")
+  webhookSupported  Boolean  @default(false) @map("webhook_supported")
+  webhookEvents     String[] @map("webhook_events")
+  iconUrl           String?  @map("icon_url")
+  screenshots       String[]
+  documentationUrl  String?  @map("documentation_url")
+  supportUrl        String?  @map("support_url")
+  pricingInfo       Json?    @map("pricing_info")
+  installationCount Int      @default(0) @map("installation_count")
+  rating            Decimal? @db.Decimal(3, 2)
+  reviewCount       Int      @default(0) @map("review_count")
+  verified          Boolean  @default(false)
+  securityAudit     Json?    @map("security_audit")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
+
+  // Relations
+  installations ServiceInstallation[] @relation("ServiceRegistryInstallations")
+  uiComponents  ServiceUIComponent[]   @relation("ServiceRegistryUIComponents")
+  apiRoutes     ServiceAPIRoute[]     @relation("ServiceRegistryAPIRoutes")
+  managementPlugins InstanceService[] @relation("ServiceRegistryManagementPlugins")
+  managementAssignments ServiceManagementAssignment[] @relation("ServiceRegistryManagementAssignments")
+  reviews PluginReview[] @relation("ServiceRegistryReviews")
+
+  @@index([category])
+  @@index([status])
+  @@index([verified])
+  @@map("service_registry")
+}
+
+model ServiceInstallation {
+  id             String   @id @default(uuid()) @db.Uuid
+  serviceId      String   @map("service_id") @db.Uuid
+  spaceId        String?  @map("space_id") @db.Uuid
+  installedBy    String?  @map("installed_by") @db.Uuid
+  config         Json?    @default("{}")
+  credentials    Json?    @default("{}") // Encrypted
+  status         String   @default("active") // 'active', 'inactive', 'error'
+  lastHealthCheck DateTime? @map("last_health_check")
+  healthStatus   String?  @map("health_status")
+  permissions    Json?    @default("{}")
+  installedAt    DateTime @default(now()) @map("installed_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  // Relations
+  service     ServiceRegistry @relation("ServiceRegistryInstallations", fields: [serviceId], references: [id], onDelete: Cascade)
+  space       Space?          @relation("SpaceServiceInstallations", fields: [spaceId], references: [id], onDelete: Cascade)
+  installer   User?           @relation("UserServiceInstallations", fields: [installedBy], references: [id])
+  uiComponents ServiceUIComponent[] @relation("ServiceInstallationUIComponents")
+  apiRoutes   ServiceAPIRoute[]     @relation("ServiceInstallationAPIRoutes")
+
+  @@unique([serviceId, spaceId])
+  @@index([spaceId])
+  @@index([serviceId])
+  @@index([status])
+  @@map("service_installations")
+}
+
+model ServiceUIComponent {
+  id              String   @id @default(uuid()) @db.Uuid
+  serviceId       String   @map("service_id") @db.Uuid
+  installationId  String?  @map("installation_id") @db.Uuid
+  componentType   String?  @map("component_type") // 'widget', 'page', 'sidebar', 'modal'
+  componentName   String?  @map("component_name")
+  componentId     String?  @map("component_id")
+  renderType      String?  @map("render_type") // 'iframe', 'react', 'web_component'
+  renderConfig    Json?    @default("{}") @map("render_config")
+  placement       String?  // 'dashboard', 'sidebar', 'settings'
+  placementConfig Json?    @default("{}") @map("placement_config")
+  requiredPermissions String[] @map("required_permissions")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  service      ServiceRegistry    @relation("ServiceRegistryUIComponents", fields: [serviceId], references: [id], onDelete: Cascade)
+  installation ServiceInstallation? @relation("ServiceInstallationUIComponents", fields: [installationId], references: [id], onDelete: Cascade)
+
+  @@index([serviceId])
+  @@index([installationId])
+  @@map("service_ui_components")
+}
+
+model ServiceAPIRoute {
+  id              String   @id @default(uuid()) @db.Uuid
+  serviceId       String   @map("service_id") @db.Uuid
+  installationId  String?  @map("installation_id") @db.Uuid
+  routePath       String   @map("route_path")
+  method          String
+  targetUrl       String   @map("target_url")
+  authType        String?  @map("auth_type")
+  authConfig      Json?    @default("{}") @map("auth_config")
+  rateLimit       Int?     @map("rate_limit")
+  rateLimitWindow Int?     @map("rate_limit_window")
+  cacheEnabled    Boolean  @default(false) @map("cache_enabled")
+  cacheTtl        Int?     @map("cache_ttl")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  service      ServiceRegistry    @relation("ServiceRegistryAPIRoutes", fields: [serviceId], references: [id], onDelete: Cascade)
+  installation ServiceInstallation? @relation("ServiceInstallationAPIRoutes", fields: [installationId], references: [id], onDelete: Cascade)
+
+  @@index([serviceId])
+  @@index([installationId])
+  @@map("service_api_routes")
+}
+
+// Infrastructure Models
+model InfrastructureInstance {
+  id              String   @id @default(uuid()) @db.Uuid
+  name            String
+  type            String   // 'vm', 'docker_host', 'kubernetes', 'cloud_instance'
+  host            String
+  port            Int?
+  protocol        String   @default("ssh")
+  connectionType  String   @map("connection_type") // 'ssh', 'docker_api', 'kubernetes', 'http'
+  connectionConfig Json?    @default("{}") @map("connection_config")
+  status          String   @default("unknown") // 'online', 'offline', 'error'
+  lastHealthCheck DateTime? @map("last_health_check")
+  healthStatus    Json?    @default("{}") @map("health_status")
+  osType          String?  @map("os_type")
+  osVersion       String?  @map("os_version")
+  resources       Json?    // { cpu, memory, disk }
+  tags            String[]
+  spaceId         String?  @map("space_id") @db.Uuid
+  createdBy       String?  @map("created_by") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  // Relations
+  space    Space?            @relation("SpaceInfrastructureInstances", fields: [spaceId], references: [id], onDelete: Cascade)
+  creator  User?             @relation("UserInfrastructureInstances", fields: [createdBy], references: [id])
+  services InstanceService[] @relation("InfrastructureInstanceServices")
+
+  @@index([spaceId])
+  @@index([type])
+  @@index([status])
+  @@map("infrastructure_instances")
+}
+
+model InstanceService {
+  id                String   @id @default(uuid()) @db.Uuid
+  instanceId        String   @map("instance_id") @db.Uuid
+  name              String
+  type              String   // 'docker_container', 'systemd_service', 'application'
+  status            String   @default("unknown") // 'running', 'stopped', 'error'
+  serviceConfig     Json?    @default("{}") @map("service_config")
+  endpoints         Json?    @default("[]")
+  healthCheckUrl    String?  @map("health_check_url")
+  managementPluginId String? @map("management_plugin_id") @db.Uuid
+  managementConfig  Json?    @default("{}") @map("management_config")
+  discoveredAt      DateTime @default(now()) @map("discovered_at")
+  lastSeen          DateTime @default(now()) @map("last_seen")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  instance          InfrastructureInstance @relation("InfrastructureInstanceServices", fields: [instanceId], references: [id], onDelete: Cascade)
+  managementPlugin  ServiceRegistry?      @relation("ServiceRegistryManagementPlugins", fields: [managementPluginId], references: [id])
+  managementAssignments ServiceManagementAssignment[] @relation("InstanceServiceManagementAssignments")
+
+  @@unique([instanceId, name, type])
+  @@index([instanceId])
+  @@index([managementPluginId])
+  @@index([status])
+  @@map("instance_services")
+}
+
+model ServiceManagementAssignment {
+  id                String   @id @default(uuid()) @db.Uuid
+  instanceServiceId String   @map("instance_service_id") @db.Uuid
+  pluginId          String   @map("plugin_id") @db.Uuid
+  assignedBy        String?  @map("assigned_by") @db.Uuid
+  assignedAt        DateTime @default(now()) @map("assigned_at")
+  config            Json?    @default("{}")
+  credentials       Json?    @default("{}")
+  isActive          Boolean  @default(true) @map("is_active")
+  lastUsed          DateTime? @map("last_used")
+
+  // Relations
+  instanceService InstanceService @relation("InstanceServiceManagementAssignments", fields: [instanceServiceId], references: [id], onDelete: Cascade)
+  plugin          ServiceRegistry  @relation("ServiceRegistryManagementAssignments", fields: [pluginId], references: [id], onDelete: Cascade)
+  assigner        User?            @relation("UserServiceManagementAssignments", fields: [assignedBy], references: [id])
+
+  @@unique([instanceServiceId, pluginId])
+  @@index([instanceServiceId])
+  @@index([pluginId])
+  @@map("service_management_assignments")
+}
+
+// Outline-like Knowledge Base Models
+model KnowledgeCollection {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String?  @db.Text
+  icon        String?
+  color       String?
+  isPrivate   Boolean  @default(false) @map("is_private")
+  spaceId     String?  @map("space_id") @db.Uuid
+  createdBy   String   @map("created_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  creator     User                @relation("UserKnowledgeCollections", fields: [createdBy], references: [id])
+  space       Space?              @relation("SpaceKnowledgeCollections", fields: [spaceId], references: [id], onDelete: Cascade)
+  documents   KnowledgeDocument[] @relation("CollectionDocuments")
+  members     KnowledgeCollectionMember[] @relation("CollectionMembers")
+  shares      KnowledgeShare[]    @relation("CollectionShares")
+
+  @@index([spaceId])
+  @@index([createdBy])
+  @@index([deletedAt])
+  @@map("knowledge_collections")
+}
+
+model KnowledgeCollectionMember {
+  id           String   @id @default(uuid()) @db.Uuid
+  collectionId String   @map("collection_id") @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  role         String   @default("viewer") // 'viewer', 'editor', 'admin'
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  collection   KnowledgeCollection @relation("CollectionMembers", fields: [collectionId], references: [id], onDelete: Cascade)
+  user         User               @relation("UserKnowledgeCollectionMembers", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, userId])
+  @@index([collectionId])
+  @@index([userId])
+  @@map("knowledge_collection_members")
+}
+
+model KnowledgeDocument {
+  id            String   @id @default(uuid()) @db.Uuid
+  collectionId  String   @map("collection_id") @db.Uuid
+  title         String
+  content       String   @db.Text
+  contentHtml   String?  @db.Text @map("content_html")
+  parentId      String?  @map("parent_id") @db.Uuid
+  templateId    String?  @map("template_id") @db.Uuid
+  isTemplate    Boolean  @default(false) @map("is_template")
+  isPublic      Boolean  @default(false) @map("is_public")
+  isPinned      Boolean  @default(false) @map("is_pinned")
+  publishedAt   DateTime? @map("published_at")
+  archivedAt    DateTime? @map("archived_at")
+  order         Int      @default(0)
+  createdBy     String   @map("created_by") @db.Uuid
+  updatedBy     String?  @map("updated_by") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  // Relations
+  collection    KnowledgeCollection @relation("CollectionDocuments", fields: [collectionId], references: [id], onDelete: Cascade)
+  parent        KnowledgeDocument? @relation("DocumentHierarchy", fields: [parentId], references: [id])
+  children      KnowledgeDocument[] @relation("DocumentHierarchy")
+  creator       User               @relation("UserKnowledgeDocuments", fields: [createdBy], references: [id])
+  updater       User?              @relation("UserKnowledgeDocumentUpdates", fields: [updatedBy], references: [id])
+  comments      KnowledgeComment[] @relation("DocumentComments")
+  shares        KnowledgeShare[]  @relation("DocumentShares")
+  versions      KnowledgeDocumentVersion[] @relation("DocumentVersions")
+  stars         KnowledgeStar[]    @relation("DocumentStars")
+  mentions      KnowledgeMention[] @relation("DocumentMentions")
+  presence      KnowledgePresence[] @relation("DocumentPresence")
+
+  @@index([collectionId])
+  @@index([parentId])
+  @@index([createdBy])
+  @@index([deletedAt])
+  @@index([isPublic])
+  @@fulltext([title, content])
+  @@map("knowledge_documents")
+}
+
+model KnowledgeDocumentVersion {
+  id          String   @id @default(uuid()) @db.Uuid
+  documentId  String   @map("document_id") @db.Uuid
+  title       String
+  content     String   @db.Text
+  contentHtml String?  @db.Text @map("content_html")
+  createdBy   String   @map("created_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  document    KnowledgeDocument @relation("DocumentVersions", fields: [documentId], references: [id], onDelete: Cascade)
+  creator     User             @relation("UserKnowledgeDocumentVersions", fields: [createdBy], references: [id])
+
+  @@index([documentId])
+  @@index([createdAt])
+  @@map("knowledge_document_versions")
+}
+
+model KnowledgeComment {
+  id          String   @id @default(uuid()) @db.Uuid
+  documentId  String   @map("document_id") @db.Uuid
+  parentId    String?  @map("parent_id") @db.Uuid
+  content     String   @db.Text
+  contentHtml String?  @db.Text @map("content_html")
+  resolvedAt  DateTime? @map("resolved_at")
+  resolvedBy  String?  @map("resolved_by") @db.Uuid
+  createdBy   String   @map("created_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  document    KnowledgeDocument @relation("DocumentComments", fields: [documentId], references: [id], onDelete: Cascade)
+  parent      KnowledgeComment? @relation("CommentThread", fields: [parentId], references: [id])
+  replies     KnowledgeComment[] @relation("CommentThread")
+  creator     User              @relation("UserKnowledgeComments", fields: [createdBy], references: [id])
+  resolver    User?             @relation("UserKnowledgeCommentResolutions", fields: [resolvedBy], references: [id])
+
+  @@index([documentId])
+  @@index([parentId])
+  @@index([createdBy])
+  @@index([deletedAt])
+  @@map("knowledge_comments")
+}
+
+model KnowledgeShare {
+  id          String   @id @default(uuid()) @db.Uuid
+  documentId  String?  @map("document_id") @db.Uuid
+  collectionId String? @map("collection_id") @db.Uuid
+  userId      String?  @map("user_id") @db.Uuid
+  teamId      String?  @map("team_id") @db.Uuid
+  permission  String   @default("read") // 'read', 'write', 'admin'
+  publicLink  String?  @unique @map("public_link")
+  expiresAt   DateTime? @map("expires_at")
+  createdBy   String   @map("created_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  document    KnowledgeDocument? @relation("DocumentShares", fields: [documentId], references: [id], onDelete: Cascade)
+  collection  KnowledgeCollection? @relation("CollectionShares", fields: [collectionId], references: [id], onDelete: Cascade)
+  user        User?              @relation("UserKnowledgeShares", fields: [userId], references: [id], onDelete: Cascade)
+  creator     User                @relation("UserKnowledgeShareCreators", fields: [createdBy], references: [id])
+
+  @@index([documentId])
+  @@index([collectionId])
+  @@index([userId])
+  @@index([publicLink])
+  @@map("knowledge_shares")
+}
+
+model KnowledgeStar {
+  id         String   @id @default(uuid()) @db.Uuid
+  documentId String   @map("document_id") @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  document   KnowledgeDocument @relation("DocumentStars", fields: [documentId], references: [id], onDelete: Cascade)
+  user       User             @relation("UserKnowledgeStars", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, userId])
+  @@index([documentId])
+  @@index([userId])
+  @@map("knowledge_stars")
+}
+
+model KnowledgeMention {
+  id         String   @id @default(uuid()) @db.Uuid
+  documentId String   @map("document_id") @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  createdBy  String   @map("created_by") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  document   KnowledgeDocument @relation("DocumentMentions", fields: [documentId], references: [id], onDelete: Cascade)
+  user       User             @relation("UserKnowledgeMentions", fields: [userId], references: [id], onDelete: Cascade)
+  creator    User             @relation("UserKnowledgeMentionCreators", fields: [createdBy], references: [id])
+
+  @@unique([documentId, userId, createdBy])
+  @@index([documentId])
+  @@index([userId])
+  @@map("knowledge_mentions")
+}
+
+model KnowledgePresence {
+  id         String   @id @default(uuid()) @db.Uuid
+  documentId String   @map("document_id") @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  cursor     Json?    // { line: number, ch: number }
+  selection  Json?    // { from: {line, ch}, to: {line, ch} }
+  lastSeen   DateTime @default(now()) @map("last_seen")
+
+  // Relations
+  document   KnowledgeDocument @relation("DocumentPresence", fields: [documentId], references: [id], onDelete: Cascade)
+  user       User             @relation("UserKnowledgePresence", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, userId])
+  @@index([documentId])
+  @@index([userId])
+  @@index([lastSeen])
+  @@map("knowledge_presence")
+}
+
+// API Client Models (Hoppscotch-like)
+model ApiWorkspace {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  isPersonal  Boolean  @default(true) @map("is_personal")
+  spaceId     String?  @map("space_id") @db.Uuid
+  createdBy   String   @map("created_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  creator     User           @relation("UserApiWorkspaces", fields: [createdBy], references: [id])
+  space       Space?         @relation("SpaceApiWorkspaces", fields: [spaceId], references: [id], onDelete: Cascade)
+  collections ApiCollection[] @relation("WorkspaceCollections")
+  environments ApiEnvironment[] @relation("WorkspaceEnvironments")
+
+  @@index([createdBy])
+  @@index([spaceId])
+  @@map("api_workspaces")
+}
+
+model ApiCollection {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  parentId    String?  @map("parent_id") @db.Uuid
+  name        String
+  description String?
+  order       Int      @default(0)
+  createdBy   String   @map("created_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  workspace   ApiWorkspace    @relation("WorkspaceCollections", fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent      ApiCollection?  @relation("CollectionHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children    ApiCollection[] @relation("CollectionHierarchy")
+  requests    ApiRequest[]   @relation("CollectionRequests")
+  creator     User            @relation("UserApiCollections", fields: [createdBy], references: [id])
+
+  @@index([workspaceId])
+  @@index([parentId])
+  @@index([createdBy])
+  @@map("api_collections")
+}
+
+model ApiRequest {
+  id          String   @id @default(uuid()) @db.Uuid
+  collectionId String? @map("collection_id") @db.Uuid
+  name        String
+  method      String   @default("GET") // GET, POST, PUT, DELETE, PATCH, etc.
+  url         String
+  headers     Json     @default("[]") // Array of {key, value, enabled}
+  params      Json     @default("[]") // Array of {key, value, enabled}
+  body        String?  @db.Text
+  bodyType    String?  @map("body_type") // json, form-data, x-www-form-urlencoded, raw, etc.
+  authType    String?  @map("auth_type") // none, bearer, basic, oauth2, apikey
+  authConfig  Json?    @map("auth_config")
+  preRequestScript String? @db.Text @map("pre_request_script")
+  testScript  String?  @db.Text @map("test_script")
+  requestType String  @default("REST") @map("request_type") // REST, GraphQL, WebSocket, SSE, SocketIO, MQTT
+  graphqlQuery String? @db.Text @map("graphql_query")
+  graphqlVariables String? @db.Text @map("graphql_variables")
+  order       Int      @default(0)
+  createdBy   String   @map("created_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  collection  ApiCollection? @relation("CollectionRequests", fields: [collectionId], references: [id], onDelete: SetNull)
+  creator     User          @relation("UserApiRequests", fields: [createdBy], references: [id])
+  history     ApiRequestHistory[] @relation("RequestHistory")
+
+  @@index([collectionId])
+  @@index([createdBy])
+  @@map("api_requests")
+}
+
+model ApiEnvironment {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  name        String
+  variables   Json     @default("[]") // Array of {key, value, enabled}
+  isGlobal    Boolean  @default(false) @map("is_global")
+  createdBy   String   @map("created_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  workspace   ApiWorkspace @relation("WorkspaceEnvironments", fields: [workspaceId], references: [id], onDelete: Cascade)
+  creator     User         @relation("UserApiEnvironments", fields: [createdBy], references: [id])
+
+  @@index([workspaceId])
+  @@index([createdBy])
+  @@map("api_environments")
+}
+
+model ApiRequestHistory {
+  id          String   @id @default(uuid()) @db.Uuid
+  requestId   String?  @map("request_id") @db.Uuid
+  method      String
+  url         String
+  headers     Json     @default("{}")
+  body        String?  @db.Text
+  statusCode  Int?     @map("status_code")
+  statusText  String?  @map("status_text")
+  responseHeaders Json? @map("response_headers") @db.JsonB
+  responseBody String? @db.Text @map("response_body")
+  responseTime Int?    @map("response_time") // milliseconds
+  error       String?  @db.Text
+  createdBy   String   @map("created_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  request     ApiRequest? @relation("RequestHistory", fields: [requestId], references: [id], onDelete: SetNull)
+  creator     User        @relation("UserApiRequestHistory", fields: [createdBy], references: [id])
+
+  @@index([requestId])
+  @@index([createdBy])
+  @@index([createdAt])
+  @@map("api_request_history")
 }

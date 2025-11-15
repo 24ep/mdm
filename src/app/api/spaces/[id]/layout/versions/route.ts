@@ -2,20 +2,36 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/database'
+import { logger } from '@/lib/logger'
+import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 // GET /api/spaces/[id]/layout/versions - List all versions for a space layout
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id: spaceId } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id: spaceId } = paramValidation.data
     const userId = session.user.id
+    logger.apiRequest('GET', `/api/spaces/${spaceId}/layout/versions`, { userId })
 
     // Check if user has access to this space
     const accessResult = await query(
@@ -50,14 +66,18 @@ export async function GET(
       [spaceId]
     )
 
-    return NextResponse.json({
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', `/api/spaces/${spaceId}/layout/versions`, 200, duration, {
+      versionCount: versionsResult.rows.length
+    })
+    return addSecurityHeaders(NextResponse.json({
       versions: versionsResult.rows,
       count: versionsResult.rows.length
-    })
-
+    }))
   } catch (error) {
-    console.error('Error fetching layout versions:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Layout Versions API GET')
   }
 }
 
@@ -66,19 +86,37 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id: spaceId } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id: spaceId } = paramValidation.data
     const userId = session.user.id
-    const { layoutConfig, changeDescription } = await request.json()
+    logger.apiRequest('POST', `/api/spaces/${spaceId}/layout/versions`, { userId })
 
-    if (!layoutConfig) {
-      return NextResponse.json({ error: 'Layout config is required' }, { status: 400 })
+    const bodySchema = z.object({
+      layoutConfig: z.any(),
+      changeDescription: z.string().optional(),
+    })
+
+    const bodyValidation = await validateBody(request, bodySchema)
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
     }
+
+    const { layoutConfig, changeDescription } = bodyValidation.data
 
     // Check if user has access to this space
     const accessResult = await query(
@@ -115,14 +153,18 @@ export async function POST(
       [spaceId, nextVersion, JSON.stringify(layoutConfig), changeDescription || `Version ${nextVersion}`, userId]
     )
 
-    return NextResponse.json({
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', `/api/spaces/${spaceId}/layout/versions`, 200, duration, {
+      versionNumber: nextVersion
+    })
+    return addSecurityHeaders(NextResponse.json({
       version: insertResult.rows[0],
       success: true
-    })
-
+    }))
   } catch (error) {
-    console.error('Error creating layout version:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Layout Versions API POST')
   }
 }
 

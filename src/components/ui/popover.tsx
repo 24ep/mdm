@@ -5,6 +5,7 @@ import { createPortal } from "react-dom"
 
 import { cn } from "@/lib/utils"
 import { useControlledDialogState } from "@/lib/dialog-utils"
+import { Z_INDEX } from "@/lib/z-index"
 
 interface PopoverContextValue {
   open: boolean
@@ -112,27 +113,111 @@ const PopoverContent = React.forwardRef<
 
   React.useImperativeHandle(ref, () => contentRef.current as HTMLDivElement)
 
-  React.useEffect(() => {
-    if (context?.open && context.triggerRef.current) {
-      const rect = context.triggerRef.current.getBoundingClientRect()
-      const contentRect = contentRef.current?.getBoundingClientRect()
-      const width = contentRect?.width || 0
-      
+  const calculatePosition = React.useCallback(() => {
+    if (!context?.open || !context.triggerRef.current) {
+      setPosition(null)
+      return
+    }
+
+    const rect = context.triggerRef.current.getBoundingClientRect()
+    const contentRect = contentRef.current?.getBoundingClientRect()
+    
+    // If content isn't rendered yet, use default dimensions
+    if (!contentRect) {
+      // Set initial position, will be recalculated once content is rendered
+      const defaultWidth = 256
       let left = rect.left
       if (align === "center") {
-        left = rect.left + (rect.width / 2) - (width / 2)
+        left = rect.left + (rect.width / 2) - (defaultWidth / 2)
       } else if (align === "end") {
-        left = rect.right - width
+        left = rect.right - defaultWidth
       }
-
       setPosition({
         top: rect.bottom + sideOffset,
         left,
       })
-    } else {
-      setPosition(null)
+      return
     }
+
+    const width = contentRect.width
+    const height = contentRect.height
+    
+    // Calculate initial position
+    let left = rect.left
+    if (align === "center") {
+      left = rect.left + (rect.width / 2) - (width / 2)
+    } else if (align === "end") {
+      left = rect.right - width
+    }
+
+    // Calculate top position (below trigger by default)
+    let top = rect.bottom + sideOffset
+
+    // Keep popover within viewport bounds
+    const viewportWidth = window.innerWidth
+    const viewportHeight = window.innerHeight
+    const padding = 8 // Padding from viewport edges
+
+    // Adjust horizontal position if it goes off-screen
+    if (left < padding) {
+      left = padding
+    } else if (left + width > viewportWidth - padding) {
+      left = viewportWidth - width - padding
+    }
+
+    // If popover would go off bottom, show it above the trigger instead
+    if (top + height > viewportHeight - padding) {
+      top = rect.top - height - sideOffset
+      // If it still doesn't fit above, position it at the top of viewport
+      if (top < padding) {
+        top = padding
+      }
+    }
+
+    // Ensure top is within bounds
+    if (top < padding) {
+      top = padding
+    } else if (top + height > viewportHeight - padding) {
+      top = viewportHeight - height - padding
+    }
+
+    setPosition({
+      top,
+      left,
+    })
   }, [context?.open, align, sideOffset])
+
+  React.useEffect(() => {
+    calculatePosition()
+  }, [calculatePosition])
+
+  // Recalculate position when content is rendered and measured
+  React.useEffect(() => {
+    if (context?.open && contentRef.current) {
+      // Use requestAnimationFrame to ensure content is rendered
+      const frame = requestAnimationFrame(() => {
+        calculatePosition()
+      })
+      return () => cancelAnimationFrame(frame)
+    }
+  }, [context?.open, calculatePosition])
+
+  // Recalculate position on window resize
+  React.useEffect(() => {
+    if (!context?.open) return
+
+    const handleResize = () => {
+      calculatePosition()
+    }
+
+    window.addEventListener('resize', handleResize)
+    window.addEventListener('scroll', handleResize, true)
+
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      window.removeEventListener('scroll', handleResize, true)
+    }
+  }, [context?.open, calculatePosition])
 
   React.useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -170,11 +255,12 @@ const PopoverContent = React.forwardRef<
     <div
       ref={contentRef}
       className={cn(
-        "z-[9999] min-w-[8rem] rounded-md border bg-popover p-1 text-popover-foreground shadow-lg outline-none animate-in fade-in-0 zoom-in-95",
+        "min-w-[8rem] rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none animate-in fade-in-0 zoom-in-95 [background-color:hsl(var(--popover))]",
         className
       )}
       style={{
         position: "fixed",
+        zIndex: Z_INDEX.popover,
         top: `${position.top}px`,
         left: `${position.left}px`,
       }}

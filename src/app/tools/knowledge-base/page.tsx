@@ -1,11 +1,11 @@
 'use client'
 
-import { KnowledgeBase } from '@/app/admin/features/content'
+import { OutlineKnowledgeBase } from '@/features/knowledge'
 
 export default function KnowledgeBasePage() {
   return (
-    <div className="p-6">
-      <KnowledgeBase />
+    <div className="h-screen">
+      <OutlineKnowledgeBase />
     </div>
   )
 }

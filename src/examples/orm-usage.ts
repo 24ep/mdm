@@ -197,11 +197,11 @@ export async function systemSettingsExamples() {
   console.log('App name:', appName)
 
   // Set single setting
-  await SystemSettingsORM.set('app_name', 'Customer Data Management')
+  await SystemSettingsORM.set('app_name', 'Unified Data Platform')
 
   // Set multiple settings
   await SystemSettingsORM.setMultiple({
-    'app_name': 'Customer Data Management',
+    'app_name': 'Unified Data Platform',
     'app_version': '1.0.0',
     'maintenance_mode': 'false'
   })

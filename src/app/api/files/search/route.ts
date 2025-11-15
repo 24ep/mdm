@@ -2,36 +2,47 @@ import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/database'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { logger } from '@/lib/logger'
+import { validateQuery, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { searchParams } = new URL(request.url)
-    const q = searchParams.get('q') || ''
-    const spaceId = searchParams.get('spaceId')
-    const fileType = searchParams.get('fileType')
-    const category = searchParams.get('category')
-    const tag = searchParams.get('tag')
-    const dateFrom = searchParams.get('dateFrom')
-    const dateTo = searchParams.get('dateTo')
-    const sizeMin = searchParams.get('sizeMin')
-    const sizeMax = searchParams.get('sizeMax')
-    const uploadedBy = searchParams.get('uploadedBy')
-    const sortBy = searchParams.get('sortBy') || 'uploaded_at'
-    const sortOrder = searchParams.get('sortOrder') || 'desc'
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
+    // Validate query parameters - use passthrough for complex filters
+    const queryValidation = validateQuery(request, z.object({
+      q: z.string().optional().default(''),
+      spaceId: commonSchemas.id,
+      fileType: z.string().optional(),
+      category: z.string().optional(),
+      tag: z.string().optional(),
+      dateFrom: z.string().optional(),
+      dateTo: z.string().optional(),
+      sizeMin: z.string().optional().transform((val) => val ? parseInt(val) : undefined),
+      sizeMax: z.string().optional().transform((val) => val ? parseInt(val) : undefined),
+      uploadedBy: commonSchemas.id.optional(),
+      sortBy: z.enum(['name', 'size', 'type', 'uploaded_at']).optional().default('uploaded_at'),
+      sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
+      page: z.string().optional().transform((val) => parseInt(val || '1')).pipe(z.number().int().positive()).optional().default(1),
+      limit: z.string().optional().transform((val) => parseInt(val || '20')).pipe(z.number().int().positive().max(100)).optional().default(20),
+    }))
+    
+    if (!queryValidation.success) {
+      return addSecurityHeaders(queryValidation.response)
+    }
+    
+    const { q = '', spaceId, fileType, category, tag, dateFrom, dateTo, sizeMin, sizeMax, uploadedBy, sortBy = 'uploaded_at', sortOrder = 'desc', page, limit = 20 } = queryValidation.data
     const offset = (page - 1) * limit
-
-    if (!spaceId) {
-      return NextResponse.json({ error: 'Space ID is required' }, { status: 400 })
-    }
+    logger.apiRequest('GET', '/api/files/search', { userId, spaceId, q, page, limit })
 
     // Check if user has access to this space
     const memberResult = await query(
@@ -40,7 +51,8 @@ export async function GET(request: NextRequest) {
     )
 
     if (memberResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 })
+      logger.warn('Space not found or access denied for file search', { spaceId, userId })
+      return addSecurityHeaders(NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 }))
     }
 
     // Build the search query
@@ -219,8 +231,33 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/files/search', 200, duration, { total, filesCount: filesResult.rows.length })
+    return addSecurityHeaders(NextResponse.json({
+      files: filesResult.rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      },
+      filters: {
+        fileTypes: filters.file_types || [],
+        categories: filters.categories || [],
+        tags: filters.tags || [],
+        dateRange: {
+          from: filters.earliest_date,
+          to: filters.latest_date
+        },
+        sizeRange: {
+          min: filters.min_size,
+          max: filters.max_size
+        }
+      }
+    }))
   } catch (error) {
-    console.error('Error searching files:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/files/search', 500, duration)
+    return handleApiError(error, 'File Search API GET')
   }
 }

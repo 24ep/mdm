@@ -502,6 +502,7 @@ export function WorkflowEngine({ spaceId }: WorkflowEngineProps) {
                     </div>
                   </TabsContent>
                 </Tabs>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -529,7 +530,7 @@ export function WorkflowEngine({ spaceId }: WorkflowEngineProps) {
                     </div>
                   </div>
                   {execution.error_message && (
-                    <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+                    <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-sm text-red-700 dark:text-red-400">
                       {execution.error_message}
                     </div>
                   )}
@@ -546,6 +547,7 @@ export function WorkflowEngine({ spaceId }: WorkflowEngineProps) {
           </div>
         </TabsContent>
       </Tabs>
+      </div>
 
       {showCreateDialog && (
         <Card className="fixed inset-0 z-50 m-4 max-w-md">

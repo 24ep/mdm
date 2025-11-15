@@ -206,7 +206,7 @@ export function BigQueryDataSource({ onDataLoad, onQueryExecute }: BigQueryDataS
                   <div className="flex items-center gap-2">
                     <span>{model.name}</span>
                     {model.description && (
-                      <span className="text-xs text-gray-500">- {model.description}</span>
+                      <span className="text-xs text-muted-foreground">- {model.description}</span>
                     )}
                   </div>
                 </SelectItem>
@@ -276,7 +276,7 @@ export function BigQueryDataSource({ onDataLoad, onQueryExecute }: BigQueryDataS
                   </div>
                 ))}
                 {queryHistory.length === 0 && (
-                  <div className="text-center py-4 text-gray-500 text-sm">
+                  <div className="text-center py-4 text-muted-foreground text-sm">
                     No query history yet
                   </div>
                 )}
@@ -291,7 +291,7 @@ export function BigQueryDataSource({ onDataLoad, onQueryExecute }: BigQueryDataS
           <textarea
             value={customQuery}
             onChange={(e) => setCustomQuery(e.target.value)}
-            className="w-full h-32 p-3 border border-gray-200 rounded-md font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full h-32 p-3 border border-border rounded-md font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="-- Enter your SQL query here
 SELECT 
   column1,
@@ -333,7 +333,7 @@ LIMIT 100;"
           </div>
           
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-muted-foreground">
               Ctrl+Enter to execute
             </span>
           </div>
@@ -373,21 +373,21 @@ LIMIT 100;"
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
-                <table className="min-w-full border border-gray-200 rounded-lg">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full border border-border rounded-lg">
+                  <thead className="bg-muted">
                     <tr>
                       {metadata.columns.map((col: string) => (
-                        <th key={col} className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        <th key={col} className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">
                           {col}
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-background divide-y divide-border">
                     {dataPreview.slice(0, 10).map((row, index) => (
                       <tr key={index}>
                         {metadata.columns.map((col: string) => (
-                          <td key={col} className="px-3 py-2 text-sm text-gray-900">
+                          <td key={col} className="px-3 py-2 text-sm text-foreground">
                             {row[col]?.toString() || '-'}
                           </td>
                         ))}
@@ -396,7 +396,7 @@ LIMIT 100;"
                   </tbody>
                 </table>
                 {dataPreview.length > 10 && (
-                  <div className="px-3 py-2 text-xs text-gray-500 bg-gray-50">
+                  <div className="px-3 py-2 text-xs text-muted-foreground bg-muted">
                     Showing 10 of {dataPreview.length} rows
                   </div>
                 )}

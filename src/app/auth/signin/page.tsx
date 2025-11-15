@@ -110,8 +110,8 @@ export default function SignInPage() {
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative h-full flex items-center justify-center">
           <div className="text-center text-white p-8">
-            <h1 className="text-4xl font-bold mb-4">Welcome to Customer Data Management</h1>
-            <p className="text-xl opacity-90">Streamline your event organization with powerful customer data management</p>
+            <h1 className="text-4xl font-bold mb-4">Welcome to Unified Data Platform</h1>
+            <p className="text-xl opacity-90">Streamline your event organization with powerful unified data platform</p>
           </div>
         </div>
       </div>

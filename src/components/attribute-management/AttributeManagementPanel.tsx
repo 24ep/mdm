@@ -332,7 +332,7 @@ export function AttributeManagementPanel({ modelId, onAttributesChange }: Attrib
       ) : filteredAttributes.length > 0 ? (
         <div className="space-y-2">
           {/* Select All */}
-          <div className="flex items-center gap-2 p-2 border rounded-lg">
+          <div className="flex items-center gap-2 p-2 border border-border rounded-lg">
             <Checkbox
               checked={selectedAttributes.length === filteredAttributes.length && filteredAttributes.length > 0}
               onCheckedChange={handleSelectAll}
@@ -344,7 +344,7 @@ export function AttributeManagementPanel({ modelId, onAttributesChange }: Attrib
           {filteredAttributes.map((attr) => (
             <div
               key={attr.id}
-              className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+              className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors"
             >
               <Checkbox
                 checked={selectedAttributes.includes(attr.id)}
@@ -460,7 +460,7 @@ export function AttributeManagementPanel({ modelId, onAttributesChange }: Attrib
               value={importData}
               onChange={(e) => setImportData(e.target.value)}
               placeholder="Paste JSON data here..."
-              className="w-full h-64 p-3 border rounded-lg font-mono text-sm"
+              className="w-full h-64 p-3 border border-border rounded-lg font-mono text-sm"
             />
           </div>
           <DialogFooter>

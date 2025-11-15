@@ -2,22 +2,33 @@ import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/database'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { logger } from '@/lib/logger'
+import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { searchParams } = new URL(request.url)
-    const spaceId = searchParams.get('spaceId')
-
-    if (!spaceId) {
-      return NextResponse.json({ error: 'Space ID is required' }, { status: 400 })
+    // Validate query parameters
+    const queryValidation = validateQuery(request, z.object({
+      spaceId: commonSchemas.id,
+    }))
+    
+    if (!queryValidation.success) {
+      return addSecurityHeaders(queryValidation.response)
     }
+    
+    const { spaceId } = queryValidation.data
+    logger.apiRequest('GET', '/api/files/categories', { userId, spaceId })
 
     // Check if user has access to this space
     const memberResult = await query(
@@ -26,7 +37,8 @@ export async function GET(request: NextRequest) {
     )
 
     if (memberResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 })
+      logger.warn('Space not found or access denied for file categories', { spaceId, userId })
+      return addSecurityHeaders(NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 }))
     }
 
     // Get categories
@@ -69,31 +81,48 @@ export async function GET(request: NextRequest) {
       [spaceId]
     )
 
-    return NextResponse.json({
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/files/categories', 200, duration, { 
+      categoriesCount: categoriesResult.rows.length,
+      tagsCount: tagsResult.rows.length
+    })
+    return addSecurityHeaders(NextResponse.json({
       categories: categoriesResult.rows,
       tags: tagsResult.rows
-    })
-
+    }))
   } catch (error) {
-    console.error('Error fetching categories and tags:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/files/categories', 500, duration)
+    return handleApiError(error, 'File Categories API GET')
   }
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { type, spaceId, name, description, color, icon } = await request.json()
-
-    if (!spaceId || !name) {
-      return NextResponse.json({ error: 'Space ID and name are required' }, { status: 400 })
+    // Validate request body
+    const bodyValidation = await validateBody(request, z.object({
+      type: z.enum(['category', 'tag']),
+      spaceId: commonSchemas.id,
+      name: z.string().min(1, 'Name is required'),
+      description: z.string().optional(),
+      color: z.string().optional(),
+      icon: z.string().optional(),
+    }))
+    
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
     }
+    
+    const { type, spaceId, name, description, color, icon } = bodyValidation.data
+    logger.apiRequest('POST', '/api/files/categories', { userId, spaceId, type, name })
 
     // Check if user has admin access to this space
     const memberResult = await query(
@@ -102,7 +131,8 @@ export async function POST(request: NextRequest) {
     )
 
     if (memberResult.rows.length === 0 || !['owner', 'admin'].includes((memberResult.rows[0] as any).role)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      logger.warn('Insufficient permissions for file category/tag creation', { spaceId, userId })
+      return addSecurityHeaders(NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 }))
     }
 
     if (type === 'category') {
@@ -114,9 +144,11 @@ export async function POST(request: NextRequest) {
         [spaceId, name, description || '', color || '#3B82F6', icon || 'folder', userId]
       )
 
-      return NextResponse.json({
+      const duration = Date.now() - startTime
+      logger.apiResponse('POST', '/api/files/categories', 200, duration, { type: 'category', categoryId: categoryResult.rows[0].id })
+      return addSecurityHeaders(NextResponse.json({
         category: categoryResult.rows[0]
-      })
+      }))
     } else if (type === 'tag') {
       // Create tag
       const tagResult = await query(
@@ -126,15 +158,18 @@ export async function POST(request: NextRequest) {
         [spaceId, name, color || '#6B7280', userId]
       )
 
-      return NextResponse.json({
+      const duration = Date.now() - startTime
+      logger.apiResponse('POST', '/api/files/categories', 200, duration, { type: 'tag', tagId: tagResult.rows[0].id })
+      return addSecurityHeaders(NextResponse.json({
         tag: tagResult.rows[0]
-      })
+      }))
     } else {
-      return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
+      logger.warn('Invalid type for file category/tag creation', { type })
+      return addSecurityHeaders(NextResponse.json({ error: 'Invalid type' }, { status: 400 }))
     }
-
   } catch (error) {
-    console.error('Error creating category or tag:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/files/categories', 500, duration)
+    return handleApiError(error, 'File Categories API POST')
   }
 }

@@ -409,8 +409,8 @@ export function DragDropCanvas({
             className="absolute inset-0 opacity-20"
             style={{
               backgroundImage: `
-                linear-gradient(to right, #e5e7eb 1px, transparent 1px),
-                linear-gradient(to bottom, #e5e7eb 1px, transparent 1px)
+                linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
+                linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px)
               `,
               backgroundSize: `${gridSize}px ${gridSize}px`
             }}
@@ -436,7 +436,7 @@ export function DragDropCanvas({
             onMouseDown={(e) => handleMouseDown(e, component)}
           >
             {/* Component Content */}
-            <div className="w-full h-full bg-background border rounded p-2">
+            <div className="w-full h-full bg-background border border-border rounded p-2">
               <div className="text-sm font-medium mb-1">{component.name}</div>
               <div className="text-xs text-muted-foreground">
                 {component.type} - {component.size.width}×{component.size.height}

@@ -202,7 +202,7 @@ export function DashboardAnalytics({ dashboardId, onExportAnalytics }: Dashboard
           <select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
-            className="px-3 py-2 border rounded-md"
+            className="px-3 py-2 border border-border rounded-md"
           >
             <option value="1d">Last 24 hours</option>
             <option value="7d">Last 7 days</option>
@@ -317,7 +317,7 @@ export function DashboardAnalytics({ dashboardId, onExportAnalytics }: Dashboard
             <CardContent>
               <div className="space-y-3">
                 {analytics.topPages.map((page, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div key={index} className="flex items-center justify-between p-3 border border-border rounded-lg">
                     <div>
                       <div className="font-medium">{page.page}</div>
                       <div className="text-sm text-muted-foreground">

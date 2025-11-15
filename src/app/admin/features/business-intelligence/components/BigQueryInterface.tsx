@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -231,14 +231,14 @@ export function BigQueryInterface() {
   const [scheduledQueries, setScheduledQueries] = useState<any[]>([])
   const [queryComments, setQueryComments] = useState<any[]>([])
   const [queryVersions, setQueryVersions] = useState<any[]>([])
+  const [showJumpToLineDialog, setShowJumpToLineDialog] = useState(false)
+  const [jumpToLineNumber, setJumpToLineNumber] = useState('')
   
   // Query validation
   const { validateQuery } = useQueryValidation()
-  const [queryValidation, setQueryValidation] = useState<{
-    isValid: boolean
-    errors: string[]
-    warnings: string[]
-  }>({ isValid: true, errors: [], warnings: [] })
+  const queryValidation = useMemo(() => {
+    return validateQuery(query)
+  }, [query, validateQuery])
 
   // Load query history
   useEffect(() => {
@@ -253,11 +253,38 @@ export function BigQueryInterface() {
     }
   }, [spaces, selectedSpace])
 
-  // Validate query on change
+  // Keyboard shortcut for jump to line (Ctrl+G / Cmd+G)
   useEffect(() => {
-    const validation = validateQuery(query)
-    setQueryValidation(validation)
-  }, [query, validateQuery])
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
+        e.preventDefault()
+        setShowJumpToLineDialog(true)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  const handleJumpToLine = () => {
+    const line = parseInt(jumpToLineNumber)
+    if (!isNaN(line) && line > 0) {
+      if (codeEditorRef.current?.jumpToLine) {
+        codeEditorRef.current.jumpToLine(line)
+      } else {
+        // Fallback: scroll to line in query
+        const lines = query.split('\n')
+        if (line >= 1 && line <= lines.length) {
+          const lineElement = document.querySelector(`[data-line="${line}"]`)
+          if (lineElement) {
+            lineElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }
+        }
+      }
+      setShowJumpToLineDialog(false)
+      setJumpToLineNumber('')
+    }
+  }
 
 
   // Mock data loading functions
@@ -1217,10 +1244,52 @@ LIMIT 100;"
                 }
               }
             }}
+            onJumpToLineDialog={() => setShowJumpToLineDialog(true)}
           />
         </div>
       </div>
 
+      {/* Jump to Line Dialog */}
+      <Dialog open={showJumpToLineDialog} onOpenChange={setShowJumpToLineDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Jump to Line</DialogTitle>
+            <DialogDescription>
+              Enter the line number to jump to (Ctrl+G or Cmd+G)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="line-number">Line Number</Label>
+              <Input
+                id="line-number"
+                type="number"
+                min="1"
+                value={jumpToLineNumber}
+                onChange={(e) => setJumpToLineNumber(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleJumpToLine()
+                  }
+                }}
+                placeholder="Enter line number"
+                autoFocus
+              />
+              <p className="text-sm text-muted-foreground">
+                Total lines: {query.split('\n').length}
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowJumpToLineDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleJumpToLine} disabled={!jumpToLineNumber || isNaN(parseInt(jumpToLineNumber))}>
+              Jump
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Component Dialogs */}
       <QueryTemplates

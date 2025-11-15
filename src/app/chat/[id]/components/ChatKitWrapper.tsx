@@ -6,6 +6,7 @@ import * as Icons from 'lucide-react'
 import toast from 'react-hot-toast'
 import { ChatbotConfig } from '../types'
 import { getOverlayStyle } from '../utils/chatStyling'
+import { Z_INDEX } from '@/lib/z-index'
 
 interface ChatKitWrapperProps {
   chatkitModule: any
@@ -705,7 +706,9 @@ export function ChatKitWrapper({
                   flexDirection: 'row',
                   alignItems: 'center',
                   gap: 0,
-                  zIndex: ((chatbot as any).widgetZIndex || 9999) + 1,
+                  zIndex: ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) >= Z_INDEX.chatWidget 
+                    ? ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) + 1 
+                    : Z_INDEX.chatWidgetWindow,
                 }}
               >
                 <button
@@ -821,7 +824,9 @@ export function ChatKitWrapper({
             borderRadius: borderRadius,
             border: `${(chatbot as any).widgetBorderWidth || '0px'} solid ${(chatbot as any).widgetBorderColor || 'transparent'}`,
             boxShadow: boxShadow,
-            zIndex: ((chatbot as any).widgetZIndex || 9999) + 1,
+            zIndex: ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) >= Z_INDEX.chatWidget 
+              ? ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) + 1 
+              : Z_INDEX.chatWidgetWindow,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -919,9 +924,11 @@ export function ChatKitWrapper({
                 top: '50%',
                 left: '50%',
                 transform: 'translate(-50%, -50%)',
-                zIndex: ((chatbot as any).widgetZIndex || 9999) + 1,
+                zIndex: ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) >= Z_INDEX.chatWidget 
+                  ? ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) + 1 
+                  : Z_INDEX.chatWidgetWindow,
               } as React.CSSProperties) : {}),
-              zIndex: (chatbot as any).widgetZIndex || 9999,
+              zIndex: (chatbot as any).widgetZIndex || Z_INDEX.chatWidget,
               display: 'flex',
               flexDirection: 'column'
               }),

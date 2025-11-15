@@ -1,29 +1,43 @@
 'use client'
 
-import { ComponentType } from 'react'
+import { ComponentType, useEffect, useState } from 'react'
 
 // Optional devtools component that only loads if the package is installed
-let ReactQueryDevtools: ComponentType<any> | null = null
-
-if (process.env.NODE_ENV === 'development') {
-  try {
-    // Try to load the actual devtools package
-    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-    const devtools = require('@tanstack/react-query-devtools')
-    // Check if it's not the stub (stub exports null or the component is null)
-    if (devtools && devtools.ReactQueryDevtools && typeof devtools.ReactQueryDevtools !== 'undefined') {
-      ReactQueryDevtools = devtools.ReactQueryDevtools
-    }
-  } catch (e) {
-    // Package not installed, that's okay - webpack will use the stub
-    ReactQueryDevtools = null
-  }
-}
-
 export function OptionalReactQueryDevtools(props: { initialIsOpen?: boolean }) {
-  if (!ReactQueryDevtools) {
+  const [Devtools, setDevtools] = useState<ComponentType<any> | null>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!mounted || process.env.NODE_ENV !== 'development') {
+      return
+    }
+
+    // Use a function to construct the import path at runtime to prevent static analysis
+    const loadDevtools = async () => {
+      try {
+        // Construct module path dynamically to prevent Next.js from analyzing it
+        const packageName = '@tanstack' + '/react-query-devtools'
+        // @ts-ignore - optional dependency
+        const module = await import(/* webpackIgnore: true */ packageName)
+        if (module?.ReactQueryDevtools) {
+          setDevtools(() => module.ReactQueryDevtools)
+        }
+      } catch (error) {
+        // Package not installed, that's okay - fail silently
+        setDevtools(null)
+      }
+    }
+
+    loadDevtools()
+  }, [mounted])
+
+  if (!mounted || !Devtools) {
     return null
   }
-  return <ReactQueryDevtools {...props} />
+  return <Devtools {...props} />
 }
 

@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         message: 'Ticket updated in ServiceDesk successfully',
-        data: result.data,
+        data: result?.data || null,
         rateLimit: {
           remaining: rateLimitResult.remaining,
           resetTime: rateLimitResult.resetTime

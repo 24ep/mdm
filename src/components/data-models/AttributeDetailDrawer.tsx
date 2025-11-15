@@ -289,7 +289,7 @@ export function AttributeDetailDrawer({
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="h-screen w-[600px] flex flex-col">
-        <DrawerHeader className="border-b sticky top-0 bg-background z-10">
+        <DrawerHeader className="border-b border-border sticky top-0 bg-background z-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Type className="h-5 w-5" />
@@ -544,7 +544,7 @@ export function AttributeDetailDrawer({
                       </div>
 
                       {incrementConfig.enabled && (
-                        <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+                        <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                               <Label htmlFor="prefix">Prefix</Label>
@@ -613,7 +613,7 @@ export function AttributeDetailDrawer({
                             </div>
                           </div>
 
-                          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                          <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                             <div className="text-sm font-medium text-blue-800 mb-1">Preview</div>
                             <div className="text-sm text-blue-700">
                               Next value: {incrementConfig.prefix}{incrementConfig.startValue}{incrementConfig.suffix}
@@ -641,7 +641,7 @@ export function AttributeDetailDrawer({
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 border rounded-lg bg-primary/5">
+                      <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-primary/5">
                         <div className="flex items-center gap-3">
                           <GripVertical className="h-4 w-4 text-muted-foreground" />
                           <div>
@@ -679,7 +679,7 @@ export function AttributeDetailDrawer({
                             .map((attr, index) => (
                               <div
                                 key={attr.id}
-                                className={`flex items-center gap-3 p-3 border rounded-lg ${
+                                className={`flex items-center gap-3 p-3 border border-border rounded-lg ${
                                   attr.id === attribute.id ? 'bg-primary/10 border-primary' : 'bg-muted/50'
                                 }`}
                               >
@@ -730,7 +730,7 @@ export function AttributeDetailDrawer({
                   <CardContent>
                     <div className="space-y-2">
                       {(attribute as any).options && (attribute as any).options.length > 0 && (attribute as any).options.map((option: any, index: number) => (
-                        <div key={index} className="flex items-center gap-3 p-3 border rounded-lg">
+                        <div key={index} className="flex items-center gap-3 p-3 border border-border rounded-lg">
                           {/* Color Swatch */}
                           <div className="flex items-center gap-2">
                             <ColorInput
@@ -849,7 +849,7 @@ export function AttributeDetailDrawer({
                       ))}
                       
                       {showNewOption && (
-                        <div className="flex items-center gap-3 p-3 border-2 border-dashed border-blue-300 bg-blue-50 rounded-lg">
+                        <div className="flex items-center gap-3 p-3 border-2 border-dashed border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                           {/* Color Swatch */}
                           <div className="flex items-center gap-2">
                             <ColorInput
@@ -935,25 +935,25 @@ export function AttributeDetailDrawer({
                       <div className="space-y-4">
                         {/* Statistics Grid - Minimal Style */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <div className="p-3 border rounded-lg">
+                          <div className="p-3 border border-border rounded-lg">
                             <div className="text-2xl font-semibold text-gray-900">
                               {qualityStats.statistics.totalRecords.toLocaleString()}
                             </div>
                             <div className="text-sm text-gray-600">Total Records</div>
                           </div>
-                          <div className="p-3 border rounded-lg">
+                          <div className="p-3 border border-border rounded-lg">
                             <div className="text-2xl font-semibold text-gray-900">
                               {qualityStats.statistics.completionRate}%
                             </div>
                             <div className="text-sm text-gray-600">Completion Rate</div>
                           </div>
-                          <div className="p-3 border rounded-lg">
+                          <div className="p-3 border border-border rounded-lg">
                             <div className="text-2xl font-semibold text-gray-900">
                               {qualityStats.statistics.uniqueCount.toLocaleString()}
                             </div>
                             <div className="text-sm text-gray-600">Unique Values</div>
                           </div>
-                          <div className="p-3 border rounded-lg">
+                          <div className="p-3 border border-border rounded-lg">
                             <div className="text-2xl font-semibold text-gray-900">
                               {qualityStats.statistics.recentChanges}
                             </div>
@@ -967,7 +967,7 @@ export function AttributeDetailDrawer({
                             <h4 className="text-sm font-medium text-gray-900">Quality Issues</h4>
                             <div className="space-y-1">
                               {qualityStats.qualityIssues.map((issue: any, index: number) => (
-                                <div key={index} className="flex items-center justify-between p-2 border rounded text-sm">
+                                <div key={index} className="flex items-center justify-between p-2 border border-border rounded text-sm">
                                   <div className="flex items-center gap-2">
                                     <div className={`w-2 h-2 rounded-full ${
                                       issue.severity === 'error' ? 'bg-red-500' : 

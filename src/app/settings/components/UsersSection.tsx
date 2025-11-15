@@ -371,7 +371,7 @@ export function UsersSection() {
               <tr><td className="p-4" colSpan={8}>No users found</td></tr>
             ) : (
               users.map(u => (
-                <tr key={u.id} className="border-t hover:bg-muted/50">
+                <tr key={u.id} className="border-t border-border hover:bg-muted/50">
                   <td className="p-3">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={u.avatar || undefined} alt={u.name || 'User'} />

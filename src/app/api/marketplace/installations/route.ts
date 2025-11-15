@@ -1,0 +1,218 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { query } from '@/lib/db'
+import { logAPIRequest } from '@/shared/lib/security/audit-logger'
+import { storeCredentials } from '@/shared/lib/security/credential-manager'
+import { checkPermission } from '@/shared/lib/security/permission-checker'
+
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const spaceId = searchParams.get('spaceId')
+    const serviceId = searchParams.get('serviceId')
+
+    let whereConditions = ['si.deleted_at IS NULL']
+    const queryParams: any[] = []
+    let paramIndex = 1
+
+    if (spaceId) {
+      whereConditions.push(`si.space_id = $${paramIndex}`)
+      queryParams.push(spaceId)
+      paramIndex++
+    }
+
+    if (serviceId) {
+      whereConditions.push(`si.service_id = $${paramIndex}`)
+      queryParams.push(serviceId)
+      paramIndex++
+    }
+
+    // Check permission
+    const permission = await checkPermission({
+      resource: 'marketplace',
+      action: 'read',
+      spaceId: spaceId || null,
+    })
+
+    if (!permission.allowed) {
+      return NextResponse.json(
+        { error: 'Forbidden', reason: permission.reason },
+        { status: 403 }
+      )
+    }
+
+    const whereClause = whereConditions.join(' AND ')
+
+    const installationsQuery = `
+      SELECT 
+        si.id,
+        si.service_id,
+        si.space_id,
+        si.installed_by,
+        si.config,
+        si.status,
+        si.last_health_check,
+        si.health_status,
+        si.permissions,
+        si.installed_at,
+        si.updated_at,
+        json_build_object(
+          'id', sr.id,
+          'name', sr.name,
+          'slug', sr.slug,
+          'category', sr.category
+        ) as service
+      FROM service_installations si
+      JOIN service_registry sr ON sr.id = si.service_id
+      WHERE ${whereClause}
+      ORDER BY si.installed_at DESC
+    `
+
+    const result = await query(installationsQuery, queryParams)
+
+    const installations = result.rows.map((row: any) => ({
+      id: row.id,
+      serviceId: row.service_id,
+      spaceId: row.space_id,
+      installedBy: row.installed_by,
+      config: row.config,
+      status: row.status,
+      lastHealthCheck: row.last_health_check,
+      healthStatus: row.health_status,
+      permissions: row.permissions,
+      service: row.service,
+      installedAt: row.installed_at,
+      updatedAt: row.updated_at,
+    }))
+
+    await logAPIRequest(
+      session.user.id,
+      'GET',
+      '/api/marketplace/installations',
+      200,
+      spaceId || undefined
+    )
+
+    return NextResponse.json({ installations })
+  } catch (error) {
+    console.error('Error fetching installations:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { serviceId, spaceId, config, credentials } = body
+
+    if (!serviceId || !spaceId) {
+      return NextResponse.json(
+        { error: 'serviceId and spaceId are required' },
+        { status: 400 }
+      )
+    }
+
+    // Check permission
+    const permission = await checkPermission({
+      resource: 'marketplace',
+      action: 'install',
+      spaceId,
+    })
+
+    if (!permission.allowed) {
+      return NextResponse.json(
+        { error: 'Forbidden', reason: permission.reason },
+        { status: 403 }
+      )
+    }
+
+    // Check if already installed
+    const existing = await query(
+      `SELECT id FROM service_installations 
+       WHERE service_id = $1 AND space_id = $2 AND deleted_at IS NULL`,
+      [serviceId, spaceId]
+    )
+
+    if (existing.rows.length > 0) {
+      return NextResponse.json(
+        { error: 'Plugin already installed in this space' },
+        { status: 409 }
+      )
+    }
+
+    // Store credentials if provided
+    let credentialsStored = false
+    if (credentials) {
+      await storeCredentials(`plugin:${serviceId}:${spaceId}`, credentials)
+      credentialsStored = true
+    }
+
+    // Create installation
+    const result = await query(
+      `INSERT INTO service_installations (
+        id, service_id, space_id, installed_by, config, credentials, status, installed_at, updated_at
+      ) VALUES (
+        gen_random_uuid(), $1, $2, $3, $4, $5, 'active', NOW(), NOW()
+      ) RETURNING id`,
+      [
+        serviceId,
+        spaceId,
+        session.user.id,
+        config ? JSON.stringify(config) : '{}',
+        credentialsStored ? JSON.stringify({ stored: true }) : '{}',
+      ]
+    )
+
+    const installationId = result.rows[0].id
+
+    // Update installation count
+    await query(
+      `UPDATE service_registry 
+       SET installation_count = installation_count + 1, updated_at = NOW()
+       WHERE id = $1`,
+      [serviceId]
+    )
+
+    await logAPIRequest(
+      session.user.id,
+      'POST',
+      '/api/marketplace/installations',
+      201,
+      spaceId
+    )
+
+    return NextResponse.json(
+      { 
+        installation: {
+          id: installationId,
+          serviceId,
+          spaceId,
+          status: 'active',
+        },
+        message: 'Plugin installed successfully' 
+      },
+      { status: 201 }
+    )
+  } catch (error) {
+    console.error('Error installing plugin:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+

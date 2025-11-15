@@ -12,6 +12,7 @@ import { DataModelTreeView } from '@/components/data-model/DataModelTreeView'
 import { Database, Filter } from 'lucide-react'
 import { showSuccess, showError, showInfo, ToastMessages } from '@/lib/toast-utils'
 import { DataModel, Folder } from '../types'
+import { DataModelDialog } from './DataModelDialog'
 
 interface Space {
   id: string
@@ -35,6 +36,8 @@ export function DataModelManagement() {
   const [showEditFolderDialog, setShowEditFolderDialog] = useState(false)
   const [editingFolder, setEditingFolder] = useState<Folder | null>(null)
   const [editFolderName, setEditFolderName] = useState('')
+  const [showModelDialog, setShowModelDialog] = useState(false)
+  const [editingModel, setEditingModel] = useState<DataModel | null>(null)
 
   // Load spaces for filter
   useEffect(() => {
@@ -99,13 +102,17 @@ export function DataModelManagement() {
   }
 
   const handleCreateModel = () => {
-    showInfo('Create model functionality - redirect to space settings or implement here')
-    // TODO: Either redirect to space settings or implement create dialog here
+    setEditingModel(null)
+    setShowModelDialog(true)
   }
 
   const handleEditModel = (model: DataModel) => {
-    showInfo('Edit model functionality - redirect to space settings or implement here')
-    // TODO: Either redirect to space settings or implement edit dialog here
+    setEditingModel(model)
+    setShowModelDialog(true)
+  }
+
+  const handleModelDialogSuccess = () => {
+    loadModels()
   }
 
   const handleDeleteModel = async (model: DataModel) => {
@@ -422,6 +429,15 @@ export function DataModelManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Data Model Create/Edit Dialog */}
+      <DataModelDialog
+        open={showModelDialog}
+        onOpenChange={setShowModelDialog}
+        model={editingModel}
+        spaces={spaces}
+        onSuccess={handleModelDialogSuccess}
+      />
     </div>
   )
 }

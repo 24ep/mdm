@@ -45,7 +45,7 @@ export interface IntegrationConfig {
   config?: Record<string, any>
 }
 
-const INTEGRATIONS: Omit<IntegrationConfig, 'id' | 'isConfigured' | 'status' | 'config'>[] = [
+export const INTEGRATIONS: Omit<IntegrationConfig, 'id' | 'isConfigured' | 'status' | 'config'>[] = [
   {
     name: 'OpenMetadata',
     type: 'openmetadata',

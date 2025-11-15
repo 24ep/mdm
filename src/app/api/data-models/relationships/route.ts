@@ -2,18 +2,32 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
+import { logger } from '@/lib/logger'
+import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const { searchParams } = new URL(request.url)
-    const spaceId = searchParams.get('space_id')
-
-    if (!spaceId) {
-      return NextResponse.json({ error: 'Space ID is required' }, { status: 400 })
+    if (!session?.user) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
+
+    logger.apiRequest('GET', '/api/data-models/relationships', { userId: session.user.id })
+
+    const querySchema = z.object({
+      space_id: commonSchemas.id,
+    })
+
+    const queryValidation = validateQuery(request, querySchema)
+    if (!queryValidation.success) {
+      return addSecurityHeaders(queryValidation.response)
+    }
+
+    const { space_id: spaceId } = queryValidation.data
 
     // Get relationships from data model attributes that are foreign keys
     const relationshipsSql = `
@@ -68,19 +82,43 @@ export async function GET(request: NextRequest) {
       label: `${row.from_model_display_name} → ${row.to_model_display_name}`
     }))
 
-    return NextResponse.json({ relationships })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/data-models/relationships', 200, duration, {
+      relationshipCount: relationships.length,
+      spaceId,
+    })
+    return addSecurityHeaders(NextResponse.json({ relationships }))
   } catch (error) {
-    console.error('Error fetching relationships:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/data-models/relationships', 500, duration)
+    return handleApiError(error, 'Data Models Relationships API GET')
   }
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.user) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+    }
 
-    const body = await request.json()
+    logger.apiRequest('POST', '/api/data-models/relationships', { userId: session.user.id })
+
+    const bodySchema = z.object({
+      fromModel: commonSchemas.id,
+      toModel: commonSchemas.id,
+      fromAttribute: commonSchemas.id,
+      toAttribute: commonSchemas.id,
+      type: z.enum(['one-to-many', 'many-to-one', 'many-to-many', 'one-to-one']).optional().default('one-to-many'),
+      label: z.string().optional(),
+    })
+
+    const bodyValidation = await validateBody(request, bodySchema)
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+
     const { 
       fromModel, 
       toModel, 
@@ -88,11 +126,7 @@ export async function POST(request: NextRequest) {
       toAttribute, 
       type, 
       label 
-    } = body
-
-    if (!fromModel || !toModel || !fromAttribute || !toAttribute) {
-      return NextResponse.json({ error: 'Required fields missing' }, { status: 400 })
-    }
+    } = bodyValidation.data
 
     // For now, we'll just return the relationship data
     // In a full implementation, you might want to store relationships in a separate table
@@ -106,24 +140,42 @@ export async function POST(request: NextRequest) {
       label: label || ''
     }
 
-    return NextResponse.json({ relationship }, { status: 201 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/data-models/relationships', 201, duration, {
+      relationshipId: relationship.id,
+      fromModel,
+      toModel,
+    })
+    return addSecurityHeaders(NextResponse.json({ relationship }, { status: 201 }))
   } catch (error) {
-    console.error('Error creating relationship:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/data-models/relationships', 500, duration)
+    return handleApiError(error, 'Data Models Relationships API POST')
   }
 }
 
 export async function PUT(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const body = await request.json()
-    const { id, type, label } = body
-
-    if (!id) {
-      return NextResponse.json({ error: 'Relationship ID is required' }, { status: 400 })
+    if (!session?.user) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
+
+    logger.apiRequest('PUT', '/api/data-models/relationships', { userId: session.user.id })
+
+    const bodySchema = z.object({
+      id: z.string().min(1),
+      type: z.enum(['one-to-many', 'many-to-one', 'many-to-many', 'one-to-one']).optional(),
+      label: z.string().optional(),
+    })
+
+    const bodyValidation = await validateBody(request, bodySchema)
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+
+    const { id, type, label } = bodyValidation.data
 
     // For now, we'll just return the updated relationship data
     // In a full implementation, you might want to update relationships in a separate table
@@ -133,30 +185,45 @@ export async function PUT(request: NextRequest) {
       label: label || ''
     }
 
-    return NextResponse.json({ relationship })
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', '/api/data-models/relationships', 200, duration, { relationshipId: id })
+    return addSecurityHeaders(NextResponse.json({ relationship }))
   } catch (error) {
-    console.error('Error updating relationship:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', '/api/data-models/relationships', 500, duration)
+    return handleApiError(error, 'Data Models Relationships API PUT')
   }
 }
 
 export async function DELETE(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const { searchParams } = new URL(request.url)
-    const relationshipId = searchParams.get('id')
-
-    if (!relationshipId) {
-      return NextResponse.json({ error: 'Relationship ID is required' }, { status: 400 })
+    if (!session?.user) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
+
+    logger.apiRequest('DELETE', '/api/data-models/relationships', { userId: session.user.id })
+
+    const querySchema = z.object({
+      id: z.string().min(1),
+    })
+
+    const queryValidation = validateQuery(request, querySchema)
+    if (!queryValidation.success) {
+      return addSecurityHeaders(queryValidation.response)
+    }
+
+    const { id: relationshipId } = queryValidation.data
 
     // For now, we'll just return success
     // In a full implementation, you might want to delete relationships from a separate table
-    return NextResponse.json({ message: 'Relationship deleted successfully' })
+    const duration = Date.now() - startTime
+    logger.apiResponse('DELETE', '/api/data-models/relationships', 200, duration, { relationshipId })
+    return addSecurityHeaders(NextResponse.json({ message: 'Relationship deleted successfully' }))
   } catch (error) {
-    console.error('Error deleting relationship:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('DELETE', '/api/data-models/relationships', 500, duration)
+    return handleApiError(error, 'Data Models Relationships API DELETE')
   }
 }

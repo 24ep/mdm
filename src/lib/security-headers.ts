@@ -1,0 +1,131 @@
+/**
+ * Security Headers Middleware
+ * Provides security headers for Next.js API routes and pages
+ */
+
+import { NextRequest, NextResponse } from 'next/server'
+
+/**
+ * Security headers configuration
+ */
+const securityHeaders = {
+  'X-DNS-Prefetch-Control': 'on',
+  'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
+  'X-Frame-Options': 'SAMEORIGIN',
+  'X-Content-Type-Options': 'nosniff',
+  'X-XSS-Protection': '1; mode=block',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+  'Content-Security-Policy': [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // Note: unsafe-eval needed for some Next.js features
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: https:",
+    "font-src 'self' data:",
+    "connect-src 'self' https:",
+    "frame-ancestors 'self'",
+  ].join('; '),
+}
+
+/**
+ * Add security headers to a response
+ */
+export function addSecurityHeaders(response: NextResponse): NextResponse {
+  Object.entries(securityHeaders).forEach(([key, value]) => {
+    response.headers.set(key, value)
+  })
+  return response
+}
+
+/**
+ * Middleware to add security headers to API responses
+ */
+export function withSecurityHeaders<T extends NextResponse>(
+  response: T
+): T {
+  return addSecurityHeaders(response) as T
+}
+
+/**
+ * CORS configuration for API routes
+ */
+export interface CorsOptions {
+  origin?: string | string[] | ((origin: string | null) => boolean)
+  methods?: string[]
+  allowedHeaders?: string[]
+  credentials?: boolean
+  maxAge?: number
+}
+
+const defaultCorsOptions: Required<CorsOptions> = {
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: false,
+  maxAge: 86400, // 24 hours
+}
+
+/**
+ * Handle CORS preflight requests
+ */
+export function handleCors(request: NextRequest, options: CorsOptions = {}): NextResponse | null {
+  const opts = { ...defaultCorsOptions, ...options }
+  const origin = request.headers.get('origin')
+
+  // Handle preflight requests
+  if (request.method === 'OPTIONS') {
+    const response = new NextResponse(null, { status: 204 })
+    
+    // Set allowed origin
+    if (origin && (typeof opts.origin === 'function' 
+      ? opts.origin(origin)
+      : Array.isArray(opts.origin)
+      ? opts.origin.includes(origin)
+      : opts.origin === '*' || opts.origin === origin)) {
+      response.headers.set('Access-Control-Allow-Origin', origin)
+    } else if (opts.origin === '*') {
+      response.headers.set('Access-Control-Allow-Origin', '*')
+    }
+
+    response.headers.set('Access-Control-Allow-Methods', opts.methods.join(', '))
+    response.headers.set('Access-Control-Allow-Headers', opts.allowedHeaders.join(', '))
+    response.headers.set('Access-Control-Max-Age', String(opts.maxAge))
+    
+    if (opts.credentials) {
+      response.headers.set('Access-Control-Allow-Credentials', 'true')
+    }
+
+    return addSecurityHeaders(response)
+  }
+
+  return null
+}
+
+/**
+ * Add CORS headers to response
+ */
+export function addCorsHeaders(
+  request: NextRequest,
+  response: NextResponse,
+  options: CorsOptions = {}
+): NextResponse {
+  const opts = { ...defaultCorsOptions, ...options }
+  const origin = request.headers.get('origin')
+
+  if (origin && (typeof opts.origin === 'function'
+    ? opts.origin(origin)
+    : Array.isArray(opts.origin)
+    ? opts.origin.includes(origin)
+    : opts.origin === '*' || opts.origin === origin)) {
+    response.headers.set('Access-Control-Allow-Origin', origin)
+  } else if (opts.origin === '*') {
+    response.headers.set('Access-Control-Allow-Origin', '*')
+  }
+
+  if (opts.credentials) {
+    response.headers.set('Access-Control-Allow-Credentials', 'true')
+  }
+
+  return response
+}
+

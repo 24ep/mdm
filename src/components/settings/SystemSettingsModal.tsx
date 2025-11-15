@@ -22,6 +22,7 @@ import {
   Palette
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
+import { Z_INDEX } from '@/lib/z-index'
 
 interface SystemSettingsModalProps {
   open: boolean
@@ -39,7 +40,7 @@ interface SystemSettings {
 }
 
 const defaultSettings: SystemSettings = {
-  appName: 'Customer Data Management',
+  appName: 'Unified Data Platform',
   deletePolicyDays: 30,
   enableAuditTrail: true,
   enableNotifications: true,
@@ -118,7 +119,7 @@ export function SystemSettingsModal({ open, onOpenChange }: SystemSettingsModalP
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-background/95 backdrop-blur-sm">
+    <div className="fixed inset-0 bg-background/95 backdrop-blur-sm" style={{ zIndex: Z_INDEX.modal }}>
       <div className="fixed inset-0 bg-background">
         <div className="flex h-full flex-col">
           {/* Header */}
@@ -228,7 +229,7 @@ export function SystemSettingsModal({ open, onOpenChange }: SystemSettingsModalP
                               id="app-name"
                               value={settings.appName}
                               onChange={(e) => updateSetting('appName', e.target.value)}
-                              placeholder="Customer Data Management"
+                              placeholder="Unified Data Platform"
                             />
                             <p className="text-sm text-muted-foreground">
                               The name displayed in the application header

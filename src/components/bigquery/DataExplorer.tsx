@@ -223,9 +223,9 @@ export function DataExplorer({
 
 
   return (
-    <div className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col">
+    <div className="w-64 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col">
       {/* Header with Tabs */}
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-800">
         <div className="w-full">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2">

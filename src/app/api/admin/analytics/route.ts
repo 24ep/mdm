@@ -1,103 +1,192 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { query } from '@/lib/db'
+import { logAPIRequest } from '@/shared/lib/security/audit-logger'
+import { checkPermission } from '@/shared/lib/security/permission-checker'
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check permission
+    const permission = await checkPermission({
+      resource: 'analytics',
+      action: 'read',
+      spaceId: null,
+    })
+
+    if (!permission.allowed) {
+      return NextResponse.json(
+        { error: 'Forbidden', reason: permission.reason },
+        { status: 403 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const range = searchParams.get('range') || '7d'
     
-    // Mock analytics data based on range
-    const getDateRange = (range: string) => {
-      const now = new Date()
-      const ranges = {
-        '1d': 1,
-        '7d': 7,
-        '30d': 30,
-        '90d': 90
-      }
-      const days = ranges[range as keyof typeof ranges] || 7
-      const startDate = new Date(now.getTime() - (days * 24 * 60 * 60 * 1000))
-      return { startDate, endDate: now }
+    // Calculate date range
+    const now = new Date()
+    let startDate: Date
+    switch (range) {
+      case '1h':
+        startDate = new Date(now.getTime() - 60 * 60 * 1000)
+        break
+      case '24h':
+        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+        break
+      case '7d':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+        break
+      case '30d':
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+        break
+      default:
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
     }
 
-    const { startDate, endDate } = getDateRange(range)
-    
-    // Mock analytics data
-    const analytics = {
-      overview: {
-        totalUsers: 1250,
-        activeUsers: 890,
-        totalSpaces: 45,
-        totalDataModels: 234,
-        totalRecords: 15678,
-        storageUsed: '2.4 GB',
-        apiCalls: 45678
-      },
-      userActivity: {
-        labels: Array.from({ length: 7 }, (_, i) => {
-          const date = new Date()
-          date.setDate(date.getDate() - (6 - i))
-          return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-        }),
-        datasets: [
-          {
-            label: 'Active Users',
-            data: [45, 52, 48, 61, 55, 67, 73],
-            borderColor: 'rgb(59, 130, 246)',
-            backgroundColor: 'rgba(59, 130, 246, 0.1)'
-          },
-          {
-            label: 'New Users',
-            data: [12, 18, 15, 22, 19, 25, 28],
-            borderColor: 'rgb(16, 185, 129)',
-            backgroundColor: 'rgba(16, 185, 129, 0.1)'
-          }
-        ]
-      },
-      spaceUsage: [
-        { name: 'Development', users: 25, dataModels: 12, records: 2340, storage: '450 MB' },
-        { name: 'Production', users: 45, dataModels: 28, records: 8900, storage: '1.2 GB' },
-        { name: 'Testing', users: 15, dataModels: 8, records: 1200, storage: '200 MB' },
-        { name: 'Analytics', users: 8, dataModels: 5, records: 890, storage: '150 MB' }
-      ],
-      systemMetrics: {
-        cpuUsage: 45,
-        memoryUsage: 67,
-        diskUsage: 34,
-        networkLatency: 12
-      },
-      recentActivity: [
-        {
-          id: '1',
-          type: 'user_login',
-          user: 'john.doe@example.com',
-          space: 'Development',
-          timestamp: new Date(Date.now() - 5 * 60 * 1000),
-          description: 'User logged in'
-        },
-        {
-          id: '2',
-          type: 'data_model_created',
-          user: 'jane.smith@example.com',
-          space: 'Production',
-          timestamp: new Date(Date.now() - 15 * 60 * 1000),
-          description: 'Created new data model "Customer Orders"'
-        },
-        {
-          id: '3',
-          type: 'space_created',
-          user: 'admin@example.com',
-          space: 'Analytics',
-          timestamp: new Date(Date.now() - 30 * 60 * 1000),
-          description: 'Created new space "Analytics"'
-        }
-      ]
-    }
+    // Get system metrics
+    const systemMetrics = await query(
+      `SELECT 
+        COUNT(DISTINCT al.user_id) as active_users,
+        COUNT(*) as total_requests,
+        COUNT(*) FILTER (WHERE al.created_at >= $1) as recent_requests,
+        COUNT(*) FILTER (WHERE al.action = 'api_request' AND al.details->>'statusCode'::text = '200') as successful_requests,
+        COUNT(*) FILTER (WHERE al.action = 'api_request' AND al.details->>'statusCode'::text != '200') as failed_requests
+      FROM audit_logs al
+      WHERE al.created_at >= $1`,
+      [startDate]
+    )
 
-    return NextResponse.json(analytics)
+    // Get activity data (requests per day)
+    const activityData = await query(
+      `SELECT 
+        DATE(al.created_at) as date,
+        COUNT(*) as count,
+        COUNT(DISTINCT al.user_id) as unique_users
+      FROM audit_logs al
+      WHERE al.created_at >= $1
+      GROUP BY DATE(al.created_at)
+      ORDER BY date ASC`,
+      [startDate]
+    )
+
+    // Get storage usage (from data models and files)
+    const storageData = await query(
+      `SELECT 
+        'data_models' as type,
+        COUNT(*) as count,
+        COUNT(*) * 1024 as estimated_bytes
+      FROM data_models
+      WHERE deleted_at IS NULL
+      UNION ALL
+      SELECT 
+        'tickets' as type,
+        COUNT(*) as count,
+        COUNT(*) * 512 as estimated_bytes
+      FROM tickets
+      WHERE deleted_at IS NULL
+      UNION ALL
+      SELECT 
+        'reports' as type,
+        COUNT(*) as count,
+        COUNT(*) * 2048 as estimated_bytes
+      FROM reports
+      WHERE deleted_at IS NULL`
+    )
+
+    // Get performance data (API response times)
+    const performanceData = await query(
+      `SELECT 
+        DATE(al.created_at) as date,
+        AVG(CAST(al.details->>'duration' AS INTEGER)) as avg_duration,
+        MAX(CAST(al.details->>'duration' AS INTEGER)) as max_duration,
+        MIN(CAST(al.details->>'duration' AS INTEGER)) as min_duration
+      FROM audit_logs al
+      WHERE al.action = 'api_request'
+        AND al.details->>'duration' IS NOT NULL
+        AND al.created_at >= $1
+      GROUP BY DATE(al.created_at)
+      ORDER BY date ASC`,
+      [startDate]
+    )
+
+    // Get top endpoints
+    const topEndpoints = await query(
+      `SELECT 
+        al.details->>'path' as endpoint,
+        COUNT(*) as count,
+        AVG(CAST(al.details->>'duration' AS INTEGER)) as avg_duration
+      FROM audit_logs al
+      WHERE al.action = 'api_request'
+        AND al.created_at >= $1
+      GROUP BY al.details->>'path'
+      ORDER BY count DESC
+      LIMIT 10`,
+      [startDate]
+    )
+
+    // Get error rate
+    const errorRate = await query(
+      `SELECT 
+        COUNT(*) FILTER (WHERE al.details->>'statusCode'::text != '200') * 100.0 / 
+        NULLIF(COUNT(*), 0) as error_rate
+      FROM audit_logs al
+      WHERE al.action = 'api_request'
+        AND al.created_at >= $1`,
+      [startDate]
+    )
+
+    const metrics = systemMetrics.rows[0] || {}
+    const errorRateValue = errorRate.rows[0]?.error_rate || 0
+
+    await logAPIRequest(
+      session.user.id,
+      'GET',
+      '/api/admin/analytics',
+      200,
+      undefined
+    )
+
+    return NextResponse.json({
+      metrics: {
+        activeUsers: parseInt(metrics.active_users || '0'),
+        totalRequests: parseInt(metrics.total_requests || '0'),
+        recentRequests: parseInt(metrics.recent_requests || '0'),
+        successfulRequests: parseInt(metrics.successful_requests || '0'),
+        failedRequests: parseInt(metrics.failed_requests || '0'),
+        errorRate: parseFloat(errorRateValue.toString()),
+      },
+      activityData: activityData.rows.map((row: any) => ({
+        date: row.date,
+        count: parseInt(row.count),
+        uniqueUsers: parseInt(row.unique_users),
+      })),
+      storageData: storageData.rows.map((row: any) => ({
+        type: row.type,
+        count: parseInt(row.count),
+        bytes: parseInt(row.estimated_bytes),
+      })),
+      performanceData: performanceData.rows.map((row: any) => ({
+        date: row.date,
+        avgDuration: parseFloat(row.avg_duration || '0'),
+        maxDuration: parseFloat(row.max_duration || '0'),
+        minDuration: parseFloat(row.min_duration || '0'),
+      })),
+      topEndpoints: topEndpoints.rows.map((row: any) => ({
+        endpoint: row.endpoint,
+        count: parseInt(row.count),
+        avgDuration: parseFloat(row.avg_duration || '0'),
+      })),
+    })
   } catch (error) {
-    console.error('Analytics API error:', error)
+    console.error('Error fetching analytics:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch analytics data' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

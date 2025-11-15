@@ -1,17 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import { requireRole } from '@/lib/rbac'
+import { logger } from '@/lib/logger'
+import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 // GET /api/users/[id]/space-associations - get user's space associations
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   const forbidden = await requireRole(request, 'MANAGER')
-  if (forbidden) return forbidden
+  if (forbidden) return addSecurityHeaders(forbidden)
 
   try {
-    const { id } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id } = paramValidation.data
+    logger.apiRequest('GET', `/api/users/${id}/space-associations`)
     const { rows } = await query(`
       SELECT 
         sm.id,
@@ -28,13 +44,15 @@ export async function GET(
       ORDER BY s.is_default DESC, s.name ASC
     `, [id])
 
-    return NextResponse.json({ spaces: rows })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', `/api/users/${id}/space-associations`, 200, duration, {
+      spaceCount: rows.length
+    })
+    return addSecurityHeaders(NextResponse.json({ spaces: rows }))
   } catch (error) {
-    console.error('Error fetching user space associations:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch user space associations' },
-      { status: 500 }
-    )
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'User Space Associations API GET')
   }
 }
 
@@ -43,34 +61,36 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   const forbidden = await requireRole(request, 'MANAGER')
-  if (forbidden) return forbidden
+  if (forbidden) return addSecurityHeaders(forbidden)
 
   try {
-    const { id } = await params
-    const body = await request.json()
-    const { spaces } = body
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id } = paramValidation.data
+    logger.apiRequest('PUT', `/api/users/${id}/space-associations`)
 
-    if (!Array.isArray(spaces)) {
-      return NextResponse.json({ error: 'Spaces must be an array' }, { status: 400 })
+    const bodySchema = z.object({
+      spaces: z.array(z.object({
+        space_id: commonSchemas.id,
+        role: z.enum(['owner', 'admin', 'member', 'viewer']),
+      })),
+    })
+
+    const bodyValidation = await validateBody(request, bodySchema)
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
     }
 
-    // Validate space associations
-    for (const space of spaces) {
-      if (!space.space_id || !space.role) {
-        return NextResponse.json(
-          { error: 'Each space association must have space_id and role' },
-          { status: 400 }
-        )
-      }
-      
-      if (!['owner', 'admin', 'member'].includes(space.role)) {
-        return NextResponse.json(
-          { error: 'Invalid role. Must be owner, admin, or member' },
-          { status: 400 }
-        )
-      }
-    }
+    const { spaces } = bodyValidation.data
 
     // Start transaction
     await query('BEGIN')
@@ -107,17 +127,19 @@ export async function PUT(
         ORDER BY s.is_default DESC, s.name ASC
       `, [id])
 
-      return NextResponse.json({ spaces: rows })
+      const duration = Date.now() - startTime
+      logger.apiResponse('PUT', `/api/users/${id}/space-associations`, 200, duration, {
+        spaceCount: rows.length
+      })
+      return addSecurityHeaders(NextResponse.json({ spaces: rows }))
     } catch (error) {
       // Rollback transaction
       await query('ROLLBACK')
       throw error
     }
   } catch (error) {
-    console.error('Error updating user space associations:', error)
-    return NextResponse.json(
-      { error: 'Failed to update user space associations' },
-      { status: 500 }
-    )
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'User Space Associations API PUT')
   }
 }

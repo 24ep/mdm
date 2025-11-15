@@ -90,7 +90,7 @@ export function CodeCell({
       case 'success': return <CheckCircle className="h-4 w-4 text-green-500" />
       case 'error': return <XCircle className="h-4 w-4 text-red-500" />
       case 'running': return <Clock className="h-4 w-4 text-blue-500 animate-spin" />
-      default: return <Play className="h-4 w-4 text-gray-400" />
+      default: return <Play className="h-4 w-4 text-muted-foreground" />
     }
   }
 
@@ -200,10 +200,10 @@ console.log("Hello, TypeScript!");`
     if (output.chart) {
       return (
         <div className="mt-4">
-          <div className="bg-white border rounded-lg p-4">
+          <div className="bg-background border border-border rounded-lg p-4">
             <h4 className="text-sm font-medium mb-2">Chart</h4>
-            <div className="h-64 bg-gray-100 rounded flex items-center justify-center">
-              <span className="text-gray-500">Chart visualization would appear here</span>
+            <div className="h-64 bg-muted rounded flex items-center justify-center">
+              <span className="text-muted-foreground">Chart visualization would appear here</span>
             </div>
           </div>
         </div>
@@ -213,24 +213,24 @@ console.log("Hello, TypeScript!");`
     if (output.table) {
       return (
         <div className="mt-4">
-          <div className="bg-white border rounded-lg overflow-hidden">
+          <div className="bg-background border border-border rounded-lg overflow-hidden">
             <h4 className="text-sm font-medium p-3 border-b">Data Table</h4>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-border">
+                <thead className="bg-muted">
                   <tr>
                     {output.columns?.map((col: string, index: number) => (
-                      <th key={index} className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                      <th key={index} className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase">
                         {col}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-background divide-y divide-border">
                   {output.data?.slice(0, 10).map((row: any, rowIndex: number) => (
                     <tr key={rowIndex}>
                       {output.columns?.map((col: string, colIndex: number) => (
-                        <td key={colIndex} className="px-4 py-2 text-sm text-gray-900">
+                        <td key={colIndex} className="px-4 py-2 text-sm text-foreground">
                           {row[col]}
                         </td>
                       ))}
@@ -239,7 +239,7 @@ console.log("Hello, TypeScript!");`
                 </tbody>
               </table>
               {output.data?.length > 10 && (
-                <div className="px-4 py-2 text-xs text-gray-500 bg-gray-50">
+                <div className="px-4 py-2 text-xs text-muted-foreground bg-muted">
                   Showing 10 of {output.data.length} rows
                 </div>
               )}
@@ -251,8 +251,8 @@ console.log("Hello, TypeScript!");`
 
     return (
       <div className="mt-4">
-        <div className="bg-gray-50 border rounded-lg p-3">
-          <pre className="text-sm text-gray-800 whitespace-pre-wrap font-mono">
+        <div className="bg-muted border border-border rounded-lg p-3">
+          <pre className="text-sm text-foreground whitespace-pre-wrap font-mono">
             {formatOutput(output)}
           </pre>
         </div>
@@ -367,7 +367,7 @@ console.log("Hello, TypeScript!");`
               onFocus={onFocus}
               className={cn(
                 "w-full min-h-[120px] p-3 border rounded-md font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500",
-                isEditing ? "border-blue-300" : "border-gray-200"
+                isEditing ? "border-blue-300" : "border-border"
               )}
               placeholder={getLanguageSyntax(language)}
               style={{
@@ -400,7 +400,7 @@ console.log("Hello, TypeScript!");`
               </div>
               
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-muted-foreground">
                   Ctrl+Enter to run
                 </span>
                 <Button
@@ -430,7 +430,7 @@ console.log("Hello, TypeScript!");`
             <div className="border-t pt-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <h4 className="text-sm font-medium text-gray-700">Output</h4>
+                  <h4 className="text-sm font-medium text-foreground">Output</h4>
                   {status === 'success' && (
                     <Badge variant="outline" className="text-xs text-green-600">
                       Success

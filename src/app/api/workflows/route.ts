@@ -2,20 +2,35 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
+import { logger } from '@/lib/logger'
+import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { searchParams } = new URL(request.url)
-    const dataModelId = searchParams.get('data_model_id')
-    const status = searchParams.get('status')
-    const triggerType = searchParams.get('trigger_type')
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
+    // Validate query parameters
+    const queryValidation = validateQuery(request, z.object({
+      data_model_id: commonSchemas.id.optional(),
+      status: z.string().optional(),
+      trigger_type: z.string().optional(),
+      page: z.string().optional().transform((val) => parseInt(val || '1')).pipe(z.number().int().positive()).optional().default(1),
+      limit: z.string().optional().transform((val) => parseInt(val || '20')).pipe(z.number().int().positive().max(100)).optional().default(20),
+    }))
+    
+    if (!queryValidation.success) {
+      return addSecurityHeaders(queryValidation.response)
+    }
+    
+    const { data_model_id: dataModelId, status, trigger_type: triggerType, page, limit = 20 } = queryValidation.data
+    logger.apiRequest('GET', '/api/workflows', { userId: session.user.id, page, limit, dataModelId, status, triggerType })
 
     const offset = (page - 1) * limit
 
@@ -85,7 +100,9 @@ export async function GET(request: NextRequest) {
     const { rows: countRows } = await query(countQuery, params.slice(0, -2))
     const total = parseInt(countRows[0].total)
 
-    return NextResponse.json({
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/workflows', 200, duration, { total })
+    return addSecurityHeaders(NextResponse.json({
       workflows,
       pagination: {
         page,
@@ -93,22 +110,38 @@ export async function GET(request: NextRequest) {
         total,
         pages: Math.ceil(total / limit)
       }
-    })
-
+    }))
   } catch (error) {
-    console.error('Error fetching workflows:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/workflows', 500, duration)
+    return handleApiError(error, 'Workflows API GET')
   }
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const body = await request.json()
+    // Validate request body
+    const bodyValidation = await validateBody(request, z.object({
+      name: z.string().min(1, 'Name is required'),
+      description: z.string().optional(),
+      data_model_id: commonSchemas.id,
+      trigger_type: z.enum(['SCHEDULED', 'EVENT_BASED', 'MANUAL']),
+      status: z.string().optional().default('ACTIVE'),
+      conditions: z.array(z.any()).optional().default([]),
+      actions: z.array(z.any()).optional().default([]),
+      schedule: z.any().optional().nullable().default(null),
+    }))
+    
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+    
     const {
       name,
       description,
@@ -118,21 +151,8 @@ export async function POST(request: NextRequest) {
       conditions = [],
       actions = [],
       schedule = null
-    } = body
-
-    if (!name || !data_model_id || !trigger_type) {
-      return NextResponse.json({ 
-        error: 'Missing required fields: name, data_model_id, trigger_type' 
-      }, { status: 400 })
-    }
-
-    // Validate trigger type
-    const validTriggerTypes = ['SCHEDULED', 'EVENT_BASED', 'MANUAL']
-    if (!validTriggerTypes.includes(trigger_type)) {
-      return NextResponse.json({ 
-        error: 'Invalid trigger_type. Must be one of: ' + validTriggerTypes.join(', ') 
-      }, { status: 400 })
-    }
+    } = bodyValidation.data
+    logger.apiRequest('POST', '/api/workflows', { userId: session.user.id, name, trigger_type })
 
     // Create workflow
     const { rows: workflowRows } = await query(
@@ -217,10 +237,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ workflow }, { status: 201 })
-
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/workflows', 201, duration, { workflowId: workflow.id })
+    return addSecurityHeaders(NextResponse.json({ workflow }, { status: 201 }))
   } catch (error) {
-    console.error('Error creating workflow:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/workflows', 500, duration)
+    return handleApiError(error, 'Workflows API POST')
   }
 }

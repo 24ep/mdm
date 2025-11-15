@@ -39,7 +39,9 @@ import {
 import { addRecentItem, getRecentItems, type RecentItem } from '@/lib/recent-items'
 import { PlatformLayout } from '@/components/platform/PlatformLayout'
 import { BigQueryInterface } from './admin/features/business-intelligence/components/BigQueryInterface'
-import { KnowledgeBase } from './admin/features/content'
+import { OutlineKnowledgeBase } from '@/features/knowledge'
+import { MarketplaceHome } from '@/features/marketplace'
+import { InfrastructureOverview } from '@/features/infrastructure'
 import { ProjectsList } from '@/components/datascience/ProjectsList'
 import { AttachmentManager } from './admin/features/content'
 import { UserManagement, RoleManagement, PermissionTester } from './admin/features/users'
@@ -75,7 +77,9 @@ const getRouteForTab = (tab: string): string => {
     'notebook': '/tools/notebook',
     'ai-analyst': '/tools/ai-analyst',
     'ai-chat-ui': '/tools/ai-chat-ui',
-    'knowledge-base': '/tools/knowledge-base',
+    'knowledge-base': '/knowledge',
+    'marketplace': '/marketplace',
+    'infrastructure': '/infrastructure',
     'projects': '/tools/projects',
     'bi': '/tools/bi',
     'storage': '/tools/storage',
@@ -295,7 +299,7 @@ export default function HomePage() {
                         >
                           <IconComponent className="h-8 w-8 text-white" />
                         </div>
-                        <span className="text-xs text-center text-gray-700 dark:text-gray-300 max-w-[80px] truncate">
+                        <span className="text-xs text-center text-foreground max-w-[80px] truncate">
                           {item.name}
                         </span>
                       </button>
@@ -479,8 +483,8 @@ export default function HomePage() {
 
             <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('settings')}>
               <CardHeader className="flex flex-row items-center gap-3">
-                <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-900/20">
-                  <Settings className="h-6 w-6 text-gray-600 dark:text-gray-400" />
+                <div className="p-2 rounded-lg bg-muted">
+                  <Settings className="h-6 w-6 text-muted-foreground" />
                 </div>
                 <div>
                   <CardTitle className="text-lg">System Settings</CardTitle>
@@ -574,7 +578,19 @@ export default function HomePage() {
         {activeTab === 'kernels' && <KernelManagement />}
         {activeTab === 'ai-analyst' && <AIAnalyst />}
         {activeTab === 'ai-chat-ui' && <AIChatUI />}
-        {activeTab === 'knowledge-base' && <KnowledgeBase />}
+        {activeTab === 'knowledge-base' && <OutlineKnowledgeBase />}
+        {activeTab === 'marketplace' && (
+          <MarketplaceHome 
+            spaceId={selectedSpace || undefined}
+            showSpaceSelector={true}
+          />
+        )}
+        {activeTab === 'infrastructure' && (
+          <InfrastructureOverview 
+            spaceId={selectedSpace || undefined}
+            showSpaceSelector={true}
+          />
+        )}
         {activeTab === 'integrations' && <IntegrationHub />}
         {activeTab === 'settings' && <SystemSettings />}
         {activeTab === 'space-layouts' && <SpaceLayoutsAdmin />}

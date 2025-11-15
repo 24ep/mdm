@@ -38,12 +38,14 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // TODO: In a production system, you would:
-    // 1. Queue a background job to process the export
-    // 2. Fetch data from the data model based on filters
-    // 3. Format data according to the specified format
-    // 4. Upload the file to storage and update the job with fileUrl
-    // For now, we just create the job record
+    // Queue job for processing
+    const { jobQueue } = await import('@/shared/lib/jobs/job-queue')
+    await jobQueue.add({
+      id: exportJob.id,
+      type: 'export',
+      status: 'PENDING',
+      progress: 0,
+    })
 
     return NextResponse.json({ 
       job: exportJob,

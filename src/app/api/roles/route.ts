@@ -1,14 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import { requireRole } from '@/lib/rbac'
+import { logger } from '@/lib/logger'
+import { validateQuery, validateBody } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 // GET /api/roles - list roles and their permissions (ADMIN+)
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
   const forbidden = await requireRole(request, 'ADMIN')
-  if (forbidden) return forbidden
+  if (forbidden) return addSecurityHeaders(forbidden)
   try {
-    const { searchParams } = new URL(request.url)
-    const level = searchParams.get('level') // 'global' or 'space' or null for all
+    logger.apiRequest('GET', '/api/roles')
+
+    const querySchema = z.object({
+      level: z.enum(['global', 'space']).optional(),
+    })
+
+    const queryValidation = validateQuery(request, querySchema)
+    if (!queryValidation.success) {
+      return addSecurityHeaders(queryValidation.response)
+    }
+
+    const level = queryValidation.data.level // 'global' or 'space' or null for all
 
     // Note: level and is_system columns don't exist in the database schema
     // They are set as defaults in the response mapping below
@@ -46,20 +62,38 @@ export async function GET(request: NextRequest) {
       result = result.filter(r => r.level === level)
     }
     
-    return NextResponse.json({ roles: result })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/roles', 200, duration, {
+      roleCount: result.length
+    })
+    return addSecurityHeaders(NextResponse.json({ roles: result }))
   } catch (error) {
-    console.error('List roles error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/roles', 500, duration)
+    return handleApiError(error, 'Roles API GET')
   }
 }
 
 // POST /api/roles - create role (ADMIN+)
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
   const forbidden = await requireRole(request, 'ADMIN')
-  if (forbidden) return forbidden
+  if (forbidden) return addSecurityHeaders(forbidden)
   try {
-    const { name, description, level } = await request.json()
-    if (!name) return NextResponse.json({ error: 'name is required' }, { status: 400 })
+    logger.apiRequest('POST', '/api/roles')
+
+    const bodySchema = z.object({
+      name: z.string().min(1),
+      description: z.string().optional().nullable(),
+      level: z.enum(['global', 'space']).optional().default('space'),
+    })
+
+    const bodyValidation = await validateBody(request, bodySchema)
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+
+    const { name, description, level } = bodyValidation.data
     
     // Note: level and is_system columns don't exist in the database schema
     // They are set as defaults in the response below
@@ -68,19 +102,25 @@ export async function POST(request: NextRequest) {
       'INSERT INTO public.roles (name, description) VALUES ($1, $2) RETURNING id, name, description',
       [name, description || null]
     )
-    return NextResponse.json({ 
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/roles', 201, duration, {
+      roleId: rows[0].id
+    })
+    return addSecurityHeaders(NextResponse.json({ 
       role: {
         ...rows[0],
         isSystem: false,
         level: roleLevel
       }
-    }, { status: 201 })
+    }, { status: 201 }))
   } catch (error: any) {
+    const duration = Date.now() - startTime
     if (String(error?.message || '').includes('duplicate')) {
-      return NextResponse.json({ error: 'Role already exists' }, { status: 409 })
+      logger.warn('Role already exists', { name })
+      return addSecurityHeaders(NextResponse.json({ error: 'Role already exists' }, { status: 409 }))
     }
-    console.error('Create role error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    logger.apiResponse('POST', '/api/roles', 500, duration)
+    return handleApiError(error, 'Roles API POST')
   }
 }
 

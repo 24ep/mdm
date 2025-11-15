@@ -2,15 +2,32 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
+import { logger } from '@/lib/logger'
+import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.user) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+    }
 
-    const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '10')
+    // Validate query parameters
+    const queryValidation = validateQuery(request, z.object({
+      page: z.string().optional().transform((val) => parseInt(val || '1')).pipe(z.number().int().positive()).optional().default(1),
+      limit: z.string().optional().transform((val) => parseInt(val || '10')).pipe(z.number().int().positive().max(100)).optional().default(10),
+    }))
+    
+    if (!queryValidation.success) {
+      return addSecurityHeaders(queryValidation.response)
+    }
+    
+    const { page, limit } = queryValidation.data
+    logger.apiRequest('GET', '/api/spaces', { userId: session.user.id, page, limit })
 
     const offset = (page - 1) * limit
 
@@ -59,35 +76,42 @@ export async function GET(request: NextRequest) {
     ])
     
     const total = totalRows[0]?.total || 0
-    return NextResponse.json({
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/spaces', 200, duration, { total })
+    return addSecurityHeaders(NextResponse.json({
       spaces: spaces || [],
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
-    })
+    }))
   } catch (error) {
-    console.error('Error fetching spaces:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch spaces' },
-      { status: 500 }
-    )
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/spaces', 500, duration)
+    return handleApiError(error, 'Spaces API GET')
   }
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const body = await request.json()
-    const { name, description, slug, is_default = false, tags = [] } = body
-
-    if (!name || name.trim().length === 0) {
-      return NextResponse.json(
-        { error: 'Space name is required' },
-        { status: 400 }
-      )
+    // Validate request body
+    const bodyValidation = await validateBody(request, z.object({
+      name: z.string().min(1, 'Space name is required'),
+      description: z.string().optional(),
+      slug: z.string().optional(),
+      is_default: z.boolean().optional().default(false),
+      tags: z.array(z.string()).optional().default([]),
+    }))
+    
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
     }
+    
+    const { name, description, slug, is_default = false, tags = [] } = bodyValidation.data
+    logger.apiRequest('POST', '/api/spaces', { userId: session.user.id, name })
 
     const spaceSlug = slug?.trim() || name.toLowerCase().replace(/\s+/g, '-')
 
@@ -150,7 +174,9 @@ export async function POST(request: NextRequest) {
       [newSpace.id, session.user.id, 'ADMIN']
     )
 
-    return NextResponse.json({
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/spaces', 201, duration, { spaceId: newSpace.id })
+    return addSecurityHeaders(NextResponse.json({
       space: {
         ...newSpace,
         tags: tagsColumnExists 
@@ -158,12 +184,10 @@ export async function POST(request: NextRequest) {
           : []
       },
       message: 'Space created successfully'
-    }, { status: 201 })
+    }, { status: 201 }))
   } catch (error: any) {
-    console.error('Error creating space:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to create space' },
-      { status: 500 }
-    )
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/spaces', 500, duration)
+    return handleApiError(error, 'Spaces API POST')
   }
 }

@@ -820,7 +820,7 @@ export function StorageConnections() {
               />
               <Label>Active</Label>
             </div>
-            <div className="border-t pt-4">
+            <div className="border-t border-border pt-4">
               <Label className="text-base font-semibold mb-4 block">
                 {STORAGE_TYPES.find((t) => t.value === formData.type)?.label} Configuration
               </Label>

@@ -2,18 +2,35 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
+import { logger } from '@/lib/logger'
+import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; userId: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id: spaceId, userId } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+      userId: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id: spaceId, userId } = paramValidation.data
+    logger.apiRequest('GET', `/api/spaces/${spaceId}/members/${userId}/permissions`, { userId: session.user.id })
 
     // Check if current user has permission to view member permissions
     const memberCheck = await query(`
@@ -22,7 +39,8 @@ export async function GET(
     `, [spaceId, session.user.id])
 
     if (memberCheck.rows.length === 0 || !['owner', 'admin'].includes(memberCheck.rows[0].role)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      logger.warn('Insufficient permissions to view member permissions', { spaceId, targetUserId: userId, userId: session.user.id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 }))
     }
 
     // Get member permissions
@@ -31,15 +49,15 @@ export async function GET(
       WHERE space_id = $1::uuid AND user_id = $2::uuid
     `, [spaceId, userId])
 
-    return NextResponse.json({
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', `/api/spaces/${spaceId}/members/${userId}/permissions`, 200, duration)
+    return addSecurityHeaders(NextResponse.json({
       permissions: permissions.rows[0]?.permissions || []
-    })
+    }))
   } catch (error) {
-    console.error('Error fetching member permissions:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch member permissions' },
-      { status: 500 }
-    )
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Space Member Permissions API GET')
   }
 }
 
@@ -47,19 +65,36 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; userId: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id: spaceId, userId } = await params
-    const body = await request.json()
-    const { permissions } = body
-
-    if (!Array.isArray(permissions)) {
-      return NextResponse.json({ error: 'Permissions must be an array' }, { status: 400 })
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+      userId: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
     }
+    
+    const { id: spaceId, userId } = paramValidation.data
+    logger.apiRequest('PUT', `/api/spaces/${spaceId}/members/${userId}/permissions`, { userId: session.user.id })
+
+    const bodySchema = z.object({
+      permissions: z.array(z.string()),
+    })
+
+    const bodyValidation = await validateBody(request, bodySchema)
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+
+    const { permissions } = bodyValidation.data
 
     // Check if current user has permission to manage member permissions
     const memberCheck = await query(`
@@ -68,7 +103,8 @@ export async function PUT(
     `, [spaceId, session.user.id])
 
     if (memberCheck.rows.length === 0 || !['owner', 'admin'].includes(memberCheck.rows[0].role)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      logger.warn('Insufficient permissions to update member permissions', { spaceId, targetUserId: userId, userId: session.user.id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 }))
     }
 
     // Check if target user is a member of the space
@@ -78,12 +114,14 @@ export async function PUT(
     `, [spaceId, userId])
 
     if (targetMemberCheck.rows.length === 0) {
-      return NextResponse.json({ error: 'User is not a member of this space' }, { status: 404 })
+      logger.warn('User is not a member of space', { spaceId, targetUserId: userId })
+      return addSecurityHeaders(NextResponse.json({ error: 'User is not a member of this space' }, { status: 404 }))
     }
 
     // Prevent non-owners from modifying owner permissions
     if (targetMemberCheck.rows[0].role === 'owner' && memberCheck.rows[0].role !== 'owner') {
-      return NextResponse.json({ error: 'Cannot modify owner permissions' }, { status: 403 })
+      logger.warn('Non-owner attempted to modify owner permissions', { spaceId, targetUserId: userId, userId: session.user.id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Cannot modify owner permissions' }, { status: 403 }))
     }
 
     // Update or insert member permissions
@@ -94,15 +132,17 @@ export async function PUT(
       DO UPDATE SET permissions = $3, updated_at = NOW()
     `, [spaceId, userId, permissions])
 
-    return NextResponse.json({
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', `/api/spaces/${spaceId}/members/${userId}/permissions`, 200, duration, {
+      permissionCount: permissions.length
+    })
+    return addSecurityHeaders(NextResponse.json({
       success: true,
       message: 'Permissions updated successfully'
-    })
+    }))
   } catch (error) {
-    console.error('Error updating member permissions:', error)
-    return NextResponse.json(
-      { error: 'Failed to update member permissions' },
-      { status: 500 }
-    )
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Space Member Permissions API PUT')
   }
 }

@@ -3,7 +3,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 210 40% 96%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
@@ -19,10 +19,74 @@
     --accent-foreground: 222.2 84% 4.9%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    --border: 0 0% 98.04%;
+    --input: 0 0% 98.04%;
     --ring: 221.2 83.2% 53.3%;
     --radius: 0.75rem;
+    
+    /* Spacing scale - centralized spacing values (reduced for compact UI) */
+    --spacing-xs: 0.25rem;    /* 4px */
+    --spacing-sm: 0.5rem;     /* 8px */
+    --spacing-md: 0.75rem;    /* 12px */
+    --spacing-base: 1rem;     /* 16px */
+    --spacing-lg: 1.25rem;    /* 20px */
+    --spacing-xl: 1.5rem;     /* 24px */
+    --spacing-2xl: 2rem;      /* 32px */
+    --spacing-3xl: 2.5rem;    /* 40px */
+    --spacing-4xl: 3rem;      /* 48px */
+    
+    /* Typography scale - centralized font sizes */
+    --font-size-xs: 0.75rem;      /* 12px */
+    --font-size-sm: 0.875rem;     /* 14px */
+    --font-size-base: 1rem;       /* 16px */
+    --font-size-lg: 1.125rem;     /* 18px */
+    --font-size-xl: 1.25rem;      /* 20px */
+    --font-size-2xl: 1.5rem;      /* 24px */
+    --font-size-3xl: 1.875rem;     /* 30px */
+    --font-size-4xl: 2.25rem;     /* 36px */
+    --font-size-5xl: 3rem;        /* 48px */
+    
+    /* Component spacing - common UI element spacing */
+    --input-padding: 0.5rem;       /* 8px */
+    --input-height: 2rem;          /* 32px */
+    --card-padding: 1rem;          /* 16px */
+    --button-padding-x: 1rem;      /* 16px */
+    --button-padding-y: 0.5rem;    /* 8px */
+    --sidebar-padding: 0.75rem;     /* 12px */
+    --content-padding: 1rem;       /* 16px */
+    --section-gap: 1.25rem;        /* 20px */
+    
+    /* Z-index scale - centralized z-index values */
+    --z-base: 0;
+    --z-content: 1;
+    --z-canvas-element: 10;
+    --z-canvas-element-selected: 20;
+    --z-canvas-element-dragging: 50;
+    --z-canvas-lock-indicator: 50;
+    --z-sidebar: 100;
+    --z-navigation: 200;
+    --z-dropdown: 300;
+    --z-sticky: 400;
+    --z-tooltip: 1000;
+    --z-popover: 1100;
+    --z-floating-toolbar: 1200;
+    --z-sortable-dragging: 1300;
+    --z-overlay: 2000;
+    --z-drawer: 2100;
+    --z-modal: 2200;
+    --z-dialog: 2300;
+    --z-notification: 3000;
+    --z-toast: 3100;
+    --z-alert: 3200;
+    --z-widget: 4000;
+    --z-widget-overlay: 3900;
+    --z-widget-window: 4100;
+    --z-chat-widget: 4000;
+    --z-chat-widget-overlay: 3900;
+    --z-chat-widget-window: 4100;
+    --z-chat-widget-control: 10002;
+    --z-chat-widget-overlay-text: 10003;
+    --z-chat-widget-preview: 10004;
   }
 
   .dark {
@@ -42,31 +106,36 @@
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 94.1%;
+    
+    /* Z-index values remain the same in dark mode */
   }
 }
 
 @layer base {
+  * {
+    border-width: 0;
+    border-style: solid;
+    border-color: hsl(var(--border));
+  }
+  
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
     font-family: 'Prompt', sans-serif;
   }
+  
+  /* Input styling - light grey background for light theme, no border */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]),
+  textarea,
+  select {
+    background-color: hsl(var(--border)) !important;
+    border: none !important;
+  }
 }
 
-/* Glass Morphism Effect */
-.glass {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.dark .glass {
-  background: rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
@@ -252,4 +321,59 @@
   bottom: 0 !important;
   display: flex !important;
   flex-direction: column !important;
+}
+
+/* Platform Sidebar Menu Button Styles - Override Button component defaults */
+.platform-sidebar-menu-button:hover {
+  background-color: hsl(var(--muted)) !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+.platform-sidebar-menu-button.platform-sidebar-menu-button-active {
+  background-color: hsl(var(--muted)) !important;
+  color: hsl(var(--foreground)) !important;
+}
+/* Hide ChatKit header when rendered inside regular style container */
+.chatkit-in-regular-style > div > div:first-child,
+.chatkit-in-regular-style [data-chatkit-header],
+.chatkit-in-regular-style header {
+  display: none !important;
+}
+
+/* Make ChatKit fill the container properly - remove all margins and positioning */
+.chatkit-in-regular-style {
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  position: relative !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+}
+
+.chatkit-in-regular-style > div {
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  position: relative !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Platform Sidebar Menu Button Styles - Override Button component defaults */
+.platform-sidebar-menu-button:hover {
+  background-color: hsl(var(--muted)) !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+.platform-sidebar-menu-button.platform-sidebar-menu-button-active {
+  background-color: hsl(var(--muted)) !important;
+  color: hsl(var(--foreground)) !important;
 }

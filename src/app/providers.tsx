@@ -21,6 +21,7 @@ function ThemedToaster() {
           style: {
             background: '#363636',
             color: '#fff',
+            border: '1px solid hsl(var(--border))',
           },
         }}
       />
@@ -35,7 +36,7 @@ function ThemedToaster() {
         style: {
           background: isDark ? '#1f2937' : '#ffffff',
           color: isDark ? '#fff' : '#000',
-          border: isDark ? '1px solid #374151' : '1px solid #e5e7eb',
+          border: '1px solid hsl(var(--border))',
         },
         success: {
           duration: 3000,

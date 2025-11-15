@@ -16,8 +16,8 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'Customer Data Management',
-  description: 'Comprehensive customer data management system for event organizations',
+  title: 'Unified Data Platform',
+  description: 'Comprehensive unified data platform for event organizations',
 }
 
 export default function RootLayout({
@@ -27,7 +27,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={inter.className} suppressHydrationWarning>
         <Providers>
           <DynamicFavicon />
           <SidebarProvider>

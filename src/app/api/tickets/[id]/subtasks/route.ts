@@ -2,18 +2,34 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { logger } from '@/lib/logger'
+import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id } = paramValidation.data
+    logger.apiRequest('GET', `/api/tickets/${id}/subtasks`, { userId: session.user.id })
 
     const subtasks = await db.ticket.findMany({
       where: {
@@ -38,10 +54,15 @@ export async function GET(
       }
     })
 
-    return NextResponse.json({ subtasks })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', `/api/tickets/${id}/subtasks`, 200, duration, {
+      subtaskCount: subtasks.length
+    })
+    return addSecurityHeaders(NextResponse.json({ subtasks }))
   } catch (error) {
-    console.error('Error fetching subtasks:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Ticket Subtasks API GET')
   }
 }
 
@@ -49,19 +70,39 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const { id } = await params
-    const body = await request.json()
-    const { title, description, status, priority, spaceIds } = body
-
-    if (!title) {
-      return NextResponse.json({ error: 'Title is required' }, { status: 400 })
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
     }
+    
+    const { id } = paramValidation.data
+    logger.apiRequest('POST', `/api/tickets/${id}/subtasks`, { userId: session.user.id })
+
+    const bodySchema = z.object({
+      title: z.string().min(1),
+      description: z.string().optional().nullable(),
+      status: z.string().optional(),
+      priority: z.string().optional(),
+      spaceIds: z.array(z.string().uuid()).optional(),
+    })
+
+    const bodyValidation = await validateBody(request, bodySchema)
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+
+    const { title, description, status, priority, spaceIds } = bodyValidation.data
 
     // Get parent ticket to inherit spaces
     const parentTicket = await db.ticket.findUnique({
@@ -70,7 +111,8 @@ export async function POST(
     })
 
     if (!parentTicket) {
-      return NextResponse.json({ error: 'Parent ticket not found' }, { status: 404 })
+      logger.warn('Parent ticket not found for subtask creation', { ticketId: id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Parent ticket not found' }, { status: 404 }))
     }
 
     // Get max position for subtasks
@@ -113,10 +155,15 @@ export async function POST(
       }
     })
 
-    return NextResponse.json(subtask, { status: 201 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', `/api/tickets/${id}/subtasks`, 201, duration, {
+      subtaskId: subtask.id
+    })
+    return addSecurityHeaders(NextResponse.json(subtask, { status: 201 }))
   } catch (error) {
-    console.error('Error creating subtask:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Ticket Subtasks API POST')
   }
 }
 

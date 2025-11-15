@@ -60,7 +60,7 @@ export function CellOutput({
   }
 
   const renderTextOutput = (text: string) => (
-    <pre className="whitespace-pre-wrap font-mono text-sm bg-gray-50 dark:bg-gray-900 p-3 rounded border overflow-x-auto">
+    <pre className="whitespace-pre-wrap font-mono text-sm bg-gray-50 dark:bg-gray-900 p-3 rounded border border-border overflow-x-auto">
       {text}
     </pre>
   )
@@ -90,7 +90,7 @@ export function CellOutput({
   )
 
   const renderImageOutput = (imageData: any) => (
-    <div className="border rounded overflow-hidden">
+    <div className="border border-border rounded overflow-hidden">
       <img 
         src={imageData.data || imageData.url} 
         alt={imageData.title || 'Output image'}
@@ -105,7 +105,7 @@ export function CellOutput({
   )
 
   const renderTableOutput = (data: any[]) => (
-    <div className="border rounded overflow-hidden">
+    <div className="border border-border rounded overflow-hidden">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-800">
@@ -187,7 +187,7 @@ export function CellOutput({
       return (
         <div className="space-y-4">
           {(output as any).charts.map((chart: any, index: number) => (
-            <div key={index} className="border rounded p-4">
+            <div key={index} className="border border-border rounded p-4">
               <div className="text-sm font-medium mb-2">{chart.title}</div>
               <div className="text-xs text-gray-500">Chart visualization (type: {chart.type})</div>
             </div>

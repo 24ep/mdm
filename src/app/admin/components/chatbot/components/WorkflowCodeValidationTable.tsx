@@ -206,7 +206,7 @@ export function WorkflowCodeValidationTable({ code, apiKey, workflowId }: Workfl
       </Alert>
 
       {/* Validation Table */}
-      <div className="border rounded-lg">
+      <div className="border border-border rounded-lg">
         <Table>
           <TableHeader>
             <TableRow>

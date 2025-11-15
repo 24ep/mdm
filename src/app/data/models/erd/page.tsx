@@ -309,7 +309,7 @@ export default function ERDViewPage() {
                       {model.attributes.map((attr) => (
                         <div
                           key={attr.id}
-                          className="flex items-center gap-2 p-2 border rounded"
+                          className="flex items-center gap-2 p-2 border border-border rounded"
                         >
                           <span className="font-medium">{attr.display_name}</span>
                           <Badge variant="outline">{attr.type}</Badge>

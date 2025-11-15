@@ -2,16 +2,24 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { logger } from '@/lib/logger'
+import { validateBody } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 const COMP_PREFIX = 'freq:companies:'
 const IND_PREFIX = 'freq:industries:'
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
+
+    logger.apiRequest('GET', '/api/user-frequencies', { userId: session.user.id })
 
     const compKey = `${COMP_PREFIX}${session.user.id}`
     const indKey = `${IND_PREFIX}${session.user.id}`
@@ -27,26 +35,40 @@ export async function GET(request: NextRequest) {
       })
     ])
 
-    return NextResponse.json({
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/user-frequencies', 200, duration)
+    return addSecurityHeaders(NextResponse.json({
       companies: (compRow?.value as unknown as Record<string, number>) || {},
       industries: (indRow?.value as unknown as Record<string, number>) || {},
-    })
+    }))
   } catch (error) {
-    console.error('GET /api/user-frequencies error', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/user-frequencies', 500, duration)
+    return handleApiError(error, 'User Frequencies API GET')
   }
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    const body = await request.json().catch(() => ({}))
-    const companies: string[] = Array.isArray(body?.companies) ? body.companies : []
-    const industries: string[] = Array.isArray(body?.industries) ? body.industries : []
+    logger.apiRequest('POST', '/api/user-frequencies', { userId: session.user.id })
+
+    const bodySchema = z.object({
+      companies: z.array(z.string()).optional().default([]),
+      industries: z.array(z.string()).optional().default([]),
+    })
+
+    const bodyValidation = await validateBody(request, bodySchema)
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+
+    const { companies, industries } = bodyValidation.data
 
     const compKey = `${COMP_PREFIX}${session.user.id}`
     const indKey = `${IND_PREFIX}${session.user.id}`
@@ -90,10 +112,16 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    return NextResponse.json({ ok: true })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/user-frequencies', 200, duration, {
+      companyCount: companies.length,
+      industryCount: industries.length,
+    })
+    return addSecurityHeaders(NextResponse.json({ ok: true }))
   } catch (error) {
-    console.error('POST /api/user-frequencies error', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('POST', '/api/user-frequencies', 500, duration)
+    return handleApiError(error, 'User Frequencies API POST')
   }
 }
 

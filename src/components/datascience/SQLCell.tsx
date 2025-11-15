@@ -74,11 +74,33 @@ export function SQLCell({
 
   // Load SQL autocomplete with database schema
   useEffect(() => {
-    fetchDatabaseSchema(selectedSpaceId || undefined).then(schema => {
+    // Skip during build time - API won't be available
+    if (typeof process !== 'undefined' && process.env?.NEXT_PHASE === 'phase-production-build') {
+      // Set default autocomplete during build
+      const defaultAutocomplete = createSQLAutocomplete(undefined, 'postgresql')
+      setSqlAutocomplete(defaultAutocomplete)
+      return
+    }
+    
+    fetchDatabaseSchema(selectedSpaceId || undefined)
+      .then(schema => {
+        if (schema && schema.tables && Array.isArray(schema.tables)) {
       const autocomplete = createSQLAutocomplete(schema, 'postgresql')
       setSqlAutocomplete(autocomplete)
-    }).catch(err => {
+        } else {
+          // Fallback to default autocomplete
+          const defaultAutocomplete = createSQLAutocomplete(undefined, 'postgresql')
+          setSqlAutocomplete(defaultAutocomplete)
+        }
+      })
+      .catch(err => {
+        // Suppress errors during build time
+        if (typeof process === 'undefined' || process.env?.NEXT_PHASE !== 'phase-production-build') {
       console.error('Failed to load database schema for autocomplete:', err)
+        }
+        // Fallback to default autocomplete on error
+        const defaultAutocomplete = createSQLAutocomplete(undefined, 'postgresql')
+        setSqlAutocomplete(defaultAutocomplete)
     })
   }, [selectedSpaceId])
   
@@ -145,7 +167,7 @@ export function SQLCell({
   // The variable name and datasource are now in the CellRenderer toolbar
   return (
     <div className="space-y-2">
-      <div style={{ padding: '4px' }}>
+      <div style={{ padding: '4px' }} className="code-editor-wrapper">
         <CodeMirror
           value={cell.sqlQuery || cell.content || ''}
           height="auto"
@@ -251,9 +273,9 @@ export function SQLCell({
 
       {/* Query Result Output */}
       {cell.output && (
-        <div className="border-t border-[#e5e7eb] dark:border-gray-700" style={{ borderWidth: '1px', borderStyle: 'solid' }}>
+        <div className="border-t border-border" style={{ borderWidth: '1px', borderStyle: 'solid' }}>
           {showOutput ? (
-            <div className="bg-gray-50 dark:bg-gray-800" style={{ padding: '4px', borderRadius: '0px' }}>
+            <div className="cell-output bg-gray-50 dark:bg-gray-800 animate-fade-in" style={{ padding: '4px', borderRadius: '0px' }}>
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Result

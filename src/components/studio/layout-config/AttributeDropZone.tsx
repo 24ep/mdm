@@ -8,6 +8,7 @@ import { Attribute } from './chartDataSourceTypes'
 import { getAttributeIcon, getTypeBadgeClass, getEffectiveType } from './chartDataSourceUtils'
 import { AggregationType } from './ChartDataSourceConfig'
 import { ColorInput } from './ColorInput'
+import { Z_INDEX } from '@/lib/z-index'
 
 interface AttributeDropZoneProps {
   dimKey: string
@@ -91,10 +92,10 @@ function AggregationBadge({
         </button>
       </PopoverTrigger>
       <PopoverContent
-        className="z-[10001] p-1 whitespace-nowrap"
+        className="p-1 whitespace-nowrap"
         align="start"
         sideOffset={6}
-        style={{ minWidth: panelWidth, width: 'max-content' }}
+        style={{ minWidth: panelWidth, width: 'max-content', zIndex: Z_INDEX.popover }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-col gap-0.5">
@@ -130,7 +131,7 @@ function GranularityBadge({ value, onChange }: { value: Granularity; onChange: (
           {String(value).toUpperCase()}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="z-[10001] p-1 whitespace-nowrap" align="start" sideOffset={6} style={{ minWidth: panelWidth, width: 'max-content' }} onClick={(e) => e.stopPropagation()}>
+      <PopoverContent className="p-1 whitespace-nowrap" align="start" sideOffset={6} style={{ minWidth: panelWidth, width: 'max-content', zIndex: Z_INDEX.popover }} onClick={(e) => e.stopPropagation()}>
         <div className="flex flex-col gap-0.5">
           {(['AUTO','YEAR','QUARTER','MONTH','WEEK','DAY','HOUR','MINUTE','SECOND'] as Granularity[]).map(opt => (
             <button key={opt} className="w-full text-left text-[11px] px-2 py-1 rounded hover:bg-accent hover:text-accent-foreground" onClick={() => onChange(opt)}>
@@ -161,7 +162,7 @@ function BucketBadge({ value, onChange }: { value: Bins; onChange: (v: Bins) => 
           {String(label).toUpperCase()}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="z-[10001] p-1 whitespace-nowrap" align="start" sideOffset={6} style={{ minWidth: panelWidth, width: 'max-content' }} onClick={(e) => e.stopPropagation()}>
+      <PopoverContent className="p-1 whitespace-nowrap" align="start" sideOffset={6} style={{ minWidth: panelWidth, width: 'max-content', zIndex: Z_INDEX.popover }} onClick={(e) => e.stopPropagation()}>
         <div className="flex flex-col gap-0.5">
           {(['AUTO','NONE',5,10,20,50] as Bins[]).map(opt => (
             <button key={String(opt)} className="w-full text-left text-[11px] px-2 py-1 rounded hover:bg-accent hover:text-accent-foreground" onClick={() => onChange(opt)}>
@@ -206,7 +207,7 @@ function AttributeSettingsPopover({
       <PopoverTrigger asChild>
         <div ref={triggerRef} onClick={(e) => e.stopPropagation()}>{children}</div>
       </PopoverTrigger>
-      <PopoverContent className="z-[10002] p-2 whitespace-nowrap min-w-40" align="start" sideOffset={6} style={{ minWidth: panelWidth, width: 'max-content' }} onClick={(e) => e.stopPropagation()}>
+      <PopoverContent className="p-2 whitespace-nowrap min-w-40" align="start" sideOffset={6} style={{ minWidth: panelWidth, width: 'max-content', zIndex: Z_INDEX.popover }} onClick={(e) => e.stopPropagation()}>
         <div className="flex flex-col gap-2 text-[11px]">
           <div className="flex items-center gap-2 justify-between">
             <span className="text-muted-foreground">Display type</span>
@@ -347,7 +348,7 @@ function AttributeStylePopover({
       <PopoverTrigger asChild>
         <div ref={triggerRef} onClick={(e) => e.stopPropagation()}>{children}</div>
       </PopoverTrigger>
-      <PopoverContent className="z-[10002] p-2 whitespace-nowrap min-w-40" align="start" sideOffset={6} style={{ minWidth: panelWidth, width: 'max-content' }} onClick={(e) => e.stopPropagation()}>
+      <PopoverContent className="p-2 whitespace-nowrap min-w-40" align="start" sideOffset={6} style={{ minWidth: panelWidth, width: 'max-content', zIndex: Z_INDEX.popover }} onClick={(e) => e.stopPropagation()}>
         <div className="flex flex-col gap-2 text-[11px]">
           <div className="flex items-center gap-2 justify-between">
             <span className="text-muted-foreground">Wrap text</span>
@@ -472,7 +473,7 @@ function TypeBadgePopover({
           <Icon className="h-3 w-3 text-muted-foreground" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="z-[10000] p-1 whitespace-nowrap" align="start" sideOffset={6} style={{ minWidth: panelWidth, width: 'max-content' }} onClick={(e) => e.stopPropagation()}>
+      <PopoverContent className="p-1 whitespace-nowrap" align="start" sideOffset={6} style={{ minWidth: panelWidth, width: 'max-content', zIndex: Z_INDEX.popover }} onClick={(e) => e.stopPropagation()}>
         <div className="flex flex-col gap-1">
           {[
             { key: 'text', label: 'Text', Icon: TypeIcon },
@@ -778,7 +779,7 @@ export function AttributeDropZone({
               </div>
             </div>
           </PopoverTrigger>
-          <PopoverContent className="z-[10000] w-[300px] p-0" align="start">
+          <PopoverContent className="w-[300px] p-0" align="start" style={{ zIndex: Z_INDEX.popover }}>
             <div className="p-2 border-b">
               <input
                 type="text"
@@ -1005,7 +1006,7 @@ export function AttributeDropZone({
             </div>
           </div>
         </PopoverTrigger>
-        <PopoverContent className="z-[10000] w-[300px] p-0" align="start">
+        <PopoverContent className="w-[300px] p-0" align="start" style={{ zIndex: Z_INDEX.popover }}>
           <div className="p-2 border-b">
             <input
               type="text"

@@ -328,19 +328,19 @@ export function SelectionToolbar({
                 <div className="p-3 grid grid-cols-2 gap-2">
                   <div>
                     <div className="text-[11px] text-muted-foreground mb-1">Top</div>
-                    <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={Number(current.top||0)} onChange={(e)=>updatePad('top', Number(e.target.value)||0)} />
+                    <input className="w-full h-7 border border-border rounded px-1 text-xs bg-background text-foreground" type="number" value={Number(current.top||0)} onChange={(e)=>updatePad('top', Number(e.target.value)||0)} />
                   </div>
                   <div>
                     <div className="text-[11px] text-muted-foreground mb-1">Right</div>
-                    <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={Number(current.right||0)} onChange={(e)=>updatePad('right', Number(e.target.value)||0)} />
+                    <input className="w-full h-7 border border-border rounded px-1 text-xs bg-background text-foreground" type="number" value={Number(current.right||0)} onChange={(e)=>updatePad('right', Number(e.target.value)||0)} />
                   </div>
                   <div>
                     <div className="text-[11px] text-muted-foreground mb-1">Bottom</div>
-                    <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={Number(current.bottom||0)} onChange={(e)=>updatePad('bottom', Number(e.target.value)||0)} />
+                    <input className="w-full h-7 border border-border rounded px-1 text-xs bg-background text-foreground" type="number" value={Number(current.bottom||0)} onChange={(e)=>updatePad('bottom', Number(e.target.value)||0)} />
                   </div>
                   <div>
                     <div className="text-[11px] text-muted-foreground mb-1">Left</div>
-                    <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={Number(current.left||0)} onChange={(e)=>updatePad('left', Number(e.target.value)||0)} />
+                    <input className="w-full h-7 border border-border rounded px-1 text-xs bg-background text-foreground" type="number" value={Number(current.left||0)} onChange={(e)=>updatePad('left', Number(e.target.value)||0)} />
                   </div>
                 </div>
               )
@@ -377,27 +377,27 @@ export function SelectionToolbar({
                 <div className="p-3 grid grid-cols-2 gap-2">
                   <div>
                     <div className="text-[11px] text-muted-foreground mb-1">Offset X</div>
-                    <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={getNum(shadow.offsetX)} onChange={(e)=>updateShadow({ offsetX: Number(e.target.value)||0 })} />
+                    <input className="w-full h-7 border border-border rounded px-1 text-xs bg-background text-foreground" type="number" value={getNum(shadow.offsetX)} onChange={(e)=>updateShadow({ offsetX: Number(e.target.value)||0 })} />
                   </div>
                   <div>
                     <div className="text-[11px] text-muted-foreground mb-1">Offset Y</div>
-                    <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={getNum(shadow.offsetY)} onChange={(e)=>updateShadow({ offsetY: Number(e.target.value)||0 })} />
+                    <input className="w-full h-7 border border-border rounded px-1 text-xs bg-background text-foreground" type="number" value={getNum(shadow.offsetY)} onChange={(e)=>updateShadow({ offsetY: Number(e.target.value)||0 })} />
                   </div>
                   <div>
                     <div className="text-[11px] text-muted-foreground mb-1">Blur</div>
-                    <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={getNum(shadow.blur)} onChange={(e)=>updateShadow({ blur: Number(e.target.value)||0 })} />
+                    <input className="w-full h-7 border border-border rounded px-1 text-xs bg-background text-foreground" type="number" value={getNum(shadow.blur)} onChange={(e)=>updateShadow({ blur: Number(e.target.value)||0 })} />
                   </div>
                   <div>
                     <div className="text-[11px] text-muted-foreground mb-1">Spread</div>
-                    <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" value={getNum(shadow.spread)} onChange={(e)=>updateShadow({ spread: Number(e.target.value)||0 })} />
+                    <input className="w-full h-7 border border-border rounded px-1 text-xs bg-background text-foreground" type="number" value={getNum(shadow.spread)} onChange={(e)=>updateShadow({ spread: Number(e.target.value)||0 })} />
                   </div>
                   <div className="col-span-2">
                     <div className="text-[11px] text-muted-foreground mb-1">Color</div>
-                    <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" value={shadow.color || '#000000'} onChange={(e)=>updateShadow({ color: e.target.value })} />
+                    <input className="w-full h-7 border border-border rounded px-1 text-xs bg-background text-foreground" value={shadow.color || '#000000'} onChange={(e)=>updateShadow({ color: e.target.value })} />
                   </div>
                   <div className="col-span-2">
                     <div className="text-[11px] text-muted-foreground mb-1">Opacity (%)</div>
-                    <input className="w-full h-7 border border-gray-300 rounded px-1 text-xs" type="number" min={0} max={100} value={Math.round(Number((shadow.opacity ?? 0.25) * 100))} onChange={(e)=>{
+                    <input className="w-full h-7 border border-border rounded px-1 text-xs bg-background text-foreground" type="number" min={0} max={100} value={Math.round(Number((shadow.opacity ?? 0.25) * 100))} onChange={(e)=>{
                       const v = Math.max(0, Math.min(100, Number(e.target.value)||0))
                       updateShadow({ opacity: v/100 })
                     }} />
@@ -887,8 +887,8 @@ export function SelectionToolbar({
 
       {/* Element Type Indicator */}
       {elements.length === 1 && (
-        <div className="flex items-center border-l border-gray-200 pl-2 ml-2">
-          <div className="flex items-center gap-2 text-xs text-gray-600">
+        <div className="flex items-center border-l border-border pl-2 ml-2">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             {getShapeIcon(elements[0].type)}
             <span className="capitalize">{elements[0].type.toLowerCase().replace('_', ' ')}</span>
           </div>
@@ -897,8 +897,8 @@ export function SelectionToolbar({
 
       {/* Multi-select indicator */}
       {isMultiSelect && (
-        <div className="flex items-center border-l border-gray-200 pl-2 ml-2">
-          <div className="text-xs text-gray-600 font-medium">
+        <div className="flex items-center border-l border-border pl-2 ml-2">
+          <div className="text-xs text-muted-foreground font-medium">
             {selectedElements?.length ?? 0} selected
           </div>
         </div>

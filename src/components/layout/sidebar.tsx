@@ -170,12 +170,12 @@ export function Sidebar({ className }: SidebarProps) {
   // Don't render until hydrated to prevent flash of default styles
   if (!isHydrated) {
     return (
-      <div className={cn('flex h-full flex-col border-r w-64', className)}>
+      <div className={cn('flex h-full flex-col border-r border-border w-64', className)}>
         <div className="p-6">
               <h1 className="text-xl font-bold">{currentSpace?.name || 'Customer Data'}</h1>
         </div>
         <div className="flex-1 px-4">
-          <div className="text-sm text-gray-500">Loading...</div>
+          <div className="text-sm text-muted-foreground">Loading...</div>
         </div>
       </div>
     )
@@ -197,7 +197,7 @@ export function Sidebar({ className }: SidebarProps) {
 
   return (
     <div 
-      className={cn('flex h-full flex-col border-r', getWidth(), className)}
+      className={cn('flex h-full flex-col border-r border-border', getWidth(), className)}
       style={{
         ...getBackgroundStyle(),
         color: currentSpace?.sidebar_config?.style?.fontColor || settings.fontColor
@@ -260,7 +260,7 @@ export function Sidebar({ className }: SidebarProps) {
               ))}
               {spaces.length > 0 && (
                 <>
-                  <div className="border-t my-1" />
+                  <div className="border-t border-border my-1" />
                   <DropdownMenuItem
                     onClick={() => {
                       sessionStorage.setItem('navigate-to-spaces', 'true')
@@ -277,7 +277,7 @@ export function Sidebar({ className }: SidebarProps) {
           </DropdownMenu>
         )}
         <div 
-          className="mt-3 border-t"
+          className="mt-3 border-t border-border"
           style={{ borderColor: settings.fontColor, opacity: 0.3 }}
         />
       </div>
@@ -384,7 +384,7 @@ export function Sidebar({ className }: SidebarProps) {
             )}
             {index < menuItems.length - 1 && (
               <div 
-                className="my-3 border-t"
+                className="my-3 border-t border-border"
                 style={{ borderColor: settings.fontColor, opacity: 0.3 }}
               />
             )}

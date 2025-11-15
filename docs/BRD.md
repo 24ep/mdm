@@ -1,5 +1,5 @@
 # Business Requirements Document (BRD)
-## Customer Data Management System
+## Unified Data Platform
 
 ### Document Information
 - **Document Title**: Business Requirements Document
@@ -13,7 +13,7 @@
 ## 1. Executive Summary
 
 ### 1.1 Project Overview
-The Customer Data Management System is a comprehensive web application designed to streamline customer data management for event organizations. The system addresses the critical need for efficient customer relationship management, task tracking, and data organization in the event planning industry.
+The Unified Data Platform is a comprehensive web application designed to streamline data management for event organizations. The system addresses the critical need for efficient customer relationship management, task tracking, and data organization in the event planning industry.
 
 ### 1.2 Business Objectives
 - **Primary Objective**: Centralize and streamline customer data management for event organizations
@@ -63,7 +63,7 @@ Current challenges result in:
 
 ### 3.1 Functional Requirements
 
-#### 3.1.1 Customer Data Management
+#### 3.1.1 Data Management
 **Business Need**: Centralized customer information management
 - **Requirement**: Store comprehensive customer profiles including contact information, company details, and interaction history
 - **Business Value**: Improved customer service and relationship management
@@ -317,6 +317,6 @@ Current challenges result in:
 
 ## 10. Conclusion
 
-The Customer Data Management System addresses critical business needs for event organizations by providing a comprehensive, user-friendly platform for customer data management, task tracking, and team collaboration. The system's flexible architecture and robust features will significantly improve operational efficiency, data quality, and user satisfaction while ensuring compliance with regulatory requirements.
+The Unified Data Platform addresses critical business needs for event organizations by providing a comprehensive, user-friendly platform for data management, task tracking, and team collaboration. The system's flexible architecture and robust features will significantly improve operational efficiency, data quality, and user satisfaction while ensuring compliance with regulatory requirements.
 
 The successful implementation of this system will result in measurable business value through improved productivity, reduced costs, and enhanced customer relationships, positioning the organization for continued growth and success in the competitive event planning industry.

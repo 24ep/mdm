@@ -112,7 +112,7 @@ export function LoginPageItem({
 
   return (
     <div
-      className={`rounded-[10px] border ${
+      className={`rounded-[10px] border border-border ${
         isSelected ? 'ring-2 ring-border' : ''
       } bg-muted hover:bg-muted/80 select-none`}
     >
@@ -144,7 +144,7 @@ export function LoginPageItem({
 
       {/* Expanded Settings Section */}
       {isExpanded && loginPageConfig && (
-        <div className={`border-t ${isMobileViewport ? 'p-3' : 'p-2'} space-y-3 bg-background/50`}>
+        <div className={`border-t border-border ${isMobileViewport ? 'p-3' : 'p-2'} space-y-3 bg-background/50`}>
           {/* Title */}
           <div className="space-y-2">
             <Label className={`${isMobileViewport ? 'text-sm' : 'text-xs'} font-medium`}>Login Title</Label>

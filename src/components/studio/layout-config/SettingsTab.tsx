@@ -205,7 +205,7 @@ export function SettingsTab({
                     <img 
                       src={globalStyle.logoUrl} 
                       alt="Logo" 
-                      className={`${isMobileViewport ? 'h-12 w-12' : 'h-10 w-10'} object-contain rounded border`}
+                      className={`${isMobileViewport ? 'h-12 w-12' : 'h-10 w-10'} object-contain rounded border border-border`}
                     />
                     <Button
                       size="sm"
@@ -296,7 +296,7 @@ export function SettingsTab({
                     <img 
                       src={globalStyle.faviconUrl} 
                       alt="Favicon" 
-                      className={`${isMobileViewport ? 'h-8 w-8' : 'h-6 w-6'} object-contain rounded border`}
+                      className={`${isMobileViewport ? 'h-8 w-8' : 'h-6 w-6'} object-contain rounded border border-border`}
                     />
                     <Button
                       size="sm"

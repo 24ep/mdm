@@ -2,16 +2,35 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
+import { logger } from '@/lib/logger'
+import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
+import { handleApiError } from '@/lib/api-middleware'
+import { addSecurityHeaders } from '@/lib/security-headers'
+import { z } from 'zod'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; attrId: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.user) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+    }
 
-    const { id: dataModelId, attrId } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+      attrId: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id: dataModelId, attrId } = paramValidation.data
+    logger.apiRequest('GET', `/api/data-models/${dataModelId}/attributes/${attrId}`, { userId: session.user.id })
 
     const { rows } = await query(
       'SELECT * FROM public.data_model_attributes WHERE id = $1::uuid AND data_model_id = $2::uuid AND is_active = TRUE',
@@ -19,13 +38,17 @@ export async function GET(
     )
 
     if (rows.length === 0) {
-      return NextResponse.json({ error: 'Attribute not found' }, { status: 404 })
+      logger.warn('Attribute not found', { dataModelId, attrId })
+      return addSecurityHeaders(NextResponse.json({ error: 'Attribute not found' }, { status: 404 }))
     }
 
-    return NextResponse.json({ attribute: rows[0] })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', `/api/data-models/${dataModelId}/attributes/${attrId}`, 200, duration)
+    return addSecurityHeaders(NextResponse.json({ attribute: rows[0] }))
   } catch (error) {
-    console.error('Error fetching attribute:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Attribute API GET')
   }
 }
 
@@ -33,11 +56,25 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; attrId: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.user) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+    }
 
-    const { id: dataModelId, attrId } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+      attrId: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id: dataModelId, attrId } = paramValidation.data
+    logger.apiRequest('PUT', `/api/data-models/${dataModelId}/attributes/${attrId}`, { userId: session.user.id })
 
     // Check if user has permission to edit attributes in this space
     const spaceCheck = await query(`
@@ -50,7 +87,8 @@ export async function PUT(
     `, [session.user.id, dataModelId])
 
     if (spaceCheck.rows.length === 0) {
-      return NextResponse.json({ error: 'Data model not found' }, { status: 404 })
+      logger.warn('Data model not found', { dataModelId })
+      return addSecurityHeaders(NextResponse.json({ error: 'Data model not found' }, { status: 404 }))
     }
 
     const spaceData = spaceCheck.rows[0]
@@ -59,9 +97,31 @@ export async function PUT(
     const canEdit = userRole === 'ADMIN' || userRole === 'MEMBER' || isOwner
 
     if (!canEdit) {
-      return NextResponse.json({ error: 'Insufficient permissions to edit attributes' }, { status: 403 })
+      logger.warn('Insufficient permissions to edit attribute', { dataModelId, attrId, userId: session.user.id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Insufficient permissions to edit attributes' }, { status: 403 }))
     }
-    const body = await request.json()
+    
+    const bodySchema = z.object({
+      name: z.string().min(1).optional(),
+      display_name: z.string().min(1).optional(),
+      type: z.string().optional(),
+      is_required: z.boolean().optional(),
+      is_unique: z.boolean().optional(),
+      is_primary_key: z.boolean().optional(),
+      is_foreign_key: z.boolean().optional(),
+      referenced_table: z.string().optional().nullable(),
+      referenced_column: z.string().optional().nullable(),
+      default_value: z.any().optional().nullable(),
+      options: z.array(z.any()).optional().nullable(),
+      validation: z.any().optional().nullable(),
+      order: z.number().int().nonnegative().optional(),
+    })
+    
+    const bodyValidation = await validateBody(request, bodySchema)
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response)
+    }
+    
     const { 
       name, 
       display_name, 
@@ -76,7 +136,7 @@ export async function PUT(
       options, 
       validation, 
       order 
-    } = body
+    } = bodyValidation.data
 
     // Map type to uppercase for database enum
     const typeMapping: Record<string, string> = {
@@ -122,13 +182,17 @@ export async function PUT(
     ])
 
     if (rows.length === 0) {
-      return NextResponse.json({ error: 'Attribute not found' }, { status: 404 })
+      logger.warn('Attribute not found for update', { dataModelId, attrId })
+      return addSecurityHeaders(NextResponse.json({ error: 'Attribute not found' }, { status: 404 }))
     }
 
-    return NextResponse.json({ attribute: rows[0] })
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', `/api/data-models/${dataModelId}/attributes/${attrId}`, 200, duration)
+    return addSecurityHeaders(NextResponse.json({ attribute: rows[0] }))
   } catch (error) {
-    console.error('Error updating attribute:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Attribute API PUT')
   }
 }
 
@@ -136,11 +200,25 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; attrId: string }> }
 ) {
+  const startTime = Date.now()
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.user) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+    }
 
-    const { id: dataModelId, attrId } = await params
+    const resolvedParams = await params
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+      attrId: commonSchemas.id,
+    }))
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response)
+    }
+    
+    const { id: dataModelId, attrId } = paramValidation.data
+    logger.apiRequest('DELETE', `/api/data-models/${dataModelId}/attributes/${attrId}`, { userId: session.user.id })
 
     // Check if user has permission to delete attributes in this space
     const spaceCheck = await query(`
@@ -153,7 +231,8 @@ export async function DELETE(
     `, [session.user.id, dataModelId])
 
     if (spaceCheck.rows.length === 0) {
-      return NextResponse.json({ error: 'Data model not found' }, { status: 404 })
+      logger.warn('Data model not found', { dataModelId })
+      return addSecurityHeaders(NextResponse.json({ error: 'Data model not found' }, { status: 404 }))
     }
 
     const spaceData = spaceCheck.rows[0]
@@ -162,7 +241,8 @@ export async function DELETE(
     const canDelete = userRole === 'ADMIN' || isOwner
 
     if (!canDelete) {
-      return NextResponse.json({ error: 'Insufficient permissions to delete attributes' }, { status: 403 })
+      logger.warn('Insufficient permissions to delete attribute', { dataModelId, attrId, userId: session.user.id })
+      return addSecurityHeaders(NextResponse.json({ error: 'Insufficient permissions to delete attributes' }, { status: 403 }))
     }
 
     const { rows } = await query(
@@ -171,12 +251,16 @@ export async function DELETE(
     )
 
     if (rows.length === 0) {
-      return NextResponse.json({ error: 'Attribute not found' }, { status: 404 })
+      logger.warn('Attribute not found for deletion', { dataModelId, attrId })
+      return addSecurityHeaders(NextResponse.json({ error: 'Attribute not found' }, { status: 404 }))
     }
 
-    return NextResponse.json({ message: 'Attribute deleted successfully' })
+    const duration = Date.now() - startTime
+    logger.apiResponse('DELETE', `/api/data-models/${dataModelId}/attributes/${attrId}`, 200, duration)
+    return addSecurityHeaders(NextResponse.json({ message: 'Attribute deleted successfully' }))
   } catch (error) {
-    console.error('Error deleting attribute:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const duration = Date.now() - startTime
+    logger.apiResponse('DELETE', request.nextUrl.pathname, 500, duration)
+    return handleApiError(error, 'Attribute API DELETE')
   }
 }

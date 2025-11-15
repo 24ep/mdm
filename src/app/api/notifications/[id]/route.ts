@@ -3,19 +3,35 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { UpdateNotificationRequest } from '@/types/notifications';
+import { logger } from '@/lib/logger';
+import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation';
+import { handleApiError } from '@/lib/api-middleware';
+import { addSecurityHeaders } from '@/lib/security-headers';
+import { z } from 'zod';
 
 // GET /api/notifications/[id] - Get a specific notification
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now();
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }));
     }
 
-    const { id } = await params;
+    const resolvedParams = await params;
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }));
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response);
+    }
+    
+    const { id } = paramValidation.data;
+    logger.apiRequest('GET', `/api/notifications/${id}`, { userId: session.user.id });
 
     const fetchQuery = `
       SELECT 
@@ -28,17 +44,17 @@ export async function GET(
     const { rows } = await query(fetchQuery, [id, session.user.id]);
 
     if (rows.length === 0) {
-      return NextResponse.json({ error: 'Notification not found' }, { status: 404 });
+      logger.warn('Notification not found', { notificationId: id, userId: session.user.id });
+      return addSecurityHeaders(NextResponse.json({ error: 'Notification not found' }, { status: 404 }));
     }
 
-    return NextResponse.json(rows[0]);
-
+    const duration = Date.now() - startTime;
+    logger.apiResponse('GET', `/api/notifications/${id}`, 200, duration);
+    return addSecurityHeaders(NextResponse.json(rows[0]));
   } catch (error) {
-    console.error('Error fetching notification:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch notification' },
-      { status: 500 }
-    );
+    const duration = Date.now() - startTime;
+    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration);
+    return handleApiError(error, 'Notifications API GET');
   }
 }
 
@@ -47,14 +63,36 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now();
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }));
     }
 
-    const { id } = await params;
-    const body: UpdateNotificationRequest = await request.json();
+    const resolvedParams = await params;
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }));
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response);
+    }
+    
+    const { id } = paramValidation.data;
+    logger.apiRequest('PATCH', `/api/notifications/${id}`, { userId: session.user.id });
+
+    const bodySchema = z.object({
+      status: z.enum(['UNREAD', 'READ', 'ARCHIVED']).optional(),
+      read_at: z.string().datetime().optional().nullable(),
+    });
+
+    const bodyValidation = await validateBody(request, bodySchema);
+    if (!bodyValidation.success) {
+      return addSecurityHeaders(bodyValidation.response);
+    }
+
+    const body: UpdateNotificationRequest = bodyValidation.data;
 
     // Build update query dynamically
     const updateFields: string[] = [];
@@ -74,10 +112,11 @@ export async function PATCH(
     }
 
     if (updateFields.length === 0) {
-      return NextResponse.json(
+      logger.warn('No fields to update for notification', { notificationId: id });
+      return addSecurityHeaders(NextResponse.json(
         { error: 'No fields to update' },
         { status: 400 }
-      );
+      ));
     }
 
     // Add user_id and id to the query
@@ -95,17 +134,17 @@ export async function PATCH(
     const { rows } = await query(updateQuery, updateValues);
 
     if (rows.length === 0) {
-      return NextResponse.json({ error: 'Notification not found' }, { status: 404 });
+      logger.warn('Notification not found for update', { notificationId: id, userId: session.user.id });
+      return addSecurityHeaders(NextResponse.json({ error: 'Notification not found' }, { status: 404 }));
     }
 
-    return NextResponse.json(rows[0]);
-
+    const duration = Date.now() - startTime;
+    logger.apiResponse('PATCH', `/api/notifications/${id}`, 200, duration);
+    return addSecurityHeaders(NextResponse.json(rows[0]));
   } catch (error) {
-    console.error('Error updating notification:', error);
-    return NextResponse.json(
-      { error: 'Failed to update notification' },
-      { status: 500 }
-    );
+    const duration = Date.now() - startTime;
+    logger.apiResponse('PATCH', request.nextUrl.pathname, 500, duration);
+    return handleApiError(error, 'Notifications API PATCH');
   }
 }
 
@@ -114,13 +153,24 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now();
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }));
     }
 
-    const { id } = await params;
+    const resolvedParams = await params;
+    const paramValidation = validateParams(resolvedParams, z.object({
+      id: commonSchemas.id,
+    }));
+    
+    if (!paramValidation.success) {
+      return addSecurityHeaders(paramValidation.response);
+    }
+    
+    const { id } = paramValidation.data;
+    logger.apiRequest('DELETE', `/api/notifications/${id}`, { userId: session.user.id });
 
     const deleteQuery = `
       DELETE FROM public.notifications 
@@ -131,16 +181,16 @@ export async function DELETE(
     const { rows } = await query(deleteQuery, [id, session.user.id]);
 
     if (rows.length === 0) {
-      return NextResponse.json({ error: 'Notification not found' }, { status: 404 });
+      logger.warn('Notification not found for deletion', { notificationId: id, userId: session.user.id });
+      return addSecurityHeaders(NextResponse.json({ error: 'Notification not found' }, { status: 404 }));
     }
 
-    return NextResponse.json({ success: true });
-
+    const duration = Date.now() - startTime;
+    logger.apiResponse('DELETE', `/api/notifications/${id}`, 200, duration);
+    return addSecurityHeaders(NextResponse.json({ success: true }));
   } catch (error) {
-    console.error('Error deleting notification:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete notification' },
-      { status: 500 }
-    );
+    const duration = Date.now() - startTime;
+    logger.apiResponse('DELETE', request.nextUrl.pathname, 500, duration);
+    return handleApiError(error, 'Notifications API DELETE');
   }
 }

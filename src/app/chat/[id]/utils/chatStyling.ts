@@ -1,5 +1,6 @@
 import { ChatbotConfig } from '../types'
 import React from 'react'
+import { Z_INDEX } from '@/lib/z-index'
 
 interface EmulatorConfig {
   backgroundColor?: string
@@ -88,7 +89,7 @@ export function getContainerStyle(
       border: `${chatbot.chatWindowBorderWidth || chatbot.borderWidth} solid ${chatbot.chatWindowBorderColor || chatbot.borderColor}`,
       borderRadius: chatbot.chatWindowBorderRadius || chatbot.borderRadius,
       boxShadow: `0 0 ${shadowBlur} ${shadowColor}`,
-      zIndex: (chatbot as any).widgetZIndex || 9999,
+      zIndex: (chatbot as any).widgetZIndex || Z_INDEX.chatWidget,
       // Note: Emulator background should NOT be applied to popover - only to page background
       overflow: 'hidden',
       // Glassmorphism effect
@@ -197,7 +198,7 @@ export function getContainerStyle(
       border: `${chatbot.chatWindowBorderWidth || chatbot.borderWidth} solid ${chatbot.chatWindowBorderColor || chatbot.borderColor}`,
       borderRadius: chatbot.chatWindowBorderRadius || chatbot.borderRadius,
       boxShadow: `0 0 ${shadowBlur} ${shadowColor}`,
-      zIndex: 10001,
+      zIndex: Z_INDEX.chatWidgetWindow,
       position: 'fixed',
       top: '50%',
       left: '50%',
@@ -252,7 +253,7 @@ export function getOverlayStyle(
 ): React.CSSProperties | undefined {
   // For popup-center, always show overlay (legacy behavior)
   if (previewDeploymentType === 'popup-center') {
-    return { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 10000 }
+    return { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: Z_INDEX.chatWidgetOverlay }
   }
   
   // For popover mode, check if overlay is enabled and chat is open
@@ -290,7 +291,9 @@ export function getOverlayStyle(
       position: 'fixed',
       inset: 0,
       backgroundColor,
-      zIndex: ((chatbot as any).widgetZIndex || 9999) - 1, // Place overlay below widget and popover
+      zIndex: ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) >= Z_INDEX.chatWidget 
+        ? ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) - 1 
+        : Z_INDEX.chatWidgetOverlay, // Place overlay below widget and popover
     }
     
     // Apply blur if specified
@@ -334,7 +337,9 @@ export function getWidgetButtonStyle(chatbot: ChatbotConfig): React.CSSPropertie
     borderRadius: (chatbot as any).widgetBorderRadius || '50%',
     border: `${(chatbot as any).widgetBorderWidth || '0px'} solid ${(chatbot as any).widgetBorderColor || 'transparent'}`,
     boxShadow: boxShadow,
-    zIndex: ((chatbot as any).widgetZIndex || 9999) + 1, // Higher than popover to stay on top
+    zIndex: ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) >= Z_INDEX.chatWidget 
+      ? ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) + 1 
+      : Z_INDEX.chatWidgetWindow, // Higher than popover to stay on top
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
