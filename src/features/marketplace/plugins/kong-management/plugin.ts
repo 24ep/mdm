@@ -21,7 +21,5 @@ export const kongManagementPlugin: PluginDefinition = {
   iconUrl: '/icons/kong.svg',
   installationCount: 0,
   reviewCount: 0,
-  createdAt: new Date(),
-  updatedAt: new Date(),
 }
 

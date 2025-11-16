@@ -59,8 +59,9 @@ export function InstallationWizard({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="config" className="w-full">
-          <TabsList>
+        <div className="w-full">
+          <Tabs defaultValue="config">
+            <TabsList>
             <TabsTrigger value="config">Configuration</TabsTrigger>
             {plugin.apiAuthType && plugin.apiAuthType !== 'none' && (
               <TabsTrigger value="credentials">Credentials</TabsTrigger>
@@ -184,7 +185,8 @@ export function InstallationWizard({
               </div>
             )}
           </TabsContent>
-        </Tabs>
+          </Tabs>
+        </div>
 
         <div className="flex justify-end gap-2 pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>

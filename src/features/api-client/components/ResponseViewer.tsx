@@ -124,8 +124,9 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
 
       {/* Response Content */}
       {!response.error && (
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col">
-          <TabsList className="border-b border-border">
+        <div className="flex-1 flex flex-col">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+            <TabsList className="border-b border-border">
             <TabsTrigger value="body">Body</TabsTrigger>
             <TabsTrigger value="headers">Headers</TabsTrigger>
           </TabsList>
@@ -152,7 +153,8 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
               ))}
             </div>
           </TabsContent>
-        </Tabs>
+          </Tabs>
+        </div>
       )}
     </div>
   )

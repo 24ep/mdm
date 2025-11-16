@@ -168,7 +168,7 @@ export function MarkdownCell({
       .replace(/!\[([^\]]*)\]\(([^)]+)\)/gim, '<img src="$2" alt="$1" style="max-width: 100%; height: auto;" />')
       // Lists
       .replace(/^- (.*$)/gim, '<li>$1</li>')
-      .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+      .replace(/(<li>[\s\S]*?<\/li>)/g, '<ul>$1</ul>')
       // Blockquotes
       .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
       // Line breaks

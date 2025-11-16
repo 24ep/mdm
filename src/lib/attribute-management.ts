@@ -5,15 +5,15 @@
 
 import { Attribute as PrismaAttribute } from '@prisma/client'
 
-export interface Attribute extends Omit<PrismaAttribute, 'validationRules' | 'options'> {
+export interface Attribute extends Omit<PrismaAttribute, 'validationRules' | 'options' | 'description'> {
   data_model_id: string
   display_name: string
   is_required: boolean
+  description?: string | null
   is_unique: boolean
   is_primary_key?: boolean
   is_foreign_key?: boolean
   order: number
-  description?: string
   default_value?: string
   validation_rules?: any
   options?: Array<{ value: string; label: string; color?: string; order: number }>

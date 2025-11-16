@@ -129,7 +129,7 @@ export function LayoutToolbar({
           {/* Canvas Mode Dropdown */}
           <div className={`flex ${isMobileViewport ? 'flex-col' : 'items-center'} gap-2 ${isMobileViewport ? '' : 'px-2'}`}>
             <span className={`${isMobileViewport ? 'text-sm' : 'text-xs'} whitespace-nowrap font-medium`}>Canvas Mode</span>
-            <Select value={canvasMode} onValueChange={(value: 'freeform' | 'grid') => setCanvasMode(value)}>
+             <Select value={canvasMode} onValueChange={(value: string) => setCanvasMode(value as 'freeform' | 'grid')}>
               <SelectTrigger className={`${isMobileViewport ? "h-10 w-full" : "h-8 w-32"} border-0 rounded-none`}>
                 <SelectValue />
               </SelectTrigger>

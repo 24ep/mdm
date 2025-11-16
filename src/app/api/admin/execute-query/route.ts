@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
         action: 'EXECUTE_QUERY',
         resourceType: 'query',
         sqlQuery: trimmedQuery,
-        spaceId,
+        spaceId: spaceId || undefined,
         success: false,
         errorMessage: 'Query blocked by linting rules',
         executionTime: Date.now() - startTime,
@@ -104,8 +104,8 @@ export async function POST(request: NextRequest) {
         const maskingContext = {
           userId,
           userRole: userRole || undefined,
-          spaceId,
-          environment: env.NODE_ENV as 'production' | 'development' | 'test'
+          spaceId: spaceId || undefined,
+          environment: (env.NODE_ENV === 'test' ? 'development' : env.NODE_ENV) as 'production' | 'development' | 'staging'
         }
         maskedResults = dataMasking.maskResultSet(result.rows, undefined, maskingContext)
       }
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
         action: 'EXECUTE_QUERY',
         resourceType: 'query',
         sqlQuery: trimmedQuery,
-        spaceId,
+        spaceId: spaceId || undefined,
         success: true,
         executionTime,
         rowCount: result.rows.length,
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
         timestamp: new Date(),
         userId,
         userName: userName || undefined,
-        spaceId,
+        spaceId: spaceId || undefined,
         status: 'success'
       }).catch(err => {
         logger.error('Failed to record query performance', err, { userId })
@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
         action: 'EXECUTE_QUERY',
         resourceType: 'query',
         sqlQuery: trimmedQuery,
-        spaceId,
+        spaceId: spaceId || undefined,
         success: false,
         errorMessage: dbError.message,
         executionTime,

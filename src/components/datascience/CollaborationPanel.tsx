@@ -131,7 +131,7 @@ export function CollaborationPanel({
   const [isInviting, setIsInviting] = useState(false)
   
   const chatRef = useRef<HTMLDivElement>(null)
-  const typingTimeoutRef = useRef<NodeJS.Timeout>()
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Mock WebSocket connection - replace with actual implementation
   useEffect(() => {

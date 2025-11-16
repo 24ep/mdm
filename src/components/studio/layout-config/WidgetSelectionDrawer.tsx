@@ -54,8 +54,9 @@ export function WidgetSelectionDrawer({
         {/* Widgets List with category tabs */}
           <div className="flex-1 overflow-hidden flex flex-col">
             <div className="px-4 pt-3">
-              <Tabs value={category} onValueChange={(v: any) => setCategory(v)} className="w-full">
-                <TabsList className="grid grid-cols-8 w-full">
+              <div className="w-full">
+                <Tabs value={category} onValueChange={(v: any) => setCategory(v)}>
+                  <TabsList className="grid grid-cols-8 w-full">
                   <TabsTrigger value="all">All</TabsTrigger>
                   <TabsTrigger value="dashboard"><LayoutGrid className="h-3.5 w-3.5 mr-1" />Dashboard</TabsTrigger>
                   <TabsTrigger value="charts">Charts</TabsTrigger>
@@ -65,7 +66,8 @@ export function WidgetSelectionDrawer({
                   <TabsTrigger value="media"><Image className="h-3.5 w-3.5 mr-1" />Media</TabsTrigger>
                   <TabsTrigger value="shapes"><Shapes className="h-3.5 w-3.5 mr-1" />Shapes</TabsTrigger>
                 </TabsList>
-              </Tabs>
+                </Tabs>
+              </div>
             </div>
             <div className="flex-1 overflow-hidden">
               <WidgetsTab 

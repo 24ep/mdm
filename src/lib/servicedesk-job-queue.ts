@@ -111,7 +111,7 @@ export async function updateServiceDeskJob(
     values.push(updates.status)
     paramIndex++
 
-    if (updates.status === 'processing' && !updates.startedAt) {
+    if (updates.status === 'processing' && !(updates as any).startedAt) {
       updateFields.push(`started_at = NOW()`)
     } else if (updates.status === 'completed' || updates.status === 'failed') {
       updateFields.push(`completed_at = NOW()`)

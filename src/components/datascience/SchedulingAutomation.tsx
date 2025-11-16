@@ -29,7 +29,8 @@ import {
   Edit,
   Eye,
   Bell,
-  BellOff
+  BellOff,
+  Plus
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
@@ -559,7 +560,8 @@ export function SchedulingAutomation({
 
   return (
     <div className="h-full flex flex-col space-y-4">
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="flex-1">
+      <div className="flex-1">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="schedules">Schedules</TabsTrigger>
           <TabsTrigger value="executions">Executions</TabsTrigger>
@@ -923,7 +925,8 @@ export function SchedulingAutomation({
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+        </Tabs>
+      </div>
     </div>
   )
 }

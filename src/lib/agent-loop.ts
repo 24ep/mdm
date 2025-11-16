@@ -36,10 +36,10 @@ export async function getAgentLoopConfig(chatbotId: string): Promise<AgentLoopCo
 
   return {
     maxIterations: config.maxIterations || undefined,
-    stopConditions: config.stopConditions as StopCondition[] | undefined,
+    stopConditions: config.stopConditions as unknown as StopCondition[] | undefined,
     timeout: config.timeout || undefined,
     enableHumanInLoop: config.enableHumanInLoop || false,
-    humanInLoopConfig: config.humanInLoopConfig as HumanInLoopConfig | undefined,
+    humanInLoopConfig: config.humanInLoopConfig as unknown as HumanInLoopConfig | undefined,
   }
 }
 

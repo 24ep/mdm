@@ -13,7 +13,7 @@ import {
   BarChart3,
   TrendingUp,
   PieChart,
-  Scatter,
+  ScatterChart,
   Activity,
   Layers,
   Database,
@@ -473,9 +473,9 @@ export function DataExploration({
                           <span className="text-sm text-muted-foreground truncate">{col}:</span>
                           <span className={cn(
                             "text-sm font-medium",
-                            count > 0 ? "text-orange-600" : "text-green-600"
+                            (count as number) > 0 ? "text-orange-600" : "text-green-600"
                           )}>
-                            {count}
+                            {count as number}
                           </span>
                         </div>
                       ))}
@@ -490,7 +490,7 @@ export function DataExploration({
               
               {analysisResults?.statistics && (
                 <div className="space-y-4">
-                  {Object.entries(analysisResults.statistics).map(([column, stats]) => (
+                  {Object.entries(analysisResults.statistics).map(([column, stats]: [string, any]) => (
                     <Card key={column}>
                       <CardHeader className="pb-2">
                         <h4 className="text-sm font-medium">{column}</h4>

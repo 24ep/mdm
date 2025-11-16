@@ -172,7 +172,7 @@ class DataMasking {
     return data.map(row => this.maskRow(row, tableName, context))
   }
 
-  private applyMaskingStrategy(value: string, rule: MaskingRule): string {
+  private applyMaskingStrategy(value: string, rule: MaskingRule): string | null {
     const options = rule.options || {}
     const maskChar = options.maskChar || '*'
     const visibleChars = options.visibleChars || 0

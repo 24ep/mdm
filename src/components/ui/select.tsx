@@ -13,7 +13,7 @@ interface SelectContextValue {
   onValueChange: (value: string) => void
   open: boolean
   setOpen: (open: boolean) => void
-  triggerRef: React.RefObject<HTMLElement>
+  triggerRef: React.RefObject<HTMLElement | null>
 }
 
 const SelectContext = React.createContext<SelectContextValue | undefined>(undefined)

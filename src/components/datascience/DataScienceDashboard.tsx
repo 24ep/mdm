@@ -490,12 +490,7 @@ export function DataScienceDashboard({ className }: DataScienceDashboardProps) {
         </TabsContent>
 
         <TabsContent value="sql">
-          <SQLIntegration
-            onQueryExecuted={handleQueryExecuted}
-            onConnectionEstablished={(connection) => {
-              console.log('Connected to:', connection.name)
-            }}
-          />
+          <SQLIntegration />
         </TabsContent>
 
         <TabsContent value="viz">

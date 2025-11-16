@@ -105,7 +105,7 @@ async function getRolePermissions(
 ): Promise<string[]> {
   try {
     // First try to get role from database
-    const { rows: roles } = await query<any>(
+    const { rows: roles } = await query(
       `SELECT r.id FROM public.roles r 
        WHERE r.name = $1 AND r.level = $2 
        LIMIT 1`,
@@ -120,7 +120,7 @@ async function getRolePermissions(
 
     // Get permissions for this role
     // Return in format "resource:action" for matching
-    const { rows: perms } = await query<any>(
+    const { rows: perms } = await query(
       `SELECT p.name, p.resource, p.action
        FROM public.role_permissions rp
        JOIN public.permissions p ON p.id = rp.permission_id
@@ -152,7 +152,7 @@ async function getCustomPermissions(
   spaceId: string
 ): Promise<string[]> {
   try {
-    const { rows } = await query<any>(
+    const { rows } = await query(
       `SELECT permissions 
        FROM public.member_permissions 
        WHERE user_id = $1 AND space_id = $2 
@@ -235,7 +235,7 @@ export async function getUserRoleContext(
   let spaceRole: string | undefined
 
   if (spaceId) {
-    const spaceMember = await query<any>(
+    const spaceMember = await query(
       `SELECT role FROM space_members 
        WHERE space_id = $1 AND user_id = $2 
        LIMIT 1`,

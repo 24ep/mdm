@@ -5,12 +5,6 @@ import {
   AlignLeft, 
   AlignCenter, 
   AlignRight, 
-  AlignVerticalCenter, 
-  AlignHorizontalCenter,
-  AlignTop,
-  AlignBottom,
-  DistributeHorizontal,
-  DistributeVertical,
   Group,
   Ungroup,
   Copy,
@@ -170,7 +164,7 @@ export function AlignmentToolbar({
           disabled={!hasMultipleSelection}
           title="Align Top"
         >
-          <AlignTop className="h-4 w-4" />
+          <AlignCenter className="h-4 w-4" />
         </Button>
         <Button
           size="sm"
@@ -179,7 +173,7 @@ export function AlignmentToolbar({
           disabled={!hasMultipleSelection}
           title="Align Middle"
         >
-          <AlignVerticalCenter className="h-4 w-4" />
+          <AlignCenter className="h-4 w-4" />
         </Button>
         <Button
           size="sm"
@@ -188,7 +182,7 @@ export function AlignmentToolbar({
           disabled={!hasMultipleSelection}
           title="Align Bottom"
         >
-          <AlignBottom className="h-4 w-4" />
+          <AlignCenter className="h-4 w-4" />
         </Button>
       </div>
 
@@ -202,7 +196,7 @@ export function AlignmentToolbar({
           disabled={selectedCount < 3}
           title="Distribute Horizontally"
         >
-          <DistributeHorizontal className="h-4 w-4" />
+          <AlignCenter className="h-4 w-4" />
         </Button>
         <Button
           size="sm"
@@ -211,7 +205,7 @@ export function AlignmentToolbar({
           disabled={selectedCount < 3}
           title="Distribute Vertically"
         >
-          <DistributeVertical className="h-4 w-4" />
+          <AlignCenter className="h-4 w-4" />
         </Button>
       </div>
 

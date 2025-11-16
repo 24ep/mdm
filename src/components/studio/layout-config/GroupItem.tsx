@@ -52,9 +52,9 @@ interface GroupItemProps {
 export function GroupItem(props: GroupItemProps) {
   const { page, isMobileViewport, allPages, setAllPages } = props
   const [open, setOpen] = useState(true)
-  const { setNodeRef, isOver } = useDroppable({ id: `group-drop-${page.id}` })
+  const { setNodeRef, isOver } = useDroppable({ id: `group-drop-${(page as any).id || (page as any).key || 'unknown'}` })
 
-  const children = (page.children || [])
+  const children = ((page as any).children || [])
 
   return (
     <div className="border rounded-md">
@@ -62,7 +62,7 @@ export function GroupItem(props: GroupItemProps) {
       <div className="flex items-center justify-between px-2 py-1.5 bg-muted/40">
         <button className="flex items-center gap-1" onClick={() => setOpen(!open)}>
           <ChevronDown className={`h-4 w-4 transition-transform ${open ? '' : '-rotate-90'}`} />
-          <span className={`${isMobileViewport ? 'text-sm' : 'text-xs'} font-medium`}>{page.name || 'Group'}</span>
+          <span className={`${isMobileViewport ? 'text-sm' : 'text-xs'} font-medium`}>{(page as any).name || 'Group'}</span>
           <span className="text-[10px] text-muted-foreground">({children.length})</span>
         </button>
         <DropdownMenu>
@@ -75,17 +75,17 @@ export function GroupItem(props: GroupItemProps) {
             <DropdownMenuItem onClick={() => {
               // Quick add placeholder label into group
               const newChild: UnifiedPage = { id: `label-${Date.now()}`, type: 'label', name: 'Label', label: 'Label' }
-              setAllPages(prev => prev.map(p => p.id === page.id ? { ...p, children: [ ...(p.children || []), newChild ] } as any : p))
+              setAllPages(prev => prev.map(p => p.id === (page as any).id ? { ...p, children: [ ...((p as any).children || []), newChild ] } as any : p))
             }}>
               <FolderPlus className="mr-2 h-4 w-4" /> Add item to group
             </DropdownMenuItem>
             <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => {
               // Ungroup: move children to root above this group, then remove group
-              const idx = allPages.findIndex(p => p.id === page.id)
+              const idx = allPages.findIndex(p => p.id === (page as any).id)
               setAllPages(prev => {
                 const before = prev.slice(0, idx)
                 const after = prev.slice(idx + 1)
-                return [...before, ...(page.children || []), ...after]
+                return [...before, ...((page as any).children || []), ...after]
               })
             }}>
               <Trash className="mr-2 h-4 w-4" /> Ungroup
@@ -101,7 +101,7 @@ export function GroupItem(props: GroupItemProps) {
             {children.length === 0 && (
               <div className="text-[11px] text-muted-foreground px-1 py-1">Drop pages here</div>
             )}
-            {children.map((child, idx) => {
+            {children.map((child: UnifiedPage, idx: number) => {
               const isSeparator = child.type === 'separator'
               const isLabel = child.type === 'label'
               const isText = child.type === 'text'

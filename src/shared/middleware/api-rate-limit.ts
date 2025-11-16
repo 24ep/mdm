@@ -18,7 +18,12 @@ export async function rateLimitMiddleware(
   try {
     // Get user identifier
     const session = await getServerSession(authOptions)
-    const identifier = session?.user?.id || request.ip || 'anonymous'
+    // Extract IP from headers (x-forwarded-for, x-real-ip, cf-connecting-ip)
+    const forwardedFor = request.headers.get('x-forwarded-for')
+    const realIp = request.headers.get('x-real-ip')
+    const cfConnectingIp = request.headers.get('cf-connecting-ip')
+    const ip = forwardedFor?.split(',')[0]?.trim() || realIp || cfConnectingIp || 'anonymous'
+    const identifier = session?.user?.id || ip
 
     // Check rate limit
     const result = await rateLimiter.checkLimit(identifier, {

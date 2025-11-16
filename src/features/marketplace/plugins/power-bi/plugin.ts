@@ -74,14 +74,12 @@ export const powerBIPlugin: PluginDefinition = {
     ],
   },
   installationCount: 0,
-  rating: null,
+  rating: undefined,
   reviewCount: 0,
   securityAudit: {
     lastAudited: new Date().toISOString(),
     vulnerabilities: [],
     compliance: ['SOC 2', 'ISO 27001'],
   },
-  createdAt: new Date(),
-  updatedAt: new Date(),
 }
 

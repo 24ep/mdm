@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
       FROM workflows w
       LEFT JOIN spaces s ON s.id = w.space_id
       WHERE ${whereClause}
-      ${buildOrderByClause(sortBy, sortOrder, { field: 'created_at', order: 'desc' })}
+      ${buildOrderByClause(sortBy, sortOrder || 'desc', { field: 'created_at', order: 'desc' })}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `
     queryParams.push(limit, offset)

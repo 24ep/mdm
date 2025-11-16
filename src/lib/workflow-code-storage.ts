@@ -60,7 +60,7 @@ export async function storeWorkflowCode(
 
     // Upload workflow code
     const buffer = Buffer.from(code, 'utf-8')
-    await client.putObject(bucket, objectName, buffer, {
+    await client.putObject(bucket, objectName, buffer, buffer.length, {
       'Content-Type': 'application/javascript',
       'Content-Disposition': `attachment; filename="${workflowId}.js"`
     })

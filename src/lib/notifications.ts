@@ -24,7 +24,7 @@ export class NotificationService {
 
       // Only create transporter if SMTP is configured
       if (smtpConfig.auth.user && smtpConfig.auth.pass) {
-        this.transporter = nodemailer.createTransporter(smtpConfig)
+        this.transporter = nodemailer.createTransport(smtpConfig)
       }
     }
 

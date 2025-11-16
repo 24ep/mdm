@@ -215,7 +215,7 @@ export function AutoTemplateGenerator({ dataModel, onTemplatesGenerated, onClose
                     
                     <Switch
                       checked={isSelected}
-                      onChange={() => handleTemplateToggle(template.id)}
+                      onCheckedChange={() => handleTemplateToggle(template.id)}
                       onClick={(e) => e.stopPropagation()}
                     />
                   </div>

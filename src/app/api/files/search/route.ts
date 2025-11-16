@@ -109,13 +109,13 @@ export async function GET(request: NextRequest) {
     // Size range filter
     if (sizeMin) {
       whereConditions.push(`af.file_size >= $${paramIndex}`)
-      queryParams.push(parseInt(sizeMin))
+      queryParams.push(String(sizeMin))
       paramIndex++
     }
 
     if (sizeMax) {
       whereConditions.push(`af.file_size <= $${paramIndex}`)
-      queryParams.push(parseInt(sizeMax))
+      queryParams.push(String(sizeMax))
       paramIndex++
     }
 

@@ -294,7 +294,7 @@ export function PageListItem({
             isOpen={sidebarPositionOpen === page.id}
             onOpenChange={(open) => setSidebarPositionOpen(open ? page.id : null)}
             setAllPages={setAllPages}
-            triggerRef={sidebarPositionTriggerRef}
+            triggerRef={sidebarPositionTriggerRef as React.RefObject<HTMLButtonElement>}
           />
         </>
       )}

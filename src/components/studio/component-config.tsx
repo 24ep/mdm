@@ -625,7 +625,7 @@ export function ComponentConfig({ component, onUpdate }: ComponentConfigProps) {
         <TabsContent value="records" className="mt-4">
           <RecordConfig
             component={component}
-            onUpdate={onUpdate}
+            onUpdate={(config: any) => onUpdate({ ...component, config })}
           />
         </TabsContent>
 

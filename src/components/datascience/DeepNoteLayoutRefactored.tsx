@@ -500,11 +500,6 @@ export function DeepNoteLayoutRefactored({
                             onMerge={handlers.handleMergeCells}
                             onSplit={handlers.handleSplitCell}
                             onAddComment={handlers.handleAddComment}
-                            onAddTag={handlers.handleAddTag}
-                            onSearch={handlers.handleSearchCell}
-                            onTitleChange={handlers.handleRenameCellTitle}
-                            onToggleBookmark={handlers.toggleBookmark}
-                            onToggleCollapse={handlers.toggleCellCollapse}
                             canEdit={effectiveCanEdit}
                             canExecute={canExecute}
                           />
@@ -592,12 +587,8 @@ export function DeepNoteLayoutRefactored({
                 }}
               >
                 <SelectTrigger className="h-auto p-0 border-0 bg-transparent shadow-none focus:ring-0 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
-                  <SelectValue>
-                    <span className="flex items-center gap-1">
-                      <span>{state.currentKernel?.name || 'No kernel'}</span>
-                      <ChevronDown className="h-3 w-3 ml-1" />
-                    </span>
-                  </SelectValue>
+                  <SelectValue placeholder={state.currentKernel?.name || 'No kernel'} />
+                  <ChevronDown className="h-3 w-3 ml-1" />
                 </SelectTrigger>
                 <SelectContent>
                   {kernels.map((kernel) => (

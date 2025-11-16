@@ -358,7 +358,7 @@ export function FileNotifications({ spaceId }: FileNotificationsProps) {
                       <div className="flex items-start space-x-3">
                         <Checkbox
                           checked={selectedNotifications.has(notification.id)}
-                          onChange={() => {}}
+                          onCheckedChange={() => {}}
                           onClick={(e) => e.stopPropagation()}
                         />
                         <div className={`${getNotificationColor(notification.type)}`}>

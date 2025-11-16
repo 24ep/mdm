@@ -241,7 +241,7 @@ export const computeWidgetStyle = (props: WidgetStyleProps): React.CSSProperties
     fontSize: props.fontSize ? `${props.fontSize}px` : undefined,
     fontWeight: props.fontWeight || 'normal',
     fontStyle: props.fontStyle || 'normal',
-    textAlign: props.textAlign || 'left',
+    textAlign: (props.textAlign || 'left') as React.CSSProperties['textAlign'],
     borderTop: borderColor && borderSides.top ? `${borderWidth}px ${borderStyle} ${borderColor}` : 'none',
     borderRight: borderColor && borderSides.right ? `${borderWidth}px ${borderStyle} ${borderColor}` : 'none',
     borderBottom: borderColor && borderSides.bottom ? `${borderWidth}px ${borderStyle} ${borderColor}` : 'none',

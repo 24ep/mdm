@@ -339,7 +339,8 @@ export function CollaborationFeatures({
 
   return (
     <div className="h-full flex flex-col space-y-4">
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="flex-1">
+      <div className="flex-1">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="comments">Comments</TabsTrigger>
@@ -694,7 +695,8 @@ export function CollaborationFeatures({
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+        </Tabs>
+      </div>
     </div>
   )
 }

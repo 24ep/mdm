@@ -51,6 +51,7 @@ interface EavAttribute {
   isEditable: boolean
   helpText?: string
   placeholder?: string
+  attributeGroupId?: string
 }
 
 interface EntityType {
@@ -279,7 +280,6 @@ export function EavEntityManager({
             value={value}
             onChange={(e) => setFormData(prev => ({ ...prev, [attribute.name]: e.target.value }))}
             placeholder={attribute.placeholder}
-            disabled={!attribute.isEditable}
           />
         )
       
@@ -289,7 +289,6 @@ export function EavEntityManager({
             value={value}
             onChange={(e) => setFormData(prev => ({ ...prev, [attribute.name]: e.target.value }))}
             placeholder={attribute.placeholder}
-            disabled={!attribute.isEditable}
           />
         )
       
@@ -302,7 +301,6 @@ export function EavEntityManager({
             value={value}
             onChange={(e) => setFormData(prev => ({ ...prev, [attribute.name]: parseFloat(e.target.value) || 0 }))}
             placeholder={attribute.placeholder}
-            disabled={!attribute.isEditable}
           />
         )
       
@@ -311,7 +309,6 @@ export function EavEntityManager({
           <Select
             value={value ? 'true' : 'false'}
             onValueChange={(val) => setFormData(prev => ({ ...prev, [attribute.name]: val === 'true' }))}
-            disabled={!attribute.isEditable}
           >
             <SelectTrigger>
               <SelectValue />
@@ -329,7 +326,6 @@ export function EavEntityManager({
             type="date"
             value={value}
             onChange={(e) => setFormData(prev => ({ ...prev, [attribute.name]: e.target.value }))}
-            disabled={!attribute.isEditable}
           />
         )
       
@@ -340,7 +336,6 @@ export function EavEntityManager({
             type="datetime-local"
             value={value}
             onChange={(e) => setFormData(prev => ({ ...prev, [attribute.name]: e.target.value }))}
-            disabled={!attribute.isEditable}
           />
         )
       
@@ -349,7 +344,6 @@ export function EavEntityManager({
           <Select
             value={value}
             onValueChange={(val) => setFormData(prev => ({ ...prev, [attribute.name]: val }))}
-            disabled={!attribute.isEditable}
           >
             <SelectTrigger>
               <SelectValue placeholder={attribute.placeholder} />
@@ -360,8 +354,8 @@ export function EavEntityManager({
                   const choiceValue = String(choice.value ?? '')
                   return { choiceValue, choice }
                 })
-                .filter(({ choiceValue }) => choiceValue !== '')
-                .map(({ choiceValue, choice }) => (
+                .filter(({ choiceValue }: { choiceValue: string; choice: any }) => choiceValue !== '')
+                .map(({ choiceValue, choice }: { choiceValue: string; choice: any }) => (
                   <SelectItem key={choiceValue} value={choiceValue}>
                     {choice.label}
                   </SelectItem>
@@ -385,7 +379,6 @@ export function EavEntityManager({
                       : currentValues.filter((v: any) => v !== choice.value)
                     setFormData(prev => ({ ...prev, [attribute.name]: newValues }))
                   }}
-                  disabled={!attribute.isEditable}
                 />
                 <span>{choice.label}</span>
               </label>
@@ -400,7 +393,6 @@ export function EavEntityManager({
             value={value}
             onChange={(e) => setFormData(prev => ({ ...prev, [attribute.name]: e.target.value }))}
             placeholder={attribute.placeholder}
-            disabled={!attribute.isEditable}
           />
         )
     }

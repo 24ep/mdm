@@ -59,14 +59,12 @@ export const grafanaPlugin: PluginDefinition = {
     note: 'Grafana is open-source and free to use',
   },
   installationCount: 0,
-  rating: null,
+  rating: undefined,
   reviewCount: 0,
   securityAudit: {
     lastAudited: new Date().toISOString(),
     vulnerabilities: [],
     compliance: ['Open Source'],
   },
-  createdAt: new Date(),
-  updatedAt: new Date(),
 }
 

@@ -34,7 +34,6 @@ export function BackgroundColorPicker({
       <PopoverContent 
         className="w-72 p-4"
         align="end"
-        side="right"
         onClick={(e) => e.stopPropagation()}
         style={{ width: '288px', minWidth: '288px', maxWidth: '288px' }}
       >

@@ -305,7 +305,7 @@ export function PagesTab({
                   return (
                     <GroupItem
                       key={page.id}
-                      page={page as any}
+                      page={page as UnifiedPage & { type: 'group'; children?: UnifiedPage[] }}
                       index={idx}
                       isMobileViewport={isMobileViewport}
                       allPages={allPages}
@@ -510,7 +510,7 @@ export function PagesTab({
                           return (
                             <GroupItem
                               key={page.id}
-                              page={page as any}
+                              page={page as UnifiedPage & { type: 'group'; children?: UnifiedPage[] }}
                               index={idx}
                               isMobileViewport={isMobileViewport}
                               allPages={allPages}

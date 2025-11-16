@@ -22,8 +22,6 @@ import {
   Mail,
   Slack,
   Github,
-  Google,
-  Microsoft,
   CheckCircle,
   AlertTriangle,
   Clock,
@@ -120,14 +118,14 @@ const THIRD_PARTY_PROVIDERS = [
     provider: 'google',
     name: 'Google Workspace',
     description: 'Integrate with Google services',
-    icon: <Google className="h-5 w-5" />,
+    icon: <Database className="h-5 w-5" />,
     color: 'bg-blue-500'
   },
   {
     provider: 'microsoft',
     name: 'Microsoft 365',
     description: 'Connect to Microsoft services',
-    icon: <Microsoft className="h-5 w-5" />,
+    icon: <Database className="h-5 w-5" />,
     color: 'bg-orange-500'
   }
 ]
@@ -375,7 +373,6 @@ export function IntegrationHub({ spaceId }: IntegrationHubProps) {
                           id="integration-name"
                           value={selectedIntegration.name}
                           onChange={(e) => updateIntegration(selectedIntegration.id, { name: e.target.value })}
-                          disabled={!canEditIntegration}
                         />
                       </div>
                       <div className="space-y-2">
@@ -383,7 +380,6 @@ export function IntegrationHub({ spaceId }: IntegrationHubProps) {
                         <Select
                           value={selectedIntegration.status}
                           onValueChange={(status) => updateIntegration(selectedIntegration.id, { status: status as any })}
-                          disabled={!canEditIntegration}
                         >
                           <SelectTrigger>
                             <SelectValue />

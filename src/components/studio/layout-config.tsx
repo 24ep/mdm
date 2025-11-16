@@ -1021,7 +1021,7 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
           selectedComponent={selectedComponent}
           allPages={allPages}
           selectedPageId={selectedPageId}
-          canvasRef={canvasRef}
+          canvasRef={canvasRef as React.RefObject<HTMLDivElement>}
           isDraggingWidget={isDraggingWidget}
           selectedWidgetId={selectedWidgetId}
           selectedWidgetIds={selectedWidgetIds}

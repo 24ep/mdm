@@ -397,7 +397,7 @@ export function SystemHealthDashboard({ spaceId }: HealthDashboardProps) {
                     <span>{metrics.find(m => m.id === 'error_rate')?.value}%</span>
                   </div>
                   <Progress 
-                    value={metrics.find(m => m.id === 'error_rate')?.value * 20} 
+                    value={(metrics.find(m => m.id === 'error_rate')?.value ?? 0) * 20} 
                   />
                 </div>
                 <div className="space-y-2">

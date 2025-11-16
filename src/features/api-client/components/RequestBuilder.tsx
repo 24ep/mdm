@@ -137,8 +137,9 @@ export function RequestBuilder({ request, onChange, environmentVariables = [] }:
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col">
-        <TabsList className="border-b border-border">
+      <div className="flex-1 flex flex-col">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+          <TabsList className="border-b border-border">
           <TabsTrigger value="params">Params</TabsTrigger>
           <TabsTrigger value="headers">Headers</TabsTrigger>
           {!['GET', 'HEAD', 'OPTIONS'].includes(request.method) && (
@@ -353,9 +354,9 @@ export function RequestBuilder({ request, onChange, environmentVariables = [] }:
                 />
                 <Select
                   value={request.authConfig?.apiKeyLocation || 'header'}
-                  onValueChange={(value: 'header' | 'query') =>
+                  onValueChange={(value: string) =>
                     updateRequest({
-                      authConfig: { ...request.authConfig, apiKeyLocation: value },
+                      authConfig: { ...request.authConfig, apiKeyLocation: value as 'header' | 'query' },
                     })
                   }
                 >
@@ -405,6 +406,7 @@ export function RequestBuilder({ request, onChange, environmentVariables = [] }:
                         oauth2Config: {
                           ...request.authConfig?.oauth2Config,
                           authorizationUrl: e.target.value,
+                          grantType: request.authConfig?.oauth2Config?.grantType || 'authorization_code',
                         },
                       },
                     })
@@ -420,6 +422,7 @@ export function RequestBuilder({ request, onChange, environmentVariables = [] }:
                         oauth2Config: {
                           ...request.authConfig?.oauth2Config,
                           accessTokenUrl: e.target.value,
+                          grantType: request.authConfig?.oauth2Config?.grantType || 'authorization_code',
                         },
                       },
                     })
@@ -435,6 +438,7 @@ export function RequestBuilder({ request, onChange, environmentVariables = [] }:
                         oauth2Config: {
                           ...request.authConfig?.oauth2Config,
                           clientId: e.target.value,
+                          grantType: request.authConfig?.oauth2Config?.grantType || 'authorization_code',
                         },
                       },
                     })
@@ -450,6 +454,7 @@ export function RequestBuilder({ request, onChange, environmentVariables = [] }:
                         oauth2Config: {
                           ...request.authConfig?.oauth2Config,
                           clientSecret: e.target.value,
+                          grantType: request.authConfig?.oauth2Config?.grantType || 'authorization_code',
                         },
                       },
                     })
@@ -466,6 +471,7 @@ export function RequestBuilder({ request, onChange, environmentVariables = [] }:
                         oauth2Config: {
                           ...request.authConfig?.oauth2Config,
                           scope: e.target.value,
+                          grantType: request.authConfig?.oauth2Config?.grantType || 'authorization_code',
                         },
                       },
                     })
@@ -481,6 +487,7 @@ export function RequestBuilder({ request, onChange, environmentVariables = [] }:
                         oauth2Config: {
                           ...request.authConfig?.oauth2Config,
                           callbackUrl: e.target.value,
+                          grantType: request.authConfig?.oauth2Config?.grantType || 'authorization_code',
                         },
                       },
                     })
@@ -596,7 +603,8 @@ export function RequestBuilder({ request, onChange, environmentVariables = [] }:
             />
           </div>
         </TabsContent>
-      </Tabs>
+        </Tabs>
+      </div>
     </div>
   )
 }

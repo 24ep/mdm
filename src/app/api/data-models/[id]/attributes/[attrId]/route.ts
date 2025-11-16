@@ -152,7 +152,7 @@ export async function PUT(
       'textarea': 'TEXTAREA',
       'json': 'JSON'
     }
-    const mappedType = typeMapping[type?.toLowerCase()] || type?.toUpperCase() || 'TEXT'
+    const mappedType = type ? (typeMapping[type.toLowerCase()] || type.toUpperCase() || 'TEXT') : 'TEXT'
 
     const updateSql = `
       UPDATE public.data_model_attributes

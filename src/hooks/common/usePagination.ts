@@ -18,6 +18,7 @@ export interface UsePaginationReturn {
   totalPages: number
   setPage: (page: number) => void
   setLimit: (limit: number) => void
+  setTotal: (total: number) => void
   nextPage: () => void
   prevPage: () => void
   goToPage: (page: number) => void

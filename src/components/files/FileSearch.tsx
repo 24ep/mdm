@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Search, Filter, SortAsc, SortDesc, Grid, List, Download, Trash2, Share2, Tag, Folder } from 'lucide-react'
 import { FilePreview } from '@/components/ui/file-preview'
-import { useDebounce } from '@/hooks/use-debounce'
+import { useDebounce } from '@/shared/hooks/useDebounce'
 
 interface FileSearchProps {
   spaceId: string

@@ -88,18 +88,18 @@ export async function POST(
         )
 
         // Send notification
-        await notificationService.createNotification(
-          user.id,
-          'INFO',
-          'You were mentioned',
-          `${session.user.name} mentioned you in "${doc.title}"`,
-          'MEDIUM',
-          {
+        await notificationService.createNotification({
+          user_id: user.id,
+          type: 'INFO',
+          title: 'You were mentioned',
+          message: `${session.user.name} mentioned you in "${doc.title}"`,
+          priority: 'MEDIUM',
+          data: {
             documentId,
             mentionedBy: session.user.id,
           },
-          `/knowledge/documents/${documentId}`
-        )
+          action_url: `/knowledge/documents/${documentId}`
+        })
 
         createdMentions.push({
           userId: user.id,

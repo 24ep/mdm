@@ -501,10 +501,10 @@ export function DraggableAttributeList({ modelId, onAttributesChange }: Draggabl
       <EnhancedAttributeDetailDrawer
         open={showAttributeDrawer}
         onOpenChange={setShowAttributeDrawer}
-        attribute={selectedAttribute}
-        onSave={handleSaveAttribute}
+        attribute={selectedAttribute ? { ...selectedAttribute, description: selectedAttribute.description ?? undefined } : null}
+        onSave={(attr) => handleSaveAttribute(attr as any)}
         onDelete={handleDeleteAttribute}
-        allAttributes={attributes}
+        allAttributes={attributes.map(attr => ({ ...attr, description: attr.description ?? undefined })) as any}
       />
 
       {/* Import Dialog */}

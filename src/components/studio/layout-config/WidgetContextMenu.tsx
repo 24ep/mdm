@@ -62,14 +62,14 @@ export function WidgetContextMenu({
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       {children}
-      <DropdownMenuContent className="w-48" onCloseAutoFocus={(e) => e.preventDefault()}>
-        <DropdownMenuItem onClick={() => { onCopy(); setOpen(false) }} disabled={isLocked}>
+      <DropdownMenuContent className="w-48">
+        <DropdownMenuItem onClick={() => { if (!isLocked) { onCopy(); setOpen(false) } }}>
           <Copy className="h-4 w-4 mr-2" />
           Copy
           <DropdownMenuShortcut>⌘C</DropdownMenuShortcut>
         </DropdownMenuItem>
         
-        <DropdownMenuItem onClick={() => { onCut(); setOpen(false) }} disabled={isLocked}>
+        <DropdownMenuItem onClick={() => { if (!isLocked) { onCut(); setOpen(false) } }}>
           <Scissors className="h-4 w-4 mr-2" />
           Cut
           <DropdownMenuShortcut>⌘X</DropdownMenuShortcut>
@@ -83,7 +83,7 @@ export function WidgetContextMenu({
           </DropdownMenuItem>
         )}
         
-        <DropdownMenuItem onClick={() => { onDuplicate(); setOpen(false) }} disabled={isLocked}>
+        <DropdownMenuItem onClick={() => { if (!isLocked) { onDuplicate(); setOpen(false) } }}>
           <Copy className="h-4 w-4 mr-2" />
           Duplicate
           <DropdownMenuShortcut>⌘D</DropdownMenuShortcut>
@@ -127,25 +127,25 @@ export function WidgetContextMenu({
               Layer Order
             </DropdownMenuLabel>
             {onBringToFront && (
-              <DropdownMenuItem onClick={() => { onBringToFront(); setOpen(false) }} disabled={isLocked}>
+              <DropdownMenuItem onClick={() => { if (!isLocked) { onBringToFront(); setOpen(false) } }}>
                 <ArrowUp className="h-4 w-4 mr-2" />
                 Bring to Front
               </DropdownMenuItem>
             )}
             {onBringForward && (
-              <DropdownMenuItem onClick={() => { onBringForward(); setOpen(false) }} disabled={isLocked}>
+              <DropdownMenuItem onClick={() => { if (!isLocked) { onBringForward(); setOpen(false) } }}>
                 <ArrowUp className="h-4 w-4 mr-2" />
                 Bring Forward
               </DropdownMenuItem>
             )}
             {onSendBackward && (
-              <DropdownMenuItem onClick={() => { onSendBackward(); setOpen(false) }} disabled={isLocked}>
+              <DropdownMenuItem onClick={() => { if (!isLocked) { onSendBackward(); setOpen(false) } }}>
                 <ArrowDown className="h-4 w-4 mr-2" />
                 Send Backward
               </DropdownMenuItem>
             )}
             {onSendToBack && (
-              <DropdownMenuItem onClick={() => { onSendToBack(); setOpen(false) }} disabled={isLocked}>
+              <DropdownMenuItem onClick={() => { if (!isLocked) { onSendToBack(); setOpen(false) } }}>
                 <ArrowDown className="h-4 w-4 mr-2" />
                 Send to Back
               </DropdownMenuItem>
@@ -155,7 +155,7 @@ export function WidgetContextMenu({
         
         <DropdownMenuSeparator />
         
-        <DropdownMenuItem onClick={() => { onDelete(); setOpen(false) }} disabled={isLocked} className="text-red-600 focus:text-red-600">
+        <DropdownMenuItem onClick={() => { if (!isLocked) { onDelete(); setOpen(false) } }} className="text-red-600 focus:text-red-600">
           <Trash2 className="h-4 w-4 mr-2" />
           Delete
           <DropdownMenuShortcut>⌫</DropdownMenuShortcut>

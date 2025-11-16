@@ -10,7 +10,7 @@ import { Z_INDEX } from "@/lib/z-index"
 interface PopoverContextValue {
   open: boolean
   setOpen: (open: boolean) => void
-  triggerRef: React.RefObject<HTMLElement>
+  triggerRef: React.RefObject<HTMLElement | null>
 }
 
 const PopoverContext = React.createContext<PopoverContextValue | undefined>(undefined)

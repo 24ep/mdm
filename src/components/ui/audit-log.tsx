@@ -24,7 +24,7 @@ import {
   Users,
   FileText
 } from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './dialog'
 
 interface AuditLog {
   id: string

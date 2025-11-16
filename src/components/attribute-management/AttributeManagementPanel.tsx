@@ -117,8 +117,8 @@ export function AttributeManagementPanel({ modelId, onAttributesChange }: Attrib
       const attribute = attributes.find(attr => attr.id === attributeId)
       if (!attribute) return
 
-      const updatedData = { ...attribute, [field]: value }
-      const updated = await attributeService.updateAttribute(attributeId, updatedData)
+      const updatedData = { ...attribute, [field]: value === null ? undefined : value }
+      const updated = await attributeService.updateAttribute(attributeId, updatedData as any)
       if (updated) {
         setAttributes(prev => prev.map(attr => attr.id === attributeId ? updated : attr))
       }
@@ -439,11 +439,11 @@ export function AttributeManagementPanel({ modelId, onAttributesChange }: Attrib
       <AttributeDetailDrawer
         open={showAttributeDrawer}
         onOpenChange={setShowAttributeDrawer}
-        attribute={selectedAttribute}
+        attribute={selectedAttribute ? { ...selectedAttribute, description: selectedAttribute.description ?? undefined } : null}
         onSave={handleSaveAttribute}
         onDelete={handleDeleteAttribute}
         onReorder={handleReorderAttributes}
-        allAttributes={attributes}
+        allAttributes={attributes.map(attr => ({ ...attr, description: attr.description ?? undefined })) as any}
       />
 
       {/* Import Dialog */}

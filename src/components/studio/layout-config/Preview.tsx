@@ -83,13 +83,13 @@ export function Preview({
       } else if (page.page?.icon) {
         const customPage = page.page
         // Check if it's a letter, number, roman, or color
-        if (customPage.icon.startsWith('letter-') || 
+        if (customPage.icon && (customPage.icon.startsWith('letter-') || 
             customPage.icon.startsWith('number-') || 
             customPage.icon.startsWith('roman-') || 
-            customPage.icon.startsWith('color-')) {
+            customPage.icon.startsWith('color-'))) {
           // These are rendered as text/color, not icons
           Icon = null
-        } else if (customPage.icon.startsWith('lucide-')) {
+        } else if (customPage.icon && customPage.icon.startsWith('lucide-')) {
           // Lucide icon with prefix
           const iconName = customPage.icon.replace('lucide-', '')
           const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -112,7 +112,7 @@ export function Preview({
               }
             }).catch(() => {})
           }
-        } else if (customPage.icon.includes('-')) {
+        } else if (customPage.icon && customPage.icon.includes('-')) {
           // React Icon (format: fa-*, md-*, etc.)
           const [prefix, ...rest] = customPage.icon.split('-')
           const iconName = rest.join('-')
@@ -149,7 +149,7 @@ export function Preview({
             'Settings': Settings,
             'FileText': FileIcon,
           }
-          Icon = iconMap[customPage.icon] || null
+          Icon = customPage.icon ? (iconMap[customPage.icon] || null) : null
         }
       }
       
@@ -439,7 +439,7 @@ export function Preview({
                     setPlacedWidgets={setPlacedWidgets}
                     setSelectedWidgetId={setSelectedWidgetId}
                     setSelectedWidgetIds={setSelectedWidgetIds}
-                    setSelectedComponent={setSelectedComponent}
+                    setSelectedComponent={setSelectedComponent as React.Dispatch<React.SetStateAction<string | null>>}
                     setIsDraggingWidget={setIsDraggingWidget}
                     setDragOffset={setDragOffset}
                     clipboardWidget={clipboardWidget}

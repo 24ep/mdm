@@ -38,7 +38,7 @@ export function UserInviteInput({ spaceId, onInvite, disabled = false, className
   
   const inputRef = useRef<HTMLInputElement>(null)
   const suggestionsRef = useRef<HTMLDivElement>(null)
-  const debounceRef = useRef<NodeJS.Timeout>()
+  const debounceRef = useRef<NodeJS.Timeout | null>(null)
 
   // Debounced search for users
   useEffect(() => {
@@ -278,8 +278,8 @@ export function UserInviteInput({ spaceId, onInvite, disabled = false, className
         
         <div>
           <Label>Role</Label>
-          <Select value={role} onValueChange={setRole} disabled={disabled || isInviting}>
-            <SelectTrigger className="w-40">
+          <Select value={role} onValueChange={setRole}>
+            <SelectTrigger className="w-40" disabled={disabled || isInviting}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

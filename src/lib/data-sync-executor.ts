@@ -147,7 +147,7 @@ export class DataSyncExecutor {
         [
           result.success ? 'COMPLETED' : 'FAILED',
           result.error || null,
-          this.calculateNextRunTime(schedule.schedule_type, schedule.schedule_config),
+          this.calculateNextRunTime(schedule.schedule_type, (schedule as any).schedule_config),
           scheduleId
         ]
       )
@@ -272,7 +272,7 @@ export class DataSyncExecutor {
     if (apiAuthToken?.startsWith('vault://') || apiAuthPassword?.startsWith('vault://') || apiAuthApiKey?.startsWith('vault://')) {
       const { getSecretsManager } = await import('@/lib/secrets-manager')
       const secretsManager = getSecretsManager()
-      const connectionId = conn.id
+      const connectionId = (conn as any).id
       
       if (connectionId) {
         const vaultCreds = await secretsManager.getExternalApiCredentials(connectionId)
@@ -455,7 +455,7 @@ export class DataSyncExecutor {
          WHERE data_model_id = $1`,
         [schedule.data_model_id]
       )
-      result.records_deleted = deleteResult.rowCount || 0
+      result.records_deleted = (deleteResult as any).rowCount || deleteResult.rows?.length || 0
     }
 
     // Fetch attributes for the data model to enable proper mapping
@@ -696,7 +696,7 @@ export class DataSyncExecutor {
       notify_on_success: row.notify_on_success ?? false,
       notify_on_failure: row.notify_on_failure ?? true,
       notification_emails: row.notification_emails || [],
-      schedule_config: row.schedule_config,
+      ...(row.schedule_config ? { schedule_config: row.schedule_config } : {}),
       external_connection: {
         connection_type: row.connection_type,
         db_type: row.db_type,

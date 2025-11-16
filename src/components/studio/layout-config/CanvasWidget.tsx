@@ -145,7 +145,9 @@ export function CanvasWidget({
       
       document.body.style.userSelect = 'none'
       document.body.style.cursor = 'grabbing'
-      e.currentTarget.style.cursor = 'grabbing'
+      if (e.currentTarget instanceof HTMLElement) {
+        e.currentTarget.style.cursor = 'grabbing'
+      }
     }
   }
 
@@ -153,13 +155,17 @@ export function CanvasWidget({
     if (dragStateRef.current.isDragging && dragStateRef.current.widgetId === widget.id) {
       document.body.style.userSelect = ''
       document.body.style.cursor = ''
-      e.currentTarget.style.cursor = 'grab'
+      if (e.currentTarget instanceof HTMLElement) {
+        e.currentTarget.style.cursor = 'grab'
+      }
     }
   }
 
   const handleMouseLeave = (e: React.MouseEvent) => {
     if (!dragStateRef.current.isDragging) {
-      e.currentTarget.style.cursor = 'grab'
+      if (e.currentTarget instanceof HTMLElement) {
+        e.currentTarget.style.cursor = 'grab'
+      }
     }
   }
 

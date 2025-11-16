@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
       LEFT JOIN users u1 ON u1.id = kd.created_by
       LEFT JOIN users u2 ON u2.id = kd.updated_by
       WHERE ${whereClause}
-      ${buildOrderByClause(sortBy, sortOrder, { field: 'order', order: 'asc' })}
+      ${buildOrderByClause(sortBy, sortOrder || 'desc', { field: 'order', order: 'asc' })}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `
     queryParams.push(limit, offset)

@@ -153,8 +153,9 @@ export function RedisManagementUI({
 
   return (
     <div className="space-y-4">
-      <Tabs defaultValue="keys" className="w-full">
-        <TabsList>
+      <div className="w-full">
+        <Tabs defaultValue="keys">
+          <TabsList>
           <TabsTrigger value="keys">Keys</TabsTrigger>
           <TabsTrigger value="stats">Statistics</TabsTrigger>
         </TabsList>
@@ -286,7 +287,8 @@ export function RedisManagementUI({
             Refresh Statistics
           </Button>
         </TabsContent>
-      </Tabs>
+        </Tabs>
+      </div>
     </div>
   )
 }

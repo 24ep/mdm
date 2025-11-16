@@ -15,7 +15,7 @@ const envSchema = z.object({
   NEXTAUTH_SECRET: z.string().min(32).optional(),
 
   // Database
-  DATABASE_URL: z.string().url(),
+  DATABASE_URL: z.string().url().optional(),
 
   // PostgREST
   NEXT_PUBLIC_API_URL: z.string().url().optional(),
@@ -79,7 +79,7 @@ function validateEnv() {
     return envSchema.parse(process.env)
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const missingVars = error.errors.map((err) => `${err.path.join('.')}: ${err.message}`)
+      const missingVars = error.issues.map((err) => `${err.path.join('.')}: ${err.message}`)
       // Use console.error here to avoid circular dependency with logger
       console.error('Environment validation failed:', error, { missingVars })
       throw new Error(

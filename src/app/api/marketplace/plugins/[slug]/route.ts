@@ -6,7 +6,7 @@ import { logAPIRequest } from '@/shared/lib/security/audit-logger'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -14,7 +14,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { slug } = params
+    const { slug } = await params
 
     const result = await query(
       `SELECT * FROM service_registry WHERE slug = $1 AND deleted_at IS NULL`,
@@ -78,7 +78,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -90,7 +90,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { slug } = params
+    const { slug } = await params
     const body = await request.json()
 
     // Build update query dynamically
@@ -158,7 +158,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -170,7 +170,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { slug } = params
+    const { slug } = await params
 
     const result = await query(
       `UPDATE service_registry

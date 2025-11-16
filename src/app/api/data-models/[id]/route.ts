@@ -110,10 +110,14 @@ export async function PUT(
     if (description !== undefined) { fields.push(`description = $${idx++}`); values.push(description) }
     if (is_active !== undefined) { fields.push(`is_active = $${idx++}`); values.push(!!is_active) }
     if (icon !== undefined) { fields.push(`icon = $${idx++}`); values.push(icon) }
-    if (sort_order !== undefined) { fields.push(`sort_order = $${idx++}`); values.push(parseInt(sort_order) || 0) }
+    if (sort_order !== undefined) { 
+      const sortOrderNum = typeof sort_order === 'string' ? parseInt(sort_order) || 0 : sort_order || 0
+      fields.push(`sort_order = $${idx++}`)
+      values.push(String(sortOrderNum))
+    }
     if (is_pinned !== undefined) { fields.push(`is_pinned = $${idx++}`); values.push(!!is_pinned) }
     if (source_type !== undefined) { fields.push(`source_type = $${idx++}`); values.push(source_type) }
-    if (external_connection_id !== undefined) { fields.push(`external_connection_id = $${idx++}`); values.push(external_connection_id) }
+    if (external_connection_id !== undefined && external_connection_id !== null) { fields.push(`external_connection_id = $${idx++}`); values.push(external_connection_id) }
     if (external_schema !== undefined) { fields.push(`external_schema = $${idx++}`); values.push(external_schema) }
     if (external_table !== undefined) { fields.push(`external_table = $${idx++}`); values.push(external_table) }
     if (external_primary_key !== undefined) { fields.push(`external_primary_key = $${idx++}`); values.push(external_primary_key) }

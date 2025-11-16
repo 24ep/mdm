@@ -103,7 +103,6 @@ export function StyleSection({
                   value={widget.properties?.borderColor || '#e5e7eb'}
                   onChange={(color) => updateProperty('borderColor', color)}
                   allowImageVideo={false}
-                  disabled={widget.properties?.showBorder !== true}
                   className="relative"
                   placeholder="#e5e7eb"
                   inputClassName="h-7 text-xs pl-7"
@@ -327,7 +326,6 @@ export function StyleSection({
                 <Select
                   value={widget.properties?.borderStyle || 'solid'}
                   onValueChange={(value) => updateProperty('borderStyle', value)}
-                  disabled={widget.properties?.showBorder !== true}
                 >
                   <SelectTrigger className="h-7 text-xs">
                     <SelectValue />

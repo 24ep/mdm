@@ -15,10 +15,12 @@ export interface ToastOptions {
  * Show success toast
  */
 export function showSuccess(message: string, options?: ToastOptions) {
+  const { icon, ...restOptions } = options || {}
   return toast.success(message, {
-    duration: options?.duration || 3000,
-    position: options?.position || 'top-right',
-    ...options
+    duration: restOptions.duration || 3000,
+    position: restOptions.position || 'top-right',
+    ...restOptions,
+    ...(icon ? { icon: icon as any } : {})
   })
 }
 
@@ -26,10 +28,12 @@ export function showSuccess(message: string, options?: ToastOptions) {
  * Show error toast
  */
 export function showError(message: string, options?: ToastOptions) {
+  const { icon, ...restOptions } = options || {}
   return toast.error(message, {
-    duration: options?.duration || 4000,
-    position: options?.position || 'top-right',
-    ...options
+    duration: restOptions.duration || 4000,
+    position: restOptions.position || 'top-right',
+    ...restOptions,
+    ...(icon ? { icon: icon as any } : {})
   })
 }
 
@@ -37,11 +41,12 @@ export function showError(message: string, options?: ToastOptions) {
  * Show info toast
  */
 export function showInfo(message: string, options?: ToastOptions) {
+  const { icon, ...restOptions } = options || {}
   return toast(message, {
-    duration: options?.duration || 3000,
-    position: options?.position || 'top-right',
-    icon: options?.icon || 'ℹ️',
-    ...options
+    duration: restOptions.duration || 3000,
+    position: restOptions.position || 'top-right',
+    icon: (icon || 'ℹ️') as any,
+    ...restOptions
   })
 }
 
@@ -49,11 +54,12 @@ export function showInfo(message: string, options?: ToastOptions) {
  * Show warning toast
  */
 export function showWarning(message: string, options?: ToastOptions) {
+  const { icon, ...restOptions } = options || {}
   return toast(message, {
-    duration: options?.duration || 3500,
-    position: options?.position || 'top-right',
-    icon: options?.icon || '⚠️',
-    ...options
+    duration: restOptions.duration || 3500,
+    position: restOptions.position || 'top-right',
+    icon: (icon || '⚠️') as any,
+    ...restOptions
   })
 }
 
@@ -61,9 +67,11 @@ export function showWarning(message: string, options?: ToastOptions) {
  * Show loading toast (returns dismiss function)
  */
 export function showLoading(message: string, options?: ToastOptions) {
+  const { icon, ...restOptions } = options || {}
   return toast.loading(message, {
-    position: options?.position || 'top-right',
-    ...options
+    position: restOptions.position || 'top-right',
+    ...restOptions,
+    ...(icon ? { icon: icon as any } : {})
   })
 }
 

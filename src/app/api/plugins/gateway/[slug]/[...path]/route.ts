@@ -9,30 +9,34 @@ import { pluginGateway } from '@/features/marketplace/lib/plugin-gateway'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string; path: string[] } }
+  { params }: { params: Promise<{ slug: string; path: string[] }> }
 ) {
-  return handleGatewayRequest(request, params, 'GET')
+  const resolvedParams = await params
+  return handleGatewayRequest(request, resolvedParams, 'GET')
 }
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { slug: string; path: string[] } }
+  { params }: { params: Promise<{ slug: string; path: string[] }> }
 ) {
-  return handleGatewayRequest(request, params, 'POST')
+  const resolvedParams = await params
+  return handleGatewayRequest(request, resolvedParams, 'POST')
 }
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { slug: string; path: string[] } }
+  { params }: { params: Promise<{ slug: string; path: string[] }> }
 ) {
-  return handleGatewayRequest(request, params, 'PUT')
+  const resolvedParams = await params
+  return handleGatewayRequest(request, resolvedParams, 'PUT')
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { slug: string; path: string[] } }
+  { params }: { params: Promise<{ slug: string; path: string[] }> }
 ) {
-  return handleGatewayRequest(request, params, 'DELETE')
+  const resolvedParams = await params
+  return handleGatewayRequest(request, resolvedParams, 'DELETE')
 }
 
 async function handleGatewayRequest(

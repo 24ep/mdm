@@ -27,8 +27,8 @@ const RadioGroup = React.forwardRef<HTMLDivElement, RadioGroupProps>(
         {React.Children.map(children, (child) => {
           if (React.isValidElement(child) && child.type === RadioGroupItem) {
             return React.cloneElement(child, {
-              checked: value === child.props.value,
-              onChange: () => onValueChange?.(child.props.value),
+              checked: value === (child.props as any).value,
+              onChange: () => onValueChange?.((child.props as any).value),
             } as any)
           }
           return child
@@ -59,7 +59,7 @@ const RadioGroupItem = React.forwardRef<HTMLInputElement, RadioGroupItemProps>(
         <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
           <div className={cn(
             "w-2 h-2 rounded-full bg-white transition-opacity",
-            props.checked ? "opacity-100" : "opacity-0"
+            (props as any).checked ? "opacity-100" : "opacity-0"
           )} />
         </div>
       </div>

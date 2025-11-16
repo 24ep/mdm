@@ -58,7 +58,7 @@ export async function requireRole(
     console.error('❌ Role check error:', error);
     return NextResponse.json({ 
       error: 'Forbidden - Role check failed',
-      details: error.message 
+      details: error instanceof Error ? error.message : String(error)
     }, { status: 403 })
   }
 }

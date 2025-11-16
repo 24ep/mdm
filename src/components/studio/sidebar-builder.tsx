@@ -324,7 +324,7 @@ export function SidebarBuilder({ items, config, onUpdate, onConfigUpdate }: Side
                       <div>
                         <Label htmlFor="item-color">Color</Label>
                         <ColorInput
-                          value={newItem.color}
+                          value={newItem.color || ''}
                           onChange={(color) => setNewItem({ ...newItem, color })}
                           allowImageVideo={false}
                           className="relative"
@@ -507,7 +507,7 @@ export function SidebarBuilder({ items, config, onUpdate, onConfigUpdate }: Side
                   <div>
                     <Label htmlFor="edit-color">Color</Label>
                     <ColorInput
-                      value={editingItem.color}
+                      value={editingItem.color || ''}
                       onChange={(color) => setEditingItem({ ...editingItem, color })}
                       allowImageVideo={false}
                       className="relative"

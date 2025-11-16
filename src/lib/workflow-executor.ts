@@ -73,7 +73,6 @@ export async function executeWorkflowCode(
       // Dynamic import with expression is intentional for workflow code execution
       // This allows loading user-provided workflow code at runtime
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      // @ts-expect-error - Dynamic import with expression is intentional
       const module = await import(/* @vite-ignore */ /* webpackIgnore: true */ pathToFileURL(tempFile).href)
       
       // Step 4: Get runWorkflow function

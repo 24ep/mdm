@@ -206,6 +206,7 @@ class NotebookExecutionEngine {
       return {
         stdout: 'R plot generated',
         result: 'Visualization created',
+        executionTime: 0,
         charts: [{
           type: 'scatter',
           data: this.generateSampleData('scatter'),
@@ -219,6 +220,7 @@ class NotebookExecutionEngine {
     return {
       stdout: 'R code executed successfully',
       result: 'R execution completed',
+      executionTime: 0,
       variables: { ...kernel.variables, 'r_output': 'success' }
     }
   }
@@ -232,6 +234,7 @@ class NotebookExecutionEngine {
     return {
       stdout: 'SQL query executed successfully',
       result: 'Query completed',
+      executionTime: 0,
       tables: [{
         data: mockData,
         columns: ['id', 'name', 'value', 'category'],
@@ -251,11 +254,13 @@ class NotebookExecutionEngine {
       return {
         stdout: 'JavaScript executed successfully',
         result: result,
+        executionTime: 0,
         variables: { ...kernel.variables, 'js_result': result }
       }
     } catch (error) {
       return {
         error: error instanceof Error ? error.message : 'JavaScript execution failed',
+        executionTime: 0,
         variables: kernel.variables
       }
     }

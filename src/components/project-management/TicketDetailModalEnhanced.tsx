@@ -591,9 +591,9 @@ export function TicketDetailModalEnhanced({
         updates.priority = priorityMap[ticket.priority] || 'Medium'
       }
       if (ticket.dueDate) {
-        updates.dueDate = ticket.dueDate instanceof Date 
-          ? ticket.dueDate.toISOString() 
-          : new Date(ticket.dueDate).toISOString()
+        updates.dueDate = ticket.dueDate && typeof ticket.dueDate === 'object' && 'toISOString' in ticket.dueDate
+          ? (ticket.dueDate as Date).toISOString() 
+          : new Date(ticket.dueDate as string).toISOString()
       }
 
       const response = await fetch('/api/integrations/manageengine-servicedesk/update', {

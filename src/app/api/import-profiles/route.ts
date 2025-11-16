@@ -37,8 +37,8 @@ export async function GET(request: NextRequest) {
       where.dataModel = dataModel
     }
     
-    if (isPublic !== null) {
-      where.isPublic = isPublic === 'true'
+    if (isPublic !== null && isPublic !== undefined) {
+      where.isPublic = Boolean(isPublic)
     }
     
     if (importType) {
@@ -86,8 +86,8 @@ export async function POST(request: NextRequest) {
       dateFormat: z.string().optional().default('YYYY-MM-DD'),
       timeFormat: z.string().optional().default('HH:mm:ss'),
       booleanFormat: z.string().optional().default('true/false'),
-      attributeMapping: z.record(z.any()).optional().default({}),
-      attributeOptions: z.record(z.any()).optional().default({}),
+      attributeMapping: z.record(z.string(), z.any()).optional().default({}),
+      attributeOptions: z.record(z.string(), z.any()).optional().default({}),
       isPublic: z.boolean().optional().default(false),
       sharing: z.any().optional(),
       spaceId: commonSchemas.id.optional().nullable(),

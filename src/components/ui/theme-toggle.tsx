@@ -128,15 +128,15 @@ export function ThemeToggle({
         <DropdownMenuLabel>Theme</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuRadioGroup value={theme || 'system'} onValueChange={setTheme}>
-          <DropdownMenuRadioItem value="light">
+          <DropdownMenuRadioItem checked={theme === 'light'} onClick={() => setTheme('light')}>
             <Sun className="mr-2 h-4 w-4" />
             <span>Light</span>
           </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="dark">
+          <DropdownMenuRadioItem checked={theme === 'dark'} onClick={() => setTheme('dark')}>
             <Moon className="mr-2 h-4 w-4" />
             <span>Dark</span>
           </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="system">
+          <DropdownMenuRadioItem checked={theme === 'system'} onClick={() => setTheme('system')}>
             <Monitor className="mr-2 h-4 w-4" />
             <span>System</span>
           </DropdownMenuRadioItem>

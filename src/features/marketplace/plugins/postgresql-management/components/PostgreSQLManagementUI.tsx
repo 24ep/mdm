@@ -161,8 +161,9 @@ export function PostgreSQLManagementUI({
 
   return (
     <div className="space-y-4">
-      <Tabs defaultValue="databases" className="w-full">
-        <TabsList>
+      <div className="w-full">
+        <Tabs defaultValue="databases">
+          <TabsList>
           <TabsTrigger value="databases">Databases & Tables</TabsTrigger>
           <TabsTrigger value="query">Query Editor</TabsTrigger>
           <TabsTrigger value="stats">Statistics</TabsTrigger>
@@ -339,7 +340,8 @@ export function PostgreSQLManagementUI({
             Refresh Statistics
           </Button>
         </TabsContent>
-      </Tabs>
+        </Tabs>
+      </div>
     </div>
   )
 }

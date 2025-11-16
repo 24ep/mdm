@@ -33,7 +33,7 @@ export async function validateBody<T extends z.ZodTypeAny>(
   } catch (error) {
     if (error instanceof z.ZodError) {
       logger.warn('Request validation failed', {
-        errors: error.errors,
+        errors: error.issues,
         path: request.url,
       })
       return {
@@ -41,7 +41,7 @@ export async function validateBody<T extends z.ZodTypeAny>(
         response: NextResponse.json(
           {
             error: 'Validation failed',
-            details: error.errors.map((err) => ({
+            details: error.issues.map((err) => ({
               path: err.path.join('.'),
               message: err.message,
             })),
@@ -93,7 +93,7 @@ export function validateQuery<T extends z.ZodTypeAny>(
   } catch (error) {
     if (error instanceof z.ZodError) {
       logger.warn('Query validation failed', {
-        errors: error.errors,
+        errors: error.issues,
         path: request.url,
       })
       return {
@@ -101,7 +101,7 @@ export function validateQuery<T extends z.ZodTypeAny>(
         response: NextResponse.json(
           {
             error: 'Invalid query parameters',
-            details: error.errors.map((err) => ({
+            details: error.issues.map((err) => ({
               path: err.path.join('.'),
               message: err.message,
             })),
@@ -144,7 +144,7 @@ export function validateParams<T extends z.ZodTypeAny>(
   } catch (error) {
     if (error instanceof z.ZodError) {
       logger.warn('Route params validation failed', {
-        errors: error.errors,
+        errors: error.issues,
         params,
       })
       return {
@@ -152,7 +152,7 @@ export function validateParams<T extends z.ZodTypeAny>(
         response: NextResponse.json(
           {
             error: 'Invalid route parameters',
-            details: error.errors.map((err) => ({
+            details: error.issues.map((err) => ({
               path: err.path.join('.'),
               message: err.message,
             })),
