@@ -325,7 +325,7 @@ export async function POST(
           filters: filters || [],
           fetchedAt: new Date().toISOString()
         }
-      })
+      }))
     }
 
     // Use Prisma ORM for standard queries without filters

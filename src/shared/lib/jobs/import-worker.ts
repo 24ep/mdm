@@ -1,6 +1,6 @@
 import { Job } from './job-queue'
 import { query } from '@/lib/db'
-import XLSX from 'xlsx'
+import * as XLSX from 'xlsx'
 import { downloadJobFile } from './storage-helper'
 
 /**

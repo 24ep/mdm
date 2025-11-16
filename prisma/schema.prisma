@@ -52,6 +52,19 @@ model User {
   apiRequests ApiRequest[] @relation("UserApiRequests")
   apiEnvironments ApiEnvironment[] @relation("UserApiEnvironments")
   apiRequestHistory ApiRequestHistory[] @relation("UserApiRequestHistory")
+  knowledgeCollections KnowledgeCollection[] @relation("UserKnowledgeCollections")
+  knowledgeCollectionMembers KnowledgeCollectionMember[] @relation("UserKnowledgeCollectionMembers")
+  knowledgeDocuments KnowledgeDocument[] @relation("UserKnowledgeDocuments")
+  knowledgeDocumentUpdates KnowledgeDocument[] @relation("UserKnowledgeDocumentUpdates")
+  knowledgeDocumentVersions KnowledgeDocumentVersion[] @relation("UserKnowledgeDocumentVersions")
+  knowledgeComments KnowledgeComment[] @relation("UserKnowledgeComments")
+  knowledgeCommentResolutions KnowledgeComment[] @relation("UserKnowledgeCommentResolutions")
+  knowledgeShares KnowledgeShare[] @relation("UserKnowledgeShares")
+  knowledgeShareCreators KnowledgeShare[] @relation("UserKnowledgeShareCreators")
+  knowledgeStars KnowledgeStar[] @relation("UserKnowledgeStars")
+  knowledgeMentions KnowledgeMention[] @relation("UserKnowledgeMentions")
+  knowledgeMentionCreators KnowledgeMention[] @relation("UserKnowledgeMentionCreators")
+  knowledgePresence KnowledgePresence[] @relation("UserKnowledgePresence")
 
   @@map("users")
 }
@@ -1762,6 +1775,51 @@ model ServiceManagementAssignment {
   @@map("service_management_assignments")
 }
 
+// Plugin Review Models
+model PluginReview {
+  id          String   @id @default(uuid()) @db.Uuid
+  serviceId   String   @map("service_id") @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  spaceId     String?  @map("space_id") @db.Uuid
+  rating      Int      // 1-5 stars
+  title       String?
+  comment     String?  @db.Text
+  helpfulCount Int     @default(0) @map("helpful_count")
+  isVerified  Boolean  @default(false) @map("is_verified")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  service     ServiceRegistry @relation("ServiceRegistryReviews", fields: [serviceId], references: [id], onDelete: Cascade)
+  user        User            @relation("UserPluginReviews", fields: [userId], references: [id], onDelete: Cascade)
+  space       Space?          @relation("SpacePluginReviews", fields: [spaceId], references: [id], onDelete: Cascade)
+  helpful     PluginReviewHelpful[] @relation("ReviewHelpful")
+
+  @@unique([serviceId, userId, spaceId])
+  @@index([serviceId])
+  @@index([userId])
+  @@index([spaceId])
+  @@index([rating])
+  @@map("plugin_reviews")
+}
+
+model PluginReviewHelpful {
+  id        String   @id @default(uuid()) @db.Uuid
+  reviewId  String   @map("review_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  review PluginReview @relation("ReviewHelpful", fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User         @relation("UserPluginReviewHelpful", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
+  @@index([reviewId])
+  @@index([userId])
+  @@map("plugin_review_helpful")
+}
+
 // Outline-like Knowledge Base Models
 model KnowledgeCollection {
   id          String   @id @default(uuid()) @db.Uuid
@@ -1845,7 +1903,6 @@ model KnowledgeDocument {
   @@index([createdBy])
   @@index([deletedAt])
   @@index([isPublic])
-  @@fulltext([title, content])
   @@map("knowledge_documents")
 }
 

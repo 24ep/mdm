@@ -17,6 +17,9 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
+    "listFiles": false,
+    "listEmittedFiles": false,
+    "pretty": true,
     "plugins": [
       {
         "name": "next"

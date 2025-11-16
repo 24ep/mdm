@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
           summary: lintResult.summary,
           issues: lintResult.issues
         } : null
-      })
+      }))
     } catch (dbError: any) {
       const executionTime = Date.now() - startTime
       

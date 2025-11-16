@@ -114,7 +114,7 @@ export function RequestBuilder({ request, onChange, environmentVariables = [] }:
                 onChange={(value) => updateRequest({ graphqlVariables: value })}
                 language="json"
                 height="100px"
-                placeholder="{ \"key\": \"value\" }"
+                placeholder='{ "key": "value" }'
               />
             </div>
             <div className="border border-border rounded">
