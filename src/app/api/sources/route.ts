@@ -19,8 +19,8 @@ export async function GET(request: NextRequest) {
     logger.apiRequest('GET', '/api/sources', { userId: session.user.id })
 
     const querySchema = z.object({
-      page: commonSchemas.page,
-      limit: commonSchemas.limit,
+      page: z.string().transform(Number).pipe(z.number().int().positive()).optional().default(1),
+      limit: z.string().transform(Number).pipe(z.number().int().positive().max(100)).optional().default(20),
       search: z.string().optional().default(''),
     })
 

@@ -91,7 +91,7 @@ export function DataBindingManager({
       setTestResults(prev => ({ ...prev, [dataSource.id]: result }))
       return result
     } catch (error) {
-      setTestResults(prev => ({ ...prev, [dataSource.id]: { error: error.message } }))
+      setTestResults(prev => ({ ...prev, [dataSource.id]: { error: error instanceof Error ? error.message : String(error) } }))
       return false
     } finally {
       setIsTesting(false)
@@ -105,7 +105,7 @@ export function DataBindingManager({
       setTestResults(prev => ({ ...prev, [dataSourceId]: data }))
       return data
     } catch (error) {
-      setTestResults(prev => ({ ...prev, [dataSourceId]: { error: error.message } }))
+      setTestResults(prev => ({ ...prev, [dataSourceId]: { error: error instanceof Error ? error.message : String(error) } }))
       throw error
     }
   }, [onRefreshData])

@@ -82,7 +82,7 @@ import {
   Layers,
   TrendingUp,
   PieChart,
-  Scatter,
+  ScatterChart,
   LineChart,
   BarChart,
   Users,

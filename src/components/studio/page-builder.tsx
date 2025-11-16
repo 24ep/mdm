@@ -12,7 +12,6 @@ import {
   Settings,
   Maximize2,
   Minimize2,
-  Resize,
   MousePointer
 } from 'lucide-react'
 
@@ -372,7 +371,7 @@ export function PageBuilder({
             onClick={() => setResizeMode(!resizeMode)}
             title={resizeMode ? "Exit resize mode" : "Enter resize mode"}
           >
-            {resizeMode ? <MousePointer className="h-4 w-4" /> : <Resize className="h-4 w-4" />}
+            {resizeMode ? <MousePointer className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </Button>
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Grid:</span>

@@ -188,7 +188,7 @@ export function createNotebookHandlers(
     setNotebook((prev: Notebook) => {
       const updated = {
         ...prev,
-        cells: prev.cells.filter(cell => cell.id !== cellId),
+        cells: prev.cells.filter((cell: NotebookCell) => cell.id !== cellId),
         updatedAt: new Date()
       }
       saveToHistory(updated)
@@ -205,7 +205,7 @@ export function createNotebookHandlers(
     setNotebook((prev: Notebook) => {
       const updated = {
         ...prev,
-        cells: prev.cells.map(cell => 
+        cells: prev.cells.map((cell: NotebookCell) => 
           cell.id === cellId 
             ? { 
                 ...cell, 
@@ -253,7 +253,7 @@ export function createNotebookHandlers(
   }
 
   const executeCell = async (cellId: string) => {
-    const cell = notebook.cells.find(c => c.id === cellId)
+    const cell = notebook.cells.find((c: NotebookCell) => c.id === cellId)
     if (!cell || cell.type !== 'code') return
 
     if (!currentKernel) {
@@ -318,7 +318,7 @@ export function createNotebookHandlers(
       }
 
       setKernelStatus('idle')
-      setExecutionCount(prev => prev + 1)
+      setExecutionCount((prev: number) => prev + 1)
       toast.success(`Cell executed in ${executionTime}ms`)
     } catch (error) {
       setNotebook((prev: Notebook) => ({
@@ -346,7 +346,7 @@ export function createNotebookHandlers(
   }
 
   const executeAllCells = async () => {
-    const codeCells = notebook.cells.filter(cell => cell.type === 'code')
+    const codeCells = notebook.cells.filter((cell: NotebookCell) => cell.type === 'code')
     for (const cell of codeCells) {
       await executeCell(cell.id)
     }
@@ -355,7 +355,7 @@ export function createNotebookHandlers(
   const clearAllOutputs = () => {
     setNotebook((prev: Notebook) => ({
       ...prev,
-      cells: prev.cells.map(cell => ({ ...cell, output: undefined, status: 'idle' })),
+      cells: prev.cells.map((cell: NotebookCell) => ({ ...cell, output: undefined, status: 'idle' })),
       updatedAt: new Date()
     }))
     setExecutionCount(0)
@@ -364,25 +364,25 @@ export function createNotebookHandlers(
 
   // Navigation functions
   const focusNextCell = () => {
-    const currentIndex = notebook.cells.findIndex(cell => cell.id === activeCellId)
+    const currentIndex = notebook.cells.findIndex((cell: NotebookCell) => cell.id === activeCellId)
     if (currentIndex < notebook.cells.length - 1) {
       setActiveCellId(notebook.cells[currentIndex + 1].id)
     }
   }
 
   const focusPreviousCell = () => {
-    const currentIndex = notebook.cells.findIndex(cell => cell.id === activeCellId)
+    const currentIndex = notebook.cells.findIndex((cell: NotebookCell) => cell.id === activeCellId)
     if (currentIndex > 0) {
       setActiveCellId(notebook.cells[currentIndex - 1].id)
     }
   }
 
   const selectAllCells = () => {
-    setSelectedCellIds(new Set(notebook.cells.map(cell => cell.id)))
+    setSelectedCellIds(new Set(notebook.cells.map((cell: NotebookCell) => cell.id)))
   }
 
   const copyCell = (cellId: string) => {
-    const cell = notebook.cells.find(c => c.id === cellId)
+    const cell = notebook.cells.find((c: NotebookCell) => c.id === cellId)
     if (cell) {
       copyToClipboard(JSON.stringify(cell))
       toast.success('Cell copied to clipboard')
@@ -417,7 +417,7 @@ export function createNotebookHandlers(
     const selectedArray = Array.from(selectedCellIds)
     const cellsToMerge = selectedArray
       .map(id => {
-        const index = notebook.cells.findIndex(c => c.id === id)
+        const index = notebook.cells.findIndex((c: NotebookCell) => c.id === id)
         return { id, index, cell: notebook.cells[index] }
       })
       .filter(item => item.index !== -1)
@@ -480,7 +480,7 @@ export function createNotebookHandlers(
   }
 
   const splitCell = (cellId: string) => {
-    const cell = notebook.cells.find(c => c.id === cellId)
+    const cell = notebook.cells.find((c: NotebookCell) => c.id === cellId)
     if (!cell) {
       toast.error('Cell not found')
       return
@@ -499,7 +499,7 @@ export function createNotebookHandlers(
     const secondHalf = lines.slice(midPoint).join('\n')
     
     // Find cell index
-    const cellIndex = notebook.cells.findIndex(c => c.id === cellId)
+    const cellIndex = notebook.cells.findIndex((c: NotebookCell) => c.id === cellId)
     if (cellIndex === -1) return
     
     // Create new cell for second half
@@ -539,7 +539,7 @@ export function createNotebookHandlers(
     setNotebook((prev: Notebook) => {
       const updated = {
         ...prev,
-        cells: prev.cells.map(cell => {
+        cells: prev.cells.map((cell: NotebookCell) => {
           if (cell.id === cellId) {
             const newType: CellType = cell.type === 'code' 
               ? 'markdown' 
@@ -643,8 +643,8 @@ export function createNotebookHandlers(
   }
 
   const handleRunSelected = () => {
-    const selectedCells = notebook.cells.filter(cell => selectedCellIds.has(cell.id) && cell.type === 'code')
-    selectedCells.forEach(cell => executeCell(cell.id))
+    const selectedCells = notebook.cells.filter((cell: NotebookCell) => selectedCellIds.has(cell.id) && cell.type === 'code')
+    selectedCells.forEach((cell: NotebookCell) => executeCell(cell.id))
   }
 
   const handleInterrupt = () => {
@@ -760,7 +760,7 @@ export function createNotebookHandlers(
       
       // Find all matches
       const matches: Array<{ cellId: string; index: number }> = []
-      notebook.cells.forEach(cell => {
+      notebook.cells.forEach((cell: NotebookCell) => {
         const content = cell.type === 'sql' ? (cell.sqlQuery || cell.content) : cell.content
         let index = -1
         let startIndex = 0
@@ -803,7 +803,7 @@ export function createNotebookHandlers(
     setNotebook((prev: Notebook) => {
       const updated = {
         ...prev,
-        cells: prev.cells.map(cell => {
+        cells: prev.cells.map((cell: NotebookCell) => {
           const content = cell.type === 'sql' ? (cell.sqlQuery || cell.content) : cell.content
           const regex = new RegExp(finalSearchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi')
           const newContent = replaceAll 
@@ -883,16 +883,16 @@ export function createNotebookHandlers(
   }
 
   const handleRenameCellTitle = (cellId: string, title: string) => {
-    setNotebook(prev => ({
+    setNotebook((prev: Notebook) => ({
       ...prev,
-      cells: prev.cells.map(cell => cell.id === cellId ? { ...cell, title } : cell),
+      cells: prev.cells.map((cell: NotebookCell) => cell.id === cellId ? { ...cell, title } : cell),
       updatedAt: new Date()
     }))
   }
 
   // Common cell feature handlers
   const handleCopyCell = (cellId: string) => {
-    const cell = notebook.cells.find(c => c.id === cellId)
+    const cell = notebook.cells.find((c: NotebookCell) => c.id === cellId)
     if (cell) {
       // Copy to clipboard
       navigator.clipboard.writeText(cell.content)
@@ -901,7 +901,7 @@ export function createNotebookHandlers(
   }
 
   const handleCutCell = (cellId: string) => {
-    const cell = notebook.cells.find(c => c.id === cellId)
+    const cell = notebook.cells.find((c: NotebookCell) => c.id === cellId)
     if (cell) {
       navigator.clipboard.writeText(cell.content)
       deleteCell(cellId)
@@ -914,7 +914,7 @@ export function createNotebookHandlers(
       if (text) {
         const newCell = createNewCell('code')
         newCell.content = text
-        setNotebook(prev => ({
+        setNotebook((prev: Notebook) => ({
           ...prev,
           cells: prev.cells.map(c => 
             c.id === cellId ? newCell : c
@@ -929,7 +929,7 @@ export function createNotebookHandlers(
   }
 
   const handleMergeCells = (cellId: string, direction: 'above' | 'below') => {
-    const currentIndex = notebook.cells.findIndex(c => c.id === cellId)
+    const currentIndex = notebook.cells.findIndex((c: NotebookCell) => c.id === cellId)
     const targetIndex = direction === 'above' ? currentIndex - 1 : currentIndex + 1
     
     if (targetIndex >= 0 && targetIndex < notebook.cells.length) {
@@ -948,7 +948,7 @@ export function createNotebookHandlers(
         ? `${targetContent}\n\n${currentContent}`
         : `${currentContent}\n\n${targetContent}`
       
-      setNotebook(prev => {
+      setNotebook((prev: Notebook) => {
         const updated = {
           ...prev,
           cells: prev.cells.map((cell, idx) => {
@@ -980,7 +980,7 @@ export function createNotebookHandlers(
   }
 
   const handleSplitCell = (cellId: string) => {
-    const cell = notebook.cells.find(c => c.id === cellId)
+    const cell = notebook.cells.find((c: NotebookCell) => c.id === cellId)
     if (!cell) {
       toast.error('Cell not found')
       return
@@ -1006,7 +1006,7 @@ export function createNotebookHandlers(
     const firstHalf = lines.slice(0, midPoint).join('\n')
     const secondHalf = lines.slice(midPoint).join('\n')
     
-    const cellIndex = notebook.cells.findIndex(c => c.id === cellId)
+    const cellIndex = notebook.cells.findIndex((c: NotebookCell) => c.id === cellId)
     if (cellIndex === -1) return
     
     // Create new cell for second half
@@ -1018,7 +1018,7 @@ export function createNotebookHandlers(
       newCell.sqlConnection = cell.sqlConnection || 'default'
     }
     
-    setNotebook(prev => {
+    setNotebook((prev: Notebook) => {
       const newCells = [...prev.cells]
       newCells[cellIndex] = {
         ...cell,
@@ -1044,9 +1044,9 @@ export function createNotebookHandlers(
   const handleAddComment = (cellId: string, content?: string) => {
     const commentText = content ?? prompt('Add a comment:') ?? ''
     if (commentText) {
-      setNotebook(prev => ({
+      setNotebook((prev: Notebook) => ({
         ...prev,
-        cells: prev.cells.map(cell => 
+        cells: prev.cells.map((cell: NotebookCell) => 
           cell.id === cellId 
             ? {
                 ...cell,
@@ -1071,9 +1071,9 @@ export function createNotebookHandlers(
   const handleAddTag = (cellId: string) => {
     const tag = prompt('Add a tag:')
     if (tag) {
-      setNotebook(prev => ({
+      setNotebook((prev: Notebook) => ({
         ...prev,
-        cells: prev.cells.map(cell => 
+        cells: prev.cells.map((cell: NotebookCell) => 
           cell.id === cellId 
             ? {
                 ...cell,
@@ -1090,7 +1090,7 @@ export function createNotebookHandlers(
   const handleSearchCell = (cellId: string) => {
     const searchTerm = prompt('Search in cell:')
     if (searchTerm) {
-      const cell = notebook.cells.find(c => c.id === cellId)
+      const cell = notebook.cells.find((c: NotebookCell) => c.id === cellId)
       if (cell && cell.content.includes(searchTerm)) {
         toast.success(`Found "${searchTerm}" in cell`)
         // In a real implementation, you'd highlight the search term
@@ -1102,7 +1102,7 @@ export function createNotebookHandlers(
 
   // SQL-specific handlers
   const handleVariableNameChange = (cellId: string, variableName: string) => {
-    setNotebook(prev => ({
+    setNotebook((prev: Notebook) => ({
       ...prev,
       cells: prev.cells.map(cell => 
         cell.id === cellId 
@@ -1114,7 +1114,7 @@ export function createNotebookHandlers(
   }
 
   const handleConnectionChange = (cellId: string, connection: string) => {
-    setNotebook(prev => ({
+    setNotebook((prev: Notebook) => ({
       ...prev,
       cells: prev.cells.map(cell => 
         cell.id === cellId 
@@ -1126,7 +1126,7 @@ export function createNotebookHandlers(
   }
 
   const handleSQLExecute = async (cellId: string) => {
-    const cell = notebook.cells.find(c => c.id === cellId)
+    const cell = notebook.cells.find((c: NotebookCell) => c.id === cellId)
     if (!cell || cell.type !== 'sql') return
 
     if (!cell.sqlQuery || !cell.sqlVariableName) {
@@ -1137,7 +1137,7 @@ export function createNotebookHandlers(
     setIsExecuting(true)
     setKernelStatus('busy')
     
-    setNotebook(prev => ({
+    setNotebook((prev: Notebook) => ({
       ...prev,
       cells: prev.cells.map(c => 
         c.id === cellId ? { ...c, status: 'running' } : c
@@ -1182,7 +1182,7 @@ export function createNotebookHandlers(
         executionTime: result.executionTime || executionTime
       }
 
-      setNotebook(prev => ({
+      setNotebook((prev: Notebook) => ({
         ...prev,
         cells: prev.cells.map(c => 
           c.id === cellId 
@@ -1205,17 +1205,17 @@ export function createNotebookHandlers(
         size: `${formattedResult.rowCount} rows × ${formattedResult.columnCount} columns`
       }
 
-      setVariables(prev => {
-        const existing = prev.find(v => v.name === cell.sqlVariableName)
+      setVariables((prev: Variable[]) => {
+        const existing = prev.find((v: Variable) => v.name === cell.sqlVariableName)
         if (existing) {
-          return prev.map(v => v.name === cell.sqlVariableName ? newVariable : v)
+          return prev.map((v: Variable) => v.name === cell.sqlVariableName ? newVariable : v)
         } else {
           return [...prev, newVariable]
         }
       })
 
       setKernelStatus('idle')
-      setExecutionCount(prev => prev + 1)
+      setExecutionCount((prev: number) => prev + 1)
       
       // Show rate limit info if available
       if (result.rateLimit) {
@@ -1236,7 +1236,7 @@ export function createNotebookHandlers(
         toast.error(error.message || 'SQL query execution failed')
       }
 
-      setNotebook(prev => ({
+      setNotebook((prev: Notebook) => ({
         ...prev,
         cells: prev.cells.map(c => 
           c.id === cellId 
@@ -1260,7 +1260,7 @@ export function createNotebookHandlers(
 
   // Toggle bookmark for a cell
   const toggleBookmark = (cellId: string) => {
-    setNotebook(prev => ({
+    setNotebook((prev: Notebook) => ({
       ...prev,
       cells: prev.cells.map(cell =>
         cell.id === cellId
@@ -1268,7 +1268,7 @@ export function createNotebookHandlers(
           : cell
       )
     }))
-    const cell = notebook.cells.find(c => c.id === cellId)
+    const cell = notebook.cells.find((c: NotebookCell) => c.id === cellId)
     if (cell) {
       toast.success(cell.isBookmarked ? 'Bookmark removed' : 'Cell bookmarked')
     }
@@ -1276,7 +1276,7 @@ export function createNotebookHandlers(
 
   // Toggle cell collapse
   const toggleCellCollapse = (cellId: string) => {
-    setNotebook(prev => ({
+    setNotebook((prev: Notebook) => ({
       ...prev,
       cells: prev.cells.map(cell =>
         cell.id === cellId
@@ -1292,7 +1292,7 @@ export function createNotebookHandlers(
       toast.error('Please select a cell first')
       return
     }
-    const cell = notebook.cells.find(c => c.id === activeCellId)
+    const cell = notebook.cells.find((c: NotebookCell) => c.id === activeCellId)
     if (cell) {
       const newContent = cell.content + (cell.content ? '\n' : '') + snippet.code
       updateCellContent(activeCellId, newContent)
@@ -1408,11 +1408,11 @@ export function createNotebookHandlers(
   // Update executeCell to track execution history
   const executeCellWithHistory = async (cellId: string) => {
     const startTime = Date.now()
-    const cell = notebook.cells.find(c => c.id === cellId)
+    const cell = notebook.cells.find((c: NotebookCell) => c.id === cellId)
     if (!cell) return
 
     // Update cell to track execution
-    setNotebook(prev => ({
+    setNotebook((prev: Notebook) => ({
       ...prev,
       cells: prev.cells.map(c =>
         c.id === cellId
@@ -1430,7 +1430,7 @@ export function createNotebookHandlers(
       const executionTime = Date.now() - startTime
       
       // Add to execution history
-      setNotebook(prev => ({
+      setNotebook((prev: Notebook) => ({
         ...prev,
         cells: prev.cells.map(c =>
           c.id === cellId
@@ -1450,7 +1450,7 @@ export function createNotebookHandlers(
       }))
     } catch (error) {
       const executionTime = Date.now() - startTime
-      setNotebook(prev => ({
+      setNotebook((prev: Notebook) => ({
         ...prev,
         cells: prev.cells.map(c =>
           c.id === cellId
@@ -1469,7 +1469,7 @@ export function createNotebookHandlers(
         )
       }))
     } finally {
-      setNotebook(prev => ({
+      setNotebook((prev: Notebook) => ({
         ...prev,
         cells: prev.cells.map(c =>
           c.id === cellId ? { ...c, isExecuting: false } : c
@@ -1499,6 +1499,8 @@ export function createNotebookHandlers(
     handleImport,
     handleOpenFile,
     handleNewFile,
+    handleCreateFile,
+    handleCreateFolder,
     handleNewFolder,
     handleUploadFile,
     handleDeleteFile,

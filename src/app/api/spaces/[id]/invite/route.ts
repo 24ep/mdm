@@ -34,7 +34,7 @@ export async function POST(
     logger.apiRequest('POST', `/api/spaces/${spaceId}/invite`, { userId: session.user.id })
 
     const bodySchema = z.object({
-      email: commonSchemas.email,
+      email: z.string().email(),
       role: z.enum(['owner', 'admin', 'member', 'viewer']).optional().default('member'),
     })
 

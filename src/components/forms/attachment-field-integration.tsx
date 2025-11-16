@@ -43,24 +43,28 @@ export function AttachmentFieldIntegration({
 
   const {
     uploadFile,
-    downloadFile,
-    deleteFile,
-    listAttachments,
+    downloadAttachment,
+    deleteAttachment,
+    loadAttachments: loadAttachmentsFromHook,
+    attachments: hookAttachments,
     loading: attachmentsLoading
-  } = useAttachments(spaceId, dataModelId, attributeId, recordId)
+  } = useAttachments({ spaceId, attributeId })
 
   // Load existing attachments
   useEffect(() => {
     if (recordId) {
-      loadAttachments()
+      loadAttachmentsFromHook()
     }
-  }, [recordId])
+  }, [recordId, loadAttachmentsFromHook])
+
+  useEffect(() => {
+    setAttachments(hookAttachments)
+  }, [hookAttachments])
 
   const loadAttachments = async () => {
     try {
       setLoading(true)
-      const files = await listAttachments()
-      setAttachments(files)
+      await loadAttachmentsFromHook()
     } catch (err) {
       setError('Failed to load attachments')
       console.error('Error loading attachments:', err)
@@ -91,7 +95,7 @@ export function AttachmentFieldIntegration({
   const handleFileDelete = async (fileId: string) => {
     try {
       setError(null)
-      await deleteFile(fileId)
+      await deleteAttachment(fileId)
       
       const newAttachments = attachments.filter(att => att.id !== fileId)
       setAttachments(newAttachments)
@@ -109,7 +113,7 @@ export function AttachmentFieldIntegration({
   const handleFileDownload = async (fileId: string, fileName: string) => {
     try {
       setError(null)
-      await downloadFile(fileId, fileName)
+      await downloadAttachment(fileId, fileName)
     } catch (err) {
       setError('Failed to download file')
       console.error('Error downloading file:', err)
@@ -196,16 +200,10 @@ export function AttachmentFieldIntegration({
         
         <AttachmentManager
           spaceId={spaceId}
-          dataModelId={dataModelId}
           attributeId={attributeId}
-          recordId={recordId}
           allowedFileTypes={attribute.allowed_file_types}
-          maxFileSize={attribute.max_file_size}
-          allowMultiple={attribute.allow_multiple_files}
-          onUpload={handleFileUpload}
-          onDelete={handleFileDelete}
-          onDownload={handleFileDownload}
-          existingFiles={attachments}
+          maxFileSizeMB={attribute.max_file_size ? attribute.max_file_size / (1024 * 1024) : undefined}
+          onAttachmentsChange={onChange}
         />
       </CardContent>
     </Card>

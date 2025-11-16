@@ -28,6 +28,7 @@ export function importCollection(json: string): ApiCollection {
       description: data.description,
       requests: data.requests || [],
       children: data.children?.map((child: any) => importCollection(JSON.stringify(child))) || [],
+      workspaceId: data.workspaceId || '',
     }
   } catch (error) {
     throw new Error('Invalid collection JSON format')

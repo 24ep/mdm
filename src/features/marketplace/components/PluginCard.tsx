@@ -37,7 +37,7 @@ export function PluginCard({ plugin, onInstall, installing = false, installed = 
             <div className="flex items-center gap-1 text-sm text-muted-foreground">
               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
               <span>{plugin.rating.toFixed(1)}</span>
-              {plugin.reviewCount > 0 && (
+              {plugin.reviewCount && plugin.reviewCount > 0 && (
                 <span className="text-xs">({plugin.reviewCount})</span>
               )}
             </div>

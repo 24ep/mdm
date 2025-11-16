@@ -31,14 +31,14 @@ export async function getServiceDeskService(spaceId: string): Promise<ManageEngi
     const secretsManager = getSecretsManager()
     const useVault = secretsManager.getBackend() === 'vault'
     
-    let apiKey: string
+    let apiKey: string | null = null
     let technicianKey: string | null = null
 
     if (useVault && config.api_auth_apikey_value?.startsWith('vault://')) {
       const vaultPath = config.api_auth_apikey_value.replace('vault://', '')
       const connectionId = vaultPath.split('/')[0]
       const creds = await secretsManager.getSecret(`servicedesk-integrations/${connectionId}/credentials`)
-      apiKey = creds?.apiKey || ''
+      apiKey = creds?.apiKey || null
       technicianKey = creds?.technicianKey || null
     } else {
       apiKey = decryptApiKey(config.api_auth_apikey_value)

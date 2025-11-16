@@ -436,7 +436,7 @@ export function RichMarkdownEditor({
     if (editor) {
       editorRef.current = editor
       if (content !== editor.getHTML()) {
-        editor.commands.setContent(content, false)
+        editor.commands.setContent(content, { emitUpdate: false })
       }
       // Update editable state
       editor.setEditable(editable)

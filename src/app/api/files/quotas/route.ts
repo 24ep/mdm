@@ -226,7 +226,8 @@ export async function PUT(request: NextRequest) {
     }
 
     const duration = Date.now() - startTime
-    logger.apiResponse('PUT', '/api/files/quotas', 200, duration, { quotaId: updateResult.rows[0].id })
+    const quota = updateResult.rows[0] as any
+    logger.apiResponse('PUT', '/api/files/quotas', 200, duration, { quotaId: quota.id })
     return addSecurityHeaders(NextResponse.json({
       quota: updateResult.rows[0]
     }))

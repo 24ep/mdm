@@ -71,7 +71,7 @@ export function PowerBIEmbed({
         }
 
         // Embed the report
-        powerbi.current = pbi.embed(embedContainer.current, config)
+        powerbi.current = new (pbi.Report as any)(embedContainer.current, config)
 
         // Handle loaded event
         powerbi.current.on('loaded', () => {

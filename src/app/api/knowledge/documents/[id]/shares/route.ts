@@ -173,18 +173,18 @@ export async function POST(
     // Send notification if sharing with user
     if (userId && userId !== session.user.id) {
       const notificationService = NotificationService.getInstance()
-      await notificationService.createNotification(
-        userId,
-        'INFO',
-        'Document shared with you',
-        `${session.user.name} shared a document with you`,
-        'MEDIUM',
-        {
+      await notificationService.createNotification({
+        user_id: userId,
+        type: 'INFO',
+        title: 'Document shared with you',
+        message: `${session.user.name} shared a document with you`,
+        priority: 'MEDIUM',
+        data: {
           documentId,
           shareId: share.id,
         },
-        `/knowledge/documents/${documentId}`
-      )
+        action_url: `/knowledge/documents/${documentId}`
+      })
     }
 
     return NextResponse.json({

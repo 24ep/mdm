@@ -196,8 +196,9 @@ export function IconPicker({
           <Tabs value={iconPickerTab} onValueChange={(v) => {
             setIconPickerTab(v as any)
             setIconLibraryTab('all') // Reset library tab when switching
-          }} className="mt-3">
-            <TabsList className="grid grid-cols-7 w-full h-8">
+          }}>
+            <div className="mt-3">
+              <TabsList className="grid grid-cols-7 w-full h-8">
               <TabsTrigger value="icons" className="text-[10px] px-1">Lucide</TabsTrigger>
               <TabsTrigger value="react-icons" className="text-[10px] px-1">React</TabsTrigger>
               <TabsTrigger value="alphabet" className="text-[10px] px-1">A-Z</TabsTrigger>
@@ -413,6 +414,7 @@ export function IconPicker({
                 })}
               </div>
             </TabsContent>
+            </div>
           </Tabs>
         </div>
       </PopoverContent>

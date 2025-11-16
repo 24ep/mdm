@@ -217,13 +217,7 @@ export function Sidebar({ className }: SidebarProps) {
                 }}
               >
                 <div className="flex items-center">
-                  {currentSpace?.logo_url ? (
-                    <img src={currentSpace.logo_url} alt={currentSpace.name} className="mr-2 h-6 w-6 rounded" />
-                  ) : currentSpace?.icon && (LucideIcons as any)[currentSpace.icon] ? (
-                    (() => { const Icon = (LucideIcons as any)[currentSpace.icon] as React.ComponentType<{ className?: string }>; return <Icon className="mr-2 h-5 w-5" /> })()
-                  ) : (
-                    <Building2 className="mr-2 h-5 w-5" />
-                  )}
+                  <Building2 className="mr-2 h-5 w-5" />
                   {currentSpace?.name || 'Select Space'}
                 </div>
                 <ChevronDown className="h-5 w-5" />
@@ -241,13 +235,7 @@ export function Sidebar({ className }: SidebarProps) {
                   className="flex items-center justify-between"
                 >
                   <div className="flex items-center">
-                    {space.logo_url ? (
-                      <img src={space.logo_url} alt={space.name} className="mr-2 h-5 w-5 rounded" />
-                    ) : (space as any).icon && (LucideIcons as any)[(space as any).icon] ? (
-                      (() => { const Icon = (LucideIcons as any)[(space as any).icon] as React.ComponentType<{ className?: string }>; return <Icon className="mr-2 h-4 w-4" /> })()
-                    ) : (
-                      <Building2 className="mr-2 h-4 w-4" />
-                    )}
+                    <Building2 className="mr-2 h-4 w-4" />
                     <span>{space.name}</span>
                     {space.is_default && (
                       <span className="ml-2 text-xs text-muted-foreground">(Default)</span>
@@ -284,11 +272,11 @@ export function Sidebar({ className }: SidebarProps) {
       
       <nav className="flex-1 space-y-2 px-4">
         {!currentSpace && (
-                  <div className="px-2 text-xs" style={{ color: (currentSpace?.sidebar_config?.style?.fontColor || settings.fontColor), opacity: 0.7 }}>
+                  <div className="px-2 text-xs" style={{ color: settings.fontColor, opacity: 0.7 }}>
             Select a space to view content
           </div>
         )}
-        {menuItems.map((item, index) => (
+        {menuItems.map((item: any, index: number) => (
           <div key={item.title}>
             <div 
               className="px-2 text-xs font-medium uppercase tracking-wide mb-1"
@@ -298,7 +286,7 @@ export function Sidebar({ className }: SidebarProps) {
             </div>
             {item.children && (
               <div className="ml-2 space-y-1">
-                {item.children.map((child) => (
+                 {item.children.map((child: any) => (
                   child.title === 'System Settings' ? (
                     <Button
                       key={child.href}

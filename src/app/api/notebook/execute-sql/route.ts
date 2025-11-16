@@ -38,6 +38,7 @@ function checkRateLimit(userId: string): { allowed: boolean; remaining: number }
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
   let userId: string | null = null
+  let connectionId: string = 'default'
 
   try {
     const session = await getServerSession(authOptions)
@@ -73,6 +74,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { query: sqlQuery, connection, spaceId } = bodyValidation.data
+    const connectionId = connection || 'default'
 
     // Validate query
     const validation = await sqlExecutor.validateQuery(sqlQuery.trim())
@@ -108,7 +110,7 @@ export async function POST(request: NextRequest) {
           isActive: true,
           deletedAt: null,
           OR: [
-            { spaceId: null }, // Global connections accessible to all
+            { spaceId: null as any }, // Global connections accessible to all
             ...(spaceId ? [
               { spaceId },
               { space: { members: { some: { userId } } } }
@@ -198,13 +200,13 @@ export async function POST(request: NextRequest) {
       userId,
       executionTime,
       rowCount: result.rowCount || 0,
-      connection: connection || 'default',
+      connection: connectionId,
     })
 
     const duration = Date.now() - startTime
     logger.apiResponse('POST', '/api/notebook/execute-sql', 200, duration, {
       rowCount: result.rowCount || 0,
-      connection: connection || 'default',
+      connection: connectionId,
     })
     return addSecurityHeaders(NextResponse.json({
       success: true,
@@ -221,7 +223,7 @@ export async function POST(request: NextRequest) {
     logger.error('SQL execution error', error, {
       userId,
       executionTime,
-      connection: connection || 'default',
+      connection: connectionId,
     })
 
     // Handle timeout

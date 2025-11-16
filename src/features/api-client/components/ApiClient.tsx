@@ -234,8 +234,9 @@ export function ApiClient({ workspaceId }: ApiClientProps) {
 
         {/* Request/Response Area */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col">
-            <TabsList className="border-b border-border">
+          <div className="flex-1 flex flex-col">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+              <TabsList className="border-b border-border">
               <TabsTrigger value="request">Request</TabsTrigger>
               <TabsTrigger value="history">History</TabsTrigger>
             </TabsList>
@@ -332,7 +333,8 @@ export function ApiClient({ workspaceId }: ApiClientProps) {
                 }}
               />
             </TabsContent>
-          </Tabs>
+            </Tabs>
+          </div>
         </div>
       </div>
     </div>

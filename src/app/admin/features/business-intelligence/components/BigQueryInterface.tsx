@@ -1244,7 +1244,6 @@ LIMIT 100;"
                 }
               }
             }}
-            onJumpToLineDialog={() => setShowJumpToLineDialog(true)}
           />
         </div>
       </div>

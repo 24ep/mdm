@@ -145,9 +145,10 @@ export async function POST(request: NextRequest) {
       )
 
       const duration = Date.now() - startTime
-      logger.apiResponse('POST', '/api/files/categories', 200, duration, { type: 'category', categoryId: categoryResult.rows[0].id })
+      const category = categoryResult.rows[0] as any
+      logger.apiResponse('POST', '/api/files/categories', 200, duration, { type: 'category', categoryId: category.id })
       return addSecurityHeaders(NextResponse.json({
-        category: categoryResult.rows[0]
+        category
       }))
     } else if (type === 'tag') {
       // Create tag
@@ -159,7 +160,8 @@ export async function POST(request: NextRequest) {
       )
 
       const duration = Date.now() - startTime
-      logger.apiResponse('POST', '/api/files/categories', 200, duration, { type: 'tag', tagId: tagResult.rows[0].id })
+      const tag = tagResult.rows[0] as any
+      logger.apiResponse('POST', '/api/files/categories', 200, duration, { type: 'tag', tagId: tag.id })
       return addSecurityHeaders(NextResponse.json({
         tag: tagResult.rows[0]
       }))

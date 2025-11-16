@@ -17,11 +17,12 @@ export interface IconPickerProps {
 }
 
 // Determine which exports are icon components
-function isIconEntry([key, value]: [string, any]): value is IconComponent {
+function isIconEntry(entry: [string, any]): boolean {
+  const [key, value] = entry
   // Lucide icons are ForwardRefExoticComponent objects in React 18
   if (!value) return false
   const isLikelyComponent = typeof value === "function" || typeof value === "object"
-  const isPascalCase = key && key[0] === key[0]?.toUpperCase()
+  const isPascalCase = Boolean(key && key[0] === key[0]?.toUpperCase())
   return isLikelyComponent && isPascalCase
 }
 

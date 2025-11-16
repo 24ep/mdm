@@ -505,7 +505,6 @@ export function ChartDataSourceConfig({
               position="popper"
               className="max-h-[200px]"
               style={{ zIndex: Z_INDEX.popover }}
-              sideOffset={4}
             >
               {dataModels.map((model: any) => {
                 const modelId = model.id || model._id || String(model)
@@ -556,7 +555,7 @@ export function ChartDataSourceConfig({
               if (dim.key === 'dateRange') {
                 const dateRangeConfig = (widget.properties?.dateRangeConfig as { attribute?: string; startDate?: string; endDate?: string }) || {}
                 const dateAttrs = attributes.filter(a => {
-                  const type = getEffectiveType(a, attributeTypeOverrides[dim.key]?.[a.name], dim.key)
+                  const type = getEffectiveType(dim.key, a, attributeTypeOverrides)
                   return type === 'date' || type === 'datetime'
                 })
                 
@@ -961,9 +960,9 @@ export function ChartDataSourceConfig({
       const updateItem = (itemId: string, updates: Partial<FilterCondition | FilterGroup>, parentGroup: FilterGroup): FilterGroup => {
         return {
           ...parentGroup,
-          items: parentGroup.items.map(item => {
+          items: parentGroup.items.map((item: FilterItem) => {
             if (item.id === itemId) {
-              return { ...item, ...updates }
+              return { ...item, ...updates } as FilterItem
             }
             return item.type === 'group' ? updateItem(itemId, updates, item) : item
           })

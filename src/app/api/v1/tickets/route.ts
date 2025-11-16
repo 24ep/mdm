@@ -165,7 +165,7 @@ export async function GET(request: NextRequest) {
       LEFT JOIN spaces s ON s.id = ts2.space_id
       WHERE ${whereClause}
       GROUP BY t.id
-      ${buildOrderByClause(sortBy, sortOrder, { field: 'created_at', order: 'desc' })}
+      ${buildOrderByClause(sortBy, sortOrder || 'desc', { field: 'created_at', order: 'desc' })}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `
     queryParams.push(limit, offset)

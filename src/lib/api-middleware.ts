@@ -98,7 +98,7 @@ export function withErrorHandling<T = {}>(
 ) {
   return async (request: NextRequest, contextData: T) => {
     try {
-      return await handler(request, contextData)
+      return await handler(request, contextData as T & { session: any })
     } catch (error) {
       return handleApiError(error, context)
     }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -42,7 +42,6 @@ import {
   Tag,
   Star,
   StarOff,
-  Checkbox
 } from 'lucide-react'
 import { showSuccess, showError, ToastMessages } from '@/lib/toast-utils'
 import { validateRequired, validateLength } from '@/lib/validation-utils'
@@ -529,7 +528,9 @@ export function ReportsTreeView({
                     <>
                       <DropdownMenuItem onClick={(e) => {
                         e.stopPropagation()
-                        openCategoryDialog(node.category, node.category.id)
+                        if (node.category) {
+                          openCategoryDialog(node.category, node.category.id)
+                        }
                       }}>
                         <Plus className="h-4 w-4 mr-2" />
                         Add Subcategory

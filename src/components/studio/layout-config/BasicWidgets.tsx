@@ -18,7 +18,7 @@ export function TextWidget({ props, style }: { props: BasicWidgetProps; style: R
       style={style}
     >
       <span style={{
-        fontSize: props.titleFontSize ? `${props.titleFontSize}px` : style.fontSize,
+        fontSize: (props as any).titleFontSize ? `${(props as any).titleFontSize}px` : style.fontSize,
         fontWeight: props.fontWeight || 'normal',
       }}>
         {(props as any).text || 'Text Widget'}

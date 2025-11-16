@@ -10,7 +10,7 @@ import { pluginRegistry } from '@/features/marketplace/lib/plugin-registry'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -18,7 +18,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { slug } = params
+    const { slug } = await params
 
     // Get plugin from database
     const result = await query(

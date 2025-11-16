@@ -10,7 +10,7 @@ export const reportSchema = z.object({
   link: z.string().url('Invalid URL').optional().nullable(),
   workspace: z.string().max(255).optional().nullable(),
   embed_url: z.string().url('Invalid URL').optional().nullable(),
-  metadata: z.record(z.any()).optional().nullable(),
+  metadata: z.record(z.string(), z.any()).optional().nullable(),
   space_ids: z.array(z.string().uuid()).optional(),
 })
 

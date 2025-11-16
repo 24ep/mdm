@@ -79,27 +79,26 @@ export function UserSelectField({
       onValueChange={onChange}
     >
       <SelectTrigger className={error ? 'border-red-500' : ''} disabled={disabled || loading}>
-        <SelectValue placeholder={placeholder}>
-          {selectedUser && (
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                {selectedUser.avatar ? (
-                  <img 
-                    src={selectedUser.avatar} 
-                    alt={selectedUser.name}
-                    className="w-6 h-6 rounded-full"
-                  />
-                ) : (
-                  <User className="w-4 h-4" />
-                )}
-              </div>
-              <span>{selectedUser.name}</span>
-              <Badge variant="outline" className="text-xs">
-                {selectedUser.space_role}
-              </Badge>
+        <SelectValue placeholder={placeholder} />
+        {selectedUser && (
+          <div className="flex items-center space-x-2">
+            <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+              {selectedUser.avatar ? (
+                <img 
+                  src={selectedUser.avatar} 
+                  alt={selectedUser.name}
+                  className="w-6 h-6 rounded-full"
+                />
+              ) : (
+                <User className="w-4 h-4" />
+              )}
             </div>
-          )}
-        </SelectValue>
+            <span>{selectedUser.name}</span>
+            <Badge variant="outline" className="text-xs">
+              {selectedUser.space_role}
+            </Badge>
+          </div>
+        )}
       </SelectTrigger>
       <SelectContent>
         {users.map((user) => (

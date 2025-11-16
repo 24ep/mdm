@@ -33,7 +33,6 @@ import {
   Upload,
   Code,
   Webhook,
-  Api,
   Cloud,
   Server,
   Smartphone,
@@ -65,9 +64,11 @@ import {
   Maximize,
   Minimize,
   RotateCw,
-  RotateCcw,
   Save,
-  Loader
+  Loader,
+  Activity,
+  CreditCard,
+  Users
 } from 'lucide-react'
 
 interface Integration {
@@ -189,7 +190,7 @@ export function IntegrationManager({
 
   const getTypeIcon = useCallback((type: Integration['type']) => {
     switch (type) {
-      case 'api': return <Api className="h-4 w-4" />
+      case 'api': return <Code className="h-4 w-4" />
       case 'database': return <Database className="h-4 w-4" />
       case 'webhook': return <Webhook className="h-4 w-4" />
       case 'oauth': return <Key className="h-4 w-4" />
@@ -204,7 +205,7 @@ export function IntegrationManager({
     switch (category) {
       case 'data': return <Database className="h-4 w-4" />
       case 'communication': return <MessageSquare className="h-4 w-4" />
-      case 'analytics': return <BarChart3 className="h-4 w-4" />
+      case 'analytics': return <Activity className="h-4 w-4" />
       case 'storage': return <Archive className="h-4 w-4" />
       case 'payment': return <CreditCard className="h-4 w-4" />
       case 'social': return <Users className="h-4 w-4" />
@@ -354,7 +355,7 @@ export function IntegrationManager({
           size="sm"
           onClick={() => setActiveTab('integrations')}
         >
-          <Api className="h-4 w-4 mr-2" />
+          <Code className="h-4 w-4 mr-2" />
           Integrations
         </Button>
         <Button
@@ -471,7 +472,7 @@ export function IntegrationManager({
                   onClick={() => setActiveTab('integrations')}
                   className="h-20 flex flex-col items-center justify-center"
                 >
-                  <Api className="h-6 w-6 mb-2" />
+                  <Code className="h-6 w-6 mb-2" />
                   Manage Integrations
                 </Button>
                 <Button

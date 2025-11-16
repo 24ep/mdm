@@ -1,8 +1,10 @@
 'use client'
 
+import { useState, useMemo, useEffect } from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
 import { WorkflowsList } from '@/features/workflows'
 import { Button } from '@/components/ui/button'
+import { useSpace } from '@/contexts/space-context'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'

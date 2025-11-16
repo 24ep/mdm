@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { ApiCollection, ApiRequest, ApiEnvironment } from '../types'
-import { exportCollection, importCollection, requestToCurl, curlToRequest } from '../lib/import-export'
+import { exportCollection, importCollection, requestToCurl, curlToRequest, exportEnvironment } from '../lib/import-export'
 import {
   Dialog,
   DialogContent,

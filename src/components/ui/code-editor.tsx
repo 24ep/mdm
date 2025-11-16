@@ -146,8 +146,8 @@ export function CodeEditor({
           '&': {
             fontSize: options.fontSize || 14,
             fontFamily: options.fontFamily || 'Monaco, Menlo, "Ubuntu Mono", monospace',
-            height: height === '100%' ? '100%' : undefined,
-            minHeight: height === '100%' ? undefined : height
+            height: height === '100%' ? '100%' : null,
+            minHeight: height === '100%' ? null : height
           },
           '.cm-content': {
             padding: '8px',
@@ -180,8 +180,8 @@ export function CodeEditor({
             '&': {
               fontSize: options.fontSize || 14,
               fontFamily: options.fontFamily || 'Monaco, Menlo, "Ubuntu Mono", monospace',
-              height: height === '100%' ? '100%' : undefined,
-              minHeight: height === '100%' ? undefined : height
+              height: height === '100%' ? '100%' : null,
+              minHeight: height === '100%' ? null : height
             },
             '.cm-content': {
               padding: '8px',
@@ -233,8 +233,8 @@ export function CodeEditor({
           '&': {
             fontSize: options.fontSize || 14,
             fontFamily: options.fontFamily || 'Monaco, Menlo, "Ubuntu Mono", monospace',
-            height: height === '100%' ? '100%' : undefined,
-            minHeight: height === '100%' ? undefined : height
+            height: height === '100%' ? '100%' : null,
+            minHeight: height === '100%' ? null : height
           },
           '.cm-content': {
             padding: '8px',
@@ -256,8 +256,8 @@ export function CodeEditor({
           '&': {
             fontSize: options.fontSize || 14,
             fontFamily: options.fontFamily || 'Monaco, Menlo, "Ubuntu Mono", monospace',
-            height: height === '100%' ? '100%' : undefined,
-            minHeight: height === '100%' ? undefined : height
+            height: height === '100%' ? '100%' : null,
+            minHeight: height === '100%' ? null : height
           },
           '.cm-content': {
             padding: '8px',
@@ -370,7 +370,6 @@ export function CodeEditor({
         'scala': 'scala',
         'r': 'r',
         'matlab': 'matlab',
-        'dart': 'dart',
         'dart': 'dart'
       }
 

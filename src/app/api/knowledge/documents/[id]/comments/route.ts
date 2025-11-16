@@ -225,19 +225,19 @@ export async function POST(
 
       if (parentCommentResult.rows.length > 0 && parentCommentResult.rows[0].created_by !== session.user.id) {
         const notificationService = NotificationService.getInstance()
-        await notificationService.createNotification(
-          parentCommentResult.rows[0].created_by,
-          'INFO',
-          'New reply to your comment',
-          `${session.user.name} replied to your comment`,
-          'MEDIUM',
-          {
+        await notificationService.createNotification({
+          user_id: parentCommentResult.rows[0].created_by,
+          type: 'INFO',
+          title: 'New reply to your comment',
+          message: `${session.user.name} replied to your comment`,
+          priority: 'MEDIUM',
+          data: {
             documentId,
             commentId: comment.id,
             parentCommentId: parentId,
           },
-          `/knowledge/documents/${documentId}?comment=${comment.id}`
-        )
+          action_url: `/knowledge/documents/${documentId}?comment=${comment.id}`
+        })
       }
     }
 

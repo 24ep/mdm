@@ -5,8 +5,9 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 export interface SwitchProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "type" | "onChange"> {
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> {
   onCheckedChange?: (checked: boolean) => void
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void
 }
 
 const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(

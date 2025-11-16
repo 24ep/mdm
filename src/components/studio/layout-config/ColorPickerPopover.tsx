@@ -894,7 +894,7 @@ export function ColorPickerPopover({
                 <Label className="text-xs">Type</Label>
                 <Select 
                   value={gradientConfig.type} 
-                  onValueChange={(value: 'linear' | 'radial') => handleGradientChange({ ...gradientConfig, type: value })}
+                   onValueChange={(value: string) => handleGradientChange({ ...gradientConfig, type: value as 'linear' | 'radial' })}
                 >
                   <SelectTrigger className="h-8 text-xs">
                     <div className="flex items-center gap-2">

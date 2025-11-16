@@ -21,7 +21,5 @@ export const minioManagementPlugin: PluginDefinition = {
   iconUrl: '/icons/minio.svg',
   installationCount: 0,
   reviewCount: 0,
-  createdAt: new Date(),
-  updatedAt: new Date(),
 }
 

@@ -476,9 +476,8 @@ export function WorkflowEngine({ spaceId }: WorkflowEngineProps) {
                         <Select
                           value={selectedWorkflow.status}
                           onValueChange={(status) => updateWorkflow(selectedWorkflow.id, { status: status as any })}
-                          disabled={!canEditWorkflow}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger disabled={!canEditWorkflow}>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>

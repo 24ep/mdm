@@ -235,7 +235,7 @@ export class AttachmentStorageService {
     })
 
     const objectName = `attachments/${fileName}`
-    await minioClient.putObject(config.bucket, objectName, fileBuffer, {
+    await minioClient.putObject(config.bucket, objectName, fileBuffer, fileBuffer.length, {
       'Content-Type': contentType || 'application/octet-stream'
     })
 

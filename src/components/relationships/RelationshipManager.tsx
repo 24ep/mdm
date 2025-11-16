@@ -361,7 +361,6 @@ export function RelationshipManager({
                           id="relationship-name"
                           value={selectedRelationship.name}
                           onChange={(e) => updateRelationship(selectedRelationship.id, { name: e.target.value })}
-                          disabled={!canEditRelationship}
                         />
                       </div>
                       <div className="space-y-2">
@@ -369,7 +368,6 @@ export function RelationshipManager({
                         <Select
                           value={selectedRelationship.type}
                           onValueChange={(type) => updateRelationship(selectedRelationship.id, { type: type as any })}
-                          disabled={!canEditRelationship}
                         >
                           <SelectTrigger>
                             <SelectValue />
@@ -399,7 +397,6 @@ export function RelationshipManager({
                         <Select
                           value={selectedRelationship.source_model}
                           onValueChange={(source_model) => updateRelationship(selectedRelationship.id, { source_model })}
-                          disabled={!canEditRelationship}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select source model" />
@@ -418,7 +415,6 @@ export function RelationshipManager({
                         <Select
                           value={selectedRelationship.target_model}
                           onValueChange={(target_model) => updateRelationship(selectedRelationship.id, { target_model })}
-                          disabled={!canEditRelationship}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select target model" />
@@ -441,7 +437,6 @@ export function RelationshipManager({
                           <Select
                             value={selectedRelationship.source_attribute || ''}
                             onValueChange={(source_attribute) => updateRelationship(selectedRelationship.id, { source_attribute })}
-                            disabled={!canEditRelationship}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Select source attribute" />
@@ -460,7 +455,6 @@ export function RelationshipManager({
                           <Select
                             value={selectedRelationship.target_attribute || ''}
                             onValueChange={(target_attribute) => updateRelationship(selectedRelationship.id, { target_attribute })}
-                            disabled={!canEditRelationship}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Select target attribute" />
@@ -502,7 +496,6 @@ export function RelationshipManager({
                             id="cascade-delete"
                             checked={selectedRelationship.cascade_delete}
                             onCheckedChange={(cascade_delete) => updateRelationship(selectedRelationship.id, { cascade_delete })}
-                            disabled={!canEditRelationship}
                           />
                         </div>
                         <div className="flex items-center justify-between">
@@ -516,7 +509,6 @@ export function RelationshipManager({
                             id="cascade-update"
                             checked={selectedRelationship.cascade_update}
                             onCheckedChange={(cascade_update) => updateRelationship(selectedRelationship.id, { cascade_update })}
-                            disabled={!canEditRelationship}
                           />
                         </div>
                       </div>

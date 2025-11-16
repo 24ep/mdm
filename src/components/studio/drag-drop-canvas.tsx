@@ -21,8 +21,6 @@ import {
   AlignCenter,
   AlignRight,
   AlignJustify,
-  AlignVerticalCenter,
-  AlignHorizontalCenter
 } from 'lucide-react'
 
 interface DragDropComponent {
@@ -363,7 +361,7 @@ export function DragDropCanvas({
             onClick={() => alignComponents('top')}
             title="Align Top"
           >
-            <AlignVerticalCenter className="h-4 w-4" />
+            <AlignCenter className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
@@ -371,7 +369,7 @@ export function DragDropCanvas({
             onClick={() => alignComponents('middle')}
             title="Align Middle"
           >
-            <AlignHorizontalCenter className="h-4 w-4" />
+            <AlignCenter className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
@@ -379,7 +377,7 @@ export function DragDropCanvas({
             onClick={() => alignComponents('bottom')}
             title="Align Bottom"
           >
-            <AlignVerticalCenter className="h-4 w-4" />
+            <AlignCenter className="h-4 w-4" />
           </Button>
         </div>
         

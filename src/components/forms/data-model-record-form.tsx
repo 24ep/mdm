@@ -135,7 +135,6 @@ export function DataModelRecordForm({
               type={attribute.type}
               value={value}
               onChange={(e) => handleInputChange(attribute.code, e.target.value)}
-              disabled={readOnly}
               className={error ? 'border-red-500' : ''}
             />
             {error && <p className="text-sm text-red-500">{error}</p>}
@@ -153,7 +152,6 @@ export function DataModelRecordForm({
               id={attribute.code}
               value={value}
               onChange={(e) => handleInputChange(attribute.code, e.target.value)}
-              disabled={readOnly}
               className={error ? 'border-red-500' : ''}
             />
             {error && <p className="text-sm text-red-500">{error}</p>}
@@ -172,7 +170,6 @@ export function DataModelRecordForm({
               type="number"
               value={value}
               onChange={(e) => handleInputChange(attribute.code, parseFloat(e.target.value) || 0)}
-              disabled={readOnly}
               className={error ? 'border-red-500' : ''}
             />
             {error && <p className="text-sm text-red-500">{error}</p>}
@@ -189,7 +186,6 @@ export function DataModelRecordForm({
             <Select
               value={value ? 'true' : 'false'}
               onValueChange={(val) => handleInputChange(attribute.code, val === 'true')}
-              disabled={readOnly}
             >
               <SelectTrigger className={error ? 'border-red-500' : ''}>
                 <SelectValue />
@@ -213,7 +209,6 @@ export function DataModelRecordForm({
             <Select
               value={value}
               onValueChange={(val) => handleInputChange(attribute.code, val)}
-              disabled={readOnly}
             >
               <SelectTrigger className={error ? 'border-red-500' : ''}>
                 <SelectValue placeholder="Select an option" />
@@ -258,7 +253,6 @@ export function DataModelRecordForm({
               spaceId={spaceId}
               value={value}
               onChange={(val) => handleInputChange(attribute.code, val)}
-              disabled={readOnly}
               placeholder="Select a user"
             />
             {error && <p className="text-sm text-red-500">{error}</p>}
@@ -276,7 +270,6 @@ export function DataModelRecordForm({
               spaceId={spaceId}
               value={value}
               onChange={(val) => handleInputChange(attribute.code, val)}
-              disabled={readOnly}
               placeholder="Select users"
             />
             {error && <p className="text-sm text-red-500">{error}</p>}
@@ -294,7 +287,6 @@ export function DataModelRecordForm({
               id={attribute.code}
               value={value}
               onChange={(e) => handleInputChange(attribute.code, e.target.value)}
-              disabled={readOnly}
               className={error ? 'border-red-500' : ''}
             />
             {error && <p className="text-sm text-red-500">{error}</p>}

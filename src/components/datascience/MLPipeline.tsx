@@ -679,7 +679,7 @@ export function MLPipeline({
                         </div>
                         <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                           Probabilities: {Object.entries(pred.probabilities)
-                            .map(([cls, prob]) => `${cls}: ${(prob * 100).toFixed(1)}%`)
+                            .map(([cls, prob]: [string, any]) => `${cls}: ${(Number(prob) * 100).toFixed(1)}%`)
                             .join(', ')
                           }
                         </div>

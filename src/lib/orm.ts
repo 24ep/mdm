@@ -156,9 +156,10 @@ export class SpaceORM {
   }
 
   static async update(id: string, data: Partial<Space>) {
+    const { createdBy, createdAt, ...updateData } = data
     return prisma.space.update({
       where: { id },
-      data
+      data: updateData as any
     })
   }
 
@@ -282,6 +283,7 @@ export class AttributeORM {
     return prisma.attribute.create({
       data: {
         name: data.name,
+        displayName: data.name,
         type: data.type,
         description: data.description,
         dataModelId: data.dataModelId
@@ -290,9 +292,10 @@ export class AttributeORM {
   }
 
   static async update(id: string, data: Partial<Attribute>) {
+    const { dataModelId, createdAt, ...updateData } = data
     return prisma.attribute.update({
       where: { id },
-      data
+      data: updateData as any
     })
   }
 

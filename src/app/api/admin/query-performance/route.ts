@@ -26,8 +26,8 @@ export async function GET(request: NextRequest) {
 
     const querySchema = z.object({
       type: z.enum(['slow', 'stats', 'trends', 'top-by-time', 'most-frequent', 'recent']).optional().default('recent'),
-      limit: z.string().transform(Number).pipe(z.number().int().positive().max(1000)).optional().default('50'),
-      days: z.string().transform(Number).pipe(z.number().int().positive().max(365)).optional().default('7'),
+      limit: z.string().transform(Number).pipe(z.number().int().positive().max(1000)).optional().default(50),
+      days: z.string().transform(Number).pipe(z.number().int().positive().max(365)).optional().default(7),
       queryHash: z.string().optional(),
     })
 
@@ -116,9 +116,9 @@ export async function POST(request: NextRequest) {
       timestamp: new Date(),
       userId: session.user.id,
       userName: session.user.name || undefined,
-      spaceId: spaceId || null,
-      status: status || 'success',
-      errorMessage: errorMessage || null
+      spaceId: spaceId || undefined,
+      status: (status || 'success') as 'error' | 'success',
+      errorMessage: errorMessage || undefined
     })
 
     const duration = Date.now() - startTime

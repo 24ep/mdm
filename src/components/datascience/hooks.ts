@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { notebookEngine, Kernel } from '@/lib/notebook-engine'
-import { Notebook, NotebookState, NotebookActions } from './types'
+import { Notebook, NotebookState, NotebookActions, CellType, FileItem } from './types'
 import { createNewCell, generateNotebookId } from './utils'
 
 export function useNotebookState(initialNotebook?: Notebook): [NotebookState, NotebookActions] {
@@ -33,7 +33,7 @@ export function useNotebookState(initialNotebook?: Notebook): [NotebookState, No
   const [showSidebar, setShowSidebar] = useState(true)
   const [showFileManager, setShowFileManager] = useState(false)
   const [showCollaboration, setShowCollaboration] = useState(false)
-  const [selectedCellType, setSelectedCellType] = useState<'code' | 'markdown' | 'raw'>('code')
+  const [selectedCellType, setSelectedCellType] = useState<CellType>('code')
   const [notebookHistory, setNotebookHistory] = useState<Notebook[]>([])
   const [showHistory, setShowHistory] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
@@ -57,7 +57,7 @@ export function useNotebookState(initialNotebook?: Notebook): [NotebookState, No
     { name: 'y', type: 'str', value: '"hello"' },
     { name: 'data', type: 'list', value: '[1, 2, 3, 4, 5]', size: '5 items' }
   ])
-  const [files, setFiles] = useState([
+  const [files, setFiles] = useState<FileItem[]>([
     { name: 'notebook.ipynb', type: 'file' as const, size: '2.3 KB', modified: new Date() },
     { name: 'data.csv', type: 'file' as const, size: '1.2 MB', modified: new Date() },
     { name: 'scripts', type: 'folder' as const, modified: new Date() },
@@ -123,6 +123,10 @@ export function useNotebookState(initialNotebook?: Notebook): [NotebookState, No
     files
   ])
 
+  const setFilesWrapper = useCallback((files: FileItem[]) => {
+    setFiles(files)
+  }, [setFiles])
+
   const actions: NotebookActions = useMemo(() => ({
     setNotebook,
     setActiveCellId,
@@ -150,7 +154,7 @@ export function useNotebookState(initialNotebook?: Notebook): [NotebookState, No
     setCurrentKernel,
     setKernels,
     setVariables,
-    setFiles
+    setFiles: setFilesWrapper
   }), [
     setNotebook,
     setActiveCellId,
@@ -178,7 +182,7 @@ export function useNotebookState(initialNotebook?: Notebook): [NotebookState, No
     setCurrentKernel,
     setKernels,
     setVariables,
-    setFiles
+    setFilesWrapper
   ])
 
   return [state, actions]

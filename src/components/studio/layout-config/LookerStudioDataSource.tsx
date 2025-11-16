@@ -404,10 +404,10 @@ export function LookerStudioDataSource({
                     {searchQuery ? 'No fields found' : 'No fields available'}
                   </div>
                 ) : (
-                  filteredAttributes.map(attr => {
+                  filteredAttributes.map((attr: any) => {
                     const Icon = getAttributeIcon(attr.type)
-                    const isDim = dimensions.some(d => d.fieldName === attr.name)
-                    const isMet = metrics.some(m => 
+                     const isDim = dimensions.some((d: any) => d.fieldName === attr.name)
+                    const isMet = metrics.some((m: any) => 
                       (typeof m === 'string' ? m : m.fieldName) === attr.name
                     )
                     
@@ -422,7 +422,7 @@ export function LookerStudioDataSource({
                         draggable
                         onDragStart={(e) => {
                           e.dataTransfer.setData('application/json', JSON.stringify({
-                            attribute,
+                            attribute: attr,
                             model: selectedModel,
                             type: 'attribute',
                           }))
@@ -523,7 +523,7 @@ export function LookerStudioDataSource({
                           Drag dimensions here or click fields to add
                         </div>
                       ) : (
-                        dimensions.map((dim, index) => {
+                         dimensions.map((dim: any, index: number) => {
                           const attr = attributes.find(a => a.name === dim.fieldName)
                           return (
                             <div
@@ -603,7 +603,7 @@ export function LookerStudioDataSource({
                           Drag metrics here or click numeric fields to add
                         </div>
                       ) : (
-                        metrics.map((metric, index) => {
+                         metrics.map((metric: any, index: number) => {
                           const fieldName = typeof metric === 'string' ? metric : metric.fieldName
                           const attr = attributes.find(a => a.name === fieldName)
                           const agg = typeof metric === 'object' ? metric.aggregation : 'SUM'

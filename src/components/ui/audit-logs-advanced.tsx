@@ -8,7 +8,7 @@ import { Label } from './label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select'
 import { Badge } from './badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './table'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './dialog'
 import { formatDateTime } from '@/lib/date-formatters'
 import { 
   Search, 

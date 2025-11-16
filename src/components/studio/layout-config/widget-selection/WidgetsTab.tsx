@@ -42,7 +42,7 @@ export function WidgetsTab({ searchQuery, onClose, categoryFilter = 'all' }: Wid
     const isOther = (t: string) => !isChart(t) && !isTable(t) && !isFilter(t) && !isMedia(t) && !isShape(t) && !isUI(t)
 
     // No "Common" section; use full filtered list for category grouping
-    const remainingAfterCommon = items
+    const remainingAfterCommon = [...items]
 
     const charts = by(remainingAfterCommon, match(isChart))
     const tables = by(remainingAfterCommon, match(isTable))
@@ -53,7 +53,7 @@ export function WidgetsTab({ searchQuery, onClose, categoryFilter = 'all' }: Wid
     const other = by(remainingAfterCommon, match(isOther))
 
     const result: Array<{ title: string; items: typeof widgetsPalette }>= []
-    const push = (title: string, items: any[]) => { if (items.length) result.push({ title, items }) }
+    const push = (title: string, items: any[]) => { if (items.length) result.push({ title, items: items as unknown as typeof widgetsPalette }) }
 
     // Determine which groups to display based on categoryFilter
     const wants = (name: string) => categoryFilter === 'all' ||

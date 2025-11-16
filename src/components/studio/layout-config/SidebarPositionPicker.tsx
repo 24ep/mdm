@@ -45,7 +45,6 @@ export function SidebarPositionPicker({
       <PopoverContent 
         className="w-64 p-4"
         align="end"
-        side="right"
         onClick={(e) => e.stopPropagation()}
         style={{ width: '256px', minWidth: '256px', maxWidth: '256px' }}
       >

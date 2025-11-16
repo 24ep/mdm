@@ -39,7 +39,7 @@ import {
   Calculator,
   TrendingUp,
   PieChart,
-  Scatter,
+  ScatterChart,
   LineChart,
   BarChart,
   Activity,
@@ -218,7 +218,7 @@ export function DataScienceNotebook({
             break
           case 'Enter':
             e.preventDefault()
-            executeCell(activeCellId)
+            if (activeCellId) executeCell(activeCellId)
             break
           case 'Shift':
             e.preventDefault()
@@ -352,7 +352,7 @@ export function DataScienceNotebook({
         cell.content,
         cell.type === 'code' ? 'python' : cell.type,
         {
-          kernelId: currentKernel?.id,
+          kernelId: currentKernel?.id || '',
           variables: currentKernel?.variables || {},
           imports: [],
           dataSources: dataSource || {}
@@ -450,7 +450,21 @@ export function DataScienceNotebook({
 
   const exportNotebook = async (format: 'json' | 'ipynb' | 'html' | 'pdf' | 'py') => {
     try {
-      const blob = await notebookEngine.exportNotebook(notebook, format)
+      if (format === 'json') {
+        // Handle JSON export separately
+        const jsonStr = JSON.stringify(notebook, null, 2)
+        const blob = new Blob([jsonStr], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `${notebook.name || 'notebook'}.json`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+        return
+      }
+      const blob = await notebookEngine.exportNotebook(notebook, format as 'ipynb' | 'html' | 'pdf' | 'py')
       const url = URL.createObjectURL(blob)
       
       const link = document.createElement('a')
@@ -652,34 +666,41 @@ export function DataScienceNotebook({
       case 'sql':
         return (
           <SQLCell
-            {...commonProps}
-            content={cell.content}
-            output={cell.output}
-            status={cell.status}
-            executionTime={cell.executionTime}
-            onContentChange={(content) => updateCellContent(cell.id, content)}
+            cell={cell as any}
+            isActive={activeCellId === cell.id}
+            isSelected={selectedCellIds.has(cell.id)}
             onExecute={() => executeCell(cell.id)}
+            onContentChange={(cellId, content) => updateCellContent(cellId, content)}
+            onVariableNameChange={(cellId, variableName) => {
+              // Handle variable name change
+            }}
+            onConnectionChange={(cellId, connection) => {
+              // Handle connection change
+            }}
+            onFocus={() => setActiveCellId(cell.id)}
+            onSelect={(cellId, selected) => {
+              if (selected) {
+                setSelectedCellIds(new Set([...selectedCellIds, cellId]))
+              } else {
+                const newSet = new Set(selectedCellIds)
+                newSet.delete(cellId)
+                setSelectedCellIds(newSet)
+              }
+            }}
+            onTitleChange={(cellId, title) => {
+              // Handle title change
+            }}
+            canEdit={true}
+            canExecute={true}
           />
         )
       
       case 'visualization':
         return (
           <DataVisualization
-            {...commonProps}
-            config={cell.metadata?.config || {
-              type: 'bar',
-              title: 'New Chart',
-              xAxis: '',
-              yAxis: '',
-              color: '#3B82F6',
-              showLegend: true,
-              showGrid: true,
-              showTooltip: true,
-              width: 800,
-              height: 400
-            }}
             data={cell.metadata?.data || []}
-            onConfigChange={(config) => {
+            columns={cell.metadata?.columns || []}
+            onUpdate={(config) => {
               setNotebook(prev => ({
                 ...prev,
                 cells: prev.cells.map(c => 
@@ -692,19 +713,7 @@ export function DataScienceNotebook({
                 updatedAt: new Date()
               }))
             }}
-            onDataChange={(data) => {
-              setNotebook(prev => ({
-                ...prev,
-                cells: prev.cells.map(c => 
-                  c.id === cell.id ? { 
-                    ...c, 
-                    metadata: { ...c.metadata, data },
-                    updatedAt: new Date()
-                  } : c
-                ),
-                updatedAt: new Date()
-              }))
-            }}
+            className="w-full"
           />
         )
       

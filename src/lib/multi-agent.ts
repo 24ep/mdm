@@ -39,8 +39,8 @@ export async function getMultiAgentConfig(chatbotId: string): Promise<MultiAgent
 
   return {
     enabled: config.enabled,
-    agents: config.agents as AgentConfig[],
-    handoffRules: config.handoffRules as HandoffRule[] | undefined,
+    agents: config.agents as unknown as AgentConfig[],
+    handoffRules: config.handoffRules as unknown as HandoffRule[] | undefined,
     coordinationStrategy: config.coordinationStrategy as 'sequential' | 'parallel' | 'conditional' | undefined,
   }
 }

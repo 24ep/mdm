@@ -234,8 +234,8 @@ export async function POST(
         isRequired: !!is_required,
         isUnique: !!is_unique,
         defaultValue: default_value,
-        options: options && options.length > 0 ? options : null,
-        validationRules: validation_rules ? validation_rules : null,
+        options: options && options.length > 0 ? options : undefined,
+        validationRules: validation_rules ? validation_rules : undefined,
         order: Number(order_index) || 0,
         // Optional fields (will be null if columns don't exist - Prisma handles this)
         dataEntityModelId: data_entity_model_id || null,

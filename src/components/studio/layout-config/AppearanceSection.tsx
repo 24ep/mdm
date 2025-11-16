@@ -171,7 +171,6 @@ export function AppearanceSection({
                 minWidth: '280px',
                 maxWidth: '280px'
               }}
-              onOpenAutoFocus={(e) => e.preventDefault()}
             >
               <div className="space-y-3">
                 <Label className="text-xs font-semibold">Rounded Corners</Label>
@@ -196,7 +195,7 @@ export function AppearanceSection({
                       />
                       <Select
                         value={borderRadiusValue.topRight.unit}
-                        onValueChange={(unit: 'px' | '%') => updateBorderRadius('topRight', borderRadiusValue.topRight.value, unit)}
+                         onValueChange={(unit: string) => updateBorderRadius('topRight', borderRadiusValue.topRight.value, unit as 'px' | '%')}
                       >
                         <SelectTrigger className="absolute right-0 top-0 h-7 w-8 px-1 text-xs border-0">
                           <SelectValue />
@@ -227,7 +226,7 @@ export function AppearanceSection({
                       />
                       <Select
                         value={borderRadiusValue.topLeft.unit}
-                        onValueChange={(unit: 'px' | '%') => updateBorderRadius('topLeft', borderRadiusValue.topLeft.value, unit)}
+                         onValueChange={(unit: string) => updateBorderRadius('topLeft', borderRadiusValue.topLeft.value, unit as 'px' | '%')}
                       >
                         <SelectTrigger className="absolute right-0 top-0 h-7 w-8 px-1 text-xs border-0">
                           <SelectValue />
@@ -259,7 +258,7 @@ export function AppearanceSection({
                       />
                       <Select
                         value={borderRadiusValue.bottomRight.unit}
-                        onValueChange={(unit: 'px' | '%') => updateBorderRadius('bottomRight', borderRadiusValue.bottomRight.value, unit)}
+                         onValueChange={(unit: string) => updateBorderRadius('bottomRight', borderRadiusValue.bottomRight.value, unit as 'px' | '%')}
                       >
                         <SelectTrigger className="absolute right-0 top-0 h-7 w-8 px-1 text-xs border-0">
                           <SelectValue />
@@ -290,7 +289,7 @@ export function AppearanceSection({
                       />
                       <Select
                         value={borderRadiusValue.bottomLeft.unit}
-                        onValueChange={(unit: 'px' | '%') => updateBorderRadius('bottomLeft', borderRadiusValue.bottomLeft.value, unit)}
+                         onValueChange={(unit: string) => updateBorderRadius('bottomLeft', borderRadiusValue.bottomLeft.value, unit as 'px' | '%')}
                       >
                         <SelectTrigger className="absolute right-0 top-0 h-7 w-8 px-1 text-xs border-0">
                           <SelectValue />

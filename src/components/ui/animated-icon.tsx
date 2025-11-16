@@ -157,8 +157,6 @@ export function AnimatedIcon({
       height: size,
       ...style
     },
-    className: `inline-block ${className}`,
-    onClick,
   }
 
   // Set up animation triggers
@@ -190,7 +188,7 @@ export function AnimatedIcon({
   }
 
   return (
-    <motion.div {...motionProps}>
+    <motion.div {...motionProps} className={`inline-block ${className}`} onClick={onClick}>
       <IconComponent className="w-full h-full" />
     </motion.div>
   )

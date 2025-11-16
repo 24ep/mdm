@@ -92,7 +92,10 @@ export async function PATCH(
       return addSecurityHeaders(bodyValidation.response);
     }
 
-    const body: UpdateNotificationRequest = bodyValidation.data;
+    const body: UpdateNotificationRequest = {
+      ...bodyValidation.data,
+      read_at: bodyValidation.data.read_at ?? undefined
+    };
 
     // Build update query dynamically
     const updateFields: string[] = [];

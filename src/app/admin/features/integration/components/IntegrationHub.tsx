@@ -663,7 +663,7 @@ export function IntegrationHub() {
                             className="flex-1"
                             onCheckedChange={(checked) => {
                               // Handle webhook toggle
-                              toast.info(`Webhook ${checked ? 'enabled' : 'disabled'}`)
+                              toast.success(`Webhook ${checked ? 'enabled' : 'disabled'}`)
                             }}
                           />
                           <Button 
@@ -751,7 +751,7 @@ export function IntegrationHub() {
                             disabled={!provider.isConfigured}
                             onClick={(e) => {
                               e.stopPropagation()
-                              toast.info(`Testing ${provider.name}...`)
+                              toast(`Testing ${provider.name}...`)
                             }}
                           >
                             <Zap className="h-3 w-3 mr-1" />

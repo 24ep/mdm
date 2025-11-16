@@ -73,7 +73,6 @@ export function Combobox({
         </PopoverTrigger>
         <PopoverContent 
           className={cn("w-[var(--radix-popover-trigger-width)] p-0", popoverClassName)}
-          side="bottom"
           align="start"
           style={{ width: 'var(--radix-popover-trigger-width)' }}
         >
@@ -175,7 +174,6 @@ export function MultiCombobox({
         </PopoverTrigger>
         <PopoverContent 
           className={cn("w-[var(--radix-popover-trigger-width)] p-0", popoverClassName)}
-          side="bottom"
           align="start"
           style={{ width: 'var(--radix-popover-trigger-width)' }}
         >

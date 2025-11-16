@@ -77,7 +77,7 @@ export async function PUT(
       return addSecurityHeaders(bodyValidation.response)
     }
 
-    const template = { ...bodyValidation.data, id }
+    const template = { ...bodyValidation.data, id } as any
 
     await TemplateManager.saveTemplate(template)
 

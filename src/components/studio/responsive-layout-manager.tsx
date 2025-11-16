@@ -30,8 +30,6 @@ import {
   AlignCenter,
   AlignRight,
   AlignJustify,
-  AlignVerticalCenter,
-  AlignHorizontalCenter,
   Space,
   CornerUpLeft,
   CornerUpRight,

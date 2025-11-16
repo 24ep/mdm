@@ -342,7 +342,8 @@ export function CloudIntegration({
 
   return (
     <div className="h-full flex flex-col space-y-4">
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="flex-1">
+      <div className="flex-1">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="connections">Connections</TabsTrigger>
           <TabsTrigger value="resources">Resources</TabsTrigger>
@@ -695,7 +696,8 @@ export function CloudIntegration({
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+        </Tabs>
+      </div>
     </div>
   )
 }

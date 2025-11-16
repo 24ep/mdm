@@ -235,7 +235,7 @@ export function PlatformLayout({
   return (
     <div className="flex flex-col h-screen bg-background">
       {/* Top Menu Bar - Full Width Above Everything */}
-      <TopMenuBar activeTab={activeTab} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+      <TopMenuBar activeTab={activeTab} />
       
       {/* Content Area with Sidebars */}
       <div className="flex flex-1 overflow-hidden">

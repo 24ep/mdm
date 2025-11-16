@@ -13,7 +13,7 @@ import {
   Calculator,
   TrendingUp,
   PieChart,
-  Scatter,
+  ScatterChart,
   LineChart,
   Activity,
   Layers,

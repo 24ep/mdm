@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 
 interface AccordionContextValue {
   value: string[]
-  onValueChange: (value: string[]) => void
+  onValueChange: (itemValue: string) => void
   type?: "single" | "multiple"
 }
 

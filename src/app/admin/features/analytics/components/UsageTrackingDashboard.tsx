@@ -225,8 +225,9 @@ export function UsageTrackingDashboard() {
       </div>
 
       {/* User Activity and Space Usage */}
-      <Tabs defaultValue="users" className="space-y-4">
-        <TabsList>
+      <div className="space-y-4">
+        <Tabs defaultValue="users">
+          <TabsList>
           <TabsTrigger value="users">User Activity</TabsTrigger>
           <TabsTrigger value="spaces">Space Usage</TabsTrigger>
         </TabsList>
@@ -331,7 +332,8 @@ export function UsageTrackingDashboard() {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+        </Tabs>
+      </div>
     </div>
   )
 }

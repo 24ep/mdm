@@ -78,7 +78,7 @@ export function UserCombobox({ value, onValueChange, placeholder = "Select user.
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" side="bottom" align="start" style={{ width: 'var(--radix-popover-trigger-width)' }}>
+        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start" style={{ width: 'var(--radix-popover-trigger-width)' }}>
           <Command>
             <CommandInput placeholder="Search users..." value={query} onValueChange={(v) => { setQuery(v); void fetchUsers(v) }} />
             <CommandList>
