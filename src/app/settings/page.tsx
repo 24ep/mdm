@@ -301,8 +301,10 @@ export default function SettingsPage() {
   const [deletePolicyDays, setDeletePolicyDays] = useState(30)
   const [faviconUrl, setFaviconUrl] = useState('')
   
-  // Debug logging
-  console.log('SettingsPage - currentSpace:', currentSpace)
+  // Debug logging (only in development, not during build)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('SettingsPage - currentSpace:', currentSpace)
+  }
   
   // Sidebar Configuration
   const { settings: sidebarSettings, updateSettings: updateSidebarSettings, resetSettings: resetSidebarSettings } = useSidebar()

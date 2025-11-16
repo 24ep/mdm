@@ -54,7 +54,17 @@ export function useInfrastructureInstances(
       const response = await fetch(`/api/infrastructure/instances?${params.toString()}`)
       
       if (!response.ok) {
-        throw new Error('Failed to fetch instances')
+        let errorMessage = `Failed to fetch instances (${response.status})`
+        try {
+          const errorData = await response.json()
+          if (errorData.error) {
+            errorMessage = `${errorData.error}${errorData.reason ? `: ${errorData.reason}` : ''}`
+          }
+        } catch {
+          // If response is not JSON, use status text
+          errorMessage = `Failed to fetch instances: ${response.statusText} (${response.status})`
+        }
+        throw new Error(errorMessage)
       }
 
       const data = await response.json()

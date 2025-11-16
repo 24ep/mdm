@@ -46,7 +46,7 @@ const TabsList = React.forwardRef<
     role="tablist"
     aria-orientation={orientation}
     className={cn(
-      "inline-flex h-10 items-center justify-center border-b border-border text-muted-foreground",
+      "inline-flex h-10 items-center justify-start border-b border-border text-muted-foreground",
       orientation === "vertical" && "inline-flex h-auto w-full flex-col items-stretch border-b-0",
       className
     )}
@@ -77,7 +77,7 @@ const TabsTrigger = React.forwardRef<
       aria-selected={isActive}
       onClick={handleClick}
       className={cn(
-        "inline-flex items-center justify-center whitespace-nowrap px-3 py-2.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex items-center justify-start whitespace-nowrap px-3 py-2.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
         isActive && "text-foreground border-b-[3px] border-primary relative",
         className
       )}

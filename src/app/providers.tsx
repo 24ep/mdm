@@ -7,6 +7,7 @@ import { Toaster } from "react-hot-toast"
 import { NotificationProvider } from "@/contexts/notification-context"
 import { QueryProvider } from "@/lib/providers/query-provider"
 import { ThemeProvider } from "@/contexts/theme-context"
+import { BrandingInitializer } from "@/components/branding/BrandingInitializer"
 import { useEffect, useState } from "react"
 
 function ThemedToaster() {
@@ -66,6 +67,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         disableTransitionOnChange
       >
         <ThemeProvider>
+          <BrandingInitializer />
           <QueryProvider>
             <NotificationProvider>
               {children}

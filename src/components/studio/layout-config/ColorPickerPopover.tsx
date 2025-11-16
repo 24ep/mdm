@@ -602,7 +602,7 @@ export function ColorPickerPopover({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild disabled={disabled} onClick={(e) => e.stopPropagation()}>
+      <PopoverTrigger asChild disabled={disabled}>
         {children}
       </PopoverTrigger>
       <PopoverContent

@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       whereConditions.push(`EXISTS (
         SELECT 1 FROM ticket_spaces ts 
         WHERE ts.ticket_id = t.id 
-        AND ts.space_id = $${paramIndex}
+        AND ts.space_id = $${paramIndex}::uuid
       )`)
       queryParams.push(spaceId)
       paramIndex++
@@ -67,8 +67,8 @@ export async function GET(request: NextRequest) {
       // Get all spaces user has access to
       const userSpaces = await query(
         `SELECT id FROM spaces 
-         WHERE (created_by = $1 OR id IN (
-           SELECT space_id FROM space_members WHERE user_id = $1
+         WHERE (created_by = $1::uuid OR id IN (
+           SELECT space_id FROM space_members WHERE user_id = $1::uuid
          )) AND deleted_at IS NULL`,
         [session.user.id]
       )
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
           whereConditions.push(`EXISTS (
             SELECT 1 FROM ticket_assignees ta 
             WHERE ta.ticket_id = t.id 
-            AND ta.user_id = $${paramIndex}
+            AND ta.user_id = $${paramIndex}::uuid
           )`)
           queryParams.push(filters.assigneeId)
           paramIndex++

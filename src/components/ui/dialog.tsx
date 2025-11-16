@@ -6,6 +6,7 @@ import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { useControlledDialogState, useDialogBodyScrollLock, useDialogEscapeKey } from "@/lib/dialog-utils"
+import { Z_INDEX } from "@/lib/z-index"
 
 interface DialogContextValue {
   open: boolean
@@ -104,9 +105,10 @@ const DialogOverlay = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "fixed inset-0 z-50 bg-background/80 backdrop-blur-sm animate-in fade-in-0",
+        "fixed inset-0 bg-background/80 backdrop-blur-sm animate-in fade-in-0",
         className
       )}
+      style={{ zIndex: Z_INDEX.overlay }}
       {...props}
     />
   )
@@ -156,9 +158,10 @@ const DialogContent = React.forwardRef<
       <div
         ref={ref}
         className={cn(
-          "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-border bg-background p-6 shadow-lg duration-200 animate-in fade-in-0 zoom-in-95 sm:rounded-lg [background-color:hsl(var(--background))]",
+          "fixed left-[50%] top-[50%] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-border bg-background p-6 shadow-lg duration-200 animate-in fade-in-0 zoom-in-95 sm:rounded-lg [background-color:hsl(var(--background))]",
           className
         )}
+        style={{ zIndex: Z_INDEX.dialog }}
         {...props}
       >
         {children}

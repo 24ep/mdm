@@ -118,6 +118,97 @@ export interface Theme {
   updatedAt: Date
 }
 
+export interface BrandingConfig {
+  // Application branding
+  applicationLogo?: string
+  applicationName: string
+  
+  // Light mode colors
+  lightMode: {
+    primaryColor: string
+    secondaryColor: string
+    warningColor: string
+    dangerColor: string
+    topMenuBackgroundColor: string
+    platformSidebarBackgroundColor: string
+    secondarySidebarBackgroundColor: string
+    topMenuTextColor: string
+    platformSidebarTextColor: string
+    secondarySidebarTextColor: string
+    bodyBackgroundColor: string
+  }
+  
+  // Dark mode colors
+  darkMode: {
+    primaryColor: string
+    secondaryColor: string
+    warningColor: string
+    dangerColor: string
+    topMenuBackgroundColor: string
+    platformSidebarBackgroundColor: string
+    secondarySidebarBackgroundColor: string
+    topMenuTextColor: string
+    platformSidebarTextColor: string
+    secondarySidebarTextColor: string
+    bodyBackgroundColor: string
+  }
+  
+  // Login background
+  loginBackground: {
+    type: 'color' | 'gradient' | 'image'
+    color?: string
+    gradient?: {
+      from: string
+      to: string
+      angle: number
+    }
+    image?: string
+  }
+  
+  // Global styling (not applied to space modules)
+  globalStyling: {
+    borderRadius: string // e.g., "0.5rem", "8px"
+    borderColor: string // e.g., "#e2e8f0"
+    borderWidth: string // e.g., "1px"
+    buttonBorderRadius: string
+    buttonBorderWidth: string
+    inputBorderRadius: string
+    inputBorderWidth: string
+    selectBorderRadius: string
+    selectBorderWidth: string
+    textareaBorderRadius: string
+    textareaBorderWidth: string
+  }
+
+  // Component-specific styling
+  componentStyling: {
+    [componentId: string]: {
+      // Light mode styling
+      light: {
+        backgroundColor?: string
+        textColor?: string
+        borderColor?: string
+        borderRadius?: string
+        borderWidth?: string
+        padding?: string
+        fontSize?: string
+        fontWeight?: string
+      }
+      // Dark mode styling
+      dark: {
+        backgroundColor?: string
+        textColor?: string
+        borderColor?: string
+        borderRadius?: string
+        borderWidth?: string
+        padding?: string
+        fontSize?: string
+        fontWeight?: string
+      }
+    }
+  }
+}
+
 export interface TemplateItem {
   id: string
   name: string

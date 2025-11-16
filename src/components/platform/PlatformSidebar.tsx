@@ -408,13 +408,25 @@ export function PlatformSidebar({
 
 
 
+  const sidebarBg = mode === 'primary' 
+    ? 'var(--brand-platform-sidebar-bg, hsl(var(--background)))'
+    : 'var(--brand-secondary-sidebar-bg, hsl(var(--muted)))'
+  
+  const sidebarText = mode === 'primary'
+    ? 'var(--brand-platform-sidebar-text, hsl(var(--foreground)))'
+    : 'var(--brand-secondary-sidebar-text, hsl(var(--muted-foreground)))'
+
   return (
     <div 
-      className={`h-full flex flex-col w-full bg-background`}
+      className={`h-full flex flex-col w-full`}
+      data-sidebar={mode}
+      data-component="platform-sidebar"
       style={{ 
         position: 'relative',
         zIndex: Z_INDEX.sidebar,
-        pointerEvents: 'auto'
+        pointerEvents: 'auto',
+        backgroundColor: sidebarBg,
+        color: sidebarText
       }}
     >
  
@@ -551,7 +563,7 @@ export function PlatformSidebar({
                             key={tab.id}
                             variant="ghost"
                             className={cn(
-                              "platform-sidebar-menu-button w-full justify-start text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
+                              "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
                               activeTab === tab.id 
                                 ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm" 
                                 : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
@@ -564,8 +576,8 @@ export function PlatformSidebar({
                               ...(activeTab === tab.id ? { backgroundColor: 'hsl(var(--muted))' } : {})
                             }}
                           >
-                            <tab.icon className="h-4 w-4 mr-3 text-muted-foreground" />
-                            <span className="truncate">{tab.name}</span>
+                            <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" style={{ color: sidebarText }} />
+                            <span className="truncate text-left" style={{ color: sidebarText }}>{tab.name}</span>
                           </Button>
                         ))}
                     </div>
@@ -586,7 +598,7 @@ export function PlatformSidebar({
                             key={tab.id}
                             variant="ghost"
                             className={cn(
-                              "platform-sidebar-menu-button w-full justify-start text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
+                              "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
                               activeTab === tab.id 
                                 ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm" 
                                 : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
@@ -599,8 +611,8 @@ export function PlatformSidebar({
                               ...(activeTab === tab.id ? { backgroundColor: 'hsl(var(--muted))' } : {})
                             }}
                           >
-                            <tab.icon className="h-4 w-4 mr-3 text-muted-foreground" />
-                            <span className="truncate">{tab.name}</span>
+                            <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" style={{ color: sidebarText }} />
+                            <span className="truncate text-left" style={{ color: sidebarText }}>{tab.name}</span>
                           </Button>
                         ))}
                     </div>
@@ -621,7 +633,7 @@ export function PlatformSidebar({
                             key={tab.id}
                             variant="ghost"
                             className={cn(
-                              "platform-sidebar-menu-button w-full justify-start text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
+                              "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
                               activeTab === tab.id 
                                 ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm" 
                                 : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
@@ -634,8 +646,8 @@ export function PlatformSidebar({
                               ...(activeTab === tab.id ? { backgroundColor: 'hsl(var(--muted))' } : {})
                             }}
                           >
-                            <tab.icon className="h-4 w-4 mr-3 text-muted-foreground" />
-                            <span className="truncate">{tab.name}</span>
+                            <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" style={{ color: sidebarText }} />
+                            <span className="truncate text-left" style={{ color: sidebarText }}>{tab.name}</span>
                           </Button>
                         ))}
                     </div>
@@ -656,7 +668,7 @@ export function PlatformSidebar({
                             key={tab.id}
                             variant="ghost"
                             className={cn(
-                              "platform-sidebar-menu-button w-full justify-start text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
+                              "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
                               activeTab === tab.id 
                                 ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-md" 
                                 : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
@@ -669,8 +681,8 @@ export function PlatformSidebar({
                               ...(activeTab === tab.id ? { backgroundColor: 'hsl(var(--muted))' } : {})
                             }}
                           >
-                            <tab.icon className="h-4 w-4 mr-3 text-muted-foreground" />
-                            <span className="truncate">{tab.name}</span>
+                            <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" style={{ color: sidebarText }} />
+                            <span className="truncate text-left" style={{ color: sidebarText }}>{tab.name}</span>
                           </Button>
                         ))}
                     </div>
@@ -691,7 +703,7 @@ export function PlatformSidebar({
                     key={tab.id}
                     variant="ghost"
                     className={cn(
-                      "platform-sidebar-menu-button w-full justify-start text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
+                      "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
                       activeTab === tab.id 
                         ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm" 
                         : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
@@ -704,8 +716,8 @@ export function PlatformSidebar({
                       ...(activeTab === tab.id ? { backgroundColor: 'hsl(var(--muted))' } : {})
                     }}
                   >
-                    <tab.icon className="h-4 w-4 mr-3 text-muted-foreground" />
-                    <span className="truncate">{tab.name}</span>
+                    <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" style={{ color: sidebarText }} />
+                    <span className="truncate text-left">{tab.name}</span>
                   </Button>
                 ))}
                     </div>
@@ -726,7 +738,7 @@ export function PlatformSidebar({
                               key={tab.id}
                               variant="ghost"
                               className={cn(
-                                "platform-sidebar-menu-button w-full justify-start text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
+                                "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
                                 activeTab === tab.id 
                                   ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm" 
                                   : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
@@ -739,8 +751,8 @@ export function PlatformSidebar({
                                 ...(activeTab === tab.id ? { backgroundColor: 'hsl(var(--muted))' } : {})
                               }}
                             >
-                              <tab.icon className="h-4 w-4 mr-3 text-muted-foreground" />
-                              <span className="truncate">{tab.name}</span>
+                              <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" style={{ color: sidebarText }} />
+                              <span className="truncate text-left">{tab.name}</span>
                             </Button>
                           ))}
                         {sectionIndex < Object.entries(toolSections).length - 1 && (
@@ -759,7 +771,7 @@ export function PlatformSidebar({
                       key={tab.id}
                       variant="ghost"
                       className={cn(
-                        "platform-sidebar-menu-button w-full justify-start text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
+                        "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
                         activeTab === tab.id 
                           ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-md" 
                           : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
@@ -772,8 +784,8 @@ export function PlatformSidebar({
                         ...(activeTab === tab.id ? { backgroundColor: 'hsl(var(--muted))' } : {})
                       }}
                     >
-                      <tab.icon className="h-4 w-4 mr-3 text-muted-foreground" />
-                      <span className="truncate">{tab.name}</span>
+                      <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" style={{ color: sidebarText }} />
+                      <span className="truncate text-left">{tab.name}</span>
                     </Button>
                   ))
                 )}

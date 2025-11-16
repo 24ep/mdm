@@ -171,8 +171,11 @@ export function CodeEditor({
           throw new Error('SQL extension returned empty result')
         }
       } catch (sqlError: any) {
-        // Log the error for debugging
-        console.warn('Failed to initialize SQL extension:', sqlError?.message || sqlError)
+        // Log the error for debugging (only in development, not during build)
+        // During build, NODE_ENV is 'production', so this won't log
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Failed to initialize SQL extension:', sqlError?.message || sqlError)
+        }
         // Fallback to basic editor without SQL extension
         return [
           EditorView.lineWrapping,

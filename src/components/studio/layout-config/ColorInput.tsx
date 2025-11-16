@@ -69,7 +69,6 @@ const patterns = [
 // Helper to get swatch style with checkerboard background for transparency
 const getSwatchStyle = (color: string): React.CSSProperties => {
   const baseStyle: React.CSSProperties = {
-    border: 'none',
     outline: 'none',
     backgroundColor: '#ffffff'
   }
@@ -140,6 +139,8 @@ export function ColorInput({
   const defaultInputClassName = 'h-7 text-xs pl-7 w-full rounded-[2px] bg-input border-0 focus:outline-none focus:ring-0 focus:border-0'
   const finalInputClassName = inputClassName || defaultInputClassName
 
+  const swatchStyle = getSwatchStyle(value)
+
   return (
     <div className={className}>
       <ColorPickerPopover
@@ -150,9 +151,12 @@ export function ColorInput({
       >
         <button
           type="button"
-          className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-none z-10"
-          style={getSwatchStyle(value)}
-          onClick={(e) => e.stopPropagation()}
+          className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-sm z-30 border border-border/50 shadow-sm hover:border-border transition-colors"
+          style={{ ...swatchStyle, pointerEvents: 'auto', zIndex: 30 }}
+          onClick={(e) => {
+            e.stopPropagation()
+          }}
+          aria-label="Color swatch"
         />
       </ColorPickerPopover>
       <Input
@@ -162,6 +166,14 @@ export function ColorInput({
         className={finalInputClassName}
         placeholder={placeholder}
         disabled={disabled}
+        style={{ pointerEvents: 'auto' }}
+        onPointerDown={(e) => {
+          // Don't prevent pointer events on the input itself, but allow button clicks
+          const target = e.target as HTMLElement
+          if (target.closest('button')) {
+            return
+          }
+        }}
       />
     </div>
   )

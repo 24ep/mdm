@@ -280,11 +280,17 @@ export function AttributeDetailDrawer({
 
 
   if (!attribute) {
-    console.log('AttributeDetailDrawer: No attribute provided')
+    // Only log in development, not during build
+    if (process.env.NODE_ENV === 'development') {
+      console.log('AttributeDetailDrawer: No attribute provided')
+    }
     return null
   }
   
-  console.log('AttributeDetailDrawer: Rendering with attribute:', attribute)
+  // Only log in development, not during build
+  if (process.env.NODE_ENV === 'development') {
+    console.log('AttributeDetailDrawer: Rendering with attribute:', attribute)
+  }
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>

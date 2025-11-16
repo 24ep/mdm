@@ -137,7 +137,7 @@ export function SettingsPanelContent({
     <div className="w-full" style={{ pointerEvents: 'auto' }}>
       <div className="w-full">
       <Tabs value={validActiveTab} onValueChange={handleTabChange}>
-        <TabsList className={`${isMobileViewport ? 'w-full' : 'w-full'} ${shouldShowSelectionTab ? 'grid grid-cols-3' : 'grid grid-cols-2'} mb-3`}>
+        <TabsList className={`${isMobileViewport ? 'w-full' : 'w-full'} ${shouldShowSelectionTab ? 'grid grid-cols-3' : 'grid grid-cols-2'} mb-3 justify-start`}>
           {shouldShowSelectionTab && (
           <TabsTrigger 
             value="selection" 

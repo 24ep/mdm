@@ -15,6 +15,9 @@ interface PopoverContextValue {
 
 const PopoverContext = React.createContext<PopoverContextValue | undefined>(undefined)
 
+// Global flag to prevent immediate re-toggling
+const openingRef = { current: false }
+
 const Popover = ({ children, open: controlledOpen, onOpenChange, defaultOpen = false }: {
   children: React.ReactNode
   open?: boolean
@@ -45,14 +48,28 @@ const PopoverTrigger = React.forwardRef<
   const triggerRef = React.useRef<HTMLButtonElement>(null)
 
   React.useImperativeHandle(ref, () => triggerRef.current as HTMLButtonElement)
-  React.useEffect(() => {
-    if (context) {
-      (context.triggerRef as React.MutableRefObject<HTMLElement | null>).current = triggerRef.current
-    }
-  }, [context])
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    context?.setOpen(!context.open)
+    e.stopPropagation()
+    e.preventDefault()
+    if (context) {
+      // If we're currently opening, ignore this click
+      if (openingRef.current) {
+        return
+      }
+      const newOpen = !context.open
+      if (newOpen) {
+        // Set flag before opening to prevent immediate close
+        openingRef.current = true
+        context.setOpen(true)
+        // Clear flag after a short delay
+        setTimeout(() => {
+          openingRef.current = false
+        }, 300)
+      } else {
+        context.setOpen(false)
+      }
+    }
     props.onClick?.(e)
   }
 
@@ -60,13 +77,36 @@ const PopoverTrigger = React.forwardRef<
     return React.cloneElement(children as React.ReactElement<any>, {
       ...props,
       onClick: (e: React.MouseEvent<HTMLButtonElement>) => {
-        handleClick(e)
+        e.stopPropagation()
+        e.preventDefault()
+        if (context) {
+          // If we're currently opening, ignore this click
+          if (openingRef.current) {
+            return
+          }
+          const newOpen = !context.open
+          if (newOpen) {
+            // Set flag before opening to prevent immediate close
+            openingRef.current = true
+            context.setOpen(true)
+            // Clear flag after a short delay
+            setTimeout(() => {
+              openingRef.current = false
+            }, 300)
+          } else {
+            context.setOpen(false)
+          }
+        }
+        props.onClick?.(e)
         if (typeof (children as any).props?.onClick === 'function') {
           (children as any).props.onClick(e)
         }
       },
       ref: (node: HTMLButtonElement) => {
         triggerRef.current = node
+        if (context && node) {
+          (context.triggerRef as React.MutableRefObject<HTMLElement | null>).current = node
+        }
         if (typeof ref === 'function') {
           ref(node)
         } else if (ref) {
@@ -79,16 +119,23 @@ const PopoverTrigger = React.forwardRef<
             ((children as any).ref as React.MutableRefObject<HTMLButtonElement | null>).current = node
           }
         }
-        if (context) {
-          (context.triggerRef as React.MutableRefObject<HTMLElement | null>).current = node
-        }
       },
     })
   }
 
   return (
     <button
-      ref={triggerRef}
+      ref={(node) => {
+        triggerRef.current = node
+        if (context && node) {
+          (context.triggerRef as React.MutableRefObject<HTMLElement | null>).current = node
+        }
+        if (typeof ref === 'function') {
+          ref(node)
+        } else if (ref) {
+          (ref as React.MutableRefObject<HTMLButtonElement | null>).current = node
+        }
+      }}
       type="button"
       onClick={handleClick}
       className={className}
@@ -114,12 +161,19 @@ const PopoverContent = React.forwardRef<
   React.useImperativeHandle(ref, () => contentRef.current as HTMLDivElement)
 
   const calculatePosition = React.useCallback(() => {
-    if (!context?.open || !context.triggerRef.current) {
+    if (!context?.open) {
       setPosition(null)
       return
     }
+    
+    if (!context.triggerRef.current) {
+      // If triggerRef not set yet, don't calculate position
+      // It will be recalculated when ref is available
+      return
+    }
 
-    const rect = context.triggerRef.current.getBoundingClientRect()
+    try {
+      const rect = context.triggerRef.current.getBoundingClientRect()
     const contentRect = contentRef.current?.getBoundingClientRect()
     
     // If content isn't rendered yet, use default dimensions
@@ -185,16 +239,40 @@ const PopoverContent = React.forwardRef<
       top,
       left,
     })
+    } catch (error) {
+      // If getBoundingClientRect fails, set a default position
+      console.warn('Failed to calculate popover position:', error)
+      setPosition({
+        top: 100,
+        left: 100,
+      })
+    }
   }, [context?.open, align, sideOffset])
 
   React.useEffect(() => {
-    calculatePosition()
-  }, [calculatePosition])
+    if (context?.open) {
+      // Try to calculate position immediately
+      if (context.triggerRef.current) {
+        calculatePosition()
+      }
+      
+      // Also use requestAnimationFrame as backup
+      const frame = requestAnimationFrame(() => {
+        if (context.triggerRef.current) {
+          calculatePosition()
+        }
+      })
+      
+      return () => cancelAnimationFrame(frame)
+    } else {
+      setPosition(null)
+    }
+  }, [context?.open, calculatePosition])
+  
 
-  // Recalculate position when content is rendered and measured
+  // Recalculate position once content is rendered (in case we used fallback position)
   React.useEffect(() => {
-    if (context?.open && contentRef.current) {
-      // Use requestAnimationFrame to ensure content is rendered
+    if (context?.open && contentRef.current && context.triggerRef.current) {
       const frame = requestAnimationFrame(() => {
         calculatePosition()
       })
@@ -219,8 +297,26 @@ const PopoverContent = React.forwardRef<
     }
   }, [context?.open, calculatePosition])
 
+  const justOpenedRef = React.useRef(false)
+
+  React.useEffect(() => {
+    if (context?.open) {
+      // Set flag when popover opens, clear it after a short delay
+      justOpenedRef.current = true
+      const timeoutId = setTimeout(() => {
+        justOpenedRef.current = false
+      }, 200)
+      return () => clearTimeout(timeoutId)
+    } else {
+      justOpenedRef.current = false
+    }
+  }, [context?.open])
+
   React.useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
+      // Ignore clicks immediately after opening
+      if (justOpenedRef.current) return
+      
       if (
         context?.open &&
         contentRef.current &&
@@ -239,38 +335,116 @@ const PopoverContent = React.forwardRef<
     }
 
     if (context?.open) {
-      document.addEventListener("mousedown", handleClickOutside)
+      // Use click instead of mousedown to avoid catching the opening click
+      document.addEventListener("click", handleClickOutside, true)
       document.addEventListener("keydown", handleEscape)
     }
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
+      document.removeEventListener("click", handleClickOutside, true)
       document.removeEventListener("keydown", handleEscape)
     }
   }, [context?.open])
 
-  if (!context?.open || !position) return null
+  // Debug: Log when popover is rendered (must be before early return to follow Rules of Hooks)
+  React.useEffect(() => {
+    if (context?.open) {
+      // Use setTimeout to ensure DOM is ready
+      const timeoutId = setTimeout(() => {
+        if (contentRef.current) {
+          const rect = contentRef.current.getBoundingClientRect()
+          const styles = window.getComputedStyle(contentRef.current)
+          console.log('🔍 PopoverContent Debug:', {
+            element: contentRef.current,
+            rect: {
+              top: rect.top,
+              left: rect.left,
+              width: rect.width,
+              height: rect.height,
+              bottom: rect.bottom,
+              right: rect.right,
+            },
+            viewport: {
+              width: window.innerWidth,
+              height: window.innerHeight,
+            },
+            styles: {
+              display: styles.display,
+              visibility: styles.visibility,
+              opacity: styles.opacity,
+              zIndex: styles.zIndex,
+              position: styles.position,
+              backgroundColor: styles.backgroundColor,
+            },
+            isVisible: rect.width > 0 && rect.height > 0 && styles.display !== 'none' && styles.visibility !== 'hidden' && parseFloat(styles.opacity) > 0,
+            isInViewport: rect.top >= 0 && rect.left >= 0 && rect.bottom <= window.innerHeight && rect.right <= window.innerWidth,
+          })
+        } else {
+          console.warn('⚠️ PopoverContent ref is null!')
+        }
+      }, 100)
+      return () => clearTimeout(timeoutId)
+    }
+  }, [context?.open])
+
+  if (!context?.open) return null
+  
+  // Always calculate a position - use fallback if position state not set yet
+  let finalPosition = position
+  if (!finalPosition && context.triggerRef.current) {
+    try {
+      const rect = context.triggerRef.current.getBoundingClientRect()
+      finalPosition = { 
+        top: Math.min(rect.bottom + 4, window.innerHeight - 400), 
+        left: Math.min(rect.left, window.innerWidth - 340) 
+      }
+    } catch {
+      finalPosition = { top: 100, left: 100 }
+    }
+  }
+  if (!finalPosition) {
+    finalPosition = { top: 100, left: 100 }
+  }
 
   const content = (
     <div
       ref={contentRef}
       className={cn(
-        "min-w-[8rem] rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none animate-in fade-in-0 zoom-in-95 [background-color:hsl(var(--popover))]",
+        "min-w-[8rem] rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none [background-color:hsl(var(--popover))]",
         className
       )}
       style={{
         position: "fixed",
-        zIndex: Z_INDEX.popover,
-        top: `${position.top}px`,
-        left: `${position.left}px`,
+        zIndex: Z_INDEX.popover + 100, // Increase z-index to ensure it's above other elements
+        top: `${finalPosition.top}px`,
+        left: `${finalPosition.left}px`,
+        maxHeight: '80vh',
+        overflowY: 'auto',
+        visibility: 'visible',
+        opacity: 1,
+        display: 'block',
+        pointerEvents: 'auto',
+        transform: 'none',
+        backgroundColor: 'hsl(var(--popover))', // Ensure background is set
+        ...props.style, // Merge with props.style but our styles take precedence for visibility
       }}
-      {...props}
+      {...(Object.fromEntries(Object.entries(props).filter(([key]) => key !== 'style')))}
     >
       {children}
     </div>
   )
 
-  return typeof window !== "undefined" ? createPortal(content, document.body) : null
+  if (typeof window === "undefined") return null
+  
+  // Ensure we're portaling to body
+  const portalTarget = document.body
+  if (!portalTarget) {
+    console.warn('⚠️ document.body is null!')
+    return null
+  }
+  
+  console.log('✅ Creating PopoverContent portal to body, position:', finalPosition)
+  return createPortal(content, portalTarget)
 })
 PopoverContent.displayName = "PopoverContent"
 

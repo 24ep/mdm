@@ -156,7 +156,7 @@ const SelectContent = React.forwardRef<
       )}
       style={{
         position: "fixed",
-        zIndex: Z_INDEX.popover,
+        zIndex: Z_INDEX.popover + 200, // Higher than popover (1200) to appear above it
         top: `${positionState.top}px`,
         left: `${positionState.left}px`,
         width: position === "popper" ? `${positionState.width}px` : "auto",

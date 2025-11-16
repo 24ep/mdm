@@ -8,6 +8,7 @@ import { DynamicFavicon } from '@/components/ui/dynamic-favicon'
 import { Toaster } from 'react-hot-toast'
 import { Suspense } from 'react'
 import { LoadingPage } from '@/components/ui/loading-spinner'
+import { GlobalErrorHandler } from '@/components/global-error-handler'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -28,6 +29,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
+        <GlobalErrorHandler />
         <Providers>
           <DynamicFavicon />
           <SidebarProvider>

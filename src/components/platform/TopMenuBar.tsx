@@ -14,10 +14,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
-import { Switch } from '@/components/ui/switch'
 import { User, Moon, Sun, Monitor, LogOut, Settings } from 'lucide-react'
 import { Z_INDEX } from '@/lib/z-index'
 import { useEffect, useState } from 'react'
+import { loadBrandingConfig } from '@/lib/branding'
+import { cn } from '@/lib/utils'
+import { ThemeToggleSegmented } from '@/components/ui/theme-toggle-segmented'
+import type { BrandingConfig } from '@/app/admin/features/system/types'
 
 interface TopMenuBarProps {
   activeTab: string
@@ -80,10 +83,21 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
   const { data: session } = useSession()
   const { theme, setTheme, systemTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const [branding, setBranding] = useState<BrandingConfig | null>(null)
 
   useEffect(() => {
     setMounted(true)
+    // Load branding config
+    loadBrandingConfig().then((config) => {
+      if (config) {
+        setBranding(config)
+      }
+    })
   }, [])
+  
+  // Use branding config if available, otherwise use props
+  const displayName = branding?.applicationName || applicationName
+  const displayLogo = branding?.applicationLogo || logoUrl
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: '/auth/signin' })
@@ -117,14 +131,21 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
   }
 
   return (
-    <div className="h-14 border-b border-border bg-background flex items-center justify-between px-2" style={{ zIndex: Z_INDEX.navigation }}>
+    <div 
+      className="h-14 border-b border-border flex items-center justify-between px-2" 
+      style={{ 
+        zIndex: Z_INDEX.navigation,
+        backgroundColor: 'var(--brand-top-menu-bg, hsl(var(--background)))',
+        color: 'var(--brand-top-menu-text, hsl(var(--foreground)))'
+      }}
+    >
       {/* Left Section: Logo, Application Name, and Selected Feature */}
       <div className="flex items-center gap-1.5 min-w-0">
         {/* Logo */}
-        {logoUrl ? (
+        {displayLogo ? (
           <img 
-            src={logoUrl} 
-            alt={applicationName}
+            src={displayLogo} 
+            alt={displayName}
             className="h-5 w-5 object-contain flex-shrink-0"
             onError={(e) => {
               (e.target as HTMLImageElement).style.display = 'none'
@@ -133,21 +154,25 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
         ) : (
           <div className="h-5 w-5 rounded bg-primary flex items-center justify-center flex-shrink-0">
             <span className="text-primary-foreground text-[10px] font-bold">
-              {applicationName.charAt(0)}
+              {displayName.charAt(0)}
             </span>
           </div>
         )}
         
         {/* Application Name */}
-        <span className="font-semibold text-sm text-foreground whitespace-nowrap">
-          {applicationName}
-        </span>
-        
-        {/* Separator */}
-        <span className="text-muted-foreground text-sm">|</span>
+        {displayName && (
+          <>
+            <span className="font-semibold text-sm whitespace-nowrap" style={{ color: 'var(--brand-top-menu-text, hsl(var(--foreground)))' }}>
+              {displayName}
+            </span>
+            
+            {/* Separator */}
+            <span className="text-sm" style={{ color: 'var(--brand-top-menu-text, hsl(var(--muted-foreground)))', opacity: 0.6 }}>|</span>
+          </>
+        )}
         
         {/* Selected Feature */}
-        <span className="text-sm text-muted-foreground truncate">
+        <span className="text-sm truncate" style={{ color: 'var(--brand-top-menu-text, hsl(var(--muted-foreground)))', opacity: 0.8 }}>
           {featureName}
         </span>
       </div>
@@ -223,55 +248,21 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
 
               {/* Light/Dark Toggle Switch */}
               <div className="px-2 py-2">
-                <div className={`flex items-center justify-between p-2.5 rounded-md transition-colors ${
-                  isSystemMode ? 'bg-muted/30 border border-border/50' : 'bg-muted/50'
-                }`}>
-                  <div className="flex items-center gap-2 flex-1">
-                    <Sun className={`h-4 w-4 transition-colors ${
-                      !isDarkMode && !isSystemMode 
-                        ? 'text-amber-500' 
-                        : isSystemMode && !isDarkMode
-                        ? 'text-amber-500/70'
-                        : 'text-muted-foreground'
-                    }`} />
-                    <span className={`text-sm transition-colors ${
-                      !isDarkMode && !isSystemMode 
-                        ? 'font-medium text-foreground' 
-                        : 'text-muted-foreground'
-                    }`}>
-                      Light
-                    </span>
-                  </div>
-                  
-                  <Switch
-                    checked={isDarkMode}
-                    onCheckedChange={handleThemeToggle}
-                    disabled={!mounted}
-                    className={isSystemMode ? 'opacity-80' : ''}
-                  />
-                  
-                  <div className="flex items-center gap-2 flex-1 justify-end">
-                    <span className={`text-sm transition-colors ${
-                      isDarkMode && !isSystemMode 
-                        ? 'font-medium text-foreground' 
-                        : 'text-muted-foreground'
-                    }`}>
-                      Dark
-                    </span>
-                    <Moon className={`h-4 w-4 transition-colors ${
-                      isDarkMode && !isSystemMode 
-                        ? 'text-blue-500' 
-                        : isSystemMode && isDarkMode
-                        ? 'text-blue-500/70'
-                        : 'text-muted-foreground'
-                    }`} />
-                  </div>
-                </div>
-                {isSystemMode && (
-                  <p className="text-xs text-muted-foreground mt-2 px-2 text-center italic">
-                    Click toggle to override system preference
-                  </p>
-                )}
+                <ThemeToggleSegmented
+                  isDarkMode={isDarkMode}
+                  isSystemMode={isSystemMode}
+                  mounted={mounted}
+                  onLightMode={() => {
+                    if (!mounted) return
+                    setTheme('light')
+                  }}
+                  onDarkMode={() => {
+                    if (!mounted) return
+                    setTheme('dark')
+                  }}
+                  align="center"
+                  showSystemModeHelp={true}
+                />
               </div>
             </div>
             

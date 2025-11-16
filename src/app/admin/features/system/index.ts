@@ -13,6 +13,7 @@ export { NotificationCenter } from './components/NotificationCenter'
 export type {
   SystemSettings as SystemSettingsType,
   Theme,
+  BrandingConfig,
   TemplateItem,
   NotificationTemplate,
   NotificationSettings,
