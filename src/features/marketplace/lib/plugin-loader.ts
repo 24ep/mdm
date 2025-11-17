@@ -23,6 +23,14 @@ const PLUGIN_COMPONENT_MAP: Record<string, () => Promise<any>> = {
   '@/features/marketplace/plugins/kong-management/components/KongManagementUI': () =>
     import('@/features/marketplace/plugins/kong-management/components/KongManagementUI'),
   
+  // Grafana Management
+  '@/features/marketplace/plugins/grafana-management/components/GrafanaManagementUI': () =>
+    import('@/features/marketplace/plugins/grafana-management/components/GrafanaManagementUI'),
+  
+  // Prometheus Management
+  '@/features/marketplace/plugins/prometheus-management/components/PrometheusManagementUI': () =>
+    import('@/features/marketplace/plugins/prometheus-management/components/PrometheusManagementUI'),
+  
   // Redis Management
   '@/features/marketplace/plugins/redis-management/components/RedisManagementUI': () =>
     import('@/features/marketplace/plugins/redis-management/components/RedisManagementUI'),

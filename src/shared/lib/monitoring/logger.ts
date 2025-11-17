@@ -1,3 +1,5 @@
+import { sendLogToElasticsearch } from '@/lib/elasticsearch-client'
+
 export enum LogLevel {
   DEBUG = 'debug',
   INFO = 'info',
@@ -50,6 +52,16 @@ export class Logger {
         console.error(logMessage)
         break
     }
+
+    // Send to Elasticsearch (fire and forget)
+    sendLogToElasticsearch('monitoring', {
+      level: level.toString(),
+      message,
+      ...entry.context,
+      userId: entry.userId,
+      spaceId: entry.spaceId,
+      timestamp: entry.timestamp?.toISOString()
+    }).catch(() => {}) // Silently fail
   }
 
   debug(message: string, data?: Record<string, any>) {

@@ -30,7 +30,8 @@ import {
   Rocket,
   Box,
   Cloud,
-  Globe
+  Globe,
+  Search
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -105,6 +106,12 @@ export const INTEGRATIONS: Omit<IntegrationConfig, 'id' | 'isConfigured' | 'stat
     type: 'sdk',
     icon: Box,
     description: 'Custom SDK integration'
+  },
+  {
+    name: 'Elasticsearch',
+    type: 'elasticsearch',
+    icon: Search,
+    description: 'Elasticsearch integration for centralized logging and search'
   }
 ]
 
@@ -350,6 +357,15 @@ export function IntegrationList() {
           { key: 'authType', label: 'Auth Type', type: 'select', options: ['none', 'apiKey', 'bearer', 'basic'], required: true },
           { key: 'customHeaders', label: 'Custom Headers (JSON)', type: 'textarea', required: false }
         ]
+      case 'elasticsearch':
+        return [
+          { key: 'url', label: 'Elasticsearch URL', type: 'text', required: true, placeholder: 'https://localhost:9200' },
+          { key: 'cloudId', label: 'Cloud ID (optional)', type: 'text', required: false, placeholder: 'For Elastic Cloud' },
+          { key: 'username', label: 'Username (optional)', type: 'text', required: false },
+          { key: 'password', label: 'Password (optional)', type: 'password', required: false },
+          { key: 'apiKey', label: 'API Key (optional)', type: 'password', required: false },
+          { key: 'indexPrefix', label: 'Index Prefix', type: 'text', required: false, placeholder: 'mdm-logs (default)' }
+        ]
       default:
         return [
           { key: 'url', label: 'URL', type: 'text', required: true },
@@ -410,9 +426,9 @@ export function IntegrationList() {
                 onChange={(e) => setConfigForm({ ...configForm, [field.key]: e.target.value })}
               >
                 <option value="">Select {field.label}</option>
-                {field.options?.map(option => (
+                {'options' in field && field.options ? field.options.map(option => (
                   <option key={option} value={option}>{option}</option>
-                ))}
+                )) : null}
               </select>
             ) : (
               <Input
@@ -420,7 +436,7 @@ export function IntegrationList() {
                 type="text"
                 value={configForm[field.key] || ''}
                 onChange={(e) => setConfigForm({ ...configForm, [field.key]: e.target.value })}
-                placeholder={`Enter ${field.label.toLowerCase()}`}
+                placeholder={(field as any).placeholder || `Enter ${field.label.toLowerCase()}`}
               />
             )}
           </div>

@@ -1,4 +1,5 @@
 import { query } from './db'
+import { sendLogToElasticsearch } from './elasticsearch-client'
 
 export interface AuditLogData {
   action: string
@@ -30,7 +31,23 @@ export async function createAuditLog(data: AuditLogData) {
       data.userAgent || null
     ])
 
-    return result.rows[0]
+    const auditLog = result.rows[0]
+
+    // Send to Elasticsearch (fire and forget)
+    sendLogToElasticsearch('audit', {
+      id: auditLog.id,
+      action: data.action,
+      entityType: data.entityType,
+      entityId: data.entityId,
+      oldValue: data.oldValue,
+      newValue: data.newValue,
+      userId: data.userId,
+      ipAddress: data.ipAddress,
+      userAgent: data.userAgent,
+      createdAt: auditLog.created_at
+    }).catch(() => {}) // Silently fail
+
+    return auditLog
   } catch (error) {
     console.error('Error creating audit log:', error)
     throw error

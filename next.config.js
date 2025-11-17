@@ -15,6 +15,7 @@ const nextConfig = {
   typescript: {
     // Show all TypeScript errors during build (don't ignore, but don't stop)
     ignoreBuildErrors: false,
+    // TypeScript will show all errors, build will continue to collect all errors
   },
   // Disable output file tracing for local builds to avoid Windows permission issues
   output: process.env.NODE_ENV === 'production' && process.env.DOCKER_BUILD ? 'standalone' : undefined,
@@ -37,24 +38,50 @@ const nextConfig = {
     config.stats.modules = false
     config.stats.chunks = false
     config.stats.assets = false
+    config.stats.all = false // Don't show everything, just errors/warnings
+    config.stats.preset = false // Disable presets to use custom config
     
-    // Enhanced error reporting
+    // Enhanced error reporting - show all errors
     config.infrastructureLogging = {
       level: 'error',
     }
     
-    // Override optimization to not fail on errors
-    if (config.optimization) {
-      config.optimization.removeAvailableModules = false
-      config.optimization.removeEmptyChunks = false
-    }
+    // Collect all errors before failing
+    config.optimization = config.optimization || {}
+    config.optimization.removeAvailableModules = false
+    config.optimization.removeEmptyChunks = false
     
     // Custom error handling to collect all errors
     const originalEmit = config.plugins?.find(p => p.constructor.name === 'ForkTsCheckerWebpackPlugin')
     if (originalEmit) {
-      // If ForkTsCheckerWebpackPlugin exists, configure it to not fail the build
+      // If ForkTsCheckerWebpackPlugin exists, configure it to collect all errors
       originalEmit.options = originalEmit.options || {}
-      originalEmit.options.async = true // Don't block build
+      originalEmit.options.async = true // Don't block build, collect all errors
+      originalEmit.options.typescript = {
+        ...originalEmit.options.typescript,
+        diagnosticOptions: {
+          semantic: true,
+          syntactic: true,
+        },
+      }
+    }
+    
+    // Override webpack's error handling to collect all errors
+    const originalOnError = config.infrastructureLogging
+    if (config.plugins) {
+      // Add a plugin to collect all compilation errors
+      config.plugins.push({
+        apply: (compiler) => {
+          compiler.hooks.done.tap('CollectAllErrors', (stats) => {
+            if (stats.hasErrors()) {
+              const errors = stats.compilation.errors
+              if (errors.length > 0) {
+                console.error(`\n\n=== Found ${errors.length} error(s) ===\n`)
+              }
+            }
+          })
+        },
+      })
     }
     
     if (isServer) {
@@ -67,7 +94,34 @@ const nextConfig = {
       // Exclude native modules from server bundle
       config.externals = config.externals || []
       config.externals.push('ssh2-sftp-client', 'ftp', 'ssh2')
+    } else {
+      // For client-side builds, configure fallbacks for Node.js modules
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+        crypto: false,
+        stream: false,
+        url: false,
+        zlib: false,
+        http: false,
+        https: false,
+        assert: false,
+        os: false,
+        path: false,
+      }
     }
+    
+    // Handle mqtt and socket.io-client - they use dynamic imports
+    // Use IgnorePlugin to prevent webpack from trying to resolve them during build
+    // Dynamic imports at runtime will still work because they bypass webpack
+    config.plugins.push(
+      new webpack.IgnorePlugin({
+        resourceRegExp: /^(mqtt|socket\.io-client)$/,
+        contextRegExp: /src\/features\/api-client/,
+      })
+    )
     return config
   },
   // Experimental: Continue build even with errors

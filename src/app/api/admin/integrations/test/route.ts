@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { Client } from '@elastic/elasticsearch'
 
 export async function POST(request: NextRequest) {
   try {
@@ -168,6 +169,53 @@ export async function POST(request: NextRequest) {
             }
           } else {
             testResult = { success: false, error: 'Endpoint URL is required' }
+          }
+          break
+
+        case 'elasticsearch':
+          // Test Elasticsearch connection
+          if (!config?.url && !config?.cloudId) {
+            testResult = { success: false, error: 'Elasticsearch URL or Cloud ID is required' }
+            break
+          }
+
+          try {
+            const clientOptions: any = {
+              maxRetries: 1,
+              requestTimeout: 10000,
+              pingTimeout: 5000
+            }
+
+            // Set connection
+            if (config.cloudId) {
+              clientOptions.cloud = { id: config.cloudId }
+            } else {
+              clientOptions.node = config.url
+            }
+
+            // Set authentication
+            if (config.apiKey) {
+              clientOptions.auth = { apiKey: config.apiKey }
+            } else if (config.username && config.password) {
+              clientOptions.auth = {
+                username: config.username,
+                password: config.password
+              }
+            }
+
+            const client = new Client(clientOptions)
+            
+            // Test connection with ping
+            const pingResult = await client.ping()
+            testResult = {
+              success: pingResult,
+              error: pingResult ? '' : 'Connection test failed'
+            }
+          } catch (esError: any) {
+            testResult = {
+              success: false,
+              error: esError.message || 'Failed to connect to Elasticsearch'
+            }
           }
           break
 

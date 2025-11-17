@@ -10,6 +10,8 @@ import { grafanaPlugin } from './grafana/plugin'
 import { lookerStudioPlugin } from './looker-studio/plugin'
 import { minioManagementPlugin } from './minio-management/plugin'
 import { kongManagementPlugin } from './kong-management/plugin'
+import { grafanaManagementPlugin } from './grafana-management/plugin'
+import { prometheusManagementPlugin } from './prometheus-management/plugin'
 import { redisManagementPlugin } from './redis-management/plugin'
 import { postgresqlManagementPlugin } from './postgresql-management/plugin'
 import { PluginDefinition } from '../types'
@@ -23,6 +25,8 @@ export const marketplacePlugins: PluginDefinition[] = [
   lookerStudioPlugin,
   minioManagementPlugin,
   kongManagementPlugin,
+  grafanaManagementPlugin,
+  prometheusManagementPlugin,
   redisManagementPlugin,
   postgresqlManagementPlugin,
 ]

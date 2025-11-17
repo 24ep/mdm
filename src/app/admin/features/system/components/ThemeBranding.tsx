@@ -1491,6 +1491,28 @@ export function ThemeBranding() {
                   className="w-full"
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Border Color</Label>
+                <ColorInput
+                  value={currentNormal.borderColor || ''}
+                  onChange={(color) => updateComponentStyling('vertical-tab-menu-normal', currentMode, 'borderColor', color)}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="transparent"
+                  inputClassName="h-7 text-xs pl-7 w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Border Width</Label>
+                <Input
+                  value={currentNormal.borderWidth || ''}
+                  onChange={(e) => updateComponentStyling('vertical-tab-menu-normal', currentMode, 'borderWidth', e.target.value)}
+                  placeholder="0px"
+                  className="w-full"
+                />
+              </div>
             </div>
           </div>
 
@@ -1519,6 +1541,68 @@ export function ThemeBranding() {
                   className="relative"
                   placeholder="hsl(var(--foreground))"
                   inputClassName="h-7 text-xs pl-7 w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Border Radius</Label>
+                <Input
+                  value={currentHover.borderRadius || ''}
+                  onChange={(e) => updateComponentStyling('vertical-tab-menu-hover', currentMode, 'borderRadius', e.target.value)}
+                  placeholder="8px"
+                  className="w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Padding</Label>
+                <Input
+                  value={currentHover.padding || ''}
+                  onChange={(e) => updateComponentStyling('vertical-tab-menu-hover', currentMode, 'padding', e.target.value)}
+                  placeholder="0.75rem 1rem"
+                  className="w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Font Size</Label>
+                <Input
+                  value={currentHover.fontSize || ''}
+                  onChange={(e) => updateComponentStyling('vertical-tab-menu-hover', currentMode, 'fontSize', e.target.value)}
+                  placeholder="0.875rem"
+                  className="w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Font Weight</Label>
+                <Input
+                  value={currentHover.fontWeight || ''}
+                  onChange={(e) => updateComponentStyling('vertical-tab-menu-hover', currentMode, 'fontWeight', e.target.value)}
+                  placeholder="500"
+                  className="w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Border Color</Label>
+                <ColorInput
+                  value={currentHover.borderColor || ''}
+                  onChange={(color) => updateComponentStyling('vertical-tab-menu-hover', currentMode, 'borderColor', color)}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="transparent"
+                  inputClassName="h-7 text-xs pl-7 w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Border Width</Label>
+                <Input
+                  value={currentHover.borderWidth || ''}
+                  onChange={(e) => updateComponentStyling('vertical-tab-menu-hover', currentMode, 'borderWidth', e.target.value)}
+                  placeholder="0px"
+                  className="w-full"
                 />
               </div>
             </div>
@@ -1571,6 +1655,46 @@ export function ThemeBranding() {
                   className="relative"
                   placeholder="hsl(var(--primary))"
                   inputClassName="h-7 text-xs pl-7 w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Padding</Label>
+                <Input
+                  value={currentActive.padding || ''}
+                  onChange={(e) => updateComponentStyling('vertical-tab-menu-active', currentMode, 'padding', e.target.value)}
+                  placeholder="0.75rem 1rem"
+                  className="w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Font Size</Label>
+                <Input
+                  value={currentActive.fontSize || ''}
+                  onChange={(e) => updateComponentStyling('vertical-tab-menu-active', currentMode, 'fontSize', e.target.value)}
+                  placeholder="0.875rem"
+                  className="w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Font Weight</Label>
+                <Input
+                  value={currentActive.fontWeight || ''}
+                  onChange={(e) => updateComponentStyling('vertical-tab-menu-active', currentMode, 'fontWeight', e.target.value)}
+                  placeholder="500"
+                  className="w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Border Width</Label>
+                <Input
+                  value={currentActive.borderWidth || ''}
+                  onChange={(e) => updateComponentStyling('vertical-tab-menu-active', currentMode, 'borderWidth', e.target.value)}
+                  placeholder="0px"
+                  className="w-full"
                 />
               </div>
             </div>
@@ -1673,6 +1797,28 @@ export function ThemeBranding() {
                   className="w-full"
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Border Color</Label>
+                <ColorInput
+                  value={currentNormal.borderColor || ''}
+                  onChange={(color) => updateComponentStyling('platform-sidebar-menu-normal', currentMode, 'borderColor', color)}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="transparent"
+                  inputClassName="h-7 text-xs pl-7 w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Border Width</Label>
+                <Input
+                  value={currentNormal.borderWidth || ''}
+                  onChange={(e) => updateComponentStyling('platform-sidebar-menu-normal', currentMode, 'borderWidth', e.target.value)}
+                  placeholder="0px"
+                  className="w-full"
+                />
+              </div>
             </div>
           </div>
 
@@ -1701,6 +1847,68 @@ export function ThemeBranding() {
                   className="relative"
                   placeholder="hsl(var(--foreground))"
                   inputClassName="h-7 text-xs pl-7 w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Border Radius</Label>
+                <Input
+                  value={currentHover.borderRadius || ''}
+                  onChange={(e) => updateComponentStyling('platform-sidebar-menu-hover', currentMode, 'borderRadius', e.target.value)}
+                  placeholder="0px"
+                  className="w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Padding</Label>
+                <Input
+                  value={currentHover.padding || ''}
+                  onChange={(e) => updateComponentStyling('platform-sidebar-menu-hover', currentMode, 'padding', e.target.value)}
+                  placeholder="0.5rem 1rem"
+                  className="w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Font Size</Label>
+                <Input
+                  value={currentHover.fontSize || ''}
+                  onChange={(e) => updateComponentStyling('platform-sidebar-menu-hover', currentMode, 'fontSize', e.target.value)}
+                  placeholder="0.875rem"
+                  className="w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Font Weight</Label>
+                <Input
+                  value={currentHover.fontWeight || ''}
+                  onChange={(e) => updateComponentStyling('platform-sidebar-menu-hover', currentMode, 'fontWeight', e.target.value)}
+                  placeholder="400"
+                  className="w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Border Color</Label>
+                <ColorInput
+                  value={currentHover.borderColor || ''}
+                  onChange={(color) => updateComponentStyling('platform-sidebar-menu-hover', currentMode, 'borderColor', color)}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="transparent"
+                  inputClassName="h-7 text-xs pl-7 w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Border Width</Label>
+                <Input
+                  value={currentHover.borderWidth || ''}
+                  onChange={(e) => updateComponentStyling('platform-sidebar-menu-hover', currentMode, 'borderWidth', e.target.value)}
+                  placeholder="0px"
+                  className="w-full"
                 />
               </div>
             </div>
@@ -1740,6 +1948,58 @@ export function ThemeBranding() {
                   value={currentActive.borderRadius || ''}
                   onChange={(e) => updateComponentStyling('platform-sidebar-menu-active', currentMode, 'borderRadius', e.target.value)}
                   placeholder="4px"
+                  className="w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Padding</Label>
+                <Input
+                  value={currentActive.padding || ''}
+                  onChange={(e) => updateComponentStyling('platform-sidebar-menu-active', currentMode, 'padding', e.target.value)}
+                  placeholder="0.5rem 1rem"
+                  className="w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Font Size</Label>
+                <Input
+                  value={currentActive.fontSize || ''}
+                  onChange={(e) => updateComponentStyling('platform-sidebar-menu-active', currentMode, 'fontSize', e.target.value)}
+                  placeholder="0.875rem"
+                  className="w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Font Weight</Label>
+                <Input
+                  value={currentActive.fontWeight || ''}
+                  onChange={(e) => updateComponentStyling('platform-sidebar-menu-active', currentMode, 'fontWeight', e.target.value)}
+                  placeholder="400"
+                  className="w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Border Color</Label>
+                <ColorInput
+                  value={currentActive.borderColor || ''}
+                  onChange={(color) => updateComponentStyling('platform-sidebar-menu-active', currentMode, 'borderColor', color)}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="transparent"
+                  inputClassName="h-7 text-xs pl-7 w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Border Width</Label>
+                <Input
+                  value={currentActive.borderWidth || ''}
+                  onChange={(e) => updateComponentStyling('platform-sidebar-menu-active', currentMode, 'borderWidth', e.target.value)}
+                  placeholder="0px"
                   className="w-full"
                 />
               </div>

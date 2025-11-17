@@ -4,6 +4,7 @@ import { InfrastructureInstance } from '../types'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Server, Activity, AlertCircle } from 'lucide-react'
+import { useInfrastructureTags } from '../hooks/useInfrastructureTags'
 
 export interface InstanceCardProps {
   instance: InfrastructureInstance
@@ -11,6 +12,7 @@ export interface InstanceCardProps {
 }
 
 export function InstanceCard({ instance, onClick }: InstanceCardProps) {
+  const { tags } = useInfrastructureTags(instance.id)
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'online':
@@ -53,12 +55,36 @@ export function InstanceCard({ instance, onClick }: InstanceCardProps) {
         <CardDescription>{instance.host}:{instance.port || 'N/A'}</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-2">
           <Badge variant={getStatusColor(instance.status)}>
             {instance.status}
           </Badge>
           <Badge variant="outline">{instance.type}</Badge>
         </div>
+        
+        {/* Service Tags */}
+        {tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {tags.map((tag) => {
+              let variant: 'default' | 'secondary' | 'outline' = 'outline'
+              if (tag === 'minio') variant = 'default'
+              else if (tag === 'kong') variant = 'secondary'
+              else if (tag === 'grafana') variant = 'default'
+              else if (tag === 'prometheus') variant = 'secondary'
+              
+              return (
+                <Badge 
+                  key={tag} 
+                  variant={variant}
+                  className="text-xs"
+                >
+                  {tag}
+                </Badge>
+              )
+            })}
+          </div>
+        )}
+        
         {instance.osType && (
           <div className="mt-2 text-sm text-muted-foreground">
             {instance.osType} {instance.osVersion}

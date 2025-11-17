@@ -236,7 +236,34 @@ class DatabaseAuditLogger {
         auditLog.errorMessage || null
       ])
 
-      return result.rows[0]?.id || null
+      const auditLogId = result.rows[0]?.id || null
+
+      // Send to Elasticsearch (fire and forget)
+      if (auditLogId) {
+        const { sendLogToElasticsearch } = await import('./elasticsearch-client')
+        sendLogToElasticsearch('db-audit', {
+          id: auditLogId,
+          userId: auditLog.userId,
+          userName: auditLog.userName,
+          userEmail: auditLog.userEmail,
+          action: auditLog.action,
+          resourceType: auditLog.resourceType,
+          resourceId: auditLog.resourceId,
+          resourceName: auditLog.resourceName,
+          sqlQuery: auditLog.sqlQuery,
+          connectionId: auditLog.connectionId,
+          spaceId: auditLog.spaceId,
+          metadata: auditLog.metadata,
+          ipAddress: auditLog.ipAddress,
+          userAgent: auditLog.userAgent,
+          executionTime: auditLog.executionTime,
+          rowCount: auditLog.rowCount,
+          success: auditLog.success,
+          errorMessage: auditLog.errorMessage
+        }).catch(() => {}) // Silently fail
+      }
+
+      return auditLogId
     } catch (error) {
       console.error('❌ Failed to log audit entry:', error)
       return null
