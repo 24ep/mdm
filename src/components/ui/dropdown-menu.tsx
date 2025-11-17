@@ -5,6 +5,7 @@ import { createPortal } from "react-dom"
 import { Check, ChevronRight, Circle } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { Z_INDEX } from "@/lib/z-index"
 
 interface DropdownMenuContextValue {
   open: boolean
@@ -212,11 +213,12 @@ const DropdownMenuContent = React.forwardRef<
       <div
         ref={contentRef}
         className={cn(
-          "z-50 min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 [background-color:hsl(var(--popover))]",
+          "min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 [background-color:hsl(var(--popover))]",
           className
         )}
         style={{
           position: "fixed",
+          zIndex: Z_INDEX.popover + 200, // Above popover (popover uses popover + 100)
           top: `${position.top}px`,
           left: `${position.left}px`,
         }}
@@ -365,13 +367,17 @@ DropdownMenuSubTrigger.displayName = "DropdownMenuSubTrigger"
 const DropdownMenuSubContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
+>(({ className, style, ...props }, ref) => (
   <div
     ref={ref}
     className={cn(
-      "z-50 min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg animate-in fade-in-0 zoom-in-95 [background-color:hsl(var(--popover))]",
+      "min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg animate-in fade-in-0 zoom-in-95 [background-color:hsl(var(--popover))]",
       className
     )}
+    style={{
+      zIndex: Z_INDEX.popover + 200, // Above popover (popover uses popover + 100)
+      ...style,
+    }}
     {...props}
   />
 ))

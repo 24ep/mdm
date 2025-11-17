@@ -356,11 +356,23 @@ export function AssetManagement() {
 
       <div className="w-full">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="assets">Assets</TabsTrigger>
-          <TabsTrigger value="types">Asset Types</TabsTrigger>
-          <TabsTrigger value="languages">Languages</TabsTrigger>
-          <TabsTrigger value="localizations">Localizations</TabsTrigger>
+        <TabsList className="w-full justify-start">
+          <TabsTrigger value="assets" className="flex items-center gap-1.5">
+            <Database className="h-4 w-4" />
+            Assets
+          </TabsTrigger>
+          <TabsTrigger value="types" className="flex items-center gap-1.5">
+            <FileText className="h-4 w-4" />
+            Asset Types
+          </TabsTrigger>
+          <TabsTrigger value="languages" className="flex items-center gap-1.5">
+            <Languages className="h-4 w-4" />
+            Languages
+          </TabsTrigger>
+          <TabsTrigger value="localizations" className="flex items-center gap-1.5">
+            <Globe className="h-4 w-4" />
+            Localizations
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="assets" className="space-y-4">

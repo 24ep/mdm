@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import { PlatformLayout } from '@/components/platform/PlatformLayout'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, createContext, useContext, useMemo } from 'react'
 
 const pathToTabMap: Record<string, string> = {
   '/tools/bigquery': 'bigquery',
@@ -16,6 +16,19 @@ const pathToTabMap: Record<string, string> = {
   '/tools/api-client': 'api-client',
 }
 
+// Context to share breadcrumb actions from child pages
+const BreadcrumbActionsContext = createContext<{
+  setBreadcrumbActions: (actions: React.ReactNode) => void
+} | null>(null)
+
+export function useBreadcrumbActions() {
+  const context = useContext(BreadcrumbActionsContext)
+  if (!context) {
+    return { setBreadcrumbActions: () => {} }
+  }
+  return context
+}
+
 export default function ToolsLayout({
   children,
 }: {
@@ -23,10 +36,15 @@ export default function ToolsLayout({
 }) {
   const pathname = usePathname()
   const [activeTab, setActiveTab] = useState('bigquery')
+  const [breadcrumbActions, setBreadcrumbActions] = useState<React.ReactNode>(null)
 
   useEffect(() => {
     const tab = pathToTabMap[pathname || ''] || 'bigquery'
     setActiveTab(tab)
+    // Clear breadcrumb actions when tab changes
+    if (tab !== 'bigquery') {
+      setBreadcrumbActions(null)
+    }
   }, [pathname])
 
   const handleTabChange = (tab: string) => {
@@ -34,13 +52,22 @@ export default function ToolsLayout({
     // Navigation is handled by the sidebar href
   }
 
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = useMemo(
+    () => ({ setBreadcrumbActions }),
+    [setBreadcrumbActions]
+  )
+
   return (
-    <PlatformLayout
-      activeTab={activeTab}
-      onTabChange={handleTabChange}
-    >
-      {children}
-    </PlatformLayout>
+    <BreadcrumbActionsContext.Provider value={contextValue}>
+      <PlatformLayout
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        breadcrumbActions={breadcrumbActions}
+      >
+        {children}
+      </PlatformLayout>
+    </BreadcrumbActionsContext.Provider>
   )
 }
 

@@ -4,7 +4,7 @@ import { BigQueryInterface } from '@/app/admin/features/business-intelligence/co
 
 export default function BigQueryPage() {
   return (
-    <div className="p-6">
+    <div>
       <BigQueryInterface />
     </div>
   )

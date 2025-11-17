@@ -739,10 +739,14 @@ export function AIChatUI() {
                 variant="outline"
                 size="sm"
                 onClick={() => document.getElementById('import-chatbot')?.click()}
+                className="border"
               >
                 Import
               </Button>
-              <Button onClick={handleCreate}>
+              <Button 
+                onClick={handleCreate}
+                className="border"
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Create Chatbot
               </Button>
@@ -803,7 +807,9 @@ export function AIChatUI() {
       {(showCreateDialog || showEditDialog) && (
         <div className="space-y-4">
           {/* Header */}
-          <ChatbotHeader formData={formData} setFormData={setFormData} />
+          <div className="border-b pb-4">
+            <ChatbotHeader formData={formData} setFormData={setFormData} />
+          </div>
           
           {/* Selection Tab */}
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>

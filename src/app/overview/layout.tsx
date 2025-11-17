@@ -13,11 +13,7 @@ export default function OverviewLayout({
   const [activeTab, setActiveTab] = useState('overview')
 
   useEffect(() => {
-    if (pathname === '/overview/analytics') {
-      setActiveTab('analytics')
-    } else {
-      setActiveTab('overview')
-    }
+    setActiveTab('overview')
   }, [pathname])
 
   const handleTabChange = (tab: string) => {

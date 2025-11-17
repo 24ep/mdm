@@ -2,25 +2,31 @@
 
 import { useSession, signOut } from 'next-auth/react'
 import { useTheme } from 'next-themes'
-import Link from 'next/link'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
-import { User, Moon, Sun, Monitor, LogOut, Settings } from 'lucide-react'
+import { LogOut, User, Bell, CheckCircle, AlertCircle, Info, AlertTriangle, ExternalLink, MoreHorizontal, Moon, Sun, Monitor, Palette, ChevronDown } from 'lucide-react'
 import { Z_INDEX } from '@/lib/z-index'
 import { useEffect, useState } from 'react'
 import { loadBrandingConfig } from '@/lib/branding'
 import { cn } from '@/lib/utils'
-import { ThemeToggleSegmented } from '@/components/ui/theme-toggle-segmented'
 import type { BrandingConfig } from '@/app/admin/features/system/types'
+import { useNotifications } from '@/contexts/notification-context'
+import { Badge } from '@/components/ui/badge'
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer'
+import { NotificationList } from '@/components/notifications/notification-list'
+import { formatDistanceToNow } from 'date-fns'
+import type { Notification } from '@/types/notifications'
+import { ProfileSettingsModal } from '@/components/settings/ProfileSettingsModal'
 
 interface TopMenuBarProps {
   activeTab: string
@@ -35,8 +41,8 @@ const getFeatureName = (activeTab: string): string => {
     'analytics': 'Analytics',
     'bigquery': 'SQL Query',
     'notebook': 'Data Science',
-    'ai-analyst': 'AI Analyst',
-    'ai-chat-ui': 'AI Chat UI',
+    'ai-analyst': 'Chat with AI',
+    'ai-chat-ui': 'Agent Embed GUI',
     'knowledge-base': 'Knowledge Base',
     'marketplace': 'Marketplace',
     'infrastructure': 'Infrastructure',
@@ -84,6 +90,12 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
   const { theme, setTheme, systemTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [branding, setBranding] = useState<BrandingConfig | null>(null)
+  const [notificationPopoverOpen, setNotificationPopoverOpen] = useState(false)
+  const [notificationDrawerOpen, setNotificationDrawerOpen] = useState(false)
+  const [profileModalOpen, setProfileModalOpen] = useState(false)
+  const [profilePopoverOpen, setProfilePopoverOpen] = useState(false)
+  const [themeDropdownOpen, setThemeDropdownOpen] = useState(false)
+  const { notifications, unreadCount, isLoading, markAsRead } = useNotifications()
 
   useEffect(() => {
     setMounted(true)
@@ -108,31 +120,49 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
   const userEmail = (session as any)?.user?.email || ''
   const userImage = (session as any)?.user?.image || (session as any)?.user?.avatar || ''
   const userInitial = userName?.charAt(0) || userEmail?.charAt(0) || 'U'
+  const userId = (session as any)?.user?.id || (session as any)?.user?.email || ''
+  const userRole = (session as any)?.user?.role || 'User'
+  
+  // Construct user object for ProfileSettingsModal
+  const user = {
+    id: userId,
+    email: userEmail,
+    name: userName,
+    role: userRole
+  }
 
-  // Get the current effective theme (system resolves to light/dark)
-  const currentTheme = mounted ? (theme === 'system' ? systemTheme || 'light' : theme || 'system') : 'system'
-  const isSystemMode = mounted ? theme === 'system' || !theme : true
-  const isDarkMode = currentTheme === 'dark'
-
-  // Handle theme toggle - cycles: system -> light -> dark -> system
-  const handleThemeToggle = (checked: boolean) => {
-    if (isSystemMode) {
-      // If currently system, toggle to light or dark based on system preference
-      setTheme(checked ? 'dark' : 'light')
-    } else {
-      // If currently light/dark, toggle between them
-      setTheme(checked ? 'dark' : 'light')
+  // Get notification icon helper
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'SUCCESS':
+        return <CheckCircle className="h-4 w-4 text-green-500" />
+      case 'ERROR':
+        return <AlertCircle className="h-4 w-4 text-red-500" />
+      case 'WARNING':
+        return <AlertTriangle className="h-4 w-4 text-yellow-500" />
+      default:
+        return <Info className="h-4 w-4 text-blue-500" />
     }
   }
 
-  // Handle system mode selection
-  const handleSystemMode = () => {
-    setTheme('system')
+  // Handle notification click
+  const handleNotificationClick = async (notification: Notification) => {
+    if (notification.status === 'UNREAD') {
+      await markAsRead(notification.id)
+    }
+    if (notification.action_url) {
+      window.open(notification.action_url, '_blank')
+    }
+    setNotificationPopoverOpen(false)
   }
+
+  // Get recent notifications (first 5)
+  const recentNotifications = notifications.slice(0, 5)
 
   return (
     <div 
-      className="h-14 border-b border-border flex items-center justify-between px-2" 
+      className="h-14 border-b border-border flex items-center justify-between px-2 top-menu-bar" 
+      data-component="top-menu-bar"
       style={{ 
         zIndex: Z_INDEX.navigation,
         backgroundColor: 'var(--brand-top-menu-bg, hsl(var(--background)))',
@@ -177,108 +207,329 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
         </span>
       </div>
 
-      {/* Right Section: User Avatar with Popover */}
-      <div className="flex items-center">
-        <Popover>
+      {/* Right Section: Notifications and User Avatar */}
+      <div className="flex items-center gap-2">
+        {/* Notification Bell with Popover */}
+        <Popover open={notificationPopoverOpen} onOpenChange={setNotificationPopoverOpen}>
           <PopoverTrigger asChild>
-            <Button variant="ghost" className="relative h-6 w-6 rounded-full p-0">
-              <Avatar className="h-6 w-6 border-2 border-border">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className="relative h-9 w-9"
+              title="Notifications"
+            >
+              <Bell className="h-4 w-4" />
+              {notifications.length > 0 && unreadCount > 0 && (
+                <Badge 
+                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-[10px] bg-red-500 text-white border-2 border-background"
+                >
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </Badge>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-96 p-0" align="end">
+            <div className="flex flex-col max-h-[600px]">
+              {/* Header */}
+              <div className="p-4 border-b border-border">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-sm">Notifications</h3>
+                  {unreadCount > 0 && (
+                    <Badge variant="secondary" className="text-xs">
+                      {unreadCount} unread
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Notification List */}
+              <div className="overflow-y-auto max-h-[500px]">
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                    <span className="ml-2 text-sm text-muted-foreground">Loading...</span>
+                  </div>
+                ) : recentNotifications.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                    <Bell className="h-8 w-8 mb-2 opacity-50" />
+                    <p className="text-sm">No notifications</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-border">
+                    {recentNotifications.map((notification) => (
+                      <div
+                        key={notification.id}
+                        className={cn(
+                          "p-4 cursor-pointer transition-colors hover:bg-muted/50",
+                          notification.status === 'UNREAD' && "bg-muted/30"
+                        )}
+                        onClick={() => handleNotificationClick(notification)}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 mt-0.5">
+                            {getNotificationIcon(notification.type)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <h4 className={cn(
+                                "text-sm font-medium truncate",
+                                notification.status === 'UNREAD' && "font-semibold"
+                              )}>
+                                {notification.title}
+                              </h4>
+                              {notification.status === 'UNREAD' && (
+                                <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-1.5"></div>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                              {notification.message}
+                            </p>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-muted-foreground">
+                                {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                              </span>
+                              {notification.action_url && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 px-2 text-xs"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    window.open(notification.action_url, '_blank')
+                                  }}
+                                >
+                                  <ExternalLink className="h-3 w-3 mr-1" />
+                                  {notification.action_label || 'View'}
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer with Show More button */}
+              {notifications.length > 0 && (
+                <div className="p-3 border-t border-border">
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      setNotificationPopoverOpen(false)
+                      setNotificationDrawerOpen(true)
+                    }}
+                  >
+                    <MoreHorizontal className="h-4 w-4 mr-2" />
+                    {notifications.length > 5 
+                      ? `Show More (${notifications.length - 5} more)`
+                      : 'View All Notifications'
+                    }
+                  </Button>
+                </div>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* Notification Drawer */}
+        <Drawer open={notificationDrawerOpen} onOpenChange={setNotificationDrawerOpen}>
+          <DrawerContent className="w-[600px] max-w-[90vw]">
+            <DrawerHeader>
+              <DrawerTitle>All Notifications</DrawerTitle>
+              <DrawerDescription>
+                {unreadCount > 0 ? `${unreadCount} unread notifications` : 'All notifications'}
+              </DrawerDescription>
+            </DrawerHeader>
+            <div className="px-4 pb-4 overflow-y-auto max-h-[calc(100vh-120px)]">
+              <NotificationList showActions={true} maxHeight="none" />
+            </div>
+          </DrawerContent>
+        </Drawer>
+
+        {/* User Avatar with Popover */}
+        <Popover open={profilePopoverOpen} onOpenChange={setProfilePopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
+              <Avatar className="h-9 w-9 border border-border">
                 <AvatarImage src={userImage} alt={userName} />
-                <AvatarFallback className="bg-primary text-primary-foreground text-[10px] border-2 border-border">
+                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                   {userInitial}
                 </AvatarFallback>
               </Avatar>
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-72 p-0" align="end">
+          <PopoverContent className="w-64 p-1" align="end">
             {/* User Info Section */}
-            <div className="p-4 border-b border-border">
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none flex items-center gap-2">
-                  <User className="h-4 w-4 text-muted-foreground" />
+            <div className="px-3 py-2.5">
+              <div className="flex flex-col">
+                <p className="text-sm font-medium leading-tight">
                   {userName}
                 </p>
-                <p className="text-xs leading-none text-muted-foreground truncate ml-6">
+                <p className="text-xs text-muted-foreground truncate mt-0.5">
                   {userEmail}
                 </p>
               </div>
             </div>
             
-            {/* Profile Settings */}
-            <div className="p-2">
-              <Link href="/profile">
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start font-normal"
-                >
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Profile Settings</span>
-                </Button>
-              </Link>
-            </div>
+            <div className="border-t border-border my-1" />
             
-            {/* Theme Section */}
-            <div className="p-2 border-t border-border">
-              <div className="px-2 py-2 text-xs font-semibold text-muted-foreground flex items-center gap-2">
-                <Monitor className="h-3.5 w-3.5" />
-                Theme
-              </div>
-              
-              {/* System Mode Button */}
-              <div className="px-2 py-1.5">
-                <Button
-                  variant={isSystemMode ? 'secondary' : 'ghost'}
-                  className="w-full justify-between font-normal h-9"
-                  onClick={handleSystemMode}
-                >
-                  <div className="flex items-center gap-2">
-                    <Monitor className="h-4 w-4" />
-                    <span>System</span>
-                    {isSystemMode && (
-                      <span className="text-xs text-muted-foreground ml-1">
-                        ({systemTheme === 'dark' ? 'Dark' : 'Light'})
-                      </span>
-                    )}
-                  </div>
-                  {isSystemMode && (
-                    <span className="text-xs">✓</span>
-                  )}
-                </Button>
-              </div>
-
-              {/* Light/Dark Toggle Switch */}
-              <div className="px-2 py-2">
-                <ThemeToggleSegmented
-                  isDarkMode={isDarkMode}
-                  isSystemMode={isSystemMode}
-                  mounted={mounted}
-                  onLightMode={() => {
-                    if (!mounted) return
-                    setTheme('light')
-                  }}
-                  onDarkMode={() => {
-                    if (!mounted) return
-                    setTheme('dark')
-                  }}
-                  align="center"
-                  showSystemModeHelp={true}
-                />
-              </div>
-            </div>
-            
-            {/* Logout */}
-            <div className="p-2 border-t border-border">
+            {/* Menu Items */}
+            <div className="py-1">
               <Button
                 variant="ghost"
-                className="w-full justify-start font-normal text-destructive hover:text-destructive hover:bg-destructive/10"
+                className="w-full justify-start font-normal h-9 px-3"
+                onClick={() => {
+                  setProfilePopoverOpen(false)
+                  setProfileModalOpen(true)
+                }}
+              >
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile Settings</span>
+              </Button>
+              
+              {/* Theme Dropdown */}
+              <DropdownMenu open={themeDropdownOpen} onOpenChange={setThemeDropdownOpen}>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between font-normal h-9 px-3"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Palette className="h-4 w-4" />
+                      <span>Theme:</span>
+                      <div className="flex items-center gap-1.5">
+                        {mounted && theme === 'dark' ? (
+                          <>
+                            <Moon className="h-4 w-4" />
+                            <span className="text-xs">Dark</span>
+                          </>
+                        ) : mounted && theme === 'light' ? (
+                          <>
+                            <Sun className="h-4 w-4" />
+                            <span className="text-xs">Light</span>
+                          </>
+                        ) : (
+                          <>
+                            <Monitor className="h-4 w-4" />
+                            <span className="text-xs">System</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuLabel>Theme</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuRadioGroup 
+                    value={mounted ? (theme || 'system') : 'system'} 
+                    onValueChange={(value) => {
+                      if (mounted) {
+                        const newTheme = value as 'light' | 'dark' | 'system'
+                        setTheme(newTheme)
+                        // Ensure dark class is applied/removed immediately
+                        const root = document.documentElement
+                        if (newTheme === 'dark') {
+                          root.classList.add('dark')
+                        } else if (newTheme === 'light') {
+                          root.classList.remove('dark')
+                        } else {
+                          // System mode - let next-themes handle it
+                          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+                          if (prefersDark) {
+                            root.classList.add('dark')
+                          } else {
+                            root.classList.remove('dark')
+                          }
+                        }
+                        // Close dropdown after a short delay to ensure theme is applied
+                        setTimeout(() => {
+                          setThemeDropdownOpen(false)
+                        }, 100)
+                      }
+                    }}
+                  >
+                    <DropdownMenuRadioItem 
+                      value="light" 
+                      checked={mounted && theme === 'light'}
+                      onClick={() => {
+                        if (mounted) {
+                          setTheme('light')
+                          document.documentElement.classList.remove('dark')
+                          setTimeout(() => {
+                            setThemeDropdownOpen(false)
+                          }, 100)
+                        }
+                      }}
+                    >
+                      <Sun className="mr-2 h-4 w-4" />
+                      <span>Light</span>
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem 
+                      value="dark" 
+                      checked={mounted && theme === 'dark'}
+                      onClick={() => {
+                        if (mounted) {
+                          setTheme('dark')
+                          document.documentElement.classList.add('dark')
+                          setTimeout(() => {
+                            setThemeDropdownOpen(false)
+                          }, 100)
+                        }
+                      }}
+                    >
+                      <Moon className="mr-2 h-4 w-4" />
+                      <span>Dark</span>
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem 
+                      value="system" 
+                      checked={mounted && (theme === 'system' || !theme)}
+                      onClick={() => {
+                        if (mounted) {
+                          setTheme('system')
+                          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+                          if (prefersDark) {
+                            document.documentElement.classList.add('dark')
+                          } else {
+                            document.documentElement.classList.remove('dark')
+                          }
+                          setTimeout(() => {
+                            setThemeDropdownOpen(false)
+                          }, 100)
+                        }
+                      }}
+                    >
+                      <Monitor className="mr-2 h-4 w-4" />
+                      <span>System</span>
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              <div className="border-t border-border my-1" />
+              
+              <Button
+                variant="ghost"
+                className="w-full justify-start font-normal h-9 px-3"
                 onClick={handleSignOut}
               >
                 <LogOut className="mr-2 h-4 w-4" />
-                <span>Logout</span>
+                <span>Sign out</span>
               </Button>
             </div>
           </PopoverContent>
         </Popover>
+
+        {/* Profile Settings Modal */}
+        <ProfileSettingsModal
+          open={profileModalOpen}
+          onOpenChange={setProfileModalOpen}
+          user={user}
+        />
       </div>
     </div>
   )

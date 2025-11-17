@@ -3,7 +3,19 @@
  * Replaces console.log/error/warn with structured logging
  */
 
-import { sendLogToElasticsearch } from './elasticsearch-client'
+// Dynamic import for Elasticsearch (server-side only)
+const getElasticsearchLogger = async () => {
+  if (typeof window === 'undefined') {
+    try {
+      const { sendLogToElasticsearch } = await import('./elasticsearch-client')
+      return sendLogToElasticsearch
+    } catch (error) {
+      // Elasticsearch not available, return no-op function
+      return () => Promise.resolve()
+    }
+  }
+  return () => Promise.resolve()
+}
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
@@ -35,12 +47,14 @@ class Logger {
       console.debug(this.formatMessage('debug', message, context))
       
       // Send to Elasticsearch (fire and forget)
-      sendLogToElasticsearch('application', {
-        level: 'debug',
-        message,
-        ...context,
-        environment: this.isProduction ? 'production' : 'development'
-      }).catch(() => {}) // Silently fail
+      getElasticsearchLogger().then(sendLog => {
+        sendLog('application', {
+          level: 'debug',
+          message,
+          ...context,
+          environment: this.isProduction ? 'production' : 'development'
+        }).catch(() => {}) // Silently fail
+      })
     }
   }
 
@@ -49,12 +63,14 @@ class Logger {
       console.info(this.formatMessage('info', message, context))
       
       // Send to Elasticsearch (fire and forget)
-      sendLogToElasticsearch('application', {
-        level: 'info',
-        message,
-        ...context,
-        environment: this.isProduction ? 'production' : 'development'
-      }).catch(() => {}) // Silently fail
+      getElasticsearchLogger().then(sendLog => {
+        sendLog('application', {
+          level: 'info',
+          message,
+          ...context,
+          environment: this.isProduction ? 'production' : 'development'
+        }).catch(() => {}) // Silently fail
+      })
     }
   }
 
@@ -63,12 +79,14 @@ class Logger {
       console.warn(this.formatMessage('warn', message, context))
       
       // Send to Elasticsearch (fire and forget)
-      sendLogToElasticsearch('application', {
-        level: 'warn',
-        message,
-        ...context,
-        environment: this.isProduction ? 'production' : 'development'
-      }).catch(() => {}) // Silently fail
+      getElasticsearchLogger().then(sendLog => {
+        sendLog('application', {
+          level: 'warn',
+          message,
+          ...context,
+          environment: this.isProduction ? 'production' : 'development'
+        }).catch(() => {}) // Silently fail
+      })
     }
   }
 
@@ -85,12 +103,14 @@ class Logger {
       console.error(this.formatMessage('error', message, errorContext))
       
       // Send to Elasticsearch (fire and forget)
-      sendLogToElasticsearch('application', {
-        level: 'error',
-        message,
-        ...errorContext,
-        environment: this.isProduction ? 'production' : 'development'
-      }).catch(() => {}) // Silently fail
+      getElasticsearchLogger().then(sendLog => {
+        sendLog('application', {
+          level: 'error',
+          message,
+          ...errorContext,
+          environment: this.isProduction ? 'production' : 'development'
+        }).catch(() => {}) // Silently fail
+      })
     }
   }
 
@@ -101,15 +121,17 @@ class Logger {
     this.info(`API ${method} ${path}`, context)
     
     // Also send structured API request log to Elasticsearch
-    sendLogToElasticsearch('application', {
-      level: 'info',
-      message: `API ${method} ${path}`,
-      type: 'api_request',
-      method,
-      path,
-      ...context,
-      environment: this.isProduction ? 'production' : 'development'
-    }).catch(() => {})
+    getElasticsearchLogger().then(sendLog => {
+      sendLog('application', {
+        level: 'info',
+        message: `API ${method} ${path}`,
+        type: 'api_request',
+        method,
+        path,
+        ...context,
+        environment: this.isProduction ? 'production' : 'development'
+      }).catch(() => {})
+    })
   }
 
   /**
@@ -120,17 +142,19 @@ class Logger {
     this[level](`API ${method} ${path} ${status} (${duration}ms)`, context)
     
     // Also send structured API response log to Elasticsearch
-    sendLogToElasticsearch('application', {
-      level,
-      message: `API ${method} ${path} ${status} (${duration}ms)`,
-      type: 'api_response',
-      method,
-      path,
-      statusCode: status,
-      duration,
-      ...context,
-      environment: this.isProduction ? 'production' : 'development'
-    }).catch(() => {})
+    getElasticsearchLogger().then(sendLog => {
+      sendLog('application', {
+        level,
+        message: `API ${method} ${path} ${status} (${duration}ms)`,
+        type: 'api_response',
+        method,
+        path,
+        statusCode: status,
+        duration,
+        ...context,
+        environment: this.isProduction ? 'production' : 'development'
+      }).catch(() => {})
+    })
   }
 
   /**
@@ -144,15 +168,17 @@ class Logger {
     })
     
     // Also send structured DB query log to Elasticsearch
-    sendLogToElasticsearch('application', {
-      level: 'debug',
-      message: 'Database query',
-      type: 'db_query',
-      query: query.substring(0, 200),
-      duration,
-      ...context,
-      environment: this.isProduction ? 'production' : 'development'
-    }).catch(() => {})
+    getElasticsearchLogger().then(sendLog => {
+      sendLog('application', {
+        level: 'debug',
+        message: 'Database query',
+        type: 'db_query',
+        query: query.substring(0, 200),
+        duration,
+        ...context,
+        environment: this.isProduction ? 'production' : 'development'
+      }).catch(() => {})
+    })
   }
 
   /**
@@ -165,19 +191,21 @@ class Logger {
     })
     
     // Also send structured DB error log to Elasticsearch
-    sendLogToElasticsearch('application', {
-      level: 'error',
-      message: 'Database error',
-      type: 'db_error',
-      query: query.substring(0, 200),
-      error: {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      },
-      ...context,
-      environment: this.isProduction ? 'production' : 'development'
-    }).catch(() => {})
+    getElasticsearchLogger().then(sendLog => {
+      sendLog('application', {
+        level: 'error',
+        message: 'Database error',
+        type: 'db_error',
+        query: query.substring(0, 200),
+        error: {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        },
+        ...context,
+        environment: this.isProduction ? 'production' : 'development'
+      }).catch(() => {})
+    })
   }
 }
 

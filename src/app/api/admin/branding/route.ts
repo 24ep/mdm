@@ -155,20 +155,31 @@ export async function PUT(request: NextRequest) {
       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
       RETURNING value
     `
-    const res = await query(upsertSql, ['branding_config', JSON.stringify(branding)])
-    const savedBranding = res.rows[0]?.value
+    let savedBranding
+    try {
+      const res = await query(upsertSql, ['branding_config', JSON.stringify(branding)])
+      savedBranding = res.rows[0]?.value
+    } catch (dbError) {
+      console.error('Database error saving branding:', dbError)
+      throw new Error(`Failed to save branding config: ${dbError instanceof Error ? dbError.message : 'Unknown database error'}`)
+    }
 
-    // Create audit log
-    await createAuditLog({
-      action: 'UPDATE',
-      entityType: 'BrandingConfig',
-      entityId: 'system',
-      oldValue: currentBranding,
-      newValue: branding,
-      userId: session.user.id,
-      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
-      userAgent: request.headers.get('user-agent') || 'unknown'
-    })
+    // Create audit log (non-blocking - don't fail the request if audit log fails)
+    try {
+      await createAuditLog({
+        action: 'UPDATE',
+        entityType: 'BrandingConfig',
+        entityId: 'system',
+        oldValue: currentBranding,
+        newValue: branding,
+        userId: session.user.id,
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+        userAgent: request.headers.get('user-agent') || 'unknown'
+      })
+    } catch (auditError) {
+      // Log but don't fail the request if audit log creation fails
+      console.error('Failed to create audit log for branding update:', auditError)
+    }
 
     const duration = Date.now() - startTime
     logger.apiResponse('PUT', '/api/admin/branding', 200, duration)

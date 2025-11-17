@@ -14,6 +14,8 @@ interface SelectContextValue {
   open: boolean
   setOpen: (open: boolean) => void
   triggerRef: React.RefObject<HTMLElement | null>
+  labels: Map<string, string>
+  registerLabel: (value: string, label: string) => void
 }
 
 const SelectContext = React.createContext<SelectContextValue | undefined>(undefined)
@@ -26,6 +28,7 @@ const Select = ({ children, value: controlledValue, onValueChange, defaultValue 
 }) => {
   const [internalValue, setInternalValue] = React.useState(defaultValue || "")
   const [open, setOpen] = React.useState(false)
+  const [labels, setLabels] = React.useState<Map<string, string>>(new Map())
   const triggerRef = React.useRef<HTMLElement>(null)
   const isControlled = controlledValue !== undefined
   const value = isControlled ? controlledValue : internalValue
@@ -38,8 +41,28 @@ const Select = ({ children, value: controlledValue, onValueChange, defaultValue 
     setOpen(false)
   }, [isControlled, onValueChange])
 
+  const registerLabel = React.useCallback((val: string, label: string) => {
+    setLabels(prev => {
+      // Only update if the label actually changed
+      if (prev.get(val) === label) {
+        return prev
+      }
+      const newMap = new Map(prev)
+      newMap.set(val, label)
+      return newMap
+    })
+  }, [])
+
   return (
-    <SelectContext.Provider value={{ value, onValueChange: handleValueChange, open, setOpen, triggerRef }}>
+    <SelectContext.Provider value={{ 
+      value, 
+      onValueChange: handleValueChange, 
+      open, 
+      setOpen, 
+      triggerRef,
+      labels,
+      registerLabel
+    }}>
       {children}
     </SelectContext.Provider>
   )
@@ -51,7 +74,10 @@ const SelectGroup = ({ children }: { children: React.ReactNode }) => {
 
 const SelectValue = ({ placeholder }: { placeholder?: string }) => {
   const context = React.useContext(SelectContext)
-  return <span>{context?.value || placeholder}</span>
+  if (!context) return <span>{placeholder}</span>
+  
+  const displayLabel = context.labels?.get(context.value) || context.value || placeholder
+  return <span>{displayLabel}</span>
 }
 
 const SelectTrigger = React.forwardRef<
@@ -183,6 +209,58 @@ const SelectItem = React.forwardRef<
 >(({ className, value, children, ...props }, ref) => {
   const context = React.useContext(SelectContext)
   const isSelected = context?.value === value
+  const lastLabelRef = React.useRef<string>('')
+
+  // Extract label text and register it
+  React.useEffect(() => {
+    if (!context?.registerLabel || !children) return
+
+    let label = ''
+    if (typeof children === 'string') {
+      label = children
+    } else if (typeof children === 'number') {
+      label = String(children)
+    } else if (React.isValidElement(children)) {
+      // Extract text from React element
+      const extractText = (node: React.ReactNode): string => {
+        if (typeof node === 'string' || typeof node === 'number') {
+          return String(node)
+        }
+        if (React.isValidElement(node)) {
+          if (node.props.children) {
+            return React.Children.toArray(node.props.children)
+              .map(extractText)
+              .join('')
+          }
+        }
+        if (Array.isArray(node)) {
+          return node.map(extractText).join('')
+        }
+        return ''
+      }
+      label = extractText(children)
+    } else if (Array.isArray(children)) {
+      label = children
+        .map(child => {
+          if (typeof child === 'string' || typeof child === 'number') {
+            return String(child)
+          }
+          if (React.isValidElement(child) && child.props.children) {
+            return React.Children.toArray(child.props.children)
+              .filter(c => typeof c === 'string' || typeof c === 'number')
+              .join('')
+          }
+          return ''
+        })
+        .join('')
+    }
+
+    // Only register if the label actually changed
+    if (label && label !== lastLabelRef.current) {
+      lastLabelRef.current = label
+      context.registerLabel(value, label)
+    }
+  }, [context?.registerLabel, value, children])
 
   const handleClick = () => {
     context?.onValueChange(value)

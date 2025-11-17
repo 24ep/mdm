@@ -153,9 +153,16 @@ interface QueryFolder {
   subfolders: QueryFolder[]
 }
 
-export function BigQueryInterface() {
+interface BigQueryInterfaceProps {
+  selectedSpace?: string
+  onSpaceChange?: (spaceId: string) => void
+}
+
+export function BigQueryInterface({ selectedSpace: externalSelectedSpace, onSpaceChange: externalOnSpaceChange }: BigQueryInterfaceProps = {}) {
   const [query, setQuery] = useState('')
-  const [selectedSpace, setSelectedSpace] = useState('all')
+  const [internalSelectedSpace, setInternalSelectedSpace] = useState('all')
+  const selectedSpace = externalSelectedSpace ?? internalSelectedSpace
+  const setSelectedSpace = externalOnSpaceChange ?? setInternalSelectedSpace
   const [queryHistory, setQueryHistory] = useState<QueryResult[]>([])
   const [currentResult, setCurrentResult] = useState<QueryResult | null>(null)
   const [isExecuting, setIsExecuting] = useState(false)
@@ -662,189 +669,11 @@ export function BigQueryInterface() {
 
   return (
     <div className="h-screen bg-gray-100 flex flex-col">
-      {/* BigQuery Style Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Database className="h-6 w-6 text-blue-600" />
-              <h1 className="text-xl font-semibold text-gray-900">SQL Query</h1>
-              </div>
-            {/* Space Selection Dropdown */}
-            <Popover open={spaceDropdownOpen} onOpenChange={setSpaceDropdownOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={spaceDropdownOpen}
-                  className="w-[200px] justify-between h-8 px-3"
-                  disabled={spacesLoading}
-                >
-                  <span className="truncate">
-                    {spacesLoading ? 'Loading spaces...' : 
-                     spacesError ? 'Error loading spaces' :
-                     selectedSpace === 'all' ? 'All Spaces' : 
-                     spaces.find(s => s.id === selectedSpace)?.name || 'Select space...'}
-                  </span>
-                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[200px] p-0">
-                <Command>
-                  <CommandInput 
-                    placeholder="Search spaces..." 
-                    value={spaceSearchValue}
-                    onValueChange={setSpaceSearchValue}
-                  />
-                  <CommandList>
-                    {spacesLoading ? (
-                      <div className="p-4 text-center text-sm text-gray-500">
-                        Loading spaces...
-                      </div>
-                    ) : spacesError ? (
-                      <div className="p-4 text-center">
-                        <div className="text-sm text-red-600 mb-2">
-                          {spacesError.includes('Authentication') ? 'Please sign in to view spaces' : 'Error loading spaces'}
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => refetchSpaces()}
-                          className="text-xs"
-                        >
-                          Retry
-                        </Button>
-                      </div>
-                    ) : spaces.length === 0 ? (
-                      <div className="p-4 text-center">
-                        <div className="text-sm text-gray-600 mb-2">No spaces available</div>
-                        <div className="text-xs text-gray-500">Contact your administrator to create spaces</div>
-                      </div>
-                    ) : (
-                      <>
-                        <CommandEmpty>No space found.</CommandEmpty>
-                        <CommandGroup>
-                          <CommandItem
-                            value="all"
-                            onSelect={() => {
-                              setSelectedSpace('all')
-                              setSpaceDropdownOpen(false)
-                              setSpaceSearchValue('')
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                selectedSpace === 'all' ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            All Spaces
-                          </CommandItem>
-                          {spaces.filter(space =>
-                            space.name.toLowerCase().includes(spaceSearchValue.toLowerCase()) ||
-                            space.slug.toLowerCase().includes(spaceSearchValue.toLowerCase())
-                          ).map((space) => (
-                            <CommandItem
-                              key={space.id}
-                              value={space.id}
-                              onSelect={() => {
-                                setSelectedSpace(space.id)
-                                setSpaceDropdownOpen(false)
-                                setSpaceSearchValue('')
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  selectedSpace === space.id ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              <div className="flex flex-col">
-                                <span className="font-medium">{space.name}</span>
-                                <span className="text-xs text-gray-500">{space.slug}</span>
-                                {space.isDefault && (
-                                  <span className="text-xs text-blue-600">Default</span>
-                                )}
-                              </div>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </>
-                    )}
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" className="h-8 px-3">
-              <Settings className="h-4 w-4 mr-1" />
-              Settings
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Tab Bar */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="flex items-center gap-2 px-4">
-            {tabs.map((tab) => (
-              <div
-                key={tab.id}
-              className={`flex items-center gap-2 px-3 py-3 text-sm border-b-[3px] cursor-pointer group ${
-                tab.id === activeTabId
-                  ? 'border-black text-black'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
-              }`}
-              onClick={() => {
-                setActiveTabId(tab.id)
-                setQuery(tab.query)
-              }}
-              onDoubleClick={() => handleRenameTab(tab.id)}
-            >
-              <span>{tab.name}</span>
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleRenameTab(tab.id)
-                  }}
-                  className="hover:bg-gray-200 rounded p-1"
-                  title="Rename tab"
-                >
-                  <Edit className="h-3 w-3" />
-                </button>
-                {tabs.length > 1 && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      closeTab(tab.id)
-                    }}
-                    className="hover:bg-gray-200 rounded p-1"
-                    title="Close tab"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                )}
-              </div>
-            </div>
-            ))}
-            <Button
-              size="sm"
-              variant="ghost"
-            className="h-8 px-2"
-              onClick={createNewTab}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-        </div>
-      </div>
-
-      {/* Main Content */}
+      {/* Content Area: Data Explorer on Left, Editor on Right */}
       <div className="flex-1 flex min-h-0">
-        {/* Left Sidebar - Data Explorer */}
-        <DataExplorer
+        {/* Data Explorer - Full Height */}
+        <div className="flex-shrink-0 border-r border-gray-200 h-full">
+          <DataExplorer
           spaces={spaces}
           selectedSpace={selectedSpace}
           onTableRightClick={handleTableRightClick}
@@ -878,10 +707,66 @@ export function BigQueryInterface() {
           onDeleteFolder={(folderId) => {
             setQueryFolders(prev => prev.filter(f => f.id !== folderId))
           }}
-        />
+          />
+        </div>
 
         {/* Main Editor Area */}
         <div className="flex-1 flex flex-col min-h-0">
+          {/* Tab Bar - Horizontal above SQL Editor */}
+          <div className="bg-white border-b border-gray-200 flex-shrink-0">
+            <div className="flex items-center gap-2 px-4">
+              {tabs.map((tab) => (
+                <div
+                  key={tab.id}
+                  className={`flex items-center gap-2 px-3 py-3 text-sm border-b-[3px] cursor-pointer group ${
+                    tab.id === activeTabId
+                      ? 'border-black text-black'
+                      : 'border-transparent text-gray-600 hover:text-gray-900'
+                  }`}
+                  onClick={() => {
+                    setActiveTabId(tab.id)
+                    setQuery(tab.query)
+                  }}
+                  onDoubleClick={() => handleRenameTab(tab.id)}
+                >
+                  <span>{tab.name}</span>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleRenameTab(tab.id)
+                      }}
+                      className="hover:bg-gray-200 rounded p-1"
+                      title="Rename tab"
+                    >
+                      <Edit className="h-3 w-3" />
+                    </button>
+                    {tabs.length > 1 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          closeTab(tab.id)
+                        }}
+                        className="hover:bg-gray-200 rounded p-1"
+                        title="Close tab"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 px-2"
+                onClick={createNewTab}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
           {/* Toolbar */}
           <div className="bg-white border-b border-gray-200">
             <div className="flex items-center justify-between px-4 py-2">

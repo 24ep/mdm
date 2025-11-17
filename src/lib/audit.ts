@@ -1,5 +1,17 @@
 import { query } from './db'
-import { sendLogToElasticsearch } from './elasticsearch-client'
+
+// Dynamic import for Elasticsearch (server-side only)
+const getElasticsearchLogger = async () => {
+  if (typeof window === 'undefined') {
+    try {
+      const { sendLogToElasticsearch } = await import('./elasticsearch-client')
+      return sendLogToElasticsearch
+    } catch (error) {
+      return () => Promise.resolve()
+    }
+  }
+  return () => Promise.resolve()
+}
 
 export interface AuditLogData {
   action: string
@@ -14,38 +26,78 @@ export interface AuditLogData {
 
 export async function createAuditLog(data: AuditLogData) {
   try {
-    const insertQuery = `
-      INSERT INTO audit_logs (action, entity_type, entity_id, old_value, new_value, user_id, ip_address, user_agent)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING id, created_at
-    `
+    // Helper function to check if a string is a valid UUID
+    const isValidUUID = (str: string): boolean => {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      return uuidRegex.test(str)
+    }
 
-    const result = await query(insertQuery, [
-      data.action,
-      data.entityType,
-      data.entityId,
-      data.oldValue ? JSON.stringify(data.oldValue) : null,
-      data.newValue ? JSON.stringify(data.newValue) : null,
-      data.userId,
-      data.ipAddress || null,
-      data.userAgent || null
-    ])
+    // Cast entityId to UUID if it's a valid UUID, otherwise use NULL
+    const entityIdValue = data.entityId && isValidUUID(data.entityId) 
+      ? data.entityId 
+      : null
+
+    // Validate userId is a UUID
+    const userIdValue = data.userId && isValidUUID(data.userId)
+      ? data.userId
+      : null
+
+    if (!userIdValue) {
+      throw new Error(`Invalid userId: must be a valid UUID, got: ${data.userId}`)
+    }
+
+    // Use conditional SQL to handle NULL entity_id properly
+    const insertQuery = entityIdValue
+      ? `
+        INSERT INTO audit_logs (action, entity_type, entity_id, old_value, new_value, user_id, ip_address, user_agent)
+        VALUES ($1, $2, $3::uuid, $4, $5, $6::uuid, $7, $8)
+        RETURNING id, created_at
+      `
+      : `
+        INSERT INTO audit_logs (action, entity_type, entity_id, old_value, new_value, user_id, ip_address, user_agent)
+        VALUES ($1, $2, NULL, $3, $4, $5::uuid, $6, $7)
+        RETURNING id, created_at
+      `
+
+    const result = await query(insertQuery, entityIdValue
+      ? [
+          data.action,
+          data.entityType,
+          entityIdValue,
+          data.oldValue ? JSON.stringify(data.oldValue) : null,
+          data.newValue ? JSON.stringify(data.newValue) : null,
+          userIdValue,
+          data.ipAddress || null,
+          data.userAgent || null
+        ]
+      : [
+          data.action,
+          data.entityType,
+          data.oldValue ? JSON.stringify(data.oldValue) : null,
+          data.newValue ? JSON.stringify(data.newValue) : null,
+          userIdValue,
+          data.ipAddress || null,
+          data.userAgent || null
+        ]
+    )
 
     const auditLog = result.rows[0]
 
     // Send to Elasticsearch (fire and forget)
-    sendLogToElasticsearch('audit', {
-      id: auditLog.id,
-      action: data.action,
-      entityType: data.entityType,
-      entityId: data.entityId,
-      oldValue: data.oldValue,
-      newValue: data.newValue,
-      userId: data.userId,
-      ipAddress: data.ipAddress,
-      userAgent: data.userAgent,
-      createdAt: auditLog.created_at
-    }).catch(() => {}) // Silently fail
+    getElasticsearchLogger().then(sendLog => {
+      sendLog('audit', {
+        id: auditLog.id,
+        action: data.action,
+        entityType: data.entityType,
+        entityId: data.entityId,
+        oldValue: data.oldValue,
+        newValue: data.newValue,
+        userId: data.userId,
+        ipAddress: data.ipAddress,
+        userAgent: data.userAgent,
+        createdAt: auditLog.created_at
+      }).catch(() => {}) // Silently fail
+    })
 
     return auditLog
   } catch (error) {

@@ -110,16 +110,53 @@ export function applyGlobalStyling(branding: BrandingConfig) {
   }
   
   // CSS that excludes space modules (elements with [data-space] or within [space] routes)
+  // Also excludes platform sidebar, top menu bar, and navigation elements
   styleElement.textContent = `
-    /* Global styling - excludes space modules */
-    body:not([data-space]) button,
-    body:not([data-space]) [role="button"],
-    body:not([data-space]) .btn,
-    body:not([data-space]) [class*="button"]:not([data-space]):not([data-space] *) {
+    /* Global styling - excludes space modules, platform sidebar, top menu bar, and navigation */
+    /* Apply to buttons that are NOT inside platform sidebar, top menu bar, or navigation */
+    body:not([data-space]) button:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"]),
+    body:not([data-space]) [role="button"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"]),
+    body:not([data-space]) .btn:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([data-component="select-trigger"]),
+    body:not([data-space]) [class*="button"]:not([data-space]):not([data-space] *):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"]) {
       border-radius: var(--brand-button-border-radius, ${styling.buttonBorderRadius}) !important;
       border-width: var(--brand-button-border-width, ${styling.buttonBorderWidth}) !important;
       border-color: var(--brand-border-color, ${styling.borderColor}) !important;
       border-style: solid !important;
+    }
+    
+    /* Explicitly exclude buttons inside platform sidebar, top menu bar, and navigation elements */
+    /* These rules come AFTER to override the general button styling above */
+    /* Using higher specificity by including attribute selectors */
+    body:not([data-space]) [data-sidebar] button,
+    body:not([data-space]) [data-sidebar="primary"] button,
+    body:not([data-space]) [data-sidebar="secondary"] button,
+    body:not([data-space]) [data-sidebar] [role="button"],
+    body:not([data-space]) [data-sidebar="primary"] [role="button"],
+    body:not([data-space]) [data-sidebar="secondary"] [role="button"],
+    body:not([data-space]) [data-sidebar] .btn,
+    body:not([data-space]) [data-sidebar="primary"] .btn,
+    body:not([data-space]) [data-sidebar="secondary"] .btn,
+    body:not([data-space]) [data-sidebar] [class*="button"],
+    body:not([data-space]) [data-sidebar="primary"] [class*="button"],
+    body:not([data-space]) [data-sidebar="secondary"] [class*="button"],
+    body:not([data-space]) [data-component="platform-sidebar"] button,
+    body:not([data-space]) [data-component="platform-sidebar"] [role="button"],
+    body:not([data-space]) [data-component="platform-sidebar"] .btn,
+    body:not([data-space]) [data-component="platform-sidebar"] [class*="button"],
+    body:not([data-space]) [data-component="top-menu-bar"] button,
+    body:not([data-space]) [data-component="top-menu-bar"] [role="button"],
+    body:not([data-space]) [data-component="top-menu-bar"] .btn,
+    body:not([data-space]) [data-component="top-menu-bar"] [class*="button"],
+    body:not([data-space]) .platform-sidebar-menu-button,
+    body:not([data-space]) .platform-sidebar-menu-button-active,
+    body:not([data-space]) .platform-sidebar-menu-button.platform-sidebar-menu-button-active,
+    body:not([data-space]) [role="tablist"][aria-orientation="vertical"] [role="tab"],
+    body:not([data-space]) [role="tablist"][aria-orientation="vertical"] button[role="tab"] {
+      /* Reset button styling - these use their own component-specific styling */
+      border-radius: revert !important;
+      border-width: revert !important;
+      border-color: revert !important;
+      border-style: revert !important;
     }
     
     body:not([data-space]) input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]),
@@ -168,21 +205,35 @@ export function applyGlobalStyling(branding: BrandingConfig) {
  * Excludes space modules
  */
 export function applyComponentStyling(branding: BrandingConfig, isDarkMode: boolean = false) {
-  if (!branding.componentStyling || Object.keys(branding.componentStyling).length === 0) {
-    return
-  }
-
   const styleId = 'branding-component-styling'
   let styleElement = document.getElementById(styleId) as HTMLStyleElement
 
   if (!styleElement) {
     styleElement = document.createElement('style')
     styleElement.id = styleId
+    // Append to end of head to ensure it comes after globals.css and can override it
     document.head.appendChild(styleElement)
   }
 
+  // Always initialize CSS rules (even if empty, to clear previous styles)
   const mode = isDarkMode ? 'dark' : 'light'
   let cssRules = '/* Component-specific styling - excludes space modules */\n'
+
+  // If no component styling, just set empty CSS to clear previous styles
+  if (!branding.componentStyling || Object.keys(branding.componentStyling).length === 0) {
+    cssRules += `    /* No component styling configured */\n`
+    cssRules += `    /* Exclude space studio and space-specific components */\n`
+    cssRules += `    [data-space],\n`
+    cssRules += `    [data-space] *,\n`
+    cssRules += `    [class*="space-studio"],\n`
+    cssRules += `    [class*="space-studio"] *,\n`
+    cssRules += `    [id*="space-"],\n`
+    cssRules += `    [id*="space-"] * {\n`
+    cssRules += `      /* Reset to default - space modules use their own styling */\n`
+    cssRules += `    }\n`
+    styleElement.textContent = cssRules
+    return
+  }
 
   // Map component IDs to CSS selectors
   const componentSelectors: Record<string, string[]> = {
@@ -198,6 +249,8 @@ export function applyComponentStyling(branding: BrandingConfig, isDarkMode: bool
     ],
     'select': [
       'body:not([data-space]) select',
+      'body:not([data-space]) [data-component="select-trigger"]',
+      'body:not([data-space]) [data-component="select-content"]',
       'body:not([data-space]) [role="combobox"]',
       'body:not([data-space]) [data-radix-select-content]',
       'body:not([data-space]) [class*="SelectContent"]',
@@ -217,10 +270,22 @@ export function applyComponentStyling(branding: BrandingConfig, isDarkMode: bool
       'body:not([data-space]) textarea',
     ],
     'button': [
-      'body:not([data-space]) button',
-      'body:not([data-space]) [role="button"]',
-      'body:not([data-space]) .btn',
-      'body:not([data-space]) [class*="button"]:not([data-space]):not([data-space] *)',
+      'body:not([data-space]) button:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+      'body:not([data-space]) [role="button"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+      'body:not([data-space]) .btn:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([data-component="select-trigger"])',
+      'body:not([data-space]) [class*="button"]:not([data-space]):not([data-space] *):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+      /* Exclude buttons inside platform sidebar (primary and secondary) */
+      'body:not([data-space]) [data-sidebar] button',
+      'body:not([data-space]) [data-sidebar="primary"] button',
+      'body:not([data-space]) [data-sidebar="secondary"] button',
+      'body:not([data-space]) [data-component="platform-sidebar"] button',
+      /* Exclude buttons inside top menu bar */
+      'body:not([data-space]) [data-component="top-menu-bar"] button',
+      /* Exclude active menu buttons */
+      'body:not([data-space]) .platform-sidebar-menu-button-active',
+      'body:not([data-space]) .platform-sidebar-menu-button.platform-sidebar-menu-button-active',
+      /* Exclude select triggers - they use select component styling */
+      'body:not([data-space]) [data-component="select-trigger"]',
     ],
     'card': [
       'body:not([data-space]) [class*="card"]:not([data-space]):not([data-space] *)',
@@ -235,6 +300,10 @@ export function applyComponentStyling(branding: BrandingConfig, isDarkMode: bool
     'switch': [
       'body:not([data-space]) [role="switch"]',
       'body:not([data-space]) [class*="switch"]:not([data-space]):not([data-space] *)',
+    ],
+    'top-menu-bar': [
+      'body:not([data-space]) [data-component="top-menu-bar"]',
+      'body:not([data-space]) .top-menu-bar',
     ],
     'platform-sidebar-primary': [
       'body:not([data-space]) [data-sidebar="primary"]',

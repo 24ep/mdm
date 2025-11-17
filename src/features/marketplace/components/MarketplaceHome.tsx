@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useMarketplacePlugins } from '../hooks/useMarketplacePlugins'
 import { usePluginInstallation } from '../hooks/usePluginInstallation'
 import { PluginDefinition, PluginCategory } from '../types'
@@ -35,11 +36,22 @@ export function MarketplaceHome({
   spaceId = null,
   showSpaceSelector = false,
 }: MarketplaceHomeProps) {
+  const searchParams = useSearchParams()
   const { currentSpace } = useSpace()
   const [selectedSpaceId, setSelectedSpaceId] = useState<string>(
     spaceId || currentSpace?.id || 'all'
   )
-  const [selectedCategory, setSelectedCategory] = useState<PluginCategory | 'all'>('all')
+  const categoryFromUrl = searchParams?.get('category') as PluginCategory | null
+  const [selectedCategory, setSelectedCategory] = useState<PluginCategory | 'all'>(
+    categoryFromUrl || 'all'
+  )
+
+  // Update category when URL changes
+  useEffect(() => {
+    if (categoryFromUrl) {
+      setSelectedCategory(categoryFromUrl)
+    }
+  }, [categoryFromUrl])
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedPlugin, setSelectedPlugin] = useState<PluginDefinition | null>(null)
   const [showInstallWizard, setShowInstallWizard] = useState(false)
@@ -107,7 +119,7 @@ export function MarketplaceHome({
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

@@ -5,6 +5,7 @@
 
 // Components
 export { DatabaseManagement } from './components/DatabaseManagement'
+export { DatabaseDataModelMerged } from './components/DatabaseDataModelMerged'
 export { DataExportImport } from './components/DataExportImport'
 export { DataMasking } from './components/DataMasking'
 export { DataModelManagement } from './components/DataModelManagement'

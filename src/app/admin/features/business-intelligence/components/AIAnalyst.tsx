@@ -559,10 +559,10 @@ export function AIAnalyst() {
   // Show loading state while checking authentication
   if (status === 'loading') {
     return (
-      <div className="h-full flex items-center justify-center bg-gray-50">
+      <div className="h-full flex items-center justify-center bg-background">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-purple-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading AI Analyst...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading AI Analyst...</p>
         </div>
       </div>
     )
@@ -571,10 +571,10 @@ export function AIAnalyst() {
   // Show error state if there's an error
   if (error) {
     return (
-      <div className="h-full flex items-center justify-center bg-gray-50">
+      <div className="h-full flex items-center justify-center bg-background">
         <Card className="max-w-md w-full">
           <CardHeader>
-            <CardTitle className="text-red-600">Error</CardTitle>
+            <CardTitle className="text-destructive">Error</CardTitle>
             <CardDescription>{error}</CardDescription>
           </CardHeader>
           <CardContent>
@@ -588,38 +588,38 @@ export function AIAnalyst() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-[#0f0f23] text-gray-100 overflow-hidden">
+    <div className="h-full flex flex-col bg-background text-foreground overflow-hidden">
       <div className="flex flex-1 min-h-0">
         {/* Sidebar - Open WebUI Style */}
         <div 
           className={cn(
-            "bg-[#1a1a2e] border-r border-gray-800 transition-all duration-300 flex flex-col",
+            "bg-card border-r border-border transition-all duration-300 flex flex-col",
             sidebarOpen ? "w-[280px]" : "w-0 overflow-hidden"
           )}
         >
           {sidebarOpen && (
             <>
               {/* Sidebar Header */}
-              <div className="p-4 border-b border-gray-800">
+              <div className="p-4 border-b border-border">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-white">Chats</h2>
+                  <h2 className="text-lg font-semibold text-foreground">Chats</h2>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowNewChatDialog(true)}
-                    className="h-8 w-8 p-0 hover:bg-gray-700"
+                    className="h-8 w-8 p-0 hover:bg-muted"
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
                 <div className="flex gap-2">
                   <Select value={selectedModel} onValueChange={setSelectedModel}>
-                    <SelectTrigger className="h-8 text-xs bg-gray-800 border-gray-700 text-gray-300" disabled={isLoadingModels}>
+                    <SelectTrigger className="h-8 text-xs bg-muted border-border text-foreground" disabled={isLoadingModels}>
                       <SelectValue placeholder="Model" />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectContent className="bg-card border-border">
                       {availableModels.map(model => (
-                        <SelectItem key={model.id} value={model.id} className="text-gray-300">
+                        <SelectItem key={model.id} value={model.id} className="text-foreground">
                           {model.name}
                         </SelectItem>
                       ))}
@@ -633,8 +633,8 @@ export function AIAnalyst() {
                 <div className="p-2 space-y-1">
                   {chatSessions.length === 0 ? (
                     <div className="text-center py-8 px-4">
-                      <MessageSquare className="h-8 w-8 text-gray-600 mx-auto mb-2" />
-                      <p className="text-sm text-gray-500">No chats yet</p>
+                      <MessageSquare className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">No chats yet</p>
                     </div>
                   ) : (
                     chatSessions.map(chat => (
@@ -643,16 +643,16 @@ export function AIAnalyst() {
                         onClick={() => switchToChat(chat.id)}
                         className={cn(
                           "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors",
-                          "hover:bg-gray-800/50",
-                          currentChatId === chat.id && "bg-gray-800"
+                          "hover:bg-muted/50",
+                          currentChatId === chat.id && "bg-muted"
                         )}
                       >
                         <div className="flex items-center gap-2">
-                          <MessageSquare className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                          <span className="truncate text-gray-300">{chat.title}</span>
+                          <MessageSquare className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          <span className="truncate text-foreground">{chat.title}</span>
                         </div>
                         {chat.messages?.length > 0 && (
-                          <p className="text-xs text-gray-500 mt-1 truncate">
+                          <p className="text-xs text-muted-foreground mt-1 truncate">
                             {chat.messages[chat.messages.length - 1]?.content.substring(0, 30)}...
                           </p>
                         )}
@@ -668,19 +668,19 @@ export function AIAnalyst() {
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-h-0">
           {/* Top Bar */}
-          <div className="h-14 bg-[#1a1a2e] border-b border-gray-800 flex items-center justify-between px-4 flex-shrink-0">
+          <div className="h-14 bg-card border-b border-border flex items-center justify-between px-4 flex-shrink-0">
             <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="h-8 w-8 p-0 hover:bg-gray-800"
+                className="h-8 w-8 p-0 hover:bg-muted"
               >
                 {sidebarOpen ? <ChevronLeft className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
               </Button>
               <div className="flex items-center gap-2">
-                <Bot className="h-5 w-5 text-purple-400" />
-                <span className="font-medium text-white">AI Analyst</span>
+                <Bot className="h-5 w-5 text-primary" />
+                <span className="font-medium text-foreground">AI Analyst</span>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -690,7 +690,7 @@ export function AIAnalyst() {
                     variant="ghost"
                     size="sm"
                     onClick={clearChat}
-                    className="h-8 text-gray-400 hover:text-white hover:bg-gray-800"
+                    className="h-8 text-muted-foreground hover:text-foreground hover:bg-muted"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -698,19 +698,19 @@ export function AIAnalyst() {
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowReportDrawer(!showReportDrawer)}
-                    className="h-8 text-gray-400 hover:text-white hover:bg-gray-800"
+                    className="h-8 text-muted-foreground hover:text-foreground hover:bg-muted"
                   >
                     <FileText className="h-4 w-4" />
                   </Button>
                 </>
               )}
               <Select value={selectedSpace} onValueChange={setSelectedSpace}>
-                <SelectTrigger className="h-8 w-32 text-xs bg-gray-800 border-gray-700 text-gray-300" disabled={isLoadingSpaces}>
+                <SelectTrigger className="h-8 w-32 text-xs bg-muted border-border text-foreground" disabled={isLoadingSpaces}>
                   <SelectValue placeholder="Space" />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-700">
+                <SelectContent className="bg-card border-border">
                   {spaces.map(space => (
-                    <SelectItem key={space.id} value={space.id} className="text-gray-300">
+                    <SelectItem key={space.id} value={space.id} className="text-foreground">
                       {space.name}
                     </SelectItem>
                   ))}
@@ -721,14 +721,14 @@ export function AIAnalyst() {
 
           {/* Chat Content */}
           {currentView === 'sessions' ? (
-            <div className="flex-1 flex items-center justify-center bg-[#0f0f23]">
+            <div className="flex-1 flex items-center justify-center bg-background">
               <div className="text-center max-w-md">
-                <Bot className="h-16 w-16 text-purple-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-white mb-2">Welcome to AI Analyst</h3>
-                <p className="text-gray-400 mb-6">Start a new conversation to begin analyzing your data</p>
+                <Bot className="h-16 w-16 text-primary mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-foreground mb-2">Welcome to AI Analyst</h3>
+                <p className="text-muted-foreground mb-6">Start a new conversation to begin analyzing your data</p>
                 <Button 
                   onClick={() => setShowNewChatDialog(true)}
-                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   New Chat
@@ -820,19 +820,19 @@ function ChatSessionsList({
 }) {
   if (isLoading) {
     return (
-      <div className="flex-1 flex flex-col bg-white">
-        <div className="p-6 border-b border-gray-200">
+      <div className="flex-1 flex flex-col bg-background">
+        <div className="p-6 border-b border-border">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Chat Sessions</h2>
-              <p className="text-gray-600 mt-1">Loading your chat sessions...</p>
+              <h2 className="text-2xl font-bold text-foreground">Chat Sessions</h2>
+              <p className="text-muted-foreground mt-1">Loading your chat sessions...</p>
             </div>
           </div>
         </div>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin text-purple-600 mx-auto mb-4" />
-            <p className="text-gray-600">Loading chat sessions...</p>
+            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading chat sessions...</p>
           </div>
         </div>
       </div>
@@ -840,14 +840,14 @@ function ChatSessionsList({
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-white">
-      <div className="p-6 border-b border-gray-200">
+    <div className="flex-1 flex flex-col bg-background">
+      <div className="p-6 border-b border-border">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Chat Sessions</h2>
-            <p className="text-gray-600 mt-1">Select a chat session to continue your analysis</p>
+            <h2 className="text-2xl font-bold text-foreground">Chat Sessions</h2>
+            <p className="text-muted-foreground mt-1">Select a chat session to continue your analysis</p>
           </div>
-          <Button onClick={onNewChat} className="bg-purple-600 hover:bg-purple-700">
+          <Button onClick={onNewChat} className="bg-primary hover:bg-primary/90 text-primary-foreground">
             <Plus className="h-4 w-4 mr-2" />
             New Chat
           </Button>
@@ -858,10 +858,10 @@ function ChatSessionsList({
         <div className="max-w-6xl mx-auto">
           {chatSessions.length === 0 ? (
             <div className="text-center py-12">
-              <MessageSquare className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No chat sessions yet</h3>
-              <p className="text-gray-600 mb-6">Start your first AI analysis conversation</p>
-              <Button onClick={onNewChat} className="bg-purple-600 hover:bg-purple-700">
+              <MessageSquare className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No chat sessions yet</h3>
+              <p className="text-muted-foreground mb-6">Start your first AI analysis conversation</p>
+              <Button onClick={onNewChat} className="bg-primary hover:bg-primary/90 text-primary-foreground">
                 <Plus className="h-4 w-4 mr-2" />
                 Create First Chat
               </Button>
@@ -883,22 +883,22 @@ function ChatSessionsList({
                         </CardDescription>
                       </div>
                       {chat.isPrivate && (
-                        <Lock className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                        <Lock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                       )}
                     </div>
                   </CardHeader>
                   <CardContent className="pt-0">
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <MessageSquare className="h-4 w-4" />
                         <span>{chat.messages?.length || 0} messages</span>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Clock className="h-4 w-4" />
                         <span>Updated {new Date(chat.updatedAt).toLocaleDateString()}</span>
                       </div>
                       {chat.spaceId && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Database className="h-4 w-4" />
                           <span>Space: {chat.spaceId}</span>
                         </div>
@@ -974,17 +974,17 @@ function ChatView({
   return (
     <div className="flex-1 flex min-h-0">
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col min-h-0 bg-[#0f0f23]">
+      <div className="flex-1 flex flex-col min-h-0 bg-background">
         {/* Messages */}
         <ScrollArea className="flex-1">
           <div className="max-w-3xl mx-auto px-4 py-8">
             {messages.length === 0 ? (
               <div className="text-center py-16">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-500/10 mb-6">
-                  <Bot className="h-8 w-8 text-purple-400" />
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-6">
+                  <Bot className="h-8 w-8 text-primary" />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2">How can I help you today?</h3>
-                <p className="text-gray-400 mb-8">Start a conversation to analyze your data, create visualizations, or generate insights</p>
+                <h3 className="text-xl font-semibold text-foreground mb-2">How can I help you today?</h3>
+                <p className="text-muted-foreground mb-8">Start a conversation to analyze your data, create visualizations, or generate insights</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
                   {[
                     "Analyze sales trends",
@@ -995,7 +995,7 @@ function ChatView({
                     <button
                       key={idx}
                       onClick={() => setInput(suggestion)}
-                      className="px-4 py-3 text-left text-sm rounded-lg bg-gray-800/50 hover:bg-gray-800 border border-gray-700 text-gray-300 hover:text-white transition-colors"
+                      className="px-4 py-3 text-left text-sm rounded-lg bg-muted/50 hover:bg-muted border border-border text-foreground hover:text-foreground transition-colors"
                     >
                       {suggestion}
                     </button>
@@ -1013,16 +1013,16 @@ function ChatView({
                     )}
                   >
                     {message.role === 'assistant' && (
-                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
-                        <Bot className="h-5 w-5 text-white" />
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                        <Bot className="h-5 w-5 text-primary-foreground" />
                       </div>
                     )}
                     <div
                       className={cn(
                         "max-w-[85%] rounded-2xl px-4 py-3 transition-all",
                         message.role === 'user'
-                          ? "bg-gradient-to-br from-purple-600 to-purple-700 text-white rounded-br-sm"
-                          : "bg-[#1a1a2e] border border-gray-800 text-gray-100 rounded-bl-sm"
+                          ? "bg-primary text-primary-foreground rounded-br-sm"
+                          : "bg-card border border-border text-foreground rounded-bl-sm"
                       )}
                     >
                       {message.role === 'assistant' ? (
@@ -1039,27 +1039,27 @@ function ChatView({
                       )}
                       <div className={cn(
                         "text-xs mt-2 opacity-60",
-                        message.role === 'user' ? "text-white/70" : "text-gray-400"
+                        message.role === 'user' ? "text-primary-foreground/70" : "text-muted-foreground"
                       )}>
                         {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
                     {message.role === 'user' && (
-                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-                        <User className="h-5 w-5 text-white" />
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                        <User className="h-5 w-5 text-secondary-foreground" />
                       </div>
                     )}
                   </div>
                 ))}
                 {isLoading && (
                   <div className="flex gap-4 justify-start">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
-                      <Bot className="h-5 w-5 text-white" />
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                      <Bot className="h-5 w-5 text-primary-foreground" />
                     </div>
-                    <div className="bg-[#1a1a2e] border border-gray-800 rounded-2xl rounded-bl-sm px-4 py-3">
+                    <div className="bg-card border border-border rounded-2xl rounded-bl-sm px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin text-purple-400" />
-                        <span className="text-sm text-gray-400">Thinking...</span>
+                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                        <span className="text-sm text-muted-foreground">Thinking...</span>
                       </div>
                     </div>
                   </div>
@@ -1071,17 +1071,17 @@ function ChatView({
         </ScrollArea>
 
         {/* Input Area - Open WebUI Style */}
-        <div className="border-t border-gray-800 bg-[#1a1a2e] px-4 py-4">
+        <div className="border-t border-border bg-card px-4 py-4">
           <div className="max-w-3xl mx-auto">
             <form onSubmit={onSubmit} className="relative">
-              <div className="relative flex items-end gap-2 bg-[#0f0f23] rounded-xl border border-gray-700 focus-within:border-purple-500 transition-colors">
+              <div className="relative flex items-end gap-2 bg-background rounded-xl border border-border focus-within:border-primary transition-colors">
                 <Textarea
                   ref={textareaRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Type your message... (Shift+Enter for new line)"
-                  className="flex-1 min-h-[52px] max-h-[200px] resize-none bg-transparent border-0 text-gray-100 placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0 px-4 py-3 text-sm"
+                  className="flex-1 min-h-[52px] max-h-[200px] resize-none bg-transparent border-0 text-foreground placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 px-4 py-3 text-sm"
                   disabled={isLoading}
                   rows={1}
                 />
@@ -1090,7 +1090,7 @@ function ChatView({
                     type="submit" 
                     disabled={isLoading || !input.trim()}
                     size="sm"
-                    className="h-9 w-9 p-0 bg-purple-600 hover:bg-purple-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="h-9 w-9 p-0 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -1101,8 +1101,8 @@ function ChatView({
                 </div>
               </div>
               <div className="flex items-center justify-between mt-2 px-1">
-                <p className="text-xs text-gray-500">Press Enter to send, Shift+Enter for new line</p>
-                <div className="flex items-center gap-2 text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">Press Enter to send, Shift+Enter for new line</p>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <span>Ctrl+K</span>
                   <span>•</span>
                   <span>Clear</span>
@@ -1115,18 +1115,18 @@ function ChatView({
 
       {/* Report Drawer */}
       {showReportDrawer && (
-        <div className="w-[400px] border-l border-gray-800 bg-[#1a1a2e] flex flex-col">
-          <div className="p-4 border-b border-gray-800">
+        <div className="w-[400px] border-l border-border bg-card flex flex-col">
+          <div className="p-4 border-b border-border">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold flex items-center gap-2 text-white">
+              <h3 className="font-semibold flex items-center gap-2 text-foreground">
                 <FileText className="h-4 w-4" />
                 Live Report
               </h3>
               {isGeneratingReport && (
-                <Loader2 className="h-4 w-4 animate-spin text-purple-400" />
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
               )}
             </div>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-muted-foreground">
               Real-time analysis report
             </p>
           </div>
@@ -1135,9 +1135,9 @@ function ChatView({
             {reportData ? (
               <div className="space-y-6">
                 {/* Report Header */}
-                <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 p-4 rounded-lg border border-gray-700">
-                  <h4 className="font-semibold text-lg mb-2 text-white">{reportData.title}</h4>
-                  <div className="text-sm text-gray-400 space-y-1">
+                <div className="bg-primary/10 p-4 rounded-lg border border-border">
+                  <h4 className="font-semibold text-lg mb-2 text-foreground">{reportData.title}</h4>
+                  <div className="text-sm text-muted-foreground space-y-1">
                     <p>Generated: {new Date(reportData.generatedAt).toLocaleString()}</p>
                     <p>Space: {spaces.find(s => s.id === reportData.summary.spaceId)?.name || 'Unknown'}</p>
                     <p>Model: {reportData.summary.modelUsed}</p>
@@ -1146,27 +1146,27 @@ function ChatView({
 
                 {/* Summary Stats */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-purple-500/10 border border-purple-500/20 p-3 rounded-lg text-center">
-                    <div className="text-2xl font-bold text-purple-400">{reportData.summary.totalMessages}</div>
-                    <div className="text-xs text-gray-400">Messages</div>
+                  <div className="bg-primary/10 border border-primary/20 p-3 rounded-lg text-center">
+                    <div className="text-2xl font-bold text-primary">{reportData.summary.totalMessages}</div>
+                    <div className="text-xs text-muted-foreground">Messages</div>
                   </div>
-                  <div className="bg-blue-500/10 border border-blue-500/20 p-3 rounded-lg text-center">
-                    <div className="text-2xl font-bold text-blue-400">{reportData.summary.totalAnalysis}</div>
-                    <div className="text-xs text-gray-400">Analyses</div>
+                  <div className="bg-secondary/10 border border-secondary/20 p-3 rounded-lg text-center">
+                    <div className="text-2xl font-bold text-secondary-foreground">{reportData.summary.totalAnalysis}</div>
+                    <div className="text-xs text-muted-foreground">Analyses</div>
                   </div>
                 </div>
 
                 {/* Key Insights */}
                 {reportData.summary.keyInsights.length > 0 && (
                   <div>
-                    <h5 className="font-medium mb-3 flex items-center gap-2 text-white">
-                      <Sparkles className="h-4 w-4 text-purple-400" />
+                    <h5 className="font-medium mb-3 flex items-center gap-2 text-foreground">
+                      <Sparkles className="h-4 w-4 text-primary" />
                       Key Insights
                     </h5>
                     <div className="space-y-2">
                       {reportData.summary.keyInsights.map((insight: string, index: number) => (
-                        <div key={index} className="bg-yellow-500/10 border border-yellow-500/20 p-3 rounded-lg">
-                          <p className="text-sm text-gray-300">{insight}</p>
+                        <div key={index} className="bg-[hsl(var(--warning))]/10 border border-[hsl(var(--warning))]/20 p-3 rounded-lg">
+                          <p className="text-sm text-foreground">{insight}</p>
                         </div>
                       ))}
                     </div>
@@ -1176,20 +1176,20 @@ function ChatView({
                 {/* Analysis Results */}
                 {reportData.analysis.length > 0 && (
                   <div>
-                    <h5 className="font-medium mb-3 flex items-center gap-2 text-white">
-                      <BarChart3 className="h-4 w-4 text-purple-400" />
+                    <h5 className="font-medium mb-3 flex items-center gap-2 text-foreground">
+                      <BarChart3 className="h-4 w-4 text-primary" />
                       Analysis Results
                     </h5>
                     <div className="space-y-3">
                       {reportData.analysis.map((result: any, index: number) => (
-                        <div key={index} className="bg-gray-800/50 border border-gray-700 p-3 rounded-lg">
+                        <div key={index} className="bg-muted/50 border border-border p-3 rounded-lg">
                           <div className="flex items-center justify-between mb-2">
-                            <h6 className="font-medium text-sm text-gray-200">{result.title}</h6>
-                            <Badge variant="outline" className="text-xs border-gray-600 text-gray-400">
+                            <h6 className="font-medium text-sm text-foreground">{result.title}</h6>
+                            <Badge variant="outline" className="text-xs border-border text-muted-foreground">
                               {result.type}
                             </Badge>
                           </div>
-                          <div className="text-xs text-gray-400">
+                          <div className="text-xs text-muted-foreground">
                             {result.insights.join(', ')}
                           </div>
                         </div>
@@ -1201,27 +1201,27 @@ function ChatView({
                 {/* Recommendations */}
                 {reportData.recommendations.length > 0 && (
                   <div>
-                    <h5 className="font-medium mb-3 flex items-center gap-2 text-white">
-                      <TrendingUp className="h-4 w-4 text-green-400" />
+                    <h5 className="font-medium mb-3 flex items-center gap-2 text-foreground">
+                      <TrendingUp className="h-4 w-4 text-primary" />
                       Recommendations
                     </h5>
                     <div className="space-y-2">
                       {reportData.recommendations.map((rec: any, index: number) => (
-                        <div key={index} className="bg-green-500/10 border border-green-500/20 p-3 rounded-lg">
+                        <div key={index} className="bg-primary/10 border border-primary/20 p-3 rounded-lg">
                           <div className="flex items-center justify-between mb-1">
-                            <h6 className="font-medium text-sm text-gray-200">{rec.title}</h6>
+                            <h6 className="font-medium text-sm text-foreground">{rec.title}</h6>
                             <Badge 
                               variant="outline"
                               className={cn(
-                                "text-xs border-gray-600",
-                                rec.priority === 'high' ? "text-red-400" : 
-                                rec.priority === 'medium' ? "text-yellow-400" : "text-gray-400"
+                                "text-xs border-border",
+                                rec.priority === 'high' ? "text-destructive" : 
+                                rec.priority === 'medium' ? "text-[hsl(var(--warning))]" : "text-muted-foreground"
                               )}
                             >
                               {rec.priority}
                             </Badge>
                           </div>
-                          <p className="text-xs text-gray-400">{rec.description}</p>
+                          <p className="text-xs text-muted-foreground">{rec.description}</p>
                         </div>
                       ))}
                     </div>
@@ -1229,10 +1229,10 @@ function ChatView({
                 )}
 
                 {/* Export Button */}
-                <div className="pt-4 border-t border-gray-700">
+                <div className="pt-4 border-t border-border">
                   <Button 
                     onClick={() => onExportReport(reportData)}
-                    className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                     variant="default"
                   >
                     <Download className="h-4 w-4 mr-2" />
@@ -1242,9 +1242,9 @@ function ChatView({
               </div>
             ) : (
               <div className="text-center py-8">
-                <FileText className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-                <p className="text-gray-400">No report data available</p>
-                <p className="text-sm text-gray-500">Start a conversation to generate a report</p>
+                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No report data available</p>
+                <p className="text-sm text-muted-foreground">Start a conversation to generate a report</p>
               </div>
             )}
           </ScrollArea>
@@ -1262,22 +1262,22 @@ function AnalysisVisualization({ analysis }: { analysis: any }) {
     return (
       <div className="space-y-3 mt-4">
         <div className="flex items-center gap-2">
-          <BarChart3 className="h-4 w-4 text-purple-400" />
-          <span className="font-medium text-gray-200">Chart Visualization</span>
+          <BarChart3 className="h-4 w-4 text-primary" />
+          <span className="font-medium text-foreground">Chart Visualization</span>
         </div>
-        <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-          <div className="text-sm text-gray-400 mb-2">Sample Chart Data:</div>
+        <div className="bg-muted/50 border border-border rounded-lg p-4">
+          <div className="text-sm text-muted-foreground mb-2">Sample Chart Data:</div>
           <div className="space-y-2">
             {data.labels.map((label: string, idx: number) => (
               <div key={idx} className="flex items-center gap-2">
-                <div className="w-16 text-xs text-gray-300">{label}</div>
-                <div className="flex-1 bg-gray-700 rounded h-4 relative">
+                <div className="w-16 text-xs text-foreground">{label}</div>
+                <div className="flex-1 bg-muted rounded h-4 relative">
                   <div
-                    className="bg-purple-500 h-4 rounded"
+                    className="bg-primary h-4 rounded"
                     style={{ width: `${(data.datasets[0].data[idx] / Math.max(...data.datasets[0].data)) * 100}%` }}
                   />
                 </div>
-                <div className="w-16 text-xs text-right text-gray-300">{data.datasets[0].data[idx]}</div>
+                <div className="w-16 text-xs text-right text-foreground">{data.datasets[0].data[idx]}</div>
               </div>
             ))}
           </div>
@@ -1290,15 +1290,15 @@ function AnalysisVisualization({ analysis }: { analysis: any }) {
     return (
       <div className="space-y-3 mt-4">
         <div className="flex items-center gap-2">
-          <Table className="h-4 w-4 text-green-400" />
-          <span className="font-medium text-gray-200">Data Table</span>
+          <Table className="h-4 w-4 text-primary" />
+          <span className="font-medium text-foreground">Data Table</span>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm border border-gray-700 rounded-lg">
-            <thead className="bg-gray-800/50">
+          <table className="w-full text-sm border border-border rounded-lg">
+            <thead className="bg-muted/50">
               <tr>
                 {data.columns.map((col: string, idx: number) => (
-                  <th key={idx} className="px-3 py-2 text-left font-medium text-gray-300 border-b border-gray-700">
+                  <th key={idx} className="px-3 py-2 text-left font-medium text-foreground border-b border-border">
                     {col}
                   </th>
                 ))}
@@ -1306,9 +1306,9 @@ function AnalysisVisualization({ analysis }: { analysis: any }) {
             </thead>
             <tbody>
               {data.rows.slice(0, 5).map((row: string[], rowIdx: number) => (
-                <tr key={rowIdx} className="border-t border-gray-700">
+                <tr key={rowIdx} className="border-t border-border">
                   {row.map((cell: string, cellIdx: number) => (
-                    <td key={cellIdx} className="px-3 py-2 text-gray-400">
+                    <td key={cellIdx} className="px-3 py-2 text-muted-foreground">
                       {cell}
                     </td>
                   ))}
@@ -1317,7 +1317,7 @@ function AnalysisVisualization({ analysis }: { analysis: any }) {
             </tbody>
           </table>
           {data.rows.length > 5 && (
-            <div className="text-xs text-gray-500 mt-2 text-center">
+            <div className="text-xs text-muted-foreground mt-2 text-center">
               Showing 5 of {data.rows.length} rows
             </div>
           )}
@@ -1330,10 +1330,10 @@ function AnalysisVisualization({ analysis }: { analysis: any }) {
     return (
       <div className="space-y-3 mt-4">
         <div className="flex items-center gap-2">
-          <FileText className="h-4 w-4 text-purple-400" />
-          <span className="font-medium text-gray-200">Analysis Summary</span>
+          <FileText className="h-4 w-4 text-primary" />
+          <span className="font-medium text-foreground">Analysis Summary</span>
         </div>
-        <div className="prose prose-invert prose-sm max-w-none text-gray-300">
+        <div className="prose prose-invert prose-sm max-w-none text-foreground">
           <MarkdownRenderer content={data.content} />
         </div>
       </div>

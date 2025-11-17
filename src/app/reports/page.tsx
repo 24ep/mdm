@@ -28,7 +28,8 @@ import {
   StarOff,
   Download,
   RefreshCw,
-  Trash2
+  Trash2,
+  Link
 } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -41,7 +42,7 @@ import { AdvancedFilters } from '@/components/reports/AdvancedFilters'
 import { ReportTemplatesDialog } from '@/components/reports/ReportTemplatesDialog'
 import { exportReportsToExcel, exportReportsToCSV, exportReportsToJSON } from '@/lib/utils/export-utils'
 
-export type ReportSource = 'BUILT_IN' | 'POWER_BI' | 'GRAFANA' | 'LOOKER_STUDIO'
+export type ReportSource = 'BUILT_IN' | 'BUILT_IN_VISUALIZE' | 'CUSTOM_EMBED_LINK' | 'POWER_BI' | 'GRAFANA' | 'LOOKER_STUDIO'
 
 export interface Report {
   id: string
@@ -179,6 +180,10 @@ export default function ReportsPage() {
         return <Activity className="h-4 w-4" />
       case 'LOOKER_STUDIO':
         return <Eye className="h-4 w-4" />
+      case 'BUILT_IN_VISUALIZE':
+        return <BarChart3 className="h-4 w-4" />
+      case 'CUSTOM_EMBED_LINK':
+        return <Link className="h-4 w-4" />
       default:
         return <BarChart3 className="h-4 w-4" />
     }
@@ -192,6 +197,12 @@ export default function ReportsPage() {
         return 'Grafana'
       case 'LOOKER_STUDIO':
         return 'Looker Studio'
+      case 'BUILT_IN_VISUALIZE':
+        return 'Built-in Visualize'
+      case 'CUSTOM_EMBED_LINK':
+        return 'Custom Embed Link'
+      case 'BUILT_IN':
+        return 'Built-in'
       default:
         return 'Built-in'
     }

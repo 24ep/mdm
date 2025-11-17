@@ -1,5 +1,7 @@
-import { Client } from '@elastic/elasticsearch'
 import { query } from './db'
+
+// Dynamic import for Elasticsearch Client (server-side only)
+type ElasticsearchClient = any // Using any to avoid static import of Client type
 
 interface ElasticsearchConfig {
   url?: string
@@ -10,7 +12,8 @@ interface ElasticsearchConfig {
   indexPrefix?: string
 }
 
-let elasticsearchClient: Client | null = null
+let elasticsearchClient: ElasticsearchClient | null = null
+let ElasticsearchClientClass: any = null
 let cachedConfig: ElasticsearchConfig | null = null
 let configCacheTime: number = 0
 const CONFIG_CACHE_TTL = 5 * 60 * 1000 // 5 minutes
@@ -48,9 +51,42 @@ async function getElasticsearchConfig(): Promise<ElasticsearchConfig | null> {
     cachedConfig = config
     configCacheTime = now
     return config
+  } catch (error: any) {
+    // If table doesn't exist (42P01) or query fails, return null (graceful degradation)
+    // Don't log expected errors like missing table - this is normal if migrations haven't run
+    const isTableMissing = error?.code === '42P01' || 
+                         error?.meta?.code === '42P01' ||
+                         (typeof error?.message === 'string' && error.message.includes('does not exist'))
+    
+    if (!isTableMissing) {
+      // Only log unexpected errors
+      console.error('Error fetching Elasticsearch config:', error)
+    }
+    
+    cachedConfig = null
+    return null
+  }
+}
+
+/**
+ * Load Elasticsearch Client class dynamically
+ */
+async function loadElasticsearchClient(): Promise<any> {
+  if (ElasticsearchClientClass) {
+    return ElasticsearchClientClass
+  }
+
+  // Only load on server-side
+  if (typeof window !== 'undefined') {
+    return null
+  }
+
+  try {
+    const elasticsearchModule = await import('@elastic/elasticsearch')
+    ElasticsearchClientClass = elasticsearchModule.Client
+    return ElasticsearchClientClass
   } catch (error) {
-    // If table doesn't exist or query fails, return null (graceful degradation)
-    console.error('Error fetching Elasticsearch config:', error)
+    console.error('Failed to load Elasticsearch client:', error)
     return null
   }
 }
@@ -58,7 +94,7 @@ async function getElasticsearchConfig(): Promise<ElasticsearchConfig | null> {
 /**
  * Initialize Elasticsearch client from configuration
  */
-async function initializeClient(): Promise<Client | null> {
+async function initializeClient(): Promise<ElasticsearchClient | null> {
   const config = await getElasticsearchConfig()
   
   if (!config) {
@@ -73,6 +109,12 @@ async function initializeClient(): Promise<Client | null> {
   }
 
   try {
+    // Load Elasticsearch Client class
+    const Client = await loadElasticsearchClient()
+    if (!Client) {
+      return null
+    }
+
     const clientOptions: any = {}
 
     // Set connection
@@ -123,7 +165,7 @@ async function initializeClient(): Promise<Client | null> {
 /**
  * Get Elasticsearch client instance
  */
-export async function getElasticsearchClient(): Promise<Client | null> {
+export async function getElasticsearchClient(): Promise<ElasticsearchClient | null> {
   // If client exists, return it
   if (elasticsearchClient) {
     return elasticsearchClient

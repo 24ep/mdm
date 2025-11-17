@@ -30,6 +30,7 @@ import { SSOConfiguration } from '../../security'
 import { SystemSettings as SystemSettingsType } from '../types'
 import { AssetManagement } from './AssetManagement'
 import { StorageConnections } from './StorageConnections'
+import { SystemIntegrations } from './SystemIntegrations'
 
 export function SystemSettings() {
   const [settings, setSettings] = useState<SystemSettingsType>({
@@ -206,13 +207,14 @@ export function SystemSettings() {
 
       <div className="w-full">
       <Tabs defaultValue="general">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="database">Database</TabsTrigger>
           <TabsTrigger value="email">Email</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="sso">SSO</TabsTrigger>
           <TabsTrigger value="features">Features</TabsTrigger>
+          <TabsTrigger value="integrations">Integrations</TabsTrigger>
           <TabsTrigger value="storage">Storage</TabsTrigger>
           <TabsTrigger value="assets">Assets</TabsTrigger>
         </TabsList>
@@ -567,6 +569,10 @@ export function SystemSettings() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="integrations" className="space-y-6">
+          <SystemIntegrations />
         </TabsContent>
 
         <TabsContent value="storage" className="space-y-6">

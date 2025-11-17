@@ -30,6 +30,7 @@ import {
   HardDrive,
   BarChart3 as BarChart3Icon,
   Bot,
+  MessageCircle,
   Layout,
   BookOpen,
   Building2,
@@ -46,7 +47,6 @@ import { ProjectsList } from '@/components/datascience/ProjectsList'
 import { AttachmentManager } from './admin/features/content'
 import { UserManagement, RoleManagement, PermissionTester } from './admin/features/users'
 import { SystemSettings, PageTemplatesAdmin } from './admin/features/system'
-import { AnalyticsDashboard } from './admin/features/analytics'
 import { AuditLogs } from './admin/features/security'
 import { BackupRecovery } from './admin/features/storage'
 import { APIManagement } from './admin/features/integration'
@@ -73,7 +73,6 @@ import { QuickLinksSection } from '@/components/quick-links/QuickLinksSection'
 const getRouteForTab = (tab: string): string => {
   const routeMap: Record<string, string> = {
     'overview': '/',
-    'analytics': '/overview/analytics',
     'bigquery': '/tools/bigquery',
     'notebook': '/tools/notebook',
     'ai-analyst': '/tools/ai-analyst',
@@ -161,15 +160,14 @@ export default function HomePage() {
       const tabConfig = {
         bigquery: { name: 'SQL Query', icon: 'Database', color: '#2563eb' },
         notebook: { name: 'Data Science Notebooks', icon: 'BarChart3', color: '#16a34a' },
-        'ai-analyst': { name: 'AI Analyst', icon: 'Bot', color: '#9333ea' },
-        'ai-chat-ui': { name: 'AI Chat UI', icon: 'Bot', color: '#10b981' },
+        'ai-analyst': { name: 'Chat with AI', icon: 'MessageCircle', color: '#9333ea' },
+        'ai-chat-ui': { name: 'Agent Embed GUI', icon: 'Bot', color: '#10b981' },
         'knowledge-base': { name: 'Knowledge Base', icon: 'BookOpen', color: '#14b8a6' },
         'space-layouts': { name: 'Space Layouts', icon: 'Layout', color: '#4f46e5' },
         attachments: { name: 'Attachment Manager', icon: 'Paperclip', color: '#ea580c' },
         users: { name: 'User Management', icon: 'Users', color: '#dc2626' },
         'space-settings': { name: 'Space Settings', icon: 'Building2', color: '#0891b2' },
         settings: { name: 'System Settings', icon: 'Settings', color: '#6b7280' },
-        analytics: { name: 'Analytics', icon: 'BarChart3', color: '#3b82f6' },
         projects: { name: 'Project Management', icon: 'Kanban', color: '#8b5cf6' },
         'data-governance': { name: 'Data Governance', icon: 'Shield', color: '#059669' },
       }[activeTab]
@@ -231,6 +229,7 @@ export default function HomePage() {
       Database,
       BarChart3,
       Bot,
+      MessageCircle,
       BookOpen,
       Layout,
       Paperclip,
@@ -351,10 +350,10 @@ export default function HomePage() {
             <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('ai-analyst')}>
               <CardHeader className="flex flex-row items-center gap-3">
                 <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/20">
-                  <Bot className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                  <MessageCircle className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div>
-                  <CardTitle className="text-lg">AI Analyst</CardTitle>
+                  <CardTitle className="text-lg">Chat with AI</CardTitle>
                   <CardDescription>ChatGPT-like data analysis interface</CardDescription>
                 </div>
               </CardHeader>
@@ -550,7 +549,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {activeTab === 'analytics' && <AnalyticsDashboard />}
         {activeTab === 'audit' && <AuditLogs />}
         {activeTab === 'backup' && <BackupRecovery />}
         {activeTab === 'api' && <APIManagement />}

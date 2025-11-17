@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerClose } from '@/components/ui/drawer'
 import { 
   Link, 
   Settings,
@@ -20,48 +21,86 @@ import {
   AlertTriangle,
   RefreshCw,
   Zap,
-  Globe,
-  Key,
   Eye,
   EyeOff,
-  Bot
+  Bot,
+  BarChart3,
+  Shield,
+  Rocket,
+  Activity,
+  HardDrive,
+  Network,
+  Plus,
+  Edit,
+  Trash2,
+  List
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { OAuthProvider, WebhookIntegration } from '../types'
+import React from 'react'
 import { IntegrationConfig, INTEGRATIONS } from './IntegrationList'
 
 export function IntegrationHub() {
   const [platformIntegrations, setPlatformIntegrations] = useState<IntegrationConfig[]>([])
-  const [oauthProviders, setOAuthProviders] = useState<OAuthProvider[]>([])
-  const [webhooks, setWebhooks] = useState<WebhookIntegration[]>([])
   const [aiProviders, setAiProviders] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [showOAuthSetup, setShowOAuthSetup] = useState(false)
-  const [selectedProvider, setSelectedProvider] = useState<OAuthProvider | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [selectedPlatformIntegration, setSelectedPlatformIntegration] = useState<IntegrationConfig | null>(null)
   const [selectedAIProvider, setSelectedAIProvider] = useState<any | null>(null)
-  const [selectedWebhook, setSelectedWebhook] = useState<WebhookIntegration | null>(null)
   const [showPlatformConfigDialog, setShowPlatformConfigDialog] = useState(false)
   const [showAIConfigDialog, setShowAIConfigDialog] = useState(false)
-  const [showWebhookConfigDialog, setShowWebhookConfigDialog] = useState(false)
   const [platformConfigForm, setPlatformConfigForm] = useState<Record<string, any>>({})
   const [aiConfigForm, setAiConfigForm] = useState<Record<string, any>>({})
-  const [webhookConfigForm, setWebhookConfigForm] = useState({ name: '', url: '', events: [] as string[], secret: '' })
   const [showPassword, setShowPassword] = useState<Record<string, boolean>>({})
   const [showApiKey, setShowApiKey] = useState(false)
+  const [showConnectionsDrawer, setShowConnectionsDrawer] = useState(false)
+  const [selectedIntegrationForConnections, setSelectedIntegrationForConnections] = useState<IntegrationConfig | null>(null)
+  const [connections, setConnections] = useState<any[]>([])
+  const [isLoadingConnections, setIsLoadingConnections] = useState(false)
+  const [showAddConnectionDialog, setShowAddConnectionDialog] = useState(false)
+  const [editingConnection, setEditingConnection] = useState<any | null>(null)
+  const [connectionForm, setConnectionForm] = useState<Record<string, any>>({})
 
-  const [oauthConfig, setOAuthConfig] = useState({
-    clientId: '',
-    clientSecret: '',
-    redirectUri: '',
-    scopes: [] as string[]
-  })
+  // Define integration categories by feature
+  const integrationCategories = {
+    'dashboard-reports': {
+      name: 'Dashboard & Reports',
+      icon: BarChart3,
+      types: ['powerbi', 'looker', 'grafana']
+    },
+    'monitoring-observability': {
+      name: 'Monitoring & Observability',
+      icon: Activity,
+      types: ['prometheus', 'grafana']
+    },
+    'data-governance': {
+      name: 'Data Governance',
+      icon: Shield,
+      types: ['openmetadata', 'metadata']
+    },
+    'storage': {
+      name: 'Storage',
+      icon: HardDrive,
+      types: ['minio']
+    },
+    'api-gateway': {
+      name: 'API Gateway',
+      icon: Network,
+      types: ['kong']
+    },
+    'application-management': {
+      name: 'Application Management',
+      icon: Rocket,
+      types: ['launchpad']
+    },
+    'ai-providers': {
+      name: 'AI Providers',
+      icon: Bot,
+      types: ['ai_provider']
+    }
+  }
 
   useEffect(() => {
     loadPlatformIntegrations()
-    loadOAuthProviders()
-    loadWebhooks()
     loadAIProviders()
   }, [])
 
@@ -120,62 +159,6 @@ export function IntegrationHub() {
     }
   }
 
-  const loadOAuthProviders = async () => {
-    try {
-      const response = await fetch('/api/admin/oauth-providers')
-      if (response.ok) {
-        const data = await response.json()
-        setOAuthProviders(data.providers)
-      }
-    } catch (error) {
-      console.error('Error loading OAuth providers:', error)
-    }
-  }
-
-  const loadWebhooks = async () => {
-    try {
-      const response = await fetch('/api/admin/webhook-integrations')
-      if (response.ok) {
-        const data = await response.json()
-        setWebhooks(data.webhooks.map((webhook: any) => ({
-          ...webhook,
-          lastTriggered: webhook.lastTriggered ? new Date(webhook.lastTriggered) : undefined
-        })))
-      }
-    } catch (error) {
-      console.error('Error loading webhooks:', error)
-    }
-  }
-
-  const setupOAuth = async () => {
-    if (!selectedProvider) return
-
-    try {
-      const response = await fetch(`/api/admin/oauth-providers/${selectedProvider.id}/setup`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(oauthConfig)
-      })
-
-      if (response.ok) {
-        toast.success('OAuth integration configured successfully')
-        setShowOAuthSetup(false)
-        setOAuthConfig({
-          clientId: '',
-          clientSecret: '',
-          redirectUri: '',
-          scopes: []
-        })
-        loadPlatformIntegrations()
-      } else {
-        const error = await response.json()
-        toast.error(error.error || 'Failed to setup OAuth integration')
-      }
-    } catch (error) {
-      console.error('Error setting up OAuth:', error)
-      toast.error('Failed to setup OAuth integration')
-    }
-  }
 
   const testIntegration = async (integrationId: string) => {
     try {
@@ -195,29 +178,6 @@ export function IntegrationHub() {
     }
   }
 
-  const getProviderIcon = (provider: string) => {
-    switch (provider.toLowerCase()) {
-      case 'google':
-        return '🔍'
-      case 'microsoft':
-        return '🏢'
-      case 'github':
-        return '🐙'
-      case 'slack':
-        return '💬'
-      case 'discord':
-        return '🎮'
-      case 'twitter':
-        return '🐦'
-      case 'facebook':
-        return '📘'
-      case 'linkedin':
-        return '💼'
-      default:
-        return '🔗'
-    }
-  }
-
   const getConfigFields = (type: string) => {
     switch (type.toLowerCase()) {
       case 'openmetadata':
@@ -226,13 +186,6 @@ export function IntegrationHub() {
           { key: 'apiUrl', label: 'API URL', type: 'text', required: true },
           { key: 'apiKey', label: 'API Key', type: 'password', required: true },
           { key: 'authType', label: 'Auth Type', type: 'select', options: ['apiKey', 'basic', 'bearer'], required: true }
-        ]
-      case 'sso':
-        return [
-          { key: 'provider', label: 'Provider', type: 'select', options: ['SAML', 'OAuth2', 'OpenID Connect'], required: true },
-          { key: 'entityId', label: 'Entity ID', type: 'text', required: true },
-          { key: 'ssoUrl', label: 'SSO URL', type: 'text', required: true },
-          { key: 'certificate', label: 'Certificate', type: 'textarea', required: false }
         ]
       case 'servicedesk':
         return [
@@ -258,6 +211,30 @@ export function IntegrationHub() {
           { key: 'apiUrl', label: 'API URL', type: 'text', required: true },
           { key: 'apiKey', label: 'API Key', type: 'password', required: true },
           { key: 'orgId', label: 'Organization ID', type: 'text', required: false }
+        ]
+      case 'prometheus':
+        return [
+          { key: 'apiUrl', label: 'Prometheus URL', type: 'text', required: true, placeholder: 'http://prometheus:9090' },
+          { key: 'username', label: 'Username', type: 'text', required: false },
+          { key: 'password', label: 'Password', type: 'password', required: false },
+          { key: 'timeout', label: 'Timeout (seconds)', type: 'number', required: false, placeholder: '30' }
+        ]
+      case 'minio':
+        return [
+          { key: 'endpoint', label: 'MinIO Endpoint', type: 'text', required: true, placeholder: 'http://minio:9000' },
+          { key: 'accessKey', label: 'Access Key', type: 'text', required: true },
+          { key: 'secretKey', label: 'Secret Key', type: 'password', required: true },
+          { key: 'useSSL', label: 'Use SSL', type: 'select', options: ['true', 'false'], required: false },
+          { key: 'region', label: 'Region', type: 'text', required: false, placeholder: 'us-east-1' },
+          { key: 'bucket', label: 'Default Bucket', type: 'text', required: false }
+        ]
+      case 'kong':
+        return [
+          { key: 'adminUrl', label: 'Kong Admin API URL', type: 'text', required: true, placeholder: 'http://kong:8001' },
+          { key: 'apiKey', label: 'API Key', type: 'password', required: false },
+          { key: 'username', label: 'Username', type: 'text', required: false },
+          { key: 'password', label: 'Password', type: 'password', required: false },
+          { key: 'timeout', label: 'Timeout (seconds)', type: 'number', required: false, placeholder: '30' }
         ]
       case 'vault':
         return [
@@ -333,6 +310,137 @@ export function IntegrationHub() {
     setShowAIConfigDialog(true)
   }
 
+  const handleOpenConnectionsDrawer = async (integration: IntegrationConfig) => {
+    setSelectedIntegrationForConnections(integration)
+    setShowConnectionsDrawer(true)
+    await loadConnections(integration.id)
+  }
+
+  const loadConnections = async (integrationId: string) => {
+    setIsLoadingConnections(true)
+    try {
+      const response = await fetch(`/api/admin/integrations/${integrationId}/connections`)
+      if (response.ok) {
+        const data = await response.json()
+        setConnections(data.connections || [])
+      } else {
+        setConnections([])
+      }
+    } catch (error) {
+      console.error('Error loading connections:', error)
+      setConnections([])
+    } finally {
+      setIsLoadingConnections(false)
+    }
+  }
+
+  const handleAddConnection = () => {
+    if (!selectedIntegrationForConnections) return
+    setEditingConnection(null)
+    setConnectionForm({})
+    setShowAddConnectionDialog(true)
+  }
+
+  const handleEditConnection = (connection: any) => {
+    setEditingConnection(connection)
+    setConnectionForm(connection.config || {})
+    setShowAddConnectionDialog(true)
+  }
+
+  const handleDeleteConnection = async (connectionId: string) => {
+    if (!confirm('Are you sure you want to delete this connection?')) return
+    
+    if (!selectedIntegrationForConnections) return
+    
+    try {
+      setIsLoadingConnections(true)
+      const response = await fetch(`/api/admin/integrations/${selectedIntegrationForConnections.id}/connections/${connectionId}`, {
+        method: 'DELETE'
+      })
+      
+      if (response.ok) {
+        toast.success('Connection deleted successfully')
+        await loadConnections(selectedIntegrationForConnections.id)
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to delete connection')
+      }
+    } catch (error) {
+      console.error('Error deleting connection:', error)
+      toast.error('Failed to delete connection')
+    } finally {
+      setIsLoadingConnections(false)
+    }
+  }
+
+  const handleSaveConnection = async () => {
+    if (!selectedIntegrationForConnections) return
+
+    try {
+      setIsLoadingConnections(true)
+      const url = editingConnection
+        ? `/api/admin/integrations/${selectedIntegrationForConnections.id}/connections/${editingConnection.id}`
+        : `/api/admin/integrations/${selectedIntegrationForConnections.id}/connections`
+      
+      const method = editingConnection ? 'PATCH' : 'POST'
+      
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: connectionForm.name || `Connection ${connections.length + 1}`,
+          config: connectionForm
+        })
+      })
+
+      if (response.ok) {
+        toast.success(editingConnection ? 'Connection updated successfully' : 'Connection added successfully')
+        setShowAddConnectionDialog(false)
+        setEditingConnection(null)
+        setConnectionForm({})
+        await loadConnections(selectedIntegrationForConnections.id)
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to save connection')
+      }
+    } catch (error) {
+      console.error('Error saving connection:', error)
+      toast.error('Failed to save connection')
+    } finally {
+      setIsLoadingConnections(false)
+    }
+  }
+
+  const handleTestConnection = async (connection: any) => {
+    if (!selectedIntegrationForConnections) return
+
+    try {
+      setIsLoadingConnections(true)
+      const response = await fetch(`/api/admin/integrations/${selectedIntegrationForConnections.id}/connections/${connection.id}/test`, {
+        method: 'POST'
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          toast.success(`Connection "${connection.name}" test successful`)
+          // Update connection status
+          await loadConnections(selectedIntegrationForConnections.id)
+        } else {
+          toast.error(data.error || 'Connection test failed')
+        }
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Connection test failed')
+      }
+    } catch (error) {
+      console.error('Error testing connection:', error)
+      toast.error('Connection test failed')
+    } finally {
+      setIsLoadingConnections(false)
+    }
+  }
+
   const handleSaveAIConfig = async () => {
     if (!selectedAIProvider) return
 
@@ -360,43 +468,6 @@ export function IntegrationHub() {
     }
   }
 
-  const handleWebhookConfigure = (webhook: WebhookIntegration) => {
-    setSelectedWebhook(webhook)
-    setWebhookConfigForm({
-      name: webhook.name,
-      url: webhook.url,
-      events: webhook.events || [],
-      secret: webhook.secret || ''
-    })
-    setShowWebhookConfigDialog(true)
-  }
-
-  const handleSaveWebhookConfig = async () => {
-    if (!selectedWebhook) return
-
-    try {
-      setIsLoading(true)
-      const response = await fetch(`/api/admin/webhook-integrations/${selectedWebhook.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(webhookConfigForm)
-      })
-
-      if (response.ok) {
-        toast.success(`Webhook ${webhookConfigForm.name} updated successfully`)
-        setShowWebhookConfigDialog(false)
-        loadWebhooks()
-      } else {
-        const error = await response.json()
-        toast.error(error.error || 'Failed to update webhook')
-      }
-    } catch (error) {
-      console.error('Error updating webhook:', error)
-      toast.error('Failed to update webhook')
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   return (
     <div className="space-y-6">
@@ -407,14 +478,12 @@ export function IntegrationHub() {
             Integration Hub
           </h2>
           <p className="text-muted-foreground">
-            Connect with third-party services, OAuth providers, and external APIs
+            Connect with third-party services and external APIs
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => {
             loadPlatformIntegrations()
-            loadOAuthProviders()
-            loadWebhooks()
             loadAIProviders()
           }} disabled={isLoading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
@@ -435,61 +504,147 @@ export function IntegrationHub() {
                 <Link className="h-4 w-4 mr-2" />
                 All
               </TabsTrigger>
-              <TabsTrigger 
-                value="integrations" 
-                className="w-full justify-start px-3 py-2 rounded-md hover:bg-accent transition-colors [&.text-foreground]:bg-accent [&.text-foreground]:border-r-2 [&.text-foreground]:border-r-primary [&.text-foreground]:border-b-0"
-              >
-                <Link className="h-4 w-4 mr-2" />
-                Integrations
-              </TabsTrigger>
-              <TabsTrigger 
-                value="oauth" 
-                className="w-full justify-start px-3 py-2 rounded-md hover:bg-accent transition-colors [&.text-foreground]:bg-accent [&.text-foreground]:border-r-2 [&.text-foreground]:border-r-primary [&.text-foreground]:border-b-0"
-              >
-                <Key className="h-4 w-4 mr-2" />
-                OAuth Providers
-              </TabsTrigger>
-              <TabsTrigger 
-                value="webhooks" 
-                className="w-full justify-start px-3 py-2 rounded-md hover:bg-accent transition-colors [&.text-foreground]:bg-accent [&.text-foreground]:border-r-2 [&.text-foreground]:border-r-primary [&.text-foreground]:border-b-0"
-              >
-                <Globe className="h-4 w-4 mr-2" />
-                Webhooks
-              </TabsTrigger>
-              <TabsTrigger 
-                value="ai-config" 
-                className="w-full justify-start px-3 py-2 rounded-md hover:bg-accent transition-colors [&.text-foreground]:bg-accent [&.text-foreground]:border-r-2 [&.text-foreground]:border-r-primary [&.text-foreground]:border-b-0"
-              >
-                <Bot className="h-4 w-4 mr-2" />
-                AI Configuration
-              </TabsTrigger>
+              {Object.entries(integrationCategories).map(([key, category]) => {
+                const Icon = category.icon
+                return (
+                  <TabsTrigger 
+                    key={key}
+                    value={key} 
+                    className="w-full justify-start px-3 py-2 rounded-md hover:bg-accent transition-colors [&.text-foreground]:bg-accent [&.text-foreground]:border-r-2 [&.text-foreground]:border-r-primary [&.text-foreground]:border-b-0"
+                  >
+                    <Icon className="h-4 w-4 mr-2" />
+                    {category.name}
+                  </TabsTrigger>
+                )
+              })}
             </TabsList>
           </Tabs>
         </div>
 
         {/* Main Content Area */}
         <div className="flex-1 space-y-8">
-          {/* Integrations Section */}
-          {(selectedCategory === 'all' || selectedCategory === 'integrations') && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold flex items-center gap-2">
-                  <Link className="h-5 w-5" />
-                  Platform Integrations
-                </h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {platformIntegrations.map(integration => {
-                  const Icon = integration.icon
+          {/* Filter integrations by category */}
+          {(() => {
+            let filteredIntegrations = platformIntegrations
+            let categoryName = 'All Integrations'
+            let categoryIcon = Link
+
+            if (selectedCategory !== 'all') {
+              const category = integrationCategories[selectedCategory as keyof typeof integrationCategories]
+              if (category) {
+                categoryName = category.name
+                categoryIcon = category.icon
+                filteredIntegrations = platformIntegrations.filter(integration => 
+                  category.types.includes(integration.type.toLowerCase())
+                )
+              }
+            }
+
+            // For AI providers, show from aiProviders state
+            if (selectedCategory === 'ai-providers') {
+              return (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-semibold flex items-center gap-2">
+                      <Bot className="h-5 w-5" />
+                      AI Providers
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {aiProviders.length > 0 ? (
+                      aiProviders.map(provider => (
+                        <Card key={provider.id} className="hover:shadow-lg transition-shadow">
+                          <CardHeader>
+                            <div className="flex items-center justify-between">
+                              <CardTitle className="text-lg flex items-center gap-2">
+                                <span className="text-2xl">{provider.icon}</span>
+                                {provider.name}
+                              </CardTitle>
+                              {provider.status === 'active' && <CheckCircle className="h-4 w-4 text-green-500" />}
+                              {provider.status === 'inactive' && <XCircle className="h-4 w-4 text-muted-foreground" />}
+                              {provider.status === 'error' && <AlertTriangle className="h-4 w-4 text-red-500" />}
+                            </div>
+                            <CardDescription>{provider.description}</CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <Badge className={
+                                provider.status === 'active' ? 'bg-green-100 text-green-800' :
+                                provider.status === 'error' ? 'bg-red-100 text-red-800' :
+                                'bg-muted text-foreground'
+                              }>
+                                {provider.status}
+                              </Badge>
+                              <Badge variant={provider.isConfigured ? 'default' : 'secondary'}>
+                                {provider.isConfigured ? 'Configured' : 'Not Configured'}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleAIConfigure(provider)
+                                }}
+                              >
+                                <Settings className="h-3 w-3 mr-1" />
+                                {provider.isConfigured ? 'Edit' : 'Configure'}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1"
+                                disabled={!provider.isConfigured}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  toast(`Testing ${provider.name}...`)
+                                }}
+                              >
+                                <Zap className="h-3 w-3 mr-1" />
+                                Test
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    ) : (
+                      <Card className="col-span-full">
+                        <CardContent className="p-8 text-center text-muted-foreground">
+                          No AI providers configured
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                </div>
+              )
+            }
+
+            // For platform integrations
+            const Icon = categoryIcon
+            return (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-semibold flex items-center gap-2">
+                    <Icon className="h-5 w-5" />
+                    {categoryName}
+                  </h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredIntegrations.length > 0 ? (
+                    filteredIntegrations.map(integration => {
+                  const IntegrationIcon = integration.icon
                   return (
                     <Card 
                       key={integration.id} 
-                      className="hover:shadow-lg transition-shadow"
+                      className="hover:shadow-lg transition-shadow cursor-pointer"
+                      onClick={() => handleOpenConnectionsDrawer(integration)}
                     >
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <CardTitle className="text-lg flex items-center gap-2">
-                            <Icon className="h-5 w-5" />
+                            <IntegrationIcon className="h-5 w-5" />
                             {integration.name}
                           </CardTitle>
                           {integration.status === 'active' && <CheckCircle className="h-4 w-4 text-green-500" />}
@@ -513,7 +668,7 @@ export function IntegrationHub() {
                             {integration.isConfigured ? 'Configured' : 'Not Configured'}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                           <Button
                             size="sm"
                             variant="outline"
@@ -543,234 +698,18 @@ export function IntegrationHub() {
                       </CardContent>
                     </Card>
                   )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* OAuth Providers Section */}
-          {(selectedCategory === 'all' || selectedCategory === 'oauth') && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold flex items-center gap-2">
-                  <Key className="h-5 w-5" />
-                  OAuth Providers
-                </h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {oauthProviders.length > 0 ? (
-                  oauthProviders.map(provider => (
-                    <Card key={provider.id} className="hover:shadow-lg transition-shadow">
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg flex items-center gap-2">
-                            <span className="text-2xl">{getProviderIcon(provider.name)}</span>
-                            {provider.name}
-                          </CardTitle>
-                          {provider.isSupported && <CheckCircle className="h-4 w-4 text-green-500" />}
-                          {!provider.isSupported && <XCircle className="h-4 w-4 text-gray-500" />}
-                        </div>
-                        <CardDescription>{provider.description}</CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <Badge variant={provider.isSupported ? 'default' : 'secondary'}>
-                            {provider.isSupported ? 'Supported' : 'Not Supported'}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="flex-1"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setSelectedProvider(provider)
-                              setShowOAuthSetup(true)
-                            }}
-                            disabled={!provider.isSupported}
-                          >
-                            <Settings className="h-3 w-3 mr-1" />
-                            Setup
-                          </Button>
-                        </div>
+                    })
+                  ) : (
+                    <Card className="col-span-full">
+                      <CardContent className="p-8 text-center text-muted-foreground">
+                        No integrations found in this category
                       </CardContent>
                     </Card>
-                  ))
-                ) : (
-                  <Card className="col-span-full">
-                    <CardContent className="p-8 text-center text-muted-foreground">
-                      No OAuth providers available
-                    </CardContent>
-                  </Card>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          )}
-
-          {/* Webhooks Section */}
-          {(selectedCategory === 'all' || selectedCategory === 'webhooks') && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold flex items-center gap-2">
-                  <Globe className="h-5 w-5" />
-                  Webhook Integrations
-                </h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {webhooks.length > 0 ? (
-                  webhooks.map(webhook => (
-                    <Card key={webhook.id} className="hover:shadow-lg transition-shadow">
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg flex items-center gap-2">
-                            <Globe className="h-5 w-5" />
-                            {webhook.name}
-                          </CardTitle>
-                          {webhook.isActive && <CheckCircle className="h-4 w-4 text-green-500" />}
-                          {!webhook.isActive && <XCircle className="h-4 w-4 text-gray-500" />}
-                        </div>
-                        <CardDescription className="truncate">
-                          {webhook.url}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <Badge variant={webhook.isActive ? 'default' : 'secondary'}>
-                            {webhook.isActive ? 'Active' : 'Inactive'}
-                          </Badge>
-                          <div className="text-xs text-muted-foreground">
-                            {webhook.successCount} ✓ / {webhook.failureCount} ✗
-                          </div>
-                        </div>
-                        {webhook.events && webhook.events.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {webhook.events.slice(0, 3).map((event, idx) => (
-                              <Badge key={idx} variant="outline" className="text-xs">
-                                {event}
-                              </Badge>
-                            ))}
-                            {webhook.events.length > 3 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{webhook.events.length - 3} more
-                              </Badge>
-                            )}
-                          </div>
-                        )}
-                        <div className="flex items-center gap-2">
-                          <Switch 
-                            checked={webhook.isActive} 
-                            className="flex-1"
-                            onCheckedChange={(checked) => {
-                              // Handle webhook toggle
-                              toast.success(`Webhook ${checked ? 'enabled' : 'disabled'}`)
-                            }}
-                          />
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="flex-1"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleWebhookConfigure(webhook)
-                            }}
-                          >
-                            <Settings className="h-3 w-3 mr-1" />
-                            Configure
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                ) : (
-                  <Card className="col-span-full">
-                    <CardContent className="p-8 text-center text-muted-foreground">
-                      No webhooks configured
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* AI Configuration Section */}
-          {(selectedCategory === 'all' || selectedCategory === 'ai-config') && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold flex items-center gap-2">
-                  <Bot className="h-5 w-5" />
-                  AI Providers
-                </h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {aiProviders.length > 0 ? (
-                  aiProviders.map(provider => (
-                    <Card key={provider.id} className="hover:shadow-lg transition-shadow">
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg flex items-center gap-2">
-                            <span className="text-2xl">{provider.icon}</span>
-                            {provider.name}
-                          </CardTitle>
-                          {provider.status === 'active' && <CheckCircle className="h-4 w-4 text-green-500" />}
-                          {provider.status === 'inactive' && <XCircle className="h-4 w-4 text-muted-foreground" />}
-                          {provider.status === 'error' && <AlertTriangle className="h-4 w-4 text-red-500" />}
-                        </div>
-                        <CardDescription>{provider.description}</CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <Badge className={
-                            provider.status === 'active' ? 'bg-green-100 text-green-800' :
-                            provider.status === 'error' ? 'bg-red-100 text-red-800' :
-                            'bg-muted text-foreground'
-                          }>
-                            {provider.status}
-                          </Badge>
-                          <Badge variant={provider.isConfigured ? 'default' : 'secondary'}>
-                            {provider.isConfigured ? 'Configured' : 'Not Configured'}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="flex-1"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleAIConfigure(provider)
-                            }}
-                          >
-                            <Settings className="h-3 w-3 mr-1" />
-                            {provider.isConfigured ? 'Edit' : 'Configure'}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="flex-1"
-                            disabled={!provider.isConfigured}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              toast(`Testing ${provider.name}...`)
-                            }}
-                          >
-                            <Zap className="h-3 w-3 mr-1" />
-                            Test
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                ) : (
-                  <Card className="col-span-full">
-                    <CardContent className="p-8 text-center text-muted-foreground">
-                      No AI providers configured
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </div>
-          )}
+            )
+          })()}
         </div>
       </div>
 
@@ -930,166 +869,233 @@ export function IntegrationHub() {
         </Dialog>
       )}
 
-      {/* Webhook Configuration Dialog */}
-      {selectedWebhook && (
-        <Dialog open={showWebhookConfigDialog} onOpenChange={setShowWebhookConfigDialog}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Configure Webhook</DialogTitle>
-              <DialogDescription>
-                Update webhook settings and configuration
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="webhook-name">Name</Label>
-                <Input
-                  id="webhook-name"
-                  value={webhookConfigForm.name}
-                  onChange={(e) => setWebhookConfigForm({ ...webhookConfigForm, name: e.target.value })}
-                  placeholder="Enter webhook name"
-                />
+      {/* Connections Drawer */}
+      <Drawer open={showConnectionsDrawer} onOpenChange={setShowConnectionsDrawer}>
+        <DrawerContent widthClassName="w-[600px]" className="bg-white">
+          <DrawerHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {selectedIntegrationForConnections && (
+                  <>
+                    {React.createElement(selectedIntegrationForConnections.icon, { className: "h-5 w-5" })}
+                    <DrawerTitle>{selectedIntegrationForConnections.name} Connections</DrawerTitle>
+                  </>
+                )}
               </div>
-              <div>
-                <Label htmlFor="webhook-url">URL</Label>
-                <Input
-                  id="webhook-url"
-                  type="url"
-                  value={webhookConfigForm.url}
-                  onChange={(e) => setWebhookConfigForm({ ...webhookConfigForm, url: e.target.value })}
-                  placeholder="https://example.com/webhook"
-                />
-              </div>
-              <div>
-                <Label htmlFor="webhook-secret">Secret (Optional)</Label>
-                <Input
-                  id="webhook-secret"
-                  type="password"
-                  value={webhookConfigForm.secret}
-                  onChange={(e) => setWebhookConfigForm({ ...webhookConfigForm, secret: e.target.value })}
-                  placeholder="Webhook secret for verification"
-                />
-              </div>
-              <div>
-                <Label>Events</Label>
-                <div className="space-y-2 mt-2">
-                  {['create', 'update', 'delete', 'publish', 'unpublish'].map(event => (
-                    <div key={event} className="flex items-center space-x-2">
-                      <Switch
-                        checked={webhookConfigForm.events.includes(event)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setWebhookConfigForm({
-                              ...webhookConfigForm,
-                              events: [...webhookConfigForm.events, event]
-                            })
-                          } else {
-                            setWebhookConfigForm({
-                              ...webhookConfigForm,
-                              events: webhookConfigForm.events.filter(e => e !== event)
-                            })
-                          }
-                        }}
-                      />
-                      <Label className="capitalize">{event}</Label>
-                    </div>
+              <DrawerClose asChild>
+                <Button variant="ghost" size="sm">
+                  Close
+                </Button>
+              </DrawerClose>
+            </div>
+            <DrawerDescription>
+              Manage service/asset connections for this integration
+            </DrawerDescription>
+          </DrawerHeader>
+          
+          <div className="flex flex-col h-[calc(100vh-120px)]">
+            <div className="p-4 border-b flex-shrink-0">
+              <Button onClick={handleAddConnection} size="sm" className="w-full">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Connection
+              </Button>
+            </div>
+            
+            <ScrollArea className="flex-1 p-4">
+              {isLoadingConnections ? (
+                <div className="flex items-center justify-center py-8">
+                  <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : connections.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <List className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No connections configured</p>
+                  <p className="text-sm mt-2">Click "Add Connection" to create one</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {connections.map((connection) => (
+                    <Card key={connection.id} className="hover:shadow-md transition-shadow">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-base">{connection.name || `Connection ${connection.id}`}</CardTitle>
+                          <div className="flex items-center gap-2">
+                            {connection.status === 'active' && <CheckCircle className="h-4 w-4 text-green-500" />}
+                            {connection.status === 'inactive' && <XCircle className="h-4 w-4 text-gray-500" />}
+                            {connection.status === 'error' && <AlertTriangle className="h-4 w-4 text-red-500" />}
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            {connection.config && Object.keys(connection.config).length > 0 && (
+                              <div className="text-sm text-muted-foreground space-y-1">
+                                {Object.entries(connection.config).slice(0, 2).map(([key, value]: [string, any]) => (
+                                  <div key={key} className="truncate">
+                                    <span className="font-medium">{key}:</span> {typeof value === 'string' && value.length > 30 ? value.substring(0, 30) + '...' : String(value)}
+                                  </div>
+                                ))}
+                                {Object.keys(connection.config).length > 2 && (
+                                  <div className="text-xs text-muted-foreground">
+                                    +{Object.keys(connection.config).length - 2} more fields
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 ml-4">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleTestConnection(connection)}
+                              disabled={isLoadingConnections}
+                              title="Test Connection"
+                            >
+                              <Zap className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditConnection(connection)}
+                              title="Edit Connection"
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteConnection(connection.id)}
+                              title="Delete Connection"
+                            >
+                              <Trash2 className="h-3 w-3 text-red-500" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
+              )}
+            </ScrollArea>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      {/* Add/Edit Connection Dialog */}
+      {selectedIntegrationForConnections && (
+        <Dialog open={showAddConnectionDialog} onOpenChange={setShowAddConnectionDialog}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {editingConnection ? 'Edit Connection' : 'Add Connection'} - {selectedIntegrationForConnections.name}
+              </DialogTitle>
+              <DialogDescription>
+                Configure connection settings for {selectedIntegrationForConnections.name}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="connection-name">Connection Name</Label>
+                  <Input
+                    id="connection-name"
+                    value={connectionForm.name || ''}
+                    onChange={(e) => setConnectionForm({ ...connectionForm, name: e.target.value })}
+                    placeholder="Enter connection name"
+                  />
+                </div>
+                {getConfigFields(selectedIntegrationForConnections.type).map(field => (
+                  <div key={field.key}>
+                    <Label htmlFor={field.key}>
+                      {field.label}
+                      {field.required && <span className="text-red-500 ml-1">*</span>}
+                    </Label>
+                    {field.type === 'password' ? (
+                      <div className="relative">
+                        <Input
+                          id={field.key}
+                          type={showPassword[field.key] ? 'text' : 'password'}
+                          value={connectionForm[field.key] || ''}
+                          onChange={(e) => setConnectionForm({ ...connectionForm, [field.key]: e.target.value })}
+                          placeholder={(field as any).placeholder || `Enter ${field.label.toLowerCase()}`}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowPassword({ ...showPassword, [field.key]: !showPassword[field.key] })}
+                        >
+                          {showPassword[field.key] ? (
+                            <EyeOff className="h-4 w-4 text-gray-400" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-gray-400" />
+                          )}
+                        </Button>
+                      </div>
+                    ) : field.type === 'textarea' ? (
+                      <Textarea
+                        id={field.key}
+                        value={connectionForm[field.key] || ''}
+                        onChange={(e) => setConnectionForm({ ...connectionForm, [field.key]: e.target.value })}
+                        placeholder={(field as any).placeholder || `Enter ${field.label.toLowerCase()}`}
+                        rows={4}
+                      />
+                    ) : field.type === 'select' ? (
+                      <Select
+                        value={connectionForm[field.key] || ''}
+                        onValueChange={(value) => setConnectionForm({ ...connectionForm, [field.key]: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={`Select ${field.label}`} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {field.options?.map(option => (
+                            <SelectItem key={option} value={option}>{option}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : field.type === 'number' ? (
+                      <Input
+                        id={field.key}
+                        type="number"
+                        value={connectionForm[field.key] || ''}
+                        onChange={(e) => setConnectionForm({ ...connectionForm, [field.key]: e.target.value })}
+                        placeholder={(field as any).placeholder || `Enter ${field.label.toLowerCase()}`}
+                      />
+                    ) : (
+                      <Input
+                        id={field.key}
+                        type="text"
+                        value={connectionForm[field.key] || ''}
+                        onChange={(e) => setConnectionForm({ ...connectionForm, [field.key]: e.target.value })}
+                        placeholder={(field as any).placeholder || `Enter ${field.label.toLowerCase()}`}
+                      />
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowWebhookConfigDialog(false)}>
+              <Button variant="outline" onClick={() => {
+                setShowAddConnectionDialog(false)
+                setEditingConnection(null)
+                setConnectionForm({})
+              }}>
                 Cancel
               </Button>
               <Button 
-                onClick={handleSaveWebhookConfig} 
-                disabled={!webhookConfigForm.name || !webhookConfigForm.url || isLoading}
+                onClick={handleSaveConnection} 
+                disabled={isLoadingConnections}
               >
-                {isLoading ? 'Saving...' : 'Save Configuration'}
+                {isLoadingConnections ? 'Saving...' : (editingConnection ? 'Update' : 'Add')} Connection
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
 
-      {/* OAuth Setup Dialog */}
-      {selectedProvider && (
-        <Dialog open={showOAuthSetup} onOpenChange={setShowOAuthSetup}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Setup {selectedProvider.name} OAuth</DialogTitle>
-              <DialogDescription>
-                Configure OAuth integration with {selectedProvider.name}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="client-id">Client ID</Label>
-                <Input
-                  id="client-id"
-                  value={oauthConfig.clientId}
-                  onChange={(e) => setOAuthConfig({ ...oauthConfig, clientId: e.target.value })}
-                  placeholder="Enter client ID"
-                />
-              </div>
-              <div>
-                <Label htmlFor="client-secret">Client Secret</Label>
-                <Input
-                  id="client-secret"
-                  type="password"
-                  value={oauthConfig.clientSecret}
-                  onChange={(e) => setOAuthConfig({ ...oauthConfig, clientSecret: e.target.value })}
-                  placeholder="Enter client secret"
-                />
-              </div>
-              <div>
-                <Label htmlFor="redirect-uri">Redirect URI</Label>
-                <Input
-                  id="redirect-uri"
-                  value={oauthConfig.redirectUri}
-                  onChange={(e) => setOAuthConfig({ ...oauthConfig, redirectUri: e.target.value })}
-                  placeholder="https://yourdomain.com/auth/callback"
-                />
-              </div>
-              <div>
-                <Label>Scopes</Label>
-                <div className="space-y-2 mt-2">
-                  {['read', 'write', 'admin'].map(scope => (
-                    <div key={scope} className="flex items-center space-x-2">
-                      <Switch
-                        id={scope}
-                        checked={oauthConfig.scopes.includes(scope)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setOAuthConfig({
-                              ...oauthConfig,
-                              scopes: [...oauthConfig.scopes, scope]
-                            })
-                          } else {
-                            setOAuthConfig({
-                              ...oauthConfig,
-                              scopes: oauthConfig.scopes.filter(s => s !== scope)
-                            })
-                          }
-                        }}
-                      />
-                      <Label htmlFor={scope} className="capitalize">{scope}</Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowOAuthSetup(false)}>
-                Cancel
-              </Button>
-              <Button onClick={setupOAuth} disabled={!oauthConfig.clientId || !oauthConfig.clientSecret}>
-                Setup OAuth
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   )
 }

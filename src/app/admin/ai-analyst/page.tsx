@@ -4,7 +4,7 @@ import { AIAnalyst } from '@/app/admin/features/business-intelligence'
 
 export default function AIAnalystPage() {
   return (
-    <div className="p-6">
+    <div className="h-full flex flex-col">
       <AIAnalyst />
     </div>
   )

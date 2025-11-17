@@ -6,6 +6,16 @@ import Link from 'next/link'
 import { PlatformSidebar } from './PlatformSidebar'
 import { TopMenuBar } from './TopMenuBar'
 import { Z_INDEX } from '@/lib/z-index'
+import { InfrastructureInstance } from '@/features/infrastructure/types'
+import { VMCredentialsCard } from '@/components/infrastructure/VMCredentialsCard'
+import { VMTerminal } from '@/components/infrastructure/VMTerminal'
+import { EditVMDialog } from '@/components/infrastructure/EditVMDialog'
+import { InfrastructurePlaceholder } from '@/components/infrastructure/InfrastructurePlaceholder'
+import { AddInstanceDialog } from '@/features/infrastructure/components/AddInstanceDialog'
+import { AddVMDialog } from '@/features/infrastructure/components/AddVMDialog'
+import { AddServiceDialog } from '@/features/infrastructure/components/AddServiceDialog'
+import { useInfrastructureContext } from '@/contexts/infrastructure-context'
+import { useSpace } from '@/contexts/space-context'
 
 type BreadcrumbItem = string | { label: string; href?: string; onClick?: () => void }
 
@@ -16,13 +26,19 @@ interface PlatformLayoutProps {
   selectedSpace?: string
   onSpaceChange?: (spaceId: string) => void
   breadcrumbItems?: BreadcrumbItem[]
+  breadcrumbActions?: React.ReactNode
 }
 
 // Determine which group the active tab belongs to
 const getGroupForTab = (tab: string): string | null => {
+  // Infrastructure has its own group
+  if (tab === 'infrastructure') {
+    return 'infrastructure'
+  }
+  
   const groupedTabs: Record<string, string[]> = {
-    overview: ['overview', 'analytics'],
-    tools: ['bigquery', 'notebook', 'ai-analyst', 'ai-chat-ui', 'knowledge-base', 'marketplace', 'infrastructure', 'projects', 'bi', 'reports', 'storage', 'data-governance'],
+    overview: ['overview', 'analytics', 'knowledge-base', 'projects'],
+    tools: ['bigquery', 'notebook', 'ai-analyst', 'ai-chat-ui', 'marketplace', 'bi', 'reports', 'storage', 'data-governance'],
     system: ['users', 'roles', 'permission-tester', 'space-layouts', 'space-settings', 'assets', 'data', 'attachments', 'kernels', 'health', 'logs', 'audit', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache', 'backup', 'security', 'performance', 'settings', 'page-templates', 'notifications', 'themes', 'export', 'integrations', 'api'],
     'data-management': ['space-selection']
   }
@@ -44,6 +60,7 @@ const generateBreadcrumbs = (activeTab: string): BreadcrumbItem[] => {
   const groupMetadata: Record<string, { name: string }> = {
     overview: { name: 'Homepage' },
     tools: { name: 'Tools' },
+    infrastructure: { name: 'Infrastructure' },
     system: { name: 'System' },
     'data-management': { name: 'Data Management' }
   }
@@ -51,9 +68,7 @@ const generateBreadcrumbs = (activeTab: string): BreadcrumbItem[] => {
   const toolSections: Record<string, string[]> = {
     'AI & Assistants': ['ai-analyst', 'ai-chat-ui'],
     'Data Tools': ['bigquery', 'notebook', 'storage', 'data-governance'],
-    'Knowledge & Collaboration': ['knowledge-base'],
     'Platform Services': ['marketplace', 'infrastructure'],
-    'Project Management': ['projects'],
     'Reporting': ['bi', 'reports']
   }
 
@@ -70,8 +85,8 @@ const generateBreadcrumbs = (activeTab: string): BreadcrumbItem[] => {
     'analytics': 'Analytics',
     'bigquery': 'SQL Query',
     'notebook': 'Data Science',
-    'ai-analyst': 'AI Analyst',
-    'ai-chat-ui': 'AI Chat UI',
+    'ai-analyst': 'Chat with AI',
+    'ai-chat-ui': 'Agent Embed GUI',
     'knowledge-base': 'Knowledge Base',
     'marketplace': 'Marketplace',
     'infrastructure': 'Infrastructure',
@@ -170,12 +185,20 @@ export function PlatformLayout({
   onTabChange, 
   selectedSpace, 
   onSpaceChange,
-  breadcrumbItems
+  breadcrumbItems,
+  breadcrumbActions
 }: PlatformLayoutProps) {
   const router = useRouter()
+  const infrastructureContext = useInfrastructureContext()
+  const { currentSpace } = useSpace()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true)
   const [secondarySidebarCollapsed, setSecondarySidebarCollapsed] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedVmId, setSelectedVmId] = useState<string | null>(null)
+  const [selectedVm, setSelectedVm] = useState<InfrastructureInstance | null>(null)
+  const [vmCredentials, setVmCredentials] = useState<{ username: string; password: string } | null>(null)
+  const [showEditDialog, setShowEditDialog] = useState(false)
+  const [editingVm, setEditingVm] = useState<InfrastructureInstance | null>(null)
   
   // Memoize group calculation to avoid unnecessary recalculations
   const currentGroup = useMemo(() => getGroupForTab(activeTab), [activeTab])
@@ -211,6 +234,92 @@ export function PlatformLayout({
     setSecondarySidebarCollapsed(prev => !prev)
   }, [])
 
+  const handleVmSelect = useCallback((vm: InfrastructureInstance) => {
+    setSelectedVmId(vm.id)
+    setSelectedVm(vm)
+    // Check if username/password are set
+    const hasCredentials = vm.connectionConfig?.username && vm.connectionConfig?.password
+    if (!hasCredentials) {
+      setVmCredentials(null) // Show credentials card
+    } else {
+      // Use stored credentials
+      setVmCredentials({
+        username: vm.connectionConfig.username,
+        password: vm.connectionConfig.password,
+      })
+    }
+  }, [])
+
+  const handleVmAccess = useCallback((username: string, password: string) => {
+    if (selectedVm) {
+      setVmCredentials({ username, password })
+    }
+  }, [selectedVm])
+
+  const handleVmPermission = useCallback((vm: InfrastructureInstance) => {
+    // TODO: Implement permission dialog
+    console.log('Permission for VM:', vm.id)
+  }, [])
+
+  const handleVmRemove = useCallback(async (vm: InfrastructureInstance) => {
+    if (!confirm(`Are you sure you want to remove ${vm.name}?`)) return
+    
+    try {
+      const response = await fetch(`/api/infrastructure/instances/${vm.id}`, {
+        method: 'DELETE',
+      })
+      if (response.ok) {
+        if (selectedVmId === vm.id) {
+          setSelectedVmId(null)
+          setSelectedVm(null)
+          setVmCredentials(null)
+        }
+      }
+    } catch (error) {
+      console.error('Error removing VM:', error)
+    }
+  }, [selectedVmId])
+
+  const handleVmReboot = useCallback(async (vm: InfrastructureInstance) => {
+    if (!confirm(`Are you sure you want to reboot ${vm.name}?`)) return
+    
+    try {
+      // TODO: Implement reboot API call
+      console.log('Reboot VM:', vm.id)
+    } catch (error) {
+      console.error('Error rebooting VM:', error)
+    }
+  }, [])
+
+  const handleVmEdit = useCallback((vm: InfrastructureInstance) => {
+    setEditingVm(vm)
+    setShowEditDialog(true)
+  }, [])
+
+  const handleVmAccessClick = useCallback((vm: InfrastructureInstance) => {
+    handleVmSelect(vm)
+  }, [handleVmSelect])
+
+  const handleAddVm = useCallback(() => {
+    // Try to use infrastructure context if available (when on infrastructure page)
+    if (infrastructureContext && infrastructureContext.isProviderActive && infrastructureContext.setShowAddVmDialog) {
+      infrastructureContext.setShowAddVmDialog(true)
+    } else {
+      // Context not available, navigate to infrastructure page
+      router.push('/infrastructure')
+    }
+  }, [router, infrastructureContext])
+
+  const handleAddService = useCallback(() => {
+    // Try to use infrastructure context if available (when on infrastructure page)
+    if (infrastructureContext && infrastructureContext.isProviderActive && infrastructureContext.setShowAddServiceDialog) {
+      infrastructureContext.setShowAddServiceDialog(true)
+    } else {
+      // Context not available, navigate to infrastructure page
+      router.push('/infrastructure')
+    }
+  }, [router, infrastructureContext])
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -239,39 +348,43 @@ export function PlatformLayout({
       
       {/* Content Area with Sidebars */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Primary Sidebar - Groups */}
-        <div 
-          className={`transition-all duration-150 ease-in-out ${sidebarCollapsed ? 'w-16' : 'w-64'} flex-shrink-0 border-r border-border`}
-          style={{ 
-            position: 'relative',
-            zIndex: Z_INDEX.sidebar,
-            pointerEvents: 'auto'
-          }}
-        >
-          <PlatformSidebar
-            activeTab={activeTab}
-            onTabChange={onTabChange}
-            selectedSpace={selectedSpace}
-            onSpaceChange={onSpaceChange}
-            collapsed={sidebarCollapsed}
-            selectedGroup={selectedGroup}
-            onGroupSelect={handleGroupSelect}
-            mode="primary"
-            onToggleCollapse={handleToggleCollapse}
-          />
-        </div>
-
-        {/* Secondary Sidebar - Submenu Items */}
-        {/* Show secondary sidebar for all pages with a valid group (always visible) */}
-        {currentGroup && currentGroup !== '' && (
+        {/* Sidebars Container */}
+        <div className="flex flex-shrink-0">
+          {/* Primary Sidebar - Groups */}
           <div 
-            className={`${secondarySidebarCollapsed ? 'w-0' : 'w-64'} flex-shrink-0 border-r border-border transition-all duration-150 ease-in-out overflow-hidden`}
+            className={`transition-all duration-150 ease-in-out ${sidebarCollapsed ? 'w-16' : 'w-52'} flex-shrink-0 border-r border-border`}
             style={{ 
               position: 'relative',
               zIndex: Z_INDEX.sidebar,
               pointerEvents: 'auto'
             }}
+            onMouseEnter={() => setSidebarCollapsed(false)}
+            onMouseLeave={() => setSidebarCollapsed(true)}
           >
+            <PlatformSidebar
+              activeTab={activeTab}
+              onTabChange={onTabChange}
+              selectedSpace={selectedSpace}
+              onSpaceChange={onSpaceChange}
+              collapsed={sidebarCollapsed}
+              selectedGroup={selectedGroup}
+              onGroupSelect={handleGroupSelect}
+              mode="primary"
+              onToggleCollapse={handleToggleCollapse}
+            />
+          </div>
+
+          {/* Secondary Sidebar - Submenu Items */}
+          {/* Show secondary sidebar for all pages with a valid group (always visible) */}
+          {currentGroup && currentGroup !== '' && (
+            <div 
+              className={`${secondarySidebarCollapsed ? 'w-0' : 'w-56'} flex-shrink-0 border-r border-border transition-all duration-150 ease-in-out overflow-hidden`}
+              style={{ 
+                position: 'relative',
+                zIndex: Z_INDEX.sidebar,
+                pointerEvents: 'auto'
+              }}
+            >
             {!secondarySidebarCollapsed && (
               <PlatformSidebar
                 activeTab={activeTab}
@@ -285,6 +398,14 @@ export function PlatformLayout({
                 onToggleCollapse={handleToggleSecondaryCollapse}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
+                selectedVmId={selectedVmId}
+                onVmSelect={handleVmSelect}
+                onVmPermission={handleVmPermission}
+                onVmRemove={handleVmRemove}
+                onVmReboot={handleVmReboot}
+                onVmEdit={handleVmEdit}
+                onVmAccess={handleVmAccessClick}
+                onAddVm={handleAddVm}
               />
             )}
             {secondarySidebarCollapsed && (
@@ -303,15 +424,16 @@ export function PlatformLayout({
             )}
           </div>
         )}
+        </div>
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Breadcrumb Bar */}
-          <div className="h-10 bg-background flex items-center px-4">
-            <div className="flex items-center gap-2 text-sm">
+          <div className="h-10 bg-background flex items-center justify-between px-4 border-b border-border">
+            <div className="flex items-center gap-2 text-sm flex-1 min-w-0">
               <button
                 onClick={handleToggleCollapse}
-                className="p-1 hover:bg-muted rounded"
+                className="p-1 hover:bg-muted rounded flex-shrink-0"
                 title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               >
                 {sidebarCollapsed ? (
@@ -324,7 +446,7 @@ export function PlatformLayout({
                   </svg>
                 )}
               </button>
-              <nav aria-label="Breadcrumb" className="truncate text-muted-foreground">
+              <nav aria-label="Breadcrumb" className="truncate text-muted-foreground min-w-0">
                 <ol className="flex items-center space-x-2">
                   {(() => {
                     // Generate breadcrumbs, filtering out any items that contain "admin"
@@ -374,14 +496,91 @@ export function PlatformLayout({
                 </ol>
               </nav>
             </div>
+            {breadcrumbActions && (
+              <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+                {breadcrumbActions}
+              </div>
+            )}
           </div>
 
           {/* Content Area */}
           <div className="flex-1 overflow-auto">
-            {children}
+            {selectedVm && activeTab === 'infrastructure' ? (
+              vmCredentials ? (
+                <VMTerminal
+                  vm={selectedVm}
+                  username={vmCredentials.username}
+                  password={vmCredentials.password}
+                  onClose={() => {
+                    setSelectedVm(null)
+                    setSelectedVmId(null)
+                    setVmCredentials(null)
+                  }}
+                />
+              ) : (
+                <VMCredentialsCard
+                  vm={selectedVm}
+                  onAccess={handleVmAccess}
+                  onCancel={() => {
+                    setSelectedVm(null)
+                    setSelectedVmId(null)
+                  }}
+                />
+              )
+            ) : activeTab === 'infrastructure' ? (
+              <InfrastructurePlaceholder
+                onAddVm={handleAddVm}
+                onAddService={handleAddService}
+              />
+            ) : (
+              children
+            )}
           </div>
         </div>
       </div>
+      
+      {/* Edit VM Dialog */}
+      <EditVMDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        vm={editingVm}
+        onSuccess={() => {
+          // Refresh VM data if needed
+          if (editingVm && selectedVmId === editingVm.id) {
+            // Reload VM data
+          }
+        }}
+      />
+
+      {/* Add Instance Dialog - Always available when infrastructure context is active */}
+      {infrastructureContext?.isProviderActive && (
+        <>
+          <AddInstanceDialog
+            open={infrastructureContext.showAddDialog}
+            onOpenChange={infrastructureContext.setShowAddDialog}
+            spaceId={selectedSpace || currentSpace?.id || null}
+            onSuccess={() => {
+              // Dialog will handle success, but we might want to refresh VM list if needed
+            }}
+          />
+          <AddVMDialog
+            open={infrastructureContext.showAddVmDialog}
+            onOpenChange={infrastructureContext.setShowAddVmDialog}
+            spaceId={selectedSpace || currentSpace?.id || null}
+            onSuccess={() => {
+              // Dialog will handle success, but we might want to refresh VM list if needed
+            }}
+          />
+          <AddServiceDialog
+            open={infrastructureContext.showAddServiceDialog}
+            onOpenChange={infrastructureContext.setShowAddServiceDialog}
+            spaceId={selectedSpace || currentSpace?.id || null}
+            onSuccess={() => {
+              // Dialog will handle success, but we might want to refresh VM list if needed
+            }}
+          />
+        </>
+      )}
     </div>
   )
 }

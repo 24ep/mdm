@@ -47,10 +47,18 @@ export async function query(sql: string, params: any[] = [], timeout: number = 3
     
     const result = await Promise.race([queryPromise, timeoutPromise]) as any
     return { rows: Array.isArray(result) ? result : [result] }
-  } catch (error) {
-    console.error('Database query error:', error)
-    console.error('Query:', sql.substring(0, 200))
-    console.error('Params:', params)
+  } catch (error: any) {
+    // Suppress logging for expected "table does not exist" errors (42P01)
+    // This is normal when migrations haven't run yet or tables are optional
+    const isTableMissing = error?.code === '42P01' || 
+                         error?.meta?.code === '42P01' ||
+                         (typeof error?.message === 'string' && error.message.includes('does not exist'))
+    
+    if (!isTableMissing) {
+      console.error('Database query error:', error)
+      console.error('Query:', sql.substring(0, 200))
+      console.error('Params:', params)
+    }
     throw error
   }
 }

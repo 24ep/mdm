@@ -121,6 +121,10 @@ export interface Theme {
 export interface BrandingConfig {
   // Application branding
   applicationLogo?: string
+  applicationLogoType?: 'image' | 'icon'
+  applicationLogoIcon?: string // Icon name from lucide-react
+  applicationLogoIconColor?: string
+  applicationLogoBackgroundColor?: string
   applicationName: string
   
   // Light mode colors

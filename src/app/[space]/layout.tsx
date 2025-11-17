@@ -43,7 +43,6 @@ export default function SpaceLayout({
   const getRouteForTab = (tab: string): string => {
     const routeMap: Record<string, string> = {
       'overview': '/',
-      'analytics': '/overview/analytics',
       'bigquery': '/tools/bigquery',
       'notebook': '/tools/notebook',
       'ai-analyst': '/tools/ai-analyst',

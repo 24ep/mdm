@@ -45,21 +45,21 @@ export async function GET(request: NextRequest) {
     let paramIndex = 1
 
     if (spaceId) {
-      whereConditions.push(`ii.space_id = $${paramIndex}`)
+      whereConditions.push(`ii.space_id::text = $${paramIndex}`)
       queryParams.push(spaceId)
       paramIndex++
     } else {
       const userSpaces = await query(
         `SELECT id FROM spaces 
-         WHERE (created_by = $1 OR id IN (
-           SELECT space_id FROM space_members WHERE user_id = $1
+         WHERE (created_by::text = $1 OR id::text IN (
+           SELECT space_id::text FROM space_members WHERE user_id::text = $1
          )) AND deleted_at IS NULL`,
         [session.user.id]
       )
       
       if (userSpaces.rows.length > 0) {
         const spaceIds = userSpaces.rows.map((r: any) => r.id)
-        whereConditions.push(`ii.space_id = ANY($${paramIndex}::uuid[])`)
+        whereConditions.push(`ii.space_id::text = ANY($${paramIndex}::text[])`)
         queryParams.push(spaceIds)
         paramIndex++
       } else {
@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
           'slug', s.slug
         ) as space
       FROM infrastructure_instances ii
-      LEFT JOIN spaces s ON s.id = ii.space_id
+      LEFT JOIN spaces s ON s.id::text = ii.space_id::text
       WHERE ${whereClause}
       ORDER BY ii.created_at DESC
     `

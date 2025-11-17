@@ -27,6 +27,7 @@ import {
   Zap, 
   HardDrive,
   Building,
+  Building2,
   ChevronDown,
   ChevronRight,
   Bot,
@@ -42,10 +43,14 @@ import {
   Kanban,
   Store,
   Network,
-  ChevronLeft
+  ChevronLeft,
+  MessageCircle
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Z_INDEX } from '@/lib/z-index'
+import { APP_VERSION } from '@/lib/version'
+import { HorizonSidebar } from '@/components/infrastructure/HorizonSidebar'
+import { InfrastructureInstance } from '@/features/infrastructure/types'
 
 interface PlatformSidebarProps {
   activeTab: string
@@ -59,6 +64,14 @@ interface PlatformSidebarProps {
   onToggleCollapse?: () => void
   searchQuery?: string
   onSearchChange?: (query: string) => void
+  selectedVmId?: string | null
+  onVmSelect?: (vm: InfrastructureInstance) => void
+  onVmPermission?: (vm: InfrastructureInstance) => void
+  onVmRemove?: (vm: InfrastructureInstance) => void
+  onVmReboot?: (vm: InfrastructureInstance) => void
+  onVmEdit?: (vm: InfrastructureInstance) => void
+  onVmAccess?: (vm: InfrastructureInstance) => void
+  onAddVm?: () => void
 }
 
 export function PlatformSidebar({ 
@@ -72,7 +85,15 @@ export function PlatformSidebar({
   mode = 'primary',
   onToggleCollapse,
   searchQuery = '',
-  onSearchChange
+  onSearchChange,
+  selectedVmId,
+  onVmSelect,
+  onVmPermission,
+  onVmRemove,
+  onVmReboot,
+  onVmEdit,
+  onVmAccess,
+  onAddVm,
 }: PlatformSidebarProps) {
   const [localSearchQuery, setLocalSearchQuery] = useState('')
   const searchValue = searchQuery !== undefined ? searchQuery : localSearchQuery
@@ -85,12 +106,6 @@ export function PlatformSidebar({
       name: 'Homepage',
       icon: Monitor,
       description: 'System homepage'
-    },
-    {
-      id: 'analytics',
-      name: 'Analytics',
-      icon: BarChart3,
-      description: 'Analytics and monitoring'
     },
     {
       id: 'users',
@@ -111,12 +126,6 @@ export function PlatformSidebar({
       description: 'Data model management'
     },
     {
-      id: 'attachments',
-      name: 'Attachments',
-      icon: Paperclip,
-      description: 'File and attachment management'
-    },
-    {
       id: 'bigquery',
       name: 'SQL Query',
       icon: Code,
@@ -130,8 +139,8 @@ export function PlatformSidebar({
     },
     {
       id: 'ai-analyst',
-      name: 'AI Analyst',
-      icon: Bot,
+      name: 'Chat with AI',
+      icon: MessageCircle,
       description: 'AI-powered data analysis'
     },
     {
@@ -249,12 +258,6 @@ export function PlatformSidebar({
       description: 'API client and management'
     },
     {
-      id: 'notifications',
-      name: 'Notifications',
-      icon: Bell,
-      description: 'Notification center and settings'
-    },
-    {
       id: 'themes',
       name: 'Theme & Branding',
       icon: Palette,
@@ -267,18 +270,6 @@ export function PlatformSidebar({
       description: 'Role and permission management'
     },
     {
-      id: 'permission-tester',
-      name: 'Permission Tester',
-      icon: Shield,
-      description: 'Test user permissions'
-    },
-    {
-      id: 'space-settings',
-      name: 'Space Settings',
-      icon: Building,
-      description: 'Space configuration and settings'
-    },
-    {
       id: 'assets',
       name: 'Asset Management',
       icon: Database,
@@ -289,17 +280,15 @@ export function PlatformSidebar({
   const groupedTabs = {
     overview: [
       { id: 'overview', name: 'Homepage', icon: Monitor, href: '/' },
-      { id: 'analytics', name: 'Analytics', icon: BarChart3, href: '/overview/analytics' }
+      { id: 'knowledge-base', name: 'Knowledge Base', icon: BookOpen, href: '/knowledge' },
+      { id: 'projects', name: 'Project Management', icon: Kanban, href: '/tools/projects' },
     ],
     tools: [
       { id: 'bigquery', name: 'SQL Query', icon: Code, href: '/tools/bigquery' },
       { id: 'notebook', name: 'Data Science', icon: FileText, href: '/tools/notebook' },
-      { id: 'ai-analyst', name: 'AI Analyst', icon: Bot, href: '/tools/ai-analyst' },
-      { id: 'ai-chat-ui', name: 'AI Chat UI', icon: Bot, href: '/tools/ai-chat-ui' },
-      { id: 'knowledge-base', name: 'Knowledge Base', icon: BookOpen, href: '/knowledge' },
+      { id: 'ai-analyst', name: 'Chat with AI', icon: MessageCircle, href: '/tools/ai-analyst' },
+      { id: 'ai-chat-ui', name: 'Agent Embed GUI', icon: Bot, href: '/tools/ai-chat-ui' },
       { id: 'marketplace', name: 'Marketplace', icon: Store, href: '/marketplace' },
-      { id: 'infrastructure', name: 'Infrastructure', icon: Network, href: '/infrastructure' },
-      { id: 'projects', name: 'Project Management', icon: Kanban, href: '/tools/projects' },
       { id: 'bi', name: 'BI & Reports', icon: BarChart3, href: '/tools/bi' },
       { id: 'storage', name: 'Storage', icon: HardDrive, href: '/tools/storage' },
       { id: 'data-governance', name: 'Data Governance', icon: Shield, href: '/tools/data-governance' },
@@ -307,12 +296,9 @@ export function PlatformSidebar({
     system: [
       { id: 'users', name: 'User Management', icon: Users, href: '/system/users' },
       { id: 'roles', name: 'Role Management', icon: Users, href: '/system/roles' },
-      { id: 'permission-tester', name: 'Permission Tester', icon: Shield, href: '/system/permission-tester' },
       { id: 'space-layouts', name: 'Space Layouts', icon: Layout, href: '/system/space-layouts' },
-      { id: 'space-settings', name: 'Space Settings', icon: Building, href: '/system/space-settings' },
       { id: 'assets', name: 'Asset Management', icon: Database, href: '/system/assets' },
       { id: 'data', name: 'Data Models', icon: Database, href: '/system/data' },
-      { id: 'attachments', name: 'Attachments', icon: Paperclip, href: '/system/attachments' },
       { id: 'kernels', name: 'Kernel Management', icon: Server, href: '/system/kernels' },
       { id: 'health', name: 'System Health', icon: Heart, href: '/system/health' },
       { id: 'logs', name: 'Logs', icon: FileTextIcon, href: '/system/logs' },
@@ -328,7 +314,6 @@ export function PlatformSidebar({
       { id: 'performance', name: 'Performance', icon: Activity, href: '/system/performance' },
       { id: 'settings', name: 'System Settings', icon: Settings, href: '/system/settings' },
       { id: 'page-templates', name: 'Page Templates', icon: FileText, href: '/system/page-templates' },
-      { id: 'notifications', name: 'Notifications', icon: Bell, href: '/system/notifications' },
       { id: 'themes', name: 'Theme & Branding', icon: Palette, href: '/system/themes' },
       { id: 'export', name: 'Data Export', icon: Cloud, href: '/system/export' },
       { id: 'integrations', name: 'Integrations', icon: Key, href: '/system/integrations' },
@@ -336,6 +321,9 @@ export function PlatformSidebar({
     ],
     'data-management': [
       { id: 'space-selection', name: 'Data Management', icon: FolderKanban, href: '/data-management/space-selection' }
+    ],
+    infrastructure: [
+      { id: 'infrastructure', name: 'Infrastructure', icon: Network, href: '/infrastructure' }
     ]
   }
 
@@ -343,27 +331,26 @@ export function PlatformSidebar({
   const groupMetadata = {
     overview: { name: 'Homepage', icon: Monitor },
     tools: { name: 'Tools', icon: FlaskConical },
+    infrastructure: { name: 'Infrastructure', icon: Network },
     system: { name: 'System', icon: Settings },
     'data-management': { name: 'Data Management', icon: FolderKanban }
   }
   
   // Define group sections for secondary sidebar separators
   const groupSections: Record<string, string[]> = {
-    management: ['users', 'roles', 'permission-tester', 'space-layouts', 'space-settings', 'assets', 'data', 'attachments'],
+    management: ['users', 'roles', 'space-layouts', 'assets', 'data'],
     kernels: ['kernels'],
     system: ['health', 'logs', 'audit', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache', 'backup'],
     security: ['security', 'performance'],
-    integrations: ['settings', 'page-templates', 'notifications', 'themes', 'export', 'integrations', 'api']
+    integrations: ['settings', 'page-templates', 'themes', 'export', 'integrations', 'api']
   }
 
   // Define tool categories for the Tools group
   const toolSections: Record<string, string[]> = {
+    'Reporting': ['bi'],
     'AI & Assistants': ['ai-analyst', 'ai-chat-ui'],
-    'Data Tools': ['bigquery', 'storage', 'data-governance'],
-    'Knowledge & Collaboration': ['knowledge-base'],
-    'Platform Services': ['marketplace', 'infrastructure'],
-    'Project Management': ['projects'],
-    'Reporting': ['bi']
+    'Data Tools': ['bigquery', 'notebook', 'storage', 'data-governance'],
+    'Platform Services': ['marketplace']
   }
 
 
@@ -384,6 +371,18 @@ export function PlatformSidebar({
       return
     }
     
+    // Infrastructure shows VM list in secondary sidebar
+    if (groupName === 'infrastructure') {
+      if (onGroupSelect) {
+        onGroupSelect(groupName) // Show secondary sidebar with VM list
+      }
+      // Navigate to infrastructure page if not already there
+      if (activeTab !== 'infrastructure' && tabs && tabs.length > 0) {
+        handleTabClick(tabs[0].id, (tabs[0] as any).href)
+      }
+      return
+    }
+    
     if (onGroupSelect) {
       onGroupSelect(groupName)
     }
@@ -391,7 +390,7 @@ export function PlatformSidebar({
     if (tabs && tabs.length > 0) {
       handleTabClick(tabs[0].id, (tabs[0] as any).href)
     }
-  }, [onGroupSelect, handleTabClick])
+  }, [onGroupSelect, handleTabClick, activeTab])
 
   // Filter tabs based on search query
   const filterTabs = useCallback((tabs: any[], query: string) => {
@@ -448,6 +447,7 @@ export function PlatformSidebar({
                 {Object.entries(groupMetadata).map(([groupId, group], index) => {
                   const Icon = group.icon
                   const isDataManagement = groupId === 'data-management'
+                  const isInfrastructure = groupId === 'infrastructure'
                   
                   return (
                     <div key={groupId}>
@@ -458,7 +458,7 @@ export function PlatformSidebar({
                       variant="ghost"
                       className={cn(
                           "platform-sidebar-menu-button w-full justify-center h-10 transition-colors duration-150 cursor-pointer",
-                          (selectedGroup === groupId || (groupId === 'data-management' && activeTab === 'space-selection'))
+                          (selectedGroup === groupId || (groupId === 'data-management' && activeTab === 'space-selection') || (groupId === 'infrastructure' && activeTab === 'infrastructure'))
                            ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm" 
                           : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
                       )}
@@ -468,7 +468,7 @@ export function PlatformSidebar({
                         pointerEvents: 'auto', 
                         position: 'relative', 
                         zIndex: Z_INDEX.sidebar + 1,
-                        ...((selectedGroup === groupId || (groupId === 'data-management' && activeTab === 'space-selection')) 
+                        ...((selectedGroup === groupId || (groupId === 'data-management' && activeTab === 'space-selection') || (groupId === 'infrastructure' && activeTab === 'infrastructure')) 
                           ? { backgroundColor: 'hsl(var(--muted))' } 
                           : {})
                       }}
@@ -486,6 +486,7 @@ export function PlatformSidebar({
                   const Icon = group.icon
                   const tabs = groupedTabs[groupId as keyof typeof groupedTabs]
                   const isDataManagement = groupId === 'data-management'
+                  const isInfrastructure = groupId === 'infrastructure'
                   const isLastGroup = index === Object.entries(groupMetadata).length - 1
                   
                   return (
@@ -497,7 +498,7 @@ export function PlatformSidebar({
                       variant="ghost"
                       className={cn(
                         "platform-sidebar-menu-button w-full justify-start text-sm font-medium h-10 px-4 transition-colors duration-150 cursor-pointer",
-                          (selectedGroup === groupId || (groupId === 'data-management' && activeTab === 'space-selection'))
+                          (selectedGroup === groupId || (groupId === 'data-management' && activeTab === 'space-selection') || (groupId === 'infrastructure' && activeTab === 'infrastructure'))
                           ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm" 
                           : "text-foreground !hover:bg-muted !hover:text-foreground rounded-none"
                       )}
@@ -506,19 +507,14 @@ export function PlatformSidebar({
                         pointerEvents: 'auto', 
                         position: 'relative', 
                         zIndex: Z_INDEX.sidebar + 1,
-                        ...((selectedGroup === groupId || (groupId === 'data-management' && activeTab === 'space-selection')) 
+                        ...((selectedGroup === groupId || (groupId === 'data-management' && activeTab === 'space-selection') || (groupId === 'infrastructure' && activeTab === 'infrastructure')) 
                           ? { backgroundColor: 'hsl(var(--muted))' } 
                           : {})
                       }}
                     >
                       <Icon className="h-4 w-4 mr-3" />
                       <span className="flex-1 text-left">{group.name}</span>
-                        {tabs && !isDataManagement && (
-                        <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
-                          {tabs.length}
-                        </span>
-                      )}
-                        {!isDataManagement && (
+                        {!isDataManagement && !isInfrastructure && (
                       <ChevronRight className="h-4 w-4 ml-2 text-muted-foreground" />
                         )}
                     </Button>
@@ -528,22 +524,63 @@ export function PlatformSidebar({
               </div>
             )
           ) : (
-            // Secondary sidebar - show submenu items for selected group
-            selectedGroup && groupedTabs[selectedGroup as keyof typeof groupedTabs] ? (
+            // Secondary sidebar - show submenu items for selected group or Horizon tab for infrastructure
+            selectedGroup === 'infrastructure' ? (
+              // Infrastructure group - show Horizon tab with VMs and Services
+              <div className="w-full h-full flex flex-col">
+                {/* Collapse button for secondary sidebar */}
+                {onToggleCollapse && (
+                  <div className="border-b border-border">
+                    <Button
+                      variant="ghost"
+                      className="platform-sidebar-menu-button w-full justify-start text-sm font-medium h-9 px-4 rounded-none text-muted-foreground !hover:bg-muted cursor-pointer"
+                      onClick={onToggleCollapse}
+                      style={{ 
+                        pointerEvents: 'auto', 
+                        position: 'relative', 
+                        zIndex: 101
+                      }}
+                      title="Collapse secondary sidebar"
+                      aria-label="Collapse secondary sidebar"
+                    >
+                      <ChevronLeft className="h-4 w-4 mr-2" />
+                      <span>Collapse</span>
+                    </Button>
+                  </div>
+                )}
+                <HorizonSidebar
+                  selectedVmId={selectedVmId}
+                  onVmSelect={onVmSelect}
+                  spaceId={selectedSpace}
+                  onVmPermission={onVmPermission}
+                  onVmRemove={onVmRemove}
+                  onVmReboot={onVmReboot}
+                  onVmEdit={onVmEdit}
+                  onVmAccess={onVmAccess}
+                  onAddVm={onAddVm}
+                />
+              </div>
+            ) : selectedGroup && groupedTabs[selectedGroup as keyof typeof groupedTabs] ? (
               <div className="w-full pb-4">
                 {/* Collapse button for secondary sidebar */}
                 {onToggleCollapse && (
-                  <Button
-                    variant="ghost"
-                    className="platform-sidebar-menu-button w-full justify-start text-sm font-medium h-9 px-4 rounded-none mb-2 text-muted-foreground !hover:bg-muted cursor-pointer"
-                    onClick={onToggleCollapse}
-                    style={{ pointerEvents: 'auto', position: 'relative', zIndex: 101 }}
-                    title="Collapse secondary sidebar"
-                    aria-label="Collapse secondary sidebar"
-                  >
-                    <ChevronLeft className="h-4 w-4 mr-2" />
-                    <span>Collapse</span>
-                  </Button>
+                  <div className="border-b border-border mb-2">
+                    <Button
+                      variant="ghost"
+                      className="platform-sidebar-menu-button w-full justify-start text-sm font-medium h-9 px-4 rounded-none text-muted-foreground !hover:bg-muted cursor-pointer"
+                      onClick={onToggleCollapse}
+                      style={{ 
+                        pointerEvents: 'auto', 
+                        position: 'relative', 
+                        zIndex: 101
+                      }}
+                      title="Collapse secondary sidebar"
+                      aria-label="Collapse secondary sidebar"
+                    >
+                      <ChevronLeft className="h-4 w-4 mr-2" />
+                      <span>Collapse</span>
+                    </Button>
+                  </div>
                 )}
                 
            
@@ -807,7 +844,7 @@ export function PlatformSidebar({
           style={{ pointerEvents: 'auto' }}
         >
           {collapsed ? (
-            <div className="flex items-center justify-center">
+            <div className="flex flex-col items-center justify-center gap-2">
               <Button
                 variant="ghost"
                 size="icon"
@@ -820,9 +857,12 @@ export function PlatformSidebar({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </Button>
+              <span className="text-xs text-muted-foreground" style={{ color: sidebarText }}>
+                v{APP_VERSION}
+              </span>
             </div>
           ) : (
-            <div className="flex items-center justify-start">
+            <div className="flex flex-col gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -835,6 +875,9 @@ export function PlatformSidebar({
                 </svg>
                 Collapse
               </Button>
+              <div className="text-xs text-muted-foreground text-center" style={{ color: sidebarText }}>
+                Version {APP_VERSION}
+              </div>
             </div>
           )}
         </div>

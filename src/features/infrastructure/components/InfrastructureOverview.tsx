@@ -15,8 +15,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Plus, Search, Server, Loader, Activity } from 'lucide-react'
+import { Search, Server, Loader, Activity } from 'lucide-react'
 import { useSpace } from '@/contexts/space-context'
+import { useInfrastructureContext } from '@/contexts/infrastructure-context'
 import { InstanceCard } from './InstanceCard'
 import { InstanceDetails } from './InstanceDetails'
 import { AddInstanceDialog } from './AddInstanceDialog'
@@ -65,6 +66,11 @@ export function InfrastructureOverview({
     return true
   })
 
+  // Use context if available (from infrastructure layout), otherwise use local state
+  const context = useInfrastructureContext()
+  const effectiveShowAddDialog = context.isProviderActive ? context.showAddDialog : showAddDialog
+  const effectiveSetShowAddDialog = context.isProviderActive ? context.setShowAddDialog : setShowAddDialog
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -73,10 +79,6 @@ export function InfrastructureOverview({
           <h2 className="text-2xl font-bold tracking-tight">Infrastructure</h2>
           <p className="text-muted-foreground">Manage your infrastructure instances</p>
         </div>
-        <Button onClick={() => setShowAddDialog(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Instance
-        </Button>
       </div>
 
       {/* Filters */}
@@ -164,8 +166,8 @@ export function InfrastructureOverview({
 
       {/* Add Instance Dialog */}
       <AddInstanceDialog
-        open={showAddDialog}
-        onOpenChange={setShowAddDialog}
+        open={effectiveShowAddDialog}
+        onOpenChange={effectiveSetShowAddDialog}
         spaceId={effectiveSpaceId}
         onSuccess={() => {
           refetch()

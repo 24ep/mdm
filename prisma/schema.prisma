@@ -824,6 +824,8 @@ model AuditLog {
   oldValue   String?  @map("old_value") // JSON string
   newValue   String?  @map("new_value") // JSON string
   userId     String?  @map("user_id") @db.Uuid
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
   createdAt  DateTime @default(now()) @map("created_at")
 
   // Relations

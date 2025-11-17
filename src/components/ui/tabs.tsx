@@ -45,6 +45,7 @@ const TabsList = React.forwardRef<
     ref={ref}
     role="tablist"
     aria-orientation={orientation}
+    data-component={orientation === "vertical" ? "vertical-tab-list" : undefined}
     className={cn(
       "inline-flex h-10 items-center justify-start border-b border-border text-muted-foreground",
       orientation === "vertical" && "inline-flex h-auto w-full flex-col items-stretch border-b-0",
@@ -63,6 +64,15 @@ const TabsTrigger = React.forwardRef<
 >(({ className, value, children, ...props }, ref) => {
   const context = React.useContext(TabsContext)
   const isActive = context?.value === value
+  
+  // Check if parent is a vertical tablist
+  const [isVertical, setIsVertical] = React.useState(false)
+  React.useEffect(() => {
+    if (ref && typeof ref !== 'function' && ref.current) {
+      const parent = ref.current.closest('[role="tablist"][aria-orientation="vertical"]')
+      setIsVertical(!!parent)
+    }
+  }, [ref])
 
   const handleClick = () => {
     context?.onValueChange(value)
@@ -76,6 +86,7 @@ const TabsTrigger = React.forwardRef<
       role="tab"
       aria-selected={isActive}
       onClick={handleClick}
+      data-component={isVertical ? "vertical-tab-trigger" : undefined}
       className={cn(
         "inline-flex items-center justify-start whitespace-nowrap px-3 py-2.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
         isActive && "text-foreground border-b-[3px] border-primary relative",

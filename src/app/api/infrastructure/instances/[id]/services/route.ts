@@ -79,7 +79,15 @@ export async function POST(
 
     const { id } = await params
     const body = await request.json()
-    const { name, type, serviceConfig, endpoints, healthCheckUrl } = body
+    const { 
+      name, 
+      type, 
+      serviceConfig, 
+      endpoints, 
+      healthCheckUrl,
+      managementPluginId,
+      managementConfig
+    } = body
 
     if (!name || !type) {
       return NextResponse.json(
@@ -92,9 +100,10 @@ export async function POST(
     const result = await query(
       `INSERT INTO instance_services (
         id, instance_id, name, type, service_config, endpoints, health_check_url,
+        management_plugin_id, management_config,
         discovered_at, last_seen, created_at, updated_at
       ) VALUES (
-        gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW(), NOW(), NOW(), NOW()
+        gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW(), NOW(), NOW()
       ) RETURNING id`,
       [
         id,
@@ -103,10 +112,35 @@ export async function POST(
         serviceConfig ? JSON.stringify(serviceConfig) : '{}',
         endpoints ? JSON.stringify(endpoints) : '[]',
         healthCheckUrl || null,
+        managementPluginId || null,
+        managementConfig ? JSON.stringify(managementConfig) : '{}',
       ]
     )
 
     const serviceId = result.rows[0].id
+
+    // Create management assignment if plugin is provided
+    if (managementPluginId) {
+      await query(
+        `INSERT INTO service_management_assignments (
+          id, instance_service_id, plugin_id, assigned_by, assigned_at, 
+          config, credentials, is_active
+        ) VALUES (
+          gen_random_uuid(), $1, $2, $3, NOW(), $4, '{}'::jsonb, true
+        )
+        ON CONFLICT (instance_service_id, plugin_id)
+        DO UPDATE SET
+          assigned_at = NOW(),
+          config = EXCLUDED.config,
+          is_active = true`,
+        [
+          serviceId,
+          managementPluginId,
+          session.user.id,
+          managementConfig ? JSON.stringify(managementConfig) : '{}',
+        ]
+      )
+    }
 
     await logAPIRequest(
       session.user.id,

@@ -1,4 +1,15 @@
-import { sendLogToElasticsearch } from '@/lib/elasticsearch-client'
+// Dynamic import for Elasticsearch (server-side only)
+const getElasticsearchLogger = async () => {
+  if (typeof window === 'undefined') {
+    try {
+      const { sendLogToElasticsearch } = await import('@/lib/elasticsearch-client')
+      return sendLogToElasticsearch
+    } catch (error) {
+      return () => Promise.resolve()
+    }
+  }
+  return () => Promise.resolve()
+}
 
 export enum LogLevel {
   DEBUG = 'debug',
@@ -54,14 +65,16 @@ export class Logger {
     }
 
     // Send to Elasticsearch (fire and forget)
-    sendLogToElasticsearch('monitoring', {
-      level: level.toString(),
-      message,
-      ...entry.context,
-      userId: entry.userId,
-      spaceId: entry.spaceId,
-      timestamp: entry.timestamp?.toISOString()
-    }).catch(() => {}) // Silently fail
+    getElasticsearchLogger().then(sendLog => {
+      sendLog('monitoring', {
+        level: level.toString(),
+        message,
+        ...entry.context,
+        userId: entry.userId,
+        spaceId: entry.spaceId,
+        timestamp: entry.timestamp?.toISOString()
+      }).catch(() => {}) // Silently fail
+    })
   }
 
   debug(message: string, data?: Record<string, any>) {

@@ -8,10 +8,12 @@ export default function SpaceInfrastructurePage() {
   const spaceId = params?.space as string
 
   return (
-    <InfrastructureOverview 
-      spaceId={spaceId}
-      showSpaceSelector={false}
-    />
+    <div className="p-6">
+      <InfrastructureOverview 
+        spaceId={spaceId}
+        showSpaceSelector={false}
+      />
+    </div>
   )
 }
 

@@ -19,8 +19,6 @@ import {
   Zap,
   Database,
   Server,
-  Key,
-  Shield,
   Activity,
   Eye,
   EyeOff,
@@ -28,10 +26,16 @@ import {
   BarChart3,
   Lock,
   Rocket,
-  Box,
   Cloud,
   Globe,
-  Search
+  Search,
+  Webhook,
+  UserCheck,
+  Brain,
+  Bot,
+  HardDrive,
+  Network,
+  Gauge
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -46,24 +50,14 @@ export interface IntegrationConfig {
   config?: Record<string, any>
 }
 
-export const INTEGRATIONS: Omit<IntegrationConfig, 'id' | 'isConfigured' | 'status' | 'config'>[] = [
+// Multi-connection integrations - can have many connections/instances
+// These are shown on the Integration page
+export const MULTI_CONNECTION_INTEGRATIONS: Omit<IntegrationConfig, 'id' | 'isConfigured' | 'status' | 'config'>[] = [
   {
     name: 'OpenMetadata',
     type: 'openmetadata',
     icon: Database,
     description: 'Metadata management and data governance platform'
-  },
-  {
-    name: 'SSO',
-    type: 'sso',
-    icon: Shield,
-    description: 'Single Sign-On authentication configuration'
-  },
-  {
-    name: 'Service Desk',
-    type: 'servicedesk',
-    icon: Server,
-    description: 'Service desk integration (ManageEngine, Jira, etc.)'
   },
   {
     name: 'Power BI',
@@ -84,10 +78,22 @@ export const INTEGRATIONS: Omit<IntegrationConfig, 'id' | 'isConfigured' | 'stat
     description: 'Grafana integration for monitoring and visualization'
   },
   {
-    name: 'Vault',
-    type: 'vault',
-    icon: Lock,
-    description: 'HashiCorp Vault for secrets management'
+    name: 'Prometheus',
+    type: 'prometheus',
+    icon: Gauge,
+    description: 'Prometheus integration for metrics collection and monitoring'
+  },
+  {
+    name: 'MinIO',
+    type: 'minio',
+    icon: HardDrive,
+    description: 'MinIO object storage integration for S3-compatible storage'
+  },
+  {
+    name: 'Kong',
+    type: 'kong',
+    icon: Network,
+    description: 'Kong API Gateway integration for API management and routing'
   },
   {
     name: 'Launchpad',
@@ -96,16 +102,39 @@ export const INTEGRATIONS: Omit<IntegrationConfig, 'id' | 'isConfigured' | 'stat
     description: 'Launchpad integration for application management'
   },
   {
-    name: 'Custom API',
-    type: 'api',
-    icon: Key,
-    description: 'Custom API or SDK integration'
+    name: 'OAuth Provider',
+    type: 'oauth',
+    icon: UserCheck,
+    description: 'OAuth 2.0 authentication providers (Google, GitHub, Microsoft, etc.)'
   },
   {
-    name: 'Custom SDK',
-    type: 'sdk',
-    icon: Box,
-    description: 'Custom SDK integration'
+    name: 'Webhook',
+    type: 'webhook',
+    icon: Webhook,
+    description: 'Webhook integrations for event notifications and data synchronization'
+  },
+  {
+    name: 'AI Provider',
+    type: 'ai_provider',
+    icon: Brain,
+    description: 'AI service providers (OpenAI, Anthropic, Google AI, etc.)'
+  }
+]
+
+// System config integrations - only one instance, moved to System Settings
+// These are NOT shown on the Integration page
+export const SYSTEM_CONFIG_INTEGRATIONS: Omit<IntegrationConfig, 'id' | 'isConfigured' | 'status' | 'config'>[] = [
+  {
+    name: 'Service Desk',
+    type: 'servicedesk',
+    icon: Server,
+    description: 'Service desk integration (ManageEngine, Jira, etc.)'
+  },
+  {
+    name: 'Vault',
+    type: 'vault',
+    icon: Lock,
+    description: 'HashiCorp Vault for secrets management'
   },
   {
     name: 'Elasticsearch',
@@ -114,6 +143,9 @@ export const INTEGRATIONS: Omit<IntegrationConfig, 'id' | 'isConfigured' | 'stat
     description: 'Elasticsearch integration for centralized logging and search'
   }
 ]
+
+// Legacy export for backward compatibility
+export const INTEGRATIONS = MULTI_CONNECTION_INTEGRATIONS
 
 export function IntegrationList() {
   const [integrations, setIntegrations] = useState<IntegrationConfig[]>([])
@@ -305,19 +337,6 @@ export function IntegrationList() {
           { key: 'apiKey', label: 'API Key', type: 'password', required: true },
           { key: 'authType', label: 'Auth Type', type: 'select', options: ['apiKey', 'basic', 'bearer'], required: true }
         ]
-      case 'sso':
-        return [
-          { key: 'provider', label: 'Provider', type: 'select', options: ['SAML', 'OAuth2', 'OpenID Connect'], required: true },
-          { key: 'entityId', label: 'Entity ID', type: 'text', required: true },
-          { key: 'ssoUrl', label: 'SSO URL', type: 'text', required: true },
-          { key: 'certificate', label: 'Certificate', type: 'textarea', required: false }
-        ]
-      case 'servicedesk':
-        return [
-          { key: 'baseUrl', label: 'Base URL', type: 'text', required: true },
-          { key: 'apiKey', label: 'API Key', type: 'password', required: true },
-          { key: 'technicianKey', label: 'Technician Key', type: 'password', required: false }
-        ]
       case 'powerbi':
         return [
           { key: 'clientId', label: 'Client ID', type: 'text', required: true },
@@ -337,11 +356,29 @@ export function IntegrationList() {
           { key: 'apiKey', label: 'API Key', type: 'password', required: true },
           { key: 'orgId', label: 'Organization ID', type: 'text', required: false }
         ]
-      case 'vault':
+      case 'prometheus':
         return [
-          { key: 'vaultUrl', label: 'Vault URL', type: 'text', required: true },
-          { key: 'token', label: 'Token', type: 'password', required: true },
-          { key: 'mountPath', label: 'Mount Path', type: 'text', required: false }
+          { key: 'apiUrl', label: 'Prometheus URL', type: 'text', required: true, placeholder: 'http://prometheus:9090' },
+          { key: 'username', label: 'Username', type: 'text', required: false },
+          { key: 'password', label: 'Password', type: 'password', required: false },
+          { key: 'timeout', label: 'Timeout (seconds)', type: 'number', required: false, placeholder: '30' }
+        ]
+      case 'minio':
+        return [
+          { key: 'endpoint', label: 'MinIO Endpoint', type: 'text', required: true, placeholder: 'http://minio:9000' },
+          { key: 'accessKey', label: 'Access Key', type: 'text', required: true },
+          { key: 'secretKey', label: 'Secret Key', type: 'password', required: true },
+          { key: 'useSSL', label: 'Use SSL', type: 'select', options: ['true', 'false'], required: false },
+          { key: 'region', label: 'Region', type: 'text', required: false, placeholder: 'us-east-1' },
+          { key: 'bucket', label: 'Default Bucket', type: 'text', required: false }
+        ]
+      case 'kong':
+        return [
+          { key: 'adminUrl', label: 'Kong Admin API URL', type: 'text', required: true, placeholder: 'http://kong:8001' },
+          { key: 'apiKey', label: 'API Key', type: 'password', required: false },
+          { key: 'username', label: 'Username', type: 'text', required: false },
+          { key: 'password', label: 'Password', type: 'password', required: false },
+          { key: 'timeout', label: 'Timeout (seconds)', type: 'number', required: false, placeholder: '30' }
         ]
       case 'launchpad':
         return [
@@ -349,22 +386,33 @@ export function IntegrationList() {
           { key: 'apiKey', label: 'API Key', type: 'password', required: true },
           { key: 'environment', label: 'Environment', type: 'select', options: ['development', 'staging', 'production'], required: true }
         ]
-      case 'api':
-      case 'sdk':
+      case 'oauth':
         return [
-          { key: 'endpoint', label: 'Endpoint URL', type: 'text', required: true },
-          { key: 'apiKey', label: 'API Key', type: 'password', required: false },
-          { key: 'authType', label: 'Auth Type', type: 'select', options: ['none', 'apiKey', 'bearer', 'basic'], required: true },
-          { key: 'customHeaders', label: 'Custom Headers (JSON)', type: 'textarea', required: false }
+          { key: 'provider', label: 'OAuth Provider', type: 'select', options: ['google', 'github', 'microsoft', 'facebook', 'linkedin', 'twitter', 'custom'], required: true },
+          { key: 'clientId', label: 'Client ID', type: 'text', required: true },
+          { key: 'clientSecret', label: 'Client Secret', type: 'password', required: true },
+          { key: 'redirectUri', label: 'Redirect URI', type: 'text', required: true, placeholder: 'https://yourdomain.com/auth/callback' },
+          { key: 'authorizationUrl', label: 'Authorization URL', type: 'text', required: false, placeholder: 'For custom providers' },
+          { key: 'tokenUrl', label: 'Token URL', type: 'text', required: false, placeholder: 'For custom providers' },
+          { key: 'scopes', label: 'Scopes (comma-separated)', type: 'text', required: false, placeholder: 'openid, profile, email' }
         ]
-      case 'elasticsearch':
+      case 'webhook':
         return [
-          { key: 'url', label: 'Elasticsearch URL', type: 'text', required: true, placeholder: 'https://localhost:9200' },
-          { key: 'cloudId', label: 'Cloud ID (optional)', type: 'text', required: false, placeholder: 'For Elastic Cloud' },
-          { key: 'username', label: 'Username (optional)', type: 'text', required: false },
-          { key: 'password', label: 'Password (optional)', type: 'password', required: false },
-          { key: 'apiKey', label: 'API Key (optional)', type: 'password', required: false },
-          { key: 'indexPrefix', label: 'Index Prefix', type: 'text', required: false, placeholder: 'mdm-logs (default)' }
+          { key: 'name', label: 'Webhook Name', type: 'text', required: true },
+          { key: 'url', label: 'Webhook URL', type: 'text', required: true, placeholder: 'https://example.com/webhook' },
+          { key: 'secret', label: 'Webhook Secret', type: 'password', required: false, placeholder: 'Secret for signature verification' },
+          { key: 'events', label: 'Events (comma-separated)', type: 'text', required: false, placeholder: 'user.created, data.updated' },
+          { key: 'method', label: 'HTTP Method', type: 'select', options: ['POST', 'PUT', 'PATCH'], required: false },
+          { key: 'headers', label: 'Custom Headers (JSON)', type: 'textarea', required: false, placeholder: '{"X-Custom-Header": "value"}' }
+        ]
+      case 'ai_provider':
+        return [
+          { key: 'provider', label: 'AI Provider', type: 'select', options: ['openai', 'anthropic', 'google', 'cohere', 'huggingface', 'custom'], required: true },
+          { key: 'apiKey', label: 'API Key', type: 'password', required: true },
+          { key: 'baseUrl', label: 'Base URL', type: 'text', required: false, placeholder: 'Custom API endpoint (optional)' },
+          { key: 'model', label: 'Default Model', type: 'text', required: false, placeholder: 'gpt-4, claude-3, etc.' },
+          { key: 'timeout', label: 'Timeout (ms)', type: 'number', required: false, placeholder: '30000' },
+          { key: 'maxRetries', label: 'Max Retries', type: 'number', required: false, placeholder: '3' }
         ]
       default:
         return [

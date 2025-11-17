@@ -52,6 +52,8 @@ export function AdvancedFilters({ filters, categories, onFiltersChange, onClear 
               <SelectContent>
                 <SelectItem value="">All Sources</SelectItem>
                 <SelectItem value="BUILT_IN">Built-in</SelectItem>
+                <SelectItem value="BUILT_IN_VISUALIZE">Built-in Visualize</SelectItem>
+                <SelectItem value="CUSTOM_EMBED_LINK">Custom Embed Link</SelectItem>
                 <SelectItem value="POWER_BI">Power BI</SelectItem>
                 <SelectItem value="GRAFANA">Grafana</SelectItem>
                 <SelectItem value="LOOKER_STUDIO">Looker Studio</SelectItem>
