@@ -117,7 +117,7 @@ export function ChatbotEmulator({
   }, [selectedChatbot?.id, emulatorConfig])
 
   return (
-    <div className="min-h-[800px] border rounded-lg overflow-visible relative" style={{ borderColor: formData.borderColor }}>
+    <div className="min-h-[800px] border-l overflow-visible relative bg-transparent" style={{ borderColor: formData.borderColor }}>
       <div className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: formData.borderColor }}>
         <div className="text-sm font-medium">Emulator</div>
         <div className="flex items-center gap-2">

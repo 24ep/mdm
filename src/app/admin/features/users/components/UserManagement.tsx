@@ -34,7 +34,8 @@ import {
   Globe,
   Folder,
   Download,
-  Upload
+  Upload,
+  User as UserIcon
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { User } from '../types'
@@ -68,6 +69,7 @@ export function UserManagement() {
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [editDialogTab, setEditDialogTab] = useState('basic')
   const [editForm, setEditForm] = useState({
     name: '',
     email: '',
@@ -194,6 +196,7 @@ export function UserManagement() {
       defaultSpaceId: user.defaultSpaceId || '',
       spaces: user.spaces || []
     })
+    setEditDialogTab('basic')
     setShowEditDialog(true)
   }
 
@@ -638,57 +641,84 @@ export function UserManagement() {
 
       {/* Edit User Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
             <DialogDescription>
               Update user information and permissions
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            {/* Avatar Upload */}
-            {editingUser && (
-              <div className="space-y-2">
-                <Label>Profile Picture</Label>
-                <AvatarUpload
-                  userId={editingUser.id}
-                  currentAvatar={editingUser.avatar}
-                  userName={editForm.name}
-                  userEmail={editForm.email}
-                  onAvatarChange={(avatarUrl) => {
-                    // Update the user in the list
-                    setUsers(users.map(u => 
-                      u.id === editingUser.id ? { ...u, avatar: avatarUrl || undefined } : u
-                    ))
-                    // Update editing user
-                    setEditingUser({ ...editingUser, avatar: avatarUrl || undefined })
-                  }}
-                  size="lg"
-                />
+          
+          <Tabs value={editDialogTab} onValueChange={setEditDialogTab} className="w-full">
+            <TabsList className="w-full flex justify-start gap-2">
+              <TabsTrigger value="basic" className="flex items-center gap-2">
+                <UserIcon className="h-4 w-4" />
+                Basic Info
+              </TabsTrigger>
+              <TabsTrigger value="roles" className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Roles & Permissions
+              </TabsTrigger>
+              <TabsTrigger value="spaces" className="flex items-center gap-2">
+                <Folder className="h-4 w-4" />
+                Space Associations
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="basic" className="space-y-4 mt-4">
+              {/* Avatar Upload */}
+              {editingUser && (
+                <div className="space-y-2">
+                  <Label>Profile Picture</Label>
+                  <AvatarUpload
+                    userId={editingUser.id}
+                    currentAvatar={editingUser.avatar}
+                    userName={editForm.name}
+                    userEmail={editForm.email}
+                    onAvatarChange={(avatarUrl) => {
+                      // Update the user in the list
+                      setUsers(users.map(u => 
+                        u.id === editingUser.id ? { ...u, avatar: avatarUrl || undefined } : u
+                      ))
+                      // Update editing user
+                      setEditingUser({ ...editingUser, avatar: avatarUrl || undefined })
+                    }}
+                    size="lg"
+                  />
+                </div>
+              )}
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-name">Name</Label>
+                  <Input
+                    id="edit-name"
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-email">Email</Label>
+                  <Input
+                    id="edit-email"
+                    type="email"
+                    value={editForm.email}
+                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  />
+                </div>
               </div>
-            )}
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="edit-name">Name</Label>
-                <Input
-                  id="edit-name"
-                  value={editForm.name}
-                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="edit-active"
+                  checked={editForm.isActive}
+                  onCheckedChange={(checked) => setEditForm({ ...editForm, isActive: checked })}
                 />
+                <Label htmlFor="edit-active">Active</Label>
               </div>
-              <div>
-                <Label htmlFor="edit-email">Email</Label>
-                <Input
-                  id="edit-email"
-                  type="email"
-                  value={editForm.email}
-                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-4 border-t pt-4">
+            </TabsContent>
+
+            <TabsContent value="roles" className="space-y-4 mt-4">
               <div>
                 <Label className="text-base font-semibold flex items-center gap-2">
                   <Globe className="h-4 w-4" />
@@ -726,9 +756,11 @@ export function UserManagement() {
                   </SelectContent>
                 </Select>
               </div>
+            </TabsContent>
 
-              {editingUser && editingUser.spaces && editingUser.spaces.length > 0 && (
-                <div className="space-y-2 border-t pt-4">
+            <TabsContent value="spaces" className="space-y-4 mt-4">
+              {editingUser && editingUser.spaces && editingUser.spaces.length > 0 ? (
+                <div className="space-y-2">
                   <Label className="text-base font-semibold flex items-center gap-2">
                     <Folder className="h-4 w-4" />
                     Space Roles
@@ -752,18 +784,15 @@ export function UserManagement() {
                     Note: Space roles are managed from the space settings
                   </p>
                 </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Folder className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>No space associations</p>
+                </div>
               )}
-            </div>
+            </TabsContent>
+          </Tabs>
 
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="edit-active"
-                checked={editForm.isActive}
-                onCheckedChange={(checked) => setEditForm({ ...editForm, isActive: checked })}
-              />
-              <Label htmlFor="edit-active">Active</Label>
-            </div>
-          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditDialog(false)}>
               Cancel

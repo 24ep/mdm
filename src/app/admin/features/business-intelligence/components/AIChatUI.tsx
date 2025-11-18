@@ -688,7 +688,7 @@ export function AIChatUI() {
     })
 
   return (
-    <div className="p-6 space-y-2">
+    <div className="space-y-2">
       <div className="flex items-center justify-between">
         {!(showCreateDialog || showEditDialog) && (
           <>
@@ -807,38 +807,40 @@ export function AIChatUI() {
       {(showCreateDialog || showEditDialog) && (
         <div className="space-y-4">
           {/* Header */}
-          <div className="border-b pb-4">
+          <div className="border-b pb-4 px-6">
             <ChatbotHeader formData={formData} setFormData={setFormData} />
           </div>
           
           {/* Selection Tab */}
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-            <TabsList className="w-full flex justify-start gap-2">
-              <TabsTrigger value="engine">
-                <Settings className="h-4 w-4 mr-2" />
-                Engine
-              </TabsTrigger>
-              <TabsTrigger value="style">
-                <Palette className="h-4 w-4 mr-2" />
-                Style
-              </TabsTrigger>
-              <TabsTrigger value="config">
-                <Layout className="h-4 w-4 mr-2" />
-                Config
-              </TabsTrigger>
-              <TabsTrigger value="deployment">
-                <Rocket className="h-4 w-4 mr-2" />
-                Deployment
-              </TabsTrigger>
-              <TabsTrigger value="performance">
-                <TrendingUp className="h-4 w-4 mr-2" />
-                Performance
-              </TabsTrigger>
-            </TabsList>
+            <div className="px-6 -mt-2">
+              <TabsList className="w-full flex justify-start gap-2">
+                <TabsTrigger value="engine">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Engine
+                </TabsTrigger>
+                <TabsTrigger value="style">
+                  <Palette className="h-4 w-4 mr-2" />
+                  Style
+                </TabsTrigger>
+                <TabsTrigger value="config">
+                  <Layout className="h-4 w-4 mr-2" />
+                  Config
+                </TabsTrigger>
+                <TabsTrigger value="deployment">
+                  <Rocket className="h-4 w-4 mr-2" />
+                  Deployment
+                </TabsTrigger>
+                <TabsTrigger value="performance">
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Performance
+                </TabsTrigger>
+              </TabsList>
+            </div>
           </Tabs>
           
           {/* Split Layout: Selected Tab Content | Emulator */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-6">
             <div className="min-h-[800px]">
               <ChatbotEditor
                 formData={formData}
@@ -859,7 +861,7 @@ export function AIChatUI() {
           </div>
           
           {/* Action buttons at bottom */}
-          <div className="flex items-center justify-between pt-4 border-t">
+          <div className="flex items-center justify-between pt-4 border-t px-6">
             <Button
               variant="ghost"
               onClick={() => {

@@ -422,7 +422,13 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
                     <ChevronDown className="h-4 w-4 opacity-50" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent 
+                  align="end" 
+                  className="w-48"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                  }}
+                >
                   <DropdownMenuLabel>Theme</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuRadioGroup 
@@ -456,7 +462,8 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
                     <DropdownMenuRadioItem 
                       value="light" 
                       checked={mounted && theme === 'light'}
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation()
                         if (mounted) {
                           setTheme('light')
                           document.documentElement.classList.remove('dark')
@@ -472,7 +479,8 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
                     <DropdownMenuRadioItem 
                       value="dark" 
                       checked={mounted && theme === 'dark'}
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation()
                         if (mounted) {
                           setTheme('dark')
                           document.documentElement.classList.add('dark')
@@ -488,7 +496,8 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
                     <DropdownMenuRadioItem 
                       value="system" 
                       checked={mounted && (theme === 'system' || !theme)}
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation()
                         if (mounted) {
                           setTheme('system')
                           const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches

@@ -27,7 +27,9 @@ import {
   Key,
   Mail,
   Calendar,
-  Settings
+  Settings,
+  User,
+  Folder
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -88,6 +90,7 @@ export function EnhancedUserManagement() {
   const [showUserDetails, setShowUserDetails] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [editDialogTab, setEditDialogTab] = useState('basic')
   const [editForm, setEditForm] = useState({
     name: '',
     email: '',
@@ -154,6 +157,7 @@ export function EnhancedUserManagement() {
       default_space_id: user.default_space_id || '',
       spaces: user.spaces.map(s => ({ space_id: s.space_id, role: s.role }))
     })
+    setEditDialogTab('basic')
     setShowEditDialog(true)
   }
 
@@ -568,7 +572,7 @@ export function EnhancedUserManagement() {
 
       {/* Edit User Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
             <DialogDescription>
@@ -576,50 +580,76 @@ export function EnhancedUserManagement() {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4">
-            {/* Avatar Upload */}
-            {editingUser && (
-              <div className="space-y-2">
-                <Label>Profile Picture</Label>
-                <AvatarUpload
-                  userId={editingUser.id}
-                  currentAvatar={editingUser.avatar}
-                  userName={editForm.name}
-                  userEmail={editForm.email}
-                  onAvatarChange={(avatarUrl) => {
-                    // Update the user in the list
-                    setUsers(users.map(u => 
-                      u.id === editingUser.id ? { ...u, avatar: avatarUrl || undefined } : u
-                    ))
-                    // Update editing user
-                    setEditingUser({ ...editingUser, avatar: avatarUrl || undefined })
-                  }}
-                  size="lg"
-                />
-              </div>
-            )}
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  value={editForm.name}
-                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={editForm.email}
-                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                />
-              </div>
-            </div>
+          <Tabs value={editDialogTab} onValueChange={setEditDialogTab} className="w-full">
+            <TabsList className="w-full flex justify-start gap-2">
+              <TabsTrigger value="basic" className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Basic Info
+              </TabsTrigger>
+              <TabsTrigger value="roles" className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Roles & Permissions
+              </TabsTrigger>
+              <TabsTrigger value="spaces" className="flex items-center gap-2">
+                <Folder className="h-4 w-4" />
+                Space Associations
+              </TabsTrigger>
+            </TabsList>
 
-            <div className="grid grid-cols-2 gap-4">
+            <TabsContent value="basic" className="space-y-4 mt-4">
+              {/* Avatar Upload */}
+              {editingUser && (
+                <div className="space-y-2">
+                  <Label>Profile Picture</Label>
+                  <AvatarUpload
+                    userId={editingUser.id}
+                    currentAvatar={editingUser.avatar}
+                    userName={editForm.name}
+                    userEmail={editForm.email}
+                    onAvatarChange={(avatarUrl) => {
+                      // Update the user in the list
+                      setUsers(users.map(u => 
+                        u.id === editingUser.id ? { ...u, avatar: avatarUrl || undefined } : u
+                      ))
+                      // Update editing user
+                      setEditingUser({ ...editingUser, avatar: avatarUrl || undefined })
+                    }}
+                    size="lg"
+                  />
+                </div>
+              )}
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={editForm.email}
+                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="is_active"
+                  checked={editForm.is_active}
+                  onCheckedChange={(checked) => setEditForm({ ...editForm, is_active: checked })}
+                />
+                <Label htmlFor="is_active">Active</Label>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="roles" className="space-y-4 mt-4">
               <div>
                 <Label htmlFor="role">Role</Label>
                 <Select value={editForm.role} onValueChange={(value) => setEditForm({ ...editForm, role: value })}>
@@ -653,91 +683,84 @@ export function EnhancedUserManagement() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
+            </TabsContent>
 
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="is_active"
-                checked={editForm.is_active}
-                onCheckedChange={(checked) => setEditForm({ ...editForm, is_active: checked })}
-              />
-              <Label htmlFor="is_active">Active</Label>
-            </div>
-
-            {/* Space Associations Management */}
-            <div>
-              <Label className="text-sm font-medium">Space Associations</Label>
-              <div className="mt-2 space-y-2">
-                {editForm.spaces.map((space, index) => (
-                  <div key={index} className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg">
-                    <Select
-                      value={space.space_id}
-                      onValueChange={(value) => {
-                        const newSpaces = [...editForm.spaces]
-                        newSpaces[index].space_id = value
-                        setEditForm({ ...editForm, spaces: newSpaces })
-                      }}
-                    >
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Select space" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {spaces.map((s) => (
-                          <SelectItem key={s.id} value={s.id}>
-                            {s.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    
-                    <Select
-                      value={space.role}
-                      onValueChange={(value) => {
-                        const newSpaces = [...editForm.spaces]
-                        newSpaces[index].role = value
-                        setEditForm({ ...editForm, spaces: newSpaces })
-                      }}
-                    >
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="member">Member</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="owner">Owner</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const newSpaces = editForm.spaces.filter((_, i) => i !== index)
-                        setEditForm({ ...editForm, spaces: newSpaces })
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setEditForm({
-                      ...editForm,
-                      spaces: [...editForm.spaces, { space_id: '', role: 'member' }]
-                    })
-                  }}
-                  className="w-full"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Space Association
-                </Button>
+            <TabsContent value="spaces" className="space-y-4 mt-4">
+              {/* Space Associations Management */}
+              <div>
+                <Label className="text-sm font-medium">Space Associations</Label>
+                <div className="mt-2 space-y-2">
+                  {editForm.spaces.map((space, index) => (
+                    <div key={index} className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg">
+                      <Select
+                        value={space.space_id}
+                        onValueChange={(value) => {
+                          const newSpaces = [...editForm.spaces]
+                          newSpaces[index].space_id = value
+                          setEditForm({ ...editForm, spaces: newSpaces })
+                        }}
+                      >
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Select space" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {spaces.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {s.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      
+                      <Select
+                        value={space.role}
+                        onValueChange={(value) => {
+                          const newSpaces = [...editForm.spaces]
+                          newSpaces[index].role = value
+                          setEditForm({ ...editForm, spaces: newSpaces })
+                        }}
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="member">Member</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="owner">Owner</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const newSpaces = editForm.spaces.filter((_, i) => i !== index)
+                          setEditForm({ ...editForm, spaces: newSpaces })
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setEditForm({
+                        ...editForm,
+                        spaces: [...editForm.spaces, { space_id: '', role: 'member' }]
+                      })
+                    }}
+                    className="w-full"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Space Association
+                  </Button>
+                </div>
               </div>
-            </div>
-          </div>
+            </TabsContent>
+          </Tabs>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditDialog(false)}>

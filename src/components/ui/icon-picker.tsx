@@ -98,6 +98,7 @@ export function IconPicker({ value, onChange, placeholder = "Search icons...", g
 
   const groupedIcons = useMemo(() => {
     if (!grouped) return null
+    if (!filtered || filtered.length === 0) return null
     const map = new Map<string, Array<[name: string, icon: IconComponent]>>()
     for (const [name, Icon] of filtered) {
       const cat = categorizeIcon(name)
@@ -124,41 +125,47 @@ export function IconPicker({ value, onChange, placeholder = "Search icons...", g
       />
       {filtered.length === 0 ? (
         <div className="text-center text-xs text-muted-foreground py-6 border rounded-md">No icons found</div>
-      ) : grouped && groupedIcons ? (
+      ) : grouped && groupedIcons && groupedIcons.length > 0 ? (
         <div className="flex border rounded-md overflow-hidden" style={{ height: 330 }}>
           {/* Left: Category list */}
           <div className="w-64 border-r overflow-auto p-2 bg-gray-50">
             <ul className="space-y-1">
-              {groupedIcons.map(([category, items]) => (
-                <li key={category}>
-                  <button
-                    type="button"
-                    onClick={() => setActiveCategory(category)}
-                    className={
-                      "w-full text-left px-2 py-1 rounded-md text-sm transition-colors " +
-                      (activeCategory === category
-                        ? "bg-white shadow-sm"
-                        : "hover:bg-white/60")
-                    }
-                  >
-                    {category}
-                    <span className="text-[10px] text-muted-foreground ml-1">({items.length})</span>
-                  </button>
-                </li>
-              ))}
+              {groupedIcons.map(([category, items]) => {
+                if (!items || !Array.isArray(items)) return null
+                return (
+                  <li key={category}>
+                    <button
+                      type="button"
+                      onClick={() => setActiveCategory(category)}
+                      className={
+                        "w-full text-left px-2 py-1 rounded-md text-sm transition-colors " +
+                        (activeCategory === category
+                          ? "bg-white shadow-sm"
+                          : "hover:bg-white/60")
+                      }
+                    >
+                      {category}
+                      <span className="text-[10px] text-muted-foreground ml-1">({items.length})</span>
+                    </button>
+                  </li>
+                )
+              })}
             </ul>
           </div>
           {/* Right: Icons grid */}
           <div className="flex-1 overflow-auto p-2">
             {groupedIcons
               .filter(([category]) => category === activeCategory)
-              .map(([category, items]) => (
-                <div key={category}>
-                  <div className="grid grid-cols-6 gap-2">
-                    {items.map(([name, Icon]) => renderIconButton(name, Icon))}
+              .map(([category, items]) => {
+                if (!items || !Array.isArray(items)) return null
+                return (
+                  <div key={category}>
+                    <div className="grid grid-cols-6 gap-2">
+                      {items.map(([name, Icon]) => renderIconButton(name, Icon))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
           </div>
         </div>
       ) : (
