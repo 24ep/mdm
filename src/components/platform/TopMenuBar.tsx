@@ -396,6 +396,10 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
                   <Button
                     variant="ghost"
                     className="w-full justify-between font-normal h-9 px-3"
+                    onMouseDown={(e) => {
+                      // Prevent this from closing the parent popover
+                      e.stopPropagation()
+                    }}
                   >
                     <div className="flex items-center gap-2">
                       <Palette className="h-4 w-4" />
@@ -425,7 +429,12 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
                 <DropdownMenuContent 
                   align="end" 
                   className="w-48"
+                  onMouseDown={(e) => {
+                    // Prevent clicks inside dropdown from closing parent popover
+                    e.stopPropagation()
+                  }}
                   onClick={(e) => {
+                    // Prevent clicks inside dropdown from closing parent popover
                     e.stopPropagation()
                   }}
                 >
@@ -460,8 +469,11 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
                     }}
                   >
                     <DropdownMenuRadioItem 
-                      value="light" 
+                      value="light"
                       checked={mounted && theme === 'light'}
+                      onMouseDown={(e) => {
+                        e.stopPropagation()
+                      }}
                       onClick={(e) => {
                         e.stopPropagation()
                         if (mounted) {
@@ -477,8 +489,11 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
                       <span>Light</span>
                     </DropdownMenuRadioItem>
                     <DropdownMenuRadioItem 
-                      value="dark" 
+                      value="dark"
                       checked={mounted && theme === 'dark'}
+                      onMouseDown={(e) => {
+                        e.stopPropagation()
+                      }}
                       onClick={(e) => {
                         e.stopPropagation()
                         if (mounted) {
@@ -494,8 +509,11 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
                       <span>Dark</span>
                     </DropdownMenuRadioItem>
                     <DropdownMenuRadioItem 
-                      value="system" 
+                      value="system"
                       checked={mounted && (theme === 'system' || !theme)}
+                      onMouseDown={(e) => {
+                        e.stopPropagation()
+                      }}
                       onClick={(e) => {
                         e.stopPropagation()
                         if (mounted) {

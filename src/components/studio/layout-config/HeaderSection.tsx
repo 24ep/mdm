@@ -42,22 +42,22 @@ export function HeaderSection({ widget, selectedWidgetId, setPlacedWidgets }: He
         <>
           <Separator />
           <div className="space-y-3 pt-1">
-            <div className="space-y-1">
+            <div className="flex items-center justify-between">
               <Label className="text-xs font-medium">Title</Label>
               <Input
                 value={widget.properties?.title || ''}
                 onChange={(e) => updateProperty('title', e.target.value)}
                 placeholder="Element title"
-                className="h-7 text-xs"
+                className="h-7 text-xs w-32"
               />
             </div>
-            <div className="space-y-1">
+            <div className="flex items-center justify-between">
               <Label className="text-xs font-medium">Header Icon</Label>
               <Select
                 value={widget.properties?.headerIcon || 'none'}
                 onValueChange={(value) => updateProperty('headerIcon', value)}
               >
-                <SelectTrigger className="h-7 text-xs">
+                <SelectTrigger className="h-7 text-xs w-32">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -112,48 +112,46 @@ export function HeaderSection({ widget, selectedWidgetId, setPlacedWidgets }: He
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-xs font-medium">Title Color</Label>
-                <ColorInput
-                  value={widget.properties?.titleColor || '#111827'}
-                  onChange={(color) => updateProperty('titleColor', color)}
-                  allowImageVideo={false}
-                  className="relative"
-                  placeholder="#111827"
-                  inputClassName="h-7 text-xs pl-7"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs font-medium">Font Size</Label>
-                <Input
-                  type="number"
-                  value={widget.properties?.titleFontSize || 14}
-                  onChange={(e) => updateProperty('titleFontSize', parseInt(e.target.value) || 14)}
-                  className="h-7 text-xs"
-                  min={8}
-                  max={32}
-                />
-              </div>
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-medium">Title Color</Label>
+              <ColorInput
+                value={widget.properties?.titleColor || '#111827'}
+                onChange={(color) => updateProperty('titleColor', color)}
+                allowImageVideo={false}
+                className="relative w-32"
+                placeholder="#111827"
+                inputClassName="h-7 text-xs pl-7"
+              />
             </div>
-            <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-medium">Font Size</Label>
+              <Input
+                type="number"
+                value={widget.properties?.titleFontSize || 14}
+                onChange={(e) => updateProperty('titleFontSize', parseInt(e.target.value) || 14)}
+                className="h-7 text-xs w-32"
+                min={8}
+                max={32}
+              />
+            </div>
+            <div className="flex items-center justify-between">
               <Label className="text-xs font-medium">Header Background</Label>
               <ColorInput
                 value={widget.properties?.headerBackgroundColor || '#ffffff'}
                 onChange={(color) => updateProperty('headerBackgroundColor', color)}
                 allowImageVideo={true}
-                className="relative w-28"
+                className="relative w-32"
                 placeholder="#ffffff"
                 inputClassName="h-7 text-xs pl-7"
               />
             </div>
-            <div className="space-y-1">
+            <div className="flex items-center justify-between">
               <Label className="text-xs font-medium">Text Alignment</Label>
               <Select
                 value={widget.properties?.titleAlign || 'left'}
                 onValueChange={(value) => updateProperty('titleAlign', value)}
               >
-                <SelectTrigger className="h-7 text-xs">
+                <SelectTrigger className="h-7 text-xs w-32">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

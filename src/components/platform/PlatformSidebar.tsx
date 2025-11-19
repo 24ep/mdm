@@ -60,6 +60,8 @@ interface PlatformSidebarProps {
   collapsed?: boolean
   selectedGroup?: string | null
   onGroupSelect?: (group: string) => void
+  onGroupHover?: (group: string | null) => void
+  onGroupLeave?: () => void
   mode?: 'primary' | 'secondary'
   onToggleCollapse?: () => void
   searchQuery?: string
@@ -82,6 +84,8 @@ export function PlatformSidebar({
   collapsed = false,
   selectedGroup,
   onGroupSelect,
+  onGroupHover,
+  onGroupLeave,
   mode = 'primary',
   onToggleCollapse,
   searchQuery = '',
@@ -463,6 +467,19 @@ export function PlatformSidebar({
                           : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
                       )}
                       onClick={() => handleGroupClick(groupId)}
+                      onMouseEnter={() => {
+                        const tabs = groupedTabs[groupId as keyof typeof groupedTabs]
+                        // Only show secondary sidebar if group has tabs and is not data-management
+                        if (tabs && tabs.length > 0 && groupId !== 'data-management') {
+                          onGroupHover?.(groupId)
+                        }
+                      }}
+                      onMouseLeave={() => {
+                        // Only clear hover if not currently selected
+                        if (selectedGroup !== groupId) {
+                          onGroupLeave?.()
+                        }
+                      }}
                       title={group.name}
                       style={{ 
                         pointerEvents: 'auto', 
@@ -503,6 +520,19 @@ export function PlatformSidebar({
                           : "text-foreground !hover:bg-muted !hover:text-foreground rounded-none"
                       )}
                       onClick={() => handleGroupClick(groupId)}
+                      onMouseEnter={() => {
+                        const tabs = groupedTabs[groupId as keyof typeof groupedTabs]
+                        // Only show secondary sidebar if group has tabs and is not data-management
+                        if (tabs && tabs.length > 0 && groupId !== 'data-management') {
+                          onGroupHover?.(groupId)
+                        }
+                      }}
+                      onMouseLeave={() => {
+                        // Only clear hover if not currently selected
+                        if (selectedGroup !== groupId) {
+                          onGroupLeave?.()
+                        }
+                      }}
                       style={{ 
                         pointerEvents: 'auto', 
                         position: 'relative', 

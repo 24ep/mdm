@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, Fragment, useMemo, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { PlatformSidebar } from './PlatformSidebar'
 import { TopMenuBar } from './TopMenuBar'
@@ -189,6 +189,7 @@ export function PlatformLayout({
   breadcrumbActions
 }: PlatformLayoutProps) {
   const router = useRouter()
+  const pathname = usePathname()
   const infrastructureContext = useInfrastructureContext()
   const { currentSpace } = useSpace()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true)
@@ -200,12 +201,38 @@ export function PlatformLayout({
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [editingVm, setEditingVm] = useState<InfrastructureInstance | null>(null)
   
+  // Check if we're on a data-management route
+  const isDataManagementRoute = useMemo(() => {
+    return pathname?.startsWith('/data-management') ?? false
+  }, [pathname])
+  
   // Memoize group calculation to avoid unnecessary recalculations
-  const currentGroup = useMemo(() => getGroupForTab(activeTab), [activeTab])
+  const currentGroup = useMemo(() => {
+    // If on data-management route, always return null to hide secondary sidebar
+    if (isDataManagementRoute) {
+      return null
+    }
+    return getGroupForTab(activeTab)
+  }, [activeTab, isDataManagementRoute])
   
   // Initialize selectedGroup based on activeTab
   const [selectedGroup, setSelectedGroup] = useState<string | null>(currentGroup)
+  const [hoveredGroup, setHoveredGroup] = useState<string | null>(null)
   const isGroupManuallySelected = useRef(false)
+
+  // Determine which group to show in secondary sidebar (hover takes precedence, then selected, then current)
+  const displayGroup = useMemo(() => {
+    if (hoveredGroup && hoveredGroup !== 'data-management') {
+      return hoveredGroup
+    }
+    if (selectedGroup && selectedGroup !== 'data-management') {
+      return selectedGroup
+    }
+    if (currentGroup && currentGroup !== 'data-management') {
+      return currentGroup
+    }
+    return null
+  }, [hoveredGroup, selectedGroup, currentGroup])
 
   // Set selected group based on active tab when activeTab changes
   // Only update if the group was not manually selected by the user clicking on a group
@@ -224,6 +251,20 @@ export function PlatformLayout({
   const handleGroupSelect = useCallback((group: string | null) => {
     isGroupManuallySelected.current = true
     setSelectedGroup(group)
+  }, [])
+
+  // Handle group hover to show secondary sidebar
+  const handleGroupHover = useCallback((group: string | null) => {
+    // Don't show secondary sidebar for data-management
+    if (group === 'data-management') {
+      setHoveredGroup(null)
+      return
+    }
+    setHoveredGroup(group)
+  }, [])
+
+  const handleGroupLeave = useCallback(() => {
+    setHoveredGroup(null)
   }, [])
 
   const handleToggleCollapse = useCallback(() => {
@@ -359,7 +400,14 @@ export function PlatformLayout({
               pointerEvents: 'auto'
             }}
             onMouseEnter={() => setSidebarCollapsed(false)}
-            onMouseLeave={() => setSidebarCollapsed(true)}
+            onMouseLeave={(e) => {
+              // Only collapse if not moving to secondary sidebar
+              const relatedTarget = e.relatedTarget as HTMLElement
+              if (!relatedTarget?.closest('[data-sidebar="secondary"]') && 
+                  !relatedTarget?.closest('.flex-shrink-0.border-r')) {
+                setSidebarCollapsed(true)
+              }
+            }}
           >
             <PlatformSidebar
               activeTab={activeTab}
@@ -369,6 +417,8 @@ export function PlatformLayout({
               collapsed={sidebarCollapsed}
               selectedGroup={selectedGroup}
               onGroupSelect={handleGroupSelect}
+              onGroupHover={handleGroupHover}
+              onGroupLeave={handleGroupLeave}
               mode="primary"
               onToggleCollapse={handleToggleCollapse}
             />
@@ -376,13 +426,28 @@ export function PlatformLayout({
 
           {/* Secondary Sidebar - Submenu Items */}
           {/* Show secondary sidebar for all pages with a valid group (always visible) */}
-          {currentGroup && currentGroup !== '' && (
+          {/* Hide secondary sidebar for data-management routes */}
+          {/* Show secondary sidebar when hovering over a group or when a group is selected */}
+          {displayGroup && displayGroup !== '' && !isDataManagementRoute && (
             <div 
               className={`${secondarySidebarCollapsed ? 'w-0' : 'w-56'} flex-shrink-0 border-r border-border transition-all duration-150 ease-in-out overflow-hidden`}
               style={{ 
                 position: 'relative',
                 zIndex: Z_INDEX.sidebar,
                 pointerEvents: 'auto'
+              }}
+              onMouseEnter={() => {
+                // Keep secondary sidebar visible when hovering over it
+                // If we have a displayGroup, maintain it as hovered
+                if (displayGroup) {
+                  setHoveredGroup(displayGroup)
+                }
+              }}
+              onMouseLeave={() => {
+                // Only clear hover if the group is not currently selected
+                if (selectedGroup !== displayGroup) {
+                  handleGroupLeave()
+                }
               }}
             >
             {!secondarySidebarCollapsed && (
@@ -392,7 +457,7 @@ export function PlatformLayout({
                 selectedSpace={selectedSpace}
                 onSpaceChange={onSpaceChange}
                 collapsed={false}
-                selectedGroup={currentGroup}
+                selectedGroup={displayGroup}
                 onGroupSelect={handleGroupSelect}
                 mode="secondary"
                 onToggleCollapse={handleToggleSecondaryCollapse}

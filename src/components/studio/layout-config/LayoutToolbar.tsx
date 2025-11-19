@@ -3,10 +3,13 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { WidgetSelectionDrawer } from './WidgetSelectionDrawer'
+import { GlobalStyleDrawer } from './GlobalStyleDrawer'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-// import { Label } from '@/components/ui/label'
-import { Monitor, Smartphone, Tablet, Save, Box, Grid3x3, Move, Eye, EyeOff, History, Database } from 'lucide-react'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Monitor, Smartphone, Tablet, Save, Box, Grid3x3, Move, Eye, EyeOff, History, Database, MoreVertical, Palette } from 'lucide-react'
 import { ComponentConfig } from './types'
 import { LayoutTitle } from './LayoutTitle'
 import { widgetsPalette } from './widgets'
@@ -33,6 +36,7 @@ interface LayoutToolbarProps {
   onOpenVersions?: () => void
   showDataModelPanel?: boolean
   onToggleDataModelPanel?: () => void
+  spaceId?: string
 }
 
 export function LayoutToolbar({
@@ -56,8 +60,10 @@ export function LayoutToolbar({
   onOpenVersions,
   showDataModelPanel,
   onToggleDataModelPanel,
+  spaceId,
 }: LayoutToolbarProps) {
   const [widgetDrawerOpen, setWidgetDrawerOpen] = useState(false)
+  const [globalStyleDrawerOpen, setGlobalStyleDrawerOpen] = useState(false)
   
   return (
     <div 
@@ -87,23 +93,7 @@ export function LayoutToolbar({
             className={`${isMobileViewport ? 'h-10 w-full' : 'h-8 px-3'} flex items-center gap-2 border-0 rounded-none`}
           >
             <History className={isMobileViewport ? "h-5 w-5" : "h-4 w-4"} />
-            <span className={isMobileViewport ? "text-sm" : "text-xs"}>Versions</span>
-          </Button>
-        )}
-        
-        
-        {/* Data Model Panel Toggle Button */}
-        {onToggleDataModelPanel && (
-          <Button
-            variant="ghost"
-            size={isMobileViewport ? "default" : "sm"}
-            onClick={onToggleDataModelPanel}
-            className={`${isMobileViewport ? 'h-10 w-full' : 'h-8 px-3'} flex items-center gap-2 border-0 rounded-none ${
-              showDataModelPanel ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : ''
-            } ${onOpenVersions && !isMobileViewport ? 'border-l border-border' : ''}`}
-          >
-            <Database className={isMobileViewport ? "h-5 w-5" : "h-4 w-4"} />
-            <span className={isMobileViewport ? "text-sm" : "text-xs"}>Data Models</span>
+            <span className={isMobileViewport ? "text-sm" : "text-xs"}>See Versions</span>
           </Button>
         )}
         
@@ -112,7 +102,7 @@ export function LayoutToolbar({
           variant="ghost"
           size={isMobileViewport ? "default" : "sm"}
           onClick={() => setWidgetDrawerOpen(true)}
-          className={`${isMobileViewport ? 'h-10 w-full' : 'h-8 px-3'} flex items-center gap-2 border-0 rounded-none ${((onOpenVersions || onToggleDataModelPanel) && !isMobileViewport) ? 'border-l border-border' : ''}`}
+          className={`${isMobileViewport ? 'h-10 w-full' : 'h-8 px-3'} flex items-center gap-2 border-0 rounded-none ${onOpenVersions && !isMobileViewport ? 'border-l border-border' : ''}`}
         >
           <Box className={isMobileViewport ? "h-5 w-5" : "h-4 w-4"} />
           <span className={isMobileViewport ? "text-sm" : "text-xs"}>Widgets</span>
@@ -124,74 +114,159 @@ export function LayoutToolbar({
           onOpenChange={setWidgetDrawerOpen}
         />
         
-        {/* Canvas Mode Group */}
-        <div className={`flex ${isMobileViewport ? 'flex-col gap-2 w-full' : 'items-center gap-0'} ${isMobileViewport ? 'mt-2' : ''} ${!isMobileViewport ? 'border-l border-border' : ''}`}>
-          {/* Canvas Mode Dropdown */}
-          <div className={`flex ${isMobileViewport ? 'flex-col' : 'items-center'} gap-2 ${isMobileViewport ? '' : 'px-2'}`}>
-            <span className={`${isMobileViewport ? 'text-sm' : 'text-xs'} whitespace-nowrap font-medium`}>Canvas Mode</span>
-             <Select value={canvasMode} onValueChange={(value: string) => setCanvasMode(value as 'freeform' | 'grid')}>
-              <SelectTrigger className={`${isMobileViewport ? "h-10 w-full" : "h-8 w-32"} border-0 rounded-none`}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="freeform">
-                  <Move className="h-3.5 w-3.5 mr-2 inline-block" />
-                  Freeform
-                </SelectItem>
-                <SelectItem value="grid">
-                  <Grid3x3 className="h-3.5 w-3.5 mr-2 inline-block" />
-                  Grid
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* View Grid Dropdown */}
-          <Select value={showGrid ? 'on' : 'off'} onValueChange={(value) => setShowGrid(value === 'on')}>
-            <SelectTrigger className={`${isMobileViewport ? 'h-10 w-full' : 'h-8 px-3'} border-0 rounded-none ${!isMobileViewport ? 'border-l border-border' : ''} ${showGrid ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : ''}`}>
-              <div className="flex items-center gap-2 whitespace-nowrap">
-                {showGrid ? (
-                  <Eye className={isMobileViewport ? "h-5 w-5" : "h-4 w-4"} />
-                ) : (
-                  <EyeOff className={isMobileViewport ? "h-5 w-5" : "h-4 w-4"} />
-                )}
-                <span className={`${isMobileViewport ? 'text-sm' : 'text-xs'} whitespace-nowrap`}>View Grid</span>
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="on">
-                <div className="flex items-center gap-2">
-                  <Eye className="h-4 w-4" />
-                  <span>On</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="off">
-                <div className="flex items-center gap-2">
-                  <EyeOff className="h-4 w-4" />
-                  <span>Off</span>
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Grid Size Dropdown */}
-          <Select 
-            value={gridSize.toString()} 
-            onValueChange={(value) => setGridSize(parseInt(value))}
+        {/* Global Style Button */}
+        {spaceId && (
+          <Button
+            variant="ghost"
+            size={isMobileViewport ? "default" : "sm"}
+            onClick={() => setGlobalStyleDrawerOpen(true)}
+            className={`${isMobileViewport ? 'h-10 w-full' : 'h-8 px-3'} flex items-center gap-2 border-0 rounded-none ${!isMobileViewport ? 'border-l border-border' : ''}`}
           >
-            <SelectTrigger className={`${isMobileViewport ? 'h-10 w-full' : 'h-8 px-3'} flex items-center gap-2 border-0 rounded-none ${!isMobileViewport ? 'border-l border-border' : ''}`}>
-              <Grid3x3 className={isMobileViewport ? "h-5 w-5" : "h-4 w-4"} />
-              <span className={isMobileViewport ? "text-sm" : "text-xs"}>{gridSize}px</span>
-            </SelectTrigger>
-            <SelectContent>
-              {[5, 10, 15, 20, 25, 30, 35, 40, 45, 50].map(size => (
-                <SelectItem key={size} value={size.toString()}>
-                  {size}px
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+            <Palette className={isMobileViewport ? "h-5 w-5" : "h-4 w-4"} />
+            <span className={isMobileViewport ? "text-sm" : "text-xs"}>Global Style</span>
+          </Button>
+        )}
+        
+        {/* Global Style Drawer */}
+        {spaceId && (
+          <GlobalStyleDrawer
+            open={globalStyleDrawerOpen}
+            onOpenChange={setGlobalStyleDrawerOpen}
+            spaceId={spaceId}
+            isMobileViewport={isMobileViewport}
+            componentConfigs={componentConfigs}
+            handleComponentConfigUpdate={handleComponentConfigUpdate}
+          />
+        )}
+        
+        {/* More Menu Popover */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size={isMobileViewport ? "default" : "sm"}
+              className={`${isMobileViewport ? 'h-10 w-full' : 'h-8 px-3'} flex items-center gap-2 border-0 rounded-none ${!isMobileViewport ? 'border-l border-border' : ''}`}
+            >
+              <MoreVertical className={isMobileViewport ? "h-5 w-5" : "h-4 w-4"} />
+              <span className={isMobileViewport ? "text-sm" : "text-xs"}>Configuration</span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-64 p-4" align="end">
+            <div className="space-y-2">
+              {/* Canvas Mode */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-medium text-muted-foreground">Canvas Mode</Label>
+                  <Select value={canvasMode} onValueChange={(value: string) => setCanvasMode(value as 'freeform' | 'grid')}>
+                    <SelectTrigger className="h-9 w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="freeform">
+                        <Move className="h-3.5 w-3.5 mr-2 inline-block" />
+                        Freeform
+                      </SelectItem>
+                      <SelectItem value="grid">
+                        <Grid3x3 className="h-3.5 w-3.5 mr-2 inline-block" />
+                        Grid
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="border-t border-border my-1" />
+
+              {/* Data Model Panel Toggle */}
+              {onToggleDataModelPanel && (
+                <>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-medium text-muted-foreground">Show data model panel</Label>
+                      <Switch
+                        checked={showDataModelPanel || false}
+                        onCheckedChange={(checked) => {
+                          if (checked !== (showDataModelPanel || false)) {
+                            onToggleDataModelPanel()
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="border-t border-border my-1" />
+                </>
+              )}
+
+              {/* View Grid */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-medium text-muted-foreground">View Grid</Label>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={showGrid}
+                      onCheckedChange={setShowGrid}
+                    />
+                    {showGrid && (
+                      <span className="text-xs font-medium text-foreground">
+                        {gridSize}px
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Grid Size - Only show when View Grid is on */}
+              {showGrid && (
+                <>
+                  <div className="border-t border-border my-1" />
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium text-muted-foreground">Grid Size</Label>
+                  <RadioGroup
+                    value={gridSize.toString()}
+                    onValueChange={(value) => setGridSize(parseInt(value))}
+                    className="flex flex-row gap-1 flex-wrap"
+                  >
+                    {[5, 10, 15, 20].map(size => {
+                      const isSelected = gridSize === size
+                      return (
+                        <label
+                          key={size}
+                          htmlFor={`grid-size-${size}`}
+                          className="flex flex-col items-center gap-0.5 cursor-pointer"
+                        >
+                          <div className="relative">
+                            <RadioGroupItem
+                              value={size.toString()}
+                              id={`grid-size-${size}`}
+                              className="sr-only"
+                            />
+                            <div
+                              className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors ${
+                                isSelected
+                                  ? 'bg-primary/10'
+                                  : 'opacity-60 hover:opacity-80'
+                              }`}
+                            >
+                              <Grid3x3 className={`h-3.5 w-3.5 ${
+                                isSelected ? 'text-primary' : 'text-muted-foreground'
+                              }`} />
+                            </div>
+                          </div>
+                          <span className={`text-[9px] ${
+                            isSelected ? 'text-primary font-medium' : 'text-muted-foreground'
+                          }`}>
+                            {size}
+                          </span>
+                        </label>
+                      )
+                    })}
+                  </RadioGroup>
+                </div>
+                </>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
 
         {/* Device Mode Group */}
         <div className={`flex items-center ${isMobileViewport ? 'justify-center w-full' : 'gap-0'} ${isMobileViewport ? 'mt-2' : ''} ${!isMobileViewport ? 'border-l border-border' : ''}`}>

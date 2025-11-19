@@ -31,17 +31,19 @@ const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(
         />
         <div
           className={cn(
-            "peer inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 border-gray-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",
-            "peer-checked:bg-primary peer-checked:border-primary",
-            "peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2",
-            !checked && "bg-input",
+            "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 ease-in-out",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+            "disabled:cursor-not-allowed disabled:opacity-50",
+            checked 
+              ? "bg-green-500 dark:bg-green-600" 
+              : "bg-gray-300 dark:bg-gray-600",
             className
           )}
         >
           <span
             className={cn(
-              "pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform",
-              "peer-checked:translate-x-5 translate-x-0"
+              "pointer-events-none block h-5 w-5 rounded-full bg-white shadow-md ring-0 transition-transform duration-200 ease-in-out",
+              checked ? "translate-x-5" : "translate-x-0.5"
             )}
           />
         </div>

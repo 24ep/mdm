@@ -38,31 +38,31 @@ export function OtherPropertiesSection({
               onCheckedChange={(checked) => updateProperty('visible', checked)}
             />
           </div>
-          <div className="space-y-1">
+          <div className="flex items-center justify-between">
             <Label className="text-xs">Tooltip</Label>
             <Input
               value={widget.properties?.tooltip || ''}
               onChange={(e) => updateProperty('tooltip', e.target.value)}
               placeholder="Hover tooltip text"
-              className="h-7 text-xs"
+              className="h-7 text-xs w-32"
             />
           </div>
-          <div className="space-y-1">
+          <div className="flex items-center justify-between">
             <Label className="text-xs">CSS Class</Label>
             <Input
               value={widget.properties?.cssClass || ''}
               onChange={(e) => updateProperty('cssClass', e.target.value)}
               placeholder="custom-class"
-              className="h-7 text-xs"
+              className="h-7 text-xs w-32"
             />
           </div>
-          <div className="space-y-1">
+          <div className="flex items-center justify-between">
             <Label className="text-xs">Z-Index</Label>
             <Input
               type="number"
               value={widget.properties?.zIndex || 0}
               onChange={(e) => updateProperty('zIndex', parseInt(e.target.value) || 0)}
-              className="h-7 text-xs"
+              className="h-7 text-xs w-32"
               placeholder="0"
             />
           </div>

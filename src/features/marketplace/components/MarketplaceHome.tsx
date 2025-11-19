@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { useMarketplacePlugins } from '../hooks/useMarketplacePlugins'
 import { usePluginInstallation } from '../hooks/usePluginInstallation'
 import { PluginDefinition, PluginCategory } from '../types'
@@ -18,7 +19,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Search, Download, Star, ExternalLink, Loader } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Search, Download, Star, ExternalLink, Loader, AlertCircle, RefreshCw } from 'lucide-react'
 import { useSpace } from '@/contexts/space-context'
 import { PluginCard } from './PluginCard'
 import { InstallationWizard } from './InstallationWizard'
@@ -37,6 +39,7 @@ export function MarketplaceHome({
   showSpaceSelector = false,
 }: MarketplaceHomeProps) {
   const searchParams = useSearchParams()
+  const { data: session } = useSession()
   const { currentSpace } = useSpace()
   const [selectedSpaceId, setSelectedSpaceId] = useState<string>(
     spaceId || currentSpace?.id || 'all'
@@ -55,6 +58,11 @@ export function MarketplaceHome({
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedPlugin, setSelectedPlugin] = useState<PluginDefinition | null>(null)
   const [showInstallWizard, setShowInstallWizard] = useState(false)
+  const [registering, setRegistering] = useState(false)
+  const [registerError, setRegisterError] = useState<string | null>(null)
+  const [registerSuccess, setRegisterSuccess] = useState(false)
+
+  const isAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'SUPER_ADMIN'
 
   const effectiveSpaceId = showSpaceSelector
     ? selectedSpaceId === 'all'
@@ -62,12 +70,37 @@ export function MarketplaceHome({
       : selectedSpaceId
     : spaceId
 
-  const { plugins, loading, refetch } = useMarketplacePlugins({
+  const { plugins, loading, error, refetch } = useMarketplacePlugins({
     category: selectedCategory === 'all' ? undefined : selectedCategory,
     spaceId: effectiveSpaceId,
   })
 
   const { install, loading: installing } = usePluginInstallation()
+
+  const handleRegisterPlugins = async () => {
+    setRegistering(true)
+    setRegisterError(null)
+    setRegisterSuccess(false)
+    try {
+      const response = await fetch('/api/marketplace/plugins/register', {
+        method: 'POST',
+      })
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to register plugins' }))
+        throw new Error(errorData.error || 'Failed to register plugins')
+      }
+      setRegisterSuccess(true)
+      // Refetch plugins after registration
+      await refetch()
+      setTimeout(() => setRegisterSuccess(false), 3000)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to register plugins'
+      setRegisterError(errorMessage)
+      console.error('Error registering plugins:', err)
+    } finally {
+      setRegistering(false)
+    }
+  }
 
   const filteredPlugins = plugins.filter((plugin) => {
     if (searchQuery) {
@@ -128,7 +161,62 @@ export function MarketplaceHome({
             Discover and install plugins to extend functionality
           </p>
         </div>
+        {isAdmin && (
+          <Button
+            variant="outline"
+            onClick={handleRegisterPlugins}
+            disabled={registering}
+          >
+            {registering ? (
+              <>
+                <Loader className="mr-2 h-4 w-4 animate-spin" />
+                Registering...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Register Plugins
+              </>
+            )}
+          </Button>
+        )}
       </div>
+
+      {/* Error Messages */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {error}
+            {error.includes('does not exist') && isAdmin && (
+              <div className="mt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRegisterPlugins}
+                  disabled={registering}
+                >
+                  {registering ? 'Registering...' : 'Register Plugins'}
+                </Button>
+              </div>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {registerError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{registerError}</AlertDescription>
+        </Alert>
+      )}
+
+      {registerSuccess && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>Plugins registered successfully! They should appear below.</AlertDescription>
+        </Alert>
+      )}
 
       {/* Filters */}
       <div className="flex items-center gap-4 flex-wrap">
@@ -178,8 +266,37 @@ export function MarketplaceHome({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredPlugins.length === 0 ? (
-            <div className="col-span-full text-center py-12 text-muted-foreground">
-              No plugins found.
+            <div className="col-span-full text-center py-12 space-y-4">
+              <div className="text-muted-foreground">
+                <p className="text-lg font-medium mb-2">No plugins found.</p>
+                <p className="text-sm">
+                  {error 
+                    ? 'There was an error loading plugins. Please check the error message above.'
+                    : 'No approved plugins are available in the marketplace.'}
+                </p>
+                {isAdmin && !error && (
+                  <div className="mt-4">
+                    <p className="text-sm mb-2">As an admin, you can register plugins to make them available.</p>
+                    <Button
+                      variant="outline"
+                      onClick={handleRegisterPlugins}
+                      disabled={registering}
+                    >
+                      {registering ? (
+                        <>
+                          <Loader className="mr-2 h-4 w-4 animate-spin" />
+                          Registering...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="mr-2 h-4 w-4" />
+                          Register Plugins
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             filteredPlugins.map((plugin) => (

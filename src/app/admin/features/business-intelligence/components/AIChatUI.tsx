@@ -688,7 +688,7 @@ export function AIChatUI() {
     })
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 p-6 md:p-8 lg:p-10">
       <div className="flex items-center justify-between">
         {!(showCreateDialog || showEditDialog) && (
           <>
@@ -807,13 +807,13 @@ export function AIChatUI() {
       {(showCreateDialog || showEditDialog) && (
         <div className="space-y-4">
           {/* Header */}
-          <div className="border-b pb-4 px-6">
+          <div className="border-b pb-4">
             <ChatbotHeader formData={formData} setFormData={setFormData} />
           </div>
           
           {/* Selection Tab */}
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-            <div className="px-6 -mt-2">
+            <div className="-mt-2">
               <TabsList className="w-full flex justify-start gap-2">
                 <TabsTrigger value="engine">
                   <Settings className="h-4 w-4 mr-2" />
@@ -840,7 +840,7 @@ export function AIChatUI() {
           </Tabs>
           
           {/* Split Layout: Selected Tab Content | Emulator */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="min-h-[800px]">
               <ChatbotEditor
                 formData={formData}
@@ -861,7 +861,7 @@ export function AIChatUI() {
           </div>
           
           {/* Action buttons at bottom */}
-          <div className="flex items-center justify-between pt-4 border-t px-6">
+          <div className="flex items-center justify-between pt-4 border-t">
             <Button
               variant="ghost"
               onClick={() => {

@@ -66,7 +66,7 @@ const AccordionItem = React.forwardRef<
 >(({ className, value, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("border-b", className)}
+    className={cn("border-b border-border", className)}
     {...props}
   />
 ))
@@ -90,14 +90,18 @@ const AccordionTrigger = React.forwardRef<
       type="button"
       onClick={() => itemValue && context?.onValueChange(itemValue)}
       className={cn(
-        "flex flex-1 items-center justify-between py-3 font-medium transition-all hover:underline",
-        isOpen && "[&>svg]:rotate-180",
+        "flex flex-1 items-center justify-between w-full py-3 font-medium transition-all",
+        "bg-white dark:bg-black text-foreground",
+        "hover:bg-accent hover:text-accent-foreground",
+        isOpen && "[&>svg:last-child]:rotate-180",
         className
       )}
       {...props}
     >
-      {children}
-      {!showCustomChevron && <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />}
+      <span className="flex-1 text-left">{children}</span>
+      {!showCustomChevron && (
+        <ChevronDown className="h-4 w-4 shrink-0 ml-2 text-muted-foreground transition-transform duration-200" />
+      )}
     </button>
   )
 })

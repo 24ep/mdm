@@ -21,8 +21,8 @@ export function PositionSizeSection({
     <AccordionItem value="position">
       <AccordionTrigger className="text-xs font-semibold py-2">Position & Size</AccordionTrigger>
       <AccordionContent>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-1">
+        <div className="space-y-2 px-4">
+          <div className="flex items-center justify-between">
             <Label className="text-xs">X Position</Label>
             <Input
               type="number"
@@ -33,10 +33,10 @@ export function PositionSizeSection({
                   w.id === selectedWidgetId ? { ...w, x: newX } : w
                 ))
               }}
-              className="h-7 text-xs"
+              className="h-7 text-xs w-32"
             />
           </div>
-          <div className="space-y-1">
+          <div className="flex items-center justify-between">
             <Label className="text-xs">Y Position</Label>
             <Input
               type="number"
@@ -47,10 +47,10 @@ export function PositionSizeSection({
                   w.id === selectedWidgetId ? { ...w, y: newY } : w
                 ))
               }}
-              className="h-7 text-xs"
+              className="h-7 text-xs w-32"
             />
           </div>
-          <div className="space-y-1">
+          <div className="flex items-center justify-between">
             <Label className="text-xs">Width</Label>
             <Input
               type="number"
@@ -61,10 +61,10 @@ export function PositionSizeSection({
                   w.id === selectedWidgetId ? { ...w, width: newWidth } : w
                 ))
               }}
-              className="h-7 text-xs"
+              className="h-7 text-xs w-32"
             />
           </div>
-          <div className="space-y-1">
+          <div className="flex items-center justify-between">
             <Label className="text-xs">Height</Label>
             <Input
               type="number"
@@ -75,7 +75,7 @@ export function PositionSizeSection({
                   w.id === selectedWidgetId ? { ...w, height: newHeight } : w
                 ))
               }}
-              className="h-7 text-xs"
+              className="h-7 text-xs w-32"
             />
           </div>
         </div>

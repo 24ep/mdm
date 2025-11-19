@@ -232,12 +232,6 @@ export function DataGovernance() {
         </div>
 
         <Card>
-          <CardHeader>
-            <CardTitle>OpenMetadata Integration</CardTitle>
-            <CardDescription>
-              Connect to OpenMetadata to enable data governance features
-            </CardDescription>
-          </CardHeader>
           <CardContent>
             <div className="text-center py-8">
               <Shield className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
@@ -377,26 +371,15 @@ export function DataGovernance() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <Shield className="h-6 w-6" />
-            Data Governance
-          </h2>
-          <p className="text-muted-foreground">
-            Manage data assets, policies, and quality using OpenMetadata
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setShowConfigDialog(true)}>
-            <Settings className="h-4 w-4 mr-2" />
-            Settings
-          </Button>
-          <Button onClick={() => syncAssets('both')} disabled={isLoading} title="Bidirectional sync (pull + push)">
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Sync (2-way)
-          </Button>
-        </div>
+      <div className="flex items-center justify-end gap-2">
+        <Button variant="outline" onClick={() => setShowConfigDialog(true)}>
+          <Settings className="h-4 w-4 mr-2" />
+          Settings
+        </Button>
+        <Button onClick={() => syncAssets('both')} disabled={isLoading} title="Bidirectional sync (pull + push)">
+          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+          Sync (2-way)
+        </Button>
       </div>
 
       {metrics && (

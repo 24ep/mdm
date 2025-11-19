@@ -129,27 +129,32 @@ export function StrokeSection({
       </div>
 
       {/* Stroke Color */}
-      <div className="relative mb-2 w-28">
-        <ColorInput
-          value={effectiveBorderColor}
-          onChange={(color) => updateProperty('borderColor', color)}
-          allowImageVideo={false}
-          className="relative"
-          placeholder="#e5e7eb"
-          inputClassName="h-7 text-xs pl-7"
-        />
-        {!isBorderColorGlobal && globalStyle && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5 p-0"
-            onClick={() => resetProperty('borderColor')}
-            title="Reset to global style"
-          >
-            <RotateCcw className="h-3 w-3" />
-          </Button>
-        )}
-      </div>
+      {showStroke && (
+        <div className="flex items-center justify-between mb-2">
+          <Label className="text-xs text-muted-foreground">Border Color</Label>
+          <div className="relative w-32">
+            <ColorInput
+              value={effectiveBorderColor}
+              onChange={(color) => updateProperty('borderColor', color)}
+              allowImageVideo={false}
+              className="relative"
+              placeholder="#e5e7eb"
+              inputClassName="h-7 text-xs pl-7 w-full"
+            />
+            {!isBorderColorGlobal && globalStyle && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5 p-0"
+                onClick={() => resetProperty('borderColor')}
+                title="Reset to global style"
+              >
+                <RotateCcw className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Border Sides */}
       <div className="mb-2">
@@ -209,65 +214,68 @@ export function StrokeSection({
       </div>
 
       {/* Stroke Width & Style */}
-      <div className="grid grid-cols-2 gap-2">
-        <div className="space-y-1">
-          <div className="flex items-center gap-1">
-            <Label className="text-xs text-muted-foreground">Width</Label>
-            {!isBorderWidthGlobal && globalStyle && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-4 w-4 p-0 ml-auto"
-                onClick={() => resetProperty('borderWidth')}
-                title="Reset to global style"
-              >
-                <RotateCcw className="h-2.5 w-2.5" />
-              </Button>
-            )}
+      {showStroke && (
+        <>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1">
+              <Label className="text-xs text-muted-foreground">Border Width</Label>
+              {!isBorderWidthGlobal && globalStyle && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-4 w-4 p-0"
+                  onClick={() => resetProperty('borderWidth')}
+                  title="Reset to global style"
+                >
+                  <RotateCcw className="h-2.5 w-2.5" />
+                </Button>
+              )}
+            </div>
+            <div className="w-32">
+              <MultiSideInput
+                label=""
+                baseKey="borderWidth"
+                type="sides"
+                defaultValue={effectiveBorderWidth}
+                inputClassName="h-7 text-xs"
+                getValue={(side: string) => {
+                  const key = `borderWidth${side.charAt(0).toUpperCase() + side.slice(1)}`
+                  const baseValue = typeof widget.properties?.borderWidth === 'number' 
+                    ? widget.properties.borderWidth 
+                    : (widget.properties?.borderWidth || effectiveBorderWidth)
+                  const sideValue = widget.properties?.[key]
+                  return sideValue !== undefined ? sideValue : baseValue
+                }}
+                setValue={(updates) => {
+                  const props = widget.properties || {}
+                  const newProps = { ...props }
+                  Object.keys(updates).forEach(key => {
+                    const value = updates[key]
+                    if (typeof value === 'string' && value.endsWith('px')) {
+                      const numValue = parseInt(value.replace('px', '')) || 0
+                      newProps[key] = numValue
+                    } else {
+                      newProps[key] = value
+                    }
+                  })
+                  setPlacedWidgets(prev => prev.map(w => 
+                    w.id === selectedWidgetId 
+                      ? { ...w, properties: newProps }
+                      : w
+                  ))
+                }}
+              />
+            </div>
           </div>
-          <MultiSideInput
-            label=""
-            baseKey="borderWidth"
-            type="sides"
-            defaultValue={effectiveBorderWidth}
-            inputClassName="h-7 text-xs"
-            getValue={(side: string) => {
-              const key = `borderWidth${side.charAt(0).toUpperCase() + side.slice(1)}`
-              const baseValue = typeof widget.properties?.borderWidth === 'number' 
-                ? widget.properties.borderWidth 
-                : (widget.properties?.borderWidth || effectiveBorderWidth)
-              const sideValue = widget.properties?.[key]
-              return sideValue !== undefined ? sideValue : baseValue
-            }}
-            setValue={(updates) => {
-              const props = widget.properties || {}
-              const newProps = { ...props }
-              Object.keys(updates).forEach(key => {
-                const value = updates[key]
-                if (typeof value === 'string' && value.endsWith('px')) {
-                  const numValue = parseInt(value.replace('px', '')) || 0
-                  newProps[key] = numValue
-                } else {
-                  newProps[key] = value
-                }
-              })
-              setPlacedWidgets(prev => prev.map(w => 
-                w.id === selectedWidgetId 
-                  ? { ...w, properties: newProps }
-                  : w
-              ))
-            }}
-          />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Style</Label>
-          <Select
-            value={effectiveBorderStyle}
-            onValueChange={(value) => updateProperty('borderStyle', value)}
-          >
-            <SelectTrigger className="h-7 text-xs">
-              <SelectValue />
-            </SelectTrigger>
+          <div className="flex items-center justify-between mb-2">
+            <Label className="text-xs text-muted-foreground">Border Style</Label>
+            <Select
+              value={effectiveBorderStyle}
+              onValueChange={(value) => updateProperty('borderStyle', value)}
+            >
+              <SelectTrigger className="h-7 text-xs w-32">
+                <SelectValue />
+              </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">
                 <div className="flex items-center gap-2">
@@ -301,12 +309,15 @@ export function StrokeSection({
               </SelectItem>
             </SelectContent>
           </Select>
-        </div>
-      </div>
+          </div>
+        </>
+      )}
 
       {/* Corner Radius */}
-      <div className="space-y-1">
-        <Label className="text-xs text-muted-foreground">Corner Radius</Label>
+      {showStroke && (
+        <div className="flex items-center justify-between mb-2">
+          <Label className="text-xs text-muted-foreground">Corner Radius</Label>
+          <div className="w-32">
         <MultiSideInput
           label=""
           baseKey="borderRadius"
@@ -384,7 +395,9 @@ export function StrokeSection({
             updateProperty('borderRadius', allSame ? brObj.topLeft.value : brObj)
           }}
         />
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

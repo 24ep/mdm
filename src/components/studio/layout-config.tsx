@@ -953,6 +953,8 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
         onOpenVersions={() => setVersionsDialogOpen(true)}
         showDataModelPanel={showDataModelPanel}
         onToggleDataModelPanel={() => setShowDataModelPanel(!showDataModelPanel)}
+        spaceId={spaceId}
+        pages={pages}
           />
           
       {/* Version Control Dialog */}

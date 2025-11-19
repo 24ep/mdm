@@ -315,78 +315,76 @@ export function AppearanceSection({
 
       {/* Typography */}
       <div className="px-4 mt-2 space-y-2">
-        <div className="grid grid-cols-3 gap-2">
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Font Family</Label>
-            <Select
-              value={String(widget.properties?.fontFamily || 'inherit')}
-              onValueChange={(value) => updateProperty('fontFamily', value)}
-            >
-              <SelectTrigger className="h-7 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="inherit">Inherit</SelectItem>
-                <SelectItem value="system-ui">System UI</SelectItem>
-                <SelectItem value="Roboto">Roboto</SelectItem>
-                <SelectItem value="Arial">Arial</SelectItem>
-                <SelectItem value="Helvetica">Helvetica</SelectItem>
-                <SelectItem value="'Times New Roman'">Times New Roman</SelectItem>
-                <SelectItem value="Georgia">Georgia</SelectItem>
-                <SelectItem value="Verdana">Verdana</SelectItem>
-                <SelectItem value="'Courier New'">Courier New</SelectItem>
-                <SelectItem value="monospace">Monospace</SelectItem>
-                <SelectItem value="sans-serif">Sans-serif</SelectItem>
-                <SelectItem value="serif">Serif</SelectItem>
-                <SelectItem value="__custom_google__">Custom (Google)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Weight</Label>
-            <Select
-              value={String(widget.properties?.fontWeight || 'normal')}
-              onValueChange={(value) => updateProperty('fontWeight', value)}
-            >
-              <SelectTrigger className="h-7 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="100">Thin (100)</SelectItem>
-                <SelectItem value="300">Light (300)</SelectItem>
-                <SelectItem value="400">Regular (400)</SelectItem>
-                <SelectItem value="500">Medium (500)</SelectItem>
-                <SelectItem value="600">Semi Bold (600)</SelectItem>
-                <SelectItem value="700">Bold (700)</SelectItem>
-                <SelectItem value="800">Extra Bold (800)</SelectItem>
-                <SelectItem value="900">Black (900)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Style</Label>
-            <Select
-              value={String(widget.properties?.fontStyle || 'normal')}
-              onValueChange={(value) => updateProperty('fontStyle', value)}
-            >
-              <SelectTrigger className="h-7 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="normal">Normal</SelectItem>
-                <SelectItem value="italic">Italic</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="flex items-center justify-between">
+          <Label className="text-xs text-muted-foreground">Font Family</Label>
+          <Select
+            value={String(widget.properties?.fontFamily || 'inherit')}
+            onValueChange={(value) => updateProperty('fontFamily', value)}
+          >
+            <SelectTrigger className="h-7 text-xs w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="inherit">Inherit</SelectItem>
+              <SelectItem value="system-ui">System UI</SelectItem>
+              <SelectItem value="Roboto">Roboto</SelectItem>
+              <SelectItem value="Arial">Arial</SelectItem>
+              <SelectItem value="Helvetica">Helvetica</SelectItem>
+              <SelectItem value="'Times New Roman'">Times New Roman</SelectItem>
+              <SelectItem value="Georgia">Georgia</SelectItem>
+              <SelectItem value="Verdana">Verdana</SelectItem>
+              <SelectItem value="'Courier New'">Courier New</SelectItem>
+              <SelectItem value="monospace">Monospace</SelectItem>
+              <SelectItem value="sans-serif">Sans-serif</SelectItem>
+              <SelectItem value="serif">Serif</SelectItem>
+              <SelectItem value="__custom_google__">Custom (Google)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center justify-between">
+          <Label className="text-xs text-muted-foreground">Weight</Label>
+          <Select
+            value={String(widget.properties?.fontWeight || 'normal')}
+            onValueChange={(value) => updateProperty('fontWeight', value)}
+          >
+            <SelectTrigger className="h-7 text-xs w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="100">Thin (100)</SelectItem>
+              <SelectItem value="300">Light (300)</SelectItem>
+              <SelectItem value="400">Regular (400)</SelectItem>
+              <SelectItem value="500">Medium (500)</SelectItem>
+              <SelectItem value="600">Semi Bold (600)</SelectItem>
+              <SelectItem value="700">Bold (700)</SelectItem>
+              <SelectItem value="800">Extra Bold (800)</SelectItem>
+              <SelectItem value="900">Black (900)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center justify-between">
+          <Label className="text-xs text-muted-foreground">Style</Label>
+          <Select
+            value={String(widget.properties?.fontStyle || 'normal')}
+            onValueChange={(value) => updateProperty('fontStyle', value)}
+          >
+            <SelectTrigger className="h-7 text-xs w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="normal">Normal</SelectItem>
+              <SelectItem value="italic">Italic</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         {String(widget.properties?.fontFamily) === '__custom_google__' && (
-          <div className="space-y-1">
+          <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Google Font Family</Label>
             <Input
               value={String(widget.properties?.googleFontFamily || '')}
               onChange={(e) => updateProperty('googleFontFamily', e.target.value)}
               placeholder="e.g., Inter or Open Sans"
-              className="h-7 text-xs"
+              className="h-7 text-xs w-32"
             />
           </div>
         )}

@@ -76,9 +76,10 @@ export function FillSection({
 
   return (
     <div className="space-y-2 px-4 pb-3">
-      {/* Fill Color and Opacity - Always visible */}
-      <div className="flex items-center gap-2">
-        <div className="relative basis-2/5 min-w-0">
+      {/* Fill Color */}
+      <div className="flex items-center justify-between">
+        <Label className="text-xs text-muted-foreground">Background Color</Label>
+        <div className="relative w-32">
           <ColorInput
             value={effectiveBackgroundColor}
             onChange={(color) => updateProperty('backgroundColor', color)}
@@ -99,7 +100,11 @@ export function FillSection({
             </Button>
           )}
         </div>
-        <div className="relative basis-3/5 min-w-0">
+      </div>
+      {/* Opacity */}
+      <div className="flex items-center justify-between">
+        <Label className="text-xs text-muted-foreground">Opacity</Label>
+        <div className="relative w-32">
           <Eye className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none z-10" />
           <Input
             type="number"

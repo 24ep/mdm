@@ -126,59 +126,59 @@ export function EffectsSection({
       
       {/* Shadow Properties */}
       {effectiveShadow && (
-        <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-1">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">X</Label>
             <Input
               type="number"
               value={widget.properties?.shadowX || 0}
               onChange={(e) => updateProperty('shadowX', parseInt(e.target.value) || 0)}
-              className="h-7 text-xs"
+              className="h-7 text-xs w-32"
               placeholder="0"
             />
           </div>
-          <div className="space-y-1">
+          <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Y</Label>
             <Input
               type="number"
               value={widget.properties?.shadowY || 0}
               onChange={(e) => updateProperty('shadowY', parseInt(e.target.value) || 0)}
-              className="h-7 text-xs"
+              className="h-7 text-xs w-32"
               placeholder="0"
             />
           </div>
-          <div className="space-y-1">
+          <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Blur</Label>
             <Input
               type="number"
               value={widget.properties?.shadowBlur || 4}
               onChange={(e) => updateProperty('shadowBlur', parseInt(e.target.value) || 4)}
-              className="h-7 text-xs"
+              className="h-7 text-xs w-32"
               placeholder="4"
             />
           </div>
-          <div className="space-y-1">
+          <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Spread</Label>
             <Input
               type="number"
               value={widget.properties?.shadowSpread || 0}
               onChange={(e) => updateProperty('shadowSpread', parseInt(e.target.value) || 0)}
-              className="h-7 text-xs"
+              className="h-7 text-xs w-32"
               placeholder="0"
             />
           </div>
-          <div className="space-y-1">
+          <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Color</Label>
             <ColorInput
               value={widget.properties?.shadowColor || '#000000'}
               onChange={(color) => updateProperty('shadowColor', color)}
               allowImageVideo={false}
-              className="relative"
+              className="relative w-32"
               placeholder="#000000"
               inputClassName="h-7 text-xs pl-7"
             />
           </div>
-          <div className="space-y-1">
+          <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Opacity (%)</Label>
             <Input
               type="number"
@@ -187,7 +187,7 @@ export function EffectsSection({
                 const v = Math.max(0, Math.min(100, parseInt(e.target.value) || 0))
                 updateProperty('shadowOpacity', v / 100)
               }}
-              className="h-7 text-xs w-40"
+              className="h-7 text-xs w-32"
               placeholder="25"
               min={0}
               max={100}

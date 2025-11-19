@@ -12,6 +12,7 @@ interface ColorInputProps {
   className?: string
   placeholder?: string
   inputClassName?: string
+  isSpaceLayoutConfig?: boolean
 }
 
 // Helper to check if color has transparency
@@ -135,6 +136,7 @@ export function ColorInput({
   className = 'relative w-32',
   placeholder,
   inputClassName,
+  isSpaceLayoutConfig = false,
 }: ColorInputProps) {
   const defaultInputClassName = 'h-7 text-xs pl-7 w-full rounded-[2px] bg-input border-0 focus:outline-none focus:ring-0 focus:border-0'
   const finalInputClassName = inputClassName || defaultInputClassName
@@ -148,6 +150,7 @@ export function ColorInput({
         onChange={onChange}
         allowImageVideo={allowImageVideo}
         disabled={disabled}
+        isSpaceLayoutConfig={isSpaceLayoutConfig}
       >
         <button
           type="button"

@@ -184,6 +184,13 @@ export interface BrandingConfig {
     textareaBorderWidth: string
   }
 
+  // Drawer overlay settings
+  drawerOverlay?: {
+    color: string // e.g., "#000000"
+    opacity: number // 0-100
+    blur: number // 0-100 (in pixels)
+  }
+
   // Component-specific styling
   componentStyling: {
     [componentId: string]: {

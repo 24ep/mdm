@@ -1,9 +1,10 @@
 'use client'
 
-import React from 'react'
-import { FileIcon } from 'lucide-react'
-import { ComponentConfig, GlobalStyleConfig } from './types'
-import { PlacedWidget } from './widgets'
+import React, { useMemo } from 'react'
+import { Badge } from '@/components/ui/badge'
+import { ComponentConfig } from './types'
+import { PlacedWidget, widgetsPalette } from './widgets'
+import { X } from 'lucide-react'
 import { WidgetProperties } from './WidgetProperties'
 import { ComponentProperties } from './ComponentProperties'
 
@@ -14,6 +15,7 @@ interface SelectionTabProps {
   componentConfigs: Record<string, ComponentConfig>
   setPlacedWidgets: React.Dispatch<React.SetStateAction<PlacedWidget[]>>
   setSelectedWidgetId: React.Dispatch<React.SetStateAction<string | null>>
+  setSelectedComponent: React.Dispatch<React.SetStateAction<string | null>>
   handleComponentConfigUpdate: (type: string, updates: Partial<ComponentConfig>) => void
   spaceId?: string
 }
@@ -25,61 +27,139 @@ export function SelectionTab({
   componentConfigs,
   setPlacedWidgets,
   setSelectedWidgetId,
+  setSelectedComponent,
   handleComponentConfigUpdate,
   spaceId,
 }: SelectionTabProps) {
-  React.useEffect(() => {
-    // Add data attribute for properties panel detection
-    const element = document.querySelector('[data-selection-tab]')
-    if (!element) {
-      // Add it to the component wrapper
-      const wrapper = document.querySelector('.selection-tab-wrapper')
-      if (wrapper) {
-        wrapper.setAttribute('data-properties-panel', 'true')
-        wrapper.setAttribute('data-selection-tab', 'true')
+  // Group widgets by type
+  const widgetsByType = useMemo(() => {
+    const grouped: Record<string, PlacedWidget[]> = {}
+    placedWidgets.forEach(widget => {
+      const widgetDef = widgetsPalette.find(w => w.type === widget.type)
+      const category = widgetDef?.category || 'Other'
+      if (!grouped[category]) {
+        grouped[category] = []
       }
+      grouped[category].push(widget)
+    })
+    return grouped
+  }, [placedWidgets])
+
+  const handleWidgetClick = (widgetId: string) => {
+    if (selectedWidgetId === widgetId) {
+      setSelectedWidgetId(null)
+    } else {
+      setSelectedWidgetId(widgetId)
+      setSelectedComponent(null)
     }
-  }, [])
-  // Return null if nothing is selected
-  if (!selectedWidgetId && !selectedComponent) {
-    return null
   }
 
-  const globalStyle = componentConfigs.global as any as GlobalStyleConfig | undefined
+  const handleComponentClick = (componentType: string) => {
+    if (selectedComponent === componentType) {
+      setSelectedComponent(null)
+    } else {
+      setSelectedComponent(componentType)
+      setSelectedWidgetId(null)
+    }
+  }
 
+  const handleClearSelection = () => {
+    setSelectedWidgetId(null)
+    setSelectedComponent(null)
+  }
+
+  const hasSelection = selectedWidgetId || selectedComponent
+  const hasItems = placedWidgets.length > 0 || Object.keys(componentConfigs).length > 0
+
+  if (!hasItems) {
+    return (
+      <div className="p-4 text-sm text-muted-foreground text-center">
+        No widgets or components available
+      </div>
+    )
+  }
+
+  // Show properties if something is selected
   if (selectedWidgetId) {
     const widget = placedWidgets.find(w => w.id === selectedWidgetId)
-    
-    if (!widget) {
-      return null
+    if (widget) {
+      return (
+        <WidgetProperties
+          widget={widget}
+          selectedWidgetId={selectedWidgetId}
+          setPlacedWidgets={setPlacedWidgets}
+          setSelectedWidgetId={setSelectedWidgetId}
+          spaceId={spaceId}
+        />
+      )
     }
-
-    return (
-      <WidgetProperties
-        widget={widget}
-        selectedWidgetId={selectedWidgetId}
-        setPlacedWidgets={setPlacedWidgets}
-        setSelectedWidgetId={setSelectedWidgetId}
-        globalStyle={globalStyle}
-        spaceId={spaceId}
-      />
-    )
   }
 
   if (selectedComponent) {
     const config = componentConfigs[selectedComponent]
-    if (!config) {
-      return null
+    if (config) {
+      return (
+        <ComponentProperties
+          config={config}
+          selectedComponent={selectedComponent}
+          handleComponentConfigUpdate={handleComponentConfigUpdate}
+        />
+      )
     }
-
-    return (
-      <ComponentProperties
-        config={config}
-        selectedComponent={selectedComponent}
-        handleComponentConfigUpdate={handleComponentConfigUpdate}
-      />
-    )
   }
 
-  return null
+  // No selection - show only filter tags
+  return (
+    <div className="p-4 space-y-4">
+      {/* Components */}
+      {Object.keys(componentConfigs).length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase">Components</h3>
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(componentConfigs).map(([type, config]) => (
+              <Badge
+                key={type}
+                variant={selectedComponent === type ? 'default' : 'outline'}
+                className="cursor-pointer hover:bg-primary/80 capitalize"
+                onClick={() => handleComponentClick(type)}
+              >
+                {config.type}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Widgets grouped by category */}
+      {Object.keys(widgetsByType).length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase">Widgets</h3>
+          {Object.entries(widgetsByType).map(([category, widgets]) => (
+            <div key={category} className="space-y-2">
+              <h4 className="text-xs font-medium text-muted-foreground">{category}</h4>
+              <div className="flex flex-wrap gap-2">
+                {widgets.map(widget => {
+                  const widgetDef = widgetsPalette.find(w => w.type === widget.type)
+                  const isSelected = selectedWidgetId === widget.id
+                  return (
+                    <Badge
+                      key={widget.id}
+                      variant={isSelected ? 'default' : 'outline'}
+                      className="cursor-pointer hover:bg-primary/80"
+                      onClick={() => handleWidgetClick(widget.id)}
+                    >
+                      {widgetDef?.label || widget.type}
+                      {isSelected && (
+                        <X className="h-3 w-3 ml-1" />
+                      )}
+                    </Badge>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }

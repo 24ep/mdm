@@ -133,6 +133,11 @@ export function ThemeBranding() {
       textareaBorderRadius: '4px',
       textareaBorderWidth: '1px',
     },
+    drawerOverlay: {
+      color: '#000000',
+      opacity: 80,
+      blur: 4,
+    },
     componentStyling: {
       // Top Menu Bar
       'top-menu-bar': {
@@ -285,7 +290,14 @@ export function ThemeBranding() {
     applyBrandingColors(branding, isDark)
     applyGlobalStyling(branding)
     applyComponentStyling(branding, isDark)
-  }, [isDarkMode, branding])
+    // Apply drawer overlay settings
+    if (branding.drawerOverlay) {
+      const root = document.documentElement
+      root.style.setProperty('--drawer-overlay-color', branding.drawerOverlay.color)
+      root.style.setProperty('--drawer-overlay-opacity', String(branding.drawerOverlay.opacity))
+      root.style.setProperty('--drawer-overlay-blur', `${branding.drawerOverlay.blur}px`)
+    }
+  }, [isDarkMode, branding, branding.drawerOverlay])
 
   // Auto-save disabled - user must click Save button to persist changes
   // useEffect removed - changes apply instantly but are not saved until user clicks Save
@@ -351,6 +363,11 @@ export function ThemeBranding() {
               selectBorderWidth: '1px',
               textareaBorderRadius: '4px',
               textareaBorderWidth: '1px',
+            },
+            drawerOverlay: data.branding.drawerOverlay || {
+              color: '#000000',
+              opacity: 80,
+              blur: 4,
             },
             componentStyling: (() => {
               // Default component styling with no borders for menu items
@@ -1364,6 +1381,82 @@ export function ThemeBranding() {
                   })
                 }
                 placeholder="1px"
+                className="w-full"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t pt-4">
+          <h3 className="text-xs font-semibold mb-4">Drawer Overlay</h3>
+          <p className="text-xs text-muted-foreground mb-4">
+            Configure the overlay that appears behind drawers (color, opacity, and blur effect).
+          </p>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Overlay Color</Label>
+              <ColorInput
+                value={branding.drawerOverlay?.color || '#000000'}
+                onChange={(color) =>
+                  setBranding({
+                    ...branding,
+                    drawerOverlay: {
+                      ...branding.drawerOverlay,
+                      color,
+                      opacity: branding.drawerOverlay?.opacity ?? 80,
+                      blur: branding.drawerOverlay?.blur ?? 4,
+                    },
+                  })
+                }
+                allowImageVideo={false}
+                className="relative"
+                placeholder="#000000"
+                inputClassName="h-7 text-xs pl-7 w-full"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Overlay Opacity (%)</Label>
+              <Input
+                type="number"
+                min="0"
+                max="100"
+                value={branding.drawerOverlay?.opacity ?? 80}
+                onChange={(e) =>
+                  setBranding({
+                    ...branding,
+                    drawerOverlay: {
+                      ...branding.drawerOverlay,
+                      color: branding.drawerOverlay?.color || '#000000',
+                      opacity: parseInt(e.target.value) || 80,
+                      blur: branding.drawerOverlay?.blur ?? 4,
+                    },
+                  })
+                }
+                placeholder="80"
+                className="w-full"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Overlay Blur (px)</Label>
+              <Input
+                type="number"
+                min="0"
+                max="100"
+                value={branding.drawerOverlay?.blur ?? 4}
+                onChange={(e) =>
+                  setBranding({
+                    ...branding,
+                    drawerOverlay: {
+                      ...branding.drawerOverlay,
+                      color: branding.drawerOverlay?.color || '#000000',
+                      opacity: branding.drawerOverlay?.opacity ?? 80,
+                      blur: parseInt(e.target.value) || 0,
+                    },
+                  })
+                }
+                placeholder="4"
                 className="w-full"
               />
             </div>

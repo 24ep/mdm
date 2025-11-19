@@ -525,11 +525,8 @@ export function ChartDataSourceConfig({
 
       {/* Data Limit Control */}
       <div className="space-y-2 border-t pt-3">
-        <Label className="text-xs font-semibold">Data Limit</Label>
-        <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">
-            Maximum number of records to fetch (leave empty for no limit)
-          </p>
+        <div className="flex items-center justify-between">
+          <Label className="text-xs font-semibold">Data Limit</Label>
           <Input
             type="number"
             value={widget.properties?.dataLimit || ''}
@@ -538,10 +535,13 @@ export function ChartDataSourceConfig({
               updateProperty('dataLimit', value ? parseInt(value) || undefined : undefined)
             }}
             placeholder="No limit"
-            className="h-8 text-xs"
+            className="h-8 text-xs w-32"
             min="1"
           />
         </div>
+        <p className="text-xs text-muted-foreground">
+          Maximum number of records to fetch (leave empty for no limit)
+        </p>
       </div>
       
       {/* Chart Dimensions */}

@@ -24,10 +24,8 @@ function ComponentStyleEditor({ componentType, style, onUpdate, isMobileViewport
 
   return (
     <div className="space-y-3 pb-3">
-      <Label className="text-xs font-semibold capitalize">{componentType}</Label>
-      
       {/* Background Color */}
-      <div className="space-y-1">
+      <div className="flex items-center justify-between space-y-0">
         <Label className="text-xs text-muted-foreground">Background</Label>
         <ColorInput
           value={style?.backgroundColor || '#ffffff'}
@@ -35,12 +33,12 @@ function ComponentStyleEditor({ componentType, style, onUpdate, isMobileViewport
           allowImageVideo={false}
           className="relative"
           placeholder="#ffffff"
-          inputClassName={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs pl-7`}
+          inputClassName={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs pl-7 w-32`}
         />
       </div>
 
       {/* Text Color */}
-      <div className="space-y-1">
+      <div className="flex items-center justify-between space-y-0">
         <Label className="text-xs text-muted-foreground">Text Color</Label>
         <ColorInput
           value={style?.textColor || '#000000'}
@@ -48,7 +46,7 @@ function ComponentStyleEditor({ componentType, style, onUpdate, isMobileViewport
           allowImageVideo={false}
           className="relative"
           placeholder="#000000"
-          inputClassName={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs pl-7`}
+          inputClassName={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs pl-7 w-32`}
         />
       </div>
 
@@ -153,7 +151,7 @@ function ComponentStyleEditor({ componentType, style, onUpdate, isMobileViewport
       </div>
 
       {/* Border Color */}
-      <div className="space-y-1">
+      <div className="flex items-center justify-between space-y-0">
         <Label className="text-xs text-muted-foreground">Border Color</Label>
         <ColorInput
           value={style?.borderColor || '#e5e7eb'}
@@ -161,93 +159,94 @@ function ComponentStyleEditor({ componentType, style, onUpdate, isMobileViewport
           allowImageVideo={false}
           className="relative"
           placeholder="#e5e7eb"
-          inputClassName={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs pl-7`}
+          inputClassName={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs pl-7 w-32`}
         />
       </div>
 
       {/* Spacing */}
-      <div className="grid grid-cols-2 gap-2">
-        <MultiSideInput
-          label="Padding"
-          baseKey="padding"
-          type="sides"
-          defaultValue={8}
-          inputClassName={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs`}
-          getValue={(side: string) => {
-            const key = `padding${side.charAt(0).toUpperCase() + side.slice(1)}`
-            const baseValue = typeof style?.padding === 'number'
-              ? style.padding
-              : (typeof style?.padding === 'object' && style.padding !== null
-                ? (style.padding as any)[side] || 8
-                : 8)
-            const sideValue = (style as any)?.[key]
-            return sideValue !== undefined ? sideValue : baseValue
-          }}
-          setValue={(updates) => {
-            const newStyle: any = { ...style }
-            Object.keys(updates).forEach(key => {
-              const value = updates[key]
-              if (typeof value === 'string' && value.endsWith('px')) {
-                const numValue = parseInt(value.replace('px', '')) || 0
-                newStyle[key] = numValue
-              } else {
-                newStyle[key] = value
-              }
-            })
-            onUpdate(newStyle)
-          }}
-        />
-        <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Margin</Label>
-          <Input
-            type="number"
-            value={style?.margin ?? 0}
-            onChange={(e) => updateStyle('margin', parseInt(e.target.value) || 0)}
-            className={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs`}
-            placeholder="0"
+      <div className="flex items-center justify-between space-y-0">
+        <Label className="text-xs text-muted-foreground">Padding</Label>
+        <div className="w-32">
+          <MultiSideInput
+            label=""
+            baseKey="padding"
+            type="sides"
+            defaultValue={8}
+            inputClassName={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs`}
+            getValue={(side: string) => {
+              const key = `padding${side.charAt(0).toUpperCase() + side.slice(1)}`
+              const baseValue = typeof style?.padding === 'number'
+                ? style.padding
+                : (typeof style?.padding === 'object' && style.padding !== null
+                  ? (style.padding as any)[side] || 8
+                  : 8)
+              const sideValue = (style as any)?.[key]
+              return sideValue !== undefined ? sideValue : baseValue
+            }}
+            setValue={(updates) => {
+              const newStyle: any = { ...style }
+              Object.keys(updates).forEach(key => {
+                const value = updates[key]
+                if (typeof value === 'string' && value.endsWith('px')) {
+                  const numValue = parseInt(value.replace('px', '')) || 0
+                  newStyle[key] = numValue
+                } else {
+                  newStyle[key] = value
+                }
+              })
+              onUpdate(newStyle)
+            }}
           />
         </div>
+      </div>
+      <div className="flex items-center justify-between space-y-0">
+        <Label className="text-xs text-muted-foreground">Margin</Label>
+        <Input
+          type="number"
+          value={style?.margin ?? 0}
+          onChange={(e) => updateStyle('margin', parseInt(e.target.value) || 0)}
+          className={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs w-32`}
+          placeholder="0"
+        />
       </div>
 
       {/* Typography */}
-      <div className="grid grid-cols-2 gap-2">
-        <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Font Size</Label>
-          <Input
-            type="number"
-            value={style?.fontSize ?? 14}
-            onChange={(e) => updateStyle('fontSize', parseInt(e.target.value) || 14)}
-            className={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs`}
-            placeholder="14"
-          />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Font Weight</Label>
-          <Select
-            value={style?.fontWeight || 'normal'}
-            onValueChange={(value: any) => updateStyle('fontWeight', value)}
-          >
-            <SelectTrigger className={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs`}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="normal">Normal</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="semibold">Semibold</SelectItem>
-              <SelectItem value="bold">Bold</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="flex items-center justify-between space-y-0">
+        <Label className="text-xs text-muted-foreground">Font Size</Label>
+        <Input
+          type="number"
+          value={style?.fontSize ?? 14}
+          onChange={(e) => updateStyle('fontSize', parseInt(e.target.value) || 14)}
+          className={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs w-32`}
+          placeholder="14"
+        />
+      </div>
+      <div className="flex items-center justify-between space-y-0">
+        <Label className="text-xs text-muted-foreground">Font Weight</Label>
+        <Select
+          value={style?.fontWeight || 'normal'}
+          onValueChange={(value: any) => updateStyle('fontWeight', value)}
+        >
+          <SelectTrigger className={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs w-32`}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="normal">Normal</SelectItem>
+            <SelectItem value="medium">Medium</SelectItem>
+            <SelectItem value="semibold">Semibold</SelectItem>
+            <SelectItem value="bold">Bold</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Font Family */}
-      <div className="space-y-1">
+      <div className="flex items-center justify-between space-y-0">
         <Label className="text-xs text-muted-foreground">Font Family</Label>
         <Select
           value={style?.fontFamily || 'inherit'}
           onValueChange={(value) => updateStyle('fontFamily', value)}
         >
-          <SelectTrigger className={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs`}>
+          <SelectTrigger className={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs w-32`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -266,7 +265,7 @@ function ComponentStyleEditor({ componentType, style, onUpdate, isMobileViewport
       </div>
 
       {/* Opacity */}
-      <div className="space-y-1">
+      <div className="flex items-center justify-between space-y-0">
         <Label className="text-xs text-muted-foreground">Opacity</Label>
         <Input
           type="number"
@@ -278,7 +277,7 @@ function ComponentStyleEditor({ componentType, style, onUpdate, isMobileViewport
           }}
           min={0}
           max={100}
-          className={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs`}
+          className={`${isMobileViewport ? 'h-8' : 'h-7'} text-xs w-32`}
           placeholder="100"
         />
       </div>
@@ -323,7 +322,7 @@ export function GlobalComponentStyles({ globalStyle, onUpdate, isMobileViewport 
       <Accordion type="multiple" defaultValue={['input', 'button']}>
         <AccordionItem value="input" className="border-0">
           <AccordionTrigger className="text-xs font-semibold py-2 px-4">Input</AccordionTrigger>
-          <AccordionContent className="px-0 pt-2 pb-3 border-b">
+          <AccordionContent className="px-0 pt-4 pb-4 border-b">
             <div className="px-4">
               <ComponentStyleEditor
                 componentType="input"
@@ -337,7 +336,7 @@ export function GlobalComponentStyles({ globalStyle, onUpdate, isMobileViewport 
 
         <AccordionItem value="select" className="border-0">
           <AccordionTrigger className="text-xs font-semibold py-2 px-4">Select</AccordionTrigger>
-          <AccordionContent className="px-0 pt-2 pb-3 border-b">
+          <AccordionContent className="px-0 pt-4 pb-4 border-b">
             <div className="px-4">
               <ComponentStyleEditor
                 componentType="select"
@@ -351,7 +350,7 @@ export function GlobalComponentStyles({ globalStyle, onUpdate, isMobileViewport 
 
         <AccordionItem value="button" className="border-0">
           <AccordionTrigger className="text-xs font-semibold py-2 px-4">Button</AccordionTrigger>
-          <AccordionContent className="px-0 pt-2 pb-3 border-b">
+          <AccordionContent className="px-0 pt-4 pb-4 border-b">
             <div className="px-4">
               <ComponentStyleEditor
                 componentType="button"
@@ -365,7 +364,7 @@ export function GlobalComponentStyles({ globalStyle, onUpdate, isMobileViewport 
 
         <AccordionItem value="tabs" className="border-0">
           <AccordionTrigger className="text-xs font-semibold py-2 px-4">Tabs</AccordionTrigger>
-          <AccordionContent className="px-0 pt-2 pb-3 border-b">
+          <AccordionContent className="px-0 pt-4 pb-4 border-b">
             <div className="px-4">
               <ComponentStyleEditor
                 componentType="tabs"
@@ -379,7 +378,7 @@ export function GlobalComponentStyles({ globalStyle, onUpdate, isMobileViewport 
 
         <AccordionItem value="card" className="border-0">
           <AccordionTrigger className="text-xs font-semibold py-2 px-4">Card</AccordionTrigger>
-          <AccordionContent className="px-0 pt-2 pb-3 border-b">
+          <AccordionContent className="px-0 pt-4 pb-4 border-b">
             <div className="px-4">
               <ComponentStyleEditor
                 componentType="card"
@@ -393,7 +392,7 @@ export function GlobalComponentStyles({ globalStyle, onUpdate, isMobileViewport 
 
         <AccordionItem value="table" className="border-0">
           <AccordionTrigger className="text-xs font-semibold py-2 px-4">Table</AccordionTrigger>
-          <AccordionContent className="px-0 pt-2 pb-3 border-b">
+          <AccordionContent className="px-0 pt-4 pb-4 border-b">
             <div className="px-4">
               <ComponentStyleEditor
                 componentType="table"
@@ -407,7 +406,7 @@ export function GlobalComponentStyles({ globalStyle, onUpdate, isMobileViewport 
 
         <AccordionItem value="modal" className="border-0">
           <AccordionTrigger className="text-xs font-semibold py-2 px-4">Modal</AccordionTrigger>
-          <AccordionContent className="px-0 pt-2 pb-3 border-b">
+          <AccordionContent className="px-0 pt-4 pb-4 border-b">
             <div className="px-4">
               <ComponentStyleEditor
                 componentType="modal"
@@ -421,7 +420,7 @@ export function GlobalComponentStyles({ globalStyle, onUpdate, isMobileViewport 
 
         <AccordionItem value="tooltip" className="border-0">
           <AccordionTrigger className="text-xs font-semibold py-2 px-4">Tooltip</AccordionTrigger>
-          <AccordionContent className="px-0 pt-2 pb-3 border-b">
+          <AccordionContent className="px-0 pt-4 pb-4 border-b">
             <div className="px-4">
               <ComponentStyleEditor
                 componentType="tooltip"

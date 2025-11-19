@@ -142,20 +142,62 @@ DrawerClose.displayName = "DrawerClose"
 
 const DrawerOverlay = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => {
+  React.HTMLAttributes<HTMLDivElement> & {
+    overlayColor?: string
+    overlayOpacity?: number
+    overlayBlur?: number
+  }
+>(({ className, overlayColor, overlayOpacity, overlayBlur, ...props }, ref) => {
   const context = React.useContext(DrawerContext)
 
   if (!context?.open) return null
+
+  // Get values from props or CSS variables (set by branding config)
+  const color = overlayColor || (typeof window !== 'undefined' ? getComputedStyle(document.documentElement).getPropertyValue('--drawer-overlay-color').trim() || '#000000' : '#000000')
+  const opacity = overlayOpacity ?? (typeof window !== 'undefined' ? parseInt(getComputedStyle(document.documentElement).getPropertyValue('--drawer-overlay-opacity').trim()) || 80 : 80)
+  const blur = overlayBlur ?? (typeof window !== 'undefined' ? parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--drawer-overlay-blur').trim().replace('px', '')) || 4 : 4)
+
+  // Convert hex to rgba if needed
+  const getBackgroundColor = () => {
+    if (!color) return undefined
+    
+    if (color.startsWith('rgba') || color.startsWith('rgb')) {
+      // Extract RGB values and apply opacity
+      const rgbMatch = color.match(/(\d+),\s*(\d+),\s*(\d+)/)
+      if (rgbMatch) {
+        return `rgba(${rgbMatch[1]}, ${rgbMatch[2]}, ${rgbMatch[3]}, ${opacity / 100})`
+      }
+      return color
+    } else {
+      // Convert hex to rgba
+      const hex = color.replace('#', '')
+      const r = parseInt(hex.substring(0, 2), 16)
+      const g = parseInt(hex.substring(2, 4), 16)
+      const b = parseInt(hex.substring(4, 6), 16)
+      return `rgba(${r}, ${g}, ${b}, ${opacity / 100})`
+    }
+  }
+
+  const backgroundColor = getBackgroundColor()
+  const blurValue = blur > 0 ? `${blur}px` : undefined
 
   return (
     <div
       ref={ref}
       className={cn(
-        "fixed inset-0 bg-background/80 backdrop-blur-sm animate-in fade-in-0",
+        "fixed inset-0 animate-in fade-in-0",
+        !backgroundColor && "bg-background/80",
+        !blurValue && "backdrop-blur-sm",
         className
       )}
-      style={{ zIndex: Z_INDEX.overlay }}
+      style={{ 
+        zIndex: Z_INDEX.overlay,
+        ...(backgroundColor ? { backgroundColor } : {}),
+        ...(blurValue ? { 
+          backdropFilter: `blur(${blurValue})`,
+          WebkitBackdropFilter: `blur(${blurValue})`
+        } : {})
+      }}
       {...props}
     />
   )
@@ -164,8 +206,15 @@ DrawerOverlay.displayName = "DrawerOverlay"
 
 const DrawerContent = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & { widthClassName?: string }
->(({ className, children, widthClassName = "w-[500px]", ...props }, ref) => {
+  React.HTMLAttributes<HTMLDivElement> & { 
+    widthClassName?: string
+    floating?: boolean
+    floatingMargin?: string
+    overlayColor?: string
+    overlayOpacity?: number
+    overlayBlur?: number
+  }
+>(({ className, children, widthClassName = "w-[500px]", floating = false, floatingMargin = "16px", overlayColor, overlayOpacity, overlayBlur, ...props }, ref) => {
   const context = React.useContext(DrawerContext)
 
   useDialogEscapeKey(
@@ -178,15 +227,30 @@ const DrawerContent = React.forwardRef<
 
   const content = (
     <>
-      <DrawerOverlay />
+      <DrawerOverlay overlayColor={overlayColor} overlayOpacity={overlayOpacity} overlayBlur={overlayBlur} />
       <div
         ref={ref}
         className={cn(
-          "fixed inset-y-0 right-0 h-full bg-background border-l border-border shadow-xl outline-none animate-in slide-in-from-right",
+          "fixed bg-background border-l border-border shadow-xl outline-none animate-in slide-in-from-right",
+          floating 
+            ? "rounded-l-lg" 
+            : "inset-y-0 right-0 h-full",
           widthClassName,
           className
         )}
-        style={{ zIndex: Z_INDEX.drawer }}
+        style={{ 
+          zIndex: Z_INDEX.drawer,
+          ...(floating ? (() => {
+            const marginNum = parseFloat(floatingMargin) || 16
+            const marginUnit = floatingMargin.replace(String(marginNum), '') || 'px'
+            return {
+              top: floatingMargin,
+              right: floatingMargin,
+              bottom: floatingMargin,
+              height: `calc(100vh - ${marginNum * 2}${marginUnit})`,
+            }
+          })() : {})
+        }}
         data-drawer-content
         {...props}
       >

@@ -110,13 +110,13 @@ export function WidgetSpecificSection({
                     />
                   </div>
                   {widget.properties?.pagination && (
-                    <div className="space-y-1">
+                    <div className="flex items-center justify-between">
                       <Label className="text-xs font-medium">Rows per page</Label>
                       <Input
                         type="number"
                         value={widget.properties?.rowsPerPage || 10}
                         onChange={(e) => updateProperty('rowsPerPage', parseInt(e.target.value) || 10)}
-                        className="h-7 text-xs"
+                        className="h-7 text-xs w-32"
                         min="5"
                         max="100"
                       />
@@ -126,44 +126,44 @@ export function WidgetSpecificSection({
               )}
 
           {widget.type === 'text' && (
-            <div className="space-y-1">
+            <div className="flex items-center justify-between">
               <Label className="text-xs">Text Content</Label>
               <Input
                 value={widget.properties?.text || ''}
                 onChange={(e) => updateProperty('text', e.target.value)}
                 placeholder="Enter text"
-                className="h-7 text-xs"
+                className="h-7 text-xs w-32"
               />
             </div>
           )}
 
           {widget.type === 'image' && (
             <>
-              <div className="space-y-1">
+              <div className="flex items-center justify-between">
                 <Label className="text-xs">Image URL</Label>
                 <Input
                   value={widget.properties?.imageUrl || ''}
                   onChange={(e) => updateProperty('imageUrl', e.target.value)}
                   placeholder="https://example.com/image.jpg"
-                  className="h-7 text-xs"
+                  className="h-7 text-xs w-32"
                 />
               </div>
-              <div className="space-y-1">
+              <div className="flex items-center justify-between">
                 <Label className="text-xs">Alt Text</Label>
                 <Input
                   value={widget.properties?.altText || ''}
                   onChange={(e) => updateProperty('altText', e.target.value)}
                   placeholder="Image description"
-                  className="h-7 text-xs"
+                  className="h-7 text-xs w-32"
                 />
               </div>
-              <div className="space-y-1">
+              <div className="flex items-center justify-between">
                 <Label className="text-xs">Object Fit</Label>
                 <Select
                   value={widget.properties?.objectFit || 'contain'}
                   onValueChange={(value) => updateProperty('objectFit', value)}
                 >
-                  <SelectTrigger className="h-7 text-xs">
+                  <SelectTrigger className="h-7 text-xs w-32">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -180,13 +180,13 @@ export function WidgetSpecificSection({
 
           {widget.type === 'video' && (
             <>
-              <div className="space-y-1">
+              <div className="flex items-center justify-between">
                 <Label className="text-xs">Video URL</Label>
                 <Input
                   value={widget.properties?.videoUrl || ''}
                   onChange={(e) => updateProperty('videoUrl', e.target.value)}
                   placeholder="https://example.com/video.mp4"
-                  className="h-7 text-xs"
+                  className="h-7 text-xs w-32"
                 />
               </div>
               <div className="flex items-center justify-between">
@@ -215,13 +215,13 @@ export function WidgetSpecificSection({
 
           {widget.type === 'iframe' && (
             <>
-              <div className="space-y-1">
+              <div className="flex items-center justify-between">
                 <Label className="text-xs">Iframe URL</Label>
                 <Input
                   value={widget.properties?.iframeUrl || ''}
                   onChange={(e) => updateProperty('iframeUrl', e.target.value)}
                   placeholder="https://example.com"
-                  className="h-7 text-xs"
+                  className="h-7 text-xs w-32"
                 />
               </div>
               <div className="flex items-center justify-between">
@@ -236,31 +236,31 @@ export function WidgetSpecificSection({
 
           {widget.type === 'link' && (
             <>
-              <div className="space-y-1">
+              <div className="flex items-center justify-between">
                 <Label className="text-xs">Link URL</Label>
                 <Input
                   value={widget.properties?.linkUrl || ''}
                   onChange={(e) => updateProperty('linkUrl', e.target.value)}
                   placeholder="https://example.com"
-                  className="h-7 text-xs"
+                  className="h-7 text-xs w-32"
                 />
               </div>
-              <div className="space-y-1">
+              <div className="flex items-center justify-between">
                 <Label className="text-xs">Link Text</Label>
                 <Input
                   value={widget.properties?.linkText || ''}
                   onChange={(e) => updateProperty('linkText', e.target.value)}
                   placeholder="Click here"
-                  className="h-7 text-xs"
+                  className="h-7 text-xs w-32"
                 />
               </div>
-              <div className="space-y-1">
+              <div className="flex items-center justify-between">
                 <Label className="text-xs">Target</Label>
                 <Select
                   value={widget.properties?.linkTarget || '_blank'}
                   onValueChange={(value) => updateProperty('linkTarget', value)}
                 >
-                  <SelectTrigger className="h-7 text-xs">
+                  <SelectTrigger className="h-7 text-xs w-32">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -276,22 +276,22 @@ export function WidgetSpecificSection({
 
           {widget.type === 'button' && (
             <>
-              <div className="space-y-1">
+              <div className="flex items-center justify-between">
                 <Label className="text-xs">Button Text</Label>
                 <Input
                   value={widget.properties?.buttonText || ''}
                   onChange={(e) => updateProperty('buttonText', e.target.value)}
                   placeholder="Click Me"
-                  className="h-7 text-xs"
+                  className="h-7 text-xs w-32"
                 />
               </div>
-              <div className="space-y-1">
+              <div className="flex items-center justify-between">
                 <Label className="text-xs">Action</Label>
                 <Select
                   value={widget.properties?.buttonAction || 'none'}
                   onValueChange={(value) => updateProperty('buttonAction', value)}
                 >
-                  <SelectTrigger className="h-7 text-xs">
+                  <SelectTrigger className="h-7 text-xs w-32">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

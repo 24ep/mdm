@@ -75,6 +75,9 @@ export function applyBrandingColors(branding: BrandingConfig, isDarkMode: boolea
   
   // Apply component-specific styling
   applyComponentStyling(branding, isDarkMode)
+  
+  // Apply drawer overlay settings
+  applyDrawerOverlay(branding)
 }
 
 /**
@@ -410,6 +413,47 @@ export function applyComponentStyling(branding: BrandingConfig, isDarkMode: bool
 }
 
 /**
+ * Apply drawer overlay settings
+ */
+export function applyDrawerOverlay(branding: BrandingConfig) {
+  const root = document.documentElement
+  const overlay = branding.drawerOverlay
+  
+  if (overlay) {
+    root.style.setProperty('--drawer-overlay-color', overlay.color)
+    root.style.setProperty('--drawer-overlay-opacity', String(overlay.opacity))
+    root.style.setProperty('--drawer-overlay-blur', `${overlay.blur}px`)
+  } else {
+    // Default values
+    root.style.setProperty('--drawer-overlay-color', '#000000')
+    root.style.setProperty('--drawer-overlay-opacity', '80')
+    root.style.setProperty('--drawer-overlay-blur', '4px')
+  }
+}
+
+/**
+ * Get drawer overlay settings from branding config
+ */
+export function getDrawerOverlaySettings(branding: BrandingConfig | null): {
+  color: string
+  opacity: number
+  blur: number
+} {
+  if (branding?.drawerOverlay) {
+    return {
+      color: branding.drawerOverlay.color,
+      opacity: branding.drawerOverlay.opacity,
+      blur: branding.drawerOverlay.blur,
+    }
+  }
+  return {
+    color: '#000000',
+    opacity: 80,
+    blur: 4,
+  }
+}
+
+/**
  * Load branding configuration from API
  */
 export async function loadBrandingConfig(): Promise<BrandingConfig | null> {
@@ -440,6 +484,7 @@ export async function initializeBranding(): Promise<(() => void) | null> {
     applyBrandingColors(branding, isDark)
     applyGlobalStyling(branding)
     applyComponentStyling(branding, isDark)
+    applyDrawerOverlay(branding)
     
     // Listen for theme changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
@@ -449,6 +494,7 @@ export async function initializeBranding(): Promise<(() => void) | null> {
       applyBrandingColors(branding, isDarkNow)
       applyGlobalStyling(branding)
       applyComponentStyling(branding, isDarkNow)
+      applyDrawerOverlay(branding)
     }
     
     // Watch for class changes on document element

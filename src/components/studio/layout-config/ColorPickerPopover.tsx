@@ -15,6 +15,7 @@ interface ColorPickerPopoverProps {
   children: React.ReactNode
   disabled?: boolean
   allowImageVideo?: boolean // Only show Image/Video tabs for background/fill
+  isSpaceLayoutConfig?: boolean // If true, items display on separate lines full width with no left/right padding
 }
 
 export function ColorPickerPopover({
@@ -23,6 +24,7 @@ export function ColorPickerPopover({
   children,
   disabled,
   allowImageVideo = false,
+  isSpaceLayoutConfig = false,
 }: ColorPickerPopoverProps) {
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -606,36 +608,41 @@ export function ColorPickerPopover({
         {children}
       </PopoverTrigger>
       <PopoverContent
-        className="w-[320px] p-0"
+        className={`w-[320px] ${isSpaceLayoutConfig ? 'px-0' : 'p-0'}`}
         align="start"
         onClick={(e) => e.stopPropagation()}
         style={{ width: '320px', minWidth: '320px', maxWidth: '320px' }}
       >
-        <div className="w-full">
+        <div className={`w-full ${isSpaceLayoutConfig ? 'space-y-2' : ''}`}>
           <Tabs value={colorType} onValueChange={(v) => setColorType(v as any)}>
-            <TabsList className={`w-full grid h-8 ${allowImageVideo ? 'grid-cols-5' : 'grid-cols-3'}`}>
-            <TabsTrigger value="solid" className="text-xs px-2 flex items-center justify-center" title="Solid">
+            <TabsList className={`w-full grid h-9 ${allowImageVideo ? 'grid-cols-5' : 'grid-cols-3'}`}>
+            <TabsTrigger value="solid" className="text-xs px-3 py-2 flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50" title="Solid">
               <Droplet className="h-4 w-4" />
+              <span>Solid</span>
             </TabsTrigger>
-            <TabsTrigger value="gradient" className="text-xs px-2 flex items-center justify-center" title="Gradient">
+            <TabsTrigger value="gradient" className="text-xs px-3 py-2 flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50" title="Gradient">
               <Sliders className="h-4 w-4" />
+              <span>Gradient</span>
             </TabsTrigger>
-            <TabsTrigger value="pattern" className="text-xs px-2 flex items-center justify-center" title="Pattern">
+            <TabsTrigger value="pattern" className="text-xs px-3 py-2 flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50" title="Pattern">
               <Grid3x3 className="h-4 w-4" />
+              <span>Pattern</span>
             </TabsTrigger>
             {allowImageVideo && (
               <>
-                <TabsTrigger value="image" className="text-xs px-2 flex items-center justify-center" title="Image">
+                <TabsTrigger value="image" className="text-xs px-3 py-2 flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50" title="Image">
                   <Image className="h-4 w-4" />
+                  <span>Image</span>
                 </TabsTrigger>
-                <TabsTrigger value="video" className="text-xs px-2 flex items-center justify-center" title="Video">
+                <TabsTrigger value="video" className="text-xs px-3 py-2 flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50" title="Video">
                   <Play className="h-4 w-4" />
+                  <span>Video</span>
                 </TabsTrigger>
               </>
             )}
           </TabsList>
 
-          <TabsContent value="solid" className="p-4 space-y-2 mt-0">
+          <TabsContent value="solid" className={`${isSpaceLayoutConfig ? 'py-4' : 'p-4'} space-y-2 mt-0`}>
             {/* Color Set Selector */}
             <div className="space-y-1">
               <Label className="text-xs">Color Set</Label>
@@ -887,7 +894,7 @@ export function ColorPickerPopover({
             </div>
           </TabsContent>
 
-          <TabsContent value="gradient" className="p-4 space-y-2 mt-0">
+          <TabsContent value="gradient" className={`${isSpaceLayoutConfig ? 'py-4' : 'p-4'} space-y-2 mt-0`}>
             <div className="space-y-2">
               {/* Gradient Type */}
               <div className="space-y-1">
@@ -1026,7 +1033,7 @@ export function ColorPickerPopover({
             </div>
           </TabsContent>
 
-          <TabsContent value="pattern" className="p-4 space-y-2 mt-0">
+          <TabsContent value="pattern" className={`${isSpaceLayoutConfig ? 'py-4' : 'p-4'} space-y-2 mt-0`}>
             <div className="space-y-2">
               <Label className="text-xs">Pattern</Label>
               <Select value={currentPattern.id} onValueChange={handlePatternChange}>
@@ -1062,7 +1069,7 @@ export function ColorPickerPopover({
             </div>
           </TabsContent>
 
-          <TabsContent value="image" className="p-4 space-y-2 mt-0">
+          <TabsContent value="image" className={`${isSpaceLayoutConfig ? 'py-4' : 'p-4'} space-y-2 mt-0`}>
             <div className="space-y-2">
               <Input
                 type="text"
@@ -1101,7 +1108,7 @@ export function ColorPickerPopover({
             </div>
           </TabsContent>
 
-          <TabsContent value="video" className="p-4 space-y-2 mt-0">
+          <TabsContent value="video" className={`${isSpaceLayoutConfig ? 'py-4' : 'p-4'} space-y-2 mt-0`}>
             <div className="space-y-2">
               <Input
                 type="text"

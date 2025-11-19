@@ -2,13 +2,12 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { FileIcon, FileText, Settings } from 'lucide-react'
+import { FileIcon, FileText } from 'lucide-react'
 import { ComponentConfig } from './types'
 import { UnifiedPage } from './types'
 import { PlacedWidget } from './widgets'
 import { SelectionTab } from './SelectionTab'
 import { PagesTab } from './PagesTab'
-import { SettingsTab } from './SettingsTab'
 import { useIconLoader } from './useIconLoader'
 import { SpacesEditorPage } from '@/lib/space-studio-manager'
 
@@ -137,7 +136,7 @@ export function SettingsPanelContent({
     <div className="w-full" style={{ pointerEvents: 'auto' }}>
       <div className="w-full">
       <Tabs value={validActiveTab} onValueChange={handleTabChange}>
-        <TabsList className={`${isMobileViewport ? 'w-full' : 'w-full'} ${shouldShowSelectionTab ? 'grid grid-cols-3' : 'grid grid-cols-2'} mb-3 justify-start`}>
+        <TabsList className={`${isMobileViewport ? 'w-full' : 'w-full'} ${shouldShowSelectionTab ? 'grid grid-cols-2' : 'grid grid-cols-1'} mb-3 justify-start`}>
           {shouldShowSelectionTab && (
           <TabsTrigger 
             value="selection" 
@@ -154,13 +153,6 @@ export function SettingsPanelContent({
           <FileText className="h-3.5 w-3.5" />
           Pages
         </TabsTrigger>
-          <TabsTrigger 
-            value="settings" 
-            className="flex items-center gap-1.5 text-xs cursor-pointer"
-          >
-          <Settings className="h-3.5 w-3.5" />
-          Global Settings
-        </TabsTrigger>
       </TabsList>
 
       {/* Selection Tab - Shows properties of selected widget or component */}
@@ -174,6 +166,7 @@ export function SettingsPanelContent({
                 componentConfigs={componentConfigs}
                 setPlacedWidgets={setPlacedWidgets}
                 setSelectedWidgetId={setSelectedWidgetId}
+                setSelectedComponent={setSelectedComponent}
                 handleComponentConfigUpdate={handleComponentConfigUpdate}
                 spaceId={spaceId}
               />
@@ -204,16 +197,6 @@ export function SettingsPanelContent({
             componentConfigs={componentConfigs}
             handleComponentConfigUpdate={handleComponentConfigUpdate}
             setAllPages={setAllPages}
-          />
-      </TabsContent>
-
-      <TabsContent value="settings" className="mt-0">
-          <SettingsTab
-            spaceId={spaceId}
-            isMobileViewport={isMobileViewport}
-            componentConfigs={componentConfigs}
-            handleComponentConfigUpdate={handleComponentConfigUpdate}
-            pages={pages}
           />
       </TabsContent>
 

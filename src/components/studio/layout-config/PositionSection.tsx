@@ -63,7 +63,7 @@ export function PositionSection({
       </div>
 
       {/* Rotation */}
-      <div className="space-y-1 px-4">
+      <div className="flex items-center justify-between px-4">
         <Label className="text-xs text-muted-foreground">Rotation</Label>
         <div className="flex gap-1">
           <div className="flex items-center justify-center w-7 h-7 border rounded cursor-pointer hover:bg-muted">
@@ -73,7 +73,7 @@ export function PositionSection({
             type="number"
             value={widget.properties?.rotation || 0}
             onChange={(e) => updateProperty('rotation', parseInt(e.target.value) || 0)}
-            className="h-7 text-xs flex-1"
+            className="h-7 text-xs w-24"
             placeholder="0°"
           />
         </div>

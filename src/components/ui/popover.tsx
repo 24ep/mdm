@@ -317,12 +317,35 @@ const PopoverContent = React.forwardRef<
       // Ignore clicks immediately after opening
       if (justOpenedRef.current) return
       
+      const target = e.target as HTMLElement
+      
+      // Check if click is inside a dropdown menu (which is portaled to body)
+      // Dropdown menus are portaled and have higher z-index, check by traversing up the DOM
+      let isInsideDropdown = false
+      let element: HTMLElement | null = target
+      while (element && element !== document.body) {
+        // Check if element is a dropdown menu content or contains dropdown menu items
+        const role = element.getAttribute('role')
+        const zIndex = element.style.zIndex ? parseInt(element.style.zIndex) : 0
+        if (
+          role === 'menuitemradio' ||
+          role === 'menuitem' ||
+          role === 'radiogroup' ||
+          (element.classList.contains('rounded-md') && zIndex > Z_INDEX.popover + 100)
+        ) {
+          isInsideDropdown = true
+          break
+        }
+        element = element.parentElement
+      }
+      
       if (
         context?.open &&
         contentRef.current &&
         context.triggerRef.current &&
         !contentRef.current.contains(e.target as Node) &&
-        !context.triggerRef.current.contains(e.target as Node)
+        !context.triggerRef.current.contains(e.target as Node) &&
+        !isInsideDropdown
       ) {
         context.setOpen(false)
       }

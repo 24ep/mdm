@@ -38,7 +38,7 @@ export function ComponentProperties({
 
       {/* Dimensions */}
       {config.width !== undefined && (
-        <div className="space-y-1 px-4">
+        <div className="flex items-center justify-between px-4">
           <Label className="text-xs">Width</Label>
           <Input
             type="number"
@@ -46,13 +46,13 @@ export function ComponentProperties({
             onChange={(e) => {
               handleComponentConfigUpdate(selectedComponent, { width: parseInt(e.target.value) || 0 })
             }}
-            className="h-7 text-xs"
+            className="h-7 text-xs w-32"
           />
         </div>
       )}
 
       {config.height !== undefined && (
-        <div className="space-y-1 px-4">
+        <div className="flex items-center justify-between px-4">
           <Label className="text-xs">Height</Label>
           <Input
             type="number"
@@ -60,7 +60,7 @@ export function ComponentProperties({
             onChange={(e) => {
               handleComponentConfigUpdate(selectedComponent, { height: parseInt(e.target.value) || 0 })
             }}
-            className="h-7 text-xs"
+            className="h-7 text-xs w-32"
           />
         </div>
       )}
@@ -68,8 +68,7 @@ export function ComponentProperties({
       {/* Colors */}
       <div className="space-y-2 px-4">
         <Label className="text-xs font-semibold">Colors</Label>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-1">
+        <div className="flex items-center justify-between">
             <Label className="text-xs">Background</Label>
             <ColorInput
               value={config.backgroundColor || '#ffffff'}
@@ -77,11 +76,11 @@ export function ComponentProperties({
                 handleComponentConfigUpdate(selectedComponent, { backgroundColor: color })
               }}
               allowImageVideo={false}
-              className="relative"
+            className="relative w-32"
               inputClassName="h-7 text-xs pl-7"
             />
           </div>
-          <div className="space-y-1">
+        <div className="flex items-center justify-between">
             <Label className="text-xs">Text</Label>
             <ColorInput
               value={config.textColor || '#374151'}
@@ -89,10 +88,9 @@ export function ComponentProperties({
                 handleComponentConfigUpdate(selectedComponent, { textColor: color })
               }}
               allowImageVideo={false}
-              className="relative"
+            className="relative w-32"
               inputClassName="h-7 text-xs pl-7"
             />
-          </div>
         </div>
       </div>
     </div>

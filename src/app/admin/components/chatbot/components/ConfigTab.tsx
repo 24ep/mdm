@@ -410,6 +410,41 @@ export function ConfigTab({ formData, setFormData }: ConfigTabProps) {
                       : 'Uses the current chat interface for voice interactions'}
                   </p>
                 </div>
+
+                {/* Realtime Voice Settings - Only show when voice is enabled and provider is openai-realtime */}
+                {formData.voiceProvider === 'openai-realtime' && (
+                  <div className="space-y-3 pt-2 border-t">
+                    <h5 className="text-sm font-medium">Realtime Voice Settings</h5>
+                    <p className="text-xs text-muted-foreground">
+                      Configure prompt for OpenAI Realtime Voice API. If prompt ID is provided, it will be used instead of instructions.
+                    </p>
+                    
+                    <div className="space-y-2">
+                      <Label>Realtime Voice Prompt ID (Optional)</Label>
+                      <Input
+                        value={(formData as any).openaiAgentSdkRealtimePromptId || ''}
+                        onChange={(e) => setFormData({ ...formData, openaiAgentSdkRealtimePromptId: e.target.value } as any)}
+                        placeholder="pmpt_6910de2213d881909b426f4ebc8644010d67268fbf2a125c"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Enter the prompt ID from OpenAI Realtime API. This will be used for voice interactions instead of instructions.
+                        You can create prompts at <a href="https://platform.openai.com/prompts" target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 underline">OpenAI Platform</a>.
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Prompt Version (Optional)</Label>
+                      <Input
+                        value={(formData as any).openaiAgentSdkRealtimePromptVersion || '1'}
+                        onChange={(e) => setFormData({ ...formData, openaiAgentSdkRealtimePromptVersion: e.target.value } as any)}
+                        placeholder="1"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Version of the prompt to use. Defaults to "1" if not specified.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
