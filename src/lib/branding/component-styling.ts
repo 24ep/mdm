@@ -5,7 +5,9 @@
  */
 
 import { BrandingConfig } from '@/app/admin/features/system/types'
-import { hexToHsl } from './utils'
+import { hexToHsl, rgbaToHsl, hasAlphaChannel } from './utils'
+import { componentSelectors } from './component-selectors'
+import { generateBorderOverrideCSS } from './component-styling-border-override'
 
 export function applyComponentStyling(branding: BrandingConfig) {
   const styleId = 'branding-component-styling'
@@ -40,6 +42,9 @@ export function applyComponentStyling(branding: BrandingConfig) {
 
   // Always initialize CSS rules (even if empty, to clear previous styles)
   let cssRules = '/* Component-specific styling - excludes space modules */\n'
+  
+  // Generate border override CSS for rgba colors
+  cssRules += generateBorderOverrideCSS(branding)
 
   // If no component styling, just set empty CSS to clear previous styles
   if (!branding.componentStyling || Object.keys(branding.componentStyling).length === 0) {
@@ -57,460 +62,8 @@ export function applyComponentStyling(branding: BrandingConfig) {
     return
   }
 
-  // Map component IDs to CSS selectors
-  const componentSelectors: Record<string, string[]> = {
-    'text-input': [
-      'body:not([data-space]) input:not([type])',
-      'body:not([data-space]) input[type="text"]',
-      'body:not([data-space]) input[type="email"]',
-      'body:not([data-space]) input[type="password"]',
-      'body:not([data-space]) input[type="number"]',
-      'body:not([data-space]) input[type="search"]',
-      'body:not([data-space]) input[type="tel"]',
-      'body:not([data-space]) input[type="url"]',
-      'body:not([data-space]) input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"])',
-      // Shadcn/ui Input component wrapper
-      'body:not([data-space]) [data-component="input"]',
-      'body:not([data-space]) [class*="Input"]',
-      'body:not([data-space]) input[class*="input"]',
-      'body:not([data-space]) input[class*="Input"]',
-    ],
-    'text-input-focus': [
-      'body:not([data-space]) input:not([type]):focus',
-      'body:not([data-space]) input[type="text"]:focus',
-      'body:not([data-space]) input[type="email"]:focus',
-      'body:not([data-space]) input[type="password"]:focus',
-      'body:not([data-space]) input[type="number"]:focus',
-      'body:not([data-space]) input[type="search"]:focus',
-      'body:not([data-space]) input[type="tel"]:focus',
-      'body:not([data-space]) input[type="url"]:focus',
-      'body:not([data-space]) input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]):focus',
-      // Shadcn/ui Input component focus states
-      'body:not([data-space]) [data-component="input"]:focus-within',
-      'body:not([data-space]) [class*="Input"]:focus-within',
-      'body:not([data-space]) input[class*="input"]:focus',
-      'body:not([data-space]) input[class*="Input"]:focus',
-    ],
-    'text-input-disabled': [
-      'body:not([data-space]) input:not([type]):disabled',
-      'body:not([data-space]) input[type="text"]:disabled',
-      'body:not([data-space]) input[type="email"]:disabled',
-      'body:not([data-space]) input[type="password"]:disabled',
-      'body:not([data-space]) input[type="number"]:disabled',
-      'body:not([data-space]) input[type="search"]:disabled',
-      'body:not([data-space]) input[type="tel"]:disabled',
-      'body:not([data-space]) input[type="url"]:disabled',
-      'body:not([data-space]) input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]):disabled',
-      // Shadcn/ui Input component disabled states
-      'body:not([data-space]) [data-component="input"][aria-disabled="true"]',
-      'body:not([data-space]) [data-component="input"]:has(input:disabled)',
-      'body:not([data-space]) [class*="Input"][aria-disabled="true"]',
-      'body:not([data-space]) input[class*="input"]:disabled',
-      'body:not([data-space]) input[class*="Input"]:disabled',
-    ],
-    'select': [
-      'body:not([data-space]) select',
-      'body:not([data-space]) [data-component="select-trigger"]',
-      'body:not([data-space]) [data-component="select-content"]',
-      'body:not([data-space]) [role="combobox"]',
-      'body:not([data-space]) [data-radix-select-content]',
-      'body:not([data-space]) [class*="SelectContent"]',
-      'body:not([data-space]) [class*="SelectTrigger"]',
-      'body:not([data-space]) [class*="SelectValue"]',
-      'body:not([data-space]) [role="listbox"]',
-      // Target the dropdown content div (portaled to body)
-      'body:not([data-space]) > div[style*="position: fixed"][style*="z-index"]:has([role="option"])',
-    ],
-    'select-focus': [
-      'body:not([data-space]) select:focus',
-      'body:not([data-space]) [data-component="select-trigger"]:focus',
-      'body:not([data-space]) [class*="SelectTrigger"]:focus',
-      'body:not([data-space]) [role="combobox"]:focus',
-      'body:not([data-space]) [role="combobox"][data-state="open"]',
-    ],
-    'select-disabled': [
-      'body:not([data-space]) select:disabled',
-      'body:not([data-space]) [data-component="select-trigger"][aria-disabled="true"]',
-      'body:not([data-space]) [class*="SelectTrigger"][aria-disabled="true"]',
-      'body:not([data-space]) [role="combobox"][aria-disabled="true"]',
-      'body:not([data-space]) [role="combobox"]:has(select:disabled)',
-    ],
-    'multi-select': [
-      'body:not([data-space]) select[multiple]',
-      'body:not([data-space]) [role="listbox"]',
-      'body:not([data-space]) [data-radix-select-content]',
-      'body:not([data-space]) [class*="SelectContent"]',
-      'body:not([data-space]) [class*="MultiSelect"]',
-      'body:not([data-space]) [data-component="multi-select"]',
-      // Target the dropdown content div (portaled to body)
-      'body:not([data-space]) > div[style*="position: fixed"][style*="z-index"]:has([role="option"])',
-    ],
-    'multi-select-focus': [
-      'body:not([data-space]) select[multiple]:focus',
-      'body:not([data-space]) [role="listbox"]:focus',
-      'body:not([data-space]) [class*="MultiSelect"]:focus-within',
-      'body:not([data-space]) [data-component="multi-select"]:focus-within',
-    ],
-    'multi-select-disabled': [
-      'body:not([data-space]) select[multiple]:disabled',
-      'body:not([data-space]) [role="listbox"][aria-disabled="true"]',
-      'body:not([data-space]) [class*="MultiSelect"][aria-disabled="true"]',
-      'body:not([data-space]) [data-component="multi-select"][aria-disabled="true"]',
-    ],
-    'textarea': [
-      'body:not([data-space]) textarea',
-      'body:not([data-space]) [data-component="textarea"]',
-      'body:not([data-space]) [class*="Textarea"]',
-      'body:not([data-space]) textarea[class*="textarea"]',
-      'body:not([data-space]) textarea[class*="Textarea"]',
-    ],
-    'textarea-focus': [
-      'body:not([data-space]) textarea:focus',
-      'body:not([data-space]) [data-component="textarea"]:focus-within',
-      'body:not([data-space]) [class*="Textarea"]:focus-within',
-      'body:not([data-space]) textarea[class*="textarea"]:focus',
-      'body:not([data-space]) textarea[class*="Textarea"]:focus',
-    ],
-    'textarea-disabled': [
-      'body:not([data-space]) textarea:disabled',
-      'body:not([data-space]) [data-component="textarea"][aria-disabled="true"]',
-      'body:not([data-space]) [data-component="textarea"]:has(textarea:disabled)',
-      'body:not([data-space]) [class*="Textarea"][aria-disabled="true"]',
-      'body:not([data-space]) textarea[class*="textarea"]:disabled',
-      'body:not([data-space]) textarea[class*="Textarea"]:disabled',
-    ],
-    'form': [
-      'body:not([data-space]) form',
-      'body:not([data-space]) [data-component="form"]',
-      'body:not([data-space]) [class*="Form"]',
-      'body:not([data-space]) form[class*="form"]',
-      'body:not([data-space]) form[class*="Form"]',
-    ],
-    'button': [
-      'body:not([data-space]) button:not([class*="bg-secondary"]):not([class*="secondary"]):not([class*="ghost"]):not([class*="hover:bg-accent"]):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) [role="button"]:not([class*="bg-secondary"]):not([class*="secondary"]):not([class*="ghost"]):not([class*="hover:bg-accent"]):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) .btn:not([class*="bg-secondary"]):not([class*="secondary"]):not([class*="ghost"]):not([class*="hover:bg-accent"]):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([data-component="select-trigger"])',
-      'body:not([data-space]) [class*="button"]:not([class*="bg-secondary"]):not([class*="secondary"]):not([class*="ghost"]):not([class*="hover:bg-accent"]):not([data-space]):not([data-space] *):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      /* Exclude buttons inside platform sidebar (primary and secondary) */
-      'body:not([data-space]) [data-sidebar] button',
-      'body:not([data-space]) [data-sidebar="primary"] button',
-      'body:not([data-space]) [data-sidebar="secondary"] button',
-      'body:not([data-space]) [data-component="platform-sidebar"] button',
-      /* Exclude buttons inside top menu bar */
-      'body:not([data-space]) [data-component="top-menu-bar"] button',
-      /* Exclude active menu buttons */
-      'body:not([data-space]) .platform-sidebar-menu-button-active',
-      'body:not([data-space]) .platform-sidebar-menu-button.platform-sidebar-menu-button-active',
-      /* Exclude select triggers - they use select component styling */
-      'body:not([data-space]) [data-component="select-trigger"]',
-    ],
-    'button-default': [
-      'body:not([data-space]) button[class*="bg-primary"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) button:not([class*="bg-destructive"]):not([class*="bg-secondary"]):not([class*="border"]):not([class*="underline"]):not([class*="hover:bg-accent"]):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-    ],
-    'button-destructive': [
-      // Match buttons with bg-destructive class (most specific)
-      'body button[class*="bg-destructive"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body [role="button"][class*="bg-destructive"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      // Match buttons with destructive in class name
-      'body button[class*="destructive"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body [role="button"][class*="destructive"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      // Also match without data-space exclusion to catch space buttons
-      'body:not([data-space]) button[class*="bg-destructive"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) button[class*="destructive"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-    ],
-    'button-outline': [
-      'body:not([data-space]) button[class*="border"]:not([class*="bg-primary"]):not([class*="bg-destructive"]):not([class*="bg-secondary"]):not([class*="underline"]):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) button[class*="outline"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-    ],
-    'button-secondary': [
-      'body:not([data-space]) button[class*="bg-secondary"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) button[class*="secondary"]:not([class*="bg-primary"]):not([class*="bg-destructive"]):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-    ],
-    'button-ghost': [
-      'body:not([data-space]) button[class*="hover:bg-accent"]:not([class*="bg-primary"]):not([class*="bg-destructive"]):not([class*="bg-secondary"]):not([class*="border"]):not([class*="underline"]):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) button[class*="ghost"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-    ],
-    'button-link': [
-      'body:not([data-space]) button[class*="underline"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) button[class*="link"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-    ],
-    'iconButton': [
-      'body:not([data-space]) button[data-icon-button]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) button[class*="h-10"][class*="w-10"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) button[class*="h-6"][class*="w-6"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) button[class*="size-icon"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) button[size="icon"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-    ],
-    'iconButton-hover': [
-      'body:not([data-space]) button[data-icon-button]:hover:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) button[class*="h-10"][class*="w-10"]:hover:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) button[class*="h-6"][class*="w-6"]:hover:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) button[class*="size-icon"]:hover:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) button[size="icon"]:hover:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-    ],
-    'iconButton-active': [
-      'body:not([data-space]) button[data-icon-button]:active:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) button[class*="h-10"][class*="w-10"]:active:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) button[class*="h-6"][class*="w-6"]:active:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) button[class*="size-icon"]:active:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) button[size="icon"]:active:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-    ],
-    'iconButton-focus': [
-      'body:not([data-space]) button[data-icon-button]:focus:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) button[class*="h-10"][class*="w-10"]:focus:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) button[class*="h-6"][class*="w-6"]:focus:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) button[class*="size-icon"]:focus:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) button[size="icon"]:focus:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-    ],
-    'iconButton-disabled': [
-      'body:not([data-space]) button[data-icon-button]:disabled:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) button[class*="h-10"][class*="w-10"]:disabled:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) button[class*="h-6"][class*="w-6"]:disabled:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) button[class*="size-icon"]:disabled:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) button[size="icon"]:disabled:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-    ],
-    'button-hover': [
-      'body:not([data-space]) button:hover:not([class*="bg-secondary"]):not([class*="secondary"]):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) [role="button"]:hover:not([class*="bg-secondary"]):not([class*="secondary"]):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) .btn:hover:not([class*="bg-secondary"]):not([class*="secondary"]):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([data-component="select-trigger"])',
-    ],
-    'button-active': [
-      'body:not([data-space]) button:active:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) [role="button"]:active:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) .btn:active:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([data-component="select-trigger"])',
-    ],
-    'button-focus': [
-      'body:not([data-space]) button:focus:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) [role="button"]:focus:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) .btn:focus:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([data-component="select-trigger"])',
-    ],
-    'button-disabled': [
-      'body:not([data-space]) button:disabled:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) [role="button"]:disabled:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
-      'body:not([data-space]) .btn:disabled:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([data-component="select-trigger"])',
-    ],
-    'card': [
-      'body:not([data-space]) [class*="card"]:not([data-space]):not([data-space] *)',
-      'body:not([data-space]) .card',
-      'body:not([data-space]) [data-component="card"]',
-      'body:not([data-space]) [class*="Card"]',
-      'body:not([data-space]) [role="region"][class*="card"]',
-    ],
-    'checkbox': [
-      'body:not([data-space]) input[type="checkbox"]',
-      'body:not([data-space]) input[type="checkbox"] + div', // Visual checkbox wrapper
-      'body:not([data-space]) label:has(input[type="checkbox"]) > div', // Checkbox visual element
-    ],
-    'checkbox-checked': [
-      'body:not([data-space]) input[type="checkbox"]:checked',
-      'body:not([data-space]) input[type="checkbox"]:checked + div',
-      'body:not([data-space]) label:has(input[type="checkbox"]:checked) > div',
-    ],
-    'checkbox-focus': [
-      'body:not([data-space]) input[type="checkbox"]:focus',
-      'body:not([data-space]) input[type="checkbox"]:focus + div',
-      'body:not([data-space]) label:has(input[type="checkbox"]:focus) > div',
-    ],
-    'checkbox-disabled': [
-      'body:not([data-space]) input[type="checkbox"]:disabled',
-      'body:not([data-space]) input[type="checkbox"]:disabled + div',
-      'body:not([data-space]) label:has(input[type="checkbox"]:disabled) > div',
-    ],
-    'radio': [
-      'body:not([data-space]) input[type="radio"]',
-      'body:not([data-space]) input[type="radio"] + div', // Visual radio wrapper
-      'body:not([data-space]) label:has(input[type="radio"]) > div', // Radio visual element
-    ],
-    'radio-checked': [
-      'body:not([data-space]) input[type="radio"]:checked',
-      'body:not([data-space]) input[type="radio"]:checked + div',
-      'body:not([data-space]) label:has(input[type="radio"]:checked) > div',
-    ],
-    'radio-focus': [
-      'body:not([data-space]) input[type="radio"]:focus',
-      'body:not([data-space]) input[type="radio"]:focus + div',
-      'body:not([data-space]) label:has(input[type="radio"]:focus) > div',
-    ],
-    'radio-disabled': [
-      'body:not([data-space]) input[type="radio"]:disabled',
-      'body:not([data-space]) input[type="radio"]:disabled + div',
-      'body:not([data-space]) label:has(input[type="radio"]:disabled) > div',
-    ],
-    'switch': [
-      'body:not([data-space]) [role="switch"]',
-      'body:not([data-space]) [role="switch"] + div', // Switch track wrapper
-      'body:not([data-space]) label:has([role="switch"]) > div', // Switch track visual element
-      'body:not([data-space]) [class*="switch"]:not([data-space]):not([data-space] *)',
-      'body:not([data-space]) label:has(input[type="checkbox"][role="switch"]) > div', // Switch track for checkbox-based switches
-    ],
-    'switch-checked': [
-      'body:not([data-space]) [role="switch"][aria-checked="true"]',
-      'body:not([data-space]) [role="switch"][aria-checked="true"] + div',
-      'body:not([data-space]) label:has([role="switch"][aria-checked="true"]) > div',
-      'body:not([data-space]) input[type="checkbox"][role="switch"]:checked + div',
-      'body:not([data-space]) label:has(input[type="checkbox"][role="switch"]:checked) > div',
-    ],
-    'switch-focus': [
-      'body:not([data-space]) [role="switch"]:focus',
-      'body:not([data-space]) [role="switch"]:focus + div',
-      'body:not([data-space]) label:has([role="switch"]:focus) > div',
-      'body:not([data-space]) input[type="checkbox"][role="switch"]:focus + div',
-      'body:not([data-space]) label:has(input[type="checkbox"][role="switch"]:focus) > div',
-    ],
-    'switch-disabled': [
-      'body:not([data-space]) [role="switch"][aria-disabled="true"]',
-      'body:not([data-space]) [role="switch"][aria-disabled="true"] + div',
-      'body:not([data-space]) label:has([role="switch"][aria-disabled="true"]) > div',
-      'body:not([data-space]) input[type="checkbox"][role="switch"]:disabled + div',
-      'body:not([data-space]) label:has(input[type="checkbox"][role="switch"]:disabled) > div',
-    ],
-    'top-menu-bar': [
-      'body:not([data-space]) [data-component="top-menu-bar"]',
-      'body:not([data-space]) .top-menu-bar',
-    ],
-    'platform-sidebar-primary': [
-      'body:not([data-space]) [data-sidebar="primary"]',
-      'body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="primary"]',
-      'body:not([data-space]) div[data-sidebar="primary"]', // Target the wrapper div
-      // More specific selectors to override inline styles
-      'body:not([data-space]) [data-sidebar="primary"][data-component="platform-sidebar"]',
-      'body:not([data-space]) [data-sidebar="primary"][data-component="platform-sidebar"].h-full',
-      'body:not([data-space]) [data-sidebar="primary"][data-component="platform-sidebar"].flex',
-      'body:not([data-space]) [data-sidebar="primary"][data-component="platform-sidebar"].flex-col',
-    ],
-    'platform-sidebar-secondary': [
-      'body:not([data-space]) [data-sidebar="secondary"]',
-      'body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="secondary"]',
-      'body:not([data-space]) div[data-sidebar="secondary"]', // Target the wrapper div
-      // More specific selectors to override inline styles
-      'body:not([data-space]) [data-sidebar="secondary"][data-component="platform-sidebar"]',
-      'body:not([data-space]) [data-sidebar="secondary"][data-component="platform-sidebar"].h-full',
-      'body:not([data-space]) [data-sidebar="secondary"][data-component="platform-sidebar"].flex',
-      'body:not([data-space]) [data-sidebar="secondary"][data-component="platform-sidebar"].flex-col',
-    ],
-    'platform-sidebar-menu-normal': [
-      'body:not([data-space]) .platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
-      'body:not([data-space]) [data-sidebar] .platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
-      'body:not([data-space]) [data-component="platform-sidebar"] .platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
-      'body:not([data-space]) [data-component="space-sidebar"] .platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
-      'body:not([data-space]) [data-sidebar="secondary"][data-component="space-sidebar"] .platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
-      'body:not([data-space]) [data-component="space-settings-sidebar"] .platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
-      'body:not([data-space]) [data-sidebar="secondary"][data-component="space-settings-sidebar"] .platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
-    ],
-    'platform-sidebar-menu-hover': [
-      'body:not([data-space]) .platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
-      'body:not([data-space]) [data-sidebar] .platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
-      'body:not([data-space]) [data-component="platform-sidebar"] .platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
-      'body:not([data-space]) [data-component="space-sidebar"] .platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
-      'body:not([data-space]) [data-sidebar="secondary"][data-component="space-sidebar"] .platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
-      'body:not([data-space]) [data-component="space-settings-sidebar"] .platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
-      'body:not([data-space]) [data-sidebar="secondary"][data-component="space-settings-sidebar"] .platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
-    ],
-    'platform-sidebar-menu-active': [
-      'body:not([data-space]) .platform-sidebar-menu-button-active',
-      'body:not([data-space]) .platform-sidebar-menu-button.platform-sidebar-menu-button-active',
-      'body:not([data-space]) [data-sidebar] .platform-sidebar-menu-button-active',
-      'body:not([data-space]) [data-component="platform-sidebar"] .platform-sidebar-menu-button-active',
-      'body:not([data-space]) [data-component="space-sidebar"] .platform-sidebar-menu-button-active',
-      'body:not([data-space]) [data-component="space-sidebar"] .platform-sidebar-menu-button.platform-sidebar-menu-button-active',
-      'body:not([data-space]) [data-sidebar="secondary"][data-component="space-sidebar"] .platform-sidebar-menu-button-active',
-      'body:not([data-space]) [data-sidebar="secondary"][data-component="space-sidebar"] .platform-sidebar-menu-button.platform-sidebar-menu-button-active',
-      'body:not([data-space]) [data-component="space-settings-sidebar"] .platform-sidebar-menu-button-active',
-      'body:not([data-space]) [data-component="space-settings-sidebar"] .platform-sidebar-menu-button.platform-sidebar-menu-button-active',
-      'body:not([data-space]) [data-sidebar="secondary"][data-component="space-settings-sidebar"] .platform-sidebar-menu-button-active',
-      'body:not([data-space]) [data-sidebar="secondary"][data-component="space-settings-sidebar"] .platform-sidebar-menu-button.platform-sidebar-menu-button-active',
-    ],
-    'vertical-tab-menu-normal': [
-      'body:not([data-space]) [role="tablist"][aria-orientation="vertical"] [role="tab"]:not([aria-selected="true"])',
-      'body:not([data-space]) [role="tablist"][aria-orientation="vertical"] button[role="tab"]:not([aria-selected="true"])',
-      // Target secondary sidebar tabs specifically
-      'body:not([data-space]) [data-sidebar="secondary"] [role="tablist"][aria-orientation="vertical"] [role="tab"]:not([aria-selected="true"])',
-      'body:not([data-space]) [data-sidebar="secondary"] [role="tablist"][aria-orientation="vertical"] button[role="tab"]:not([aria-selected="true"])',
-      // Target secondary sidebar normal menu buttons (not active)
-      'body:not([data-space]) [data-sidebar="secondary"] .platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
-      'body:not([data-space]) [data-sidebar="secondary"] button.platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
-      'body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="secondary"] .platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
-      'body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="secondary"] button.platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
-      'body:not([data-space]) [data-component="space-sidebar"][data-sidebar="secondary"] .platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
-      'body:not([data-space]) [data-component="space-sidebar"][data-sidebar="secondary"] button.platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
-      'body:not([data-space]) [data-component="space-settings-sidebar"][data-sidebar="secondary"] .platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
-      'body:not([data-space]) [data-component="space-settings-sidebar"][data-sidebar="secondary"] button.platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
-    ],
-    'vertical-tab-menu-hover': [
-      'body:not([data-space]) [role="tablist"][aria-orientation="vertical"] [role="tab"]:hover:not([aria-selected="true"])',
-      'body:not([data-space]) [role="tablist"][aria-orientation="vertical"] button[role="tab"]:hover:not([aria-selected="true"])',
-      // Target secondary sidebar tabs specifically
-      'body:not([data-space]) [data-sidebar="secondary"] [role="tablist"][aria-orientation="vertical"] [role="tab"]:hover:not([aria-selected="true"])',
-      'body:not([data-space]) [data-sidebar="secondary"] [role="tablist"][aria-orientation="vertical"] button[role="tab"]:hover:not([aria-selected="true"])',
-      // Target secondary sidebar hover menu buttons
-      'body:not([data-space]) [data-sidebar="secondary"] .platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
-      'body:not([data-space]) [data-sidebar="secondary"] button.platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
-      'body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="secondary"] .platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
-      'body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="secondary"] button.platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
-      'body:not([data-space]) [data-component="space-sidebar"][data-sidebar="secondary"] .platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
-      'body:not([data-space]) [data-component="space-sidebar"][data-sidebar="secondary"] button.platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
-      'body:not([data-space]) [data-component="space-settings-sidebar"][data-sidebar="secondary"] .platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
-      'body:not([data-space]) [data-component="space-settings-sidebar"][data-sidebar="secondary"] button.platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
-    ],
-    'vertical-tab-menu-active': [
-      'body:not([data-space]) [role="tablist"][aria-orientation="vertical"] [role="tab"][aria-selected="true"]',
-      'body:not([data-space]) [role="tablist"][aria-orientation="vertical"] button[role="tab"][aria-selected="true"]',
-      // Target secondary sidebar tabs specifically
-      'body:not([data-space]) [data-sidebar="secondary"] [role="tablist"][aria-orientation="vertical"] [role="tab"][aria-selected="true"]',
-      'body:not([data-space]) [data-sidebar="secondary"] [role="tablist"][aria-orientation="vertical"] button[role="tab"][aria-selected="true"]',
-      // Target secondary sidebar active menu buttons (PlatformSidebar uses platform-sidebar-menu-button-active class)
-      'body:not([data-space]) [data-sidebar="secondary"] .platform-sidebar-menu-button-active',
-      'body:not([data-space]) [data-sidebar="secondary"] button.platform-sidebar-menu-button-active',
-      'body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="secondary"] .platform-sidebar-menu-button-active',
-      'body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="secondary"] button.platform-sidebar-menu-button-active',
-      'body:not([data-space]) [data-component="space-sidebar"][data-sidebar="secondary"] .platform-sidebar-menu-button-active',
-      'body:not([data-space]) [data-component="space-sidebar"][data-sidebar="secondary"] button.platform-sidebar-menu-button-active',
-      'body:not([data-space]) [data-component="space-settings-sidebar"][data-sidebar="secondary"] .platform-sidebar-menu-button-active',
-      'body:not([data-space]) [data-component="space-settings-sidebar"][data-sidebar="secondary"] button.platform-sidebar-menu-button-active',
-    ],
-    'separator': [
-      'body:not([data-space]) [role="separator"]',
-      'body:not([data-space]) hr',
-      'body:not([data-space]) .separator',
-      'body:not([data-space]) [class*="Separator"]',
-    ],
-    'space-settings-menu-normal': [
-      'body .space-settings-menu-item-normal',
-      'body [class*="space-settings-menu-item"]:not(.space-settings-menu-item-active)',
-      'body button.space-settings-menu-item-normal[role="tab"]',
-      'body [class*="space-settings-menu-item"]:not(.space-settings-menu-item-active)[role="tab"]',
-      'body.dark .space-settings-menu-item-normal',
-      'body.dark [class*="space-settings-menu-item"]:not(.space-settings-menu-item-active)',
-      'body.dark button.space-settings-menu-item-normal[role="tab"]',
-    ],
-    'space-settings-menu-hover': [
-      'body .space-settings-menu-item-normal:hover',
-      'body [class*="space-settings-menu-item"]:not(.space-settings-menu-item-active):hover',
-      'body button.space-settings-menu-item-normal[role="tab"]:hover',
-      'body [class*="space-settings-menu-item"]:not(.space-settings-menu-item-active)[role="tab"]:hover',
-      'body.dark .space-settings-menu-item-normal:hover',
-      'body.dark [class*="space-settings-menu-item"]:not(.space-settings-menu-item-active):hover',
-      'body.dark button.space-settings-menu-item-normal[role="tab"]:hover',
-    ],
-    'space-settings-menu-active': [
-      'body .space-settings-menu-item-active',
-      'body [class*="space-settings-menu-item-active"]',
-      'body [data-state="active"][class*="space-settings-menu-item"]',
-      'body button.space-settings-menu-item-active[role="tab"][aria-selected="true"]',
-      'body [class*="space-settings-menu-item-active"][role="tab"][aria-selected="true"]',
-      'body button[role="tab"][aria-selected="true"].space-settings-menu-item-active',
-      // Override TabsTrigger's default bg-muted/30 class
-      'body button[role="tab"][aria-selected="true"].space-settings-menu-item-active.bg-muted\\/30',
-      'body button.space-settings-menu-item-active[role="tab"][aria-selected="true"].bg-muted\\/30',
-      // Dark mode overrides
-      'body.dark .space-settings-menu-item-active',
-      'body.dark [class*="space-settings-menu-item-active"]',
-      'body.dark button.space-settings-menu-item-active[role="tab"][aria-selected="true"]',
-      'body.dark button[role="tab"][aria-selected="true"].space-settings-menu-item-active',
-      'body.dark button[role="tab"][aria-selected="true"].space-settings-menu-item-active.bg-muted\\/30',
-    ],
-  }
+  // Use component selectors from extracted module
+  // componentSelectors is imported from './component-selectors'
 
   // Set CSS variables for vertical tab menu active state (to override inline styles in PlatformSidebar)
   // The inline style uses hsl(var(--muted)), so we need to override --muted in the secondary sidebar context
@@ -570,34 +123,35 @@ export function applyComponentStyling(branding: BrandingConfig) {
       isNonEmpty(componentStyle.width) ||
       isNonEmpty(componentStyle.height) ||
       isNonEmpty(componentStyle.minWidth) ||
-      isNonEmpty(componentStyle.maxWidth) ||
       isNonEmpty(componentStyle.minHeight) ||
+      isNonEmpty(componentStyle.maxWidth) ||
       isNonEmpty(componentStyle.maxHeight) ||
       isNonEmpty(componentStyle.fontSize) ||
       isNonEmpty(componentStyle.fontWeight) ||
-      isNonEmpty(componentStyle.fontStyle) ||
       isNonEmpty(componentStyle.fontFamily) ||
-      isNonEmpty(componentStyle.letterSpacing) ||
       isNonEmpty(componentStyle.lineHeight) ||
+      isNonEmpty(componentStyle.letterSpacing) ||
       isNonEmpty(componentStyle.textAlign) ||
       isNonEmpty(componentStyle.textTransform) ||
       isNonEmpty(componentStyle.textDecoration) ||
-      isNonEmpty(componentStyle.textDecorationColor) ||
-      isNonEmpty(componentStyle.textDecorationThickness) ||
-      isNonEmpty(componentStyle.textDecorationStyle) ||
-      isNonEmpty(componentStyle.textUnderlineOffset) ||
-      isNonEmpty(componentStyle.textUnderlinePosition) ||
       isNonEmpty(componentStyle.opacity) ||
-      isNonEmpty(componentStyle.backdropFilter) ||
-      isNonEmpty(componentStyle.boxShadow) ||
-      isNonEmpty(componentStyle.filter) ||
-      isNonEmpty(componentStyle.transform) ||
-      isNonEmpty(componentStyle.cursor) ||
-      isNonEmpty(componentStyle.outline) ||
-      isNonEmpty(componentStyle.outlineColor) ||
-      isNonEmpty(componentStyle.outlineWidth) ||
-      isNonEmpty(componentStyle.gap) ||
       isNonEmpty(componentStyle.zIndex) ||
+      isNonEmpty(componentStyle.position) ||
+      isNonEmpty(componentStyle.top) ||
+      isNonEmpty(componentStyle.right) ||
+      isNonEmpty(componentStyle.bottom) ||
+      isNonEmpty(componentStyle.left) ||
+      isNonEmpty(componentStyle.display) ||
+      isNonEmpty(componentStyle.flexDirection) ||
+      isNonEmpty(componentStyle.flexWrap) ||
+      isNonEmpty(componentStyle.justifyContent) ||
+      isNonEmpty(componentStyle.alignItems) ||
+      isNonEmpty(componentStyle.alignContent) ||
+      isNonEmpty(componentStyle.gap) ||
+      isNonEmpty(componentStyle.gridTemplateColumns) ||
+      isNonEmpty(componentStyle.gridTemplateRows) ||
+      isNonEmpty(componentStyle.gridColumn) ||
+      isNonEmpty(componentStyle.gridRow) ||
       isNonEmpty(componentStyle.overflow) ||
       isNonEmpty(componentStyle.overflowX) ||
       isNonEmpty(componentStyle.overflowY) ||
@@ -652,46 +206,15 @@ export function applyComponentStyling(branding: BrandingConfig) {
         componentCSS += `      background: ${bgColor} !important;\n`
         componentCSS += `      background-color: ${bgColor} !important;\n`
         componentCSS += `      background-image: none !important;\n`
-        // Override Tailwind's bg-border CSS variable
-        let borderHsl: string
-        if (bgColor.startsWith('#')) {
-          borderHsl = hexToHsl(bgColor)
-        } else if (bgColor.startsWith('rgb') || bgColor.startsWith('rgba')) {
-          const match = bgColor.match(/(\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/)
-          if (match) {
-            const r = parseInt(match[1]) / 255
-            const g = parseInt(match[2]) / 255
-            const b = parseInt(match[3]) / 255
-            const max = Math.max(r, g, b)
-            const min = Math.min(r, g, b)
-            let h = 0
-            let s = 0
-            const l = (max + min) / 2
-            if (max !== min) {
-              const d = max - min
-              s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-              switch (max) {
-                case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break
-                case g: h = ((b - r) / d + 2) / 6; break
-                case b: h = ((r - g) / d + 4) / 6; break
-              }
-            }
-            borderHsl = `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`
-          } else {
-            borderHsl = bgColor
-          }
-        } else if (bgColor.includes('hsl')) {
-          const match = bgColor.match(/(\d+)\s+(\d+)%\s+(\d+)%/)
-          if (match) {
-            borderHsl = `${match[1]} ${match[2]}% ${match[3]}%`
-          } else {
-            borderHsl = bgColor
-          }
-        } else {
-          borderHsl = bgColor
-        }
         // Override Tailwind's --border CSS variable (used by bg-border class)
-        componentCSS += `      --border: ${borderHsl} !important;\n`
+        // IMPORTANT: If the background color has an alpha channel, use it directly
+        // because HSL conversion loses the alpha, making transparent colors appear opaque/black
+        if (hasAlphaChannel(bgColor)) {
+          componentCSS += `      --border: ${bgColor} !important;\n`
+        } else {
+          const borderHsl = rgbaToHsl(bgColor)
+          componentCSS += `      --border: ${borderHsl} !important;\n`
+        }
       }
       // For platform-sidebar-menu components, aggressively override button styles
       if (componentId.startsWith('platform-sidebar-menu')) {
@@ -714,34 +237,91 @@ export function applyComponentStyling(branding: BrandingConfig) {
         componentCSS += `      background-repeat: initial !important;\n`
         // Override the --muted CSS variable in this context to prevent bg-muted/30 from working
         // Convert the background color to HSL format for --muted override
-        if (bgColor.startsWith('#')) {
-          const hsl = hexToHsl(bgColor)
-          componentCSS += `      --muted: ${hsl} !important;\n`
-        } else if (bgColor.startsWith('rgba') || bgColor.startsWith('rgb')) {
-          // Convert rgba/rgb to HSL
-          const match = bgColor.match(/(\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/)
-          if (match) {
-            const r = parseInt(match[1]) / 255
-            const g = parseInt(match[2]) / 255
-            const b = parseInt(match[3]) / 255
-            const max = Math.max(r, g, b)
-            const min = Math.min(r, g, b)
-            let h = 0
-            let s = 0
-            const l = (max + min) / 2
-            if (max !== min) {
-              const d = max - min
-              s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-              switch (max) {
-                case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break
-                case g: h = ((b - r) / d + 2) / 6; break
-                case b: h = ((r - g) / d + 4) / 6; break
-              }
-            }
-            const hsl = `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`
-            componentCSS += `      --muted: ${hsl} !important;\n`
-          }
+        // Use the shared rgbaToHsl function which handles hex, rgba/rgb, and hsl formats
+        const hsl = rgbaToHsl(bgColor)
+        componentCSS += `      --muted: ${hsl} !important;\n`
+      }
+      // For button-destructive, override CSS variables used by Tailwind's bg-destructive class
+      // The bg-destructive class uses hsl(var(--destructive)), so we need to override --destructive
+      // Also directly set background-color with !important to ensure it overrides Tailwind classes
+      // Use maximum specificity to override Tailwind's utility classes
+      if (componentId === 'button-destructive') {
+        const bgColor = componentStyle.backgroundColor.trim()
+        // Directly set background-color with !important to override Tailwind's bg-destructive class
+        // Use multiple declarations with !important for maximum specificity
+        componentCSS += `      background: ${bgColor} !important;\n`
+        componentCSS += `      background-color: ${bgColor} !important;\n`
+        componentCSS += `      background-image: none !important;\n`
+        // Override any hover states that might use the CSS variable
+        componentCSS += `      --tw-bg-opacity: 1 !important;\n`
+      }
+      // For vertical-tab-menu-active, also set CSS variable to override inline styles
+      // The inline style uses hsl(var(--muted)), so --muted must be in HSL format
+      if (componentId === 'vertical-tab-menu-active') {
+        const bgColor = componentStyle.backgroundColor.trim()
+        // Use the shared rgbaToHsl function which handles hex, rgba/rgb, and hsl formats
+        const mutedHsl = rgbaToHsl(bgColor)
+        componentCSS += `      --muted: ${mutedHsl} !important;\n`
+      }
+    }
+
+    if (componentStyle.textColor && componentStyle.textColor.trim()) {
+      componentCSS += `      color: ${componentStyle.textColor.trim()} !important;\n`
+    }
+    
+    // Debug logging for form
+    if (componentId === 'form') {
+      console.log(`[Branding] Generating CSS for ${componentId} with selector:`, selector)
+      console.log(`[Branding] Component style:`, componentStyle)
+      console.log(`[Branding] Has borderColor:`, componentStyle.borderColor)
+      console.log(`[Branding] Has borderWidth:`, componentStyle.borderWidth)
+    }
+
+    if (componentStyle.backgroundColor && componentStyle.backgroundColor.trim()) {
+      // Skip setting background-color here for button-destructive - we'll handle it in the special block below
+      if (componentId !== 'button-destructive') {
+        componentCSS += `      background-color: ${componentStyle.backgroundColor.trim()} !important;\n`
+      }
+      // For text-input, override Tailwind's bg-border class and globals.css rules
+      if (componentId === 'text-input') {
+        const bgColor = componentStyle.backgroundColor.trim()
+        componentCSS += `      background: ${bgColor} !important;\n`
+        componentCSS += `      background-color: ${bgColor} !important;\n`
+        componentCSS += `      background-image: none !important;\n`
+        // Override Tailwind's --border CSS variable (used by bg-border class)
+        // IMPORTANT: If the background color has an alpha channel, use it directly
+        // because HSL conversion loses the alpha, making transparent colors appear opaque/black
+        if (hasAlphaChannel(bgColor)) {
+          componentCSS += `      --border: ${bgColor} !important;\n`
+        } else {
+          const borderHsl = rgbaToHsl(bgColor)
+          componentCSS += `      --border: ${borderHsl} !important;\n`
         }
+      }
+      // For platform-sidebar-menu components, aggressively override button styles
+      if (componentId.startsWith('platform-sidebar-menu')) {
+        const bgColor = componentStyle.backgroundColor.trim()
+        componentCSS += `      background: ${bgColor} !important;\n`
+        componentCSS += `      background-color: ${bgColor} !important;\n`
+        componentCSS += `      background-image: none !important;\n`
+      }
+      // For space-settings-menu components, also override Tailwind's bg-muted/30 class and dark mode backgrounds
+      if (componentId.startsWith('space-settings-menu')) {
+        // Aggressively override all background properties to prevent bg-muted/30 from showing
+        // The bg-muted/30 class uses hsl(var(--muted) / 0.3), so we need to override both
+        // the background property and the CSS variable
+        const bgColor = componentStyle.backgroundColor.trim()
+        componentCSS += `      background: ${bgColor} !important;\n`
+        componentCSS += `      background-color: ${bgColor} !important;\n`
+        componentCSS += `      background-image: none !important;\n`
+        componentCSS += `      background-size: auto !important;\n`
+        componentCSS += `      background-position: initial !important;\n`
+        componentCSS += `      background-repeat: initial !important;\n`
+        // Override the --muted CSS variable in this context to prevent bg-muted/30 from working
+        // Convert the background color to HSL format for --muted override
+        // Use the shared rgbaToHsl function which handles hex, rgba/rgb, and hsl formats
+        const hsl = rgbaToHsl(bgColor)
+        componentCSS += `      --muted: ${hsl} !important;\n`
       }
       // For button-destructive, override CSS variables used by Tailwind's bg-destructive class
       // The bg-destructive class uses hsl(var(--destructive)), so we need to override --destructive
@@ -758,43 +338,8 @@ export function applyComponentStyling(branding: BrandingConfig) {
         componentCSS += `      --tw-bg-opacity: 1 !important;\n`
         
         // Also override CSS variable for consistency
-        let destructiveHsl: string
-        if (bgColor.startsWith('#')) {
-          destructiveHsl = hexToHsl(bgColor)
-        } else if (bgColor.startsWith('rgb') || bgColor.startsWith('rgba')) {
-          const match = bgColor.match(/(\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/)
-          if (match) {
-            const r = parseInt(match[1]) / 255
-            const g = parseInt(match[2]) / 255
-            const b = parseInt(match[3]) / 255
-            const max = Math.max(r, g, b)
-            const min = Math.min(r, g, b)
-            let h = 0
-            let s = 0
-            const l = (max + min) / 2
-            if (max !== min) {
-              const d = max - min
-              s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-              switch (max) {
-                case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break
-                case g: h = ((b - r) / d + 2) / 6; break
-                case b: h = ((r - g) / d + 4) / 6; break
-              }
-            }
-            destructiveHsl = `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`
-          } else {
-            destructiveHsl = bgColor
-          }
-        } else if (bgColor.includes('hsl')) {
-          const match = bgColor.match(/(\d+)\s+(\d+)%\s+(\d+)%/)
-          if (match) {
-            destructiveHsl = `${match[1]} ${match[2]}% ${match[3]}%`
-          } else {
-            destructiveHsl = bgColor
-          }
-        } else {
-          destructiveHsl = bgColor
-        }
+        // Use the shared rgbaToHsl function which handles hex, rgba/rgb, and hsl formats
+        const destructiveHsl = rgbaToHsl(bgColor)
         // Override Tailwind's --destructive CSS variable (used by bg-destructive class)
         componentCSS += `      --destructive: ${destructiveHsl} !important;\n`
       }
@@ -803,45 +348,8 @@ export function applyComponentStyling(branding: BrandingConfig) {
       // The inline style uses hsl(var(--muted)), so --muted must be in HSL format
       if (componentId === 'vertical-tab-menu-active') {
         const bgColor = componentStyle.backgroundColor.trim()
-        let mutedHsl: string
-        if (bgColor.startsWith('#')) {
-          mutedHsl = hexToHsl(bgColor)
-        } else if (bgColor.startsWith('rgb') || bgColor.startsWith('rgba')) {
-          // Convert rgba/rgb to HSL
-          const match = bgColor.match(/(\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/)
-          if (match) {
-            const r = parseInt(match[1]) / 255
-            const g = parseInt(match[2]) / 255
-            const b = parseInt(match[3]) / 255
-            const max = Math.max(r, g, b)
-            const min = Math.min(r, g, b)
-            let h = 0
-            let s = 0
-            const l = (max + min) / 2
-            if (max !== min) {
-              const d = max - min
-              s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-              switch (max) {
-                case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break
-                case g: h = ((b - r) / d + 2) / 6; break
-                case b: h = ((r - g) / d + 4) / 6; break
-              }
-            }
-            mutedHsl = `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`
-          } else {
-            mutedHsl = bgColor
-          }
-        } else if (bgColor.includes('hsl')) {
-          // Extract HSL values if already in HSL format
-          const match = bgColor.match(/(\d+)\s+(\d+)%\s+(\d+)%/)
-          if (match) {
-            mutedHsl = `${match[1]} ${match[2]}% ${match[3]}%`
-          } else {
-            mutedHsl = bgColor
-          }
-        } else {
-          mutedHsl = bgColor
-        }
+        // Use the shared rgbaToHsl function which handles hex, rgba/rgb, and hsl formats
+        const mutedHsl = rgbaToHsl(bgColor)
         componentCSS += `      --muted: ${mutedHsl} !important;\n`
         componentCSS += `      --brand-vertical-tab-active-bg: ${componentStyle.backgroundColor.trim()} !important;\n`
         // Also directly override inline styles with !important
@@ -858,86 +366,16 @@ export function applyComponentStyling(branding: BrandingConfig) {
         componentCSS += `      color: ${textColor} !important;\n`
         
         // Also override CSS variable for consistency
-        let destructiveForegroundHsl: string
-        if (textColor.startsWith('#')) {
-          destructiveForegroundHsl = hexToHsl(textColor)
-        } else if (textColor.startsWith('rgb') || textColor.startsWith('rgba')) {
-          const match = textColor.match(/(\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/)
-          if (match) {
-            const r = parseInt(match[1]) / 255
-            const g = parseInt(match[2]) / 255
-            const b = parseInt(match[3]) / 255
-            const max = Math.max(r, g, b)
-            const min = Math.min(r, g, b)
-            let h = 0
-            let s = 0
-            const l = (max + min) / 2
-            if (max !== min) {
-              const d = max - min
-              s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-              switch (max) {
-                case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break
-                case g: h = ((b - r) / d + 2) / 6; break
-                case b: h = ((r - g) / d + 4) / 6; break
-              }
-            }
-            destructiveForegroundHsl = `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`
-          } else {
-            destructiveForegroundHsl = textColor
-          }
-        } else if (textColor.includes('hsl')) {
-          const match = textColor.match(/(\d+)\s+(\d+)%\s+(\d+)%/)
-          if (match) {
-            destructiveForegroundHsl = `${match[1]} ${match[2]}% ${match[3]}%`
-          } else {
-            destructiveForegroundHsl = textColor
-          }
-        } else {
-          destructiveForegroundHsl = textColor
-        }
+        // Use the shared rgbaToHsl function which handles hex, rgba/rgb, and hsl formats
+        const destructiveForegroundHsl = rgbaToHsl(textColor)
         // Override Tailwind's --destructive-foreground CSS variable (used by text-destructive-foreground class)
         componentCSS += `      --destructive-foreground: ${destructiveForegroundHsl} !important;\n`
       }
       // For text-input, override Tailwind's text-foreground class
       if (componentId === 'text-input') {
         const textColor = componentStyle.textColor.trim()
-        let foregroundHsl: string
-        if (textColor.startsWith('#')) {
-          foregroundHsl = hexToHsl(textColor)
-        } else if (textColor.startsWith('rgb') || textColor.startsWith('rgba')) {
-          const match = textColor.match(/(\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/)
-          if (match) {
-            const r = parseInt(match[1]) / 255
-            const g = parseInt(match[2]) / 255
-            const b = parseInt(match[3]) / 255
-            const max = Math.max(r, g, b)
-            const min = Math.min(r, g, b)
-            let h = 0
-            let s = 0
-            const l = (max + min) / 2
-            if (max !== min) {
-              const d = max - min
-              s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-              switch (max) {
-                case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break
-                case g: h = ((b - r) / d + 2) / 6; break
-                case b: h = ((r - g) / d + 4) / 6; break
-              }
-            }
-            foregroundHsl = `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`
-          } else {
-            foregroundHsl = textColor
-          }
-        } else if (textColor.includes('hsl')) {
-          const match = textColor.match(/(\d+)\s+(\d+)%\s+(\d+)%/)
-          if (match) {
-            foregroundHsl = `${match[1]} ${match[2]}% ${match[3]}%`
-          } else {
-            foregroundHsl = textColor
-          }
-        } else {
-          foregroundHsl = textColor
-        }
+        // Use the shared rgbaToHsl function which handles hex, rgba/rgb, and hsl formats
+        const foregroundHsl = rgbaToHsl(textColor)
         // Override Tailwind's text-foreground class by setting CSS variable
         componentCSS += `      --foreground: ${foregroundHsl} !important;\n`
         // Also directly set color to ensure it overrides
@@ -947,43 +385,8 @@ export function applyComponentStyling(branding: BrandingConfig) {
       // The inline style may use CSS variables, so --foreground must be in HSL format
       if (componentId === 'vertical-tab-menu-active') {
         const textColor = componentStyle.textColor.trim()
-        let foregroundHsl: string
-        if (textColor.startsWith('#')) {
-          foregroundHsl = hexToHsl(textColor)
-        } else if (textColor.startsWith('rgb') || textColor.startsWith('rgba')) {
-          const match = textColor.match(/(\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/)
-          if (match) {
-            const r = parseInt(match[1]) / 255
-            const g = parseInt(match[2]) / 255
-            const b = parseInt(match[3]) / 255
-            const max = Math.max(r, g, b)
-            const min = Math.min(r, g, b)
-            let h = 0
-            let s = 0
-            const l = (max + min) / 2
-            if (max !== min) {
-              const d = max - min
-              s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-              switch (max) {
-                case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break
-                case g: h = ((b - r) / d + 2) / 6; break
-                case b: h = ((r - g) / d + 4) / 6; break
-              }
-            }
-            foregroundHsl = `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`
-          } else {
-            foregroundHsl = textColor
-          }
-        } else if (textColor.includes('hsl')) {
-          const match = textColor.match(/(\d+)\s+(\d+)%\s+(\d+)%/)
-          if (match) {
-            foregroundHsl = `${match[1]} ${match[2]}% ${match[3]}%`
-          } else {
-            foregroundHsl = textColor
-          }
-        } else {
-          foregroundHsl = textColor
-        }
+        // Use the shared rgbaToHsl function which handles hex, rgba/rgb, and hsl formats
+        const foregroundHsl = rgbaToHsl(textColor)
         componentCSS += `      --foreground: ${foregroundHsl} !important;\n`
         componentCSS += `      --brand-vertical-tab-active-text: ${componentStyle.textColor.trim()} !important;\n`
         // Also directly override inline styles with !important
@@ -1100,7 +503,22 @@ export function applyComponentStyling(branding: BrandingConfig) {
     
     // General border properties (applied if individual sides are not specified)
     if (componentStyle.borderColor && componentStyle.borderColor.trim()) {
-      componentCSS += `      border-color: ${componentStyle.borderColor.trim()} !important;\n`
+      const borderColorValue = componentStyle.borderColor.trim()
+      componentCSS += `      border-color: ${borderColorValue} !important;\n`
+      // Also set --border CSS variable for Tailwind classes
+      // IMPORTANT: If the border color has an alpha channel, use it directly
+      // because HSL conversion loses the alpha, making transparent colors appear opaque/black
+      if (hasAlphaChannel(borderColorValue)) {
+        componentCSS += `      --border: ${borderColorValue} !important;\n`
+        componentCSS += `      --input: ${borderColorValue} !important;\n`
+      } else {
+        const borderHsl = rgbaToHsl(borderColorValue)
+        componentCSS += `      --border: ${borderHsl} !important;\n`
+        componentCSS += `      --input: ${borderHsl} !important;\n`
+      }
+      if (componentId === 'text-input') {
+        console.log('[Branding] Setting text-input border-color:', borderColorValue, 'borderWidth:', componentStyle.borderWidth)
+      }
       // Ensure width is set if borderColor is set but borderWidth is not explicitly set
       if (!componentStyle.borderWidth || !componentStyle.borderWidth.trim() || componentStyle.borderWidth.trim() === '0px' || componentStyle.borderWidth.trim() === '0') {
         // Check if any individual side widths are set
@@ -1347,6 +765,38 @@ export function applyComponentStyling(branding: BrandingConfig) {
     // This ensures the inline style backgroundColor uses the theme color
     // Use main branding config colors if component styling doesn't have them
     if (componentId === 'platform-sidebar-primary') {
+      // Set CSS variable for platform sidebar border color (used by separator lines)
+      // If borderColor is set and not transparent, use it; otherwise fall back to global border color
+      const globalBorderColor = branding.globalStyling?.borderColor?.trim() || branding.uiBorderColor?.trim() || 'rgba(0, 0, 0, 0.06)'
+      const sidebarBorderColor = (componentStyle.borderColor && componentStyle.borderColor.trim() && componentStyle.borderColor.trim() !== 'transparent')
+        ? componentStyle.borderColor.trim()
+        : globalBorderColor
+      
+      // Apply border color to separator lines within this sidebar
+      if (hasAlphaChannel(sidebarBorderColor)) {
+        cssRules += `    /* Platform sidebar primary separator lines - use rgba directly */\n`
+        cssRules += `    body:not([data-space]) [data-sidebar="primary"] .border-t.border-border,\n`
+        cssRules += `    body:not([data-space]) [data-sidebar="primary"] .border-b.border-border,\n`
+        cssRules += `    body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="primary"] .border-t.border-border,\n`
+        cssRules += `    body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="primary"] .border-b.border-border {\n`
+        cssRules += `      border-color: ${sidebarBorderColor} !important;\n`
+        cssRules += `      border-top-color: ${sidebarBorderColor} !important;\n`
+        cssRules += `      border-bottom-color: ${sidebarBorderColor} !important;\n`
+        cssRules += `    }\n\n`
+        root.style.setProperty('--platform-sidebar-primary-border', sidebarBorderColor)
+      } else {
+        const sidebarBorderHsl = rgbaToHsl(sidebarBorderColor)
+        root.style.setProperty('--platform-sidebar-primary-border', sidebarBorderHsl)
+        cssRules += `    /* Platform sidebar primary separator lines - use HSL */\n`
+        cssRules += `    body:not([data-space]) [data-sidebar="primary"] .border-t.border-border,\n`
+        cssRules += `    body:not([data-space]) [data-sidebar="primary"] .border-b.border-border,\n`
+        cssRules += `    body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="primary"] .border-t.border-border,\n`
+        cssRules += `    body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="primary"] .border-b.border-border {\n`
+        cssRules += `      border-color: ${sidebarBorderHsl} !important;\n`
+        cssRules += `      border-top-color: ${sidebarBorderHsl} !important;\n`
+        cssRules += `      border-bottom-color: ${sidebarBorderHsl} !important;\n`
+        cssRules += `    }\n\n`
+      }
       cssRules += `    /* Override CSS variable and apply styles directly for platform sidebar primary */\n`
       cssRules += `    body:not([data-space]) [data-sidebar="primary"][data-component="platform-sidebar"],\n`
       cssRules += `    body:not([data-space]) [data-sidebar="primary"][data-component="platform-sidebar"].h-full,\n`
@@ -1371,6 +821,38 @@ export function applyComponentStyling(branding: BrandingConfig) {
     // This ensures the inline style backgroundColor uses the theme color
     // Use main branding config colors if component styling doesn't have them
     if (componentId === 'platform-sidebar-secondary') {
+      // Set CSS variable for platform sidebar border color (used by separator lines)
+      // If borderColor is set and not transparent, use it; otherwise fall back to global border color
+      const globalBorderColor = branding.globalStyling?.borderColor?.trim() || branding.uiBorderColor?.trim() || 'rgba(0, 0, 0, 0.06)'
+      const sidebarBorderColor = (componentStyle.borderColor && componentStyle.borderColor.trim() && componentStyle.borderColor.trim() !== 'transparent')
+        ? componentStyle.borderColor.trim()
+        : globalBorderColor
+      
+      // Apply border color to separator lines within this sidebar
+      if (hasAlphaChannel(sidebarBorderColor)) {
+        cssRules += `    /* Platform sidebar secondary separator lines - use rgba directly */\n`
+        cssRules += `    body:not([data-space]) [data-sidebar="secondary"] .border-t.border-border,\n`
+        cssRules += `    body:not([data-space]) [data-sidebar="secondary"] .border-b.border-border,\n`
+        cssRules += `    body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="secondary"] .border-t.border-border,\n`
+        cssRules += `    body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="secondary"] .border-b.border-border {\n`
+        cssRules += `      border-color: ${sidebarBorderColor} !important;\n`
+        cssRules += `      border-top-color: ${sidebarBorderColor} !important;\n`
+        cssRules += `      border-bottom-color: ${sidebarBorderColor} !important;\n`
+        cssRules += `    }\n\n`
+        root.style.setProperty('--platform-sidebar-secondary-border', sidebarBorderColor)
+      } else {
+        const sidebarBorderHsl = rgbaToHsl(sidebarBorderColor)
+        root.style.setProperty('--platform-sidebar-secondary-border', sidebarBorderHsl)
+        cssRules += `    /* Platform sidebar secondary separator lines - use HSL */\n`
+        cssRules += `    body:not([data-space]) [data-sidebar="secondary"] .border-t.border-border,\n`
+        cssRules += `    body:not([data-space]) [data-sidebar="secondary"] .border-b.border-border,\n`
+        cssRules += `    body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="secondary"] .border-t.border-border,\n`
+        cssRules += `    body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="secondary"] .border-b.border-border {\n`
+        cssRules += `      border-color: ${sidebarBorderHsl} !important;\n`
+        cssRules += `      border-top-color: ${sidebarBorderHsl} !important;\n`
+        cssRules += `      border-bottom-color: ${sidebarBorderHsl} !important;\n`
+        cssRules += `    }\n\n`
+      }
       cssRules += `    /* Override CSS variable and apply styles directly for platform sidebar secondary */\n`
       cssRules += `    body:not([data-space]) [data-sidebar="secondary"][data-component="platform-sidebar"],\n`
       cssRules += `    body:not([data-space]) [data-sidebar="secondary"][data-component="platform-sidebar"].h-full,\n`
@@ -1453,87 +935,16 @@ export function applyComponentStyling(branding: BrandingConfig) {
           cssRules += `      background-color: ${bgColor} !important;\n`
           cssRules += `      background-image: none !important;\n`
           // Override Tailwind's bg-muted class by converting color to HSL format
-          let mutedHsl: string
-          if (bgColor.startsWith('#')) {
-            mutedHsl = hexToHsl(bgColor)
-          } else if (bgColor.startsWith('rgba') || bgColor.startsWith('rgb')) {
-            // Convert rgba/rgb to HSL
-            const match = bgColor.match(/(\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/)
-            if (match) {
-              const r = parseInt(match[1]) / 255
-              const g = parseInt(match[2]) / 255
-              const b = parseInt(match[3]) / 255
-              const max = Math.max(r, g, b)
-              const min = Math.min(r, g, b)
-              let h = 0
-              let s = 0
-              const l = (max + min) / 2
-              if (max !== min) {
-                const d = max - min
-                s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-                switch (max) {
-                  case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break
-                  case g: h = ((b - r) / d + 2) / 6; break
-                  case b: h = ((r - g) / d + 4) / 6; break
-                }
-              }
-              mutedHsl = `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`
-            } else {
-              mutedHsl = bgColor
-            }
-          } else if (bgColor.includes('hsl')) {
-            const match = bgColor.match(/(\d+)\s+(\d+)%\s+(\d+)%/)
-            if (match) {
-              mutedHsl = `${match[1]} ${match[2]}% ${match[3]}%`
-            } else {
-              mutedHsl = bgColor
-            }
-          } else {
-            mutedHsl = bgColor
-          }
+          // Use the shared rgbaToHsl function which handles hex, rgba/rgb, and hsl formats
+          const mutedHsl = rgbaToHsl(bgColor)
           cssRules += `      --muted: ${mutedHsl} !important;\n`
         }
         if (componentStyle.textColor) {
           const textColor = componentStyle.textColor.trim()
           cssRules += `      color: ${textColor} !important;\n`
           // Override Tailwind's text-foreground class by converting color to HSL format
-          let foregroundHsl: string
-          if (textColor.startsWith('#')) {
-            foregroundHsl = hexToHsl(textColor)
-          } else if (textColor.startsWith('rgba') || textColor.startsWith('rgb')) {
-            const match = textColor.match(/(\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/)
-            if (match) {
-              const r = parseInt(match[1]) / 255
-              const g = parseInt(match[2]) / 255
-              const b = parseInt(match[3]) / 255
-              const max = Math.max(r, g, b)
-              const min = Math.min(r, g, b)
-              let h = 0
-              let s = 0
-              const l = (max + min) / 2
-              if (max !== min) {
-                const d = max - min
-                s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-                switch (max) {
-                  case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break
-                  case g: h = ((b - r) / d + 2) / 6; break
-                  case b: h = ((r - g) / d + 4) / 6; break
-                }
-              }
-              foregroundHsl = `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`
-            } else {
-              foregroundHsl = textColor
-            }
-          } else if (textColor.includes('hsl')) {
-            const match = textColor.match(/(\d+)\s+(\d+)%\s+(\d+)%/)
-            if (match) {
-              foregroundHsl = `${match[1]} ${match[2]}% ${match[3]}%`
-            } else {
-              foregroundHsl = textColor
-            }
-          } else {
-            foregroundHsl = textColor
-          }
+          // Use the shared rgbaToHsl function which handles hex, rgba/rgb, and hsl formats
+          const foregroundHsl = rgbaToHsl(textColor)
           cssRules += `      --foreground: ${foregroundHsl} !important;\n`
         }
         if (componentStyle.borderRadius) {
@@ -1581,94 +992,65 @@ export function applyComponentStyling(branding: BrandingConfig) {
         cssRules += `      background: ${bgColor} !important;\n`
         cssRules += `      background-color: ${bgColor} !important;\n`
         cssRules += `      background-image: none !important;\n`
-        // Override Tailwind's bg-border CSS variable
-        let borderHsl: string
-        if (bgColor.startsWith('#')) {
-          borderHsl = hexToHsl(bgColor)
-        } else if (bgColor.startsWith('rgb') || bgColor.startsWith('rgba')) {
-          const match = bgColor.match(/(\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/)
-          if (match) {
-            const r = parseInt(match[1]) / 255
-            const g = parseInt(match[2]) / 255
-            const b = parseInt(match[3]) / 255
-            const max = Math.max(r, g, b)
-            const min = Math.min(r, g, b)
-            let h = 0
-            let s = 0
-            const l = (max + min) / 2
-            if (max !== min) {
-              const d = max - min
-              s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-              switch (max) {
-                case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break
-                case g: h = ((b - r) / d + 2) / 6; break
-                case b: h = ((r - g) / d + 4) / 6; break
-              }
-            }
-            borderHsl = `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`
-          } else {
-            borderHsl = bgColor
-          }
-        } else if (bgColor.includes('hsl')) {
-          const match = bgColor.match(/(\d+)\s+(\d+)%\s+(\d+)%/)
-          if (match) {
-            borderHsl = `${match[1]} ${match[2]}% ${match[3]}%`
-          } else {
-            borderHsl = bgColor
-          }
+        // Override Tailwind's --border and --input CSS variables
+        // IMPORTANT: If the background color has an alpha channel, use it directly
+        // because HSL conversion loses the alpha, making transparent colors appear opaque/black
+        if (hasAlphaChannel(bgColor)) {
+          cssRules += `      --border: ${bgColor} !important;\n`
+          cssRules += `      --input: ${bgColor} !important;\n`
         } else {
-          borderHsl = bgColor
+          const borderHsl = rgbaToHsl(bgColor)
+          cssRules += `      --border: ${borderHsl} !important;\n`
+          cssRules += `      --input: ${borderHsl} !important;\n`
         }
-        cssRules += `      --border: ${borderHsl} !important;\n`
-        cssRules += `      --input: ${borderHsl} !important;\n`
       }
       if (componentStyle.textColor) {
         const textColor = componentStyle.textColor.trim()
         cssRules += `      color: ${textColor} !important;\n`
         // Override Tailwind's text-foreground class by setting CSS variable
-        let foregroundHsl: string
-        if (textColor.startsWith('#')) {
-          foregroundHsl = hexToHsl(textColor)
-        } else if (textColor.startsWith('rgb') || textColor.startsWith('rgba')) {
-          const match = textColor.match(/(\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/)
-          if (match) {
-            const r = parseInt(match[1]) / 255
-            const g = parseInt(match[2]) / 255
-            const b = parseInt(match[3]) / 255
-            const max = Math.max(r, g, b)
-            const min = Math.min(r, g, b)
-            let h = 0
-            let s = 0
-            const l = (max + min) / 2
-            if (max !== min) {
-              const d = max - min
-              s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-              switch (max) {
-                case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break
-                case g: h = ((b - r) / d + 2) / 6; break
-                case b: h = ((r - g) / d + 4) / 6; break
-              }
-            }
-            foregroundHsl = `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`
-          } else {
-            foregroundHsl = textColor
-          }
-        } else if (textColor.includes('hsl')) {
-          const match = textColor.match(/(\d+)\s+(\d+)%\s+(\d+)%/)
-          if (match) {
-            foregroundHsl = `${match[1]} ${match[2]}% ${match[3]}%`
-          } else {
-            foregroundHsl = textColor
-          }
-        } else {
-          foregroundHsl = textColor
-        }
+        // Use the shared rgbaToHsl function which handles hex, rgba/rgb, and hsl formats
+        const foregroundHsl = rgbaToHsl(textColor)
         cssRules += `      --foreground: ${foregroundHsl} !important;\n`
       }
-      if (componentStyle.borderColor) {
-        cssRules += `      border-color: ${componentStyle.borderColor.trim()} !important;\n`
+      if (componentStyle.borderColor && componentStyle.borderColor.trim()) {
+        const borderColorValue = componentStyle.borderColor.trim()
+        cssRules += `      border-color: ${borderColorValue} !important;\n`
+        // Also set --border CSS variable for Tailwind classes
+        // IMPORTANT: If the border color has an alpha channel, use it directly
+        // because HSL conversion loses the alpha, making transparent colors appear opaque/black
+        if (hasAlphaChannel(borderColorValue)) {
+          cssRules += `      --border: ${borderColorValue} !important;\n`
+          cssRules += `      --input: ${borderColorValue} !important;\n`
+        } else {
+          const borderHsl = rgbaToHsl(borderColorValue)
+          cssRules += `      --border: ${borderHsl} !important;\n`
+          cssRules += `      --input: ${borderHsl} !important;\n`
+        }
+        // Ensure width is set if borderColor is set but borderWidth is not explicitly set
+        if (!componentStyle.borderWidth || !componentStyle.borderWidth.trim() || componentStyle.borderWidth.trim() === '0px' || componentStyle.borderWidth.trim() === '0') {
+          // Check if any individual side widths are set
+          const hasIndividualWidths = (componentStyle.borderTopWidth && componentStyle.borderTopWidth.trim()) ||
+                                    (componentStyle.borderRightWidth && componentStyle.borderRightWidth.trim()) ||
+                                    (componentStyle.borderBottomWidth && componentStyle.borderBottomWidth.trim()) ||
+                                    (componentStyle.borderLeftWidth && componentStyle.borderLeftWidth.trim())
+          if (!hasIndividualWidths) {
+            // Default to 1px if color is set but no width
+            cssRules += `      border-width: 1px !important;\n`
+          }
+        }
+        // Ensure style is set if borderColor is set but borderStyle is not explicitly set
+        if (!componentStyle.borderStyle || !componentStyle.borderStyle.trim()) {
+          // Check if any individual side styles are set
+          const hasIndividualStyles = (componentStyle.borderTopStyle && componentStyle.borderTopStyle.trim()) ||
+                                    (componentStyle.borderRightStyle && componentStyle.borderRightStyle.trim()) ||
+                                    (componentStyle.borderBottomStyle && componentStyle.borderBottomStyle.trim()) ||
+                                    (componentStyle.borderLeftStyle && componentStyle.borderLeftStyle.trim())
+          if (!hasIndividualStyles) {
+            cssRules += `      border-style: solid !important;\n`
+          }
+        }
       }
-      if (componentStyle.borderWidth) {
+      if (componentStyle.borderWidth && componentStyle.borderWidth.trim()) {
         cssRules += `      border-width: ${componentStyle.borderWidth.trim()} !important;\n`
         if (componentStyle.borderWidth.trim() === '0px' || componentStyle.borderWidth.trim() === '0') {
           cssRules += `      border: none !important;\n`
@@ -1713,43 +1095,8 @@ export function applyComponentStyling(branding: BrandingConfig) {
         const textColor = componentStyle.textColor.trim()
         cssRules += `      color: ${textColor} !important;\n`
         // Convert to HSL for --foreground
-        let foregroundHsl: string
-        if (textColor.startsWith('#')) {
-          foregroundHsl = hexToHsl(textColor)
-        } else if (textColor.startsWith('rgb') || textColor.startsWith('rgba')) {
-          const match = textColor.match(/(\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/)
-          if (match) {
-            const r = parseInt(match[1]) / 255
-            const g = parseInt(match[2]) / 255
-            const b = parseInt(match[3]) / 255
-            const max = Math.max(r, g, b)
-            const min = Math.min(r, g, b)
-            let h = 0
-            let s = 0
-            const l = (max + min) / 2
-            if (max !== min) {
-              const d = max - min
-              s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-              switch (max) {
-                case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break
-                case g: h = ((b - r) / d + 2) / 6; break
-                case b: h = ((r - g) / d + 4) / 6; break
-              }
-            }
-            foregroundHsl = `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`
-          } else {
-            foregroundHsl = textColor
-          }
-        } else if (textColor.includes('hsl')) {
-          const match = textColor.match(/(\d+)\s+(\d+)%\s+(\d+)%/)
-          if (match) {
-            foregroundHsl = `${match[1]} ${match[2]}% ${match[3]}%`
-          } else {
-            foregroundHsl = textColor
-          }
-        } else {
-          foregroundHsl = textColor
-        }
+        // Use the shared rgbaToHsl function which handles hex, rgba/rgb, and hsl formats
+        const foregroundHsl = rgbaToHsl(textColor)
         cssRules += `      --foreground: ${foregroundHsl} !important;\n`
       }
       cssRules += `    }\n\n`
@@ -1787,96 +1134,67 @@ export function applyComponentStyling(branding: BrandingConfig) {
       cssRules += `      background-color: ${bgColor} !important;\n`
       cssRules += `      background-image: none !important;\n`
       // Override both --border and --input CSS variables (used by bg-border and bg-input classes)
-      let borderHsl: string
-      if (bgColor.startsWith('#')) {
-        borderHsl = hexToHsl(bgColor)
-      } else if (bgColor.startsWith('rgb') || bgColor.startsWith('rgba')) {
-        const match = bgColor.match(/(\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/)
-        if (match) {
-          const r = parseInt(match[1]) / 255
-          const g = parseInt(match[2]) / 255
-          const b = parseInt(match[3]) / 255
-          const max = Math.max(r, g, b)
-          const min = Math.min(r, g, b)
-          let h = 0
-          let s = 0
-          const l = (max + min) / 2
-          if (max !== min) {
-            const d = max - min
-            s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-            switch (max) {
-              case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break
-              case g: h = ((b - r) / d + 2) / 6; break
-              case b: h = ((r - g) / d + 4) / 6; break
-            }
-          }
-          borderHsl = `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`
-        } else {
-          borderHsl = bgColor
-        }
-      } else if (bgColor.includes('hsl')) {
-        const match = bgColor.match(/(\d+)\s+(\d+)%\s+(\d+)%/)
-        if (match) {
-          borderHsl = `${match[1]} ${match[2]}% ${match[3]}%`
-        } else {
-          borderHsl = bgColor
-        }
+      // IMPORTANT: If the background color has an alpha channel, use it directly
+      // because HSL conversion loses the alpha, making transparent colors appear opaque/black
+      if (hasAlphaChannel(bgColor)) {
+        cssRules += `      --border: ${bgColor} !important;\n`
+        cssRules += `      --input: ${bgColor} !important;\n`
+        console.log('[Branding] Setting text-input background:', bgColor, '(using rgba directly)')
       } else {
-        borderHsl = bgColor
+        const borderHsl = rgbaToHsl(bgColor)
+        cssRules += `      --border: ${borderHsl} !important;\n`
+        cssRules += `      --input: ${borderHsl} !important;\n`
+        console.log('[Branding] Setting text-input background:', bgColor, 'HSL:', borderHsl)
       }
-      cssRules += `      --border: ${borderHsl} !important;\n`
-      cssRules += `      --input: ${borderHsl} !important;\n`
-      console.log('[Branding] Setting text-input background:', bgColor, 'HSL:', borderHsl)
     }
     if (textInputStyle.textColor) {
       const textColor = textInputStyle.textColor.trim()
       cssRules += `      color: ${textColor} !important;\n`
       // Also override CSS variable
-      let foregroundHsl: string
-      if (textColor.startsWith('#')) {
-        foregroundHsl = hexToHsl(textColor)
-      } else if (textColor.startsWith('rgb') || textColor.startsWith('rgba')) {
-        const match = textColor.match(/(\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/)
-        if (match) {
-          const r = parseInt(match[1]) / 255
-          const g = parseInt(match[2]) / 255
-          const b = parseInt(match[3]) / 255
-          const max = Math.max(r, g, b)
-          const min = Math.min(r, g, b)
-          let h = 0
-          let s = 0
-          const l = (max + min) / 2
-          if (max !== min) {
-            const d = max - min
-            s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-            switch (max) {
-              case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break
-              case g: h = ((b - r) / d + 2) / 6; break
-              case b: h = ((r - g) / d + 4) / 6; break
-            }
-          }
-          foregroundHsl = `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`
-        } else {
-          foregroundHsl = textColor
-        }
-      } else if (textColor.includes('hsl')) {
-        const match = textColor.match(/(\d+)\s+(\d+)%\s+(\d+)%/)
-        if (match) {
-          foregroundHsl = `${match[1]} ${match[2]}% ${match[3]}%`
-        } else {
-          foregroundHsl = textColor
-        }
-      } else {
-        foregroundHsl = textColor
-      }
+      // Use the shared rgbaToHsl function which handles hex, rgba/rgb, and hsl formats
+      const foregroundHsl = rgbaToHsl(textColor)
       cssRules += `      --foreground: ${foregroundHsl} !important;\n`
       console.log('[Branding] Setting text-input text color:', textColor, 'HSL:', foregroundHsl)
     }
-    if (textInputStyle.borderColor) {
-      cssRules += `      border-color: ${textInputStyle.borderColor.trim()} !important;\n`
+    if (textInputStyle.borderColor && textInputStyle.borderColor.trim()) {
+      const borderColorValue = textInputStyle.borderColor.trim()
+      cssRules += `      border-color: ${borderColorValue} !important;\n`
+      console.log('[Branding] Setting text-input border-color:', borderColorValue, 'borderWidth:', textInputStyle.borderWidth)
+      // Also set --border CSS variable for Tailwind classes
+      // IMPORTANT: If the border color has an alpha channel, use it directly
+      // because HSL conversion loses the alpha, making transparent colors appear opaque/black
+      if (hasAlphaChannel(borderColorValue)) {
+        cssRules += `      --border: ${borderColorValue} !important;\n`
+        cssRules += `      --input: ${borderColorValue} !important;\n`
+        console.log('[Branding] Using rgba border color directly (has alpha channel):', borderColorValue)
+      } else {
+        const borderHsl = rgbaToHsl(borderColorValue)
+        cssRules += `      --border: ${borderHsl} !important;\n`
+        cssRules += `      --input: ${borderHsl} !important;\n`
+        console.log('[Branding] Converted border color to HSL:', borderHsl)
+      }
+      // Ensure width is set if borderColor is set but borderWidth is not explicitly set
+      if (!textInputStyle.borderWidth || !textInputStyle.borderWidth.trim() || textInputStyle.borderWidth.trim() === '0px' || textInputStyle.borderWidth.trim() === '0') {
+        // Default to 1px if color is set but no width
+        cssRules += `      border-width: 1px !important;\n`
+        console.log('[Branding] text-input borderWidth was missing/0, defaulting to 1px')
+      }
+      // Ensure style is set if borderColor is set but borderStyle is not explicitly set
+      if (!textInputStyle.borderStyle || !textInputStyle.borderStyle.trim()) {
+        cssRules += `      border-style: solid !important;\n`
+        console.log('[Branding] text-input borderStyle was missing, defaulting to solid')
+      }
+    } else {
+      console.warn('[Branding] text-input borderColor is missing or empty!', {
+        hasBorderColor: !!textInputStyle.borderColor,
+        borderColor: textInputStyle.borderColor
+      })
     }
-    if (textInputStyle.borderWidth) {
+    if (textInputStyle.borderWidth && textInputStyle.borderWidth.trim()) {
       cssRules += `      border-width: ${textInputStyle.borderWidth.trim()} !important;\n`
+      if (textInputStyle.borderWidth.trim() === '0px' || textInputStyle.borderWidth.trim() === '0') {
+        cssRules += `      border: none !important;\n`
+      }
     }
     if (textInputStyle.borderRadius) {
       cssRules += `      border-radius: ${textInputStyle.borderRadius.trim()} !important;\n`
@@ -1915,44 +1233,44 @@ export function applyComponentStyling(branding: BrandingConfig) {
       const textColor = textInputStyle.textColor.trim()
       cssRules += `      color: ${textColor} !important;\n`
       // Convert to HSL for --foreground
-      let foregroundHsl: string
-      if (textColor.startsWith('#')) {
-        foregroundHsl = hexToHsl(textColor)
-      } else if (textColor.startsWith('rgb') || textColor.startsWith('rgba')) {
-        const match = textColor.match(/(\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/)
-        if (match) {
-          const r = parseInt(match[1]) / 255
-          const g = parseInt(match[2]) / 255
-          const b = parseInt(match[3]) / 255
-          const max = Math.max(r, g, b)
-          const min = Math.min(r, g, b)
-          let h = 0
-          let s = 0
-          const l = (max + min) / 2
-          if (max !== min) {
-            const d = max - min
-            s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-            switch (max) {
-              case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break
-              case g: h = ((b - r) / d + 2) / 6; break
-              case b: h = ((r - g) / d + 4) / 6; break
-            }
-          }
-          foregroundHsl = `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`
-        } else {
-          foregroundHsl = textColor
-        }
-      } else if (textColor.includes('hsl')) {
-        const match = textColor.match(/(\d+)\s+(\d+)%\s+(\d+)%/)
-        if (match) {
-          foregroundHsl = `${match[1]} ${match[2]}% ${match[3]}%`
-        } else {
-          foregroundHsl = textColor
-        }
-      } else {
-        foregroundHsl = textColor
-      }
+      // Use the shared rgbaToHsl function which handles hex, rgba/rgb, and hsl formats
+      const foregroundHsl = rgbaToHsl(textColor)
       cssRules += `      --foreground: ${foregroundHsl} !important;\n`
+    }
+    // Also set border properties in ULTIMATE OVERRIDE for maximum specificity
+    if (textInputStyle.borderColor && textInputStyle.borderColor.trim()) {
+      const borderColorValue = textInputStyle.borderColor.trim()
+      cssRules += `      border-color: ${borderColorValue} !important;\n`
+      // Also set --border CSS variable for Tailwind classes
+      // IMPORTANT: If the border color has an alpha channel, use it directly
+      // because HSL conversion loses the alpha, making transparent colors appear opaque/black
+      if (hasAlphaChannel(borderColorValue)) {
+        cssRules += `      --border: ${borderColorValue} !important;\n`
+        cssRules += `      --input: ${borderColorValue} !important;\n`
+      } else {
+        const borderHsl = rgbaToHsl(borderColorValue)
+        cssRules += `      --border: ${borderHsl} !important;\n`
+        cssRules += `      --input: ${borderHsl} !important;\n`
+      }
+      // Ensure width is set if borderColor is set but borderWidth is not explicitly set
+      if (!textInputStyle.borderWidth || !textInputStyle.borderWidth.trim() || textInputStyle.borderWidth.trim() === '0px' || textInputStyle.borderWidth.trim() === '0') {
+        cssRules += `      border-width: 1px !important;\n`
+      } else {
+        cssRules += `      border-width: ${textInputStyle.borderWidth.trim()} !important;\n`
+      }
+      // Ensure style is set
+      if (!textInputStyle.borderStyle || !textInputStyle.borderStyle.trim()) {
+        cssRules += `      border-style: solid !important;\n`
+      } else {
+        cssRules += `      border-style: ${textInputStyle.borderStyle.trim()} !important;\n`
+      }
+    }
+    if (textInputStyle.borderWidth && textInputStyle.borderWidth.trim() && 
+        textInputStyle.borderWidth.trim() !== '0px' && textInputStyle.borderWidth.trim() !== '0') {
+      cssRules += `      border-width: ${textInputStyle.borderWidth.trim()} !important;\n`
+    }
+    if (textInputStyle.borderRadius) {
+      cssRules += `      border-radius: ${textInputStyle.borderRadius.trim()} !important;\n`
     }
     cssRules += `    }\n\n`
   } else {
@@ -2050,41 +1368,8 @@ export function applyComponentStyling(branding: BrandingConfig) {
     if (textInputStyleDirect) {
       console.log('[Branding] Applying text-input styles directly to existing inputs (including number inputs)')
       
-      // Function to convert color to HSL format (same as color inputs use)
-      const colorToHsl = (color: string): string => {
-        const trimmed = color.trim()
-        if (trimmed.startsWith('#')) {
-          return hexToHsl(trimmed)
-        } else if (trimmed.startsWith('rgb') || trimmed.startsWith('rgba')) {
-          const match = trimmed.match(/(\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/)
-          if (match) {
-            const r = parseInt(match[1]) / 255
-            const g = parseInt(match[2]) / 255
-            const b = parseInt(match[3]) / 255
-            const max = Math.max(r, g, b)
-            const min = Math.min(r, g, b)
-            let h = 0
-            let s = 0
-            const l = (max + min) / 2
-            if (max !== min) {
-              const d = max - min
-              s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-              switch (max) {
-                case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break
-                case g: h = ((b - r) / d + 2) / 6; break
-                case b: h = ((r - g) / d + 4) / 6; break
-              }
-            }
-            return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`
-          }
-        } else if (trimmed.includes('hsl')) {
-          const match = trimmed.match(/(\d+)\s+(\d+)%\s+(\d+)%/)
-          if (match) {
-            return `${match[1]} ${match[2]}% ${match[3]}%`
-          }
-        }
-        return trimmed
-      }
+      // Use the shared rgbaToHsl function which handles hex, rgba/rgb, and hsl formats
+      const colorToHsl = rgbaToHsl
       
       // Function to apply styles to an input element (EXACT same logic as color inputs)
       const applyInputStyles = (input: HTMLInputElement) => {
@@ -2098,9 +1383,16 @@ export function applyComponentStyling(branding: BrandingConfig) {
             input.style.setProperty('background-image', 'none', 'important')
             
             // Override CSS variables used by Tailwind classes (bg-border and bg-input)
-            const bgHsl = colorToHsl(bgColor)
-            input.style.setProperty('--border', bgHsl, 'important')
-            input.style.setProperty('--input', bgHsl, 'important')
+            // IMPORTANT: If the background color has an alpha channel, use it directly
+            // because HSL conversion loses the alpha, making transparent colors appear opaque/black
+            if (hasAlphaChannel(bgColor)) {
+              input.style.setProperty('--border', bgColor, 'important')
+              input.style.setProperty('--input', bgColor, 'important')
+            } else {
+              const bgHsl = colorToHsl(bgColor)
+              input.style.setProperty('--border', bgHsl, 'important')
+              input.style.setProperty('--input', bgHsl, 'important')
+            }
           }
           
           // Apply text color - same approach as ColorInput
@@ -2115,14 +1407,39 @@ export function applyComponentStyling(branding: BrandingConfig) {
           }
           
           // Apply border styles
-          if (textInputStyleDirect.borderColor) {
-            input.style.setProperty('border-color', textInputStyleDirect.borderColor, 'important')
+          if (textInputStyleDirect.borderColor && textInputStyleDirect.borderColor.trim()) {
+            const borderColorValue = textInputStyleDirect.borderColor.trim()
+            input.style.setProperty('border-color', borderColorValue, 'important')
+            // Also set --border CSS variable for Tailwind classes
+            // IMPORTANT: If the border color has an alpha channel, use it directly
+            // because HSL conversion loses the alpha, making transparent colors appear opaque/black
+            if (hasAlphaChannel(borderColorValue)) {
+              input.style.setProperty('--border', borderColorValue, 'important')
+              input.style.setProperty('--input', borderColorValue, 'important')
+            } else {
+              const borderHsl = colorToHsl(borderColorValue)
+              input.style.setProperty('--border', borderHsl, 'important')
+              input.style.setProperty('--input', borderHsl, 'important')
+            }
+            // Ensure width is set if borderColor is set but borderWidth is not explicitly set
+            if (!textInputStyleDirect.borderWidth || !textInputStyleDirect.borderWidth.trim() || 
+                textInputStyleDirect.borderWidth.trim() === '0px' || textInputStyleDirect.borderWidth.trim() === '0') {
+              input.style.setProperty('border-width', '1px', 'important')
+            }
+            // Ensure style is set if borderColor is set but borderStyle is not explicitly set
+            if (!textInputStyleDirect.borderStyle || !textInputStyleDirect.borderStyle.trim()) {
+              input.style.setProperty('border-style', 'solid', 'important')
+            }
           }
-          if (textInputStyleDirect.borderWidth) {
-            input.style.setProperty('border-width', textInputStyleDirect.borderWidth, 'important')
+          if (textInputStyleDirect.borderWidth && textInputStyleDirect.borderWidth.trim() && 
+              textInputStyleDirect.borderWidth.trim() !== '0px' && textInputStyleDirect.borderWidth.trim() !== '0') {
+            input.style.setProperty('border-width', textInputStyleDirect.borderWidth.trim(), 'important')
+          }
+          if (textInputStyleDirect.borderStyle && textInputStyleDirect.borderStyle.trim()) {
+            input.style.setProperty('border-style', textInputStyleDirect.borderStyle.trim(), 'important')
           }
           if (textInputStyleDirect.borderRadius) {
-            input.style.setProperty('border-radius', textInputStyleDirect.borderRadius, 'important')
+            input.style.setProperty('border-radius', textInputStyleDirect.borderRadius.trim(), 'important')
           }
         }
       }
@@ -2334,6 +1651,9 @@ export function applyComponentStyling(branding: BrandingConfig) {
     }
   }
   
+  // Set the CSS content
+  styleElement.textContent = cssRules
+  
   // Verify the CSS was actually set
   if (styleElement.textContent !== cssRules) {
     console.error('[Branding] ERROR: CSS was not set correctly!')
@@ -2429,11 +1749,10 @@ export function applyComponentStyling(branding: BrandingConfig) {
         hasMargin: !!branding.componentStyling['form'].margin
       })
     } else {
-      console.log('[Branding] Form component styling NOT found in branding.componentStyling')
+      // Form component styling is optional - this is expected if not defined in theme config
+      // console.log('[Branding] Form component styling not found in branding.componentStyling (optional)')
     }
   }
-
-  styleElement.textContent = cssRules
 }
 
 /**

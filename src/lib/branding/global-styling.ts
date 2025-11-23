@@ -28,7 +28,21 @@ export function applyGlobalStyling(branding: BrandingConfig) {
 
   // Set CSS variables for global styling
   root.style.setProperty('--brand-border-radius', styling.borderRadius)
-  root.style.setProperty('--brand-border-color', styling.borderColor)
+  // Trim and validate borderColor to ensure rgba values work correctly
+  // Handle both with and without spaces: rgba(0,0,0,0.1) or rgba(0, 0, 0, 0.1)
+  // Also handle empty strings and undefined values
+  const borderColor = (styling.borderColor && styling.borderColor.trim() && styling.borderColor.trim().length > 0)
+    ? styling.borderColor.trim() 
+    : (branding.uiBorderColor && branding.uiBorderColor.trim() && branding.uiBorderColor.trim().length > 0)
+      ? branding.uiBorderColor.trim()
+      : 'rgba(0, 0, 0, 0.1)'
+  
+  // Debug logging to help diagnose issues
+  if (!styling.borderColor || !styling.borderColor.trim()) {
+    console.warn('[Branding] Global styling borderColor is missing or empty, using fallback:', borderColor)
+  }
+  
+  root.style.setProperty('--brand-border-color', borderColor)
   root.style.setProperty('--brand-border-width', styling.borderWidth)
   root.style.setProperty('--brand-button-border-radius', styling.buttonBorderRadius)
   root.style.setProperty('--brand-button-border-width', styling.buttonBorderWidth)
@@ -109,7 +123,7 @@ export function applyGlobalStyling(branding: BrandingConfig) {
     body:not([data-space]) [class*="button"]:not([data-space]):not([data-space] *):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"]):not([data-component="color-input-trigger"]):not(.color-input-trigger) {
       border-radius: var(--brand-button-border-radius, ${styling.buttonBorderRadius}) !important;
       border-width: var(--brand-button-border-width, ${styling.buttonBorderWidth}) !important;
-      border-color: var(--brand-border-color, ${styling.borderColor}) !important;
+      border-color: var(--brand-border-color, ${borderColor}) !important;
       border-style: solid !important;
     }
     
@@ -158,7 +172,7 @@ export function applyGlobalStyling(branding: BrandingConfig) {
     body:not([data-space]) input[type="url"] {
       border-radius: var(--brand-input-border-radius, ${styling.inputBorderRadius}) !important;
       border-width: var(--brand-input-border-width, ${styling.inputBorderWidth}) !important;
-      border-color: var(--brand-border-color, ${styling.borderColor}) !important;
+      border-color: var(--brand-border-color, ${borderColor}) !important;
       border-style: solid !important;
     }
     
@@ -166,14 +180,14 @@ export function applyGlobalStyling(branding: BrandingConfig) {
     body:not([data-space]) [role="combobox"] {
       border-radius: var(--brand-select-border-radius, ${styling.selectBorderRadius}) !important;
       border-width: var(--brand-select-border-width, ${styling.selectBorderWidth}) !important;
-      border-color: var(--brand-border-color, ${styling.borderColor}) !important;
+      border-color: var(--brand-border-color, ${borderColor}) !important;
       border-style: solid !important;
     }
     
     body:not([data-space]) textarea {
       border-radius: var(--brand-textarea-border-radius, ${styling.textareaBorderRadius}) !important;
       border-width: var(--brand-textarea-border-width, ${styling.textareaBorderWidth}) !important;
-      border-color: var(--brand-border-color, ${styling.borderColor}) !important;
+      border-color: var(--brand-border-color, ${borderColor}) !important;
       border-style: solid !important;
     }
     

@@ -1,0 +1,459 @@
+/**
+ * Component selectors mapping
+ * Maps component IDs to CSS selectors for styling
+ */
+
+export const componentSelectors: Record<string, string[]> = {
+  'text-input': [
+    'body:not([data-space]) input:not([type])',
+    'body:not([data-space]) input[type="text"]',
+    'body:not([data-space]) input[type="email"]',
+    'body:not([data-space]) input[type="password"]',
+    'body:not([data-space]) input[type="number"]',
+    'body:not([data-space]) input[type="search"]',
+    'body:not([data-space]) input[type="tel"]',
+    'body:not([data-space]) input[type="url"]',
+    'body:not([data-space]) input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"])',
+    // Shadcn/ui Input component wrapper
+    'body:not([data-space]) [data-component="input"]',
+    'body:not([data-space]) [class*="Input"]',
+    'body:not([data-space]) input[class*="input"]',
+    'body:not([data-space]) input[class*="Input"]',
+  ],
+  'text-input-focus': [
+    'body:not([data-space]) input:not([type]):focus',
+    'body:not([data-space]) input[type="text"]:focus',
+    'body:not([data-space]) input[type="email"]:focus',
+    'body:not([data-space]) input[type="password"]:focus',
+    'body:not([data-space]) input[type="number"]:focus',
+    'body:not([data-space]) input[type="search"]:focus',
+    'body:not([data-space]) input[type="tel"]:focus',
+    'body:not([data-space]) input[type="url"]:focus',
+    'body:not([data-space]) input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]):focus',
+    // Shadcn/ui Input component focus states
+    'body:not([data-space]) [data-component="input"]:focus-within',
+    'body:not([data-space]) [class*="Input"]:focus-within',
+    'body:not([data-space]) input[class*="input"]:focus',
+    'body:not([data-space]) input[class*="Input"]:focus',
+  ],
+  'text-input-disabled': [
+    'body:not([data-space]) input:not([type]):disabled',
+    'body:not([data-space]) input[type="text"]:disabled',
+    'body:not([data-space]) input[type="email"]:disabled',
+    'body:not([data-space]) input[type="password"]:disabled',
+    'body:not([data-space]) input[type="number"]:disabled',
+    'body:not([data-space]) input[type="search"]:disabled',
+    'body:not([data-space]) input[type="tel"]:disabled',
+    'body:not([data-space]) input[type="url"]:disabled',
+    'body:not([data-space]) input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]):disabled',
+    // Shadcn/ui Input component disabled states
+    'body:not([data-space]) [data-component="input"][aria-disabled="true"]',
+    'body:not([data-space]) [data-component="input"]:has(input:disabled)',
+    'body:not([data-space]) [class*="Input"][aria-disabled="true"]',
+    'body:not([data-space]) input[class*="input"]:disabled',
+    'body:not([data-space]) input[class*="Input"]:disabled',
+  ],
+  'select': [
+    'body:not([data-space]) select',
+    'body:not([data-space]) [data-component="select-trigger"]',
+    'body:not([data-space]) [data-component="select-content"]',
+    'body:not([data-space]) [role="combobox"]',
+    'body:not([data-space]) [data-radix-select-content]',
+    'body:not([data-space]) [class*="SelectContent"]',
+    'body:not([data-space]) [class*="SelectTrigger"]',
+    'body:not([data-space]) [class*="SelectValue"]',
+    'body:not([data-space]) [role="listbox"]',
+    // Target the dropdown content div (portaled to body)
+    'body:not([data-space]) > div[style*="position: fixed"][style*="z-index"]:has([role="option"])',
+  ],
+  'select-focus': [
+    'body:not([data-space]) select:focus',
+    'body:not([data-space]) [data-component="select-trigger"]:focus',
+    'body:not([data-space]) [class*="SelectTrigger"]:focus',
+    'body:not([data-space]) [role="combobox"]:focus',
+    'body:not([data-space]) [role="combobox"][data-state="open"]',
+  ],
+  'select-disabled': [
+    'body:not([data-space]) select:disabled',
+    'body:not([data-space]) [data-component="select-trigger"][aria-disabled="true"]',
+    'body:not([data-space]) [class*="SelectTrigger"][aria-disabled="true"]',
+    'body:not([data-space]) [role="combobox"][aria-disabled="true"]',
+    'body:not([data-space]) [role="combobox"]:has(select:disabled)',
+  ],
+  'multi-select': [
+    'body:not([data-space]) select[multiple]',
+    'body:not([data-space]) [role="listbox"]',
+    'body:not([data-space]) [data-radix-select-content]',
+    'body:not([data-space]) [class*="SelectContent"]',
+    'body:not([data-space]) [class*="MultiSelect"]',
+    'body:not([data-space]) [data-component="multi-select"]',
+    // Target the dropdown content div (portaled to body)
+    'body:not([data-space]) > div[style*="position: fixed"][style*="z-index"]:has([role="option"])',
+  ],
+  'multi-select-focus': [
+    'body:not([data-space]) select[multiple]:focus',
+    'body:not([data-space]) [role="listbox"]:focus',
+    'body:not([data-space]) [class*="MultiSelect"]:focus-within',
+    'body:not([data-space]) [data-component="multi-select"]:focus-within',
+  ],
+  'multi-select-disabled': [
+    'body:not([data-space]) select[multiple]:disabled',
+    'body:not([data-space]) [role="listbox"][aria-disabled="true"]',
+    'body:not([data-space]) [class*="MultiSelect"][aria-disabled="true"]',
+    'body:not([data-space]) [data-component="multi-select"][aria-disabled="true"]',
+  ],
+  'textarea': [
+    'body:not([data-space]) textarea',
+    'body:not([data-space]) [data-component="textarea"]',
+    'body:not([data-space]) [class*="Textarea"]',
+    'body:not([data-space]) textarea[class*="textarea"]',
+    'body:not([data-space]) textarea[class*="Textarea"]',
+  ],
+  'textarea-focus': [
+    'body:not([data-space]) textarea:focus',
+    'body:not([data-space]) [data-component="textarea"]:focus-within',
+    'body:not([data-space]) [class*="Textarea"]:focus-within',
+    'body:not([data-space]) textarea[class*="textarea"]:focus',
+    'body:not([data-space]) textarea[class*="Textarea"]:focus',
+  ],
+  'textarea-disabled': [
+    'body:not([data-space]) textarea:disabled',
+    'body:not([data-space]) [data-component="textarea"][aria-disabled="true"]',
+    'body:not([data-space]) [data-component="textarea"]:has(textarea:disabled)',
+    'body:not([data-space]) [class*="Textarea"][aria-disabled="true"]',
+    'body:not([data-space]) textarea[class*="textarea"]:disabled',
+    'body:not([data-space]) textarea[class*="Textarea"]:disabled',
+  ],
+  'form': [
+    'body:not([data-space]) form',
+    'body:not([data-space]) [data-component="form"]',
+    'body:not([data-space]) [class*="Form"]',
+    'body:not([data-space]) form[class*="form"]',
+    'body:not([data-space]) form[class*="Form"]',
+  ],
+  'button': [
+    'body:not([data-space]) button:not([class*="bg-secondary"]):not([class*="secondary"]):not([class*="ghost"]):not([class*="hover:bg-accent"]):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) [role="button"]:not([class*="bg-secondary"]):not([class*="secondary"]):not([class*="ghost"]):not([class*="hover:bg-accent"]):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) .btn:not([class*="bg-secondary"]):not([class*="secondary"]):not([class*="ghost"]):not([class*="hover:bg-accent"]):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([data-component="select-trigger"])',
+    'body:not([data-space]) [class*="button"]:not([class*="bg-secondary"]):not([class*="secondary"]):not([class*="ghost"]):not([class*="hover:bg-accent"]):not([data-space]):not([data-space] *):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    /* Exclude buttons inside platform sidebar (primary and secondary) */
+    'body:not([data-space]) [data-sidebar] button',
+    'body:not([data-space]) [data-sidebar="primary"] button',
+    'body:not([data-space]) [data-sidebar="secondary"] button',
+    'body:not([data-space]) [data-component="platform-sidebar"] button',
+    /* Exclude buttons inside top menu bar */
+    'body:not([data-space]) [data-component="top-menu-bar"] button',
+    /* Exclude active menu buttons */
+    'body:not([data-space]) .platform-sidebar-menu-button-active',
+    'body:not([data-space]) .platform-sidebar-menu-button.platform-sidebar-menu-button-active',
+    /* Exclude select triggers - they use select component styling */
+    'body:not([data-space]) [data-component="select-trigger"]',
+  ],
+  'button-default': [
+    'body:not([data-space]) button[class*="bg-primary"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) button:not([class*="bg-destructive"]):not([class*="bg-secondary"]):not([class*="border"]):not([class*="underline"]):not([class*="hover:bg-accent"]):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+  ],
+  'button-destructive': [
+    // Match buttons with bg-destructive class (most specific)
+    'body button[class*="bg-destructive"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body [role="button"][class*="bg-destructive"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    // Match buttons with destructive in class name
+    'body button[class*="destructive"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body [role="button"][class*="destructive"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    // Also match without data-space exclusion to catch space buttons
+    'body:not([data-space]) button[class*="bg-destructive"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) button[class*="destructive"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+  ],
+  'button-outline': [
+    'body:not([data-space]) button[class*="border"]:not([class*="bg-primary"]):not([class*="bg-destructive"]):not([class*="bg-secondary"]):not([class*="underline"]):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) button[class*="outline"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+  ],
+  'button-secondary': [
+    'body:not([data-space]) button[class*="bg-secondary"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) button[class*="secondary"]:not([class*="bg-primary"]):not([class*="bg-destructive"]):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+  ],
+  'button-ghost': [
+    'body:not([data-space]) button[class*="hover:bg-accent"]:not([class*="bg-primary"]):not([class*="bg-destructive"]):not([class*="bg-secondary"]):not([class*="border"]):not([class*="underline"]):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) button[class*="ghost"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+  ],
+  'button-link': [
+    'body:not([data-space]) button[class*="underline"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) button[class*="link"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+  ],
+  'iconButton': [
+    'body:not([data-space]) button[data-icon-button]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) button[class*="h-10"][class*="w-10"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) button[class*="h-6"][class*="w-6"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) button[class*="size-icon"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) button[size="icon"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+  ],
+  'iconButton-hover': [
+    'body:not([data-space]) button[data-icon-button]:hover:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) button[class*="h-10"][class*="w-10"]:hover:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) button[class*="h-6"][class*="w-6"]:hover:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) button[class*="size-icon"]:hover:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) button[size="icon"]:hover:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+  ],
+  'iconButton-active': [
+    'body:not([data-space]) button[data-icon-button]:active:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) button[class*="h-10"][class*="w-10"]:active:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) button[class*="h-6"][class*="w-6"]:active:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) button[class*="size-icon"]:active:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) button[size="icon"]:active:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+  ],
+  'iconButton-focus': [
+    'body:not([data-space]) button[data-icon-button]:focus:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) button[class*="h-10"][class*="w-10"]:focus:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) button[class*="h-6"][class*="w-6"]:focus:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) button[class*="size-icon"]:focus:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) button[size="icon"]:focus:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+  ],
+  'iconButton-disabled': [
+    'body:not([data-space]) button[data-icon-button]:disabled:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) button[class*="h-10"][class*="w-10"]:disabled:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) button[class*="h-6"][class*="w-6"]:disabled:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) button[class*="size-icon"]:disabled:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) button[size="icon"]:disabled:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+  ],
+  'button-hover': [
+    'body:not([data-space]) button:hover:not([class*="bg-secondary"]):not([class*="secondary"]):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) [role="button"]:hover:not([class*="bg-secondary"]):not([class*="secondary"]):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) .btn:hover:not([class*="bg-secondary"]):not([class*="secondary"]):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([data-component="select-trigger"])',
+  ],
+  'button-active': [
+    'body:not([data-space]) button:active:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) [role="button"]:active:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) .btn:active:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([data-component="select-trigger"])',
+  ],
+  'button-focus': [
+    'body:not([data-space]) button:focus:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) [role="button"]:focus:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) .btn:focus:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([data-component="select-trigger"])',
+  ],
+  'button-disabled': [
+    'body:not([data-space]) button:disabled:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) [role="button"]:disabled:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"])',
+    'body:not([data-space]) .btn:disabled:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([data-component="select-trigger"])',
+  ],
+  'card': [
+    'body:not([data-space]) [class*="card"]:not([data-space]):not([data-space] *)',
+    'body:not([data-space]) .card',
+    'body:not([data-space]) [data-component="card"]',
+    'body:not([data-space]) [class*="Card"]',
+    'body:not([data-space]) [role="region"][class*="card"]',
+  ],
+  'checkbox': [
+    'body:not([data-space]) input[type="checkbox"]',
+    'body:not([data-space]) input[type="checkbox"] + div', // Visual checkbox wrapper
+    'body:not([data-space]) label:has(input[type="checkbox"]) > div', // Checkbox visual element
+  ],
+  'checkbox-checked': [
+    'body:not([data-space]) input[type="checkbox"]:checked',
+    'body:not([data-space]) input[type="checkbox"]:checked + div',
+    'body:not([data-space]) label:has(input[type="checkbox"]:checked) > div',
+  ],
+  'checkbox-focus': [
+    'body:not([data-space]) input[type="checkbox"]:focus',
+    'body:not([data-space]) input[type="checkbox"]:focus + div',
+    'body:not([data-space]) label:has(input[type="checkbox"]:focus) > div',
+  ],
+  'checkbox-disabled': [
+    'body:not([data-space]) input[type="checkbox"]:disabled',
+    'body:not([data-space]) input[type="checkbox"]:disabled + div',
+    'body:not([data-space]) label:has(input[type="checkbox"]:disabled) > div',
+  ],
+  'radio': [
+    'body:not([data-space]) input[type="radio"]',
+    'body:not([data-space]) input[type="radio"] + div', // Visual radio wrapper
+    'body:not([data-space]) label:has(input[type="radio"]) > div', // Radio visual element
+  ],
+  'radio-checked': [
+    'body:not([data-space]) input[type="radio"]:checked',
+    'body:not([data-space]) input[type="radio"]:checked + div',
+    'body:not([data-space]) label:has(input[type="radio"]:checked) > div',
+  ],
+  'radio-focus': [
+    'body:not([data-space]) input[type="radio"]:focus',
+    'body:not([data-space]) input[type="radio"]:focus + div',
+    'body:not([data-space]) label:has(input[type="radio"]:focus) > div',
+  ],
+  'radio-disabled': [
+    'body:not([data-space]) input[type="radio"]:disabled',
+    'body:not([data-space]) input[type="radio"]:disabled + div',
+    'body:not([data-space]) label:has(input[type="radio"]:disabled) > div',
+  ],
+  'switch': [
+    'body:not([data-space]) [role="switch"]',
+    'body:not([data-space]) [role="switch"] + div', // Switch track wrapper
+    'body:not([data-space]) label:has([role="switch"]) > div', // Switch track visual element
+    'body:not([data-space]) [class*="switch"]:not([data-space]):not([data-space] *)',
+    'body:not([data-space]) label:has(input[type="checkbox"][role="switch"]) > div', // Switch track for checkbox-based switches
+  ],
+  'switch-checked': [
+    'body:not([data-space]) [role="switch"][aria-checked="true"]',
+    'body:not([data-space]) [role="switch"][aria-checked="true"] + div',
+    'body:not([data-space]) label:has([role="switch"][aria-checked="true"]) > div',
+    'body:not([data-space]) input[type="checkbox"][role="switch"]:checked + div',
+    'body:not([data-space]) label:has(input[type="checkbox"][role="switch"]:checked) > div',
+  ],
+  'switch-focus': [
+    'body:not([data-space]) [role="switch"]:focus',
+    'body:not([data-space]) [role="switch"]:focus + div',
+    'body:not([data-space]) label:has([role="switch"]:focus) > div',
+    'body:not([data-space]) input[type="checkbox"][role="switch"]:focus + div',
+    'body:not([data-space]) label:has(input[type="checkbox"][role="switch"]:focus) > div',
+  ],
+  'switch-disabled': [
+    'body:not([data-space]) [role="switch"][aria-disabled="true"]',
+    'body:not([data-space]) [role="switch"][aria-disabled="true"] + div',
+    'body:not([data-space]) label:has([role="switch"][aria-disabled="true"]) > div',
+    'body:not([data-space]) input[type="checkbox"][role="switch"]:disabled + div',
+    'body:not([data-space]) label:has(input[type="checkbox"][role="switch"]:disabled) > div',
+  ],
+  'top-menu-bar': [
+    'body:not([data-space]) [data-component="top-menu-bar"]',
+    'body:not([data-space]) .top-menu-bar',
+  ],
+  'platform-sidebar-primary': [
+    'body:not([data-space]) [data-sidebar="primary"]',
+    'body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="primary"]',
+    'body:not([data-space]) div[data-sidebar="primary"]', // Target the wrapper div
+    // More specific selectors to override inline styles
+    'body:not([data-space]) [data-sidebar="primary"][data-component="platform-sidebar"]',
+    'body:not([data-space]) [data-sidebar="primary"][data-component="platform-sidebar"].h-full',
+    'body:not([data-space]) [data-sidebar="primary"][data-component="platform-sidebar"].flex',
+    'body:not([data-space]) [data-sidebar="primary"][data-component="platform-sidebar"].flex-col',
+  ],
+  'platform-sidebar-secondary': [
+    'body:not([data-space]) [data-sidebar="secondary"]',
+    'body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="secondary"]',
+    'body:not([data-space]) div[data-sidebar="secondary"]', // Target the wrapper div
+    // More specific selectors to override inline styles
+    'body:not([data-space]) [data-sidebar="secondary"][data-component="platform-sidebar"]',
+    'body:not([data-space]) [data-sidebar="secondary"][data-component="platform-sidebar"].h-full',
+    'body:not([data-space]) [data-sidebar="secondary"][data-component="platform-sidebar"].flex',
+    'body:not([data-space]) [data-sidebar="secondary"][data-component="platform-sidebar"].flex-col',
+  ],
+  'platform-sidebar-menu-normal': [
+    'body:not([data-space]) .platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
+    'body:not([data-space]) [data-sidebar] .platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
+    'body:not([data-space]) [data-component="platform-sidebar"] .platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
+    'body:not([data-space]) [data-component="space-sidebar"] .platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
+    'body:not([data-space]) [data-sidebar="secondary"][data-component="space-sidebar"] .platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
+    'body:not([data-space]) [data-component="space-settings-sidebar"] .platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
+    'body:not([data-space]) [data-sidebar="secondary"][data-component="space-settings-sidebar"] .platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
+  ],
+  'platform-sidebar-menu-hover': [
+    'body:not([data-space]) .platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
+    'body:not([data-space]) [data-sidebar] .platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
+    'body:not([data-space]) [data-component="platform-sidebar"] .platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
+    'body:not([data-space]) [data-component="space-sidebar"] .platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
+    'body:not([data-space]) [data-sidebar="secondary"][data-component="space-sidebar"] .platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
+    'body:not([data-space]) [data-component="space-settings-sidebar"] .platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
+    'body:not([data-space]) [data-sidebar="secondary"][data-component="space-settings-sidebar"] .platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
+  ],
+  'platform-sidebar-menu-active': [
+    'body:not([data-space]) .platform-sidebar-menu-button-active',
+    'body:not([data-space]) .platform-sidebar-menu-button.platform-sidebar-menu-button-active',
+    'body:not([data-space]) [data-sidebar] .platform-sidebar-menu-button-active',
+    'body:not([data-space]) [data-component="platform-sidebar"] .platform-sidebar-menu-button-active',
+    'body:not([data-space]) [data-component="space-sidebar"] .platform-sidebar-menu-button-active',
+    'body:not([data-space]) [data-component="space-sidebar"] .platform-sidebar-menu-button.platform-sidebar-menu-button-active',
+    'body:not([data-space]) [data-sidebar="secondary"][data-component="space-sidebar"] .platform-sidebar-menu-button-active',
+    'body:not([data-space]) [data-sidebar="secondary"][data-component="space-sidebar"] .platform-sidebar-menu-button.platform-sidebar-menu-button-active',
+    'body:not([data-space]) [data-component="space-settings-sidebar"] .platform-sidebar-menu-button-active',
+    'body:not([data-space]) [data-component="space-settings-sidebar"] .platform-sidebar-menu-button.platform-sidebar-menu-button-active',
+    'body:not([data-space]) [data-sidebar="secondary"][data-component="space-settings-sidebar"] .platform-sidebar-menu-button-active',
+    'body:not([data-space]) [data-sidebar="secondary"][data-component="space-settings-sidebar"] .platform-sidebar-menu-button.platform-sidebar-menu-button-active',
+  ],
+  'vertical-tab-menu-normal': [
+    'body:not([data-space]) [role="tablist"][aria-orientation="vertical"] [role="tab"]:not([aria-selected="true"])',
+    'body:not([data-space]) [role="tablist"][aria-orientation="vertical"] button[role="tab"]:not([aria-selected="true"])',
+    // Target secondary sidebar tabs specifically
+    'body:not([data-space]) [data-sidebar="secondary"] [role="tablist"][aria-orientation="vertical"] [role="tab"]:not([aria-selected="true"])',
+    'body:not([data-space]) [data-sidebar="secondary"] [role="tablist"][aria-orientation="vertical"] button[role="tab"]:not([aria-selected="true"])',
+    // Target secondary sidebar normal menu buttons (not active)
+    'body:not([data-space]) [data-sidebar="secondary"] .platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
+    'body:not([data-space]) [data-sidebar="secondary"] button.platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
+    'body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="secondary"] .platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
+    'body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="secondary"] button.platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
+    'body:not([data-space]) [data-component="space-sidebar"][data-sidebar="secondary"] .platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
+    'body:not([data-space]) [data-component="space-sidebar"][data-sidebar="secondary"] button.platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
+    'body:not([data-space]) [data-component="space-settings-sidebar"][data-sidebar="secondary"] .platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
+    'body:not([data-space]) [data-component="space-settings-sidebar"][data-sidebar="secondary"] button.platform-sidebar-menu-button:not(.platform-sidebar-menu-button-active)',
+  ],
+  'vertical-tab-menu-hover': [
+    'body:not([data-space]) [role="tablist"][aria-orientation="vertical"] [role="tab"]:hover:not([aria-selected="true"])',
+    'body:not([data-space]) [role="tablist"][aria-orientation="vertical"] button[role="tab"]:hover:not([aria-selected="true"])',
+    // Target secondary sidebar tabs specifically
+    'body:not([data-space]) [data-sidebar="secondary"] [role="tablist"][aria-orientation="vertical"] [role="tab"]:hover:not([aria-selected="true"])',
+    'body:not([data-space]) [data-sidebar="secondary"] [role="tablist"][aria-orientation="vertical"] button[role="tab"]:hover:not([aria-selected="true"])',
+    // Target secondary sidebar hover menu buttons
+    'body:not([data-space]) [data-sidebar="secondary"] .platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
+    'body:not([data-space]) [data-sidebar="secondary"] button.platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
+    'body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="secondary"] .platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
+    'body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="secondary"] button.platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
+    'body:not([data-space]) [data-component="space-sidebar"][data-sidebar="secondary"] .platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
+    'body:not([data-space]) [data-component="space-sidebar"][data-sidebar="secondary"] button.platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
+    'body:not([data-space]) [data-component="space-settings-sidebar"][data-sidebar="secondary"] .platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
+    'body:not([data-space]) [data-component="space-settings-sidebar"][data-sidebar="secondary"] button.platform-sidebar-menu-button:hover:not(.platform-sidebar-menu-button-active)',
+  ],
+  'vertical-tab-menu-active': [
+    'body:not([data-space]) [role="tablist"][aria-orientation="vertical"] [role="tab"][aria-selected="true"]',
+    'body:not([data-space]) [role="tablist"][aria-orientation="vertical"] button[role="tab"][aria-selected="true"]',
+    // Target secondary sidebar tabs specifically
+    'body:not([data-space]) [data-sidebar="secondary"] [role="tablist"][aria-orientation="vertical"] [role="tab"][aria-selected="true"]',
+    'body:not([data-space]) [data-sidebar="secondary"] [role="tablist"][aria-orientation="vertical"] button[role="tab"][aria-selected="true"]',
+    // Target secondary sidebar active menu buttons (PlatformSidebar uses platform-sidebar-menu-button-active class)
+    'body:not([data-space]) [data-sidebar="secondary"] .platform-sidebar-menu-button-active',
+    'body:not([data-space]) [data-sidebar="secondary"] button.platform-sidebar-menu-button-active',
+    'body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="secondary"] .platform-sidebar-menu-button-active',
+    'body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="secondary"] button.platform-sidebar-menu-button-active',
+    'body:not([data-space]) [data-component="space-sidebar"][data-sidebar="secondary"] .platform-sidebar-menu-button-active',
+    'body:not([data-space]) [data-component="space-sidebar"][data-sidebar="secondary"] button.platform-sidebar-menu-button-active',
+    'body:not([data-space]) [data-component="space-settings-sidebar"][data-sidebar="secondary"] .platform-sidebar-menu-button-active',
+    'body:not([data-space]) [data-component="space-settings-sidebar"][data-sidebar="secondary"] button.platform-sidebar-menu-button-active',
+  ],
+  'separator': [
+    'body:not([data-space]) [role="separator"]',
+    'body:not([data-space]) hr',
+    'body:not([data-space]) .separator',
+    'body:not([data-space]) [class*="Separator"]',
+  ],
+  'space-settings-menu-normal': [
+    'body .space-settings-menu-item-normal',
+    'body [class*="space-settings-menu-item"]:not(.space-settings-menu-item-active)',
+    'body button.space-settings-menu-item-normal[role="tab"]',
+    'body [class*="space-settings-menu-item"]:not(.space-settings-menu-item-active)[role="tab"]',
+    'body.dark .space-settings-menu-item-normal',
+    'body.dark [class*="space-settings-menu-item"]:not(.space-settings-menu-item-active)',
+    'body.dark button.space-settings-menu-item-normal[role="tab"]',
+  ],
+  'space-settings-menu-hover': [
+    'body .space-settings-menu-item-normal:hover',
+    'body [class*="space-settings-menu-item"]:not(.space-settings-menu-item-active):hover',
+    'body button.space-settings-menu-item-normal[role="tab"]:hover',
+    'body [class*="space-settings-menu-item"]:not(.space-settings-menu-item-active)[role="tab"]:hover',
+    'body.dark .space-settings-menu-item-normal:hover',
+    'body.dark [class*="space-settings-menu-item"]:not(.space-settings-menu-item-active):hover',
+    'body.dark button.space-settings-menu-item-normal[role="tab"]:hover',
+  ],
+  'space-settings-menu-active': [
+    'body .space-settings-menu-item-active',
+    'body [class*="space-settings-menu-item-active"]',
+    'body [data-state="active"][class*="space-settings-menu-item"]',
+    'body button.space-settings-menu-item-active[role="tab"][aria-selected="true"]',
+    'body [class*="space-settings-menu-item-active"][role="tab"][aria-selected="true"]',
+    'body button[role="tab"][aria-selected="true"].space-settings-menu-item-active',
+    // Override TabsTrigger's default bg-muted/30 class
+    'body button[role="tab"][aria-selected="true"].space-settings-menu-item-active.bg-muted\\/30',
+    'body button.space-settings-menu-item-active[role="tab"][aria-selected="true"].bg-muted\\/30',
+    // Dark mode overrides
+    'body.dark .space-settings-menu-item-active',
+    'body.dark [class*="space-settings-menu-item-active"]',
+    'body.dark button.space-settings-menu-item-active[role="tab"][aria-selected="true"]',
+    'body.dark button[role="tab"][aria-selected="true"].space-settings-menu-item-active',
+    'body.dark button[role="tab"][aria-selected="true"].space-settings-menu-item-active.bg-muted\\/30',
+  ],
+}
+

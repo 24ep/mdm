@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { Paintbrush, Type, Layout, Image as ImageIcon, Component, Eye, X, Settings, ArrowUp, ArrowRight, ArrowDown, ArrowLeft, ArrowLeftRight, Minus, Maximize2, Minimize2, AlignLeft, AlignCenter, AlignRight, AlignJustify, CaseUpper, Underline, Italic, Bold, EyeOff, MousePointer, Focus, Grid3x3, Layers, Move, RotateCw, Filter as FilterIcon, Sparkles, Box, Zap, MoreVertical } from 'lucide-react'
 import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 import { applyBrandingColors, applyGlobalStyling, applyComponentStyling } from '@/lib/branding'
@@ -246,30 +247,7 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                         </div>
                         {(componentStyle?.textDecoration && componentStyle?.textDecoration !== 'none') && (
                             <div className="space-y-3 pl-4 border-l-2 border-muted">
-                                <div className="text-xs font-medium text-muted-foreground/80">Line Styling</div>
-                                <ColorInputField label="Line Color" path={`${basePath}.textDecorationColor`} value={componentStyle?.textDecorationColor} />
-                                <TextInput label="Line Weight" path={`${basePath}.textDecorationThickness`} value={componentStyle?.textDecorationThickness} placeholder="1px" icon={<Minus className="h-3 w-3" />} />
-                                <div className="flex items-center gap-4">
-                                    <Label className="text-xs font-medium text-muted-foreground w-28 shrink-0 flex items-center gap-1.5">
-                                        <Minus className="h-3 w-3 text-muted-foreground" />
-                                        Line Style
-                                    </Label>
-                                    <Select
-                                        value={componentStyle?.textDecorationStyle || ''}
-                                        onValueChange={(value) => handleChange(`${basePath}.textDecorationStyle`, value)}
-                                    >
-                                        <SelectTrigger className="flex-1 h-8 text-sm">
-                                            <SelectValue placeholder="solid" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="">solid</SelectItem>
-                                            <SelectItem value="double">double</SelectItem>
-                                            <SelectItem value="dotted">dotted</SelectItem>
-                                            <SelectItem value="dashed">dashed</SelectItem>
-                                            <SelectItem value="wavy">wavy</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                                <TextDecorationLineInput basePath={basePath} componentStyle={componentStyle} />
                                 {componentStyle?.textDecoration === 'underline' && (
                                     <>
                                         <TextInput label="Underline Offset" path={`${basePath}.textUnderlineOffset`} value={componentStyle?.textUnderlineOffset} placeholder="auto" icon={<ArrowUp className="h-3 w-3" />} />
@@ -511,6 +489,176 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
         )
     }
 
+    // Helper component for grouped border side input with popover
+    const BorderSideInput = ({ 
+        side, 
+        basePath, 
+        componentStyle, 
+        icon 
+    }: { 
+        side: 'Top' | 'Right' | 'Bottom' | 'Left'
+        basePath: string
+        componentStyle: any
+        icon: React.ReactNode
+    }) => {
+        const colorPath = `${basePath}.border${side}Color`
+        const widthPath = `${basePath}.border${side}Width`
+        const stylePath = `${basePath}.border${side}Style`
+        
+        const color = componentStyle?.[`border${side}Color`] || ''
+        const width = componentStyle?.[`border${side}Width`] || ''
+        const style = componentStyle?.[`border${side}Style`] || ''
+        
+        // Create summary text for the input
+        const summary = [color && `Color: ${color}`, width && `Width: ${width}`, style && `Style: ${style}`]
+            .filter(Boolean)
+            .join(', ') || 'Click to configure'
+        
+        // Get border width as number for preview
+        const borderWidthNum = width ? parseFloat(width.replace('px', '').replace('rem', '').replace('em', '')) || 1 : 1
+        const borderStyle = style || 'solid'
+        const borderColor = color || '#e5e7eb'
+        
+        return (
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal h-9"
+                    >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <span className="text-muted-foreground">{icon}</span>
+                            <span className="text-xs font-medium text-muted-foreground/80 shrink-0">{side}</span>
+                            {/* Border preview */}
+                            <div 
+                                className="w-12 h-4 rounded border shrink-0"
+                                style={{
+                                    borderColor: borderColor,
+                                    borderWidth: `${borderWidthNum}px`,
+                                    borderStyle: borderStyle,
+                                    backgroundColor: 'transparent'
+                                }}
+                            />
+                            <span className="text-xs text-muted-foreground truncate flex-1">{summary}</span>
+                        </div>
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-4" align="start">
+                    <div className="space-y-3">
+                        <div className="text-xs font-semibold text-muted-foreground mb-2">Border {side} Configuration</div>
+                        <ColorInputField label="Color" path={colorPath} value={color} />
+                        <TextInput label="Width" path={widthPath} value={width} placeholder="0.5px" icon={icon} />
+                        <TextInput label="Style" path={stylePath} value={style} placeholder="solid" icon={icon} />
+                    </div>
+                </PopoverContent>
+            </Popover>
+        )
+    }
+
+    // Helper component for grouped text decoration line styling input with popover
+    const TextDecorationLineInput = ({ 
+        basePath, 
+        componentStyle 
+    }: { 
+        basePath: string
+        componentStyle: any
+    }) => {
+        const colorPath = `${basePath}.textDecorationColor`
+        const weightPath = `${basePath}.textDecorationThickness`
+        const stylePath = `${basePath}.textDecorationStyle`
+        
+        const color = componentStyle?.textDecorationColor || ''
+        const weight = componentStyle?.textDecorationThickness || ''
+        const style = componentStyle?.textDecorationStyle || ''
+        
+        // Create summary text for the input
+        const summary = [color && `Color: ${color}`, weight && `Weight: ${weight}`, style && `Style: ${style}`]
+            .filter(Boolean)
+            .join(', ') || 'Click to configure'
+        
+        // Get line thickness for preview
+        const lineThickness = weight ? parseFloat(weight.replace('px', '').replace('rem', '').replace('em', '')) || 1 : 1
+        const lineStyle = style || 'solid'
+        const lineColor = color || '#000000'
+        
+        // Generate border style for preview based on line style
+        const getBorderStyle = (style: string) => {
+            switch(style) {
+                case 'dashed': return 'dashed'
+                case 'dotted': return 'dotted'
+                case 'double': return 'double'
+                case 'wavy': return 'solid' // wavy can't be represented with border, use solid
+                default: return 'solid'
+            }
+        }
+        
+        return (
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal h-9"
+                    >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <span className="text-muted-foreground"><Minus className="h-3 w-3" /></span>
+                            <span className="text-xs font-medium text-muted-foreground/80 shrink-0">Line Styling</span>
+                            {/* Text decoration line preview */}
+                            <div className="relative w-12 h-4 shrink-0 flex items-center justify-center">
+                                <div 
+                                    className="w-full"
+                                    style={{
+                                        borderBottom: `${lineThickness}px ${getBorderStyle(lineStyle)} ${lineColor}`,
+                                        height: '0',
+                                        position: 'relative'
+                                    }}
+                                />
+                                {lineStyle === 'double' && (
+                                    <div 
+                                        className="absolute w-full"
+                                        style={{
+                                            borderBottom: `${Math.max(1, lineThickness / 3)}px ${getBorderStyle(lineStyle)} ${lineColor}`,
+                                            top: `${lineThickness + 2}px`,
+                                            height: '0'
+                                        }}
+                                    />
+                                )}
+                            </div>
+                            <span className="text-xs text-muted-foreground truncate flex-1">{summary}</span>
+                        </div>
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-4" align="start">
+                    <div className="space-y-3">
+                        <div className="text-xs font-semibold text-muted-foreground mb-2">Text Decoration Line Configuration</div>
+                        <ColorInputField label="Line Color" path={colorPath} value={color} />
+                        <TextInput label="Line Weight" path={weightPath} value={weight} placeholder="1px" icon={<Minus className="h-3 w-3" />} />
+                        <div className="flex items-center gap-4">
+                            <Label className="text-xs font-medium text-muted-foreground w-28 shrink-0 flex items-center gap-1.5">
+                                <Minus className="h-3 w-3 text-muted-foreground" />
+                                Line Style
+                            </Label>
+                            <Select
+                                value={style || ''}
+                                onValueChange={(value) => handleChange(stylePath, value)}
+                            >
+                                <SelectTrigger className="flex-1 h-8 text-sm">
+                                    <SelectValue placeholder="solid" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="">solid</SelectItem>
+                                    <SelectItem value="double">double</SelectItem>
+                                    <SelectItem value="dotted">dotted</SelectItem>
+                                    <SelectItem value="dashed">dashed</SelectItem>
+                                    <SelectItem value="wavy">wavy</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                </PopoverContent>
+            </Popover>
+        )
+    }
+
     // Helper component for border configuration with individual sides
     const BorderConfig = ({ basePath }: { basePath: string }) => {
         const componentKey = basePath.split('.').pop() as keyof typeof config.componentStyling
@@ -529,28 +677,36 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                 <div className="space-y-3">
                     <div className="text-xs font-medium text-muted-foreground">Individual Border Sides</div>
                     <div className="space-y-2 pl-4">
-                        <div className="text-xs font-medium text-muted-foreground/80">Top</div>
-                        <ColorInputField label="Color" path={`${basePath}.borderTopColor`} value={componentStyle?.borderTopColor} />
-                        <TextInput label="Width" path={`${basePath}.borderTopWidth`} value={componentStyle?.borderTopWidth} placeholder="0.5px" icon={<ArrowUp className="h-3 w-3" />} />
-                        <TextInput label="Style" path={`${basePath}.borderTopStyle`} value={componentStyle?.borderTopStyle} placeholder="solid" icon={<ArrowUp className="h-3 w-3" />} />
+                        <BorderSideInput 
+                            side="Top" 
+                            basePath={basePath} 
+                            componentStyle={componentStyle} 
+                            icon={<ArrowUp className="h-3 w-3" />} 
+                        />
                     </div>
                     <div className="space-y-2 pl-4">
-                        <div className="text-xs font-medium text-muted-foreground/80">Right</div>
-                        <ColorInputField label="Color" path={`${basePath}.borderRightColor`} value={componentStyle?.borderRightColor} />
-                        <TextInput label="Width" path={`${basePath}.borderRightWidth`} value={componentStyle?.borderRightWidth} placeholder="0.5px" icon={<ArrowRight className="h-3 w-3" />} />
-                        <TextInput label="Style" path={`${basePath}.borderRightStyle`} value={componentStyle?.borderRightStyle} placeholder="solid" icon={<ArrowRight className="h-3 w-3" />} />
+                        <BorderSideInput 
+                            side="Right" 
+                            basePath={basePath} 
+                            componentStyle={componentStyle} 
+                            icon={<ArrowRight className="h-3 w-3" />} 
+                        />
                     </div>
                     <div className="space-y-2 pl-4">
-                        <div className="text-xs font-medium text-muted-foreground/80">Bottom</div>
-                        <ColorInputField label="Color" path={`${basePath}.borderBottomColor`} value={componentStyle?.borderBottomColor} />
-                        <TextInput label="Width" path={`${basePath}.borderBottomWidth`} value={componentStyle?.borderBottomWidth} placeholder="0.5px" icon={<ArrowDown className="h-3 w-3" />} />
-                        <TextInput label="Style" path={`${basePath}.borderBottomStyle`} value={componentStyle?.borderBottomStyle} placeholder="solid" icon={<ArrowDown className="h-3 w-3" />} />
+                        <BorderSideInput 
+                            side="Bottom" 
+                            basePath={basePath} 
+                            componentStyle={componentStyle} 
+                            icon={<ArrowDown className="h-3 w-3" />} 
+                        />
                     </div>
                     <div className="space-y-2 pl-4">
-                        <div className="text-xs font-medium text-muted-foreground/80">Left</div>
-                        <ColorInputField label="Color" path={`${basePath}.borderLeftColor`} value={componentStyle?.borderLeftColor} />
-                        <TextInput label="Width" path={`${basePath}.borderLeftWidth`} value={componentStyle?.borderLeftWidth} placeholder="0.5px" icon={<ArrowLeft className="h-3 w-3" />} />
-                        <TextInput label="Style" path={`${basePath}.borderLeftStyle`} value={componentStyle?.borderLeftStyle} placeholder="solid" icon={<ArrowLeft className="h-3 w-3" />} />
+                        <BorderSideInput 
+                            side="Left" 
+                            basePath={basePath} 
+                            componentStyle={componentStyle} 
+                            icon={<ArrowLeft className="h-3 w-3" />} 
+                        />
                     </div>
                 </div>
             </>

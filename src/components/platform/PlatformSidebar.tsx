@@ -439,7 +439,7 @@ export function PlatformSidebar({
         style={{ pointerEvents: 'auto' }}
       >
         <div 
-          className={mode === 'secondary' ? 'min-h-full' : 'py-2 px-2'}
+          className={mode === 'secondary' ? 'min-h-full py-2 px-2' : 'py-2 px-2'}
           style={{ pointerEvents: 'auto' }}
         >
           {mode === 'primary' ? (

@@ -4,7 +4,7 @@
  */
 
 import { BrandingConfig } from '@/app/admin/features/system/types'
-import { hexToHsl, rgbaToHsl } from './utils'
+import { hexToHsl, rgbaToHsl, hasAlphaChannel } from './utils'
 import { applyGlobalStyling } from './global-styling'
 import { applyComponentStyling } from './component-styling'
 import { applyDrawerOverlay } from './drawer'
@@ -30,14 +30,27 @@ export function applyBrandingColors(branding: BrandingConfig) {
 
   // Apply UI component colors
   root.style.setProperty('--brand-ui-bg', branding.uiBackgroundColor || branding.topMenuBackgroundColor)
-  root.style.setProperty('--brand-ui-border', branding.uiBorderColor || 'rgba(0, 0, 0, 0.1)')
+  // Trim and validate uiBorderColor to ensure rgba values work correctly (handles both with and without spaces)
+  const uiBorderColor = branding.uiBorderColor ? branding.uiBorderColor.trim() : 'rgba(0, 0, 0, 0.1)'
+  root.style.setProperty('--brand-ui-border', uiBorderColor)
   
   // Also set --border and --input CSS variables for Tailwind's border-border and bg-input classes
   // This is critical for borders to work with themes in dark mode
-  const borderColor = branding.uiBorderColor || 'rgba(0, 0, 0, 0.1)'
-  const borderHsl = rgbaToHsl(borderColor)
-  root.style.setProperty('--border', borderHsl)
-  root.style.setProperty('--input', borderHsl) // Input borders typically use the same color as borders
+  // IMPORTANT: If the border color has an alpha channel, we must use it directly
+  // because HSL conversion loses the alpha, making transparent colors appear opaque/black
+  const borderColor = uiBorderColor
+  if (hasAlphaChannel(borderColor)) {
+    // For rgba colors with alpha, use directly (HSL doesn't support alpha)
+    root.style.setProperty('--border', borderColor)
+    root.style.setProperty('--input', borderColor)
+    console.log('[Branding] Set --border to rgba (has alpha):', borderColor)
+  } else {
+    // For colors without alpha, convert to HSL for consistency
+    const borderHsl = rgbaToHsl(borderColor)
+    root.style.setProperty('--border', borderHsl)
+    root.style.setProperty('--input', borderHsl)
+    console.log('[Branding] Set --border to HSL (no alpha):', borderHsl, 'from:', borderColor)
+  }
   
   root.style.setProperty('--brand-top-menu-bg', branding.topMenuBackgroundColor)
   root.style.setProperty('--brand-platform-sidebar-bg', branding.platformSidebarBackgroundColor)
