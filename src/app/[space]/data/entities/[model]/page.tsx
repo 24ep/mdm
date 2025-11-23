@@ -40,7 +40,7 @@ export default function DataEntitiesByModelInSpacePage() {
   if (notFound) {
     return (
       <div className="p-6">
-        <div className="text-sm text-red-500">Data model not found.</div>
+        <div className="text-sm text-destructive">Data model not found.</div>
       </div>
     )
   }

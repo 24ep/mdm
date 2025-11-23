@@ -7,7 +7,6 @@ import { MoreVertical, Eye, EyeOff, Trash, Shield, Palette, Layout } from 'lucid
 import toast from 'react-hot-toast'
 import { SpacesEditorManager, SpacesEditorPage } from '@/lib/space-studio-manager'
 import { UnifiedPage } from './types'
-import { getMenuItemKey } from './utils'
 
 interface PageMenuProps {
   page: UnifiedPage
@@ -15,9 +14,7 @@ interface PageMenuProps {
   isBuiltIn: boolean
   isMobileViewport: boolean
   spaceId: string
-  isPageVisibleInSidebar: (pageId: string, pageType: 'built-in' | 'custom') => boolean
-  updateSidebarMenuItem: (key: string | number | symbol, value: boolean) => void
-  updateCustomPageSidebarVisibility: (pageId: string, visible: boolean) => void
+  // Sidebar visibility functions removed - pages now use secondary platform sidebar
   setPages: React.Dispatch<React.SetStateAction<SpacesEditorPage[]>>
   setAllPages: React.Dispatch<React.SetStateAction<UnifiedPage[]>>
   setSelectedPageForPermissions: React.Dispatch<React.SetStateAction<SpacesEditorPage | null>>
@@ -35,9 +32,6 @@ export function PageMenu({
   isBuiltIn,
   isMobileViewport,
   spaceId,
-  isPageVisibleInSidebar,
-  updateSidebarMenuItem,
-  updateCustomPageSidebarVisibility,
   setPages,
   setAllPages,
   setSelectedPageForPermissions,
@@ -65,31 +59,7 @@ export function PageMenu({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem
-            onClick={(e) => {
-              e.stopPropagation()
-              const menuKey = getMenuItemKey(page.id)
-              if (menuKey) {
-                const currentVisible = isPageVisibleInSidebar(page.id, 'built-in')
-                updateSidebarMenuItem(menuKey, !currentVisible)
-                toast.success(!currentVisible ? 'Show in sidebar' : 'Hide from sidebar')
-              }
-            }}
-            className="cursor-pointer"
-          >
-            {isPageVisibleInSidebar(page.id, 'built-in') ? (
-              <>
-                <EyeOff className="mr-2 h-4 w-4" />
-                <span>Hide from Sidebar</span>
-              </>
-            ) : (
-              <>
-                <Eye className="mr-2 h-4 w-4" />
-                <span>Show in Sidebar</span>
-              </>
-            )}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
+          {/* Sidebar visibility menu items removed - pages now use secondary platform sidebar */}
           <DropdownMenuItem
             onClick={(e) => {
               e.stopPropagation()
@@ -122,27 +92,7 @@ export function PageMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuItem
-          onClick={(e) => {
-            e.stopPropagation()
-            const currentVisible = isPageVisibleInSidebar(customPage.id, 'custom')
-            updateCustomPageSidebarVisibility(customPage.id, !currentVisible)
-            toast.success(!currentVisible ? 'Show in sidebar' : 'Hide from sidebar')
-          }}
-          className="cursor-pointer"
-        >
-          {isPageVisibleInSidebar(customPage.id, 'custom') ? (
-            <>
-              <EyeOff className="mr-2 h-4 w-4" />
-              <span>Hide from Sidebar</span>
-            </>
-          ) : (
-            <>
-              <Eye className="mr-2 h-4 w-4" />
-              <span>Show in Sidebar</span>
-            </>
-          )}
-        </DropdownMenuItem>
+        {/* Sidebar visibility menu items removed - pages now use secondary platform sidebar */}
         <DropdownMenuItem
           onClick={async (e) => {
             e.stopPropagation()
@@ -184,17 +134,7 @@ export function PageMenu({
           <Shield className="mr-2 h-4 w-4" />
           <span>Permissions</span>
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={(e) => {
-            e.stopPropagation()
-            setSidebarPositionOpen(page.id)
-          }}
-          className="cursor-pointer"
-        >
-          <Layout className="mr-2 h-4 w-4" />
-          <span>Sidebar Position</span>
-        </DropdownMenuItem>
+        {/* Sidebar Position menu item removed - pages now use secondary platform sidebar */}
         <DropdownMenuItem
           onClick={(e) => {
             e.stopPropagation()

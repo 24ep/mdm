@@ -27,7 +27,7 @@ function saveTemplates(items: LayoutTemplate[]) {
 }
 
 export function SpaceLayoutsAdmin() {
-  const { spaces } = useSpace()
+  const { spaces, isLoading: spacesLoading } = useSpace()
   const [templates, setTemplates] = useState<LayoutTemplate[]>([])
   const [showEditor, setShowEditor] = useState(false)
   const [editing, setEditing] = useState<LayoutTemplate | null>(null)
@@ -192,22 +192,36 @@ export function SpaceLayoutsAdmin() {
             <DialogTitle>Allowed Spaces</DialogTitle>
           </DialogHeader>
           <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-            {spaces.map((s: any) => {
-              const checked = !!allowedDialog?.allowedSpaceIds.includes(s.id)
-              return (
-                <label key={s.id} className="flex items-center justify-between border rounded p-2">
-                  <div>
-                    <div className="font-medium">{s.name}</div>
-                    <div className="text-xs text-muted-foreground">{s.slug || s.id}</div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => allowedDialog && toggleAllowed(allowedDialog, s.id)}
-                  />
-                </label>
-              )
-            })}
+            {spacesLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center space-y-2">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+                  <p className="text-sm text-muted-foreground">Loading spaces...</p>
+                </div>
+              </div>
+            ) : spaces.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="text-sm">No spaces available</p>
+              </div>
+            ) : (
+              spaces.map((s: any) => {
+                const checked = !!allowedDialog?.allowedSpaceIds.includes(s.id)
+                return (
+                  <label key={s.id} className="flex items-center justify-between border rounded p-2 hover:bg-muted/50 cursor-pointer">
+                    <div>
+                      <div className="font-medium">{s.name}</div>
+                      <div className="text-xs text-muted-foreground">{s.slug || s.id}</div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => allowedDialog && toggleAllowed(allowedDialog, s.id)}
+                      className="cursor-pointer"
+                    />
+                  </label>
+                )
+              })
+            )}
           </div>
         </DialogContent>
       </Dialog>

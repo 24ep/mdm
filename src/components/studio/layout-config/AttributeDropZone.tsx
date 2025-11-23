@@ -212,7 +212,7 @@ function AttributeSettingsPopover({
           <div className="flex items-center gap-2 justify-between">
             <span className="text-muted-foreground">Display type</span>
             <select
-              className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
+              className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-muted border-0 focus:outline-none focus:ring-0 focus:border-0"
               value={currentType}
               onChange={(e) => onTypeChange(e.target.value)}
             >
@@ -224,7 +224,7 @@ function AttributeSettingsPopover({
           {currentType==='number' && (
             <div className="flex items-center gap-2 justify-between">
               <span className="text-muted-foreground">Format</span>
-              <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" value={effSettings.format || 'auto'} onChange={(e) => onTypeSettingChange && onTypeSettingChange({ format: e.target.value })}>
+              <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-muted border-0 focus:outline-none focus:ring-0 focus:border-0" value={effSettings.format || 'auto'} onChange={(e) => onTypeSettingChange && onTypeSettingChange({ format: e.target.value })}>
                 <option value="auto">Auto</option>
                 <option value="number">Number</option>
                 <option value="percent">Percent</option>
@@ -235,7 +235,7 @@ function AttributeSettingsPopover({
           {(currentType==='date'||currentType==='datetime'||currentType==='time') && (
             <div className="flex items-center gap-2 justify-between">
               <span className="text-muted-foreground">Granularity</span>
-              <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" value={effSettings.granularity || 'AUTO'} onChange={(e) => onTypeSettingChange && onTypeSettingChange({ granularity: e.target.value })}>
+              <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-muted border-0 focus:outline-none focus:ring-0 focus:border-0" value={effSettings.granularity || 'AUTO'} onChange={(e) => onTypeSettingChange && onTypeSettingChange({ granularity: e.target.value })}>
                 {(['AUTO','YEAR','QUARTER','MONTH','WEEK','DAY','HOUR','MINUTE','SECOND'] as const).map(g => <option key={g} value={g}>{g}</option>)}
               </select>
             </div>
@@ -243,7 +243,7 @@ function AttributeSettingsPopover({
           {currentType==='number' && (
             <div className="flex items-center gap-2 justify-between">
               <span className="text-muted-foreground">Running</span>
-              <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" value={effSettings.running || 'none'} onChange={(e) => onTypeSettingChange && onTypeSettingChange({ running: e.target.value })}>
+              <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-muted border-0 focus:outline-none focus:ring-0 focus:border-0" value={effSettings.running || 'none'} onChange={(e) => onTypeSettingChange && onTypeSettingChange({ running: e.target.value })}>
                 <option value="none">None</option>
                 <option value="running_total">Running total</option>
               </select>
@@ -252,7 +252,7 @@ function AttributeSettingsPopover({
           {currentType==='number' && (
             <div className="flex items-center gap-2 justify-between">
               <span className="text-muted-foreground">Comparison</span>
-              <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" value={effSettings.comparison || 'none'} onChange={(e) => onTypeSettingChange && onTypeSettingChange({ comparison: e.target.value })}>
+              <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-muted border-0 focus:outline-none focus:ring-0 focus:border-0" value={effSettings.comparison || 'none'} onChange={(e) => onTypeSettingChange && onTypeSettingChange({ comparison: e.target.value })}>
                 <option value="none">None</option>
                 <option value="yoy">Year over Year</option>
                 <option value="mom">Month over Month</option>
@@ -263,7 +263,7 @@ function AttributeSettingsPopover({
           {isValueMetric && onAggregationChange && (
             <div className="flex items-center gap-2 justify-between">
               <span className="text-muted-foreground">Aggregation</span>
-              <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" value={currentAggregation || 'SUM'} onChange={(e) => onAggregationChange(e.target.value as AggregationType)}>
+              <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-muted border-0 focus:outline-none focus:ring-0 focus:border-0" value={currentAggregation || 'SUM'} onChange={(e) => onAggregationChange(e.target.value as AggregationType)}>
                 {AGGREGATION_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </div>
@@ -352,7 +352,7 @@ function AttributeStylePopover({
         <div className="flex flex-col gap-2 text-[11px]">
           <div className="flex items-center gap-2 justify-between">
             <span className="text-muted-foreground">Wrap text</span>
-            <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" value={String(style.wrapText ?? 'off')} onChange={(e) => onChange && onChange({ wrapText: e.target.value })}>
+            <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-muted border-0 focus:outline-none focus:ring-0 focus:border-0" value={String(style.wrapText ?? 'off')} onChange={(e) => onChange && onChange({ wrapText: e.target.value })}>
               <option value="off">Off</option>
               <option value="on">On</option>
             </select>
@@ -360,7 +360,7 @@ function AttributeStylePopover({
           <div className="flex items-center gap-2 justify-between">
             <span className="text-muted-foreground">Font size</span>
             <div className="relative w-32">
-              <input type="number" className="w-32 rounded-[2px] px-2 py-1 pr-8 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" min={8} max={32} value={Number(style.fontSize ?? 12)} onChange={(e) => onChange && onChange({ fontSize: parseInt(e.target.value) || 12 })} />
+              <input type="number" className="w-32 rounded-[2px] px-2 py-1 pr-8 text-[11px] bg-muted border-0 focus:outline-none focus:ring-0 focus:border-0" min={8} max={32} value={Number(style.fontSize ?? 12)} onChange={(e) => onChange && onChange({ fontSize: parseInt(e.target.value) || 12 })} />
               <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
             </div>
           </div>
@@ -387,7 +387,7 @@ function AttributeStylePopover({
           </div>
           <div className="flex items-center gap-2 justify-between">
             <span className="text-muted-foreground">Badge</span>
-            <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" value={String(style.badge ?? 'none')} onChange={(e) => onChange && onChange({ badge: e.target.value })}>
+            <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-muted border-0 focus:outline-none focus:ring-0 focus:border-0" value={String(style.badge ?? 'none')} onChange={(e) => onChange && onChange({ badge: e.target.value })}>
               <option value="none">None</option>
               <option value="pill">Pill</option>
               <option value="tag">Tag</option>
@@ -395,7 +395,7 @@ function AttributeStylePopover({
           </div>
           <div className="flex items-center gap-2 justify-between">
             <span className="text-muted-foreground">Link</span>
-            <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" value={String(style.link ?? 'none')} onChange={(e) => onChange && onChange({ link: e.target.value })}>
+            <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-muted border-0 focus:outline-none focus:ring-0 focus:border-0" value={String(style.link ?? 'none')} onChange={(e) => onChange && onChange({ link: e.target.value })}>
               <option value="none">None</option>
               <option value="url">URL</option>
               <option value="email">Email</option>
@@ -403,7 +403,7 @@ function AttributeStylePopover({
           </div>
           <div className="flex items-center gap-2 justify-between">
             <span className="text-muted-foreground">Clip overflow</span>
-            <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" value={String(style.clip ?? 'ellipsis')} onChange={(e) => onChange && onChange({ clip: e.target.value })}>
+            <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-muted border-0 focus:outline-none focus:ring-0 focus:border-0" value={String(style.clip ?? 'ellipsis')} onChange={(e) => onChange && onChange({ clip: e.target.value })}>
               <option value="ellipsis">Ellipsis</option>
               <option value="clip">Clip</option>
             </select>
@@ -413,7 +413,7 @@ function AttributeStylePopover({
             <>
               <div className="flex items-center gap-2 justify-between">
                 <span className="text-muted-foreground">Value viz</span>
-                <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0" value={String(style.valueViz ?? 'none')} onChange={(e) => onChange && onChange({ valueViz: e.target.value })}>
+                <select className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-muted border-0 focus:outline-none focus:ring-0 focus:border-0" value={String(style.valueViz ?? 'none')} onChange={(e) => onChange && onChange({ valueViz: e.target.value })}>
                   <option value="none">None</option>
                   <option value="data_bar">Data bar</option>
                   <option value="color_scale">Color scale</option>
@@ -423,7 +423,7 @@ function AttributeStylePopover({
               <div className="flex items-center gap-2 justify-between">
                 <span className="text-muted-foreground">Show number</span>
                 <select
-                  className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-gray-100 dark:bg-gray-800 border-0 focus:outline-none focus:ring-0 focus:border-0"
+                  className="w-32 rounded-[2px] px-2 py-1 text-[11px] bg-muted border-0 focus:outline-none focus:ring-0 focus:border-0"
                   value={String(style.valueShowNumber ?? 'on')}
                   onChange={(e) => onChange && onChange({ valueShowNumber: e.target.value === 'on' })}
                 >
@@ -466,7 +466,7 @@ function TypeBadgePopover({
         <button
           ref={btnRef}
           type="button"
-          className="p-0.5 rounded hover:bg-blue-200/60 dark:hover:bg-blue-900/50"
+          className="p-0.5 rounded hover:bg-primary/20"
           title={triggerTitle}
           onClick={(e) => e.stopPropagation()}
         >
@@ -566,10 +566,10 @@ export function AttributeDropZone({
         <Popover open={openCombobox} onOpenChange={onOpenChange}>
           <PopoverTrigger asChild>
             <div
-              className={`min-h-[60px] border-2 border-dashed rounded p-2 transition-colors cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 ${
+              className={`min-h-[60px] border-2 border-dashed rounded p-2 transition-colors cursor-pointer hover:bg-muted/50 ${
                 dragOverDimensions.has(dimKey)
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                  : 'border-gray-300 dark:border-gray-600'
+                  ? 'border-primary bg-primary/10'
+                  : 'border-border'
               }`}
               onDragOver={(e) => {
                 e.preventDefault()
@@ -640,14 +640,14 @@ export function AttributeDropZone({
                           onDragEnd()
                         }}
                         onDragEnd={onDragEnd}
-                        className={`inline-flex items-center gap-1.5 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded text-xs pointer-events-auto cursor-move transition-all w-full ${
+                        className={`inline-flex items-center gap-1.5 px-2 py-1 bg-primary/10 text-primary rounded text-xs pointer-events-auto cursor-move transition-all w-full ${
                           isDragging ? 'opacity-50 scale-95' : ''
                         } ${
-                          isDragOver ? 'ring-2 ring-blue-500 ring-offset-1 bg-blue-200 dark:bg-blue-800/50' : ''
+                          isDragOver ? 'ring-2 ring-primary ring-offset-1 bg-primary/20' : ''
                         }`}
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <GripVertical className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                        <GripVertical className="h-3.5 w-3.5 text-primary flex-shrink-0" />
                         {attr && !isValueMetric && (
                           <AttributeSettingsPopover
                             dimKey={dimKey}
@@ -672,7 +672,7 @@ export function AttributeDropZone({
                           >
                             <button
                               type="button"
-                              className="p-0.5 rounded hover:bg-blue-200/60 dark:hover:bg-blue-900/50 flex-shrink-0"
+                              className="p-0.5 rounded hover:bg-primary/20 flex-shrink-0"
                               title="Attribute settings"
                               onMouseDown={(e) => e.stopPropagation()}
                             >
@@ -737,7 +737,7 @@ export function AttributeDropZone({
                         >
                           <button
                             type="button"
-                            className="p-0.5 rounded hover:bg-blue-200/60 dark:hover:bg-blue-900/50 flex-shrink-0"
+                            className="p-0.5 rounded hover:bg-primary/20 flex-shrink-0"
                             title="Cell style"
                             onMouseDown={(e) => e.stopPropagation()}
                           >
@@ -762,7 +762,7 @@ export function AttributeDropZone({
                             onAttributeSelect(dimKey, attrName)
                           }}
                           onMouseDown={(e) => e.stopPropagation()}
-                          className="ml-0.5 hover:bg-blue-200 dark:hover:bg-blue-900/50 rounded p-0.5 transition-colors flex-shrink-0"
+                          className="ml-0.5 hover:bg-primary/20 rounded p-0.5 transition-colors flex-shrink-0"
                           title="Remove attribute"
                         >
                           <X className="h-3 w-3" />
@@ -821,7 +821,7 @@ export function AttributeDropZone({
                             >
                               <div className="flex items-center gap-2 min-w-0">
                                 <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                <span className="truncate text-gray-900 dark:text-gray-100">
+                                <span className="truncate text-foreground">
                                   {attr.display_name || attr.name}
                                 </span>
                               </div>
@@ -844,10 +844,10 @@ export function AttributeDropZone({
       <Popover open={openCombobox} onOpenChange={onOpenChange}>
         <PopoverTrigger asChild>
           <div
-            className={`min-h-[60px] border-2 border-dashed rounded p-2 transition-colors cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 ${
+            className={`min-h-[60px] border-2 border-dashed rounded p-2 transition-colors cursor-pointer hover:bg-muted/50 ${
               dragOverDimensions.has(dimKey)
-                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                : 'border-gray-300 dark:border-gray-600'
+                ? 'border-primary bg-primary/10'
+                : 'border-border'
             }`}
             onDragOver={(e) => {
               e.preventDefault()
@@ -878,7 +878,7 @@ export function AttributeDropZone({
                   const effectiveType = getEffectiveType(dimKey, attr, attributeTypeOverrides)
                   const Icon = attr ? getAttributeIcon(effectiveType) : TypeIcon
                   return (
-                    <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded text-xs w-full" data-attribute-badge>
+                    <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-primary/10 text-primary rounded text-xs w-full" data-attribute-badge>
                       {!isValueMetric && (
                         <AttributeSettingsPopover
                           dimKey={dimKey}
@@ -904,7 +904,7 @@ export function AttributeDropZone({
                         >
                           <button
                             type="button"
-                            className="p-0.5 rounded hover:bg-blue-200/60 dark:hover:bg-blue-900/50"
+                            className="p-0.5 rounded hover:bg-primary/20"
                             title="Attribute settings"
                           >
                             <Icon className="h-3 w-3 text-muted-foreground" />
@@ -966,7 +966,7 @@ export function AttributeDropZone({
                       >
                         <button
                           type="button"
-                          className="p-0.5 rounded hover:bg-blue-200/60 dark:hover:bg-blue-900/50"
+                          className="p-0.5 rounded hover:bg-primary/20"
                           title="Cell style"
                         >
                           <Paintbrush className="h-3 w-3 text-muted-foreground" />
@@ -989,7 +989,7 @@ export function AttributeDropZone({
                           e.stopPropagation()
                           onDimensionValueChange(dimKey, '')
                         }}
-                        className="ml-0.5 hover:bg-blue-200 dark:hover:bg-blue-900/50 rounded p-0.5 transition-colors"
+                        className="ml-0.5 hover:bg-primary/20 rounded p-0.5 transition-colors"
                         title="Remove attribute"
                       >
                         <X className="h-3 w-3" />
@@ -1046,7 +1046,7 @@ export function AttributeDropZone({
                         >
                           <div className="flex items-center gap-2 min-w-0">
                             <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                            <span className="truncate text-gray-900 dark:text-gray-100">
+                            <span className="truncate text-foreground">
                               {attr.display_name || attr.name}
                             </span>
                           </div>

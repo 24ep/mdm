@@ -319,7 +319,6 @@ export function PlatformSidebar({
       { id: 'settings', name: 'System Settings', icon: Settings, href: '/system/settings' },
       { id: 'page-templates', name: 'Page Templates', icon: FileText, href: '/system/page-templates' },
       { id: 'themes', name: 'Theme & Branding', icon: Palette, href: '/system/themes' },
-      { id: 'export', name: 'Data Export', icon: Cloud, href: '/system/export' },
       { id: 'integrations', name: 'Integrations', icon: Key, href: '/system/integrations' },
       { id: 'api', name: 'API Management', icon: Key, href: '/system/api' }
     ],
@@ -346,7 +345,7 @@ export function PlatformSidebar({
     kernels: ['kernels'],
     system: ['health', 'logs', 'audit', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache', 'backup'],
     security: ['security', 'performance'],
-    integrations: ['settings', 'page-templates', 'themes', 'export', 'integrations', 'api']
+    integrations: ['settings', 'page-templates', 'themes', 'integrations', 'api']
   }
 
   // Define tool categories for the Tools group
@@ -462,7 +461,7 @@ export function PlatformSidebar({
                       variant="ghost"
                       className={cn(
                           "platform-sidebar-menu-button w-full justify-center h-10 transition-colors duration-150 cursor-pointer",
-                          (selectedGroup === groupId || (groupId === 'data-management' && activeTab === 'space-selection') || (groupId === 'infrastructure' && activeTab === 'infrastructure'))
+                          (selectedGroup === groupId || (groupId === 'data-management' && (activeTab === 'space-selection' || selectedGroup === 'data-management')) || (groupId === 'infrastructure' && activeTab === 'infrastructure'))
                            ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm" 
                           : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
                       )}
@@ -484,10 +483,7 @@ export function PlatformSidebar({
                       style={{ 
                         pointerEvents: 'auto', 
                         position: 'relative', 
-                        zIndex: Z_INDEX.sidebar + 1,
-                        ...((selectedGroup === groupId || (groupId === 'data-management' && activeTab === 'space-selection') || (groupId === 'infrastructure' && activeTab === 'infrastructure')) 
-                          ? { backgroundColor: 'hsl(var(--muted))' } 
-                          : {})
+                        zIndex: Z_INDEX.sidebar + 1
                       }}
                     >
                         <Icon className="h-5 w-5" />
@@ -536,10 +532,7 @@ export function PlatformSidebar({
                       style={{ 
                         pointerEvents: 'auto', 
                         position: 'relative', 
-                        zIndex: Z_INDEX.sidebar + 1,
-                        ...((selectedGroup === groupId || (groupId === 'data-management' && activeTab === 'space-selection') || (groupId === 'infrastructure' && activeTab === 'infrastructure')) 
-                          ? { backgroundColor: 'hsl(var(--muted))' } 
-                          : {})
+                        zIndex: Z_INDEX.sidebar + 1
                       }}
                     >
                       <Icon className="h-4 w-4 mr-3" />
@@ -619,7 +612,7 @@ export function PlatformSidebar({
                 {selectedGroup === 'system' ? (
                   <>
                     {/* Management Section */}
-                    <div className="px-4 py-2">
+                    <div className="py-2">
                       <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                         Management
                       </div>
@@ -639,21 +632,20 @@ export function PlatformSidebar({
                             style={{ 
                               pointerEvents: 'auto', 
                               position: 'relative', 
-                              zIndex: Z_INDEX.sidebar + 1,
-                              ...(activeTab === tab.id ? { backgroundColor: 'hsl(var(--muted))' } : {})
+                              zIndex: Z_INDEX.sidebar + 1
                             }}
                           >
-                            <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" style={{ color: sidebarText }} />
-                            <span className="truncate text-left" style={{ color: sidebarText }}>{tab.name}</span>
+                            <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" />
+                            <span className="truncate text-left">{tab.name}</span>
                           </Button>
                         ))}
                     </div>
                     
                     {/* Separator */}
-                    <div className="border-t border-border my-2 mx-4" />
+                    <div className="border-t border-border my-2 mx-0" />
                     
                     {/* Kernels Section */}
-                    <div className="px-4 py-2">
+                    <div className="py-2">
                       <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                         Kernels
                       </div>
@@ -674,21 +666,20 @@ export function PlatformSidebar({
                             style={{ 
                               pointerEvents: 'auto', 
                               position: 'relative', 
-                              zIndex: Z_INDEX.sidebar + 1,
-                              ...(activeTab === tab.id ? { backgroundColor: 'hsl(var(--muted))' } : {})
+                              zIndex: Z_INDEX.sidebar + 1
                             }}
                           >
-                            <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" style={{ color: sidebarText }} />
-                            <span className="truncate text-left" style={{ color: sidebarText }}>{tab.name}</span>
+                            <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" />
+                            <span className="truncate text-left">{tab.name}</span>
                           </Button>
                         ))}
                     </div>
                     
                     {/* Separator */}
-                    <div className="border-t border-border my-2 mx-4" />
+                    <div className="border-t border-border my-2 mx-0" />
                     
                     {/* System Section */}
-                    <div className="px-4 py-2">
+                    <div className="py-2">
                       <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                         System
                       </div>
@@ -709,21 +700,20 @@ export function PlatformSidebar({
                             style={{ 
                               pointerEvents: 'auto', 
                               position: 'relative', 
-                              zIndex: Z_INDEX.sidebar + 1,
-                              ...(activeTab === tab.id ? { backgroundColor: 'hsl(var(--muted))' } : {})
+                              zIndex: Z_INDEX.sidebar + 1
                             }}
                           >
-                            <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" style={{ color: sidebarText }} />
-                            <span className="truncate text-left" style={{ color: sidebarText }}>{tab.name}</span>
+                            <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" />
+                            <span className="truncate text-left">{tab.name}</span>
                           </Button>
                         ))}
                     </div>
                     
                     {/* Separator */}
-                    <div className="border-t border-border my-2 mx-4" />
+                    <div className="border-t border-border my-2 mx-0" />
                     
                     {/* Security Section */}
-                    <div className="px-4 py-2">
+                    <div className="py-2">
                       <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                         Security
                       </div>
@@ -744,12 +734,11 @@ export function PlatformSidebar({
                             style={{ 
                               pointerEvents: 'auto', 
                               position: 'relative', 
-                              zIndex: Z_INDEX.sidebar + 1,
-                              ...(activeTab === tab.id ? { backgroundColor: 'hsl(var(--muted))' } : {})
+                              zIndex: Z_INDEX.sidebar + 1
                             }}
                           >
-                            <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" style={{ color: sidebarText }} />
-                            <span className="truncate text-left" style={{ color: sidebarText }}>{tab.name}</span>
+                            <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" />
+                            <span className="truncate text-left">{tab.name}</span>
                           </Button>
                         ))}
                     </div>
@@ -779,11 +768,10 @@ export function PlatformSidebar({
                     style={{ 
                       pointerEvents: 'auto', 
                       position: 'relative', 
-                      zIndex: 101,
-                      ...(activeTab === tab.id ? { backgroundColor: 'hsl(var(--muted))' } : {})
+                      zIndex: 101
                     }}
                   >
-                    <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" style={{ color: sidebarText }} />
+                    <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" />
                     <span className="truncate text-left">{tab.name}</span>
                   </Button>
                 ))}
@@ -818,7 +806,7 @@ export function PlatformSidebar({
                                 ...(activeTab === tab.id ? { backgroundColor: 'hsl(var(--muted))' } : {})
                               }}
                             >
-                              <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" style={{ color: sidebarText }} />
+                              <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" />
                               <span className="truncate text-left">{tab.name}</span>
                             </Button>
                           ))}
@@ -851,7 +839,7 @@ export function PlatformSidebar({
                         ...(activeTab === tab.id ? { backgroundColor: 'hsl(var(--muted))' } : {})
                       }}
                     >
-                      <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" style={{ color: sidebarText }} />
+                      <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" />
                       <span className="truncate text-left">{tab.name}</span>
                     </Button>
                   ))

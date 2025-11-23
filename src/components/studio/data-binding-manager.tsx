@@ -210,7 +210,7 @@ export function DataBindingManager({
                       variant="outline"
                       size="sm"
                       onClick={() => onDeleteDataSource(dataSource.id)}
-                      className="text-red-600 hover:text-red-700"
+                      className="text-destructive hover:text-destructive/80"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -231,7 +231,6 @@ export function DataBindingManager({
                       <SelectContent>
                         <SelectItem value="api">REST API</SelectItem>
                         <SelectItem value="database">Database</SelectItem>
-                        <SelectItem value="static">Static Data</SelectItem>
                         <SelectItem value="computed">Computed</SelectItem>
                       </SelectContent>
                     </Select>
@@ -292,12 +291,12 @@ export function DataBindingManager({
                 )}
 
                 {dataSource.error && (
-                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <div className="flex items-center gap-2 text-red-600">
+                  <div className="mt-4 p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
+                    <div className="flex items-center gap-2 text-destructive">
                       <AlertCircle className="h-4 w-4" />
                       <span className="text-sm font-medium">Error</span>
                     </div>
-                    <p className="text-sm text-red-600 mt-1">{dataSource.error}</p>
+                    <p className="text-sm text-destructive mt-1">{dataSource.error}</p>
                   </div>
                 )}
 
@@ -340,7 +339,7 @@ export function DataBindingManager({
                         variant="outline"
                         size="sm"
                         onClick={() => onDeleteDataBinding(binding.id)}
-                        className="text-red-600 hover:text-red-700"
+                        className="text-destructive hover:text-destructive/80"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -452,16 +451,16 @@ export function DataBindingManager({
                 {testResults[dataSource.id] && (
                   <div className="mt-4">
                     {testResults[dataSource.id].error ? (
-                      <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                        <div className="flex items-center gap-2 text-red-600">
+                      <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
+                        <div className="flex items-center gap-2 text-destructive">
                           <AlertCircle className="h-4 w-4" />
                           <span className="text-sm font-medium">Connection Failed</span>
                         </div>
-                        <p className="text-sm text-red-600 mt-1">{testResults[dataSource.id].error}</p>
+                        <p className="text-sm text-destructive mt-1">{testResults[dataSource.id].error}</p>
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-green-600">
+                        <div className="flex items-center gap-2 text-primary">
                           <CheckCircle className="h-4 w-4" />
                           <span className="text-sm font-medium">Connection Successful</span>
                         </div>

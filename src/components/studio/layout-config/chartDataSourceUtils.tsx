@@ -4,15 +4,15 @@ import { Attribute } from './chartDataSourceTypes'
 export const getTypeBadgeClass = (type?: string) => {
   const t = (type || '').toLowerCase()
   if (t.includes('int') || t.includes('num') || t.includes('dec') || t.includes('float') || t.includes('double')) {
-    return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200'
+    return 'bg-warning/20 text-warning'
   }
   if (t.includes('date') || t.includes('time')) {
-    return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200'
+    return 'bg-primary/10 text-primary'
   }
   if (t.includes('bool')) {
-    return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-200'
+    return 'bg-secondary/50 text-secondary-foreground'
   }
-  return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200'
+  return 'bg-muted text-muted-foreground'
 }
 
 export const getAttributeIcon = (type?: string) => {

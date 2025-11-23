@@ -128,11 +128,12 @@ const nextConfig = {
   experimental: {
     // This helps show all errors
   },
-  // Logging configuration
+  // Logging configuration - disable request logs
   logging: {
     fetches: {
-      fullUrl: true,
+      fullUrl: false,
     },
+    incomingRequests: false,
   },
 }
 

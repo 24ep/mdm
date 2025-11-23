@@ -106,17 +106,17 @@ export function AccessibilityManager({
 
   const getIssueIcon = useCallback((type: AccessibilityIssue['type']) => {
     switch (type) {
-      case 'error': return <XCircle className="h-4 w-4 text-red-600" />
-      case 'warning': return <AlertTriangle className="h-4 w-4 text-yellow-600" />
-      case 'info': return <CheckCircle className="h-4 w-4 text-blue-600" />
+      case 'error': return <XCircle className="h-4 w-4 text-destructive" />
+      case 'warning': return <AlertTriangle className="h-4 w-4 text-warning" />
+      case 'info': return <CheckCircle className="h-4 w-4 text-primary" />
     }
   }, [])
 
   const getSeverityColor = useCallback((severity: AccessibilityIssue['severity']) => {
     switch (severity) {
-      case 'high': return 'bg-red-100 text-red-800'
-      case 'medium': return 'bg-yellow-100 text-yellow-800'
-      case 'low': return 'bg-green-100 text-green-800'
+      case 'high': return 'bg-destructive/10 text-destructive'
+      case 'medium': return 'bg-warning/20 text-warning'
+      case 'low': return 'bg-primary/10 text-primary'
     }
   }, [])
 
@@ -209,8 +209,8 @@ export function AccessibilityManager({
           <div className="mt-4 w-full bg-muted rounded-full h-3">
             <div
               className={`h-3 rounded-full ${
-                accessibilityScore >= 90 ? 'bg-green-500' :
-                accessibilityScore >= 70 ? 'bg-yellow-500' : 'bg-red-500'
+                accessibilityScore >= 90 ? 'bg-primary' :
+                accessibilityScore >= 70 ? 'bg-warning' : 'bg-destructive'
               }`}
               style={{ width: `${accessibilityScore}%` }}
             />
@@ -223,7 +223,7 @@ export function AccessibilityManager({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <XCircle className="h-5 w-5 text-red-600" />
+              <XCircle className="h-5 w-5 text-destructive" />
               <div>
                 <div className="text-2xl font-bold">{highSeverityIssues.length}</div>
                 <div className="text-sm text-muted-foreground">High Priority</div>
@@ -234,7 +234,7 @@ export function AccessibilityManager({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-600" />
+              <AlertTriangle className="h-5 w-5 text-warning" />
               <div>
                 <div className="text-2xl font-bold">{mediumSeverityIssues.length}</div>
                 <div className="text-sm text-muted-foreground">Medium Priority</div>
@@ -245,7 +245,7 @@ export function AccessibilityManager({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
+              <CheckCircle className="h-5 w-5 text-primary" />
               <div>
                 <div className="text-2xl font-bold">{lowSeverityIssues.length}</div>
                 <div className="text-sm text-muted-foreground">Low Priority</div>
@@ -256,7 +256,7 @@ export function AccessibilityManager({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-blue-600" />
+              <Shield className="h-5 w-5 text-primary" />
               <div>
                 <div className="text-2xl font-bold">{issues.filter(i => i.fixed).length}</div>
                 <div className="text-sm text-muted-foreground">Fixed</div>
@@ -440,7 +440,7 @@ export function AccessibilityManager({
                           {issue.category}
                         </Badge>
                         {issue.automated && (
-                          <Badge variant="outline" className="text-blue-600">
+                          <Badge variant="outline" className="text-primary">
                             Automated
                           </Badge>
                         )}
@@ -453,9 +453,9 @@ export function AccessibilityManager({
                           Element: <code className="bg-muted px-1 rounded">{issue.element}</code>
                         </p>
                       )}
-                      <div className="bg-blue-50 border border-blue-200 rounded p-3 mb-3">
-                        <div className="text-sm font-medium text-blue-800 mb-1">Suggestion:</div>
-                        <div className="text-sm text-blue-700">{issue.suggestion}</div>
+                      <div className="bg-primary/10 border border-primary/30 rounded p-3 mb-3">
+                        <div className="text-sm font-medium text-primary mb-1">Suggestion:</div>
+                        <div className="text-sm text-primary/80">{issue.suggestion}</div>
                       </div>
                       <div className="flex items-center gap-2">
                         <Button
@@ -724,24 +724,24 @@ export function AccessibilityManager({
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <CheckCircle className="h-5 w-5 text-primary" />
                     <span>Keyboard Navigation</span>
                   </div>
-                  <Badge className="bg-green-100 text-green-800">Passed</Badge>
+                  <Badge className="bg-primary/10 text-primary">Passed</Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                    <AlertTriangle className="h-5 w-5 text-warning" />
                     <span>Screen Reader Compatibility</span>
                   </div>
-                  <Badge className="bg-yellow-100 text-yellow-800">Warning</Badge>
+                  <Badge className="bg-warning/20 text-warning">Warning</Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center gap-2">
-                    <XCircle className="h-5 w-5 text-red-600" />
+                    <XCircle className="h-5 w-5 text-destructive" />
                     <span>Color Contrast</span>
                   </div>
-                  <Badge className="bg-red-100 text-red-800">Failed</Badge>
+                  <Badge className="bg-destructive/10 text-destructive">Failed</Badge>
                 </div>
               </div>
             </CardContent>

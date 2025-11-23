@@ -50,7 +50,8 @@ import {
   Menu,
   X,
   Edit2,
-  MoreVertical
+  MoreVertical,
+  Paperclip
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
@@ -127,6 +128,48 @@ export function AIAnalyst() {
   const [showReportDrawer, setShowReportDrawer] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  
+  // File attachment state
+  const [attachments, setAttachments] = useState<Array<{ id: string; file: File; url: string; name: string; type: string; size: number; uploadedFile?: any }>>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isUploadingFile, setIsUploadingFile] = useState(false)
+  
+  // MCP server state - stored per model
+  const [mcpServersByModel, setMcpServersByModel] = useState<Record<string, Array<{
+    id: string
+    name: string
+    url?: string
+    command?: string
+    args?: string[]
+    transport: 'hosted' | 'http-sse' | 'stdio'
+    enabled: boolean
+    toolFilter?: string[]
+    cache?: boolean
+  }>>>({})
+  const [showMcpConfig, setShowMcpConfig] = useState(false)
+  
+  // Get MCP servers for current model
+  const mcpServers = selectedModel ? (mcpServersByModel[selectedModel] || []) : []
+  
+  // Set MCP servers for current model
+  const setMcpServers = (servers: Array<{
+    id: string
+    name: string
+    url?: string
+    command?: string
+    args?: string[]
+    transport: 'hosted' | 'http-sse' | 'stdio'
+    enabled: boolean
+    toolFilter?: string[]
+    cache?: boolean
+  }>) => {
+    if (selectedModel) {
+      setMcpServersByModel(prev => ({
+        ...prev,
+        [selectedModel]: servers
+      }))
+    }
+  }
   
   // Error and loading states
   const [error, setError] = useState<string | null>(null)
@@ -285,30 +328,167 @@ export function AIAnalyst() {
     setMessages([])
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // File upload handler
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    setIsUploadingFile(true)
+    try {
+      for (const file of Array.from(files)) {
+        // Validate file size (10MB limit)
+        const maxSize = 10 * 1024 * 1024
+        if (file.size > maxSize) {
+          toast.error(`File ${file.name} exceeds 10MB limit`)
+          continue
+        }
+
+        // Create preview URL
+        const url = URL.createObjectURL(file)
+        
+        // Upload file to server if space is selected
+        let uploadedFile: any = null
+        if (selectedSpace) {
+          try {
+            const formData = new FormData()
+            formData.append('file', file)
+            formData.append('spaceId', selectedSpace)
+            formData.append('attributeId', 'ai-analyst-attachment') // Temporary attribute ID
+
+            const response = await fetch('/api/attachments/upload', {
+              method: 'POST',
+              body: formData
+            })
+
+            if (response.ok) {
+              const data = await response.json()
+              uploadedFile = data.attachment
+            }
+          } catch (error) {
+            console.error('Error uploading file:', error)
+            // Continue with local file if upload fails
+          }
+        }
+
+        const attachment = {
+          id: uploadedFile?.id || Date.now().toString() + Math.random(),
+          file,
+          url,
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          uploadedFile
+        }
+
+        setAttachments(prev => [...prev, attachment])
+      }
+      toast.success(`Added ${files.length} file(s)`)
+    } catch (error) {
+      console.error('Error handling file:', error)
+      toast.error('Failed to add file')
+    } finally {
+      setIsUploadingFile(false)
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  const removeAttachment = (id: string) => {
+    setAttachments(prev => {
+      const attachment = prev.find(a => a.id === id)
+      if (attachment) {
+        URL.revokeObjectURL(attachment.url)
+      }
+      return prev.filter(a => a.id !== id)
+    })
+  }
+
+  const clearAttachments = () => {
+    attachments.forEach(att => URL.revokeObjectURL(att.url))
+    setAttachments([])
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!input.trim() || isLoading) return
+    if ((!input.trim() && attachments.length === 0) || isLoading) return
     
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: input.trim(),
-      timestamp: new Date()
+      content: input.trim() || `[${attachments.length} file(s) attached]`,
+      timestamp: new Date(),
+      analysis: attachments.length > 0 ? {
+        type: 'text',
+        data: {
+          attachments: attachments.map(att => ({
+            id: att.id,
+            name: att.name,
+            type: att.type,
+            size: att.size,
+            url: att.uploadedFile?.url || att.url,
+            path: att.uploadedFile?.path
+          }))
+        }
+      } : undefined
     }
     
     setMessages(prev => [...prev, userMessage])
+    const currentInput = input.trim()
+    const currentAttachments = [...attachments]
     setInput('')
+    clearAttachments()
     
-    // Simulate AI response
-    setTimeout(() => {
+    setIsLoading(true)
+    try {
+      // Call AI analysis API with attachments and MCP servers
+      const analysisResult = await performAIAnalysis(
+        currentInput,
+        selectedSpace,
+        selectedModel,
+        currentAttachments,
+        mcpServers.filter(s => s.enabled)
+      )
+      
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'I\'ve analyzed your request. Let me help you with that.',
+        content: analysisResult.response || 'I\'ve analyzed your request. Let me help you with that.',
+        timestamp: new Date(),
+        analysis: analysisResult.analysis ? {
+          type: analysisResult.analysis.type || 'text',
+          data: analysisResult.analysis.data
+        } : undefined
+      }
+      
+      setMessages(prev => [...prev, aiMessage])
+      
+      // Add to analysis results if applicable
+      if (analysisResult.title && analysisResult.insights) {
+        setAnalysisResults(prev => [...prev, {
+          id: Date.now().toString(),
+          title: analysisResult.title,
+          type: analysisResult.analysis?.type || 'text',
+          insights: analysisResult.insights,
+          exportable: true,
+          data: analysisResult.analysis?.data || {}
+        }])
+      }
+    } catch (error) {
+      console.error('Error in AI analysis:', error)
+      toast.error('Failed to get AI response')
+      
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: 'Sorry, I encountered an error processing your request. Please try again.',
         timestamp: new Date()
       }
-      setMessages(prev => [...prev, aiMessage])
-    }, 1000)
+      setMessages(prev => [...prev, errorMessage])
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const clearChat = () => {
@@ -338,7 +518,22 @@ export function AIAnalyst() {
   }
 
 
-  const performAIAnalysis = async (query: string, spaceId: string, modelId: string): Promise<any> => {
+  const performAIAnalysis = async (
+    query: string, 
+    spaceId: string, 
+    modelId: string,
+    attachments: Array<{ id: string; file: File; url: string; name: string; type: string; size: number; uploadedFile?: any }> = [],
+    mcpServers: Array<any> = []
+  ): Promise<any> => {
+    // Prepare attachments data
+    const attachmentsData = attachments.map(att => ({
+      id: att.uploadedFile?.id || att.id,
+      name: att.name,
+      type: att.type,
+      size: att.size,
+      url: att.uploadedFile?.url || att.url,
+      path: att.uploadedFile?.path
+    }))
     // Check if we have configured providers
     if (configuredProviders.length === 0) {
       return {
@@ -361,6 +556,16 @@ export function AIAnalyst() {
     }
 
     try {
+      // Prepare attachments data
+      const attachmentsData = attachments.map(att => ({
+        id: att.uploadedFile?.id || att.id,
+        name: att.name,
+        type: att.type,
+        size: att.size,
+        url: att.uploadedFile?.url || att.url,
+        path: att.uploadedFile?.path
+      }))
+
       // Call the AI analysis API
       const response = await fetch('/api/admin/ai-analysis', {
         method: 'POST',
@@ -369,7 +574,17 @@ export function AIAnalyst() {
           query,
           spaceId,
           modelId,
-          model: selectedModelData
+          model: selectedModelData,
+          attachments: attachmentsData,
+          mcpServers: mcpServers.map(server => ({
+            name: server.name,
+            url: server.url,
+            command: server.command,
+            args: server.args,
+            transport: server.transport,
+            toolFilter: server.toolFilter,
+            cache: server.cache !== false
+          }))
         })
       })
 
@@ -593,23 +808,23 @@ export function AIAnalyst() {
         {/* Sidebar - Open WebUI Style */}
         <div 
           className={cn(
-            "bg-card border-r border-border transition-all duration-300 flex flex-col",
+            "border-r border-border transition-all duration-300 flex flex-col",
             sidebarOpen ? "w-[280px]" : "w-0 overflow-hidden"
           )}
         >
           {sidebarOpen && (
             <>
               {/* Sidebar Header */}
-              <div className="p-4 border-b border-border">
+              <div className="p-5 border-b border-border">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-foreground">Chats</h2>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowNewChatDialog(true)}
-                    className="h-8 w-8 p-0 hover:bg-muted"
+                    className="h-8 w-8 p-0 hover:bg-muted transition-all duration-200 ease-out hover:scale-110 active:scale-95"
                   >
-                    <Plus className="h-4 w-4" />
+                    <Plus className="h-4 w-4 transition-transform duration-200 hover:rotate-90" />
                   </Button>
                 </div>
                 <div className="flex gap-2">
@@ -630,10 +845,10 @@ export function AIAnalyst() {
 
               {/* Chat Sessions List */}
               <ScrollArea className="flex-1">
-                <div className="p-2 space-y-1">
+                <div className="p-2.5 space-y-1.5">
                   {chatSessions.length === 0 ? (
-                    <div className="text-center py-8 px-4">
-                      <MessageSquare className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                    <div className="text-center py-8 px-4 animate-in fade-in duration-300">
+                      <MessageSquare className="h-8 w-8 text-muted-foreground mx-auto mb-2 transition-transform duration-200 ease-out hover:scale-110" />
                       <p className="text-sm text-muted-foreground">No chats yet</p>
                     </div>
                   ) : (
@@ -642,9 +857,9 @@ export function AIAnalyst() {
                         key={chat.id}
                         onClick={() => switchToChat(chat.id)}
                         className={cn(
-                          "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors",
-                          "hover:bg-muted/50",
-                          currentChatId === chat.id && "bg-muted"
+                          "w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all duration-200 ease-out",
+                          "hover:bg-muted/50 hover:shadow-sm transform hover:scale-[1.02] active:scale-[0.98]",
+                          currentChatId === chat.id && "bg-muted shadow-sm"
                         )}
                       >
                         <div className="flex items-center gap-2">
@@ -668,18 +883,18 @@ export function AIAnalyst() {
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-h-0">
           {/* Top Bar */}
-          <div className="h-14 bg-card border-b border-border flex items-center justify-between px-4 flex-shrink-0">
-            <div className="flex items-center gap-3">
+          <div className="h-14 border-b border-border flex items-center justify-between px-6 flex-shrink-0 transition-all duration-200 ease-out">
+            <div className="flex items-center gap-4">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="h-8 w-8 p-0 hover:bg-muted"
+                className="h-8 w-8 p-0 hover:bg-muted transition-all duration-200 ease-out hover:scale-110 active:scale-95"
               >
-                {sidebarOpen ? <ChevronLeft className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+                {sidebarOpen ? <ChevronLeft className="h-4 w-4 transition-transform duration-200" /> : <Menu className="h-4 w-4 transition-transform duration-200" />}
               </Button>
-              <div className="flex items-center gap-2">
-                <Bot className="h-5 w-5 text-primary" />
+              <div className="flex items-center gap-2.5">
+                <Bot className="h-5 w-5 text-primary transition-transform duration-200 ease-out hover:scale-110" />
                 <span className="font-medium text-foreground">AI Analyst</span>
               </div>
             </div>
@@ -690,7 +905,7 @@ export function AIAnalyst() {
                     variant="ghost"
                     size="sm"
                     onClick={clearChat}
-                    className="h-8 text-muted-foreground hover:text-foreground hover:bg-muted"
+                    className="h-8 text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 ease-out hover:scale-110 active:scale-95"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -698,7 +913,7 @@ export function AIAnalyst() {
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowReportDrawer(!showReportDrawer)}
-                    className="h-8 text-muted-foreground hover:text-foreground hover:bg-muted"
+                    className="h-8 text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 ease-out hover:scale-110 active:scale-95"
                   >
                     <FileText className="h-4 w-4" />
                   </Button>
@@ -754,6 +969,17 @@ export function AIAnalyst() {
               setSelectedExport={setSelectedExport}
               showExportDialog={showExportDialog}
               setShowExportDialog={setShowExportDialog}
+              attachments={attachments}
+              onFileSelect={handleFileSelect}
+              removeAttachment={removeAttachment}
+              fileInputRef={fileInputRef}
+              isUploadingFile={isUploadingFile}
+              mcpServers={mcpServers}
+              setMcpServers={setMcpServers}
+              showMcpConfig={showMcpConfig}
+              setShowMcpConfig={setShowMcpConfig}
+              selectedModel={selectedModel}
+              availableModels={availableModels}
             />
           )}
         </div>
@@ -933,7 +1159,18 @@ function ChatView({
   selectedExport, 
   setSelectedExport, 
   showExportDialog, 
-  setShowExportDialog 
+  setShowExportDialog,
+  attachments,
+  onFileSelect,
+  removeAttachment,
+  fileInputRef,
+  isUploadingFile,
+  mcpServers,
+  setMcpServers,
+  showMcpConfig,
+  setShowMcpConfig,
+  selectedModel,
+  availableModels
 }: {
   messages: Message[]
   input: string
@@ -952,6 +1189,37 @@ function ChatView({
   setSelectedExport: (selectedExport: AnalysisResult | null) => void
   showExportDialog: boolean
   setShowExportDialog: (show: boolean) => void
+  attachments: Array<{ id: string; file: File; url: string; name: string; type: string; size: number; uploadedFile?: any }>
+  onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void
+  removeAttachment: (id: string) => void
+  fileInputRef: React.RefObject<HTMLInputElement | null>
+  isUploadingFile: boolean
+  mcpServers: Array<{
+    id: string
+    name: string
+    url?: string
+    command?: string
+    args?: string[]
+    transport: 'hosted' | 'http-sse' | 'stdio'
+    enabled: boolean
+    toolFilter?: string[]
+    cache?: boolean
+  }>
+  setMcpServers: (servers: Array<{
+    id: string
+    name: string
+    url?: string
+    command?: string
+    args?: string[]
+    transport: 'hosted' | 'http-sse' | 'stdio'
+    enabled: boolean
+    toolFilter?: string[]
+    cache?: boolean
+  }>) => void
+  showMcpConfig: boolean
+  setShowMcpConfig: (show: boolean) => void
+  selectedModel: string
+  availableModels: any[]
 }) {
   // Auto-resize textarea
   useEffect(() => {
@@ -965,7 +1233,7 @@ function ChatView({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      if (!isLoading && input.trim()) {
+      if (!isLoading && (input.trim() || attachments.length > 0)) {
         onSubmit(e as any)
       }
     }
@@ -974,13 +1242,14 @@ function ChatView({
   return (
     <div className="flex-1 flex min-h-0">
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col min-h-0 bg-background">
-        {/* Messages */}
-        <ScrollArea className="flex-1">
-          <div className="max-w-3xl mx-auto px-4 py-8">
+      <div className="flex-1 flex flex-col min-h-0 relative">
+        {/* Messages Container */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <ScrollArea className="flex-1 px-6 py-5 pb-28">
+            <div className="max-w-4xl mx-auto">
             {messages.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-6">
+              <div className="text-center py-16 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-6 transition-transform duration-200 ease-out hover:scale-110">
                   <Bot className="h-8 w-8 text-primary" />
                 </div>
                 <h3 className="text-xl font-semibold text-foreground mb-2">How can I help you today?</h3>
@@ -995,7 +1264,7 @@ function ChatView({
                     <button
                       key={idx}
                       onClick={() => setInput(suggestion)}
-                      className="px-4 py-3 text-left text-sm rounded-lg bg-muted/50 hover:bg-muted border border-border text-foreground hover:text-foreground transition-colors"
+                      className="px-4 py-3 text-left text-sm rounded-lg bg-muted/50 hover:bg-muted border border-border text-foreground hover:text-foreground transition-all duration-200 ease-out transform hover:scale-[1.02] hover:shadow-md active:scale-[0.98]"
                     >
                       {suggestion}
                     </button>
@@ -1003,26 +1272,26 @@ function ChatView({
                 </div>
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-5">
                 {messages.map((message) => (
                   <div
                     key={message.id}
                     className={cn(
-                      "flex gap-4 group",
+                      "flex gap-4 group animate-in fade-in slide-in-from-bottom-2 duration-200",
                       message.role === 'user' ? "justify-end" : "justify-start"
                     )}
                   >
                     {message.role === 'assistant' && (
-                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center transition-transform duration-200 ease-out group-hover:scale-110 ring-2 ring-primary/20">
                         <Bot className="h-5 w-5 text-primary-foreground" />
                       </div>
                     )}
                     <div
                       className={cn(
-                        "max-w-[85%] rounded-2xl px-4 py-3 transition-all",
+                        "max-w-[85%] rounded-2xl px-4 py-3 transition-all duration-200 ease-out",
                         message.role === 'user'
-                          ? "bg-primary text-primary-foreground rounded-br-sm"
-                          : "bg-card border border-border text-foreground rounded-bl-sm"
+                          ? "bg-primary text-primary-foreground rounded-br-sm hover:shadow-md"
+                          : "bg-card border border-border text-foreground rounded-bl-sm hover:shadow-md"
                       )}
                     >
                       {message.role === 'assistant' ? (
@@ -1045,7 +1314,7 @@ function ChatView({
                       </div>
                     </div>
                     {message.role === 'user' && (
-                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-secondary flex items-center justify-center transition-transform duration-200 ease-out group-hover:scale-110 ring-2 ring-secondary/20">
                         <User className="h-5 w-5 text-secondary-foreground" />
                       </div>
                     )}
@@ -1067,48 +1336,222 @@ function ChatView({
                 <div ref={messagesEndRef} />
               </div>
             )}
-          </div>
-        </ScrollArea>
+            </div>
+          </ScrollArea>
+        </div>
 
-        {/* Input Area - Open WebUI Style */}
-        <div className="border-t border-border bg-card px-4 py-4">
-          <div className="max-w-3xl mx-auto">
+        {/* Floating Input Area */}
+        <div className="absolute bottom-4 left-4 right-4 z-50 transition-all duration-300 ease-out">
+          <div className="max-w-4xl mx-auto">
+            {/* Attachment Preview */}
+            {attachments.length > 0 && (
+              <div className="mb-2 px-2 animate-in slide-in-from-bottom-2 fade-in duration-200">
+                <div className="flex flex-wrap gap-2">
+                  {attachments.map((attachment) => (
+                    <div key={attachment.id} className="relative group">
+                      <div className="rounded-lg overflow-hidden border border-border bg-card p-2 transition-all duration-200 ease-out group-hover:shadow-md group-hover:scale-105">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          <span className="text-xs text-foreground truncate max-w-[150px]">{attachment.name}</span>
+                          <span className="text-xs text-muted-foreground">{(attachment.size / 1024).toFixed(1)}KB</span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(attachment.id)}
+                        aria-label={`Remove ${attachment.name}`}
+                        className="absolute -top-1.5 -right-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-all duration-200 ease-out transform hover:scale-110 active:scale-95 shadow-md"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             <form onSubmit={onSubmit} className="relative">
-              <div className="relative flex items-end gap-2 bg-background rounded-xl border border-border focus-within:border-primary transition-colors">
+              <div className="relative flex items-center rounded-xl border border-border bg-background shadow-lg focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 focus-within:shadow-xl transition-all duration-200 ease-out min-h-[64px] overflow-hidden">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  onChange={onFileSelect}
+                  className="hidden"
+                  accept="*/*"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isLoading || isUploadingFile}
+                  className="h-full px-3 hover:bg-muted transition-all duration-200 ease-out hover:scale-105 active:scale-95 rounded-none border-0 flex-shrink-0"
+                  title="Attach file"
+                >
+                  {isUploadingFile ? (
+                    <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" />
+                  ) : (
+                    <Paperclip className="h-5 w-5 text-muted-foreground transition-transform duration-200 group-hover:rotate-12" />
+                  )}
+                </Button>
                 <Textarea
                   ref={textareaRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Type your message... (Shift+Enter for new line)"
-                  className="flex-1 min-h-[52px] max-h-[200px] resize-none bg-transparent border-0 text-foreground placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 px-4 py-3 text-sm"
+                  placeholder="Type your message... "
+                  className="flex-1 min-h-[64px] max-h-[200px] resize-none bg-transparent border-0 text-foreground placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 px-3 py-4 text-sm transition-all duration-200"
                   disabled={isLoading}
                   rows={1}
                 />
-                <div className="flex items-center gap-2 p-2">
-                  <Button 
-                    type="submit" 
-                    disabled={isLoading || !input.trim()}
-                    size="sm"
-                    className="h-9 w-9 p-0 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
+                <Button 
+                  type="submit" 
+                  disabled={isLoading || (!input.trim() && attachments.length === 0)}
+                  size="sm"
+                  className="h-full px-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-none border-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ease-out hover:scale-105 active:scale-95 hover:shadow-lg flex-shrink-0"
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Send className="h-5 w-5 transition-transform duration-200 group-hover:translate-x-0.5" />
+                  )}
+                </Button>
               </div>
               <div className="flex items-center justify-between mt-2 px-1">
-                <p className="text-xs text-muted-foreground">Press Enter to send, Shift+Enter for new line</p>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span>Ctrl+K</span>
-                  <span>•</span>
-                  <span>Clear</span>
+                <div className="flex items-center gap-3">
+                  <p className="text-xs text-muted-foreground">Press Enter to send, Shift+Enter for new line</p>
+                  {mcpServers.filter(s => s.enabled).length > 0 && (
+                    <Badge variant="outline" className="text-xs">
+                      {mcpServers.filter(s => s.enabled).length} MCP server(s) active
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowMcpConfig(!showMcpConfig)}
+                    className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    <Settings className="h-3 w-3 mr-1" />
+                    MCP
+                  </Button>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span>Ctrl+K</span>
+                    <span>•</span>
+                    <span>Clear</span>
+                  </div>
                 </div>
               </div>
             </form>
+            
+            {/* MCP Server Configuration */}
+            {showMcpConfig && (
+              <div className="mt-2 p-3 bg-card border border-border rounded-lg animate-in slide-in-from-bottom-2 fade-in duration-200">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-semibold text-foreground">MCP Servers</h4>
+                    {selectedModel && (
+                      <Badge variant="outline" className="text-xs">
+                        {availableModels.find(m => m.id === selectedModel)?.name || 'Model'}
+                      </Badge>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      if (!selectedModel) {
+                        toast.error('Please select a model first')
+                        return
+                      }
+                      setMcpServers([...mcpServers, {
+                        id: Date.now().toString(),
+                        name: `MCP Server ${mcpServers.length + 1}`,
+                        transport: 'hosted',
+                        enabled: true
+                      }])
+                    }}
+                    disabled={!selectedModel}
+                    className="h-6 px-2 text-xs"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add Server
+                  </Button>
+                </div>
+                {!selectedModel && (
+                  <p className="text-xs text-muted-foreground mb-2 text-center py-1">
+                    Select a model to configure MCP servers
+                  </p>
+                )}
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {mcpServers.length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-2">No MCP servers configured</p>
+                  ) : (
+                    mcpServers.map((server) => (
+                      <div key={server.id} className="flex items-center gap-2 p-2 bg-muted/50 rounded border border-border">
+                        <Switch
+                          checked={server.enabled}
+                          onCheckedChange={(checked) => {
+                            setMcpServers(mcpServers.map(s => s.id === server.id ? { ...s, enabled: checked } : s))
+                          }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <Input
+                            value={server.name}
+                            onChange={(e) => {
+                              setMcpServers(mcpServers.map(s => s.id === server.id ? { ...s, name: e.target.value } : s))
+                            }}
+                            placeholder="Server name"
+                            className="h-7 text-xs"
+                          />
+                        </div>
+                        <Select
+                          value={server.transport}
+                          onValueChange={(value) => {
+                            const transportValue = value as 'hosted' | 'http-sse' | 'stdio'
+                            setMcpServers(mcpServers.map(s => s.id === server.id ? { ...s, transport: transportValue } : s))
+                          }}
+                        >
+                          <SelectTrigger className="h-7 w-24 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="hosted">Hosted</SelectItem>
+                            <SelectItem value="http-sse">HTTP SSE</SelectItem>
+                            <SelectItem value="stdio">Stdio</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {server.transport !== 'stdio' && (
+                          <Input
+                            value={server.url || ''}
+                            onChange={(e) => {
+                              setMcpServers(mcpServers.map(s => s.id === server.id ? { ...s, url: e.target.value } : s))
+                            }}
+                            placeholder="Server URL"
+                            className="h-7 flex-1 text-xs"
+                          />
+                        )}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setMcpServers(mcpServers.filter(s => s.id !== server.id))
+                          }}
+                          className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

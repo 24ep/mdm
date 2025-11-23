@@ -172,19 +172,19 @@ export function IntegrationManager({
 
   const getStatusIcon = useCallback((status: Integration['status']) => {
     switch (status) {
-      case 'active': return <CheckCircle className="h-4 w-4 text-green-600" />
-      case 'inactive': return <Pause className="h-4 w-4 text-gray-600" />
-      case 'error': return <XCircle className="h-4 w-4 text-red-600" />
-      case 'pending': return <Loader className="h-4 w-4 text-yellow-600 animate-spin" />
+      case 'active': return <CheckCircle className="h-4 w-4 text-primary" />
+      case 'inactive': return <Pause className="h-4 w-4 text-muted-foreground" />
+      case 'error': return <XCircle className="h-4 w-4 text-destructive" />
+      case 'pending': return <Loader className="h-4 w-4 text-warning animate-spin" />
     }
   }, [])
 
   const getStatusColor = useCallback((status: Integration['status']) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800'
-      case 'inactive': return 'bg-gray-100 text-gray-800'
-      case 'error': return 'bg-red-100 text-red-800'
-      case 'pending': return 'bg-yellow-100 text-yellow-800'
+      case 'active': return 'bg-primary/10 text-primary'
+      case 'inactive': return 'bg-muted text-muted-foreground'
+      case 'error': return 'bg-destructive/10 text-destructive'
+      case 'pending': return 'bg-warning/20 text-warning'
     }
   }, [])
 
@@ -295,7 +295,7 @@ export function IntegrationManager({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
+              <CheckCircle className="h-5 w-5 text-primary" />
               <div>
                 <div className="text-2xl font-bold">{activeIntegrations.length}</div>
                 <div className="text-sm text-muted-foreground">Active</div>
@@ -306,7 +306,7 @@ export function IntegrationManager({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <XCircle className="h-5 w-5 text-red-600" />
+              <XCircle className="h-5 w-5 text-destructive" />
               <div>
                 <div className="text-2xl font-bold">{errorIntegrations.length}</div>
                 <div className="text-sm text-muted-foreground">Errors</div>
@@ -317,7 +317,7 @@ export function IntegrationManager({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Loader className="h-5 w-5 text-yellow-600" />
+              <Loader className="h-5 w-5 text-warning" />
               <div>
                 <div className="text-2xl font-bold">{pendingIntegrations.length}</div>
                 <div className="text-sm text-muted-foreground">Pending</div>
@@ -328,7 +328,7 @@ export function IntegrationManager({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Webhook className="h-5 w-5 text-blue-600" />
+              <Webhook className="h-5 w-5 text-primary" />
               <div>
                 <div className="text-2xl font-bold">
                   {integrations.reduce((sum, i) => sum + i.webhooks.length, 0)}
@@ -578,7 +578,7 @@ export function IntegrationManager({
                       variant="outline"
                       size="sm"
                       onClick={() => onDeleteIntegration(integration.id)}
-                      className="text-red-600 hover:text-red-700"
+                      className="text-destructive hover:text-destructive/80"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -610,22 +610,22 @@ export function IntegrationManager({
                 </div>
 
                 {integration.error && (
-                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <div className="flex items-center gap-2 text-red-600">
+                  <div className="mt-4 p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
+                    <div className="flex items-center gap-2 text-destructive">
                       <AlertCircle className="h-4 w-4" />
                       <span className="text-sm font-medium">Error</span>
                     </div>
-                    <p className="text-sm text-red-600 mt-1">{integration.error}</p>
+                    <p className="text-sm text-destructive mt-1">{integration.error}</p>
                   </div>
                 )}
 
                 {integration.rateLimit && (
-                  <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div className="flex items-center gap-2 text-blue-600">
+                  <div className="mt-4 p-3 bg-primary/10 border border-primary/30 rounded-lg">
+                    <div className="flex items-center gap-2 text-primary">
                       <Zap className="h-4 w-4" />
                       <span className="text-sm font-medium">Rate Limit</span>
                     </div>
-                    <p className="text-sm text-blue-600 mt-1">
+                    <p className="text-sm text-primary mt-1">
                       {integration.rateLimit.requests} requests per {integration.rateLimit.period}
                     </p>
                   </div>
@@ -677,7 +677,7 @@ export function IntegrationManager({
                             variant="outline"
                             size="sm"
                             onClick={() => onDeleteWebhook(integration.id, webhook.id)}
-                            className="text-red-600 hover:text-red-700"
+                            className="text-destructive hover:text-destructive/80"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

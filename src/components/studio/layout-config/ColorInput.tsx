@@ -3,6 +3,7 @@
 import React from 'react'
 import { Input } from '@/components/ui/input'
 import { ColorPickerPopover } from './ColorPickerPopover'
+import { getSwatchStyle, SWATCH_SIZE } from './color-utils'
 
 interface ColorInputProps {
   value: string
@@ -15,117 +16,47 @@ interface ColorInputProps {
   isSpaceLayoutConfig?: boolean
 }
 
-// Helper to check if color has transparency
-const hasTransparency = (color: string): boolean => {
-  if (!color || color === 'transparent') return true
-  if (color.startsWith('rgba')) {
-    const match = color.match(/rgba\([^)]+,\s*([\d.]+)\)/)
-    if (match) {
-      const alpha = parseFloat(match[1])
-      return alpha < 1
-    }
+// Global styles for color input trigger button
+const COLOR_INPUT_TRIGGER_STYLES = `
+  body:not([data-space]) button.color-input-trigger,
+  body:not([data-space]) button.color-input-trigger[type="button"] {
+    width: ${SWATCH_SIZE.width} !important;
+    height: ${SWATCH_SIZE.height} !important;
+    min-width: ${SWATCH_SIZE.minWidth} !important;
+    min-height: ${SWATCH_SIZE.minHeight} !important;
+    max-width: ${SWATCH_SIZE.maxWidth} !important;
+    max-height: ${SWATCH_SIZE.maxHeight} !important;
+    border: none !important;
+    border-width: 0 !important;
+    border-style: none !important;
+    border-color: transparent !important;
+    outline: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
   }
-  return false
-}
+`
 
-// Pattern definitions (matching ColorPickerPopover)
-const patterns = [
-  {
-    id: 'dots',
-    css: 'radial-gradient(circle, #000 1px, transparent 1px)',
-    size: '20px 20px'
-  },
-  {
-    id: 'diagonal-lines',
-    css: 'repeating-linear-gradient(45deg, transparent, transparent 10px, #000 10px, #000 20px)',
-    size: '20px 20px'
-  },
-  {
-    id: 'horizontal-stripes',
-    css: 'repeating-linear-gradient(0deg, transparent, transparent 10px, #000 10px, #000 20px)',
-    size: '20px 20px'
-  },
-  {
-    id: 'vertical-stripes',
-    css: 'repeating-linear-gradient(90deg, transparent, transparent 10px, #000 10px, #000 20px)',
-    size: '20px 20px'
-  },
-  {
-    id: 'grid',
-    css: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)',
-    size: '20px 20px'
-  },
-  {
-    id: 'checkerboard',
-    css: 'conic-gradient(#000 25%, transparent 0%, transparent 50%, #000 0%, #000 75%, transparent 0%)',
-    size: '20px 20px'
-  },
-  {
-    id: 'crosshatch',
-    css: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px), repeating-linear-gradient(45deg, transparent, transparent 10px, #000 10px, #000 20px)',
-    size: '20px 20px'
-  }
-]
+const DEFAULT_INPUT_CLASS_NAME = 'h-7 text-xs pl-9 w-full rounded-[2px] bg-input border-0 focus:outline-none focus:ring-0 focus:border-0'
 
-// Helper to get swatch style with checkerboard background for transparency
-const getSwatchStyle = (color: string): React.CSSProperties => {
-  const baseStyle: React.CSSProperties = {
-    outline: 'none',
-    backgroundColor: '#ffffff'
-  }
-  
-  if (!color) {
-    return baseStyle
-  }
-  
-  // Handle gradients
-  if (color.startsWith('linear-gradient') || color.startsWith('radial-gradient')) {
-    baseStyle.background = color
-    return baseStyle
-  }
-  
-  // Handle patterns
-  if (color.startsWith('pattern(')) {
-    const match = color.match(/pattern\(([^)]+)\)/)
-    if (match) {
-      const patternId = match[1]
-      const pattern = patterns.find(p => p.id === patternId)
-      if (pattern) {
-        baseStyle.backgroundImage = pattern.css
-        baseStyle.backgroundSize = pattern.size
-        baseStyle.backgroundColor = '#ffffff'
-        return baseStyle
-      }
-    }
-  }
-  
-  // Handle images/videos
-  if (color.startsWith('url(') || color.startsWith('http')) {
-    baseStyle.backgroundImage = color.startsWith('url(') ? color : `url(${color})`
-    baseStyle.backgroundSize = 'cover'
-    baseStyle.backgroundPosition = 'center'
-    baseStyle.backgroundColor = '#f0f0f0'
-    return baseStyle
-  }
-  
-  // Handle solid colors
-  baseStyle.backgroundColor = color || '#ffffff'
-  
-  if (hasTransparency(color)) {
-    // Checkerboard pattern for transparency
-    baseStyle.backgroundImage = `
-      linear-gradient(45deg, #d0d0d0 25%, transparent 25%),
-      linear-gradient(-45deg, #d0d0d0 25%, transparent 25%),
-      linear-gradient(45deg, transparent 75%, #d0d0d0 75%),
-      linear-gradient(-45deg, transparent 75%, #d0d0d0 75%)
-    `
-    baseStyle.backgroundSize = '8px 8px'
-    baseStyle.backgroundPosition = '0 0, 0 4px, 4px -4px, -4px 0px'
-    // Keep the actual color as an overlay
-    baseStyle.backgroundColor = color
-  }
-  
-  return baseStyle
+const TRIGGER_BUTTON_STYLE: React.CSSProperties = {
+  pointerEvents: 'auto',
+  zIndex: 30,
+  display: 'block',
+  width: SWATCH_SIZE.width,
+  height: SWATCH_SIZE.height,
+  minWidth: SWATCH_SIZE.minWidth,
+  minHeight: SWATCH_SIZE.minHeight,
+  maxWidth: SWATCH_SIZE.maxWidth,
+  maxHeight: SWATCH_SIZE.maxHeight,
+  backgroundColor: 'transparent',
+  background: 'transparent',
+  boxSizing: 'border-box',
+  border: 'none',
+  borderWidth: 0,
+  borderStyle: 'none',
+  borderColor: 'transparent'
 }
 
 export function ColorInput({
@@ -138,47 +69,78 @@ export function ColorInput({
   inputClassName,
   isSpaceLayoutConfig = false,
 }: ColorInputProps) {
-  const defaultInputClassName = 'h-7 text-xs pl-7 w-full rounded-[2px] bg-input border-0 focus:outline-none focus:ring-0 focus:border-0'
-  const finalInputClassName = inputClassName || defaultInputClassName
+  const finalInputClassName = inputClassName || DEFAULT_INPUT_CLASS_NAME
 
-  const swatchStyle = getSwatchStyle(value)
+  // Recalculate swatch style when value changes
+  const swatchStyle = React.useMemo(() => getSwatchStyle(value), [value])
+
+  const swatchContainerStyle: React.CSSProperties = {
+    display: 'block',
+    width: SWATCH_SIZE.width,
+    height: SWATCH_SIZE.height,
+    minWidth: SWATCH_SIZE.minWidth,
+    minHeight: SWATCH_SIZE.minHeight,
+    maxWidth: SWATCH_SIZE.maxWidth,
+    maxHeight: SWATCH_SIZE.maxHeight,
+    boxSizing: 'border-box',
+    background: swatchStyle.background || undefined,
+    backgroundColor: swatchStyle.backgroundColor || '#e5e5e5',
+    backgroundImage: swatchStyle.backgroundImage || undefined,
+    backgroundSize: swatchStyle.backgroundSize || undefined,
+    backgroundPosition: swatchStyle.backgroundPosition || 'center',
+    backgroundRepeat: swatchStyle.backgroundRepeat || 'no-repeat',
+    outline: 'none'
+  }
 
   return (
-    <div className={className}>
-      <ColorPickerPopover
-        value={value}
-        onChange={onChange}
-        allowImageVideo={allowImageVideo}
-        disabled={disabled}
-        isSpaceLayoutConfig={isSpaceLayoutConfig}
-      >
-        <button
-          type="button"
-          className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 cursor-pointer rounded-sm z-30 border border-border/50 shadow-sm hover:border-border transition-colors"
-          style={{ ...swatchStyle, pointerEvents: 'auto', zIndex: 30 }}
-          onClick={(e) => {
-            e.stopPropagation()
-          }}
-          aria-label="Color swatch"
+    <>
+      <style>{COLOR_INPUT_TRIGGER_STYLES}</style>
+      <div className={className}>
+        <ColorPickerPopover
+          value={value}
+          onChange={onChange}
+          allowImageVideo={allowImageVideo}
+          disabled={disabled}
+          isSpaceLayoutConfig={isSpaceLayoutConfig}
+        >
+          <button
+            type="button"
+            data-component="color-input-trigger"
+            className="absolute left-1 top-1/2 -translate-y-1/2 cursor-pointer rounded-sm z-30 border-0 outline-none shadow-none flex-shrink-0 p-0 color-input-trigger"
+            style={TRIGGER_BUTTON_STYLE}
+            onClick={(e) => {
+              e.stopPropagation()
+            }}
+            aria-label="Open color picker"
+          />
+        </ColorPickerPopover>
+        
+        {/* Color swatch - positioned above button so it's visible and updates */}
+        <div
+          key={`swatch-${value}`}
+          className="absolute left-1 top-1/2 -translate-y-1/2 rounded-sm z-40 pointer-events-none"
+          style={swatchContainerStyle}
+          aria-hidden="true"
         />
-      </ColorPickerPopover>
-      <Input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={finalInputClassName}
-        placeholder={placeholder}
-        disabled={disabled}
-        style={{ pointerEvents: 'auto' }}
-        onPointerDown={(e) => {
-          // Don't prevent pointer events on the input itself, but allow button clicks
-          const target = e.target as HTMLElement
-          if (target.closest('button')) {
-            return
-          }
-        }}
-      />
-    </div>
+        
+        <Input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={finalInputClassName}
+          placeholder={placeholder}
+          disabled={disabled}
+          style={{ pointerEvents: 'auto' }}
+          onPointerDown={(e) => {
+            // Don't prevent pointer events on the input itself, but allow button clicks
+            const target = e.target as HTMLElement
+            if (target.closest('button')) {
+              return
+            }
+          }}
+        />
+      </div>
+    </>
   )
 }
 

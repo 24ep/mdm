@@ -95,7 +95,7 @@ export function LinkWidget({ props, style }: { props: BasicWidgetProps; style: R
       <a 
         href={(props as any).linkUrl || '#'}
         target={(props as any).target || '_self'}
-        className="text-blue-600 hover:underline"
+        className="text-primary hover:underline"
         style={{ color: props.textColor || '#2563eb' }}
       >
         {(props as any).linkText || 'Link'}

@@ -417,7 +417,7 @@ export function LookerStudioDataSource({
                         className={`
                           flex items-center gap-2 p-2 rounded text-xs cursor-pointer
                           hover:bg-muted transition-colors group
-                          ${isDim || isMet ? 'bg-blue-50 border border-blue-200' : ''}
+                          ${isDim || isMet ? 'bg-primary/10 border border-primary/30' : ''}
                         `}
                         draggable
                         onDragStart={(e) => {
@@ -430,7 +430,7 @@ export function LookerStudioDataSource({
                       >
                         <Icon className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                     <span className="flex-1 truncate">{attr.display_name || attr.name}</span>
-                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-muted text-muted-foreground">
                       {attr.type || 'text'}
                     </span>
                         {isDim && (
@@ -707,7 +707,7 @@ export function LookerStudioDataSource({
                                   <SelectItem key={attr.id} value={attr.name}>
                                     <div className="flex items-center justify-between gap-2">
                                       <span className="truncate">{attr.display_name || attr.name}</span>
-                                      <span className="px-1.5 py-0.5 rounded text-[10px] bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200">
+                                      <span className="px-1.5 py-0.5 rounded text-[10px] bg-muted text-muted-foreground">
                                         {attr.type || 'text'}
                                       </span>
                                     </div>
@@ -814,7 +814,7 @@ export function LookerStudioDataSource({
                                   <SelectItem key={attr.id} value={attr.name}>
                                     <div className="flex items-center justify-between gap-2">
                                       <span className="truncate">{attr.display_name || attr.name}</span>
-                                      <span className="px-1.5 py-0.5 rounded text-[10px] bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200">
+                                      <span className="px-1.5 py-0.5 rounded text-[10px] bg-muted text-muted-foreground">
                                         {attr.type || 'text'}
                                       </span>
                                     </div>
@@ -884,7 +884,7 @@ export function LookerStudioDataSource({
                                 <SelectItem key={attr.id} value={attr.name}>
                                   <div className="flex items-center justify-between gap-2">
                                     <span className="truncate">{attr.display_name || attr.name}</span>
-                                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200">
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-muted text-muted-foreground">
                                       {attr.type || 'date'}
                                     </span>
                                   </div>

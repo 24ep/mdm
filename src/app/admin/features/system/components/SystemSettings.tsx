@@ -28,7 +28,6 @@ import {
 import toast from 'react-hot-toast'
 import { SSOConfiguration } from '../../security'
 import { SystemSettings as SystemSettingsType } from '../types'
-import { AssetManagement } from './AssetManagement'
 import { StorageConnections } from './StorageConnections'
 import { SystemIntegrations } from './SystemIntegrations'
 
@@ -207,7 +206,7 @@ export function SystemSettings() {
 
       <div className="w-full">
       <Tabs defaultValue="general">
-        <TabsList className="grid w-full grid-cols-9">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="database">Database</TabsTrigger>
           <TabsTrigger value="email">Email</TabsTrigger>
@@ -216,7 +215,6 @@ export function SystemSettings() {
           <TabsTrigger value="features">Features</TabsTrigger>
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
           <TabsTrigger value="storage">Storage</TabsTrigger>
-          <TabsTrigger value="assets">Assets</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="space-y-6">
@@ -577,10 +575,6 @@ export function SystemSettings() {
 
         <TabsContent value="storage" className="space-y-6">
           <StorageConnections />
-        </TabsContent>
-
-        <TabsContent value="assets" className="space-y-6">
-          <AssetManagement />
         </TabsContent>
       </Tabs>
       </div>

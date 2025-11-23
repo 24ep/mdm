@@ -9,10 +9,10 @@ import { useDragHandler } from './useDragHandler'
 interface WidgetsTabProps {
   searchQuery: string
   onClose: () => void
-  categoryFilter?: 'all' | 'dashboard' | 'ui' | 'filters' | 'shapes' | 'media' | 'charts' | 'tables' | 'utilities'
+  selectedCategories?: string[]
 }
 
-export function WidgetsTab({ searchQuery, onClose, categoryFilter = 'all' }: WidgetsTabProps) {
+export function WidgetsTab({ searchQuery, onClose, selectedCategories = ['all'] }: WidgetsTabProps) {
   const { handleDragStart, handleDragEnd } = useDragHandler(onClose)
   
   // Filter widgets based on search (flat list)
@@ -55,16 +55,25 @@ export function WidgetsTab({ searchQuery, onClose, categoryFilter = 'all' }: Wid
     const result: Array<{ title: string; items: typeof widgetsPalette }>= []
     const push = (title: string, items: any[]) => { if (items.length) result.push({ title, items: items as unknown as typeof widgetsPalette }) }
 
-    // Determine which groups to display based on categoryFilter
-    const wants = (name: string) => categoryFilter === 'all' ||
-      (categoryFilter === 'dashboard' && ['Charts', 'Tables', 'UI Elements'].includes(name)) ||
-      (categoryFilter === 'charts' && name === 'Charts') ||
-      (categoryFilter === 'tables' && name === 'Tables') ||
-      (categoryFilter === 'filters' && name === 'Filters') ||
-      (categoryFilter === 'media' && name === 'Media') ||
-      (categoryFilter === 'ui' && name === 'UI Elements') ||
-      (categoryFilter === 'shapes' && name === 'Shapes') ||
-      (categoryFilter === 'utilities' && name === 'Utilities')
+    // Determine which groups to display based on selectedCategories
+    const wants = (name: string) => {
+      if (selectedCategories.includes('all')) return true
+      
+      const categoryMap: Record<string, string[]> = {
+        'dashboard': ['Charts', 'Tables', 'UI Elements'],
+        'charts': ['Charts'],
+        'tables': ['Tables'],
+        'filters': ['Filters'],
+        'media': ['Media'],
+        'ui': ['UI Elements'],
+        'shapes': ['Shapes'],
+        'utilities': ['Utilities'],
+      }
+      
+      return selectedCategories.some(cat => 
+        categoryMap[cat]?.includes(name) || false
+      )
+    }
 
     if (charts.length && wants('Charts')) push('Charts', charts)
     if (tables.length && wants('Tables')) push('Tables', tables)
@@ -74,7 +83,7 @@ export function WidgetsTab({ searchQuery, onClose, categoryFilter = 'all' }: Wid
     if (shapes.length && wants('Shapes')) push('Shapes', shapes)
     if (other.length && wants('Utilities')) push('Utilities', other)
     return result
-  }, [filteredWidgets, searchQuery, categoryFilter])
+  }, [filteredWidgets, searchQuery, selectedCategories])
   
   return (
     <ScrollArea className="h-full">
@@ -82,7 +91,7 @@ export function WidgetsTab({ searchQuery, onClose, categoryFilter = 'all' }: Wid
         {groups.map(group => (
           <div key={group.title} className="space-y-2">
             <div className="text-xs font-semibold text-muted-foreground px-1">{group.title}</div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               {group.items.map(w => (
                 <WidgetItem
                   key={`${group.title}-${w.type}`}

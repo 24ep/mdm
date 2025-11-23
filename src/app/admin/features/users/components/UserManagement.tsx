@@ -13,6 +13,15 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Switch } from '@/components/ui/switch'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { AvatarUpload } from '@/components/ui/avatar-upload'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { 
   Users, 
   Plus, 
@@ -35,10 +44,16 @@ import {
   Folder,
   Download,
   Upload,
-  User as UserIcon
+  User as UserIcon,
+  ChevronDown,
+  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
+  X
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { User } from '../types'
+import { cn } from '@/lib/utils'
 
 interface Space {
   id: string
@@ -354,290 +369,512 @@ export function UserManagement() {
     )
   }
 
-  return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <Users className="h-6 w-6" />
-            User Management
-          </h2>
-          <p className="text-muted-foreground">
-            Manage users, roles, and permissions across all spaces
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => {
-            // Navigate to role management
-            const url = new URL(window.location.href)
-            url.searchParams.set('tab', 'roles')
-            window.location.href = url.toString()
-          }}>
-            <Shield className="h-4 w-4 mr-2" />
-            Manage Roles
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => setShowImportDialog(true)}
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            Import
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={async () => {
-              try {
-                const params = new URLSearchParams({
-                  search,
-                  role: roleFilter === 'all' ? '' : roleFilter,
-                  active: activeFilter === 'all' ? '' : activeFilter,
-                  spaceId: spaceFilter === 'all' ? '' : spaceFilter
-                })
-                const response = await fetch(`/api/admin/users/export?${params}`)
-                if (response.ok) {
-                  const blob = await response.blob()
-                  const url = window.URL.createObjectURL(blob)
-                  const a = document.createElement('a')
-                  a.href = url
-                  a.download = `users-export-${new Date().toISOString().split('T')[0]}.csv`
-                  document.body.appendChild(a)
-                  a.click()
-                  window.URL.revokeObjectURL(url)
-                  document.body.removeChild(a)
-                  toast.success('Users exported successfully')
-                } else {
-                  toast.error('Failed to export users')
-                }
-              } catch (error) {
-                console.error('Error exporting users:', error)
-                toast.error('Failed to export users')
-              }
-            }}
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              if (selectedUserIds.length === 0) {
-                toast.error('Please select users first')
-                return
-              }
-              setShowBulkDialog(true)
-            }}
-            disabled={selectedUserIds.length === 0}
-          >
-            <Users className="h-4 w-4 mr-2" />
-            Bulk Actions ({selectedUserIds.length})
-          </Button>
-          <Button onClick={openCreateDialog}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Add User
-          </Button>
-        </div>
-      </div>
+  const [filtersOpen, setFiltersOpen] = useState(true)
+  const activeUsersCount = useMemo(() => users.filter(u => u.isActive).length, [users])
+  const inactiveUsersCount = useMemo(() => users.filter(u => !u.isActive).length, [users])
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search users..."
-                  className="pl-8"
-                />
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="max-w-7xl mx-auto p-6 space-y-6">
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Users className="h-6 w-6 text-primary" />
               </div>
+              User Management
+            </h1>
+            <p className="text-muted-foreground mt-1.5">
+              Manage users, roles, and permissions across all spaces
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <MoreHorizontal className="h-4 w-4 mr-2" />
+                  More
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => {
+                  const url = new URL(window.location.href)
+                  url.searchParams.set('tab', 'roles')
+                  window.location.href = url.toString()
+                }}>
+                  <Shield className="h-4 w-4 mr-2" />
+                  Manage Roles
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowImportDialog(true)}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Import Users
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={async () => {
+                  try {
+                    const params = new URLSearchParams({
+                      search,
+                      role: roleFilter === 'all' ? '' : roleFilter,
+                      active: activeFilter === 'all' ? '' : activeFilter,
+                      spaceId: spaceFilter === 'all' ? '' : spaceFilter
+                    })
+                    const response = await fetch(`/api/admin/users/export?${params}`)
+                    if (response.ok) {
+                      const blob = await response.blob()
+                      const url = window.URL.createObjectURL(blob)
+                      const a = document.createElement('a')
+                      a.href = url
+                      a.download = `users-export-${new Date().toISOString().split('T')[0]}.csv`
+                      document.body.appendChild(a)
+                      a.click()
+                      window.URL.revokeObjectURL(url)
+                      document.body.removeChild(a)
+                      toast.success('Users exported successfully')
+                    } else {
+                      toast.error('Failed to export users')
+                    }
+                  } catch (error) {
+                    console.error('Error exporting users:', error)
+                    toast.error('Failed to export users')
+                  }
+                }}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export Users
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {selectedUserIds.length > 0 && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  setShowBulkDialog(true)
+                }}
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Bulk Actions ({selectedUserIds.length})
+              </Button>
+            )}
+            <Button onClick={openCreateDialog} size="sm">
+              <UserPlus className="h-4 w-4 mr-2" />
+              Add User
+            </Button>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="border-l-4 border-l-blue-500">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Users</p>
+                  <p className="text-2xl font-bold mt-1">{total}</p>
+                </div>
+                <Users className="h-8 w-8 text-blue-500 opacity-50" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-l-4 border-l-green-500">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Active Users</p>
+                  <p className="text-2xl font-bold mt-1">{activeUsersCount}</p>
+                </div>
+                <CheckCircle className="h-8 w-8 text-green-500 opacity-50" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-l-4 border-l-red-500">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Inactive Users</p>
+                  <p className="text-2xl font-bold mt-1">{inactiveUsersCount}</p>
+                </div>
+                <XCircle className="h-8 w-8 text-red-500 opacity-50" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-l-4 border-l-purple-500">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Spaces</p>
+                  <p className="text-2xl font-bold mt-1">{spaces.length}</p>
+                </div>
+                <Folder className="h-8 w-8 text-purple-500 opacity-50" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filters Section */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-base">Filters</CardTitle>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setFiltersOpen(!filtersOpen)}
+              >
+                {filtersOpen ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </CardHeader>
+          {filtersOpen && (
+            <CardContent className="pt-0">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Search by name or email..."
+                      className="pl-9 h-9"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Select value={roleFilter} onValueChange={setRoleFilter}>
+                    <SelectTrigger className="w-[140px] h-9">
+                      <SelectValue placeholder="All Roles" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Roles</SelectItem>
+                      <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
+                      <SelectItem value="ADMIN">Admin</SelectItem>
+                      <SelectItem value="MANAGER">Manager</SelectItem>
+                      <SelectItem value="USER">User</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={activeFilter} onValueChange={setActiveFilter}>
+                    <SelectTrigger className="w-[130px] h-9">
+                      <SelectValue placeholder="All Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="true">Active</SelectItem>
+                      <SelectItem value="false">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={spaceFilter} onValueChange={setSpaceFilter}>
+                    <SelectTrigger className="w-[160px] h-9">
+                      <SelectValue placeholder="All Spaces" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Spaces</SelectItem>
+                      {spaces.map(space => (
+                        <SelectItem key={space.id} value={space.id}>
+                          {space.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {(search || roleFilter !== 'all' || activeFilter !== 'all' || spaceFilter !== 'all') && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSearch('')
+                        setRoleFilter('all')
+                        setActiveFilter('all')
+                        setSpaceFilter('all')
+                      }}
+                      className="h-9"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Clear
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+
+        {/* Users Table */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg">Users</CardTitle>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">
+                  Showing {users.length} of {total}
+                </span>
+                {selectedUserIds.length > 0 && (
+                  <Badge variant="secondary" className="ml-2">
+                    {selectedUserIds.length} selected
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent mb-4"></div>
+                <p className="text-sm text-muted-foreground">Loading users...</p>
+              </div>
+            ) : error ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <AlertCircle className="h-10 w-10 text-destructive mb-4" />
+                <p className="text-sm font-medium text-destructive">{error}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={loadUsers}
+                  className="mt-4"
+                >
+                  Try Again
+                </Button>
+              </div>
+            ) : users.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <Users className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
+                <p className="text-sm font-medium text-muted-foreground mb-1">No users found</p>
+                <p className="text-xs text-muted-foreground mb-4">
+                  {search || roleFilter !== 'all' || activeFilter !== 'all' || spaceFilter !== 'all'
+                    ? 'Try adjusting your filters'
+                    : 'Get started by adding your first user'}
+                </p>
+                {(!search && roleFilter === 'all' && activeFilter === 'all' && spaceFilter === 'all') && (
+                  <Button onClick={openCreateDialog} size="sm">
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Add User
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">
+                        <input
+                          type="checkbox"
+                          checked={selectedUserIds.length === users.length && users.length > 0}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedUserIds(users.map(u => u.id))
+                            } else {
+                              setSelectedUserIds([])
+                            }
+                          }}
+                          className="rounded border-gray-300"
+                        />
+                      </TableHead>
+                      <TableHead className="min-w-[200px]">User</TableHead>
+                      <TableHead className="min-w-[150px]">Email</TableHead>
+                      <TableHead className="min-w-[120px]">Role</TableHead>
+                      <TableHead className="min-w-[100px]">Status</TableHead>
+                      <TableHead className="min-w-[150px]">Spaces</TableHead>
+                      <TableHead className="min-w-[120px]">Last Login</TableHead>
+                      <TableHead className="w-[100px] text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {users.map(user => (
+                      <TableRow 
+                        key={user.id}
+                        className={cn(
+                          "hover:bg-muted/50 transition-colors",
+                          selectedUserIds.includes(user.id) && "bg-primary/5"
+                        )}
+                      >
+                        <TableCell>
+                          <input
+                            type="checkbox"
+                            checked={selectedUserIds.includes(user.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedUserIds([...selectedUserIds, user.id])
+                              } else {
+                                setSelectedUserIds(selectedUserIds.filter(id => id !== user.id))
+                              }
+                            }}
+                            className="rounded border-gray-300"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-9 w-9">
+                              <AvatarImage src={user.avatar} />
+                              <AvatarFallback className="text-xs">
+                                {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="font-medium">{user.name}</div>
+                              <div className="text-xs text-muted-foreground">
+                                Joined {new Date(user.createdAt).toLocaleDateString()}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="text-sm">{user.email}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={cn("text-xs", getRoleColor(user.role))} variant="default">
+                            {user.role.replace('_', ' ')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {getStatusIcon(user.isActive)}
+                            <span className={cn(
+                              "text-sm",
+                              user.isActive ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+                            )}>
+                              {user.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {user.spaces && user.spaces.length > 0 ? (
+                            <div className="flex items-center gap-1 flex-wrap">
+                              {user.spaces.slice(0, 2).map((space, idx) => (
+                                <Badge key={idx} variant="outline" className="text-xs">
+                                  {space.spaceName}
+                                </Badge>
+                              ))}
+                              {user.spaces.length > 2 && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{user.spaces.length - 2}
+                                </Badge>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">No spaces</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {user.lastLoginAt ? (
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <Calendar className="h-3.5 w-3.5" />
+                              {new Date(user.lastLoginAt).toLocaleDateString()}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground italic">Never</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-end gap-1">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem onClick={() => {
+                                  setSelectedUser(user)
+                                  setShowUserDetails(true)
+                                }}>
+                                  <Settings className="h-4 w-4 mr-2" />
+                                  View Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => openEditDialog(user)}>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit User
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => {
+                                  setResetPasswordUser(user)
+                                  setShowResetPasswordDialog(true)
+                                }}>
+                                  <Key className="h-4 w-4 mr-2" />
+                                  Reset Password
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  onClick={() => deleteUser(user.id)}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete User
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Pagination */}
+        {pages > 1 && (
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
+              Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, total)} of {total} users
             </div>
             <div className="flex items-center gap-2">
-              <Select value={roleFilter} onValueChange={setRoleFilter}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="All Roles" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
-                  <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
-                  <SelectItem value="ADMIN">Admin</SelectItem>
-                  <SelectItem value="MANAGER">Manager</SelectItem>
-                  <SelectItem value="USER">User</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={activeFilter} onValueChange={setActiveFilter}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="true">Active</SelectItem>
-                  <SelectItem value="false">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={spaceFilter} onValueChange={setSpaceFilter}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="All Spaces" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Spaces</SelectItem>
-                  {spaces.map(space => (
-                    <SelectItem key={space.id} value={space.id}>
-                      {space.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(Math.max(1, page - 1))}
+                disabled={page === 1}
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Previous
+              </Button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, pages) }, (_, i) => {
+                  let pageNum
+                  if (pages <= 5) {
+                    pageNum = i + 1
+                  } else if (page <= 3) {
+                    pageNum = i + 1
+                  } else if (page >= pages - 2) {
+                    pageNum = pages - 4 + i
+                  } else {
+                    pageNum = page - 2 + i
+                  }
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={page === pageNum ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setPage(pageNum)}
+                      className="w-9 h-9 p-0"
+                    >
+                      {pageNum}
+                    </Button>
+                  )
+                })}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(Math.min(pages, page + 1))}
+                disabled={page === pages}
+              >
+                Next
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Users List */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Users ({total})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Loading users...</p>
-            </div>
-          ) : error ? (
-            <div className="text-center py-8">
-              <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-4" />
-              <p className="text-red-600">{error}</p>
-            </div>
-          ) : (
-            <ScrollArea className="h-[500px]">
-              <div className="space-y-2">
-                {users.map(user => (
-                  <div key={user.id} className={`flex items-center gap-4 p-4 border rounded hover:bg-muted/50 transition-colors ${selectedUserIds.includes(user.id) ? 'bg-primary/10 border-primary' : ''}`}>
-                    <input
-                      type="checkbox"
-                      checked={selectedUserIds.includes(user.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedUserIds([...selectedUserIds, user.id])
-                        } else {
-                          setSelectedUserIds(selectedUserIds.filter(id => id !== user.id))
-                        }
-                      }}
-                      className="rounded"
-                    />
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={user.avatar} />
-                      <AvatarFallback>
-                        {user.name.split(' ').map(n => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium">{user.name}</span>
-                        {getStatusIcon(user.isActive)}
-                        <Badge className={`text-xs ${getRoleColor(user.role)}`} variant="default">
-                          Global: {user.role}
-                        </Badge>
-                        {user.spaces && user.spaces.length > 0 && (
-                          <div className="flex items-center gap-1 flex-wrap">
-                            {user.spaces.slice(0, 3).map((space, idx) => (
-                              <Badge key={idx} className="text-xs" variant="outline">
-                                {space.spaceName}: {space.role}
-                              </Badge>
-                            ))}
-                            {user.spaces.length > 3 && (
-                              <Badge className="text-xs" variant="outline">
-                                +{user.spaces.length - 3} more
-                              </Badge>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {user.email}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Joined {new Date(user.createdAt).toLocaleDateString()}
-                        {user.lastLoginAt && (
-                          <span> • Last login {new Date(user.lastLoginAt).toLocaleDateString()}</span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedUser(user)
-                          setShowUserDetails(true)
-                        }}
-                      >
-                        <Settings className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openEditDialog(user)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setResetPasswordUser(user)
-                          setShowResetPasswordDialog(true)
-                        }}
-                      >
-                        <Key className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => deleteUser(user.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Pagination */}
-      {pages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage(Math.max(1, page - 1))}
-            disabled={page === 1}
-          >
-            Previous
-          </Button>
-          <span className="text-sm text-muted-foreground">
-            Page {page} of {pages}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage(Math.min(pages, page + 1))}
-            disabled={page === pages}
-          >
-            Next
-          </Button>
-        </div>
-      )}
+        )}
 
       {/* Edit User Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
@@ -1413,6 +1650,7 @@ export function UserManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   )
 }

@@ -230,7 +230,7 @@ export function IconPicker({
                       }}
                       className={`px-2 py-1 text-[10px] rounded border transition-colors ${
                         iconLibraryTab === value
-                          ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300'
+                          ? 'bg-primary/10 border-primary text-primary'
                           : 'bg-background border-border hover:bg-muted'
                       }`}
                     >
@@ -260,12 +260,12 @@ export function IconPicker({
                         }}
                         className={`p-2 rounded-md border transition-colors ${
                           isSelected 
-                            ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700' 
+                            ? 'bg-primary/10 border-primary' 
                             : 'bg-background border-border hover:bg-muted hover:border-border'
                         }`}
                         title={name}
                       >
-                        <IconComp className={`h-4 w-4 mx-auto ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-foreground'}`} />
+                        <IconComp className={`h-4 w-4 mx-auto ${isSelected ? 'text-primary' : 'text-foreground'}`} />
                       </button>
                     )
                   })}
@@ -292,12 +292,12 @@ export function IconPicker({
                         }}
                         className={`p-2 rounded-md border transition-colors ${
                           isSelected 
-                            ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700' 
+                            ? 'bg-primary/10 border-primary' 
                             : 'bg-background border-border hover:bg-muted hover:border-border'
                         }`}
                         title={name}
                       >
-                        <IconComp className={`h-4 w-4 mx-auto ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-foreground'}`} />
+                        <IconComp className={`h-4 w-4 mx-auto ${isSelected ? 'text-primary' : 'text-foreground'}`} />
                       </button>
                     )
                   })}
@@ -319,12 +319,12 @@ export function IconPicker({
                       }}
                       className={`p-2 rounded-md border transition-colors flex items-center justify-center ${
                         isSelected 
-                          ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700' 
+                          ? 'bg-primary/10 border-primary' 
                           : 'bg-background border-border hover:bg-muted hover:border-border'
                       }`}
                       title={letter}
                     >
-                      <span className={`text-sm font-semibold ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-foreground'}`}>
+                      <span className={`text-sm font-semibold ${isSelected ? 'text-primary' : 'text-foreground'}`}>
                         {letter}
                       </span>
                     </button>
@@ -347,12 +347,12 @@ export function IconPicker({
                       }}
                       className={`p-2 rounded-md border transition-colors flex items-center justify-center ${
                         isSelected 
-                          ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700' 
+                          ? 'bg-primary/10 border-primary' 
                           : 'bg-background border-border hover:bg-muted hover:border-border'
                       }`}
                       title={num}
                     >
-                      <span className={`text-sm font-semibold ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-foreground'}`}>
+                      <span className={`text-sm font-semibold ${isSelected ? 'text-primary' : 'text-foreground'}`}>
                         {num}
                       </span>
                     </button>
@@ -375,12 +375,12 @@ export function IconPicker({
                       }}
                       className={`p-2 rounded-md border transition-colors flex items-center justify-center ${
                         isSelected 
-                          ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700' 
+                          ? 'bg-primary/10 border-primary' 
                           : 'bg-background border-border hover:bg-muted hover:border-border'
                       }`}
                       title={roman}
                     >
-                      <span className={`text-xs font-semibold ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-foreground'}`}>
+                      <span className={`text-xs font-semibold ${isSelected ? 'text-primary' : 'text-foreground'}`}>
                         {roman}
                       </span>
                     </button>
@@ -403,8 +403,8 @@ export function IconPicker({
                       }}
                       className={`p-2 rounded-md border-2 transition-all flex items-center justify-center ${
                         isSelected 
-                          ? 'border-blue-500 ring-2 ring-blue-200' 
-                          : 'border-gray-200 hover:border-gray-400'
+                          ? 'border-primary ring-2 ring-primary/30' 
+                          : 'border-border hover:border-muted-foreground/50'
                       }`}
                       title={color.name}
                     >

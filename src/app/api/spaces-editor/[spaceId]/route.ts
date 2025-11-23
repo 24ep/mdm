@@ -20,11 +20,11 @@ export async function GET(
     const accessCheck = await query(
       `SELECT sm.role 
        FROM space_members sm 
-       WHERE sm.space_id = $1 AND sm.user_id = $2
+       WHERE sm.space_id = $1::uuid AND sm.user_id = $2::uuid
        UNION
        SELECT 'OWNER' as role
        FROM spaces s
-       WHERE s.id = $1 AND s.created_by = $2`,
+       WHERE s.id = $1::uuid AND s.created_by = $2::uuid`,
       [spaceId, session.user.id]
     )
 
@@ -72,11 +72,11 @@ export async function POST(
     const accessCheck = await query(
       `SELECT sm.role 
        FROM space_members sm 
-       WHERE sm.space_id = $1 AND sm.user_id = $2
+       WHERE sm.space_id = $1::uuid AND sm.user_id = $2::uuid
        UNION
        SELECT 'OWNER' as role
        FROM spaces s
-       WHERE s.id = $1 AND s.created_by = $2`,
+       WHERE s.id = $1::uuid AND s.created_by = $2::uuid`,
       [spaceId, session.user.id]
     )
 
@@ -96,8 +96,8 @@ export async function POST(
     const configValue = JSON.stringify(config)
 
     await query(
-      `INSERT INTO system_settings (key, value, updated_at)
-       VALUES ($1, $2, NOW())
+      `INSERT INTO system_settings (id, key, value, created_at, updated_at)
+       VALUES (gen_random_uuid(), $1, $2, NOW(), NOW())
        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
       [configKey, configValue]
     )

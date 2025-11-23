@@ -213,9 +213,9 @@ export function TableWidgetRenderer({ widget, props, style, chartData, dataLoadi
     // Auto-detect links if link mode is enabled
     let textEl: React.ReactNode = strValue
     if (styleCfg.link === 'url' || (styleCfg.link === 'none' && /^https?:\/\//i.test(strValue))) {
-      textEl = <a href={strValue} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">{strValue}</a>
+      textEl = <a href={strValue} target="_blank" rel="noreferrer" className="text-primary hover:underline">{strValue}</a>
     } else if (styleCfg.link === 'email' || (styleCfg.link === 'none' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(strValue))) {
-      textEl = <a href={`mailto:${strValue}`} className="text-blue-600 hover:underline">{strValue}</a>
+      textEl = <a href={`mailto:${strValue}`} className="text-primary hover:underline">{strValue}</a>
     }
 
     // Badge styling
@@ -320,8 +320,8 @@ export function TableWidgetRenderer({ widget, props, style, chartData, dataLoadi
   if (dataError && props.dataSource !== 'sample') {
     return (
       <div className="w-full h-full p-3 flex flex-col items-center justify-center" style={style}>
-        <BarChart3 className="h-8 w-8 mb-2 text-red-500" />
-        <div className="text-xs text-red-500 text-center font-medium">
+        <BarChart3 className="h-8 w-8 mb-2 text-destructive" />
+        <div className="text-xs text-destructive text-center font-medium">
           Data Error
         </div>
         <div className="text-xs text-muted-foreground text-center mt-1 px-2">
@@ -989,7 +989,7 @@ export function TableWidgetRenderer({ widget, props, style, chartData, dataLoadi
           Configure columns in data source settings
         </div>
         {process.env.NODE_ENV === 'development' && (
-          <div className="text-xs text-red-500 mt-2 text-center">
+          <div className="text-xs text-destructive mt-2 text-center">
             Debug: chartDimensions = {JSON.stringify(chartDimensions)}
           </div>
         )}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { signIn, getSession } from 'next-auth/react'
+import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,17 +9,39 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react'
+import { loadBrandingConfig } from '@/lib/branding'
 
 export default function SignInPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [name, setName] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
-  const [isSignUp, setIsSignUp] = useState(false)
   const [ssoProviders, setSsoProviders] = useState({ google: false, azure: false })
+  const [loginBgStyle, setLoginBgStyle] = useState<React.CSSProperties>({})
   const router = useRouter()
+
+  // Load branding config for login background
+  useEffect(() => {
+    loadBrandingConfig().then((branding) => {
+      if (branding?.loginBackground) {
+        const bg = branding.loginBackground
+        let style: React.CSSProperties = {}
+        
+        if (bg.type === 'color' && bg.color) {
+          style.backgroundColor = bg.color
+        } else if (bg.type === 'gradient' && bg.gradient) {
+          style.background = `linear-gradient(${bg.gradient.angle}deg, ${bg.gradient.from}, ${bg.gradient.to})`
+        } else if (bg.type === 'image' && bg.image) {
+          style.backgroundImage = `url(${bg.image})`
+          style.backgroundSize = 'cover'
+          style.backgroundPosition = 'center'
+        }
+        
+        setLoginBgStyle(style)
+      }
+    })
+  }, [])
 
   useEffect(() => {
     // Fetch enabled SSO providers
@@ -35,46 +57,18 @@ export default function SignInPage() {
     setError('')
 
     try {
-      if (isSignUp) {
-        // Sign up using our custom API
-        const response = await fetch('/api/auth/signup', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email,
-            password,
-            name,
-          }),
-        })
+      // Sign in with NextAuth.js
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      })
 
-        const data = await response.json()
-
-        if (!response.ok) {
-          setError(data.error || 'Failed to create account')
-        } else {
-          setError('Account created successfully! Please sign in.')
-          setIsSignUp(false)
-          // Clear form
-          setEmail('')
-          setPassword('')
-          setName('')
-        }
+      if (result?.error) {
+        setError(result.error)
       } else {
-        // Sign in with NextAuth.js
-        const result = await signIn('credentials', {
-          email,
-          password,
-          redirect: false,
-        })
-
-        if (result?.error) {
-          setError(result.error)
-        } else {
-          // Platform login - redirect to overview page
-          router.push('/')
-        }
+        // Platform login - redirect to overview page
+        router.push('/')
       }
     } catch (error) {
       setError('An error occurred. Please try again.')
@@ -103,14 +97,24 @@ export default function SignInPage() {
 
   const hasAnySSO = ssoProviders.google || ssoProviders.azure
 
+  // Get application name from branding or use default
+  const [appName, setAppName] = useState('Unified Data Platform')
+  useEffect(() => {
+    loadBrandingConfig().then((branding) => {
+      if (branding?.applicationName) {
+        setAppName(branding.applicationName)
+      }
+    })
+  }, [])
+
   return (
     <div className="min-h-screen flex">
       {/* Left side - Background Image (70%) */}
-      <div className="w-[70%] relative bg-gradient-to-br from-blue-600 to-blue-800">
+      <div className="w-[70%] relative" style={loginBgStyle}>
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative h-full flex items-center justify-center">
           <div className="text-center text-white p-8">
-            <h1 className="text-4xl font-bold mb-4">Welcome to Unified Data Platform</h1>
+            <h1 className="text-4xl font-bold mb-4">Welcome to {appName}</h1>
             <p className="text-xl opacity-90">Streamline your event organization with powerful unified data platform</p>
           </div>
         </div>
@@ -118,34 +122,17 @@ export default function SignInPage() {
 
       {/* Right side - Login Form (30%) */}
       <div className="w-[30%] flex items-center justify-center p-8 bg-background">
-        <Card className="w-full max-w-sm">
+        <Card className="w-full max-w-sm border-0 shadow-none bg-transparent">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl text-center">
-              {isSignUp ? 'Create Account' : 'Sign in'}
+              Sign in
             </CardTitle>
             <CardDescription className="text-center">
-              {isSignUp 
-                ? 'Create a new account to get started' 
-                : 'Enter your credentials to access your account'
-              }
+              Enter your credentials to access your account
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <form onSubmit={handleSubmit} className="space-y-4">
-              {isSignUp && (
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="Enter your full name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                  />
-                </div>
-              )}
-              
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
@@ -161,7 +148,7 @@ export default function SignInPage() {
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
@@ -198,27 +185,11 @@ export default function SignInPage() {
               )}
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading 
-                  ? (isSignUp ? 'Creating account...' : 'Signing in...') 
-                  : (isSignUp ? 'Create Account' : 'Sign in')
-                }
+                {isLoading ? 'Signing in...' : 'Sign in'}
               </Button>
             </form>
 
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={() => setIsSignUp(!isSignUp)}
-                className="text-sm text-blue-600 hover:text-blue-800 underline"
-              >
-                {isSignUp 
-                  ? 'Already have an account? Sign in' 
-                  : "Don't have an account? Sign up"
-                }
-              </button>
-            </div>
-
-            {hasAnySSO && !isSignUp && (
+            {hasAnySSO && (
               <>
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
@@ -260,7 +231,7 @@ export default function SignInPage() {
                       Google
                     </Button>
                   )}
-                  
+
                   {ssoProviders.azure && (
                     <Button
                       variant="outline"
@@ -269,7 +240,7 @@ export default function SignInPage() {
                       disabled={isLoading}
                     >
                       <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M11.4 24H0V12.6h11.4V24zM24 24H12.6V12.6H24V24zM11.4 11.4H0V0h11.4v11.4zM24 11.4H12.6V0H24v11.4z"/>
+                        <path d="M11.4 24H0V12.6h11.4V24zM24 24H12.6V12.6H24V24zM11.4 11.4H0V0h11.4v11.4zM24 11.4H12.6V0H24v11.4z" />
                       </svg>
                       Microsoft Azure
                     </Button>

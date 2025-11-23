@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 import { useSpace } from '@/contexts/space-context'
 import { Button } from '@/components/ui/button'
@@ -14,6 +14,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Building2, Plus, Users, Trash2, Crown, Shield, User, UserCog, UserPlus } from 'lucide-react'
 import toast from 'react-hot-toast'
+import IconPickerPopover from '@/components/ui/icon-picker-popover'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import * as LucideIcons from 'lucide-react'
 
 interface Space {
   id: string
@@ -404,22 +407,45 @@ export default function SpacesManager() {
                   {brandingMode==='icon' && (
                   <div className="space-y-2">
                     <Label>Icon</Label>
-                    <div className="grid grid-cols-6 gap-2 max-h-48 overflow-auto border rounded p-2">
-                      {['Building2','LayoutDashboard','Users','ClipboardList','Workflow','Settings','Download','Briefcase','Calendar','Tag','Bell','Folder','Globe','Home','Inbox','Layers','Map','Package','PieChart','Shield','Star','Store','ThumbsUp','TrendingUp'].map((ic) => (
-                        <button
-                          key={ic}
-                          className={`flex items-center justify-center h-9 w-9 rounded border ${selectedSpace!.icon===ic ? 'bg-primary/10 border-primary' : 'border-muted'}`}
-                          onClick={async () => {
-                            const res = await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ icon: ic, logo_url: null }) })
-                            if (res.ok) { toast.success('Icon selected'); await refreshSpaces() } else { toast.error('Failed to set icon') }
-                          }}
-                          title={ic}
-                        >
-                          <span className="text-xs">{ic.slice(0,2)}</span>
-                        </button>
-                      ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground">Picking an icon will clear the logo.</p>
+                    <IconPickerPopover
+                      value={selectedSpace!.icon || ''}
+                      onChange={async (iconName) => {
+                        const res = await fetch(`/api/spaces/${selectedSpace!.id}`, { 
+                          method: 'PUT', 
+                          headers: { 'Content-Type': 'application/json' }, 
+                          body: JSON.stringify({ icon: iconName, logo_url: null }) 
+                        })
+                        if (res.ok) { 
+                          toast.success('Icon selected')
+                          await refreshSpaces() 
+                        } else { 
+                          toast.error('Failed to set icon') 
+                        }
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        {selectedSpace!.icon ? (
+                          (() => {
+                            const IconComponent = (LucideIcons as any)[selectedSpace!.icon!] as React.ComponentType<{ className?: string }>
+                            return IconComponent ? (
+                              <div className="h-10 w-10 rounded border border-border flex items-center justify-center bg-muted">
+                                <IconComponent className="h-5 w-5 text-foreground" />
+                              </div>
+                            ) : (
+                              <div className="h-10 w-10 rounded bg-muted border border-border" />
+                            )
+                          })()
+                        ) : (
+                          <div className="h-10 w-10 rounded bg-muted border border-border flex items-center justify-center">
+                            <Building2 className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        )}
+                        <Button variant="outline" size="sm">
+                          Select Icon
+                        </Button>
+                      </div>
+                    </IconPickerPopover>
+                    <p className="text-xs text-muted-foreground">Choose an icon from the icon library. Picking an icon will clear the logo.</p>
                   </div>
                   )}
                   <div className="space-y-2">

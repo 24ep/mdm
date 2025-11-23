@@ -315,7 +315,7 @@ export function LayoutVersionControlDialog({
                   <div
                     key={version.id}
                     className={`p-4 hover:bg-muted/50 transition-colors ${
-                      version.is_current ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                      version.is_current ? 'bg-primary/10 border-l-4 border-l-primary' : ''
                     }`}
                   >
                     <div className="flex items-start justify-between gap-4">
@@ -379,7 +379,7 @@ export function LayoutVersionControlDialog({
                           </>
                         )}
                         {version.is_current && (
-                          <CheckCircle2 className="h-5 w-5 text-blue-600" />
+                          <CheckCircle2 className="h-5 w-5 text-primary" />
                         )}
                       </div>
                     </div>
@@ -408,7 +408,7 @@ export function LayoutVersionControlDialog({
                   parseLayoutConfig(comparingVersions.version1.layout_config),
                   parseLayoutConfig(comparingVersions.version2.layout_config)
                 ).map((diff, idx) => (
-                  <div key={idx} className={diff.startsWith('+') ? 'text-green-600' : diff.startsWith('-') ? 'text-red-600' : 'text-yellow-600'}>
+                  <div key={idx} className={diff.startsWith('+') ? 'text-primary' : diff.startsWith('-') ? 'text-destructive' : 'text-warning'}>
                     {diff}
                   </div>
                 ))}

@@ -130,8 +130,9 @@ const DropdownMenuContent = React.forwardRef<
   React.HTMLAttributes<HTMLDivElement> & {
     sideOffset?: number
     align?: "start" | "center" | "end"
+    customPosition?: { x: number; y: number } | null
   }
->(({ className, sideOffset = 4, align = "start", children, ...props }, ref) => {
+>(({ className, sideOffset = 4, align = "start", children, customPosition, ...props }, ref) => {
   const context = React.useContext(DropdownMenuContext)
   const [position, setPosition] = React.useState<{ top: number; left: number } | null>(null)
   const contentRef = React.useRef<HTMLDivElement>(null)
@@ -139,6 +140,15 @@ const DropdownMenuContent = React.forwardRef<
   React.useImperativeHandle(ref, () => contentRef.current as HTMLDivElement)
 
   React.useEffect(() => {
+    // If custom position is provided, use it directly with a small offset
+    if (customPosition && context?.open) {
+      setPosition({
+        top: customPosition.y + 8, // Small offset below cursor
+        left: customPosition.x + 4, // Small offset to the right
+      })
+      return
+    }
+
     if (context?.open && context.triggerRef.current) {
       const updatePosition = () => {
         if (!context.triggerRef.current || !contentRef.current) return
@@ -174,7 +184,7 @@ const DropdownMenuContent = React.forwardRef<
     } else {
       setPosition(null)
     }
-  }, [context?.open, sideOffset, align])
+  }, [context?.open, sideOffset, align, customPosition])
 
   React.useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -213,7 +223,7 @@ const DropdownMenuContent = React.forwardRef<
       <div
         ref={contentRef}
         className={cn(
-          "min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 [background-color:hsl(var(--popover))]",
+          "min-w-[8rem] rounded-md border border-border bg-card p-1 text-popover-foreground shadow-lg outline-none backdrop-blur-xl",
           className
         )}
         style={{
@@ -221,6 +231,8 @@ const DropdownMenuContent = React.forwardRef<
           zIndex: Z_INDEX.popover + 200, // Above popover (popover uses popover + 100)
           top: `${position.top}px`,
           left: `${position.left}px`,
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
         }}
         {...props}
       >
@@ -371,11 +383,13 @@ const DropdownMenuSubContent = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg animate-in fade-in-0 zoom-in-95 [background-color:hsl(var(--popover))]",
+      "min-w-[8rem] rounded-md border border-border bg-card p-1 text-popover-foreground shadow-lg outline-none backdrop-blur-xl",
       className
     )}
     style={{
       zIndex: Z_INDEX.popover + 200, // Above popover (popover uses popover + 100)
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
       ...style,
     }}
     {...props}

@@ -1,13 +1,15 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Trash, Palette, Database, Settings, Square, Box, Layers, BarChart3 } from 'lucide-react'
 import { widgetsPalette, PlacedWidget } from './widgets'
-import { GlobalStyleConfig, ComponentStyle } from './types'
+import { ComponentStyle } from './types'
 import { getWidgetComponentType } from './globalStyleUtils'
+import { getThemeComponentStyleSync } from './themeStyleUtils'
+import { BrandingConfig } from '@/app/admin/features/system/types'
 import { PositionSection } from './PositionSection'
 import { LayoutSection } from './LayoutSection'
 import { AppearanceSection } from './AppearanceSection'
@@ -26,7 +28,6 @@ interface WidgetPropertiesProps {
   selectedWidgetId: string
   setPlacedWidgets: React.Dispatch<React.SetStateAction<PlacedWidget[]>>
   setSelectedWidgetId: React.Dispatch<React.SetStateAction<string | null>>
-  globalStyle?: GlobalStyleConfig
   spaceId?: string
 }
 
@@ -35,10 +36,39 @@ export function WidgetProperties({
   selectedWidgetId,
   setPlacedWidgets,
   setSelectedWidgetId,
-  globalStyle,
   spaceId,
 }: WidgetPropertiesProps) {
   const widgetDef = widgetsPalette.find(wd => wd.type === widget.type)
+  const [themeConfig, setThemeConfig] = useState<BrandingConfig | undefined>(undefined)
+  const [componentStyle, setComponentStyle] = useState<ComponentStyle | undefined>(undefined)
+  
+  // Fetch active theme config
+  useEffect(() => {
+    const fetchTheme = async () => {
+      try {
+        const response = await fetch('/api/themes')
+        if (response.ok) {
+          const data = await response.json()
+          const activeTheme = data.themes?.find((t: any) => t.isActive)
+          if (activeTheme?.config) {
+            const brandingConfig = activeTheme.config as BrandingConfig
+            setThemeConfig(brandingConfig)
+            
+            // Get component style for this widget
+            const componentType = getWidgetComponentType(widget.type)
+            if (componentType) {
+              const style = getThemeComponentStyleSync(brandingConfig, componentType)
+              setComponentStyle(style)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching theme:', error)
+      }
+    }
+    
+    fetchTheme()
+  }, [widget.type])
   
   if (!widgetDef) {
     return (
@@ -47,10 +77,6 @@ export function WidgetProperties({
       </div>
     )
   }
-
-  // Get the component style type for this widget
-  const componentType = getWidgetComponentType(widget.type)
-  const componentStyle = componentType ? globalStyle?.components?.[componentType] : undefined
 
   // Determine if widget needs data source (charts, tables, etc.)
   const needsDataSource = widget.type.includes('chart') || 
@@ -73,12 +99,12 @@ export function WidgetProperties({
       <Tabs defaultValue={needsDataSource ? "datasource" : "properties"}>
         <TabsList className={`grid ${needsDataSource ? 'grid-cols-2' : 'grid-cols-1'} h-8 border-0 bg-transparent gap-1 px-4`}>
           {needsDataSource && (
-            <TabsTrigger value="datasource" className="text-xs px-3 data-[state=active]:bg-gray-200 data-[state=active]:border-0 data-[state=active]:border-b-0">
+            <TabsTrigger value="datasource" className="text-xs px-3 data-[state=active]:bg-muted data-[state=active]:border-0 data-[state=active]:border-b-0">
               <Database className="h-3.5 w-3.5 mr-1.5" />
               Data Source
             </TabsTrigger>
           )}
-          <TabsTrigger value="properties" className="text-xs px-3 data-[state=active]:bg-gray-200 data-[state=active]:border-0 data-[state=active]:border-b-0">
+          <TabsTrigger value="properties" className="text-xs px-3 data-[state=active]:bg-muted data-[state=active]:border-0 data-[state=active]:border-b-0">
             <Palette className="h-3.5 w-3.5 mr-1.5" />
             Properties
           </TabsTrigger>
@@ -168,7 +194,7 @@ export function WidgetProperties({
                     widget={widget}
                     selectedWidgetId={selectedWidgetId}
                     setPlacedWidgets={setPlacedWidgets}
-                    globalStyle={componentStyle}
+                    themeStyle={componentStyle}
                   />
                 </div>
               </AccordionContent>
@@ -188,7 +214,7 @@ export function WidgetProperties({
                     widget={widget}
                     selectedWidgetId={selectedWidgetId}
                     setPlacedWidgets={setPlacedWidgets}
-                    globalStyle={componentStyle}
+                    themeStyle={componentStyle}
                   />
                 </div>
               </AccordionContent>
@@ -225,7 +251,7 @@ export function WidgetProperties({
                     widget={widget}
                     selectedWidgetId={selectedWidgetId}
                     setPlacedWidgets={setPlacedWidgets}
-                    globalStyle={componentStyle}
+                    themeStyle={componentStyle}
                   />
                 </div>
               </AccordionContent>
@@ -245,7 +271,7 @@ export function WidgetProperties({
                     widget={widget}
                     selectedWidgetId={selectedWidgetId}
                     setPlacedWidgets={setPlacedWidgets}
-                    globalStyle={componentStyle}
+                    themeStyle={componentStyle}
                   />
                 </div>
               </AccordionContent>

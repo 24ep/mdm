@@ -103,6 +103,7 @@ const SelectTrigger = React.forwardRef<
       ref={triggerRef}
       type="button"
       onClick={handleClick}
+      data-component="select-trigger"
       className={cn(
         "flex h-10 w-full items-center justify-between rounded-[4px] border border-border bg-input text-foreground px-3 py-2 text-xs ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
         className
@@ -176,8 +177,9 @@ const SelectContent = React.forwardRef<
   const content = (
     <div
       ref={contentRef}
+      data-component="select-content"
       className={cn(
-        `relative ${SCROLLABLE_HEIGHTS.SMALL} min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover text-popover-foreground shadow-lg animate-in fade-in-0 zoom-in-95 [background-color:hsl(var(--popover))]`,
+        `relative ${SCROLLABLE_HEIGHTS.SMALL} min-w-[8rem] rounded-md border border-border bg-card text-popover-foreground shadow-lg outline-none backdrop-blur-xl`,
         className
       )}
       style={{
@@ -188,6 +190,8 @@ const SelectContent = React.forwardRef<
         width: position === "popper" ? `${positionState.width}px` : "auto",
         minWidth: position === "popper" ? `${positionState.width}px` : "8rem",
         maxWidth: position === "popper" ? `${positionState.width}px` : "none",
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
       }}
       {...props}
     >

@@ -497,7 +497,7 @@ export function DragDropCanvas({
                     size="sm"
                     onClick={() => onDeleteComponent(component.id)}
                     title="Delete (Ctrl+D)"
-                    className="text-red-600 hover:text-red-700"
+                    className="text-destructive hover:text-destructive/80"
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>

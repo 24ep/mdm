@@ -102,7 +102,7 @@ export function TemplateManagement({
     return (
       <Card>
         <CardContent className="py-12 text-center">
-          <div className="text-red-600 mb-4">
+          <div className="text-destructive mb-4">
             <p className="font-medium">Error loading templates</p>
             <p className="text-sm">{error}</p>
           </div>
@@ -199,7 +199,7 @@ export function TemplateManagement({
                     size="sm"
                     variant="ghost"
                     onClick={() => handleDeleteTemplate(template)}
-                    className="text-red-600 hover:text-red-700"
+                    className="text-destructive hover:text-destructive/80"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -224,7 +224,7 @@ export function TemplateManagement({
                     Created {new Date(template.createdAt).toLocaleDateString()}
                   </div>
                   <div className="flex items-center gap-1">
-                    <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
+                    <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
                       <Sparkles className="h-3 w-3 mr-1" />
                       Auto-Generated
                     </Badge>

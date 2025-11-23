@@ -73,9 +73,45 @@ export interface SpacesEditorConfig {
   updatedAt: string
 }
 
+export interface Space {
+  id: string
+  name: string
+  slug: string
+  description?: string
+  isDefault?: boolean
+  is_active?: boolean
+  icon?: string
+  logoUrl?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
 export class SpacesEditorManager {
   private static readonly STORAGE_KEY = 'spaces_editor_configs'
   private static readonly API_BASE = '/api/spaces-editor'
+
+  /**
+   * Get all spaces from the API
+   * @returns Promise resolving to an array of Space objects
+   */
+  static async getSpaces(): Promise<Space[]> {
+    const response = await fetch('/api/spaces?page=1&limit=100', {
+      cache: 'no-store',
+    })
+    
+    if (!response.ok) {
+      console.error(`Failed to fetch spaces: ${response.statusText}`)
+      return []
+    }
+    
+    try {
+      const data = await response.json()
+      return data.spaces || []
+    } catch (error) {
+      console.error('Error parsing spaces response:', error)
+      return []
+    }
+  }
 
   /**
    * Get spaces editor configuration for a space
@@ -218,7 +254,7 @@ export class SpacesEditorManager {
       description: pageData.description || 'A new page',
       templateId: pageData.templateId,
       isCustom: pageData.isCustom ?? true,
-      path: pageData.path || `/${pageData.name || 'new-page'}`,
+      path: pageData.path || (pageData.name ? `/${pageData.name}` : '/new-page'),
       order: config.pages.length + 1,
       isActive: true,
       createdAt: new Date().toISOString(),

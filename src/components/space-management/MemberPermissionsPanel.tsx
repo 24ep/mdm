@@ -53,22 +53,22 @@ const PERMISSION_CATEGORIES = {
   'space': {
     name: 'Space Management',
     icon: <Settings className="h-4 w-4" />,
-    color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+    color: 'bg-primary/10 text-primary'
   },
   'data': {
     name: 'Data Management',
     icon: <Database className="h-4 w-4" />,
-    color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+    color: 'bg-primary/10 text-primary'
   },
   'user': {
     name: 'User Management',
     icon: <Users className="h-4 w-4" />,
-    color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+    color: 'bg-primary/10 text-primary'
   },
   'content': {
     name: 'Content Management',
     icon: <FileText className="h-4 w-4" />,
-    color: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+    color: 'bg-warning/20 text-warning'
   }
 }
 
@@ -187,8 +187,8 @@ export function MemberPermissionsPanel({
                     key={member.user_id}
                     className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                       selectedMember?.user_id === member.user_id
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                        : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                        ? 'border-primary bg-primary/10'
+                        : 'hover:bg-muted'
                     }`}
                     onClick={() => setSelectedMember(member)}
                   >

@@ -158,12 +158,15 @@ export function SpaceSelection() {
   }
 
   const handleSpaceSelect = (space: Space) => {
-    router.push(`/${space.slug || space.id}/dashboard`)
+    router.push(`/${space.slug || space.id}/module`)
   }
 
   const handleSpaceSettings = (space: Space, e: React.MouseEvent) => {
     e.stopPropagation()
-    router.push(`/${space.slug || space.id}/settings`)
+    // Check if we're on data management page to add query param
+    const isFromDataManagement = window.location.pathname?.includes('/data-management')
+    const url = `/${space.slug || space.id}/settings${isFromDataManagement ? '?from=data-management' : ''}`
+    router.push(url)
   }
 
   const handleSpaceStudio = (space: Space, e: React.MouseEvent) => {
@@ -443,29 +446,18 @@ export function SpaceSelection() {
                 </CardContent>
               )}
               <CardContent className="pt-0">
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="default"
-                    className="flex-1"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleSpaceSelect(space)
-                    }}
-                  >
-                    <ArrowRight className="h-4 w-4 mr-2" />
-                    Go to Space
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="flex-1"
-                    onClick={(e) => handleSpaceSettings(space, e)}
-                  >
-                    <Settings className="h-4 w-4 mr-2" />
-                    Space Settings
-                  </Button>
-                </div>
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="w-full"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleSpaceSelect(space)
+                  }}
+                >
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                  Go to Space
+                </Button>
               </CardContent>
             </Card>
           ))}
@@ -553,31 +545,14 @@ export function SpaceSelection() {
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={(e) => handleSpaceStudio(space, e)}
-                      >
-                        <Layout className="h-4 w-4 mr-2" />
-                        Studio
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={(e) => handleSpaceSettings(space, e)}
-                      >
-                        <Settings className="h-4 w-4 mr-2" />
-                        Settings
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleSpaceSelect(space)}
-                      >
-                        <ArrowRight className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <Button
+                      size="sm"
+                      variant="default"
+                      onClick={() => handleSpaceSelect(space)}
+                    >
+                      <ArrowRight className="h-4 w-4 mr-2" />
+                      Go to Space
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}

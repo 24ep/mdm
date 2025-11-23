@@ -21,50 +21,50 @@ model User {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  createdSpaces      Space[]             @relation("SpaceCreator")
-  spaceMemberships   SpaceMember[]       @relation("UserSpaceMembers")
-  createdDataModels  DataModel[]         @relation("DataModelCreator")
-  createdDataRecords DataRecord[]        @relation("DataRecordCreator")
-  createdEavEntities EavEntity[]         @relation("EavEntityCreator")
-  notifications      Notification[]      @relation("UserNotifications")
-  teamMemberships    TeamMember[]        @relation("UserTeamMembers")
-  chatSessions       ChatSession[]       @relation("UserChatSessions")
-  auditLogs          AuditLog[]          @relation("UserAuditLogs")
-  createdTickets     Ticket[]            @relation("TicketCreator")
-  assignedTickets    TicketAssignee[]    @relation("TicketAssignees")
-  ticketComments     TicketComment[]     @relation("TicketCommentAuthor")
-  ticketTimeLogs     TicketTimeLog[]     @relation("TicketTimeLogUser")
-  intakeSubmissions  IntakeSubmission[]  @relation("IntakeSubmissionUser")
-  importProfiles     ImportProfile[]     @relation("ImportProfileCreator")
-  importJobs         ImportJob[]         @relation("ImportJobCreator")
-  exportJobs         ExportJob[]         @relation("ExportJobCreator")
-  createdChatbots    Chatbot[]           @relation("ChatbotCreator")
-  chatbotVersions    ChatbotVersion[]    @relation("ChatbotVersionCreator")
-  agentThreads       OpenAIAgentThread[] @relation("UserAgentThreads")
-  costRecords        ChatbotCostRecord[] @relation("UserCostRecords")
-  serviceInstallations ServiceInstallation[] @relation("UserServiceInstallations")
-  infrastructureInstances InfrastructureInstance[] @relation("UserInfrastructureInstances")
+  createdSpaces                Space[]                       @relation("SpaceCreator")
+  spaceMemberships             SpaceMember[]                 @relation("UserSpaceMembers")
+  createdDataModels            DataModel[]                   @relation("DataModelCreator")
+  createdDataRecords           DataRecord[]                  @relation("DataRecordCreator")
+  createdEavEntities           EavEntity[]                   @relation("EavEntityCreator")
+  notifications                Notification[]                @relation("UserNotifications")
+  teamMemberships              TeamMember[]                  @relation("UserTeamMembers")
+  chatSessions                 ChatSession[]                 @relation("UserChatSessions")
+  auditLogs                    AuditLog[]                    @relation("UserAuditLogs")
+  createdTickets               Ticket[]                      @relation("TicketCreator")
+  assignedTickets              TicketAssignee[]              @relation("TicketAssignees")
+  ticketComments               TicketComment[]               @relation("TicketCommentAuthor")
+  ticketTimeLogs               TicketTimeLog[]               @relation("TicketTimeLogUser")
+  intakeSubmissions            IntakeSubmission[]            @relation("IntakeSubmissionUser")
+  importProfiles               ImportProfile[]               @relation("ImportProfileCreator")
+  importJobs                   ImportJob[]                   @relation("ImportJobCreator")
+  exportJobs                   ExportJob[]                   @relation("ExportJobCreator")
+  createdChatbots              Chatbot[]                     @relation("ChatbotCreator")
+  chatbotVersions              ChatbotVersion[]              @relation("ChatbotVersionCreator")
+  agentThreads                 OpenAIAgentThread[]           @relation("UserAgentThreads")
+  costRecords                  ChatbotCostRecord[]           @relation("UserCostRecords")
+  serviceInstallations         ServiceInstallation[]         @relation("UserServiceInstallations")
+  infrastructureInstances      InfrastructureInstance[]      @relation("UserInfrastructureInstances")
   serviceManagementAssignments ServiceManagementAssignment[] @relation("UserServiceManagementAssignments")
-  pluginReviews PluginReview[] @relation("UserPluginReviews")
-  pluginReviewHelpful PluginReviewHelpful[] @relation("UserPluginReviewHelpful")
-  apiWorkspaces ApiWorkspace[] @relation("UserApiWorkspaces")
-  apiCollections ApiCollection[] @relation("UserApiCollections")
-  apiRequests ApiRequest[] @relation("UserApiRequests")
-  apiEnvironments ApiEnvironment[] @relation("UserApiEnvironments")
-  apiRequestHistory ApiRequestHistory[] @relation("UserApiRequestHistory")
-  knowledgeCollections KnowledgeCollection[] @relation("UserKnowledgeCollections")
-  knowledgeCollectionMembers KnowledgeCollectionMember[] @relation("UserKnowledgeCollectionMembers")
-  knowledgeDocuments KnowledgeDocument[] @relation("UserKnowledgeDocuments")
-  knowledgeDocumentUpdates KnowledgeDocument[] @relation("UserKnowledgeDocumentUpdates")
-  knowledgeDocumentVersions KnowledgeDocumentVersion[] @relation("UserKnowledgeDocumentVersions")
-  knowledgeComments KnowledgeComment[] @relation("UserKnowledgeComments")
-  knowledgeCommentResolutions KnowledgeComment[] @relation("UserKnowledgeCommentResolutions")
-  knowledgeShares KnowledgeShare[] @relation("UserKnowledgeShares")
-  knowledgeShareCreators KnowledgeShare[] @relation("UserKnowledgeShareCreators")
-  knowledgeStars KnowledgeStar[] @relation("UserKnowledgeStars")
-  knowledgeMentions KnowledgeMention[] @relation("UserKnowledgeMentions")
-  knowledgeMentionCreators KnowledgeMention[] @relation("UserKnowledgeMentionCreators")
-  knowledgePresence KnowledgePresence[] @relation("UserKnowledgePresence")
+  pluginReviews                PluginReview[]                @relation("UserPluginReviews")
+  pluginReviewHelpful          PluginReviewHelpful[]         @relation("UserPluginReviewHelpful")
+  apiWorkspaces                ApiWorkspace[]                @relation("UserApiWorkspaces")
+  apiCollections               ApiCollection[]               @relation("UserApiCollections")
+  apiRequests                  ApiRequest[]                  @relation("UserApiRequests")
+  apiEnvironments              ApiEnvironment[]              @relation("UserApiEnvironments")
+  apiRequestHistory            ApiRequestHistory[]           @relation("UserApiRequestHistory")
+  knowledgeCollections         KnowledgeCollection[]         @relation("UserKnowledgeCollections")
+  knowledgeCollectionMembers   KnowledgeCollectionMember[]   @relation("UserKnowledgeCollectionMembers")
+  knowledgeDocuments           KnowledgeDocument[]           @relation("UserKnowledgeDocuments")
+  knowledgeDocumentUpdates     KnowledgeDocument[]           @relation("UserKnowledgeDocumentUpdates")
+  knowledgeDocumentVersions    KnowledgeDocumentVersion[]    @relation("UserKnowledgeDocumentVersions")
+  knowledgeComments            KnowledgeComment[]            @relation("UserKnowledgeComments")
+  knowledgeCommentResolutions  KnowledgeComment[]            @relation("UserKnowledgeCommentResolutions")
+  knowledgeShares              KnowledgeShare[]              @relation("UserKnowledgeShares")
+  knowledgeShareCreators       KnowledgeShare[]              @relation("UserKnowledgeShareCreators")
+  knowledgeStars               KnowledgeStar[]               @relation("UserKnowledgeStars")
+  knowledgeMentions            KnowledgeMention[]            @relation("UserKnowledgeMentions")
+  knowledgeMentionCreators     KnowledgeMention[]            @relation("UserKnowledgeMentionCreators")
+  knowledgePresence            KnowledgePresence[]           @relation("UserKnowledgePresence")
 
   @@map("users")
 }
@@ -90,26 +90,26 @@ model Space {
   deletedAt          DateTime? @map("deleted_at")
 
   // Relations
-  creator             User                     @relation("SpaceCreator", fields: [createdBy], references: [id])
-  members             SpaceMember[]            @relation("SpaceMembers")
-  dataModels          DataModelSpace[]         @relation("SpaceDataModels")
-  attachmentStorage   SpaceAttachmentStorage[] @relation("SpaceAttachments")
-  externalConnections ExternalConnection[]     @relation("SpaceExternalConnections")
-  notebooks           Notebook[]               @relation("SpaceNotebooks")
-  chatSessions        ChatSession[]            @relation("SpaceChatSessions")
-  ticketSpaces        TicketSpace[]            @relation("SpaceTicketSpaces")
-  kanbanConfigs       KanbanConfig[]           @relation("SpaceKanbanConfigs")
-  intakeForms         IntakeForm[]             @relation("SpaceIntakeForms")
-  importProfiles      ImportProfile[]          @relation("SpaceImportProfiles")
-  importJobs          ImportJob[]              @relation("SpaceImportJobs")
-  exportJobs          ExportJob[]              @relation("SpaceExportJobs")
-  chatbots            Chatbot[]                @relation("SpaceChatbots")
-  agentThreads        OpenAIAgentThread[]      @relation("SpaceAgentThreads")
-  serviceInstallations ServiceInstallation[]    @relation("SpaceServiceInstallations")
+  creator                 User                     @relation("SpaceCreator", fields: [createdBy], references: [id])
+  members                 SpaceMember[]            @relation("SpaceMembers")
+  dataModels              DataModelSpace[]         @relation("SpaceDataModels")
+  attachmentStorage       SpaceAttachmentStorage[] @relation("SpaceAttachments")
+  externalConnections     ExternalConnection[]     @relation("SpaceExternalConnections")
+  notebooks               Notebook[]               @relation("SpaceNotebooks")
+  chatSessions            ChatSession[]            @relation("SpaceChatSessions")
+  ticketSpaces            TicketSpace[]            @relation("SpaceTicketSpaces")
+  kanbanConfigs           KanbanConfig[]           @relation("SpaceKanbanConfigs")
+  intakeForms             IntakeForm[]             @relation("SpaceIntakeForms")
+  importProfiles          ImportProfile[]          @relation("SpaceImportProfiles")
+  importJobs              ImportJob[]              @relation("SpaceImportJobs")
+  exportJobs              ExportJob[]              @relation("SpaceExportJobs")
+  chatbots                Chatbot[]                @relation("SpaceChatbots")
+  agentThreads            OpenAIAgentThread[]      @relation("SpaceAgentThreads")
+  serviceInstallations    ServiceInstallation[]    @relation("SpaceServiceInstallations")
   infrastructureInstances InfrastructureInstance[] @relation("SpaceInfrastructureInstances")
-  pluginReviews PluginReview[] @relation("SpacePluginReviews")
-  knowledgeCollections KnowledgeCollection[] @relation("SpaceKnowledgeCollections")
-  apiWorkspaces ApiWorkspace[] @relation("SpaceApiWorkspaces")
+  pluginReviews           PluginReview[]           @relation("SpacePluginReviews")
+  knowledgeCollections    KnowledgeCollection[]    @relation("SpaceKnowledgeCollections")
+  apiWorkspaces           ApiWorkspace[]           @relation("SpaceApiWorkspaces")
 
   @@map("spaces")
 }
@@ -1171,22 +1171,22 @@ model Chatbot {
   deletedAt          DateTime? @map("deleted_at")
 
   // Relations
-  creator     User                @relation("ChatbotCreator", fields: [createdBy], references: [id])
-  space       Space?              @relation("SpaceChatbots", fields: [spaceId], references: [id])
-  versions    ChatbotVersion[]    @relation("ChatbotVersions")
-  threads     OpenAIAgentThread[] @relation("ChatbotThreads")
-  rateLimit   ChatbotRateLimit?   @relation("ChatbotRateLimits")
-  cacheConfig ChatbotCacheConfig? @relation("ChatbotCacheConfigs")
-  retryConfig ChatbotRetryConfig? @relation("ChatbotRetryConfigs")
-  costBudget  ChatbotCostBudget?  @relation("ChatbotCostBudgets")
-  costRecords ChatbotCostRecord[] @relation("ChatbotCostRecords")
-  webhooks    ChatbotWebhook[]    @relation("ChatbotWebhooks")
+  creator            User                       @relation("ChatbotCreator", fields: [createdBy], references: [id])
+  space              Space?                     @relation("SpaceChatbots", fields: [spaceId], references: [id])
+  versions           ChatbotVersion[]           @relation("ChatbotVersions")
+  threads            OpenAIAgentThread[]        @relation("ChatbotThreads")
+  rateLimit          ChatbotRateLimit?          @relation("ChatbotRateLimits")
+  cacheConfig        ChatbotCacheConfig?        @relation("ChatbotCacheConfigs")
+  retryConfig        ChatbotRetryConfig?        @relation("ChatbotRetryConfigs")
+  costBudget         ChatbotCostBudget?         @relation("ChatbotCostBudgets")
+  costRecords        ChatbotCostRecord[]        @relation("ChatbotCostRecords")
+  webhooks           ChatbotWebhook[]           @relation("ChatbotWebhooks")
   performanceMetrics ChatbotPerformanceMetric[] @relation("ChatbotPerformanceMetrics")
-  customFunctions ChatbotCustomFunction[] @relation("ChatbotCustomFunctions")
-  multiAgentConfig ChatbotMultiAgentConfig? @relation("ChatbotMultiAgentConfigs")
-  lifecycleHooks ChatbotLifecycleHook[] @relation("ChatbotLifecycleHooks")
-  connectors ChatbotConnector[] @relation("ChatbotConnectors")
-  agentLoopConfig ChatbotAgentLoopConfig? @relation("ChatbotAgentLoopConfigs")
+  customFunctions    ChatbotCustomFunction[]    @relation("ChatbotCustomFunctions")
+  multiAgentConfig   ChatbotMultiAgentConfig?   @relation("ChatbotMultiAgentConfigs")
+  lifecycleHooks     ChatbotLifecycleHook[]     @relation("ChatbotLifecycleHooks")
+  connectors         ChatbotConnector[]         @relation("ChatbotConnectors")
+  agentLoopConfig    ChatbotAgentLoopConfig?    @relation("ChatbotAgentLoopConfigs")
 
   @@map("chatbots")
 }
@@ -1338,14 +1338,14 @@ model ChatbotCostRecord {
 
 // Webhook Configuration for Chatbot Events
 model ChatbotWebhook {
-  id          String   @id @default(uuid()) @db.Uuid
-  chatbotId   String   @map("chatbot_id") @db.Uuid
-  url         String   // Webhook URL
-  secret      String?  // Optional secret for webhook signature
-  events      String[] // Array of event types: 'budget_alert', 'budget_exceeded', 'rate_limit_exceeded', 'cost_threshold'
-  enabled     Boolean  @default(true)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id        String   @id @default(uuid()) @db.Uuid
+  chatbotId String   @map("chatbot_id") @db.Uuid
+  url       String // Webhook URL
+  secret    String? // Optional secret for webhook signature
+  events    String[] // Array of event types: 'budget_alert', 'budget_exceeded', 'rate_limit_exceeded', 'cost_threshold'
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
   chatbot Chatbot @relation("ChatbotWebhooks", fields: [chatbotId], references: [id], onDelete: Cascade)
@@ -1356,12 +1356,12 @@ model ChatbotWebhook {
 
 // Performance Metrics Tracking
 model ChatbotPerformanceMetric {
-  id              String   @id @default(uuid()) @db.Uuid
-  chatbotId       String   @map("chatbot_id") @db.Uuid
-  metricType      String   @map("metric_type") // 'cache_hit', 'cache_miss', 'retry_attempt', 'retry_success', 'rate_limit_violation', 'response_time'
-  value           Decimal  @db.Decimal(10, 4) // Metric value (e.g., response time in ms, cache hit count)
-  metadata        Json?    @default("{}") // Additional context
-  recordedAt      DateTime @default(now()) @map("recorded_at")
+  id         String   @id @default(uuid()) @db.Uuid
+  chatbotId  String   @map("chatbot_id") @db.Uuid
+  metricType String   @map("metric_type") // 'cache_hit', 'cache_miss', 'retry_attempt', 'retry_success', 'rate_limit_violation', 'response_time'
+  value      Decimal  @db.Decimal(10, 4) // Metric value (e.g., response time in ms, cache hit count)
+  metadata   Json?    @default("{}") // Additional context
+  recordedAt DateTime @default(now()) @map("recorded_at")
 
   // Relations
   chatbot Chatbot @relation("ChatbotPerformanceMetrics", fields: [chatbotId], references: [id], onDelete: Cascade)
@@ -1373,18 +1373,18 @@ model ChatbotPerformanceMetric {
 
 // Custom Function Tools for OpenAI Agent SDK
 model ChatbotCustomFunction {
-  id          String   @id @default(uuid()) @db.Uuid
-  chatbotId   String   @map("chatbot_id") @db.Uuid
-  name        String   // Function name
-  description String   @db.Text // Function description for the agent
-  parameters  Json     // JSON schema for function parameters
-  endpoint    String?  // API endpoint to call (if external)
-  code        String?  @db.Text // JavaScript/TypeScript code to execute (if inline)
-  executionType String @map("execution_type") // 'api', 'inline', 'webhook'
-  enabled     Boolean  @default(true)
-  metadata    Json?    @default("{}") // Additional configuration
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id            String   @id @default(uuid()) @db.Uuid
+  chatbotId     String   @map("chatbot_id") @db.Uuid
+  name          String // Function name
+  description   String   @db.Text // Function description for the agent
+  parameters    Json // JSON schema for function parameters
+  endpoint      String? // API endpoint to call (if external)
+  code          String?  @db.Text // JavaScript/TypeScript code to execute (if inline)
+  executionType String   @map("execution_type") // 'api', 'inline', 'webhook'
+  enabled       Boolean  @default(true)
+  metadata      Json?    @default("{}") // Additional configuration
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   // Relations
   chatbot Chatbot @relation("ChatbotCustomFunctions", fields: [chatbotId], references: [id], onDelete: Cascade)
@@ -1395,15 +1395,15 @@ model ChatbotCustomFunction {
 
 // Multi-Agent Coordination Configuration
 model ChatbotMultiAgentConfig {
-  id          String   @id @default(uuid()) @db.Uuid
-  chatbotId   String   @map("chatbot_id") @db.Uuid
-  enabled     Boolean  @default(false)
-  agents      Json     // Array of agent configurations with handoff rules
-  handoffRules Json?   @default("{}") @map("handoff_rules") // Rules for agent handoffs
-  coordinationStrategy String? @map("coordination_strategy") // 'sequential', 'parallel', 'conditional'
-  metadata    Json?    @default("{}")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id                   String   @id @default(uuid()) @db.Uuid
+  chatbotId            String   @map("chatbot_id") @db.Uuid
+  enabled              Boolean  @default(false)
+  agents               Json // Array of agent configurations with handoff rules
+  handoffRules         Json?    @default("{}") @map("handoff_rules") // Rules for agent handoffs
+  coordinationStrategy String?  @map("coordination_strategy") // 'sequential', 'parallel', 'conditional'
+  metadata             Json?    @default("{}")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
 
   // Relations
   chatbot Chatbot @relation("ChatbotMultiAgentConfigs", fields: [chatbotId], references: [id], onDelete: Cascade)
@@ -1420,7 +1420,7 @@ model ChatbotLifecycleHook {
   enabled     Boolean  @default(true)
   handlerType String   @map("handler_type") // 'api', 'inline', 'webhook'
   handlerUrl  String?  @map("handler_url") // API endpoint or webhook URL
-  handlerCode String?  @db.Text @map("handler_code") // Inline code to execute
+  handlerCode String?  @map("handler_code") @db.Text // Inline code to execute
   metadata    Json?    @default("{}")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
@@ -1434,15 +1434,15 @@ model ChatbotLifecycleHook {
 
 // Third-party Service Connectors
 model ChatbotConnector {
-  id          String   @id @default(uuid()) @db.Uuid
-  chatbotId   String   @map("chatbot_id") @db.Uuid
-  connectorType String @map("connector_type") // 'gmail', 'google_drive', 'github', 'slack', etc.
-  enabled     Boolean  @default(true)
-  credentials Json?    // Encrypted OAuth tokens or API keys
-  config      Json?    @default("{}") // Connector-specific configuration
-  metadata    Json?    @default("{}")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id            String   @id @default(uuid()) @db.Uuid
+  chatbotId     String   @map("chatbot_id") @db.Uuid
+  connectorType String   @map("connector_type") // 'gmail', 'google_drive', 'github', 'slack', etc.
+  enabled       Boolean  @default(true)
+  credentials   Json? // Encrypted OAuth tokens or API keys
+  config        Json?    @default("{}") // Connector-specific configuration
+  metadata      Json?    @default("{}")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   // Relations
   chatbot Chatbot @relation("ChatbotConnectors", fields: [chatbotId], references: [id], onDelete: Cascade)
@@ -1453,16 +1453,16 @@ model ChatbotConnector {
 
 // Agent Loop Configuration
 model ChatbotAgentLoopConfig {
-  id              String   @id @default(uuid()) @db.Uuid
-  chatbotId       String   @map("chatbot_id") @db.Uuid
-  maxIterations   Int?     @map("max_iterations") // Maximum agent loop iterations
-  stopConditions  Json?    @default("{}") @map("stop_conditions") // Conditions to stop the loop
-  timeout         Int?     // Timeout in milliseconds
-  enableHumanInLoop Boolean @default(false) @map("enable_human_in_loop") // Enable human-in-the-loop pauses
-  humanInLoopConfig Json?  @default("{}") @map("human_in_loop_config") // Configuration for human-in-the-loop
-  metadata        Json?    @default("{}")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  id                String   @id @default(uuid()) @db.Uuid
+  chatbotId         String   @map("chatbot_id") @db.Uuid
+  maxIterations     Int?     @map("max_iterations") // Maximum agent loop iterations
+  stopConditions    Json?    @default("{}") @map("stop_conditions") // Conditions to stop the loop
+  timeout           Int? // Timeout in milliseconds
+  enableHumanInLoop Boolean  @default(false) @map("enable_human_in_loop") // Enable human-in-the-loop pauses
+  humanInLoopConfig Json?    @default("{}") @map("human_in_loop_config") // Configuration for human-in-the-loop
+  metadata          Json?    @default("{}")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
   // Relations
   chatbot Chatbot @relation("ChatbotAgentLoopConfigs", fields: [chatbotId], references: [id], onDelete: Cascade)
@@ -1473,16 +1473,16 @@ model ChatbotAgentLoopConfig {
 
 // Asset Management Models
 model Language {
-  id          String   @id @default(uuid()) @db.Uuid
-  code        String   @unique // ISO 639-1 code (e.g., 'en', 'es', 'fr')
-  name        String   // Native name (e.g., 'English', 'Español')
-  nativeName  String   @map("native_name") // Native name in that language
-  flag        String?  // Flag emoji or icon URL
-  isActive    Boolean  @default(true) @map("is_active")
-  isDefault   Boolean  @default(false) @map("is_default")
-  sortOrder   Int      @default(0) @map("sort_order")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id         String   @id @default(uuid()) @db.Uuid
+  code       String   @unique // ISO 639-1 code (e.g., 'en', 'es', 'fr')
+  name       String // Native name (e.g., 'English', 'Español')
+  nativeName String   @map("native_name") // Native name in that language
+  flag       String? // Flag emoji or icon URL
+  isActive   Boolean  @default(true) @map("is_active")
+  isDefault  Boolean  @default(false) @map("is_default")
+  sortOrder  Int      @default(0) @map("sort_order")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   // Relations
   localizations Localization[] @relation("LanguageLocalizations")
@@ -1491,17 +1491,17 @@ model Language {
 }
 
 model AssetType {
-  id          String   @id @default(uuid()) @db.Uuid
-  code        String   @unique // Unique code (e.g., 'database_type', 'system_type', 'cms_type')
-  name        String   // Display name
-  description String?  @db.Text
-  category    String   // 'database', 'system', 'cms', 'other'
-  isActive    Boolean  @default(true) @map("is_active")
-  isSystem    Boolean  @default(false) @map("is_system") // System types cannot be deleted
-  sortOrder   Int      @default(0) @map("sort_order")
-  metadata    Json?    @default("{}") // Additional configuration
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id          String    @id @default(uuid()) @db.Uuid
+  code        String    @unique // Unique code (e.g., 'database_type', 'system_type', 'cms_type')
+  name        String // Display name
+  description String?   @db.Text
+  category    String // 'database', 'system', 'cms', 'other'
+  isActive    Boolean   @default(true) @map("is_active")
+  isSystem    Boolean   @default(false) @map("is_system") // System types cannot be deleted
+  sortOrder   Int       @default(0) @map("sort_order")
+  metadata    Json?     @default("{}") // Additional configuration
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
 
   // Relations
@@ -1513,12 +1513,12 @@ model AssetType {
 model Asset {
   id          String    @id @default(uuid()) @db.Uuid
   assetTypeId String    @map("asset_type_id") @db.Uuid
-  code        String    // Unique code within type (e.g., 'postgresql', 'mysql')
-  name        String    // Display name
+  code        String // Unique code within type (e.g., 'postgresql', 'mysql')
+  name        String // Display name
   description String?   @db.Text
-  logo        String?   // Logo URL or path
-  icon        String?   // Icon URL or emoji
-  color       String?   // Primary color (hex)
+  logo        String? // Logo URL or path
+  icon        String? // Icon URL or emoji
+  color       String? // Primary color (hex)
   isActive    Boolean   @default(true) @map("is_active")
   isSystem    Boolean   @default(false) @map("is_system") // System assets cannot be deleted
   sortOrder   Int       @default(0) @map("sort_order")
@@ -1535,14 +1535,14 @@ model Asset {
 }
 
 model Localization {
-  id        String   @id @default(uuid()) @db.Uuid
+  id         String   @id @default(uuid()) @db.Uuid
   languageId String   @map("language_id") @db.Uuid
   entityType String   @map("entity_type") // 'asset_type', 'asset', 'system'
   entityId   String   @map("entity_id") @db.Uuid
-  field     String   // Field name (e.g., 'name', 'description')
-  value     String   @db.Text // Translated value
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  field      String // Field name (e.g., 'name', 'description')
+  value      String   @db.Text // Translated value
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   // Relations
   language Language @relation("LanguageLocalizations", fields: [languageId], references: [id], onDelete: Cascade)
@@ -1553,61 +1553,61 @@ model Localization {
 }
 
 model StorageConnection {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String    @id @default(uuid()) @db.Uuid
   name        String
-  type        String   // 'minio', 's3', 'sftp', 'onedrive', 'google_drive'
-  config      Json     // Provider-specific configuration (encrypted in production)
-  isActive    Boolean  @default(true) @map("is_active")
-  status      String   @default("disconnected") // 'connected', 'disconnected', 'error'
+  type        String // 'minio', 's3', 'sftp', 'onedrive', 'google_drive'
+  config      Json // Provider-specific configuration (encrypted in production)
+  isActive    Boolean   @default(true) @map("is_active")
+  status      String    @default("disconnected") // 'connected', 'disconnected', 'error'
   lastTested  DateTime? @map("last_tested")
-  lastError   String?  @map("last_error") @db.Text
+  lastError   String?   @map("last_error") @db.Text
   description String?
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   @@map("storage_connections")
 }
 
 // Marketplace Models
 model ServiceRegistry {
-  id                String   @id @default(uuid()) @db.Uuid
+  id                String    @id @default(uuid()) @db.Uuid
   name              String
-  slug              String   @unique
-  description       String?  @db.Text
+  slug              String    @unique
+  description       String?   @db.Text
   version           String
   provider          String
-  providerUrl       String?  @map("provider_url")
-  category          String?   // 'business-intelligence', 'service-management', etc.
-  status            String   @default("pending") // 'pending', 'approved', 'rejected', 'deprecated'
-  capabilities      Json?    @default("{}")
-  apiBaseUrl        String?  @map("api_base_url")
-  apiAuthType       String?  @map("api_auth_type") // 'oauth2', 'api_key', 'bearer', 'none'
-  apiAuthConfig     Json?    @default("{}") @map("api_auth_config")
-  uiType            String?  @map("ui_type") // 'iframe', 'react_component', 'web_component'
-  uiConfig          Json?    @default("{}") @map("ui_config")
-  webhookSupported  Boolean  @default(false) @map("webhook_supported")
-  webhookEvents     String[] @map("webhook_events")
-  iconUrl           String?  @map("icon_url")
+  providerUrl       String?   @map("provider_url")
+  category          String? // 'business-intelligence', 'service-management', etc.
+  status            String    @default("pending") // 'pending', 'approved', 'rejected', 'deprecated'
+  capabilities      Json?     @default("{}")
+  apiBaseUrl        String?   @map("api_base_url")
+  apiAuthType       String?   @map("api_auth_type") // 'oauth2', 'api_key', 'bearer', 'none'
+  apiAuthConfig     Json?     @default("{}") @map("api_auth_config")
+  uiType            String?   @map("ui_type") // 'iframe', 'react_component', 'web_component'
+  uiConfig          Json?     @default("{}") @map("ui_config")
+  webhookSupported  Boolean   @default(false) @map("webhook_supported")
+  webhookEvents     String[]  @map("webhook_events")
+  iconUrl           String?   @map("icon_url")
   screenshots       String[]
-  documentationUrl  String?  @map("documentation_url")
-  supportUrl        String?  @map("support_url")
-  pricingInfo       Json?    @map("pricing_info")
-  installationCount Int      @default(0) @map("installation_count")
-  rating            Decimal? @db.Decimal(3, 2)
-  reviewCount       Int      @default(0) @map("review_count")
-  verified          Boolean  @default(false)
-  securityAudit     Json?    @map("security_audit")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
+  documentationUrl  String?   @map("documentation_url")
+  supportUrl        String?   @map("support_url")
+  pricingInfo       Json?     @map("pricing_info")
+  installationCount Int       @default(0) @map("installation_count")
+  rating            Decimal?  @db.Decimal(3, 2)
+  reviewCount       Int       @default(0) @map("review_count")
+  verified          Boolean   @default(false)
+  securityAudit     Json?     @map("security_audit")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
   deletedAt         DateTime? @map("deleted_at")
 
   // Relations
-  installations ServiceInstallation[] @relation("ServiceRegistryInstallations")
-  uiComponents  ServiceUIComponent[]   @relation("ServiceRegistryUIComponents")
-  apiRoutes     ServiceAPIRoute[]     @relation("ServiceRegistryAPIRoutes")
-  managementPlugins InstanceService[] @relation("ServiceRegistryManagementPlugins")
+  installations         ServiceInstallation[]         @relation("ServiceRegistryInstallations")
+  uiComponents          ServiceUIComponent[]          @relation("ServiceRegistryUIComponents")
+  apiRoutes             ServiceAPIRoute[]             @relation("ServiceRegistryAPIRoutes")
+  managementPlugins     InstanceService[]             @relation("ServiceRegistryManagementPlugins")
   managementAssignments ServiceManagementAssignment[] @relation("ServiceRegistryManagementAssignments")
-  reviews PluginReview[] @relation("ServiceRegistryReviews")
+  reviews               PluginReview[]                @relation("ServiceRegistryReviews")
 
   @@index([category])
   @@index([status])
@@ -1616,26 +1616,26 @@ model ServiceRegistry {
 }
 
 model ServiceInstallation {
-  id             String   @id @default(uuid()) @db.Uuid
-  serviceId      String   @map("service_id") @db.Uuid
-  spaceId        String?  @map("space_id") @db.Uuid
-  installedBy    String?  @map("installed_by") @db.Uuid
-  config         Json?    @default("{}")
-  credentials    Json?    @default("{}") // Encrypted
-  status         String   @default("active") // 'active', 'inactive', 'error'
+  id              String    @id @default(uuid()) @db.Uuid
+  serviceId       String    @map("service_id") @db.Uuid
+  spaceId         String?   @map("space_id") @db.Uuid
+  installedBy     String?   @map("installed_by") @db.Uuid
+  config          Json?     @default("{}")
+  credentials     Json?     @default("{}") // Encrypted
+  status          String    @default("active") // 'active', 'inactive', 'error'
   lastHealthCheck DateTime? @map("last_health_check")
-  healthStatus   String?  @map("health_status")
-  permissions    Json?    @default("{}")
-  installedAt    DateTime @default(now()) @map("installed_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-  deletedAt      DateTime? @map("deleted_at")
+  healthStatus    String?   @map("health_status")
+  permissions     Json?     @default("{}")
+  installedAt     DateTime  @default(now()) @map("installed_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
 
   // Relations
-  service     ServiceRegistry @relation("ServiceRegistryInstallations", fields: [serviceId], references: [id], onDelete: Cascade)
-  space       Space?          @relation("SpaceServiceInstallations", fields: [spaceId], references: [id], onDelete: Cascade)
-  installer   User?           @relation("UserServiceInstallations", fields: [installedBy], references: [id])
+  service      ServiceRegistry      @relation("ServiceRegistryInstallations", fields: [serviceId], references: [id], onDelete: Cascade)
+  space        Space?               @relation("SpaceServiceInstallations", fields: [spaceId], references: [id], onDelete: Cascade)
+  installer    User?                @relation("UserServiceInstallations", fields: [installedBy], references: [id])
   uiComponents ServiceUIComponent[] @relation("ServiceInstallationUIComponents")
-  apiRoutes   ServiceAPIRoute[]     @relation("ServiceInstallationAPIRoutes")
+  apiRoutes    ServiceAPIRoute[]    @relation("ServiceInstallationAPIRoutes")
 
   @@unique([serviceId, spaceId])
   @@index([spaceId])
@@ -1645,22 +1645,22 @@ model ServiceInstallation {
 }
 
 model ServiceUIComponent {
-  id              String   @id @default(uuid()) @db.Uuid
-  serviceId       String   @map("service_id") @db.Uuid
-  installationId  String?  @map("installation_id") @db.Uuid
-  componentType   String?  @map("component_type") // 'widget', 'page', 'sidebar', 'modal'
-  componentName   String?  @map("component_name")
-  componentId     String?  @map("component_id")
-  renderType      String?  @map("render_type") // 'iframe', 'react', 'web_component'
-  renderConfig    Json?    @default("{}") @map("render_config")
-  placement       String?  // 'dashboard', 'sidebar', 'settings'
-  placementConfig Json?    @default("{}") @map("placement_config")
+  id                  String   @id @default(uuid()) @db.Uuid
+  serviceId           String   @map("service_id") @db.Uuid
+  installationId      String?  @map("installation_id") @db.Uuid
+  componentType       String?  @map("component_type") // 'widget', 'page', 'sidebar', 'modal'
+  componentName       String?  @map("component_name")
+  componentId         String?  @map("component_id")
+  renderType          String?  @map("render_type") // 'iframe', 'react', 'web_component'
+  renderConfig        Json?    @default("{}") @map("render_config")
+  placement           String? // 'dashboard', 'sidebar', 'settings'
+  placementConfig     Json?    @default("{}") @map("placement_config")
   requiredPermissions String[] @map("required_permissions")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
 
   // Relations
-  service      ServiceRegistry    @relation("ServiceRegistryUIComponents", fields: [serviceId], references: [id], onDelete: Cascade)
+  service      ServiceRegistry      @relation("ServiceRegistryUIComponents", fields: [serviceId], references: [id], onDelete: Cascade)
   installation ServiceInstallation? @relation("ServiceInstallationUIComponents", fields: [installationId], references: [id], onDelete: Cascade)
 
   @@index([serviceId])
@@ -1685,7 +1685,7 @@ model ServiceAPIRoute {
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   // Relations
-  service      ServiceRegistry    @relation("ServiceRegistryAPIRoutes", fields: [serviceId], references: [id], onDelete: Cascade)
+  service      ServiceRegistry      @relation("ServiceRegistryAPIRoutes", fields: [serviceId], references: [id], onDelete: Cascade)
   installation ServiceInstallation? @relation("ServiceInstallationAPIRoutes", fields: [installationId], references: [id], onDelete: Cascade)
 
   @@index([serviceId])
@@ -1695,26 +1695,26 @@ model ServiceAPIRoute {
 
 // Infrastructure Models
 model InfrastructureInstance {
-  id              String   @id @default(uuid()) @db.Uuid
-  name            String
-  type            String   // 'vm', 'docker_host', 'kubernetes', 'cloud_instance'
-  host            String
-  port            Int?
-  protocol        String   @default("ssh")
-  connectionType  String   @map("connection_type") // 'ssh', 'docker_api', 'kubernetes', 'http'
-  connectionConfig Json?    @default("{}") @map("connection_config")
-  status          String   @default("unknown") // 'online', 'offline', 'error'
-  lastHealthCheck DateTime? @map("last_health_check")
-  healthStatus    Json?    @default("{}") @map("health_status")
-  osType          String?  @map("os_type")
-  osVersion       String?  @map("os_version")
-  resources       Json?    // { cpu, memory, disk }
-  tags            String[]
-  spaceId         String?  @map("space_id") @db.Uuid
-  createdBy       String?  @map("created_by") @db.Uuid
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-  deletedAt       DateTime? @map("deleted_at")
+  id               String    @id @default(uuid()) @db.Uuid
+  name             String
+  type             String // 'vm', 'docker_host', 'kubernetes', 'cloud_instance'
+  host             String
+  port             Int?
+  protocol         String    @default("ssh")
+  connectionType   String    @map("connection_type") // 'ssh', 'docker_api', 'kubernetes', 'http'
+  connectionConfig Json?     @default("{}") @map("connection_config")
+  status           String    @default("unknown") // 'online', 'offline', 'error'
+  lastHealthCheck  DateTime? @map("last_health_check")
+  healthStatus     Json?     @default("{}") @map("health_status")
+  osType           String?   @map("os_type")
+  osVersion        String?   @map("os_version")
+  resources        Json? // { cpu, memory, disk }
+  tags             String[]
+  spaceId          String?   @map("space_id") @db.Uuid
+  createdBy        String?   @map("created_by") @db.Uuid
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
 
   // Relations
   space    Space?            @relation("SpaceInfrastructureInstances", fields: [spaceId], references: [id], onDelete: Cascade)
@@ -1728,24 +1728,24 @@ model InfrastructureInstance {
 }
 
 model InstanceService {
-  id                String   @id @default(uuid()) @db.Uuid
-  instanceId        String   @map("instance_id") @db.Uuid
-  name              String
-  type              String   // 'docker_container', 'systemd_service', 'application'
-  status            String   @default("unknown") // 'running', 'stopped', 'error'
-  serviceConfig     Json?    @default("{}") @map("service_config")
-  endpoints         Json?    @default("[]")
-  healthCheckUrl    String?  @map("health_check_url")
-  managementPluginId String? @map("management_plugin_id") @db.Uuid
-  managementConfig  Json?    @default("{}") @map("management_config")
-  discoveredAt      DateTime @default(now()) @map("discovered_at")
-  lastSeen          DateTime @default(now()) @map("last_seen")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
+  id                 String   @id @default(uuid()) @db.Uuid
+  instanceId         String   @map("instance_id") @db.Uuid
+  name               String
+  type               String // 'docker_container', 'systemd_service', 'application'
+  status             String   @default("unknown") // 'running', 'stopped', 'error'
+  serviceConfig      Json?    @default("{}") @map("service_config")
+  endpoints          Json?    @default("[]")
+  healthCheckUrl     String?  @map("health_check_url")
+  managementPluginId String?  @map("management_plugin_id") @db.Uuid
+  managementConfig   Json?    @default("{}") @map("management_config")
+  discoveredAt       DateTime @default(now()) @map("discovered_at")
+  lastSeen           DateTime @default(now()) @map("last_seen")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
 
   // Relations
-  instance          InfrastructureInstance @relation("InfrastructureInstanceServices", fields: [instanceId], references: [id], onDelete: Cascade)
-  managementPlugin  ServiceRegistry?      @relation("ServiceRegistryManagementPlugins", fields: [managementPluginId], references: [id])
+  instance              InfrastructureInstance        @relation("InfrastructureInstanceServices", fields: [instanceId], references: [id], onDelete: Cascade)
+  managementPlugin      ServiceRegistry?              @relation("ServiceRegistryManagementPlugins", fields: [managementPluginId], references: [id])
   managementAssignments ServiceManagementAssignment[] @relation("InstanceServiceManagementAssignments")
 
   @@unique([instanceId, name, type])
@@ -1756,20 +1756,20 @@ model InstanceService {
 }
 
 model ServiceManagementAssignment {
-  id                String   @id @default(uuid()) @db.Uuid
-  instanceServiceId String   @map("instance_service_id") @db.Uuid
-  pluginId          String   @map("plugin_id") @db.Uuid
-  assignedBy        String?  @map("assigned_by") @db.Uuid
-  assignedAt        DateTime @default(now()) @map("assigned_at")
-  config            Json?    @default("{}")
-  credentials       Json?    @default("{}")
-  isActive          Boolean  @default(true) @map("is_active")
+  id                String    @id @default(uuid()) @db.Uuid
+  instanceServiceId String    @map("instance_service_id") @db.Uuid
+  pluginId          String    @map("plugin_id") @db.Uuid
+  assignedBy        String?   @map("assigned_by") @db.Uuid
+  assignedAt        DateTime  @default(now()) @map("assigned_at")
+  config            Json?     @default("{}")
+  credentials       Json?     @default("{}")
+  isActive          Boolean   @default(true) @map("is_active")
   lastUsed          DateTime? @map("last_used")
 
   // Relations
   instanceService InstanceService @relation("InstanceServiceManagementAssignments", fields: [instanceServiceId], references: [id], onDelete: Cascade)
-  plugin          ServiceRegistry  @relation("ServiceRegistryManagementAssignments", fields: [pluginId], references: [id], onDelete: Cascade)
-  assigner        User?            @relation("UserServiceManagementAssignments", fields: [assignedBy], references: [id])
+  plugin          ServiceRegistry @relation("ServiceRegistryManagementAssignments", fields: [pluginId], references: [id], onDelete: Cascade)
+  assigner        User?           @relation("UserServiceManagementAssignments", fields: [assignedBy], references: [id])
 
   @@unique([instanceServiceId, pluginId])
   @@index([instanceServiceId])
@@ -1779,24 +1779,24 @@ model ServiceManagementAssignment {
 
 // Plugin Review Models
 model PluginReview {
-  id          String   @id @default(uuid()) @db.Uuid
-  serviceId   String   @map("service_id") @db.Uuid
-  userId      String   @map("user_id") @db.Uuid
-  spaceId     String?  @map("space_id") @db.Uuid
-  rating      Int      // 1-5 stars
-  title       String?
-  comment     String?  @db.Text
-  helpfulCount Int     @default(0) @map("helpful_count")
-  isVerified  Boolean  @default(false) @map("is_verified")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  deletedAt   DateTime? @map("deleted_at")
+  id           String    @id @default(uuid()) @db.Uuid
+  serviceId    String    @map("service_id") @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  spaceId      String?   @map("space_id") @db.Uuid
+  rating       Int // 1-5 stars
+  title        String?
+  comment      String?   @db.Text
+  helpfulCount Int       @default(0) @map("helpful_count")
+  isVerified   Boolean   @default(false) @map("is_verified")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
 
   // Relations
-  service     ServiceRegistry @relation("ServiceRegistryReviews", fields: [serviceId], references: [id], onDelete: Cascade)
-  user        User            @relation("UserPluginReviews", fields: [userId], references: [id], onDelete: Cascade)
-  space       Space?          @relation("SpacePluginReviews", fields: [spaceId], references: [id], onDelete: Cascade)
-  helpful     PluginReviewHelpful[] @relation("ReviewHelpful")
+  service ServiceRegistry       @relation("ServiceRegistryReviews", fields: [serviceId], references: [id], onDelete: Cascade)
+  user    User                  @relation("UserPluginReviews", fields: [userId], references: [id], onDelete: Cascade)
+  space   Space?                @relation("SpacePluginReviews", fields: [spaceId], references: [id], onDelete: Cascade)
+  helpful PluginReviewHelpful[] @relation("ReviewHelpful")
 
   @@unique([serviceId, userId, spaceId])
   @@index([serviceId])
@@ -1824,24 +1824,24 @@ model PluginReviewHelpful {
 
 // Outline-like Knowledge Base Models
 model KnowledgeCollection {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String    @id @default(uuid()) @db.Uuid
   name        String
-  description String?  @db.Text
+  description String?   @db.Text
   icon        String?
   color       String?
-  isPrivate   Boolean  @default(false) @map("is_private")
-  spaceId     String?  @map("space_id") @db.Uuid
-  createdBy   String   @map("created_by") @db.Uuid
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  isPrivate   Boolean   @default(false) @map("is_private")
+  spaceId     String?   @map("space_id") @db.Uuid
+  createdBy   String    @map("created_by") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
 
   // Relations
-  creator     User                @relation("UserKnowledgeCollections", fields: [createdBy], references: [id])
-  space       Space?              @relation("SpaceKnowledgeCollections", fields: [spaceId], references: [id], onDelete: Cascade)
-  documents   KnowledgeDocument[] @relation("CollectionDocuments")
-  members     KnowledgeCollectionMember[] @relation("CollectionMembers")
-  shares      KnowledgeShare[]    @relation("CollectionShares")
+  creator   User                        @relation("UserKnowledgeCollections", fields: [createdBy], references: [id])
+  space     Space?                      @relation("SpaceKnowledgeCollections", fields: [spaceId], references: [id], onDelete: Cascade)
+  documents KnowledgeDocument[]         @relation("CollectionDocuments")
+  members   KnowledgeCollectionMember[] @relation("CollectionMembers")
+  shares    KnowledgeShare[]            @relation("CollectionShares")
 
   @@index([spaceId])
   @@index([createdBy])
@@ -1858,8 +1858,8 @@ model KnowledgeCollectionMember {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   // Relations
-  collection   KnowledgeCollection @relation("CollectionMembers", fields: [collectionId], references: [id], onDelete: Cascade)
-  user         User               @relation("UserKnowledgeCollectionMembers", fields: [userId], references: [id], onDelete: Cascade)
+  collection KnowledgeCollection @relation("CollectionMembers", fields: [collectionId], references: [id], onDelete: Cascade)
+  user       User                @relation("UserKnowledgeCollectionMembers", fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([collectionId, userId])
   @@index([collectionId])
@@ -1868,37 +1868,37 @@ model KnowledgeCollectionMember {
 }
 
 model KnowledgeDocument {
-  id            String   @id @default(uuid()) @db.Uuid
-  collectionId  String   @map("collection_id") @db.Uuid
-  title         String
-  content       String   @db.Text
-  contentHtml   String?  @db.Text @map("content_html")
-  parentId      String?  @map("parent_id") @db.Uuid
-  templateId    String?  @map("template_id") @db.Uuid
-  isTemplate    Boolean  @default(false) @map("is_template")
-  isPublic      Boolean  @default(false) @map("is_public")
-  isPinned      Boolean  @default(false) @map("is_pinned")
-  publishedAt   DateTime? @map("published_at")
-  archivedAt    DateTime? @map("archived_at")
-  order         Int      @default(0)
-  createdBy     String   @map("created_by") @db.Uuid
-  updatedBy     String?  @map("updated_by") @db.Uuid
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
-  deletedAt     DateTime? @map("deleted_at")
+  id           String    @id @default(uuid()) @db.Uuid
+  collectionId String    @map("collection_id") @db.Uuid
+  title        String
+  content      String    @db.Text
+  contentHtml  String?   @map("content_html") @db.Text
+  parentId     String?   @map("parent_id") @db.Uuid
+  templateId   String?   @map("template_id") @db.Uuid
+  isTemplate   Boolean   @default(false) @map("is_template")
+  isPublic     Boolean   @default(false) @map("is_public")
+  isPinned     Boolean   @default(false) @map("is_pinned")
+  publishedAt  DateTime? @map("published_at")
+  archivedAt   DateTime? @map("archived_at")
+  order        Int       @default(0)
+  createdBy    String    @map("created_by") @db.Uuid
+  updatedBy    String?   @map("updated_by") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
 
   // Relations
-  collection    KnowledgeCollection @relation("CollectionDocuments", fields: [collectionId], references: [id], onDelete: Cascade)
-  parent        KnowledgeDocument? @relation("DocumentHierarchy", fields: [parentId], references: [id])
-  children      KnowledgeDocument[] @relation("DocumentHierarchy")
-  creator       User               @relation("UserKnowledgeDocuments", fields: [createdBy], references: [id])
-  updater       User?              @relation("UserKnowledgeDocumentUpdates", fields: [updatedBy], references: [id])
-  comments      KnowledgeComment[] @relation("DocumentComments")
-  shares        KnowledgeShare[]  @relation("DocumentShares")
-  versions      KnowledgeDocumentVersion[] @relation("DocumentVersions")
-  stars         KnowledgeStar[]    @relation("DocumentStars")
-  mentions      KnowledgeMention[] @relation("DocumentMentions")
-  presence      KnowledgePresence[] @relation("DocumentPresence")
+  collection KnowledgeCollection        @relation("CollectionDocuments", fields: [collectionId], references: [id], onDelete: Cascade)
+  parent     KnowledgeDocument?         @relation("DocumentHierarchy", fields: [parentId], references: [id])
+  children   KnowledgeDocument[]        @relation("DocumentHierarchy")
+  creator    User                       @relation("UserKnowledgeDocuments", fields: [createdBy], references: [id])
+  updater    User?                      @relation("UserKnowledgeDocumentUpdates", fields: [updatedBy], references: [id])
+  comments   KnowledgeComment[]         @relation("DocumentComments")
+  shares     KnowledgeShare[]           @relation("DocumentShares")
+  versions   KnowledgeDocumentVersion[] @relation("DocumentVersions")
+  stars      KnowledgeStar[]            @relation("DocumentStars")
+  mentions   KnowledgeMention[]         @relation("DocumentMentions")
+  presence   KnowledgePresence[]        @relation("DocumentPresence")
 
   @@index([collectionId])
   @@index([parentId])
@@ -1913,13 +1913,13 @@ model KnowledgeDocumentVersion {
   documentId  String   @map("document_id") @db.Uuid
   title       String
   content     String   @db.Text
-  contentHtml String?  @db.Text @map("content_html")
+  contentHtml String?  @map("content_html") @db.Text
   createdBy   String   @map("created_by") @db.Uuid
   createdAt   DateTime @default(now()) @map("created_at")
 
   // Relations
-  document    KnowledgeDocument @relation("DocumentVersions", fields: [documentId], references: [id], onDelete: Cascade)
-  creator     User             @relation("UserKnowledgeDocumentVersions", fields: [createdBy], references: [id])
+  document KnowledgeDocument @relation("DocumentVersions", fields: [documentId], references: [id], onDelete: Cascade)
+  creator  User              @relation("UserKnowledgeDocumentVersions", fields: [createdBy], references: [id])
 
   @@index([documentId])
   @@index([createdAt])
@@ -1927,24 +1927,24 @@ model KnowledgeDocumentVersion {
 }
 
 model KnowledgeComment {
-  id          String   @id @default(uuid()) @db.Uuid
-  documentId  String   @map("document_id") @db.Uuid
-  parentId    String?  @map("parent_id") @db.Uuid
-  content     String   @db.Text
-  contentHtml String?  @db.Text @map("content_html")
+  id          String    @id @default(uuid()) @db.Uuid
+  documentId  String    @map("document_id") @db.Uuid
+  parentId    String?   @map("parent_id") @db.Uuid
+  content     String    @db.Text
+  contentHtml String?   @map("content_html") @db.Text
   resolvedAt  DateTime? @map("resolved_at")
-  resolvedBy  String?  @map("resolved_by") @db.Uuid
-  createdBy   String   @map("created_by") @db.Uuid
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  resolvedBy  String?   @map("resolved_by") @db.Uuid
+  createdBy   String    @map("created_by") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
 
   // Relations
-  document    KnowledgeDocument @relation("DocumentComments", fields: [documentId], references: [id], onDelete: Cascade)
-  parent      KnowledgeComment? @relation("CommentThread", fields: [parentId], references: [id])
-  replies     KnowledgeComment[] @relation("CommentThread")
-  creator     User              @relation("UserKnowledgeComments", fields: [createdBy], references: [id])
-  resolver    User?             @relation("UserKnowledgeCommentResolutions", fields: [resolvedBy], references: [id])
+  document KnowledgeDocument  @relation("DocumentComments", fields: [documentId], references: [id], onDelete: Cascade)
+  parent   KnowledgeComment?  @relation("CommentThread", fields: [parentId], references: [id])
+  replies  KnowledgeComment[] @relation("CommentThread")
+  creator  User               @relation("UserKnowledgeComments", fields: [createdBy], references: [id])
+  resolver User?              @relation("UserKnowledgeCommentResolutions", fields: [resolvedBy], references: [id])
 
   @@index([documentId])
   @@index([parentId])
@@ -1954,23 +1954,23 @@ model KnowledgeComment {
 }
 
 model KnowledgeShare {
-  id          String   @id @default(uuid()) @db.Uuid
-  documentId  String?  @map("document_id") @db.Uuid
-  collectionId String? @map("collection_id") @db.Uuid
-  userId      String?  @map("user_id") @db.Uuid
-  teamId      String?  @map("team_id") @db.Uuid
-  permission  String   @default("read") // 'read', 'write', 'admin'
-  publicLink  String?  @unique @map("public_link")
-  expiresAt   DateTime? @map("expires_at")
-  createdBy   String   @map("created_by") @db.Uuid
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id           String    @id @default(uuid()) @db.Uuid
+  documentId   String?   @map("document_id") @db.Uuid
+  collectionId String?   @map("collection_id") @db.Uuid
+  userId       String?   @map("user_id") @db.Uuid
+  teamId       String?   @map("team_id") @db.Uuid
+  permission   String    @default("read") // 'read', 'write', 'admin'
+  publicLink   String?   @unique @map("public_link")
+  expiresAt    DateTime? @map("expires_at")
+  createdBy    String    @map("created_by") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  document    KnowledgeDocument? @relation("DocumentShares", fields: [documentId], references: [id], onDelete: Cascade)
-  collection  KnowledgeCollection? @relation("CollectionShares", fields: [collectionId], references: [id], onDelete: Cascade)
-  user        User?              @relation("UserKnowledgeShares", fields: [userId], references: [id], onDelete: Cascade)
-  creator     User                @relation("UserKnowledgeShareCreators", fields: [createdBy], references: [id])
+  document   KnowledgeDocument?   @relation("DocumentShares", fields: [documentId], references: [id], onDelete: Cascade)
+  collection KnowledgeCollection? @relation("CollectionShares", fields: [collectionId], references: [id], onDelete: Cascade)
+  user       User?                @relation("UserKnowledgeShares", fields: [userId], references: [id], onDelete: Cascade)
+  creator    User                 @relation("UserKnowledgeShareCreators", fields: [createdBy], references: [id])
 
   @@index([documentId])
   @@index([collectionId])
@@ -1986,8 +1986,8 @@ model KnowledgeStar {
   createdAt  DateTime @default(now()) @map("created_at")
 
   // Relations
-  document   KnowledgeDocument @relation("DocumentStars", fields: [documentId], references: [id], onDelete: Cascade)
-  user       User             @relation("UserKnowledgeStars", fields: [userId], references: [id], onDelete: Cascade)
+  document KnowledgeDocument @relation("DocumentStars", fields: [documentId], references: [id], onDelete: Cascade)
+  user     User              @relation("UserKnowledgeStars", fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([documentId, userId])
   @@index([documentId])
@@ -2003,9 +2003,9 @@ model KnowledgeMention {
   createdAt  DateTime @default(now()) @map("created_at")
 
   // Relations
-  document   KnowledgeDocument @relation("DocumentMentions", fields: [documentId], references: [id], onDelete: Cascade)
-  user       User             @relation("UserKnowledgeMentions", fields: [userId], references: [id], onDelete: Cascade)
-  creator    User             @relation("UserKnowledgeMentionCreators", fields: [createdBy], references: [id])
+  document KnowledgeDocument @relation("DocumentMentions", fields: [documentId], references: [id], onDelete: Cascade)
+  user     User              @relation("UserKnowledgeMentions", fields: [userId], references: [id], onDelete: Cascade)
+  creator  User              @relation("UserKnowledgeMentionCreators", fields: [createdBy], references: [id])
 
   @@unique([documentId, userId, createdBy])
   @@index([documentId])
@@ -2017,13 +2017,13 @@ model KnowledgePresence {
   id         String   @id @default(uuid()) @db.Uuid
   documentId String   @map("document_id") @db.Uuid
   userId     String   @map("user_id") @db.Uuid
-  cursor     Json?    // { line: number, ch: number }
-  selection  Json?    // { from: {line, ch}, to: {line, ch} }
+  cursor     Json? // { line: number, ch: number }
+  selection  Json? // { from: {line, ch}, to: {line, ch} }
   lastSeen   DateTime @default(now()) @map("last_seen")
 
   // Relations
-  document   KnowledgeDocument @relation("DocumentPresence", fields: [documentId], references: [id], onDelete: Cascade)
-  user       User             @relation("UserKnowledgePresence", fields: [userId], references: [id], onDelete: Cascade)
+  document KnowledgeDocument @relation("DocumentPresence", fields: [documentId], references: [id], onDelete: Cascade)
+  user     User              @relation("UserKnowledgePresence", fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([documentId, userId])
   @@index([documentId])
@@ -2044,9 +2044,9 @@ model ApiWorkspace {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  creator     User           @relation("UserApiWorkspaces", fields: [createdBy], references: [id])
-  space       Space?         @relation("SpaceApiWorkspaces", fields: [spaceId], references: [id], onDelete: Cascade)
-  collections ApiCollection[] @relation("WorkspaceCollections")
+  creator      User             @relation("UserApiWorkspaces", fields: [createdBy], references: [id])
+  space        Space?           @relation("SpaceApiWorkspaces", fields: [spaceId], references: [id], onDelete: Cascade)
+  collections  ApiCollection[]  @relation("WorkspaceCollections")
   environments ApiEnvironment[] @relation("WorkspaceEnvironments")
 
   @@index([createdBy])
@@ -2066,11 +2066,11 @@ model ApiCollection {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  workspace   ApiWorkspace    @relation("WorkspaceCollections", fields: [workspaceId], references: [id], onDelete: Cascade)
-  parent      ApiCollection?  @relation("CollectionHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
-  children    ApiCollection[] @relation("CollectionHierarchy")
-  requests    ApiRequest[]   @relation("CollectionRequests")
-  creator     User            @relation("UserApiCollections", fields: [createdBy], references: [id])
+  workspace ApiWorkspace    @relation("WorkspaceCollections", fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent    ApiCollection?  @relation("CollectionHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children  ApiCollection[] @relation("CollectionHierarchy")
+  requests  ApiRequest[]    @relation("CollectionRequests")
+  creator   User            @relation("UserApiCollections", fields: [createdBy], references: [id])
 
   @@index([workspaceId])
   @@index([parentId])
@@ -2079,31 +2079,31 @@ model ApiCollection {
 }
 
 model ApiRequest {
-  id          String   @id @default(uuid()) @db.Uuid
-  collectionId String? @map("collection_id") @db.Uuid
-  name        String
-  method      String   @default("GET") // GET, POST, PUT, DELETE, PATCH, etc.
-  url         String
-  headers     Json     @default("[]") // Array of {key, value, enabled}
-  params      Json     @default("[]") // Array of {key, value, enabled}
-  body        String?  @db.Text
-  bodyType    String?  @map("body_type") // json, form-data, x-www-form-urlencoded, raw, etc.
-  authType    String?  @map("auth_type") // none, bearer, basic, oauth2, apikey
-  authConfig  Json?    @map("auth_config")
-  preRequestScript String? @db.Text @map("pre_request_script")
-  testScript  String?  @db.Text @map("test_script")
-  requestType String  @default("REST") @map("request_type") // REST, GraphQL, WebSocket, SSE, SocketIO, MQTT
-  graphqlQuery String? @db.Text @map("graphql_query")
-  graphqlVariables String? @db.Text @map("graphql_variables")
-  order       Int      @default(0)
-  createdBy   String   @map("created_by") @db.Uuid
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id               String   @id @default(uuid()) @db.Uuid
+  collectionId     String?  @map("collection_id") @db.Uuid
+  name             String
+  method           String   @default("GET") // GET, POST, PUT, DELETE, PATCH, etc.
+  url              String
+  headers          Json     @default("[]") // Array of {key, value, enabled}
+  params           Json     @default("[]") // Array of {key, value, enabled}
+  body             String?  @db.Text
+  bodyType         String?  @map("body_type") // json, form-data, x-www-form-urlencoded, raw, etc.
+  authType         String?  @map("auth_type") // none, bearer, basic, oauth2, apikey
+  authConfig       Json?    @map("auth_config")
+  preRequestScript String?  @map("pre_request_script") @db.Text
+  testScript       String?  @map("test_script") @db.Text
+  requestType      String   @default("REST") @map("request_type") // REST, GraphQL, WebSocket, SSE, SocketIO, MQTT
+  graphqlQuery     String?  @map("graphql_query") @db.Text
+  graphqlVariables String?  @map("graphql_variables") @db.Text
+  order            Int      @default(0)
+  createdBy        String   @map("created_by") @db.Uuid
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
 
   // Relations
-  collection  ApiCollection? @relation("CollectionRequests", fields: [collectionId], references: [id], onDelete: SetNull)
-  creator     User          @relation("UserApiRequests", fields: [createdBy], references: [id])
-  history     ApiRequestHistory[] @relation("RequestHistory")
+  collection ApiCollection?      @relation("CollectionRequests", fields: [collectionId], references: [id], onDelete: SetNull)
+  creator    User                @relation("UserApiRequests", fields: [createdBy], references: [id])
+  history    ApiRequestHistory[] @relation("RequestHistory")
 
   @@index([collectionId])
   @@index([createdBy])
@@ -2121,8 +2121,8 @@ model ApiEnvironment {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  workspace   ApiWorkspace @relation("WorkspaceEnvironments", fields: [workspaceId], references: [id], onDelete: Cascade)
-  creator     User         @relation("UserApiEnvironments", fields: [createdBy], references: [id])
+  workspace ApiWorkspace @relation("WorkspaceEnvironments", fields: [workspaceId], references: [id], onDelete: Cascade)
+  creator   User         @relation("UserApiEnvironments", fields: [createdBy], references: [id])
 
   @@index([workspaceId])
   @@index([createdBy])
@@ -2130,27 +2130,47 @@ model ApiEnvironment {
 }
 
 model ApiRequestHistory {
-  id          String   @id @default(uuid()) @db.Uuid
-  requestId   String?  @map("request_id") @db.Uuid
-  method      String
-  url         String
-  headers     Json     @default("{}")
-  body        String?  @db.Text
-  statusCode  Int?     @map("status_code")
-  statusText  String?  @map("status_text")
-  responseHeaders Json? @map("response_headers") @db.JsonB
-  responseBody String? @db.Text @map("response_body")
-  responseTime Int?    @map("response_time") // milliseconds
-  error       String?  @db.Text
-  createdBy   String   @map("created_by") @db.Uuid
-  createdAt   DateTime @default(now()) @map("created_at")
+  id              String   @id @default(uuid()) @db.Uuid
+  requestId       String?  @map("request_id") @db.Uuid
+  method          String
+  url             String
+  headers         Json     @default("{}")
+  body            String?  @db.Text
+  statusCode      Int?     @map("status_code")
+  statusText      String?  @map("status_text")
+  responseHeaders Json?    @map("response_headers") @db.JsonB
+  responseBody    String?  @map("response_body") @db.Text
+  responseTime    Int?     @map("response_time") // milliseconds
+  error           String?  @db.Text
+  createdBy       String   @map("created_by") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at")
 
   // Relations
-  request     ApiRequest? @relation("RequestHistory", fields: [requestId], references: [id], onDelete: SetNull)
-  creator     User        @relation("UserApiRequestHistory", fields: [createdBy], references: [id])
+  request ApiRequest? @relation("RequestHistory", fields: [requestId], references: [id], onDelete: SetNull)
+  creator User        @relation("UserApiRequestHistory", fields: [createdBy], references: [id])
 
   @@index([requestId])
   @@index([createdBy])
   @@index([createdAt])
   @@map("api_request_history")
+}
+
+// Theme Management Model
+model Theme {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  themeMode   String   @default("light") @map("theme_mode") // 'light' or 'dark' - each theme is either light or dark
+  tags        String[] @default([]) // Array of tags for filtering (e.g., ["light", "macos", "premium"])
+  isActive    Boolean  @default(false) @map("is_active")
+  isDefault   Boolean  @default(false) @map("is_default")
+  config      Json     @db.JsonB // BrandingConfig (flattened structure, no light/dark separation)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@index([isDefault])
+  @@index([themeMode])
+  @@index([tags], type: Gin) // GIN index for array search
+  @@map("themes")
 }

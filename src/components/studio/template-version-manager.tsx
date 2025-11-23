@@ -379,7 +379,7 @@ export function TemplateVersionManager({
                         variant="outline"
                         size="sm"
                         onClick={() => onDeleteVersion(version.id)}
-                        className="text-red-600 hover:text-red-700"
+                        className="text-destructive hover:text-destructive/80"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -395,7 +395,7 @@ export function TemplateVersionManager({
                         <ul className="text-sm text-muted-foreground space-y-1">
                           {version.changes.map((change, index) => (
                             <li key={index} className="flex items-start gap-2">
-                              <span className="text-green-600 mt-1">•</span>
+                              <span className="text-primary mt-1">•</span>
                               <span>{change}</span>
                             </li>
                           ))}

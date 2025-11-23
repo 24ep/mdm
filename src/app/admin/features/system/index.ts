@@ -5,7 +5,8 @@
 
 // Components
 export { SystemSettings } from './components/SystemSettings'
-export { ThemeBranding } from './components/ThemeBranding'
+
+export { ThemeManager } from './components/theme-manager/ThemeManager'
 export { PageTemplatesAdmin } from './components/PageTemplatesAdmin'
 export { NotificationCenter } from './components/NotificationCenter'
 

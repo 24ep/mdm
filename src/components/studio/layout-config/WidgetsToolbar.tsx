@@ -36,7 +36,7 @@ export function WidgetsToolbar({
       <div className={`${isMobileViewport ? 'px-3 py-2' : 'px-4 py-2'} flex ${isMobileViewport ? 'flex-col' : 'items-center'} gap-3`}>
         {/* Search/Filter Input */}
         <div className={`${isMobileViewport ? 'w-full' : 'w-48'} relative flex-shrink-0`}>
-          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
             type="text"
             placeholder="Filter widgets..."
@@ -47,7 +47,7 @@ export function WidgetsToolbar({
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
               aria-label="Clear search"
             >
               <X className="h-3.5 w-3.5" />
@@ -58,7 +58,7 @@ export function WidgetsToolbar({
         {/* Horizontal scrollable toolbar with filtered widgets */}
         <div className="flex-1 overflow-x-auto w-full">
           {filteredWidgets.length === 0 ? (
-            <div className="flex items-center justify-center px-4 py-2 text-xs text-gray-500">
+            <div className="flex items-center justify-center px-4 py-2 text-xs text-muted-foreground">
               No widgets found matching "{searchQuery}"
             </div>
           ) : (
@@ -68,7 +68,7 @@ export function WidgetsToolbar({
                 return (
                   <div
                     key={w.type}
-                    className={`flex flex-col items-center gap-1 ${isMobileViewport ? 'px-2 py-1.5 min-w-[60px]' : 'px-2 py-1 min-w-[50px]'} bg-background border rounded-md cursor-move hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 transition-colors flex-shrink-0`}
+                    className={`flex flex-col items-center gap-1 ${isMobileViewport ? 'px-2 py-1.5 min-w-[60px]' : 'px-2 py-1 min-w-[50px]'} bg-background border rounded-md cursor-move hover:bg-primary/10 hover:border-primary/30 transition-colors flex-shrink-0`}
                     draggable
                     onDragStart={(e) => {
                       e.dataTransfer.setData('text/plain', w.type)
@@ -77,8 +77,8 @@ export function WidgetsToolbar({
                     }}
                     title={w.label}
                   >
-                    <Icon className={`${isMobileViewport ? 'h-4 w-4' : 'h-3.5 w-3.5'} text-gray-600 dark:text-gray-400`} />
-                    <span className={`${isMobileViewport ? 'text-[10px]' : 'text-[9px]'} text-gray-700 dark:text-gray-300 text-center truncate w-full`}>
+                    <Icon className={`${isMobileViewport ? 'h-4 w-4' : 'h-3.5 w-3.5'} text-muted-foreground`} />
+                    <span className={`${isMobileViewport ? 'text-[10px]' : 'text-[9px]'} text-foreground text-center truncate w-full`}>
                       {w.label}
                     </span>
                   </div>

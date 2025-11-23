@@ -32,14 +32,14 @@ interface EffectsSectionProps {
   widget: PlacedWidget
   selectedWidgetId: string
   setPlacedWidgets: React.Dispatch<React.SetStateAction<PlacedWidget[]>>
-  globalStyle?: ComponentStyle
+  themeStyle?: ComponentStyle
 }
 
 export function EffectsSection({
   widget,
   selectedWidgetId,
   setPlacedWidgets,
-  globalStyle,
+  themeStyle,
 }: EffectsSectionProps) {
   const updateProperty = (key: string, value: any) => {
     setPlacedWidgets(prev => prev.map(w => 
@@ -60,9 +60,9 @@ export function EffectsSection({
     ))
   }
 
-  // Get effective shadow value (widget property or global style)
-  const effectiveShadow = widget.properties?.shadow ?? globalStyle?.shadow ?? false
-  const isShadowGlobal = widget.properties?.shadow === undefined && globalStyle?.shadow !== undefined
+  // Get effective shadow value (widget property or theme style)
+  const effectiveShadow = widget.properties?.shadow ?? themeStyle?.shadow ?? false
+  const isShadowUsingTheme = widget.properties?.shadow === undefined && themeStyle?.shadow !== undefined
 
   const shadowType = widget.properties?.shadowType || 'drop-shadow'
 
@@ -110,13 +110,13 @@ export function EffectsSection({
               <SelectItem value="glow">Glow</SelectItem>
             </SelectContent>
           </Select>
-          {effectiveShadow && !isShadowGlobal && globalStyle && (
+          {effectiveShadow && !isShadowUsingTheme && themeStyle && (
             <Button
               variant="ghost"
               size="sm"
               className="h-7 w-7 p-0"
               onClick={() => resetProperty('shadow')}
-              title="Reset to global style"
+              title="Reset to theme default"
             >
               <RotateCcw className="h-3 w-3" />
             </Button>

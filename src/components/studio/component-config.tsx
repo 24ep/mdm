@@ -121,7 +121,6 @@ export function ComponentConfig({ component, onUpdate }: ComponentConfigProps) {
               <SelectItem value="none">No Data Source</SelectItem>
               <SelectItem value="api">API Endpoint</SelectItem>
               <SelectItem value="database">Database Query</SelectItem>
-              <SelectItem value="static">Static Data</SelectItem>
               <SelectItem value="file">File Upload</SelectItem>
             </SelectContent>
           </Select>

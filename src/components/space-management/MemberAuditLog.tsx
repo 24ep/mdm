@@ -46,25 +46,25 @@ interface MemberAuditLogProps {
 }
 
 const ACTION_ICONS = {
-  'member_added': <UserPlus className="h-4 w-4 text-green-500" />,
-  'member_removed': <UserMinus className="h-4 w-4 text-red-500" />,
-  'role_changed': <Shield className="h-4 w-4 text-blue-500" />,
-  'permissions_updated': <Edit className="h-4 w-4 text-purple-500" />,
-  'invitation_sent': <Mail className="h-4 w-4 text-orange-500" />,
-  'invitation_accepted': <UserPlus className="h-4 w-4 text-green-500" />,
+  'member_added': <UserPlus className="h-4 w-4 text-primary" />,
+  'member_removed': <UserMinus className="h-4 w-4 text-destructive" />,
+  'role_changed': <Shield className="h-4 w-4 text-primary" />,
+  'permissions_updated': <Edit className="h-4 w-4 text-primary" />,
+  'invitation_sent': <Mail className="h-4 w-4 text-warning" />,
+  'invitation_accepted': <UserPlus className="h-4 w-4 text-primary" />,
   'space_accessed': <Clock className="h-4 w-4 text-muted-foreground" />,
   'default': <AlertTriangle className="h-4 w-4 text-muted-foreground" />
 }
 
 const ACTION_COLORS = {
-  'member_added': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  'member_removed': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-  'role_changed': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  'permissions_updated': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-  'invitation_sent': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-  'invitation_accepted': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  'space_accessed': 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
-  'default': 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+  'member_added': 'bg-primary/10 text-primary',
+  'member_removed': 'bg-destructive/10 text-destructive',
+  'role_changed': 'bg-primary/10 text-primary',
+  'permissions_updated': 'bg-primary/10 text-primary',
+  'invitation_sent': 'bg-warning/20 text-warning',
+  'invitation_accepted': 'bg-primary/10 text-primary',
+  'space_accessed': 'bg-muted text-muted-foreground',
+  'default': 'bg-muted text-muted-foreground'
 }
 
 export function MemberAuditLog({
@@ -207,7 +207,7 @@ export function MemberAuditLog({
               </div>
             ) : (
               filteredLogs.map((log) => (
-                <div key={log.id} className="flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                <div key={log.id} className="flex items-start gap-4 p-4 border rounded-lg hover:bg-muted">
                   <div className="flex-shrink-0">
                     {getActionIcon(log.action)}
                   </div>

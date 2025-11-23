@@ -134,25 +134,25 @@ export function AnalyticsDashboard({
 
   const getTrendIcon = useCallback((trend: AnalyticsMetric['trend']) => {
     switch (trend) {
-      case 'up': return <TrendingUp className="h-4 w-4 text-green-600" />
-      case 'down': return <TrendingDown className="h-4 w-4 text-red-600" />
-      case 'stable': return <Activity className="h-4 w-4 text-gray-600" />
+      case 'up': return <TrendingUp className="h-4 w-4 text-primary" />
+      case 'down': return <TrendingDown className="h-4 w-4 text-destructive" />
+      case 'stable': return <Activity className="h-4 w-4 text-muted-foreground" />
     }
   }, [])
 
   const getStatusColor = useCallback((status: AnalyticsMetric['status']) => {
     switch (status) {
-      case 'good': return 'text-green-600'
-      case 'warning': return 'text-yellow-600'
-      case 'critical': return 'text-red-600'
+      case 'good': return 'text-primary'
+      case 'warning': return 'text-warning'
+      case 'critical': return 'text-destructive'
     }
   }, [])
 
   const getPerformanceStatusColor = useCallback((status: PerformanceMetric['status']) => {
     switch (status) {
-      case 'good': return 'bg-green-100 text-green-800'
-      case 'warning': return 'bg-yellow-100 text-yellow-800'
-      case 'critical': return 'bg-red-100 text-red-800'
+      case 'good': return 'bg-primary/10 text-primary'
+      case 'warning': return 'bg-warning/20 text-warning'
+      case 'critical': return 'bg-destructive/10 text-destructive'
     }
   }, [])
 
@@ -335,8 +335,8 @@ export function AnalyticsDashboard({
                       <div className="flex-1 bg-muted rounded-full h-2">
                         <div
                           className={`h-2 rounded-full ${
-                            metric.status === 'good' ? 'bg-green-500' :
-                            metric.status === 'warning' ? 'bg-yellow-500' : 'bg-red-500'
+                            metric.status === 'good' ? 'bg-primary' :
+                            metric.status === 'warning' ? 'bg-warning' : 'bg-destructive'
                           }`}
                           style={{
                             width: `${Math.min(100, (metric.value / metric.threshold.critical) * 100)}%`
@@ -385,8 +385,8 @@ export function AnalyticsDashboard({
                     <div className="w-full bg-muted rounded-full h-2">
                       <div
                         className={`h-2 rounded-full ${
-                          metric.status === 'good' ? 'bg-green-500' :
-                          metric.status === 'warning' ? 'bg-yellow-500' : 'bg-red-500'
+                          metric.status === 'good' ? 'bg-primary' :
+                          metric.status === 'warning' ? 'bg-warning' : 'bg-destructive'
                         }`}
                         style={{
                           width: `${Math.min(100, (metric.value / metric.threshold.critical) * 100)}%`
@@ -408,7 +408,7 @@ export function AnalyticsDashboard({
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-blue-600" />
+                  <Users className="h-5 w-5 text-primary" />
                   <div>
                     <div className="text-2xl font-bold">{formatNumber(userAnalytics.totalUsers)}</div>
                     <div className="text-sm text-muted-foreground">Total Users</div>
@@ -419,7 +419,7 @@ export function AnalyticsDashboard({
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-green-600" />
+                  <Activity className="h-5 w-5 text-primary" />
                   <div>
                     <div className="text-2xl font-bold">{formatNumber(userAnalytics.activeUsers)}</div>
                     <div className="text-sm text-muted-foreground">Active Users</div>
@@ -430,7 +430,7 @@ export function AnalyticsDashboard({
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-purple-600" />
+                  <TrendingUp className="h-5 w-5 text-primary" />
                   <div>
                     <div className="text-2xl font-bold">{formatNumber(userAnalytics.newUsers)}</div>
                     <div className="text-sm text-muted-foreground">New Users</div>
@@ -441,7 +441,7 @@ export function AnalyticsDashboard({
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-orange-600" />
+                  <Clock className="h-5 w-5 text-primary" />
                   <div>
                     <div className="text-2xl font-bold">{formatNumber(userAnalytics.averageSessionDuration)}</div>
                     <div className="text-sm text-muted-foreground">Avg. Session (min)</div>

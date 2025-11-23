@@ -6,8 +6,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { Upload, Video, Image, Grid3x3, Play, Droplet, Sliders, Layers, Plus, Trash2, Move, Minus, GripVertical, Hash, Sparkles, Circle, Copy, Check, Eye, Star } from 'lucide-react'
+import { Upload, Video, Image, Play, Droplet, Plus, Trash2, Move, Copy, Check, Eye, Star, Sliders, Grid3x3, Circle } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { COLOR_PATTERNS, getPatternById } from './color-utils'
 
 interface ColorPickerPopoverProps {
   value: string
@@ -53,59 +54,6 @@ export function ColorPickerPopover({
       return []
     }
   }
-  
-  // Pattern definitions with icons and CSS
-  const patterns = [
-    {
-      id: 'dots',
-      name: 'Dots',
-      icon: Circle,
-      css: 'radial-gradient(circle, #000 1px, transparent 1px)',
-      size: '20px 20px'
-    },
-    {
-      id: 'diagonal-lines',
-      name: 'Diagonal Lines',
-      icon: Sliders,
-      css: 'repeating-linear-gradient(45deg, transparent, transparent 10px, #000 10px, #000 20px)',
-      size: '20px 20px'
-    },
-    {
-      id: 'horizontal-stripes',
-      name: 'Horizontal Stripes',
-      icon: Minus,
-      css: 'repeating-linear-gradient(0deg, transparent, transparent 10px, #000 10px, #000 20px)',
-      size: '20px 20px'
-    },
-    {
-      id: 'vertical-stripes',
-      name: 'Vertical Stripes',
-      icon: GripVertical,
-      css: 'repeating-linear-gradient(90deg, transparent, transparent 10px, #000 10px, #000 20px)',
-      size: '20px 20px'
-    },
-    {
-      id: 'grid',
-      name: 'Grid',
-      icon: Grid3x3,
-      css: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)',
-      size: '20px 20px'
-    },
-    {
-      id: 'checkerboard',
-      name: 'Checkerboard',
-      icon: Hash,
-      css: 'conic-gradient(#000 25%, transparent 0%, transparent 50%, #000 0%, #000 75%, transparent 0%)',
-      size: '20px 20px'
-    },
-    {
-      id: 'crosshatch',
-      name: 'Crosshatch',
-      icon: Layers,
-      css: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px), repeating-linear-gradient(45deg, transparent, transparent 10px, #000 10px, #000 20px)',
-      size: '20px 20px'
-    }
-  ]
   
   // Parse value to determine type and extract the actual value
   const parseValue = (val: string) => {
@@ -408,22 +356,22 @@ export function ColorPickerPopover({
   
   // Get current pattern from value
   const getCurrentPattern = () => {
-    if (!patternValue) return patterns[0]
-    return patterns.find((p: typeof patterns[0]) => {
+    if (!patternValue) return COLOR_PATTERNS[0]
+    return COLOR_PATTERNS.find((p) => {
       // Try to match by name or id
       return patternValue.toLowerCase().includes(p.id) || patternValue.toLowerCase().includes(p.name.toLowerCase())
-    }) || patterns[0]
+    }) || COLOR_PATTERNS[0]
   }
   
   const currentPattern = getCurrentPattern()
   
   // Generate CSS pattern string
-  const getPatternCSS = (pattern: typeof patterns[0]) => {
+  const getPatternCSS = (pattern: typeof COLOR_PATTERNS[0]) => {
     return pattern.css
   }
   
   // Generate full background pattern style
-  const getPatternStyle = (pattern: typeof patterns[0]) => {
+  const getPatternStyle = (pattern: typeof COLOR_PATTERNS[0]) => {
     return {
       backgroundImage: getPatternCSS(pattern),
       backgroundSize: pattern.size
@@ -558,7 +506,7 @@ export function ColorPickerPopover({
 
   const handlePatternChange = (patternId: string) => {
     isInternalUpdateRef.current = true
-    const selectedPattern = patterns.find((p: typeof patterns[0]) => p.id === patternId) || patterns[0]
+    const selectedPattern = getPatternById(patternId) || COLOR_PATTERNS[0]
     setPatternValue(selectedPattern.id)
     // Store the pattern ID, parent can use it to generate the CSS
     handleColorChange(`pattern(${selectedPattern.id})`)
@@ -1044,7 +992,7 @@ export function ColorPickerPopover({
                   </div>
                 </SelectTrigger>
                 <SelectContent>
-                  {patterns.map((pattern: typeof patterns[0]) => {
+                  {COLOR_PATTERNS.map((pattern) => {
                     const Icon = pattern.icon
                     return (
                       <SelectItem key={pattern.id} value={pattern.id}>

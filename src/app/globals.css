@@ -1,61 +1,106 @@
-@import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @layer base {
   :root {
-    --background: 210 40% 96%;
-    --foreground: 222.2 84% 4.9%;
+    /* macOS Light Theme - Soft, clean, premium */
+    --background: 240 5% 96%;
+    /* #f2f2f7 - macOS window background */
+    --foreground: 240 4% 16%;
+    /* #27272a - Soft black */
+
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* Pure white cards */
+    --card-foreground: 240 4% 16%;
+
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 0 0% 98.04%;
-    --input: 0 0% 98.04%;
-    --ring: 221.2 83.2% 53.3%;
+    --popover-foreground: 240 4% 16%;
+
+    --primary: 211 100% 50%;
+    /* #007AFF - macOS Blue */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 5% 96%;
+    /* Match background for subtle contrast */
+    --secondary-foreground: 240 4% 16%;
+
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+    /* #71717a */
+
+    --accent: 211 100% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    /* Soft red */
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 6% 90%;
+    /* Subtle border */
+    --input: 240 6% 90%;
+    --ring: 211 100% 50%;
+
     --radius: 0.75rem;
-    
+    /* 12px - Smooth corners */
+
     /* Spacing scale - centralized spacing values (reduced for compact UI) */
-    --spacing-xs: 0.25rem;    /* 4px */
-    --spacing-sm: 0.5rem;     /* 8px */
-    --spacing-md: 0.75rem;    /* 12px */
-    --spacing-base: 1rem;     /* 16px */
-    --spacing-lg: 1.25rem;    /* 20px */
-    --spacing-xl: 1.5rem;     /* 24px */
-    --spacing-2xl: 2rem;      /* 32px */
-    --spacing-3xl: 2.5rem;    /* 40px */
-    --spacing-4xl: 3rem;      /* 48px */
-    
+    --spacing-xs: 0.25rem;
+    /* 4px */
+    --spacing-sm: 0.5rem;
+    /* 8px */
+    --spacing-md: 0.75rem;
+    /* 12px */
+    --spacing-base: 1rem;
+    /* 16px */
+    --spacing-lg: 1.25rem;
+    /* 20px */
+    --spacing-xl: 1.5rem;
+    /* 24px */
+    --spacing-2xl: 2rem;
+    /* 32px */
+    --spacing-3xl: 2.5rem;
+    /* 40px */
+    --spacing-4xl: 3rem;
+    /* 48px */
+
     /* Typography scale - centralized font sizes */
-    --font-size-xs: 0.75rem;      /* 12px */
-    --font-size-sm: 0.875rem;     /* 14px */
-    --font-size-base: 1rem;       /* 16px */
-    --font-size-lg: 1.125rem;     /* 18px */
-    --font-size-xl: 1.25rem;      /* 20px */
-    --font-size-2xl: 1.5rem;      /* 24px */
-    --font-size-3xl: 1.875rem;     /* 30px */
-    --font-size-4xl: 2.25rem;     /* 36px */
-    --font-size-5xl: 3rem;        /* 48px */
-    
+    --font-size-xs: 0.75rem;
+    /* 12px */
+    --font-size-sm: 0.875rem;
+    /* 14px */
+    --font-size-base: 1rem;
+    /* 16px */
+    --font-size-lg: 1.125rem;
+    /* 18px */
+    --font-size-xl: 1.25rem;
+    /* 20px */
+    --font-size-2xl: 1.5rem;
+    /* 24px */
+    --font-size-3xl: 1.875rem;
+    /* 30px */
+    --font-size-4xl: 2.25rem;
+    /* 36px */
+    --font-size-5xl: 3rem;
+    /* 48px */
+
     /* Component spacing - common UI element spacing */
-    --input-padding: 0.5rem;       /* 8px */
-    --input-height: 2rem;          /* 32px */
-    --card-padding: 1rem;          /* 16px */
-    --button-padding-x: 1rem;      /* 16px */
-    --button-padding-y: 0.5rem;    /* 8px */
-    --sidebar-padding: 0.75rem;     /* 12px */
-    --content-padding: 1rem;       /* 16px */
-    --section-gap: 1.25rem;        /* 20px */
-    
+    --input-padding: 0.5rem;
+    /* 8px */
+    --input-height: 2rem;
+    /* 32px */
+    --card-padding: 1rem;
+    /* 16px */
+    --button-padding-x: 1rem;
+    /* 16px */
+    --button-padding-y: 0.5rem;
+    /* 8px */
+    --sidebar-padding: 0.75rem;
+    /* 12px */
+    --content-padding: 1rem;
+    /* 16px */
+    --section-gap: 1.25rem;
+    /* 20px */
+
     /* Z-index scale - centralized z-index values */
     --z-base: 0;
     --z-content: 1;
@@ -90,26 +135,41 @@
   }
 
   .dark {
-    --background: 0 0% 9%;
-    --foreground: 210 40% 98%;
-    --card: 0 0% 9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 0 0% 9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 0 0% 15%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 0 0% 15%;
-    --accent-foreground: 210 40% 98%;
+    /* macOS Dark Theme - Deep, rich, elegant */
+    --background: 0 0% 0%;
+    /* #000000 - OLED friendly */
+    --foreground: 0 0% 98%;
+
+    --card: 240 4% 11%;
+    /* #1c1c1e - macOS dark card */
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 4% 11%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 211 100% 50%;
+    /* #0A84FF - macOS Dark Mode Blue */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 4% 16%;
+    /* #2c2c2e */
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 5% 65%;
+    /* #a1a1aa */
+
+    --accent: 211 100% 50%;
+    --accent-foreground: 0 0% 100%;
+
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 94.1%;
-    
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 4% 24%;
+    /* #3a3a3c */
+    --input: 240 4% 24%;
+    --ring: 211 100% 50%;
+
     /* Z-index values remain the same in dark mode */
   }
 }
@@ -120,13 +180,13 @@
     border-style: solid;
     border-color: hsl(var(--border));
   }
-  
+
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    font-family: 'Prompt', sans-serif;
+    font-family: 'Inter', sans-serif;
   }
-  
+
   /* Input styling - light grey background for light theme, no border */
   input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]),
   textarea,
@@ -161,6 +221,7 @@
   from {
     height: 0;
   }
+
   to {
     height: var(--radix-accordion-content-height);
   }
@@ -170,6 +231,7 @@
   from {
     height: var(--radix-accordion-content-height);
   }
+
   to {
     height: 0;
   }
@@ -290,7 +352,7 @@
 }
 
 /* Hide ChatKit header when rendered inside regular style container */
-.chatkit-in-regular-style > div > div:first-child,
+.chatkit-in-regular-style>div>div:first-child,
 .chatkit-in-regular-style [data-chatkit-header],
 .chatkit-in-regular-style header {
   display: none !important;
@@ -309,7 +371,7 @@
   bottom: 0 !important;
 }
 
-.chatkit-in-regular-style > div {
+.chatkit-in-regular-style>div {
   width: 100% !important;
   height: 100% !important;
   margin: 0 !important;
@@ -334,8 +396,9 @@
   background-color: hsl(var(--muted)) !important;
   color: hsl(var(--foreground)) !important;
 }
+
 /* Hide ChatKit header when rendered inside regular style container */
-.chatkit-in-regular-style > div > div:first-child,
+.chatkit-in-regular-style>div>div:first-child,
 .chatkit-in-regular-style [data-chatkit-header],
 .chatkit-in-regular-style header {
   display: none !important;
@@ -354,7 +417,7 @@
   bottom: 0 !important;
 }
 
-.chatkit-in-regular-style > div {
+.chatkit-in-regular-style>div {
   width: 100% !important;
   height: 100% !important;
   margin: 0 !important;

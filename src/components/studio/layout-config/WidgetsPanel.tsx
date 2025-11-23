@@ -55,7 +55,7 @@ export function WidgetsPanel({
       {/* Search Input */}
       <div className="mb-4">
         <div className="relative">
-          <Search className={`absolute left-2 top-1/2 transform -translate-y-1/2 ${isMobileViewport ? 'h-4 w-4' : 'h-3.5 w-3.5'} text-gray-400`} />
+          <Search className={`absolute left-2 top-1/2 transform -translate-y-1/2 ${isMobileViewport ? 'h-4 w-4' : 'h-3.5 w-3.5'} text-muted-foreground`} />
           <Input
             type="text"
             placeholder="Search widgets..."
@@ -68,13 +68,13 @@ export function WidgetsPanel({
 
       <div className="space-y-4">
         {filteredCategories.length === 0 ? (
-          <div className="text-center py-8 text-sm text-gray-500">
+          <div className="text-center py-8 text-sm text-muted-foreground">
             No widgets found matching "{searchQuery}"
           </div>
         ) : (
           filteredCategories.map(({ category, widgets }) => (
             <div key={category} className="space-y-2">
-              <div className={`${isMobileViewport ? 'text-sm' : 'text-xs'} font-medium text-gray-500 uppercase tracking-wide`}>
+              <div className={`${isMobileViewport ? 'text-sm' : 'text-xs'} font-medium text-muted-foreground uppercase tracking-wide`}>
                 {category}
               </div>
               <div className={`grid ${isMobileViewport ? 'grid-cols-1' : 'grid-cols-1'} gap-2`}>
@@ -83,14 +83,14 @@ export function WidgetsPanel({
                   return (
                     <div
                       key={w.type}
-                      className={`flex items-center gap-2 ${isMobileViewport ? 'px-3 py-2.5 text-sm' : 'px-2.5 py-2 text-xs'} bg-background border rounded-md cursor-move hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 transition-colors`}
+                      className={`flex items-center gap-2 ${isMobileViewport ? 'px-3 py-2.5 text-sm' : 'px-2.5 py-2 text-xs'} bg-background border rounded-md cursor-move hover:bg-primary/10 hover:border-primary/30 transition-colors`}
                       draggable
                       onDragStart={(e) => {
                         e.dataTransfer.setData('widgetType', w.type)
                         e.dataTransfer.effectAllowed = 'copy'
                       }}
                     >
-                      <Icon className={`${isMobileViewport ? 'h-4 w-4' : 'h-3.5 w-3.5'} text-gray-600 dark:text-gray-400`} />
+                      <Icon className={`${isMobileViewport ? 'h-4 w-4' : 'h-3.5 w-3.5'} text-muted-foreground`} />
                       <span className="flex-1">{w.label}</span>
                     </div>
                   )

@@ -50,7 +50,7 @@ import { SystemSettings, PageTemplatesAdmin } from './admin/features/system'
 import { AuditLogs } from './admin/features/security'
 import { BackupRecovery } from './admin/features/storage'
 import { APIManagement } from './admin/features/integration'
-import { NotificationCenter, ThemeBranding } from './admin/features/system'
+import { NotificationCenter, ThemeManager } from './admin/features/system'
 import { SecurityFeatures } from './admin/features/security'
 import { PerformanceMonitoring } from './admin/features/analytics'
 import { DataExportImport } from './admin/features/data'
@@ -313,227 +313,227 @@ export default function HomePage() {
             <QuickLinksSection />
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('bigquery')}>
-              <CardHeader className="flex flex-row items-center gap-3">
-                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/20">
-                  <Database className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">SQL Query</CardTitle>
-                  <CardDescription>Query data across all spaces</CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  SQL query interface for cross-space data analysis
-                </p>
-              </CardContent>
-            </Card>
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('bigquery')}>
+                <CardHeader className="flex flex-row items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/20">
+                    <Database className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">SQL Query</CardTitle>
+                    <CardDescription>Query data across all spaces</CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    SQL query interface for cross-space data analysis
+                  </p>
+                </CardContent>
+              </Card>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('notebook')}>
-              <CardHeader className="flex flex-row items-center gap-3">
-                <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/20">
-                  <BarChart3 className="h-6 w-6 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">Data Science Notebooks</CardTitle>
-                  <CardDescription>Deepnote-like notebook interface</CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Interactive notebooks for data science and analysis
-                </p>
-              </CardContent>
-            </Card>
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('notebook')}>
+                <CardHeader className="flex flex-row items-center gap-3">
+                  <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/20">
+                    <BarChart3 className="h-6 w-6 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Data Science Notebooks</CardTitle>
+                    <CardDescription>Deepnote-like notebook interface</CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Interactive notebooks for data science and analysis
+                  </p>
+                </CardContent>
+              </Card>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('ai-analyst')}>
-              <CardHeader className="flex flex-row items-center gap-3">
-                <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/20">
-                  <MessageCircle className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">Chat with AI</CardTitle>
-                  <CardDescription>ChatGPT-like data analysis interface</CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  AI-powered data analysis, visualization, and insights generation
-                </p>
-              </CardContent>
-            </Card>
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('ai-analyst')}>
+                <CardHeader className="flex flex-row items-center gap-3">
+                  <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/20">
+                    <MessageCircle className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Chat with AI</CardTitle>
+                    <CardDescription>ChatGPT-like data analysis interface</CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    AI-powered data analysis, visualization, and insights generation
+                  </p>
+                </CardContent>
+              </Card>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('knowledge-base')}>
-              <CardHeader className="flex flex-row items-center gap-3">
-                <div className="p-2 rounded-lg bg-teal-100 dark:bg-teal-900/20">
-                  <BookOpen className="h-6 w-6 text-teal-600 dark:text-teal-400" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">Knowledge Base</CardTitle>
-                  <CardDescription>Outline-like knowledge base and wiki</CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Create and organize documentation with markdown editing
-                </p>
-              </CardContent>
-            </Card>
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('knowledge-base')}>
+                <CardHeader className="flex flex-row items-center gap-3">
+                  <div className="p-2 rounded-lg bg-teal-100 dark:bg-teal-900/20">
+                    <BookOpen className="h-6 w-6 text-teal-600 dark:text-teal-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Knowledge Base</CardTitle>
+                    <CardDescription>Outline-like knowledge base and wiki</CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Create and organize documentation with markdown editing
+                  </p>
+                </CardContent>
+              </Card>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('space-layouts')}>
-              <CardHeader className="flex flex-row items-center gap-3">
-                <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/20">
-                  <Layout className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">Space Layouts</CardTitle>
-                  <CardDescription>Manage layout templates and allowed spaces</CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Configure templates, preview, and control which spaces can use them
-                </p>
-              </CardContent>
-            </Card>
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('space-layouts')}>
+                <CardHeader className="flex flex-row items-center gap-3">
+                  <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/20">
+                    <Layout className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Space Layouts</CardTitle>
+                    <CardDescription>Manage layout templates and allowed spaces</CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Configure templates, preview, and control which spaces can use them
+                  </p>
+                </CardContent>
+              </Card>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('attachments')}>
-              <CardHeader className="flex flex-row items-center gap-3">
-                <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/20">
-                  <Paperclip className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">Attachment Manager</CardTitle>
-                  <CardDescription>Manage all file attachments across spaces</CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  View, upload, and manage attachments from all spaces
-                </p>
-              </CardContent>
-            </Card>
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('attachments')}>
+                <CardHeader className="flex flex-row items-center gap-3">
+                  <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/20">
+                    <Paperclip className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Attachment Manager</CardTitle>
+                    <CardDescription>Manage all file attachments across spaces</CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    View, upload, and manage attachments from all spaces
+                  </p>
+                </CardContent>
+              </Card>
 
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('users')}>
-              <CardHeader className="flex flex-row items-center gap-3">
-                <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/20">
-                  <Users className="h-6 w-6 text-red-600 dark:text-red-400" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">User Management</CardTitle>
-                  <CardDescription>Manage users and permissions</CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  User administration, roles, and access control
-                </p>
-              </CardContent>
-            </Card>
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('users')}>
+                <CardHeader className="flex flex-row items-center gap-3">
+                  <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/20">
+                    <Users className="h-6 w-6 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">User Management</CardTitle>
+                    <CardDescription>Manage users and permissions</CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    User administration, roles, and access control
+                  </p>
+                </CardContent>
+              </Card>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('roles')}>
-              <CardHeader className="flex flex-row items-center gap-3">
-                <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/20">
-                  <Shield className="h-6 w-6 text-amber-600 dark:text-amber-400" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">Role & Permission Management</CardTitle>
-                  <CardDescription>Manage roles and permissions</CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Create and manage roles with custom permissions for global and space levels
-                </p>
-              </CardContent>
-            </Card>
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('roles')}>
+                <CardHeader className="flex flex-row items-center gap-3">
+                  <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/20">
+                    <Shield className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Role & Permission Management</CardTitle>
+                    <CardDescription>Manage roles and permissions</CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Create and manage roles with custom permissions for global and space levels
+                  </p>
+                </CardContent>
+              </Card>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('permission-tester')}>
-              <CardHeader className="flex flex-row items-center gap-3">
-                <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/20">
-                  <TestTube className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">Permission Tester</CardTitle>
-                  <CardDescription>Test and debug permissions</CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Test user permissions and debug access control issues
-                </p>
-              </CardContent>
-            </Card>
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('permission-tester')}>
+                <CardHeader className="flex flex-row items-center gap-3">
+                  <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/20">
+                    <TestTube className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Permission Tester</CardTitle>
+                    <CardDescription>Test and debug permissions</CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Test user permissions and debug access control issues
+                  </p>
+                </CardContent>
+              </Card>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('space-settings')}>
-              <CardHeader className="flex flex-row items-center gap-3">
-                <div className="p-2 rounded-lg bg-cyan-100 dark:bg-cyan-900/20">
-                  <Building2 className="h-6 w-6 text-cyan-600 dark:text-cyan-400" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">Space Settings</CardTitle>
-                  <CardDescription>Configure individual space settings</CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Manage space details, members, layouts, and configurations
-                </p>
-              </CardContent>
-            </Card>
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('space-settings')}>
+                <CardHeader className="flex flex-row items-center gap-3">
+                  <div className="p-2 rounded-lg bg-cyan-100 dark:bg-cyan-900/20">
+                    <Building2 className="h-6 w-6 text-cyan-600 dark:text-cyan-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Space Settings</CardTitle>
+                    <CardDescription>Configure individual space settings</CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Manage space details, members, layouts, and configurations
+                  </p>
+                </CardContent>
+              </Card>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('settings')}>
-              <CardHeader className="flex flex-row items-center gap-3">
-                <div className="p-2 rounded-lg bg-muted">
-                  <Settings className="h-6 w-6 text-muted-foreground" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">System Settings</CardTitle>
-                  <CardDescription>Configure system-wide settings</CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Global system configuration and preferences
-                </p>
-              </CardContent>
-            </Card>
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('settings')}>
+                <CardHeader className="flex flex-row items-center gap-3">
+                  <div className="p-2 rounded-lg bg-muted">
+                    <Settings className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">System Settings</CardTitle>
+                    <CardDescription>Configure system-wide settings</CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Global system configuration and preferences
+                  </p>
+                </CardContent>
+              </Card>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('projects')}>
-              <CardHeader className="flex flex-row items-center gap-3">
-                <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/20">
-                  <Kanban className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">Project Management</CardTitle>
-                  <CardDescription>ClickUp-style ticket and project management</CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Manage tickets, projects, and tasks with multiple views
-                </p>
-              </CardContent>
-            </Card>
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('projects')}>
+                <CardHeader className="flex flex-row items-center gap-3">
+                  <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/20">
+                    <Kanban className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Project Management</CardTitle>
+                    <CardDescription>ClickUp-style ticket and project management</CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Manage tickets, projects, and tasks with multiple views
+                  </p>
+                </CardContent>
+              </Card>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('data-governance')}>
-              <CardHeader className="flex flex-row items-center gap-3">
-                <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/20">
-                  <Shield className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">Data Governance</CardTitle>
-                  <CardDescription>OpenMetadata data governance and quality</CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Manage data assets, policies, quality, and lineage using OpenMetadata
-                </p>
-              </CardContent>
-            </Card>
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveTab('data-governance')}>
+                <CardHeader className="flex flex-row items-center gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/20">
+                    <Shield className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Data Governance</CardTitle>
+                    <CardDescription>OpenMetadata data governance and quality</CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Manage data assets, policies, quality, and lineage using OpenMetadata
+                  </p>
+                </CardContent>
+              </Card>
             </div>
           </div>
         )}
@@ -553,7 +553,7 @@ export default function HomePage() {
         {activeTab === 'backup' && <BackupRecovery />}
         {activeTab === 'api' && <APIManagement />}
         {activeTab === 'notifications' && <NotificationCenter />}
-        {activeTab === 'themes' && <ThemeBranding />}
+        {activeTab === 'themes' && <ThemeManager />}
         {activeTab === 'security' && <SecurityFeatures />}
         {activeTab === 'performance' && <PerformanceMonitoring />}
         {activeTab === 'data' && <DataModelManagement />}
@@ -582,13 +582,13 @@ export default function HomePage() {
         {activeTab === 'ai-chat-ui' && <AIChatUI />}
         {activeTab === 'knowledge-base' && <OutlineKnowledgeBase />}
         {activeTab === 'marketplace' && (
-          <MarketplaceHome 
+          <MarketplaceHome
             spaceId={selectedSpace || undefined}
             showSpaceSelector={true}
           />
         )}
         {activeTab === 'infrastructure' && (
-          <InfrastructureOverview 
+          <InfrastructureOverview
             spaceId={selectedSpace || undefined}
             showSpaceSelector={true}
           />

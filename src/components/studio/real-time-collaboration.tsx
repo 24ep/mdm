@@ -169,21 +169,21 @@ export function RealTimeCollaboration({
 
   const getStatusColor = useCallback((status: Collaborator['status']) => {
     switch (status) {
-      case 'online': return 'bg-green-500'
-      case 'away': return 'bg-yellow-500'
-      case 'busy': return 'bg-red-500'
-      case 'offline': return 'bg-gray-400'
-      default: return 'bg-gray-400'
+      case 'online': return 'bg-primary'
+      case 'away': return 'bg-warning'
+      case 'busy': return 'bg-destructive'
+      case 'offline': return 'bg-muted'
+      default: return 'bg-muted'
     }
   }, [])
 
   const getRoleColor = useCallback((role: Collaborator['role']) => {
     switch (role) {
-      case 'owner': return 'bg-purple-100 text-purple-800'
-      case 'editor': return 'bg-blue-100 text-blue-800'
-      case 'viewer': return 'bg-green-100 text-green-800'
-      case 'commenter': return 'bg-orange-100 text-orange-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'owner': return 'bg-primary/10 text-primary'
+      case 'editor': return 'bg-primary/10 text-primary'
+      case 'viewer': return 'bg-primary/10 text-primary'
+      case 'commenter': return 'bg-warning/20 text-warning'
+      default: return 'bg-muted text-muted-foreground'
     }
   }, [])
 
@@ -206,9 +206,9 @@ export function RealTimeCollaboration({
         <div className="flex items-center gap-2">
           {/* Connection Status */}
           <div className="flex items-center gap-2">
-            {connectionStatus === 'connected' && <Wifi className="h-4 w-4 text-green-600" />}
-            {connectionStatus === 'disconnected' && <WifiOff className="h-4 w-4 text-red-600" />}
-            {connectionStatus === 'reconnecting' && <Activity className="h-4 w-4 text-yellow-600 animate-pulse" />}
+            {connectionStatus === 'connected' && <Wifi className="h-4 w-4 text-primary" />}
+            {connectionStatus === 'disconnected' && <WifiOff className="h-4 w-4 text-destructive" />}
+            {connectionStatus === 'reconnecting' && <Activity className="h-4 w-4 text-warning animate-pulse" />}
             <span className="text-sm text-muted-foreground capitalize">{connectionStatus}</span>
           </div>
 
@@ -259,7 +259,7 @@ export function RealTimeCollaboration({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-blue-600" />
+              <Users className="h-5 w-5 text-primary" />
               <div>
                 <div className="text-2xl font-bold">{session.collaborators.length}</div>
                 <div className="text-sm text-muted-foreground">Total Collaborators</div>
@@ -270,7 +270,7 @@ export function RealTimeCollaboration({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Activity className="h-5 w-5 text-green-600" />
+              <Activity className="h-5 w-5 text-primary" />
               <div>
                 <div className="text-2xl font-bold">{onlineCollaborators.length}</div>
                 <div className="text-sm text-muted-foreground">Online Now</div>
@@ -281,7 +281,7 @@ export function RealTimeCollaboration({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <MessageCircle className="h-5 w-5 text-purple-600" />
+              <MessageCircle className="h-5 w-5 text-primary" />
               <div>
                 <div className="text-2xl font-bold">{comments.length}</div>
                 <div className="text-sm text-muted-foreground">Comments</div>
@@ -292,7 +292,7 @@ export function RealTimeCollaboration({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-orange-600" />
+              <AlertCircle className="h-5 w-5 text-warning" />
               <div>
                 <div className="text-2xl font-bold">{unreadComments}</div>
                 <div className="text-sm text-muted-foreground">Unresolved</div>
@@ -427,7 +427,7 @@ export function RealTimeCollaboration({
                         variant="outline"
                         size="sm"
                         onClick={() => onRemoveCollaborator(collaborator.id)}
-                        className="text-red-600 hover:text-red-700"
+                        className="text-destructive hover:text-destructive/80"
                       >
                         <UserMinus className="h-4 w-4" />
                       </Button>
@@ -477,7 +477,7 @@ export function RealTimeCollaboration({
                           {new Date(comment.createdAt).toLocaleString()}
                         </span>
                         {comment.resolved && (
-                          <Badge variant="outline" className="text-green-600">
+                          <Badge variant="outline" className="text-primary">
                             <CheckCircle className="h-3 w-3 mr-1" />
                             Resolved
                           </Badge>
@@ -561,7 +561,7 @@ export function RealTimeCollaboration({
                 { action: 'invited', user: 'Admin', time: '20 minutes ago' }
               ].map((activity, index) => (
                 <div key={index} className="flex items-center gap-3 p-3 border rounded-lg">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                  <div className="w-2 h-2 bg-primary rounded-full" />
                   <div className="flex-1">
                     <span className="font-medium">{activity.user}</span>
                     <span className="text-muted-foreground"> {activity.action}</span>

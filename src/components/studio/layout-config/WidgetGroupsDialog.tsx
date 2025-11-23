@@ -324,7 +324,7 @@ export function WidgetGroupsDialog({
                         {isCollapsed ? (
                           <Folder className="h-4 w-4 text-muted-foreground" />
                         ) : (
-                          <FolderOpen className="h-4 w-4 text-blue-600" />
+                          <FolderOpen className="h-4 w-4 text-primary" />
                         )}
                         {editingGroupId === group.id ? (
                           <div className="flex items-center gap-1 flex-1">

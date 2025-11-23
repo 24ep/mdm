@@ -38,24 +38,24 @@ export async function logAuditEvent(entry: AuditLogEntry): Promise<void> {
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
       return uuidRegex.test(str)
     }
-    
+
     const metadata = {
       ...(entry.details || {}),
       ...(entry.spaceId ? { spaceId: entry.spaceId } : {}),
       // If resourceId is not a UUID, store it in metadata
       ...(entry.resourceId && !isUUID(entry.resourceId) ? { originalResourceId: entry.resourceId } : {}),
     }
-    
+
     // Use resourceId if it's a valid UUID, otherwise generate one
     // entity_id is required, so we always need a UUID
-    const entityId = entry.resourceId && isUUID(entry.resourceId) 
-      ? entry.resourceId 
+    const entityId = entry.resourceId && isUUID(entry.resourceId)
+      ? entry.resourceId
       : randomUUID()
-    
+
     const result = await query(
       `INSERT INTO audit_logs (
-        user_id, action, entity_type, entity_id, new_value, ip_address, user_agent, created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+        id, user_id, action, entity_type, entity_id, new_value, ip_address, user_agent, created_at
+      ) VALUES (gen_random_uuid(), $1::uuid, $2, $3, $4::uuid, $5, $6, $7, NOW())
       RETURNING id, created_at as timestamp`,
       [
         entry.userId,
@@ -82,7 +82,7 @@ export async function logAuditEvent(entry: AuditLogEntry): Promise<void> {
           ipAddress: entry.ipAddress,
           userAgent: entry.userAgent,
           createdAt: result.rows[0].timestamp
-        }).catch(() => {}) // Silently fail
+        }).catch(() => { }) // Silently fail
       })
     }
   } catch (error) {

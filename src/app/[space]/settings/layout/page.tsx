@@ -1,10 +1,9 @@
 'use client'
 
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState, useMemo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { Layout, Plus, Edit } from 'lucide-react'
 import { useSpace } from '@/contexts/space-context'
 import { SpaceSettingsSidebar } from '@/components/space-management/SpaceSettingsSidebar'
@@ -46,7 +45,10 @@ function loadTemplates(): LayoutTemplate[] {
 export default function LayoutSelectionPage() {
   const params = useParams() as { space: string }
   const router = useRouter()
+  const searchParams = useSearchParams()
   const spaceSlug = params.space
+  const fromDataManagement = searchParams?.get('from') === 'data-management'
+  const fromSpaceSidebar = searchParams?.get('from') === 'space-sidebar'
   const { currentSpace, spaces } = useSpace()
   const [adminTemplates, setAdminTemplates] = useState<LayoutTemplate[]>([])
   const [loading, setLoading] = useState(true)
@@ -58,6 +60,8 @@ export default function LayoutSelectionPage() {
     return spaces.find((s: any) => s.id === params.space || s.slug === params.space) || currentSpace
   }, [spaces, currentSpace, params.space])
 
+  const [savedLayout, setSavedLayout] = useState<any>(null)
+
   // Get homepage for "Go to Space" button
   const homepage = useMemo(() => {
     // This would typically come from editor pages, but for now return null
@@ -65,10 +69,87 @@ export default function LayoutSelectionPage() {
   }, [])
 
   useEffect(() => {
-    const templates = loadTemplates()
-    setAdminTemplates(templates)
-    setLoading(false)
-  }, [])
+    const loadData = async () => {
+      const templates = loadTemplates()
+      setAdminTemplates(templates)
+      
+      // Load saved layout config for this space
+      // Try both ID and slug since layouts might be saved with either
+      const spaceId = selectedSpace?.id
+      const spaceSlugValue = selectedSpace?.slug || params.space || spaceSlug
+      let foundLayout = false
+      
+      // Try with space ID first, then slug
+      const identifiersToTry = spaceId ? [spaceId, spaceSlugValue] : [spaceSlugValue]
+      
+      for (const identifier of identifiersToTry) {
+        if (!identifier || foundLayout) break
+        
+        try {
+          // Try to get from SpacesEditorManager
+          const savedConfig = await SpacesEditorManager.getLayoutConfig(identifier)
+          console.log(`Loaded layout config for ${identifier}:`, savedConfig)
+          
+          if (savedConfig && Object.keys(savedConfig).length > 0) {
+            // Check if config has any meaningful data
+            const hasName = savedConfig.name || savedConfig.title || savedConfig.meta?.name
+            const hasConfig = savedConfig.sidebar || savedConfig.top || savedConfig.footer || 
+                            savedConfig.pages || savedConfig.allPages || savedConfig.placedWidgets
+            
+            if (hasName || hasConfig) {
+              const layoutName = savedConfig.name || savedConfig.title || savedConfig.meta?.name || 
+                                (selectedSpace?.name ? `${selectedSpace.name} Layout` : 'Current Layout')
+              setSavedLayout({
+                id: encodeURIComponent(layoutName),
+                name: layoutName,
+                description: savedConfig.description || 'Saved layout configuration',
+                config: savedConfig
+              })
+              foundLayout = true
+              console.log('Set saved layout:', layoutName)
+              break // Found layout, no need to try other identifiers
+            }
+          }
+        } catch (error) {
+          console.error(`Error loading saved layout for ${identifier}:`, error)
+        }
+      }
+      
+      // Also try to get from database versions API as fallback (only works with UUID)
+      if (!foundLayout && spaceId) {
+        try {
+          const response = await fetch(`/api/spaces/${spaceId}/layout/versions`)
+          if (response.ok) {
+            const data = await response.json()
+            const currentVersion = data.versions?.find((v: any) => v.is_current)
+            if (currentVersion && currentVersion.layout_config) {
+              const layoutConfig = typeof currentVersion.layout_config === 'string' 
+                ? JSON.parse(currentVersion.layout_config)
+                : currentVersion.layout_config
+              
+              if (layoutConfig && Object.keys(layoutConfig).length > 0) {
+                const layoutName = layoutConfig.name || layoutConfig.title || 
+                                 (selectedSpace?.name ? `${selectedSpace.name} Layout` : 'Current Layout')
+                setSavedLayout({
+                  id: encodeURIComponent(layoutName),
+                  name: layoutName,
+                  description: layoutConfig.description || 'Saved layout configuration',
+                  config: layoutConfig
+                })
+                console.log('Set saved layout from versions API:', layoutName)
+              }
+            }
+          }
+        } catch (versionError) {
+          console.warn('Error loading from versions API:', versionError)
+        }
+      }
+      
+      setLoading(false)
+    }
+    
+    loadData()
+  }, [selectedSpace, params.space, spaceSlug])
 
   // Get allowed layouts for this space
   const allowedLayouts = useMemo(() => {
@@ -79,8 +160,8 @@ export default function LayoutSelectionPage() {
       !t.allowedSpaceIds || t.allowedSpaceIds.length === 0 || t.allowedSpaceIds.includes(spaceId)
     )
 
-    // Only return admin templates (no default layouts)
-    const allLayouts = allowedAdminTemplates.map(t => ({
+    // Map admin templates
+    const adminLayouts = allowedAdminTemplates.map(t => ({
       id: t.id,
       name: t.name,
       description: t.description || '',
@@ -88,8 +169,20 @@ export default function LayoutSelectionPage() {
       isDefault: false
     }))
 
-    return allLayouts
-  }, [adminTemplates, selectedSpace, params.space])
+    // Add saved layout if it exists
+    const layouts = [...adminLayouts]
+    if (savedLayout) {
+      layouts.push({
+        id: savedLayout.id,
+        name: savedLayout.name,
+        description: savedLayout.description,
+        icon: Layout,
+        isDefault: false
+      })
+    }
+
+    return layouts
+  }, [adminTemplates, selectedSpace, params.space, savedLayout])
 
   const handleCreateNewLayout = () => {
     // Open name dialog with a default proposal
@@ -125,34 +218,40 @@ export default function LayoutSelectionPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col h-screen">
-      <SpaceSettingsHeader
-        spaceName={selectedSpace?.name || 'Space Settings'}
-        spaceDescription={selectedSpace?.description}
-        isActive={selectedSpace?.is_active}
-        homepage={homepage}
-        spaceSlug={selectedSpace?.slug}
-        spaceId={selectedSpace?.id}
-      />
+      {/* Only show header if NOT accessed from data management (where breadcrumbs show the info) */}
+      {!fromDataManagement && !fromSpaceSidebar && (
+        <SpaceSettingsHeader
+          spaceName={selectedSpace?.name || 'Space Settings'}
+          spaceDescription={selectedSpace?.description}
+          isActive={selectedSpace?.is_active}
+          homepage={homepage}
+          spaceSlug={selectedSpace?.slug}
+          spaceId={selectedSpace?.id}
+        />
+      )}
 
       <div className="flex flex-1 overflow-hidden">
-        <Tabs value="space-studio" onValueChange={(value) => {
-          if (value !== 'space-studio') {
-            router.push(`/${spaceSlug}/settings?tab=${value}`)
-          }
-        }}>
+        {/* Only show sidebar in body if NOT accessed from data management (where it's shown in secondary sidebar) */}
+        {!fromDataManagement && !fromSpaceSidebar && (
           <SpaceSettingsSidebar
-            activeTab="space-studio"
+            activeTab="details"
             onTabChange={(value) => {
-              if (value !== 'space-studio') {
-                router.push(`/${spaceSlug}/settings?tab=${value}`)
+              const params = new URLSearchParams()
+              params.set('tab', value)
+              if (fromDataManagement) {
+                params.set('from', 'data-management')
+              } else if (fromSpaceSidebar) {
+                params.set('from', 'space-sidebar')
               }
+              router.push(`/${spaceSlug}/settings?${params.toString()}`)
             }}
             showAllTabs={false}
           />
+        )}
 
-          {/* Main Content Area */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <TabsContent value="space-studio" className="flex-1 overflow-auto space-y-6 p-6 m-0">
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-auto space-y-6 p-6 m-0">
             {/* Layout Selection Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Existing Layouts */}
@@ -173,7 +272,16 @@ export default function LayoutSelectionPage() {
                       <Button 
                         variant="outline"
                         className="w-full"
-                        onClick={() => router.push(`/${spaceSlug}/settings/layout/${layout.id}`)}
+                        onClick={() => {
+                          const params = new URLSearchParams()
+                          if (fromDataManagement) {
+                            params.set('from', 'data-management')
+                          } else if (fromSpaceSidebar) {
+                            params.set('from', 'space-sidebar')
+                          }
+                          const queryString = params.toString()
+                          router.push(`/${spaceSlug}/settings/layout/${layout.id}${queryString ? `?${queryString}` : ''}`)
+                        }}
                       >
                         <Edit className="h-4 w-4 mr-2" />
                         Edit
@@ -185,20 +293,20 @@ export default function LayoutSelectionPage() {
               
               {/* Create New Layout Placeholder Card */}
               <Card 
-                className="hover:shadow-lg transition-shadow border-dashed border-2 border-gray-300 bg-gray-50 dark:bg-gray-800/50 cursor-pointer"
+                className="hover:shadow-lg transition-shadow border-dashed border-2 border-border bg-muted/50 cursor-pointer"
                 onClick={handleCreateNewLayout}
               >
                 <CardHeader className="flex items-center justify-center min-h-[120px]">
                   <div className="text-center space-y-2">
                     <div className="flex justify-center">
-                      <div className="rounded-full bg-gray-200 dark:bg-gray-700 p-3">
-                        <Plus className="h-6 w-6 text-gray-500 dark:text-gray-400" />
+                      <div className="rounded-full bg-muted p-3">
+                        <Plus className="h-6 w-6 text-muted-foreground" />
                       </div>
                     </div>
-                    <CardTitle className="text-gray-600 dark:text-gray-400">
+                    <CardTitle className="text-foreground">
                       Create New Layout
                     </CardTitle>
-                    <CardDescription className="text-sm text-gray-500 dark:text-gray-500">
+                    <CardDescription className="text-sm text-muted-foreground">
                       Start from scratch or use a template
                     </CardDescription>
                   </div>
@@ -227,7 +335,14 @@ export default function LayoutSelectionPage() {
                       await SpacesEditorManager.saveLayoutConfig(spaceSlug, { name: proposedName.trim() })
                       setCreateOpen(false)
                       // Navigate to layout config page using the chosen name as the route param
-                      router.push(`/${spaceSlug}/settings/layout/${encodeURIComponent(proposedName.trim())}`)
+                      const params = new URLSearchParams()
+                      if (fromDataManagement) {
+                        params.set('from', 'data-management')
+                      } else if (fromSpaceSidebar) {
+                        params.set('from', 'space-sidebar')
+                      }
+                      const queryString = params.toString()
+                      router.push(`/${spaceSlug}/settings/layout/${encodeURIComponent(proposedName.trim())}${queryString ? `?${queryString}` : ''}`)
                     } finally {
                       setCreating(false)
                     }
@@ -240,9 +355,8 @@ export default function LayoutSelectionPage() {
             </DialogContent>
           </Dialog>
             </div>
-          </TabsContent>
           </div>
-        </Tabs>
+        </div>
       </div>
     </div>
   )

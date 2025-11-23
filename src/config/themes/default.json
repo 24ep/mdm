@@ -1,0 +1,455 @@
+{
+    "name": "Default",
+    "description": "Ultra-clean and premium, inspired by the latest macOS design language. Soft frosted-glass panels, subtle translucency, smooth shadows, elegant spacing, refined alignment, fine-grain micro-interactions. Minimalistic, modern, calm — everything feels effortless, fast, and delightful.",
+    "themeMode": "light",
+    "tags": ["light", "macos", "premium", "frosted-glass", "default"],
+    "config": {
+        "applicationName": "Unified Data Platform",
+        "applicationLogo": "",
+        "applicationLogoType": "image",
+        "applicationLogoIcon": "",
+        "applicationLogoIconColor": "#000000",
+        "applicationLogoBackgroundColor": "#ffffff",
+        "primaryColor": "#007AFF",
+        "secondaryColor": "#8E8E93",
+        "warningColor": "#FF9500",
+        "dangerColor": "#FF3B30",
+        "uiBackgroundColor": "rgba(255, 255, 255, 0.85)",
+        "uiBorderColor": "rgba(0, 0, 0, 0.06)",
+        "bodyBackgroundColor": "#F5F5F7",
+        "topMenuBackgroundColor": "rgba(255, 255, 255, 0.75)",
+        "platformSidebarBackgroundColor": "rgba(242, 242, 247, 0.75)",
+        "secondarySidebarBackgroundColor": "rgba(255, 255, 255, 0.6)",
+        "topMenuTextColor": "#1D1D1F",
+        "platformSidebarTextColor": "#1D1D1F",
+        "secondarySidebarTextColor": "#3A3A3C",
+        "bodyTextColor": "#1D1D1F",
+        "loginBackground": {
+            "type": "gradient",
+            "gradient": {
+                "from": "#F5F5F7",
+                "to": "#E8E8ED",
+                "angle": 135
+            }
+        },
+        "globalStyling": {
+            "fontFamily": "-apple-system, BlinkMacSystemFont, \"SF Pro Display\", \"SF Pro Text\", \"Helvetica Neue\", Helvetica, Arial, sans-serif",
+            "fontFamilyMono": "\"SF Mono\", \"Monaco\", \"Inconsolata\", \"Fira Code\", \"Fira Mono\", \"Droid Sans Mono\", \"Source Code Pro\", monospace",
+            "borderRadius": "10px",
+            "borderColor": "rgba(0, 0, 0, 0.06)",
+            "borderWidth": "0.5px",
+            "buttonBorderRadius": "10px",
+            "buttonBorderWidth": "0px",
+            "inputBorderRadius": "8px",
+            "inputBorderWidth": "0.5px",
+            "selectBorderRadius": "8px",
+            "selectBorderWidth": "0.5px",
+            "textareaBorderRadius": "8px",
+            "textareaBorderWidth": "0.5px",
+            "transitionDuration": "200ms",
+            "transitionTiming": "cubic-bezier(0.4, 0, 0.2, 1)",
+            "shadowSm": "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+            "shadowMd": "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+            "shadowLg": "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+            "shadowXl": "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)"
+        },
+        "drawerOverlay": {
+            "color": "#FAFAFA",
+            "opacity": 15,
+            "blur": 8
+        },
+        "drawerStyle": {
+            "type": "modern",
+            "margin": "16px",
+            "borderRadius": "12px",
+            "width": "500px",
+            "backgroundBlur": 10,
+            "backgroundOpacity": 95
+        },
+        "componentStyling": {
+            "top-menu-bar": {
+                "backdropFilter": "blur(30px) saturate(200%)",
+                "borderWidth": "0px 0px 0.5px 0px",
+                "borderColor": "rgba(0,0,0,0.04)",
+                "boxShadow": "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
+                "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
+            },
+            "platform-sidebar-primary": {
+                "backdropFilter": "blur(30px) saturate(200%)",
+                "borderWidth": "0px",
+                "borderColor": "transparent",
+                "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
+            },
+            "platform-sidebar-secondary": {
+                "backdropFilter": "blur(30px) saturate(200%)",
+                "borderWidth": "0px",
+                "borderColor": "transparent",
+                "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
+            },
+            "platform-sidebar-menu-normal": {
+                "borderWidth": "0px",
+                "borderColor": "transparent",
+                "backgroundColor": "transparent",
+                "textColor": "#1D1D1F",
+                "borderRadius": "8px",
+                "padding": "0.5rem 0.75rem",
+                "fontSize": "0.875rem",
+                "fontWeight": "500",
+                "backdropFilter": "",
+                "boxShadow": "",
+                "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
+            },
+            "platform-sidebar-menu-hover": {
+                "borderWidth": "0px",
+                "borderColor": "transparent",
+                "backgroundColor": "rgba(0,0,0,0.06)",
+                "textColor": "#1D1D1F",
+                "borderRadius": "8px",
+                "padding": "0.5rem 0.75rem",
+                "fontSize": "0.875rem",
+                "fontWeight": "500",
+                "backdropFilter": "",
+                "boxShadow": "",
+                "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
+            },
+            "platform-sidebar-menu-active": {
+                "borderWidth": "0px",
+                "borderColor": "transparent",
+                "backgroundColor": "rgba(0,122,255,0.12)",
+                "textColor": "#007AFF",
+                "borderRadius": "8px",
+                "padding": "0.5rem 0.75rem",
+                "fontSize": "0.875rem",
+                "fontWeight": "600",
+                "backdropFilter": "",
+                "boxShadow": "0 1px 3px 0 rgba(0, 122, 255, 0.15)",
+                "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
+            },
+            "vertical-tab-menu-normal": {
+                "borderWidth": "0px",
+                "borderColor": "transparent",
+                "backgroundColor": "transparent",
+                "textColor": "#3A3A3C",
+                "borderRadius": "6px",
+                "padding": "0.375rem 0.5rem",
+                "fontSize": "0.8125rem",
+                "fontWeight": "400",
+                "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
+            },
+            "vertical-tab-menu-hover": {
+                "borderWidth": "0px",
+                "borderColor": "transparent",
+                "backgroundColor": "rgba(0,0,0,0.04)",
+                "textColor": "#1D1D1F",
+                "borderRadius": "6px",
+                "padding": "0.375rem 0.5rem",
+                "fontSize": "0.8125rem",
+                "fontWeight": "400",
+                "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
+            },
+            "vertical-tab-menu-active": {
+                "borderWidth": "0px",
+                "borderColor": "transparent",
+                "backgroundColor": "rgba(0,122,255,0.1)",
+                "textColor": "#007AFF",
+                "borderRadius": "6px",
+                "padding": "0.375rem 0.5rem",
+                "fontSize": "0.8125rem",
+                "fontWeight": "600",
+                "boxShadow": "0 1px 2px 0 rgba(0, 122, 255, 0.15)",
+                "backdropFilter": "",
+                "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
+            },
+            "text-input": {
+                "backgroundColor": "rgba(0,0,0,0.04)",
+                "textColor": "#1D1D1F",
+                "borderColor": "rgba(0,0,0,0.06)",
+                "borderRadius": "8px",
+                "borderWidth": "0.5px",
+                "padding": "0.5rem 0.75rem",
+                "fontSize": "0.875rem",
+                "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
+            },
+            "text-input-focus": {
+                "borderColor": "#007AFF",
+                "boxShadow": "0 0 0 3px rgba(0, 122, 255, 0.1)"
+            },
+            "text-input-disabled": {
+                "backgroundColor": "rgba(0,0,0,0.02)",
+                "textColor": "rgba(29, 29, 31, 0.5)",
+                "opacity": "0.6"
+            },
+            "select": {
+                "backgroundColor": "rgba(0,0,0,0.04)",
+                "textColor": "#1D1D1F",
+                "borderColor": "rgba(0,0,0,0.06)",
+                "borderRadius": "8px",
+                "borderWidth": "0.5px",
+                "padding": "0.5rem 0.75rem",
+                "fontSize": "0.875rem",
+                "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
+            },
+            "select-focus": {
+                "borderColor": "#007AFF",
+                "boxShadow": "0 0 0 3px rgba(0, 122, 255, 0.1)"
+            },
+            "select-disabled": {
+                "backgroundColor": "rgba(0,0,0,0.02)",
+                "textColor": "rgba(29, 29, 31, 0.5)",
+                "opacity": "0.6"
+            },
+            "multi-select": {
+                "backgroundColor": "rgba(0,0,0,0.04)",
+                "textColor": "#1D1D1F",
+                "borderColor": "rgba(0,0,0,0.06)",
+                "borderRadius": "8px",
+                "borderWidth": "0.5px",
+                "padding": "0.5rem 0.75rem",
+                "fontSize": "0.875rem",
+                "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
+            },
+            "multi-select-focus": {
+                "borderColor": "#007AFF",
+                "boxShadow": "0 0 0 3px rgba(0, 122, 255, 0.1)"
+            },
+            "multi-select-disabled": {
+                "backgroundColor": "rgba(0,0,0,0.02)",
+                "textColor": "rgba(29, 29, 31, 0.5)",
+                "opacity": "0.6"
+            },
+            "textarea": {
+                "backgroundColor": "rgba(0,0,0,0.04)",
+                "textColor": "#1D1D1F",
+                "borderColor": "rgba(0,0,0,0.06)",
+                "borderRadius": "8px",
+                "borderWidth": "0.5px",
+                "padding": "0.5rem 0.75rem",
+                "fontSize": "0.875rem",
+                "lineHeight": "1.5",
+                "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
+            },
+            "textarea-focus": {
+                "borderColor": "#007AFF",
+                "boxShadow": "0 0 0 3px rgba(0, 122, 255, 0.1)"
+            },
+            "textarea-disabled": {
+                "backgroundColor": "rgba(0,0,0,0.02)",
+                "textColor": "rgba(29, 29, 31, 0.5)",
+                "opacity": "0.6"
+            },
+            "button": {
+                "backgroundColor": "#007AFF",
+                "textColor": "#FFFFFF",
+                "borderRadius": "10px",
+                "borderWidth": "0px",
+                "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)",
+                "boxShadow": "0 4px 12px 0 rgba(0, 0, 0, 0.15)",
+                "padding": "0.75rem 1.5rem",
+                "fontSize": "1rem",
+                "fontWeight": "500"
+            },
+            "button-hover": {
+                "backgroundColor": "#0051D5",
+                "textColor": "#FFFFFF",
+                "boxShadow": "0 6px 16px 0 rgba(0, 0, 0, 0.2)"
+            },
+            "button-active": {
+                "backgroundColor": "#0040B3",
+                "textColor": "#FFFFFF",
+                "boxShadow": "0 4px 12px 0 rgba(0, 0, 0, 0.25)"
+            },
+            "button-focus": {
+                "backgroundColor": "#007AFF",
+                "textColor": "#FFFFFF",
+                "boxShadow": "0 0 0 3px rgba(0, 122, 255, 0.2)"
+            },
+            "button-disabled": {
+                "backgroundColor": "rgba(0, 122, 255, 0.3)",
+                "textColor": "rgba(255, 255, 255, 0.5)",
+                "opacity": "0.6"
+            },
+            "button-default": {
+                "backgroundColor": "#007AFF",
+                "textColor": "#FFFFFF",
+                "borderRadius": "10px",
+                "borderWidth": "0px"
+            },
+            "button-destructive": {
+                "backgroundColor": "#FF3B30",
+                "textColor": "#FFFFFF",
+                "borderRadius": "10px",
+                "borderWidth": "0px"
+            },
+            "button-outline": {
+                "backgroundColor": "transparent",
+                "textColor": "#007AFF",
+                "borderColor": "#007AFF",
+                "borderRadius": "10px",
+                "borderWidth": "1px"
+            },
+            "button-secondary": {
+                "backgroundColor": "#8E8E93",
+                "textColor": "#FFFFFF",
+                "borderRadius": "10px",
+                "borderWidth": "0px",
+                "boxShadow": "none"
+            },
+            "button-ghost": {
+                "backgroundColor": "transparent",
+                "textColor": "#1D1D1F",
+                "borderRadius": "10px",
+                "borderWidth": "0px",
+                "boxShadow": "none"
+            },
+            "button-link": {
+                "backgroundColor": "transparent",
+                "textColor": "#007AFF",
+                "borderRadius": "0px",
+                "borderWidth": "0px",
+                "textDecoration": "underline"
+            },
+            "iconButton": {
+                "backgroundColor": "transparent",
+                "textColor": "#1D1D1F",
+                "borderRadius": "8px",
+                "borderWidth": "0px",
+                "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)",
+                "boxShadow": "none",
+                "padding": "0.5rem",
+                "fontSize": "1rem",
+                "fontWeight": "400"
+            },
+            "iconButton-hover": {
+                "backgroundColor": "rgba(0, 0, 0, 0.05)",
+                "textColor": "#1D1D1F",
+                "boxShadow": "none"
+            },
+            "iconButton-active": {
+                "backgroundColor": "rgba(0, 0, 0, 0.1)",
+                "textColor": "#1D1D1F",
+                "boxShadow": "none"
+            },
+            "iconButton-focus": {
+                "backgroundColor": "transparent",
+                "textColor": "#1D1D1F",
+                "boxShadow": "0 0 0 2px rgba(0, 122, 255, 0.2)"
+            },
+            "iconButton-disabled": {
+                "backgroundColor": "transparent",
+                "textColor": "rgba(29, 29, 31, 0.3)",
+                "opacity": "0.5"
+            },
+            "card": {
+                "backgroundColor": "rgba(255, 255, 255, 0.85)",
+                "backdropFilter": "blur(20px) saturate(180%)",
+                "borderRadius": "12px",
+                "borderColor": "rgba(0,0,0,0.06)",
+                "borderWidth": "0.5px",
+                "boxShadow": "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+                "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)",
+                "padding": "1.5rem"
+            },
+            "checkbox": {
+                "borderRadius": "4px",
+                "borderColor": "rgba(0,0,0,0.2)",
+                "borderWidth": "1.5px",
+                "backgroundColor": "rgba(255,255,255,0.9)",
+                "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
+            },
+            "checkbox-checked": {
+                "borderRadius": "4px",
+                "borderColor": "#007AFF",
+                "borderWidth": "1.5px",
+                "backgroundColor": "#007AFF",
+                "textColor": "#ffffff",
+                "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
+            },
+            "checkbox-focus": {
+                "borderColor": "#007AFF",
+                "boxShadow": "0 0 0 3px rgba(0, 122, 255, 0.1)"
+            },
+            "checkbox-disabled": {
+                "opacity": "0.5",
+                "backgroundColor": "rgba(0,0,0,0.05)"
+            },
+            "radio": {
+                "borderRadius": "50%",
+                "borderColor": "rgba(0,0,0,0.2)",
+                "borderWidth": "1.5px",
+                "backgroundColor": "rgba(255,255,255,0.9)",
+                "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
+            },
+            "radio-checked": {
+                "borderRadius": "50%",
+                "borderColor": "#007AFF",
+                "borderWidth": "1.5px",
+                "backgroundColor": "#007AFF",
+                "textColor": "#ffffff",
+                "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
+            },
+            "radio-focus": {
+                "borderColor": "#007AFF",
+                "boxShadow": "0 0 0 3px rgba(0, 122, 255, 0.1)"
+            },
+            "radio-disabled": {
+                "opacity": "0.5",
+                "backgroundColor": "rgba(0,0,0,0.05)"
+            },
+            "switch": {
+                "borderRadius": "9999px",
+                "borderWidth": "0px",
+                "backgroundColor": "rgba(0,0,0,0.1)",
+                "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
+            },
+            "switch-checked": {
+                "borderRadius": "9999px",
+                "borderWidth": "0px",
+                "backgroundColor": "#007AFF",
+                "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
+            },
+            "switch-focus": {
+                "boxShadow": "0 0 0 3px rgba(0, 122, 255, 0.1)"
+            },
+            "switch-disabled": {
+                "opacity": "0.5",
+                "backgroundColor": "rgba(0,0,0,0.05)"
+            },
+            "separator": {
+                "backgroundColor": "rgba(0,0,0,0.06)",
+                "height": "1px",
+                "width": "100%",
+                "marginTop": "1rem",
+                "marginBottom": "1rem",
+                "borderWidth": "0px"
+            },
+            "space-settings-menu-normal": {
+                "backgroundColor": "transparent",
+                "textColor": "#3A3A3C",
+                "borderRadius": "6px",
+                "padding": "0.375rem 0.5rem",
+                "fontSize": "0.875rem",
+                "fontWeight": "400",
+                "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
+            },
+            "space-settings-menu-hover": {
+                "backgroundColor": "rgba(0,0,0,0.04)",
+                "textColor": "#1D1D1F",
+                "borderRadius": "6px",
+                "padding": "0.375rem 0.5rem",
+                "fontSize": "0.875rem",
+                "fontWeight": "400",
+                "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
+            },
+            "space-settings-menu-active": {
+                "backgroundColor": "rgba(0,122,255,0.1)",
+                "textColor": "#007AFF",
+                "borderRadius": "6px",
+                "padding": "0.375rem 0.5rem",
+                "fontSize": "0.875rem",
+                "fontWeight": "600",
+                "boxShadow": "0 1px 2px 0 rgba(0, 122, 255, 0.15)",
+                "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
+            }
+        }
+    }
+}

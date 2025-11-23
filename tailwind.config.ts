@@ -103,6 +103,7 @@ const config: Config = {
       },
       fontFamily: {
         'thai': ['Prompt', 'sans-serif'],
+        'sans': ['Inter', 'SF Pro Display', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Open Sans', 'Helvetica Neue', 'sans-serif'],
       },
     },
   },

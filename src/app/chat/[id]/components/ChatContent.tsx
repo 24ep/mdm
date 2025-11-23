@@ -72,7 +72,7 @@ export function ChatContent({
 
   if (showWaveUI) {
     return (
-      <>
+      <div className="relative flex flex-col h-full">
         <ChatHeader 
           chatbot={chatbot} 
           onClearSession={() => setMessages([])}
@@ -95,8 +95,8 @@ export function ChatContent({
             />
           </div>
           
-          {/* Optional: Show compact input at bottom for text fallback */}
-          <div className="border-t p-2" style={{
+          {/* Optional: Show compact input at bottom for text fallback - Floating */}
+          <div className="absolute bottom-0 left-0 right-0 z-50 border-t p-2" style={{
             borderColor: chatbot.borderColor,
             ...(() => {
               const bgValue = chatbot.messageBoxColor
@@ -135,12 +135,12 @@ export function ChatContent({
             />
           </div>
         </div>
-      </>
+      </div>
     )
   }
 
   return (
-    <>
+    <div className="relative flex flex-col h-full">
       <ChatHeader 
         chatbot={chatbot} 
         onClearSession={() => setMessages([])}
@@ -162,13 +162,13 @@ export function ChatContent({
 
       {/* Follow-up Questions */}
       {chatbot.followUpQuestions && chatbot.followUpQuestions.length > 0 && !isLoading && (
-        <div className="px-4 pb-2 space-y-2">
+        <div className="px-6 pb-4 space-y-2.5 animate-in fade-in slide-in-from-bottom-2 duration-300">
           {chatbot.followUpQuestions.map((question, index) => (
             <button
               key={index}
               onClick={() => onFollowUpClick(question)}
               disabled={isLoading || selectedFollowUp === question}
-              className="w-full text-left p-2 rounded text-sm hover:opacity-80 transition-opacity"
+              className="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ease-out transform hover:scale-[1.02] hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               style={{
                 borderColor: chatbot.borderColor,
                 borderWidth: chatbot.borderWidth,
@@ -196,23 +196,28 @@ export function ChatContent({
         </div>
       )}
 
-      <ChatInput
-        chatbot={chatbot}
-        input={input}
-        setInput={setInput}
-        attachments={attachments}
-        setAttachments={setAttachments}
-        isLoading={isLoading}
-        onSubmit={handleSubmit}
-        onFileSelect={onFileSelect}
-        isRecording={isRecording}
-        isVoiceEnabled={isVoiceEnabled}
-        isSpeaking={isSpeaking}
-        onStartRecording={onStartRecording}
-        onStopRecording={onStopRecording}
-        removeAttachment={removeAttachment}
-      />
-    </>
+      {/* Floating Chat Input */}
+      <div className="absolute bottom-0 left-0 right-0 z-50 transition-all duration-300 ease-out">
+        <div className="px-4 pb-4 pt-2 bg-gradient-to-t from-background/95 via-background/90 to-transparent backdrop-blur-sm">
+          <ChatInput
+            chatbot={chatbot}
+            input={input}
+            setInput={setInput}
+            attachments={attachments}
+            setAttachments={setAttachments}
+            isLoading={isLoading}
+            onSubmit={handleSubmit}
+            onFileSelect={onFileSelect}
+            isRecording={isRecording}
+            isVoiceEnabled={isVoiceEnabled}
+            isSpeaking={isSpeaking}
+            onStartRecording={onStartRecording}
+            onStopRecording={onStopRecording}
+            removeAttachment={removeAttachment}
+          />
+        </div>
+      </div>
+    </div>
   )
 }
 

@@ -103,13 +103,13 @@ export function AutoTemplateGenerator({ dataModel, onTemplatesGenerated, onClose
 
   if (showSuccess) {
     return (
-      <Card className="border-green-200 bg-green-50">
+      <Card className="border-primary/30 bg-primary/10">
         <CardContent className="p-6">
           <div className="flex items-center gap-3 mb-4">
-            <CheckCircle className="h-6 w-6 text-green-600" />
+            <CheckCircle className="h-6 w-6 text-primary" />
             <div>
-              <h3 className="font-semibold text-green-900">Templates Generated Successfully!</h3>
-              <p className="text-sm text-green-700">
+              <h3 className="font-semibold text-primary">Templates Generated Successfully!</h3>
+              <p className="text-sm text-primary/80">
                 {generatedTemplates.length} template(s) created for {dataModel.display_name}
               </p>
             </div>
@@ -118,8 +118,8 @@ export function AutoTemplateGenerator({ dataModel, onTemplatesGenerated, onClose
           <div className="space-y-2">
             {generatedTemplates.map(template => (
               <div key={template.id} className="flex items-center gap-2 text-sm">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span className="text-green-800">{template.name}</span>
+                <CheckCircle className="h-4 w-4 text-primary" />
+                <span className="text-foreground">{template.name}</span>
                 <Badge variant="secondary" className="text-xs">
                   {template.category}
                 </Badge>
@@ -127,7 +127,7 @@ export function AutoTemplateGenerator({ dataModel, onTemplatesGenerated, onClose
             ))}
           </div>
           
-          <p className="text-xs text-green-600 mt-3">
+          <p className="text-xs text-primary mt-3">
             You can now use these templates in the Space Studio
           </p>
         </CardContent>
@@ -153,11 +153,11 @@ export function AutoTemplateGenerator({ dataModel, onTemplatesGenerated, onClose
       
       <CardContent className="space-y-6">
         {/* Info Banner */}
-        <div className="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <Info className="h-5 w-5 text-blue-600 mt-0.5" />
+        <div className="flex items-start gap-3 p-3 bg-primary/10 border border-primary/30 rounded-lg">
+          <Info className="h-5 w-5 text-primary mt-0.5" />
           <div className="text-sm">
-            <p className="text-blue-900 font-medium">Auto-Generated Templates</p>
-            <p className="text-blue-700">
+            <p className="text-primary font-medium">Auto-Generated Templates</p>
+            <p className="text-primary/80">
               These templates will replace the traditional entity page implementation with 
               customizable Space Studio layouts that include all the same functionality.
             </p>
@@ -196,7 +196,7 @@ export function AutoTemplateGenerator({ dataModel, onTemplatesGenerated, onClose
                       <div className="flex items-center gap-2 mb-1">
                         <h5 className="font-medium">{template.name}</h5>
                         {template.recommended && (
-                          <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800">
+                          <Badge variant="secondary" className="text-xs bg-warning/20 text-warning">
                             Recommended
                           </Badge>
                         )}

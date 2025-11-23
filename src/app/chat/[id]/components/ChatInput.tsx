@@ -62,8 +62,9 @@ export function ChatInput({
         disabled={isLoading}
         aria-label="Attach file"
         title="Attach file"
+        className="transition-all duration-200 ease-out hover:scale-110 active:scale-95 hover:shadow-md"
       >
-        <Paperclip className="h-4 w-4" />
+        <Paperclip className="h-4 w-4 transition-transform duration-200 group-hover:rotate-12" />
       </Button>
     </>
   ) : null
@@ -77,11 +78,12 @@ export function ChatInput({
       onClick={isRecording ? onStopRecording : onStartRecording}
       disabled={isLoading || !isVoiceEnabled}
       title={isRecording ? "Stop recording" : "Start voice input"}
+      className="transition-all duration-200 ease-out hover:scale-110 active:scale-95 hover:shadow-md"
     >
       {isRecording ? (
         <MicOff className="h-4 w-4 animate-pulse" />
       ) : (
-        <Mic className="h-4 w-4" />
+        <Mic className="h-4 w-4 transition-transform duration-200 hover:scale-110" />
       )}
     </Button>
   ) : null
@@ -101,7 +103,7 @@ export function ChatInput({
       }}
       placeholder={chatbot.openaiAgentSdkPlaceholder || chatbot.chatkitOptions?.composer?.placeholder || "Type your message..."}
       disabled={isLoading}
-      className="flex-1"
+      className="flex-1 transition-all duration-200 ease-out focus:ring-2 focus:ring-offset-2 focus:shadow-md"
       aria-label="Message input"
       style={{
         fontFamily: chatbot.fontFamily,
@@ -165,6 +167,7 @@ export function ChatInput({
       disabled={(!input.trim() && attachments.length === 0) || isLoading}
       aria-label="Send message"
       title="Send message"
+      className="transition-all duration-200 ease-out hover:scale-110 active:scale-95 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
       style={{
         backgroundColor: sendButtonBgColor,
         ...getSendButtonBorderRadius(),
@@ -179,7 +182,7 @@ export function ChatInput({
         minHeight: defaultButtonHeight,
       }}
     >
-      <SendIconComponent className="h-4 w-4" style={{ color: sendButtonIconColor }} />
+      <SendIconComponent className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" style={{ color: sendButtonIconColor }} />
     </Button>
   )
 
@@ -187,11 +190,11 @@ export function ChatInput({
     <>
       {/* Attachment Preview */}
       {attachments.length > 0 && (
-        <div className="p-4 border-t" style={{ borderColor: chatbot.borderColor, borderWidth: chatbot.borderWidth }}>
-          <div className="flex flex-wrap gap-2">
+        <div className="px-4 pt-3 pb-2 border-t animate-in slide-in-from-top-2 fade-in duration-200" style={{ borderColor: chatbot.borderColor, borderWidth: chatbot.borderWidth }}>
+          <div className="flex flex-wrap gap-2.5">
             {attachments.map((attachment, index) => (
               <div key={index} className="relative group">
-                <div className="rounded-lg overflow-hidden border" style={{ borderColor: chatbot.borderColor }}>
+                <div className="rounded-lg overflow-hidden border transition-all duration-200 ease-out group-hover:shadow-md group-hover:scale-105" style={{ borderColor: chatbot.borderColor }}>
                   {attachment.type === 'image' ? (
                     <img 
                       src={attachment.url} 
@@ -209,12 +212,12 @@ export function ChatInput({
                   type="button"
                   onClick={() => removeAttachment(index)}
                   aria-label={`Remove ${attachment.name || attachment.type}`}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute -top-1.5 -right-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-all duration-200 ease-out transform hover:scale-110 active:scale-95 shadow-md"
                 >
                   <X className="h-3 w-3" />
                 </button>
                 {attachment.name && (
-                  <p className="text-xs text-muted-foreground mt-1 truncate w-20">{attachment.name}</p>
+                  <p className="text-xs text-muted-foreground mt-1.5 truncate w-20">{attachment.name}</p>
                 )}
               </div>
             ))}
@@ -224,10 +227,11 @@ export function ChatInput({
 
       {/* Input Area */}
       <form 
-        onSubmit={onSubmit} 
+        onSubmit={onSubmit}
+        className="transition-all duration-200 ease-out"
         style={{ 
-          paddingLeft: (chatbot as any).footerPaddingX || chatbot.headerPaddingX || '16px',
-          paddingRight: (chatbot as any).footerPaddingX || chatbot.headerPaddingX || '16px',
+          paddingLeft: (chatbot as any).footerPaddingX || chatbot.headerPaddingX || '20px',
+          paddingRight: (chatbot as any).footerPaddingX || chatbot.headerPaddingX || '20px',
           paddingTop: (chatbot as any).footerPaddingY || chatbot.headerPaddingY || '16px',
           paddingBottom: (chatbot as any).footerPaddingY || chatbot.headerPaddingY || '16px',
           borderTopColor: (chatbot as any).footerBorderColor || chatbot.borderColor,
@@ -239,7 +243,7 @@ export function ChatInput({
       >
         {sendButtonPosition === 'inside' ? (
           <div className="relative">
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2.5">
               {fileUploadLayout === 'input-first' ? (
                 <>
                   {inputField}
@@ -252,7 +256,7 @@ export function ChatInput({
                   {voiceButton}
                   <div className="flex-1 relative">
                     {inputField}
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                    <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
                       {sendButton}
                     </div>
                   </div>
@@ -261,7 +265,7 @@ export function ChatInput({
             </div>
           </div>
         ) : (
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2.5">
             {fileUploadLayout === 'input-first' ? (
               <>
                 {inputField}

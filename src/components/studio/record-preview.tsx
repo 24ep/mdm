@@ -140,11 +140,11 @@ export function RecordPreview({ config }: RecordPreviewProps) {
     
     switch (field.type) {
       case 'EMAIL':
-        return <a href={`mailto:${value}`} className="text-blue-600 hover:underline">{value}</a>
+        return <a href={`mailto:${value}`} className="text-primary hover:underline">{value}</a>
       case 'PHONE':
-        return <a href={`tel:${value}`} className="text-blue-600 hover:underline">{value}</a>
+        return <a href={`tel:${value}`} className="text-primary hover:underline">{value}</a>
       case 'URL':
-        return <a href={value} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{value}</a>
+        return <a href={value} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{value}</a>
       case 'BOOLEAN':
         return (
           <Badge variant={value ? "default" : "secondary"}>
@@ -257,7 +257,7 @@ export function RecordPreview({ config }: RecordPreviewProps) {
                       </Button>
                     )}
                     {config.actions.allowDelete && (
-                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-red-600">
+                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-destructive">
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     )}
@@ -309,7 +309,7 @@ export function RecordPreview({ config }: RecordPreviewProps) {
                   </Button>
                 )}
                 {config.actions.allowDelete && (
-                  <Button size="sm" variant="outline" className="text-red-600">
+                  <Button size="sm" variant="outline" className="text-destructive">
                     <Trash2 className="h-3 w-3 mr-1" />
                     Delete
                   </Button>

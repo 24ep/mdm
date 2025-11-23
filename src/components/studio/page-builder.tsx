@@ -238,9 +238,9 @@ export function PageBuilder({
         className={`absolute border-2 cursor-move ${
           isSelected 
             ? isPrimarySelected
-              ? 'border-blue-500 bg-blue-50'
-              : 'border-blue-400 bg-blue-25'
-            : 'border-gray-300 bg-white hover:border-gray-400'
+              ? 'border-primary bg-primary/10'
+              : 'border-primary/70 bg-primary/5'
+            : 'border-border bg-background hover:border-muted-foreground/50'
         }`}
         style={{
           left: component.x,
@@ -273,25 +273,25 @@ export function PageBuilder({
           <>
             {/* Corner Handles */}
             <div
-              className="absolute w-3 h-3 bg-blue-500 border border-white cursor-nw-resize hover:bg-blue-600 transition-colors"
+              className="absolute w-3 h-3 bg-primary border border-background cursor-nw-resize hover:bg-primary/80 transition-colors"
               style={{ left: -1, top: -1 }}
               onMouseDown={(e) => handleResizeStart(e, 'nw', component)}
               title="Resize from top-left"
             />
             <div
-              className="absolute w-3 h-3 bg-blue-500 border border-white cursor-ne-resize hover:bg-blue-600 transition-colors"
+              className="absolute w-3 h-3 bg-primary border border-background cursor-ne-resize hover:bg-primary/80 transition-colors"
               style={{ right: -1, top: -1 }}
               onMouseDown={(e) => handleResizeStart(e, 'ne', component)}
               title="Resize from top-right"
             />
             <div
-              className="absolute w-3 h-3 bg-blue-500 border border-white cursor-sw-resize hover:bg-blue-600 transition-colors"
+              className="absolute w-3 h-3 bg-primary border border-background cursor-sw-resize hover:bg-primary/80 transition-colors"
               style={{ left: -1, bottom: -1 }}
               onMouseDown={(e) => handleResizeStart(e, 'sw', component)}
               title="Resize from bottom-left"
             />
             <div
-              className="absolute w-3 h-3 bg-blue-500 border border-white cursor-se-resize hover:bg-blue-600 transition-colors"
+              className="absolute w-3 h-3 bg-primary border border-background cursor-se-resize hover:bg-primary/80 transition-colors"
               style={{ right: -1, bottom: -1 }}
               onMouseDown={(e) => handleResizeStart(e, 'se', component)}
               title="Resize from bottom-right"
@@ -299,25 +299,25 @@ export function PageBuilder({
             
             {/* Edge Handles */}
             <div
-              className="absolute w-3 h-3 bg-blue-500 border border-white cursor-n-resize hover:bg-blue-600 transition-colors"
+              className="absolute w-3 h-3 bg-primary border border-background cursor-n-resize hover:bg-primary/80 transition-colors"
               style={{ left: '50%', top: -1, transform: 'translateX(-50%)' }}
               onMouseDown={(e) => handleResizeStart(e, 'n', component)}
               title="Resize from top"
             />
             <div
-              className="absolute w-3 h-3 bg-blue-500 border border-white cursor-s-resize hover:bg-blue-600 transition-colors"
+              className="absolute w-3 h-3 bg-primary border border-background cursor-s-resize hover:bg-primary/80 transition-colors"
               style={{ left: '50%', bottom: -1, transform: 'translateX(-50%)' }}
               onMouseDown={(e) => handleResizeStart(e, 's', component)}
               title="Resize from bottom"
             />
             <div
-              className="absolute w-3 h-3 bg-blue-500 border border-white cursor-w-resize hover:bg-blue-600 transition-colors"
+              className="absolute w-3 h-3 bg-primary border border-background cursor-w-resize hover:bg-primary/80 transition-colors"
               style={{ left: -1, top: '50%', transform: 'translateY(-50%)' }}
               onMouseDown={(e) => handleResizeStart(e, 'w', component)}
               title="Resize from left"
             />
             <div
-              className="absolute w-3 h-3 bg-blue-500 border border-white cursor-e-resize hover:bg-blue-600 transition-colors"
+              className="absolute w-3 h-3 bg-primary border border-background cursor-e-resize hover:bg-primary/80 transition-colors"
               style={{ right: -1, top: '50%', transform: 'translateY(-50%)' }}
               onMouseDown={(e) => handleResizeStart(e, 'e', component)}
               title="Resize from right"
@@ -391,7 +391,7 @@ export function PageBuilder({
         <div className="text-sm text-muted-foreground">
           {page.components.length} components
           {resizeMode && (
-            <span className="ml-2 text-blue-600">
+            <span className="ml-2 text-primary">
               • Resize mode: Drag any edge or corner to resize
             </span>
           )}
@@ -439,7 +439,7 @@ export function PageBuilder({
           {/* Size Indicator Overlay */}
           {showSizeIndicator && (
             <div
-              className="absolute bg-blue-500/20 border-2 border-blue-500 pointer-events-none z-10"
+              className="absolute bg-primary/20 border-2 border-primary pointer-events-none z-10"
               style={{
                 left: sizeIndicator.x,
                 top: sizeIndicator.y,
@@ -447,7 +447,7 @@ export function PageBuilder({
                 height: sizeIndicator.height
               }}
             >
-              <div className="absolute -top-6 left-0 bg-blue-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+              <div className="absolute -top-6 left-0 bg-primary text-primary-foreground text-xs px-2 py-1 rounded whitespace-nowrap">
                 {sizeIndicator.width} × {sizeIndicator.height}px
               </div>
             </div>

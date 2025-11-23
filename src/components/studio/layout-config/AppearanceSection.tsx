@@ -15,14 +15,14 @@ interface AppearanceSectionProps {
   widget: PlacedWidget
   selectedWidgetId: string
   setPlacedWidgets: React.Dispatch<React.SetStateAction<PlacedWidget[]>>
-  globalStyle?: ComponentStyle
+  themeStyle?: ComponentStyle
 }
 
 export function AppearanceSection({
   widget,
   selectedWidgetId,
   setPlacedWidgets,
-  globalStyle,
+  themeStyle,
 }: AppearanceSectionProps) {
   const updateProperty = (key: string, value: any) => {
     setPlacedWidgets(prev => prev.map(w => 
@@ -43,11 +43,11 @@ export function AppearanceSection({
     ))
   }
 
-  // Get effective opacity (widget property or global style)
-  const globalOpacity = globalStyle?.opacity ? globalStyle.opacity / 100 : undefined
-  const effectiveOpacity = widget.properties?.opacity ?? globalOpacity ?? 1
+  // Get effective opacity (widget property or theme style)
+  const themeOpacity = themeStyle?.opacity ? themeStyle.opacity / 100 : undefined
+  const effectiveOpacity = widget.properties?.opacity ?? themeOpacity ?? 1
 
-  const isOpacityGlobal = widget.properties?.opacity === undefined
+  const isOpacityUsingTheme = widget.properties?.opacity === undefined && themeStyle?.opacity !== undefined
 
   // Border radius configuration - default to all sides
   const borderRadius = widget.properties?.borderRadius || { 
@@ -116,7 +116,7 @@ export function AppearanceSection({
               placeholder="100"
             />
             <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
-            {!isOpacityGlobal && globalStyle && (
+            {!isOpacityUsingTheme && themeStyle && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -157,7 +157,7 @@ export function AppearanceSection({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 w-7 p-0 flex items-center justify-center hover:bg-gray-100 border-0 bg-transparent"
+                className="h-7 w-7 p-0 flex items-center justify-center hover:bg-muted border-0 bg-transparent"
                 title="Rounded Corners"
               >
                 <Radius className="h-3.5 w-3.5" />
@@ -238,7 +238,7 @@ export function AppearanceSection({
                       </Select>
                     </div>
                   </div>
-                  <div className="flex items-center justify-center border border-gray-300 rounded h-12 bg-gray-50">
+                  <div className="flex items-center justify-center border border-border rounded h-12 bg-muted/50">
                     <span className="text-xs text-muted-foreground">Preview</span>
                   </div>
                   <div className="space-y-1">

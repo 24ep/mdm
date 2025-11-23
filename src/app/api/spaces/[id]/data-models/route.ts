@@ -90,7 +90,7 @@ export async function GET(
         FROM public.data_models dm
         JOIN data_model_spaces dms ON dms.data_model_id::uuid = dm.id
         JOIN spaces s ON s.id = dms.space_id::uuid
-        WHERE dm.deleted_at IS NULL AND s.deleted_at IS NULL AND dms.space_id = $1
+        WHERE dm.deleted_at IS NULL AND s.deleted_at IS NULL AND dms.space_id::text = $1
         GROUP BY dm.id, dm.name, dm.description, dm.created_at, dm.updated_at, dm.deleted_at,
                  dm.is_active, dm.sort_order, dm.created_by
         ORDER BY dm.sort_order ASC, dm.created_at DESC

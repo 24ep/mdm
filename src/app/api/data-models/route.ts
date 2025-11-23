@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       // Fallback to user's default space
       const { rows: defaultSpace } = await query(
         `SELECT s.id FROM spaces s 
-         JOIN space_members sm ON sm.space_id = s.id AND sm.user_id = $1
+         JOIN space_members sm ON sm.space_id = s.id AND sm.user_id::text = $1
          WHERE s.is_default = true AND s.deleted_at IS NULL
          ORDER BY s.created_at DESC LIMIT 1`,
         [session.user.id]
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
 
     const offset = (page - 1) * limit
     const params: any[] = [spaceId]
-    const filters: string[] = ['dm.deleted_at IS NULL', 'dms.space_id = $1']
+    const filters: string[] = ['dm.deleted_at IS NULL', 'dms.space_id::text = $1']
     
     if (search) {
       params.push(`%${search}%`, `%${search}%`)

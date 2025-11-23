@@ -7,7 +7,6 @@ import { ComponentConfig } from './types'
 import { UnifiedPage } from './types'
 import { PlacedWidget } from './widgets'
 import { SelectionTab } from './SelectionTab'
-import { PagesTab } from './PagesTab'
 import { useIconLoader } from './useIconLoader'
 import { SpacesEditorPage } from '@/lib/space-studio-manager'
 
@@ -34,9 +33,7 @@ interface SettingsPanelContentProps {
   setPermissionsDialogOpen: React.Dispatch<React.SetStateAction<boolean>>
   handlePageReorder: (fromIndex: number, toIndex: number, currentPages: UnifiedPage[], currentCustomPages: SpacesEditorPage[]) => Promise<void>
   handleComponentConfigUpdate: (type: string, updates: Partial<ComponentConfig>) => void
-  isPageVisibleInSidebar: (pageId: string, pageType: 'built-in' | 'custom') => boolean
-  updateSidebarMenuItem: (key: string | number | symbol, value: boolean) => void
-  updateCustomPageSidebarVisibility: (pageId: string, visible: boolean) => void
+  // Sidebar visibility functions removed - pages now use secondary platform sidebar
   setAllPages: React.Dispatch<React.SetStateAction<UnifiedPage[]>>
 }
 
@@ -63,12 +60,9 @@ export function SettingsPanelContent({
   setPermissionsDialogOpen,
   handlePageReorder,
   handleComponentConfigUpdate,
-  isPageVisibleInSidebar,
-  updateSidebarMenuItem,
-  updateCustomPageSidebarVisibility,
   setAllPages,
 }: SettingsPanelContentProps) {
-  const [activeTab, setActiveTab] = useState('pages')
+  const [activeTab, setActiveTab] = useState('selection')
   const { allIcons, reactIcons } = useIconLoader()
   const prevSelectionRef = useRef<string | null>(null)
   const userManualTabChangeRef = useRef(false)
@@ -103,10 +97,8 @@ export function SettingsPanelContent({
         setActiveTab('selection')
       }
     } else if (!currentSelection || !isValidSelection) {
-      // Always switch away from selection tab when nothing is selected or selection is invalid
-      if (activeTab === 'selection') {
-        setActiveTab('pages')
-      }
+      // Keep on selection tab even if nothing is selected (Pages tab removed)
+      // User can still see the empty state
     }
     
     // Reset manual tab change flag after a delay
@@ -129,77 +121,39 @@ export function SettingsPanelContent({
     setActiveTab(value)
   }
 
-  // Ensure activeTab is valid - if selection tab is hidden, use 'pages' instead
-  const validActiveTab = (!shouldShowSelectionTab && activeTab === 'selection') ? 'pages' : activeTab
+  // Ensure activeTab is valid
+  const validActiveTab = activeTab
 
   return (
     <div className="w-full" style={{ pointerEvents: 'auto' }}>
       <div className="w-full">
       <Tabs value={validActiveTab} onValueChange={handleTabChange}>
-        <TabsList className={`${isMobileViewport ? 'w-full' : 'w-full'} ${shouldShowSelectionTab ? 'grid grid-cols-2' : 'grid grid-cols-1'} mb-3 justify-start`}>
-          {shouldShowSelectionTab && (
+        <TabsList className={`${isMobileViewport ? 'w-full' : 'w-full'} mb-3 justify-start`}>
           <TabsTrigger 
             value="selection" 
             className="flex items-center gap-1.5 text-xs cursor-pointer"
           >
-          <FileIcon className="h-3.5 w-3.5" />
-          Elements
-        </TabsTrigger>
-          )}
-          <TabsTrigger 
-            value="pages" 
-            className="flex items-center gap-1.5 text-xs cursor-pointer"
-          >
-          <FileText className="h-3.5 w-3.5" />
-          Pages
-        </TabsTrigger>
-      </TabsList>
+            <FileIcon className="h-3.5 w-3.5" />
+            Elements
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Selection Tab - Shows properties of selected widget or component */}
-      {shouldShowSelectionTab && (
-      <TabsContent value="selection" className="mt-0 flex-1 overflow-visible" data-properties-panel="true">
+        {/* Selection Tab - Shows properties of selected widget or component */}
+        <TabsContent value="selection" className="mt-0 flex-1 overflow-visible" data-properties-panel="true">
           <div className="h-full overflow-y-auto overflow-x-visible selection-tab-wrapper" data-selection-tab="true">
-              <SelectionTab
-                selectedWidgetId={selectedWidgetId}
-                selectedComponent={selectedComponent}
-                placedWidgets={placedWidgets}
-                componentConfigs={componentConfigs}
-                setPlacedWidgets={setPlacedWidgets}
-                setSelectedWidgetId={setSelectedWidgetId}
-                setSelectedComponent={setSelectedComponent}
-                handleComponentConfigUpdate={handleComponentConfigUpdate}
-                spaceId={spaceId}
-              />
+            <SelectionTab
+              selectedWidgetId={selectedWidgetId}
+              selectedComponent={selectedComponent}
+              placedWidgets={placedWidgets}
+              componentConfigs={componentConfigs}
+              setPlacedWidgets={setPlacedWidgets}
+              setSelectedWidgetId={setSelectedWidgetId}
+              setSelectedComponent={setSelectedComponent}
+              handleComponentConfigUpdate={handleComponentConfigUpdate}
+              spaceId={spaceId}
+            />
           </div>
         </TabsContent>
-      )}
-
-      <TabsContent value="pages" className="mt-0">
-          <PagesTab
-            spaceId={spaceId}
-            isMobileViewport={isMobileViewport}
-            allPages={allPages}
-            pages={pages}
-            selectedPageId={selectedPageId}
-            allIcons={allIcons}
-            reactIcons={reactIcons}
-            setPages={setPages}
-            setSelectedPageId={setSelectedPageId}
-            setSelectedComponent={setSelectedComponent}
-            setSelectedPageForPermissions={setSelectedPageForPermissions}
-            setPermissionsRoles={setPermissionsRoles}
-            setPermissionsUserIds={setPermissionsUserIds}
-            setPermissionsDialogOpen={setPermissionsDialogOpen}
-            handlePageReorder={handlePageReorder}
-            isPageVisibleInSidebar={isPageVisibleInSidebar}
-            updateSidebarMenuItem={updateSidebarMenuItem}
-            updateCustomPageSidebarVisibility={updateCustomPageSidebarVisibility}
-            componentConfigs={componentConfigs}
-            handleComponentConfigUpdate={handleComponentConfigUpdate}
-            setAllPages={setAllPages}
-          />
-      </TabsContent>
-
       </Tabs>
       </div>
     </div>

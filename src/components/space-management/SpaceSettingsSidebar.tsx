@@ -1,8 +1,11 @@
 'use client'
 
 import { memo, useCallback } from 'react'
-import { TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+import { Z_INDEX } from '@/lib/z-index'
 import { Building2, Layout, Users as UsersIcon, Database, FolderPlus, Archive, AlertTriangle, RefreshCw } from 'lucide-react'
 
 interface SidebarItem {
@@ -18,12 +21,6 @@ const SIDEBAR_ITEMS: readonly SidebarItem[] = [
     label: 'Space Details',
     icon: Building2,
     tooltip: 'Name, description, and basic info'
-  },
-  {
-    id: 'space-studio',
-    label: 'Space Studio',
-    icon: Layout,
-    tooltip: 'Design layout and manage space pages'
   },
   {
     id: 'members',
@@ -67,38 +64,49 @@ interface SpaceSettingsSidebarProps {
   activeTab: string
   onTabChange: (value: string) => void
   showAllTabs?: boolean
+  showSpaceSelector?: boolean
+  selectedSpaceId?: string
+  onSpaceChange?: (spaceId: string) => void
+  spaces?: Array<{ id: string; name: string; slug?: string }>
 }
 
 const SidebarItemComponent = memo(function SidebarItemComponent({ 
   item, 
   isActive, 
   onClick,
-  className = ''
+  className = '',
+  sidebarText
 }: { 
   item: SidebarItem
   isActive: boolean
   onClick: () => void
   className?: string
+  sidebarText?: string
 }) {
   const Icon = item.icon
   
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <TabsTrigger
-          value={item.id}
+        <Button
+          variant="ghost"
           onClick={onClick}
-          className={`justify-start w-full h-9 px-2.5 py-1.5 rounded-sm border-0 text-sm transition-colors cursor-pointer ${
+          className={cn(
+            "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
             isActive
-              ? 'bg-gray-200 dark:bg-gray-700'
-              : 'hover:bg-gray-50 dark:hover:bg-gray-800'
-          } ${className}`}
+              ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm"
+              : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none",
+            className
+          )}
+          style={{ 
+            pointerEvents: 'auto', 
+            position: 'relative', 
+            zIndex: Z_INDEX.sidebar + 1
+          }}
         >
-          <div className="flex items-center space-x-2.5 w-full">
-            <Icon className={`h-4 w-4 ${className.includes('text-red') ? 'text-current' : 'text-foreground'} flex-shrink-0`} />
-            <span className="font-medium">{item.label}</span>
-          </div>
-        </TabsTrigger>
+          <Icon className="h-4 w-4 mr-3 flex-shrink-0" />
+          <span className="truncate text-left">{item.label}</span>
+        </Button>
       </TooltipTrigger>
       <TooltipContent>
         <p>{item.tooltip}</p>
@@ -110,8 +118,16 @@ const SidebarItemComponent = memo(function SidebarItemComponent({
 export const SpaceSettingsSidebar = memo(function SpaceSettingsSidebar({ 
   activeTab, 
   onTabChange,
-  showAllTabs = true
+  showAllTabs = true,
+  showSpaceSelector = false,
+  selectedSpaceId,
+  onSpaceChange,
+  spaces = []
 }: SpaceSettingsSidebarProps) {
+  // Use same styling as secondary platform sidebar
+  const sidebarBg = 'var(--brand-secondary-sidebar-bg, hsl(var(--muted)))'
+  const sidebarText = 'var(--brand-secondary-sidebar-text, hsl(var(--muted-foreground)))'
+  
   const handleTabClick = useCallback((itemId: string) => {
     onTabChange(itemId)
   }, [onTabChange])
@@ -122,9 +138,44 @@ export const SpaceSettingsSidebar = memo(function SpaceSettingsSidebar({
 
   return (
     <TooltipProvider>
-      <div className="w-56 bg-background flex flex-col border-r">
-        <nav className="flex-1 p-2.5 space-y-0.5">
-          <TabsList className="w-full flex-col h-auto bg-transparent gap-0.5">
+      <div 
+        className="w-full flex flex-col h-full"
+        data-sidebar="secondary"
+        data-component="space-settings-sidebar"
+        style={{
+          backgroundColor: sidebarBg,
+          color: sidebarText
+        }}
+      >
+        {showSpaceSelector && (
+          <div className="p-3 border-b border-border">
+            <Select
+              value={selectedSpaceId || ''}
+              onValueChange={(value) => {
+                if (onSpaceChange) {
+                  onSpaceChange(value)
+                }
+              }}
+            >
+              <SelectTrigger className="w-full h-9 text-sm">
+                <SelectValue placeholder="Select a space" />
+              </SelectTrigger>
+              <SelectContent>
+                {spaces.length > 0 ? (
+                  spaces.map((space) => (
+                    <SelectItem key={space.id} value={space.id}>
+                      {space.name || space.id}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <div className="px-2 py-1.5 text-sm text-muted-foreground">No spaces available</div>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        <nav className="flex-1 p-2.5 space-y-0.5 overflow-y-auto">
+          <div className="w-full flex flex-col gap-0.5">
             {visibleItems.map((item) => {
               const isDanger = item.id === 'danger'
               return (
@@ -133,11 +184,12 @@ export const SpaceSettingsSidebar = memo(function SpaceSettingsSidebar({
                   item={item}
                   isActive={activeTab === item.id}
                   onClick={() => handleTabClick(item.id)}
-                  className={isDanger ? 'text-red-600 hover:text-red-700 data-[state=inactive]:hover:bg-red-50 dark:data-[state=inactive]:hover:bg-red-900/10' : ''}
+                  className={isDanger ? 'text-destructive hover:text-destructive/80 hover:bg-destructive/10' : ''}
+                  sidebarText={sidebarText}
                 />
               )
             })}
-          </TabsList>
+          </div>
         </nav>
       </div>
     </TooltipProvider>

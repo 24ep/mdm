@@ -16,6 +16,8 @@ import { AddVMDialog } from '@/features/infrastructure/components/AddVMDialog'
 import { AddServiceDialog } from '@/features/infrastructure/components/AddServiceDialog'
 import { useInfrastructureContext } from '@/contexts/infrastructure-context'
 import { useSpace } from '@/contexts/space-context'
+import { SpaceSettingsSidebar } from '@/components/space-management/SpaceSettingsSidebar'
+import { SpaceSidebar } from '@/components/space-management/SpaceSidebar'
 
 type BreadcrumbItem = string | { label: string; href?: string; onClick?: () => void }
 
@@ -27,6 +29,18 @@ interface PlatformLayoutProps {
   onSpaceChange?: (spaceId: string) => void
   breadcrumbItems?: BreadcrumbItem[]
   breadcrumbActions?: React.ReactNode
+  showSpaceSettingsSidebar?: boolean
+  spaceSettingsTab?: string
+  onSpaceSettingsTabChange?: (tab: string) => void
+  spaceSettingsSelectedSpaceId?: string
+  onSpaceSettingsSpaceChange?: (spaceId: string) => void
+  spaceSettingsSpaces?: Array<{ id: string; name: string; slug?: string }>
+  showSpaceSidebar?: boolean
+  spaceSidebarSpaceId?: string
+  spaceSidebarSpaceSlug?: string
+  spaceSidebarActivePageId?: string
+  spaceSidebarEditMode?: boolean
+  onSpaceSidebarPageChange?: (pageId: string) => void
 }
 
 // Determine which group the active tab belongs to
@@ -186,12 +200,24 @@ export function PlatformLayout({
   selectedSpace, 
   onSpaceChange,
   breadcrumbItems,
-  breadcrumbActions
+  breadcrumbActions,
+  showSpaceSettingsSidebar = false,
+  spaceSettingsTab,
+  onSpaceSettingsTabChange,
+  spaceSettingsSelectedSpaceId,
+  onSpaceSettingsSpaceChange,
+  spaceSettingsSpaces = [],
+  showSpaceSidebar = false,
+  spaceSidebarSpaceId,
+  spaceSidebarSpaceSlug,
+  spaceSidebarActivePageId,
+  spaceSidebarEditMode = false,
+  onSpaceSidebarPageChange,
 }: PlatformLayoutProps) {
   const router = useRouter()
   const pathname = usePathname()
   const infrastructureContext = useInfrastructureContext()
-  const { currentSpace } = useSpace()
+  const { currentSpace, spaces } = useSpace()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true)
   const [secondarySidebarCollapsed, setSecondarySidebarCollapsed] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -208,12 +234,16 @@ export function PlatformLayout({
   
   // Memoize group calculation to avoid unnecessary recalculations
   const currentGroup = useMemo(() => {
+    // If showing space settings sidebar from data management, return 'data-management' to show it as selected
+    if (showSpaceSettingsSidebar) {
+      return 'data-management'
+    }
     // If on data-management route, always return null to hide secondary sidebar
     if (isDataManagementRoute) {
       return null
     }
     return getGroupForTab(activeTab)
-  }, [activeTab, isDataManagementRoute])
+  }, [activeTab, isDataManagementRoute, showSpaceSettingsSidebar])
   
   // Initialize selectedGroup based on activeTab
   const [selectedGroup, setSelectedGroup] = useState<string | null>(currentGroup)
@@ -222,6 +252,10 @@ export function PlatformLayout({
 
   // Determine which group to show in secondary sidebar (hover takes precedence, then selected, then current)
   const displayGroup = useMemo(() => {
+    // If showing space settings sidebar, don't show regular secondary sidebar
+    if (showSpaceSettingsSidebar) {
+      return null
+    }
     if (hoveredGroup && hoveredGroup !== 'data-management') {
       return hoveredGroup
     }
@@ -232,20 +266,23 @@ export function PlatformLayout({
       return currentGroup
     }
     return null
-  }, [hoveredGroup, selectedGroup, currentGroup])
+  }, [hoveredGroup, selectedGroup, currentGroup, showSpaceSettingsSidebar])
 
   // Set selected group based on active tab when activeTab changes
   // Only update if the group was not manually selected by the user clicking on a group
   useEffect(() => {
     if (!isGroupManuallySelected.current) {
-      if (selectedGroup !== currentGroup) {
-        setSelectedGroup(currentGroup) // Set to null for data-management, which is correct
+      // Always set to 'data-management' when showing space settings sidebar
+      if (showSpaceSettingsSidebar && selectedGroup !== 'data-management') {
+        setSelectedGroup('data-management')
+      } else if (!showSpaceSettingsSidebar && selectedGroup !== currentGroup) {
+        setSelectedGroup(currentGroup)
       }
     } else {
       // Reset the flag after processing
       isGroupManuallySelected.current = false
     }
-  }, [activeTab, currentGroup, selectedGroup])
+  }, [activeTab, currentGroup, selectedGroup, showSpaceSettingsSidebar])
 
   // Custom setter that tracks manual selection
   const handleGroupSelect = useCallback((group: string | null) => {
@@ -372,7 +409,7 @@ export function PlatformLayout({
       // Ctrl/Cmd + Shift + B - Toggle secondary sidebar
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'B') {
         e.preventDefault()
-        if (currentGroup && currentGroup !== '') {
+        if (showSpaceSettingsSidebar || (currentGroup && currentGroup !== '')) {
           setSecondarySidebarCollapsed(prev => !prev)
         }
       }
@@ -385,7 +422,19 @@ export function PlatformLayout({
   return (
     <div className="flex flex-col h-screen bg-background">
       {/* Top Menu Bar - Full Width Above Everything */}
-      <TopMenuBar activeTab={activeTab} />
+      <TopMenuBar 
+        activeTab={activeTab} 
+        spaceName={
+          ((activeTab === 'space-selection' && selectedSpace) || activeTab === 'space-module' || showSpaceSidebar) && (spaceSidebarSpaceId || selectedSpace)
+            ? (currentSpace?.name || (selectedSpace && spaces.find(s => s.id === selectedSpace)?.name))
+            : undefined
+        }
+        showSpaceName={
+          ((activeTab === 'space-selection' && selectedSpace) || activeTab === 'space-module' || showSpaceSidebar) && (spaceSidebarSpaceId || selectedSpace)
+            ? true 
+            : false
+        }
+      />
       
       {/* Content Area with Sidebars */}
       <div className="flex flex-1 overflow-hidden">
@@ -393,7 +442,8 @@ export function PlatformLayout({
         <div className="flex flex-shrink-0">
           {/* Primary Sidebar - Groups */}
           <div 
-            className={`transition-all duration-150 ease-in-out ${sidebarCollapsed ? 'w-16' : 'w-52'} flex-shrink-0 border-r border-border`}
+            className={`transition-all duration-150 ease-in-out ${sidebarCollapsed ? 'w-16' : 'w-52'} flex-shrink-0`}
+            data-sidebar="primary"
             style={{ 
               position: 'relative',
               zIndex: Z_INDEX.sidebar,
@@ -425,12 +475,104 @@ export function PlatformLayout({
           </div>
 
           {/* Secondary Sidebar - Submenu Items */}
+          {/* Show space sidebar for space module page */}
+          {/* Show space settings sidebar when accessed from data management */}
           {/* Show secondary sidebar for all pages with a valid group (always visible) */}
           {/* Hide secondary sidebar for data-management routes */}
           {/* Show secondary sidebar when hovering over a group or when a group is selected */}
-          {displayGroup && displayGroup !== '' && !isDataManagementRoute && (
+          {showSpaceSidebar ? (
             <div 
-              className={`${secondarySidebarCollapsed ? 'w-0' : 'w-56'} flex-shrink-0 border-r border-border transition-all duration-150 ease-in-out overflow-hidden`}
+              className={`${secondarySidebarCollapsed ? 'w-0' : 'w-56'} flex-shrink-0 transition-all duration-150 ease-in-out overflow-hidden`}
+              data-sidebar="secondary"
+              style={{ 
+                position: 'relative',
+                zIndex: Z_INDEX.sidebar,
+                pointerEvents: 'auto'
+              }}
+            >
+              {!secondarySidebarCollapsed && spaceSidebarSpaceId && spaceSidebarSpaceSlug && (
+                <div className="w-full h-full flex flex-col">
+                  <SpaceSidebar
+                    spaceId={spaceSidebarSpaceId}
+                    spaceSlug={spaceSidebarSpaceSlug}
+                    activePageId={spaceSidebarActivePageId}
+                    editMode={spaceSidebarEditMode}
+                    onPageChange={onSpaceSidebarPageChange}
+                  />
+                </div>
+              )}
+              {secondarySidebarCollapsed && (
+                <div className="h-full flex items-center justify-center border-r border-border">
+                  <button
+                    onClick={handleToggleSecondaryCollapse}
+                    className="p-2 hover:bg-muted rounded"
+                    title="Expand secondary sidebar"
+                    aria-label="Expand secondary sidebar"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : showSpaceSettingsSidebar ? (
+            <div 
+              className={`${secondarySidebarCollapsed ? 'w-0' : 'w-56'} flex-shrink-0 transition-all duration-150 ease-in-out overflow-hidden`}
+              data-sidebar="secondary"
+              style={{ 
+                position: 'relative',
+                zIndex: Z_INDEX.sidebar,
+                pointerEvents: 'auto'
+              }}
+            >
+              {!secondarySidebarCollapsed && spaceSettingsTab && onSpaceSettingsTabChange && (
+                <div className="w-full h-full flex flex-col">
+                  {/* Collapse button for space settings sidebar */}
+                  <div className="border-b border-border">
+                    <button
+                      onClick={handleToggleSecondaryCollapse}
+                      className="w-full px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted flex items-center justify-start"
+                      title="Collapse secondary sidebar"
+                      aria-label="Collapse secondary sidebar"
+                    >
+                      <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                      <span>Collapse</span>
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <SpaceSettingsSidebar
+                      activeTab={spaceSettingsTab || 'details'}
+                      onTabChange={onSpaceSettingsTabChange || (() => {})}
+                      showSpaceSelector={true}
+                      selectedSpaceId={spaceSettingsSelectedSpaceId}
+                      onSpaceChange={onSpaceSettingsSpaceChange}
+                      spaces={spaceSettingsSpaces}
+                    />
+                  </div>
+                </div>
+              )}
+              {secondarySidebarCollapsed && (
+                <div className="h-full flex items-center justify-center border-r border-border">
+                  <button
+                    onClick={handleToggleSecondaryCollapse}
+                    className="p-2 hover:bg-muted rounded"
+                    title="Expand secondary sidebar"
+                    aria-label="Expand secondary sidebar"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : displayGroup && displayGroup !== '' && !isDataManagementRoute && (
+            <div 
+              className={`${secondarySidebarCollapsed ? 'w-0' : 'w-56'} flex-shrink-0 transition-all duration-150 ease-in-out overflow-hidden`}
+              data-sidebar="secondary"
               style={{ 
                 position: 'relative',
                 zIndex: Z_INDEX.sidebar,
@@ -496,21 +638,6 @@ export function PlatformLayout({
           {/* Breadcrumb Bar */}
           <div className="h-10 bg-background flex items-center justify-between px-4 border-b border-border">
             <div className="flex items-center gap-2 text-sm flex-1 min-w-0">
-              <button
-                onClick={handleToggleCollapse}
-                className="p-1 hover:bg-muted rounded flex-shrink-0"
-                title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              >
-                {sidebarCollapsed ? (
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                ) : (
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                )}
-              </button>
               <nav aria-label="Breadcrumb" className="truncate text-muted-foreground min-w-0">
                 <ol className="flex items-center space-x-2">
                   {(() => {

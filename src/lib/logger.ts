@@ -118,7 +118,8 @@ class Logger {
    * Log API request
    */
   apiRequest(method: string, path: string, context?: LogContext): void {
-    this.info(`API ${method} ${path}`, context)
+    // Disabled console logging - only send to Elasticsearch
+    // this.info(`API ${method} ${path}`, context)
     
     // Also send structured API request log to Elasticsearch
     getElasticsearchLogger().then(sendLog => {
@@ -138,10 +139,12 @@ class Logger {
    * Log API response
    */
   apiResponse(method: string, path: string, status: number, duration: number, context?: LogContext): void {
-    const level = status >= 500 ? 'error' : status >= 400 ? 'warn' : 'info'
-    this[level](`API ${method} ${path} ${status} (${duration}ms)`, context)
+    // Disabled console logging - only send to Elasticsearch
+    // const level = status >= 500 ? 'error' : status >= 400 ? 'warn' : 'info'
+    // this[level](`API ${method} ${path} ${status} (${duration}ms)`, context)
     
     // Also send structured API response log to Elasticsearch
+    const level = status >= 500 ? 'error' : status >= 400 ? 'warn' : 'info'
     getElasticsearchLogger().then(sendLog => {
       sendLog('application', {
         level,

@@ -478,14 +478,14 @@ export function ChartDataSourceConfig({
         <Label className="text-xs font-semibold flex items-center gap-2">
           <Database className="h-3.5 w-3.5" />
           Data Model
-          {!spaceId && <span className="text-xs text-red-500">(No space ID)</span>}
+          {!spaceId && <span className="text-xs text-destructive">(No space ID)</span>}
         </Label>
         {loadingModels ? (
           <div className="text-xs text-muted-foreground py-2">Loading data models...</div>
         ) : dataModels.length === 0 ? (
           <div className="text-xs text-muted-foreground py-2">
             {!spaceId ? (
-              <span className="text-red-500">Space ID is required</span>
+              <span className="text-destructive">Space ID is required</span>
             ) : (
               "No data models available"
             )}
@@ -519,7 +519,7 @@ export function ChartDataSourceConfig({
           </Select>
         )}
         {!spaceId && (
-          <div className="text-xs text-red-500 mt-1">Space ID is required to load data models</div>
+          <div className="text-xs text-destructive mt-1">Space ID is required to load data models</div>
         )}
       </div>
 
@@ -563,7 +563,7 @@ export function ChartDataSourceConfig({
                   <div key={dim.key} className="space-y-2">
                     <Label className="text-xs">
                       {dim.label}
-                      {dim.required && <span className="text-red-500 ml-1">*</span>}
+                      {dim.required && <span className="text-destructive ml-1">*</span>}
                     </Label>
                     <div className="space-y-2">
                       <div className="space-y-1">
@@ -620,14 +620,14 @@ export function ChartDataSourceConfig({
                   <div className="flex items-center justify-between">
                     <Label className="text-xs">
                       {dim.label}
-                      {dim.required && <span className="text-red-500 ml-1">*</span>}
+                      {dim.required && <span className="text-destructive ml-1">*</span>}
                     </Label>
                     {showStyleIcon && (
                       <Popover>
                         <PopoverTrigger asChild>
                           <button
                             type="button"
-                            className="p-0.5 rounded hover:bg-blue-200/60 dark:hover:bg-blue-900/50 flex-shrink-0"
+                            className="p-0.5 rounded hover:bg-primary/20 flex-shrink-0"
                             title={`${dim.label} style`}
                             onClick={(e) => e.stopPropagation()}
                           >
@@ -866,25 +866,9 @@ export function ChartDataSourceConfig({
     })()}
   </div>
 
-  {/* Filters (configured via modal) */}
-  <div className="space-y-3 border-t pt-3 mt-2">
-    <div className="flex items-center justify-between">
-      <Label className="text-xs font-semibold">Filters</Label>
-      <div className="flex items-center gap-2">
-        <span className="text-[11px] text-muted-foreground">
-          {filters ? 'Configured' : 'None'}
-        </span>
-        <button
-          type="button"
-          className="px-2 py-1 text-[11px] rounded-[2px] bg-input border-0 hover:bg-muted"
-          onClick={() => setIsFilterDialogOpen(true)}
-        >
-          Edit filters
-        </button>
-      </div>
-    </div>
+  {/* Filters section removed */}
 
-    <Dialog open={isFilterDialogOpen} onOpenChange={setIsFilterDialogOpen}>
+  {/* Totals & Subtotals Configuration */}
       <DialogContent className="sm:max-w-[720px]">
         <DialogHeader>
           <DialogTitle className="text-sm">Configure Filters</DialogTitle>
@@ -1035,7 +1019,7 @@ export function ChartDataSourceConfig({
               <button
                 type="button"
                 onClick={() => saveFilters(removeItem(cond.id, parentGroup))}
-                className="p-1 hover:bg-red-100 dark:hover:bg-red-900 rounded text-red-600"
+                className="p-1 hover:bg-destructive/10 rounded text-destructive"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -1045,7 +1029,7 @@ export function ChartDataSourceConfig({
           const group = item as FilterGroup
           return (
             <div className="space-y-1" style={{ paddingLeft: `${indent}px` }}>
-              <div className="flex items-center gap-2 border rounded-[6px] p-2 bg-blue-50 dark:bg-blue-900/20">
+              <div className="flex items-center gap-2 border rounded-[6px] p-2 bg-primary/10">
                 <select
                   className="w-24 rounded-[2px] px-2 py-1 text-[11px] bg-input border-0 focus:outline-none focus:ring-0 focus:border-0 font-semibold"
                   value={group.logic}
@@ -1059,7 +1043,7 @@ export function ChartDataSourceConfig({
                 <button
                   type="button"
                   onClick={() => saveFilters(addCondition(group.id, parentGroup))}
-                  className="p-1 hover:bg-blue-100 dark:hover:bg-blue-900 rounded text-blue-600"
+                  className="p-1 hover:bg-primary/10 rounded text-primary"
                   title="Add condition"
                 >
                   <Plus className="h-3 w-3" />
@@ -1067,7 +1051,7 @@ export function ChartDataSourceConfig({
                 <button
                   type="button"
                   onClick={() => saveFilters(addGroup(group.id, parentGroup))}
-                  className="p-1 hover:bg-blue-100 dark:hover:bg-blue-900 rounded text-blue-600"
+                  className="p-1 hover:bg-primary/10 rounded text-primary"
                   title="Add group"
                 >
                   <Plus className="h-3 w-3" />
@@ -1075,7 +1059,7 @@ export function ChartDataSourceConfig({
                 <button
                   type="button"
                   onClick={() => saveFilters(removeItem(group.id, parentGroup))}
-                  className="p-1 hover:bg-red-100 dark:hover:bg-red-900 rounded text-red-600"
+                  className="p-1 hover:bg-destructive/10 rounded text-destructive"
                 >
                   <X className="h-3 w-3" />
                 </button>

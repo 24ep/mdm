@@ -101,13 +101,13 @@ export default function SpacesEditorPage() {
 
         {/* Initialization Status */}
         {isInitializingTemplates && (
-          <Card className="border-blue-200 bg-blue-50">
+          <Card className="border-primary/30 bg-primary/10">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600" />
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary" />
                 <div>
-                  <h4 className="font-medium text-blue-900">Initializing Templates</h4>
-                  <p className="text-sm text-blue-700">
+                  <h4 className="font-medium text-primary">Initializing Templates</h4>
+                  <p className="text-sm text-primary/80">
                     Setting up prebuilt templates for common data models...
                   </p>
                 </div>
@@ -117,15 +117,15 @@ export default function SpacesEditorPage() {
         )}
 
         {initializationError && (
-          <Card className="border-red-200 bg-red-50">
+          <Card className="border-destructive/30 bg-destructive/10">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="h-5 w-5 rounded-full bg-red-100 flex items-center justify-center">
-                  <span className="text-red-600 text-xs">!</span>
+                <div className="h-5 w-5 rounded-full bg-destructive/20 flex items-center justify-center">
+                  <span className="text-destructive text-xs">!</span>
                 </div>
                 <div>
-                  <h4 className="font-medium text-red-900">Initialization Failed</h4>
-                  <p className="text-sm text-red-700">{initializationError}</p>
+                  <h4 className="font-medium text-destructive">Initialization Failed</h4>
+                  <p className="text-sm text-destructive/80">{initializationError}</p>
                   <Button 
                     size="sm" 
                     variant="outline" 

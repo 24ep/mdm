@@ -16,22 +16,22 @@ export function FilterWidget({ props, style }: { props: FilterWidgetProps; style
         <input 
           type="text"
           placeholder={(props as any).placeholder || 'Filter...'}
-          className="w-full px-2 py-1 text-xs border-0 bg-gray-100 rounded-[4px]"
+          className="w-full px-2 py-1 text-xs border-0 bg-muted rounded-[4px]"
         />
       ) : filterType === 'number' ? (
         <input 
           type="number"
           placeholder={(props as any).placeholder || 'Number...'}
-          className="w-full px-2 py-1 text-xs border-0 bg-gray-100 rounded-[4px]"
+          className="w-full px-2 py-1 text-xs border-0 bg-muted rounded-[4px]"
         />
       ) : filterType === 'date' ? (
         <input 
           type="date"
-          className="w-full px-2 py-1 text-xs border-0 bg-gray-100 rounded-[4px]"
+          className="w-full px-2 py-1 text-xs border-0 bg-muted rounded-[4px]"
         />
       ) : filterType === 'dropdown' ? (
         <select 
-          className="w-full px-2 py-1 text-xs border-0 bg-gray-100 rounded-[4px]"
+          className="w-full px-2 py-1 text-xs border-0 bg-muted rounded-[4px]"
         >
           <option>Select...</option>
         </select>

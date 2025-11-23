@@ -15,7 +15,7 @@ import { Preview } from './layout-config/Preview'
 import { PermissionsDialog } from './layout-config/PermissionsDialog'
 import { LayoutVersionControlDialog } from './layout-config/LayoutVersionControlDialog'
 import { DataModelExplorer } from './layout-config/DataModelExplorer'
-import { getMenuItemKey as getMenuItemKeyUtil, isPageVisibleInSidebar as isPageVisibleInSidebarUtil } from './layout-config/utils'
+// Sidebar visibility utilities removed - pages now use secondary platform sidebar
 import { useUndoRedo } from '@/hooks/useUndoRedo'
 
 export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }: { spaceId: string; layoutName?: string }) {
@@ -25,7 +25,7 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
   const [deviceMode, setDeviceMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop')
   const [pages, setPages] = useState<SpacesEditorPage[]>([])
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null)
-  const [builtInPageOrder, setBuiltInPageOrder] = useState<string[]>(['dashboard', 'assignment', 'space-settings', 'workflows', 'bulk-action'])
+  const [builtInPageOrder, setBuiltInPageOrder] = useState<string[]>([])
   const [pageOrder, setPageOrder] = useState<string[]>([]) // Stores the complete mixed order of all pages
   const pageOrderRef = useRef<string[]>([]) // Ref to track current order without causing re-renders
   
@@ -103,7 +103,7 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
   
   // Alias for backward compatibility
   const updatePlacedWidgets = setPlacedWidgets
-  const [selectedComponent, setSelectedComponent] = useState<string | null>('sidebar')
+  const [selectedComponent, setSelectedComponent] = useState<string | null>(null)
   const [expandedComponent, setExpandedComponent] = useState<string | null>(null)
   const [layoutName, setLayoutName] = useState<string>('Layout')
   const [canvasMode, setCanvasMode] = useState<'freeform' | 'grid'>('freeform')
@@ -111,22 +111,7 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
   const [gridSize, setGridSize] = useState(20) // Grid size in pixels
   const [allPages, setAllPages] = useState<UnifiedPage[]>([]) // Unified pages list for display
   const [componentConfigs, setComponentConfigs] = useState<Record<string, ComponentConfig>>({
-    sidebar: {
-      type: 'sidebar', visible: true, position: 'left', width: 250,
-      backgroundColor: '#ffffff', textColor: '#374151', borderColor: '#e5e7eb', borderWidth: 1, borderRadius: 0,
-      padding: 16, margin: 0, fontSize: 14, fontWeight: 'normal', opacity: 100, zIndex: 1, shadow: false, sticky: false,
-      menuItems: { dashboard: true, assignment: true, workflows: true, bulkAction: true, 'space-settings': true }
-    },
-    top: {
-      type: 'top', visible: true, position: 'top', height: 64, width: 220,
-      backgroundColor: '#ffffff', textColor: '#374151', borderColor: '#e5e7eb', borderWidth: 1, borderRadius: 0,
-      padding: 16, margin: 0, fontSize: 14, fontWeight: 'normal', opacity: 100, zIndex: 2, shadow: false, sticky: true
-    },
-    footer: {
-      type: 'footer', visible: false, position: 'bottom', height: 60,
-      backgroundColor: '#f9fafb', textColor: '#6b7280', borderColor: '#e5e7eb', borderWidth: 1, borderRadius: 0,
-      padding: 16, margin: 0, fontSize: 14, fontWeight: 'normal', opacity: 100, zIndex: 1, shadow: false, sticky: false
-    }
+    // Sidebar, top, and footer removed - pages now use secondary platform sidebar
   })
 
   // Detect mobile viewport
@@ -161,9 +146,7 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
         if (mounted) {
           setComponentConfigs((prev) => {
             const next = { ...prev }
-            if (preset.sidebar) next.sidebar = { ...prev.sidebar, ...preset.sidebar }
-            if (preset.top) next.top = { ...prev.top, ...preset.top }
-            if (preset.footer) next.footer = { ...prev.footer, ...preset.footer }
+            // Sidebar, top, and footer removed - pages now use secondary platform sidebar
             return next
           })
           const displayName = initialLayoutName === 'blank' ? 'Start from Scratch' : 
@@ -241,34 +224,7 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
     }))
   }, []);
 
-  const updateSidebarMenuItem = useCallback(
-    (key: string | number | symbol, value: boolean) => {
-      const base: Record<string, boolean> = { dashboard: false, assignment: false, workflows: false, bulkAction: false, 'space-settings': false }
-      const current: Record<string, boolean> = { ...base, ...(componentConfigs.sidebar.menuItems || {}) }
-      current[String(key)] = value
-      handleComponentConfigUpdate('sidebar', { menuItems: current as any })
-    },
-    [componentConfigs.sidebar.menuItems, handleComponentConfigUpdate]
-  )
-
-  // Map built-in page IDs to menuItems keys
-  const getMenuItemKey = getMenuItemKeyUtil
-
-  // Check if a page (built-in or custom) is visible in sidebar
-  const isPageVisibleInSidebar = (pageId: string, pageType: 'built-in' | 'custom'): boolean => {
-    return isPageVisibleInSidebarUtil(pageId, pageType, componentConfigs, getMenuItemKey)
-  }
-
-  // Update sidebar visibility for custom pages
-  const updateCustomPageSidebarVisibility = useCallback(
-    (pageId: string, visible: boolean) => {
-      const base: Record<string, boolean> = { dashboard: false, assignment: false, workflows: false, bulkAction: false, 'space-settings': false }
-      const current: Record<string, boolean> = { ...base, ...(componentConfigs.sidebar.menuItems || {}) }
-      current[pageId] = visible
-      handleComponentConfigUpdate('sidebar', { menuItems: current as any })
-    },
-    [componentConfigs.sidebar.menuItems, handleComponentConfigUpdate]
-  )
+  // Sidebar visibility functions removed - pages now use secondary platform sidebar
 
   // Update unified pages list when built-in order or custom pages change
   useEffect(() => {
@@ -1071,9 +1027,7 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
               setPermissionsDialogOpen={setPermissionsDialogOpen}
               handlePageReorder={handlePageReorder}
               handleComponentConfigUpdate={handleComponentConfigUpdate}
-              isPageVisibleInSidebar={isPageVisibleInSidebar}
-              updateSidebarMenuItem={updateSidebarMenuItem}
-              updateCustomPageSidebarVisibility={updateCustomPageSidebarVisibility}
+              // Sidebar visibility props removed - pages now use secondary platform sidebar
               setAllPages={setAllPages}
             />
           </div>
@@ -1081,7 +1035,7 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
 
         {/* Data Model Panel - 20% */}
         {!isMobileViewport && showDataModelPanel && (
-          <div className="w-[20%] overflow-auto min-h-0 bg-gray-50">
+          <div className="w-[20%] overflow-auto min-h-0 bg-muted/50">
             {selectedWidgetId ? (
               <DataModelExplorer
                 spaceId={spaceId}

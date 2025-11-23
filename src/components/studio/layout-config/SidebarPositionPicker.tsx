@@ -67,7 +67,7 @@ export function SidebarPositionPicker({
               }}
               className={`w-full flex items-center gap-2 px-3 py-2 rounded-md border transition-colors ${
                 page.sidebarPosition === 'top' || !page.sidebarPosition
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950'
+                  ? 'border-primary bg-primary/10'
                   : 'border-border hover:bg-muted'
               }`}
             >
@@ -90,7 +90,7 @@ export function SidebarPositionPicker({
               }}
               className={`w-full flex items-center gap-2 px-3 py-2 rounded-md border transition-colors ${
                 page.sidebarPosition === 'bottom'
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950'
+                  ? 'border-primary bg-primary/10'
                   : 'border-border hover:bg-muted'
               }`}
             >

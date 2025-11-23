@@ -22,7 +22,7 @@ export type ComponentConfig = {
   zIndex?: number
   shadow?: boolean
   sticky?: boolean
-  menuItems?: Record<'dashboard' | 'assignment' | 'workflows' | 'bulkAction' | 'space-settings' | string, boolean>
+  menuItems?: Record<string, boolean>
 }
 
 export type ComponentStyle = {

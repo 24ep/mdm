@@ -34,7 +34,7 @@ export async function GET(
     // Check if user has access to this space
     const memberCheck = await query(`
       SELECT role FROM space_members 
-      WHERE space_id = $1 AND user_id = $2
+      WHERE space_id = $1::uuid AND user_id = $2::uuid
     `, [spaceId, session.user.id])
 
     if (memberCheck.rows.length === 0) {
@@ -52,7 +52,7 @@ export async function GET(
         u.is_active
       FROM space_members sm
       LEFT JOIN users u ON sm.user_id = u.id
-      WHERE sm.space_id = $1
+      WHERE sm.space_id = $1::uuid
       ORDER BY sm.role DESC, u.name ASC
     `, [spaceId])
 
@@ -108,7 +108,7 @@ export async function POST(
     // Check if current user has permission to add members
     const memberCheck = await query(`
       SELECT role FROM space_members 
-      WHERE space_id = $1 AND user_id = $2
+      WHERE space_id = $1::uuid AND user_id = $2::uuid
     `, [spaceId, session.user.id])
 
     if (memberCheck.rows.length === 0 || !['owner', 'admin'].includes(memberCheck.rows[0].role)) {
@@ -118,7 +118,7 @@ export async function POST(
 
     // Check if user exists
     const userCheck = await query(`
-      SELECT id, name, email FROM users WHERE id = $1 AND is_active = true
+      SELECT id, name, email FROM users WHERE id = $1::uuid AND is_active = true
     `, [user_id])
 
     if (userCheck.rows.length === 0) {
@@ -129,7 +129,7 @@ export async function POST(
     // Add user to space
     const result = await query(`
       INSERT INTO space_members (space_id, user_id, role)
-      VALUES ($1, $2, $3)
+      VALUES ($1::uuid, $2::uuid, $3)
       ON CONFLICT (space_id, user_id) 
       DO UPDATE SET role = $3, updated_at = NOW()
       RETURNING *

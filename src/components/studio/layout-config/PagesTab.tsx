@@ -43,9 +43,7 @@ interface PagesTabProps {
   setPermissionsUserIds: React.Dispatch<React.SetStateAction<string[]>>
   setPermissionsDialogOpen: React.Dispatch<React.SetStateAction<boolean>>
   handlePageReorder: (fromIndex: number, toIndex: number, currentPages: UnifiedPage[], currentCustomPages: SpacesEditorPage[]) => Promise<void>
-  isPageVisibleInSidebar: (pageId: string, pageType: 'built-in' | 'custom') => boolean
-  updateSidebarMenuItem: (key: string | number | symbol, value: boolean) => void
-  updateCustomPageSidebarVisibility: (pageId: string, visible: boolean) => void
+  // Sidebar visibility functions removed - pages now use secondary platform sidebar
   componentConfigs: Record<string, ComponentConfig>
   handleComponentConfigUpdate: (type: string, updates: Partial<ComponentConfig>) => void
 }
@@ -67,9 +65,6 @@ export function PagesTab({
   setPermissionsUserIds,
   setPermissionsDialogOpen,
   handlePageReorder,
-  isPageVisibleInSidebar,
-  updateSidebarMenuItem,
-  updateCustomPageSidebarVisibility,
   componentConfigs,
   handleComponentConfigUpdate,
 }: PagesTabProps) {
@@ -282,10 +277,10 @@ export function PagesTab({
                   {/* Drop here to move to Top alignment */}
                   <div
                     ref={setTopZoneRef}
-                    className={`min-h-[48px] mb-2 rounded-md flex items-center justify-center transition-colors ${isOverTop ? 'bg-blue-500/20 border-2 border-blue-500' : 'border-2 border-dashed border-transparent hover:border-muted-foreground/50 bg-muted/30'}`}
+                    className={`min-h-[48px] mb-2 rounded-md flex items-center justify-center transition-colors ${isOverTop ? 'bg-primary/20 border-2 border-primary' : 'border-2 border-dashed border-transparent hover:border-muted-foreground/50 bg-muted/30'}`}
                     title="Drop here to move to Top alignment"
                   >
-                    <span className={`text-xs text-muted-foreground ${isOverTop ? 'text-blue-600 dark:text-blue-400 font-medium' : ''}`}>
+                    <span className={`text-xs text-muted-foreground ${isOverTop ? 'text-primary font-medium' : ''}`}>
                       {isOverTop ? 'Drop to move to top' : 'Drop here for top alignment'}
                     </span>
                   </div>
@@ -321,9 +316,7 @@ export function PagesTab({
                       sidebarPositionOpen={sidebarPositionOpen}
                       handlePageReorder={handlePageReorder}
                       handleIconUpdate={handleIconUpdate}
-                      isPageVisibleInSidebar={isPageVisibleInSidebar}
-                      updateSidebarMenuItem={updateSidebarMenuItem}
-                      updateCustomPageSidebarVisibility={updateCustomPageSidebarVisibility}
+                      // Sidebar visibility props removed - pages now use secondary platform sidebar
                       setSelectedPageId={setSelectedPageId}
                       setSelectedComponent={setSelectedComponent}
                       setSelectedPageForPermissions={setSelectedPageForPermissions}
@@ -458,9 +451,7 @@ export function PagesTab({
                       sidebarPositionOpen={sidebarPositionOpen}
                       handlePageReorder={handlePageReorder}
                       handleIconUpdate={handleIconUpdate}
-                      isPageVisibleInSidebar={isPageVisibleInSidebar}
-                      updateSidebarMenuItem={updateSidebarMenuItem}
-                      updateCustomPageSidebarVisibility={updateCustomPageSidebarVisibility}
+                      // Sidebar visibility props removed - pages now use secondary platform sidebar
                       setPages={setPages}
                       setAllPages={setAllPages}
                       setSelectedPageId={setSelectedPageId}
@@ -486,10 +477,10 @@ export function PagesTab({
                   {/* Drop here to move to Bottom alignment */}
                   <div
                     ref={setBottomZoneRef}
-                    className={`min-h-[48px] mb-2 rounded-md flex items-center justify-center transition-colors ${isOverBottom ? 'bg-blue-500/20 border-2 border-blue-500' : 'border-2 border-dashed border-transparent hover:border-muted-foreground/50 bg-muted/30'}`}
+                    className={`min-h-[48px] mb-2 rounded-md flex items-center justify-center transition-colors ${isOverBottom ? 'bg-primary/20 border-2 border-primary' : 'border-2 border-dashed border-transparent hover:border-muted-foreground/50 bg-muted/30'}`}
                     title="Drop here to move to Bottom alignment"
                   >
-                    <span className={`text-xs text-muted-foreground ${isOverBottom ? 'text-blue-600 dark:text-blue-400 font-medium' : ''}`}>
+                    <span className={`text-xs text-muted-foreground ${isOverBottom ? 'text-primary font-medium' : ''}`}>
                       {isOverBottom ? 'Drop to move to bottom' : 'Drop here for bottom alignment'}
                     </span>
                   </div>

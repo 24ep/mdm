@@ -165,7 +165,7 @@ export function GroupsTabContent({
                 </div>
               ) : (
                 <>
-                  <FolderOpen className="h-4 w-4 text-blue-600" />
+                  <FolderOpen className="h-4 w-4 text-primary" />
                   <span className="font-semibold text-sm">{group.name}</span>
                   <span className="text-xs text-muted-foreground">
                     ({groupWidgets.length})

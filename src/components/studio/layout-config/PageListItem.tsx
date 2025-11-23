@@ -114,10 +114,7 @@ export function PageListItem({
 
   const { Icon, displayContent, displayColor } = iconResolution
 
-  const isVisibleInSidebar = isPageVisibleInSidebar(
-    isBuiltInPage ? page.id : (customPageForRender?.id || ''),
-    isBuiltInPage ? 'built-in' : 'custom'
-  )
+  // Sidebar visibility removed - pages now use secondary platform sidebar
 
   // Get available parent pages (exclude current page and built-in pages)
   const availableParentPages = allPages.filter(p => (
@@ -302,42 +299,7 @@ export function PageListItem({
       {/* Expanded Settings Section */}
       {isExpanded && (
         <div className={`border-t ${isMobileViewport ? 'p-3' : 'p-2'} space-y-3 bg-background/50`}>
-          {/* Hide from Sidebar Section */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {isVisibleInSidebar ? (
-                  <Eye className={`${isMobileViewport ? 'h-4 w-4' : 'h-3.5 w-3.5'} text-muted-foreground`} />
-                ) : (
-                  <EyeOff className={`${isMobileViewport ? 'h-4 w-4' : 'h-3.5 w-3.5'} text-muted-foreground`} />
-                )}
-                <Label className={`${isMobileViewport ? 'text-sm' : 'text-xs'} font-medium`}>
-                  Hide from Sidebar
-                </Label>
-              </div>
-              <Switch
-                checked={!isVisibleInSidebar}
-                onCheckedChange={(checked) => {
-                  if (isBuiltInPage) {
-                    const menuKey = getMenuItemKey(page.id)
-                    if (menuKey) {
-                      updateSidebarMenuItem(menuKey, !checked)
-                      toast.success(checked ? 'Hidden from sidebar' : 'Shown in sidebar')
-                    }
-                  } else if (customPageForRender) {
-                    updateCustomPageSidebarVisibility(customPageForRender.id, !checked)
-                    toast.success(checked ? 'Hidden from sidebar' : 'Shown in sidebar')
-                  }
-                }}
-                onClick={(e) => e.stopPropagation()}
-              />
-            </div>
-            <p className={`${isMobileViewport ? 'text-xs' : 'text-[10px]'} text-muted-foreground`}>
-              {isVisibleInSidebar 
-                ? 'This page is visible in the sidebar' 
-                : 'This page is hidden from the sidebar'}
-            </p>
-          </div>
+          {/* Sidebar visibility toggle removed - pages now use secondary platform sidebar */}
 
           {/* Sub Page Section - Only for custom pages */}
           {!isBuiltInPage && customPageForRender && (

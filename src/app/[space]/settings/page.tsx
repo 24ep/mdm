@@ -22,13 +22,13 @@ import { showSuccess, showError, ToastMessages } from '@/lib/toast-utils'
 import { useSpace } from '@/contexts/space-context'
 import { useSession } from 'next-auth/react'
 import { PagesManagement } from '@/components/studio/pages-management'
-import { SpaceStudio } from '@/components/studio/space-studio'
 import { useSpacesEditor } from '@/hooks/use-space-studio'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import IconPickerPopover from '@/components/ui/icon-picker-popover'
 import { ColorInput } from '@/components/studio/layout-config/ColorInput'
+import { ColorPickerPopover } from '@/components/studio/layout-config/ColorPickerPopover'
 import { AttributeDetailDrawer } from '@/components/data-models/AttributeDetailDrawer'
 import { AttributeManagementPanel } from '@/components/attribute-management/AttributeManagementPanel'
 import { DraggableAttributeList } from '@/components/attribute-management/DraggableAttributeList'
@@ -53,9 +53,11 @@ export default function SpaceSettingsPage() {
   const router = useRouter()
   const params = useParams() as { space: string }
   const searchParams = useSearchParams()
-  const allowedTabs = ['details','members','space-studio','data-model','attachments','restore','danger']
+  const allowedTabs = ['details','members','data-model','attachments','restore','danger']
   const initialTabRaw = (searchParams.get('tab') as string) || 'details'
   const initialTab = allowedTabs.includes(initialTabRaw) ? initialTabRaw : 'details'
+  const fromDataManagement = searchParams.get('from') === 'data-management'
+  const fromSpaceSidebar = searchParams.get('from') === 'space-sidebar'
   const { spaces, currentSpace, refreshSpaces } = useSpace()
   const { data: session } = useSession()
 
@@ -101,6 +103,20 @@ export default function SpaceSettingsPage() {
   useEffect(() => {
     setTab(initialTab)
   }, [initialTab])
+
+  // Handle tab change and update URL to preserve from parameter
+  const handleTabChange = (newTab: string) => {
+    setTab(newTab)
+    const params = new URLSearchParams(searchParams?.toString() || '')
+    params.set('tab', newTab)
+    // Preserve from parameter if it exists
+    if (fromDataManagement) {
+      params.set('from', 'data-management')
+    } else if (fromSpaceSidebar) {
+      params.set('from', 'space-sidebar')
+    }
+    router.push(`/${params.space}/settings?${params.toString()}`)
+  }
 
   const [members, setMembers] = useState<any[]>([])
   const [memberPermissions, setMemberPermissions] = useState<any[]>([])
@@ -454,11 +470,21 @@ export default function SpaceSettingsPage() {
   const loadMembers = async (spaceId: string) => {
     try {
       const res = await fetch(`/api/spaces/${spaceId}/members`)
-      if (!res.ok) throw new Error('Failed to load members')
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to load members')
+      }
       const json = await res.json()
-      setMembers(json.members || [])
-    } catch (e) {
-      showError('Failed to load members')
+      // Ensure we have a valid array
+      const membersArray = Array.isArray(json.members) ? json.members : []
+      setMembers(membersArray)
+      if (membersArray.length === 0) {
+        console.log('No members found for space:', spaceId)
+      }
+    } catch (e: any) {
+      console.error('Error loading members:', e)
+      showError(e.message || 'Failed to load members')
+      setMembers([]) // Ensure members is always an array
     }
   }
 
@@ -1264,22 +1290,28 @@ export default function SpaceSettingsPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col h-screen">
-      <SpaceSettingsHeader
-        spaceName={selectedSpace?.name || 'Space Settings'}
-        spaceDescription={selectedSpace?.description}
-        isActive={selectedSpace?.is_active}
-        homepage={homepage}
-        spaceSlug={selectedSpace?.slug}
-        spaceId={selectedSpace?.id}
-      />
+      {/* Only show header if NOT accessed from data management (where breadcrumbs show the info) */}
+      {!fromDataManagement && !fromSpaceSidebar && (
+        <SpaceSettingsHeader
+          spaceName={selectedSpace?.name || 'Space Settings'}
+          spaceDescription={selectedSpace?.description}
+          isActive={selectedSpace?.is_active}
+          homepage={homepage}
+          spaceSlug={selectedSpace?.slug}
+          spaceId={selectedSpace?.id}
+        />
+      )}
 
       <div className="flex flex-1 overflow-hidden">
-        <Tabs value={tab} onValueChange={setTab}>
-          <SpaceSettingsSidebar
-            activeTab={tab}
-            onTabChange={setTab}
-            showAllTabs={true}
-          />
+        <Tabs value={tab} onValueChange={handleTabChange}>
+          {/* Only show sidebar in body if NOT accessed from data management (where it's shown in secondary sidebar) */}
+          {!fromDataManagement && !fromSpaceSidebar && (
+            <SpaceSettingsSidebar
+              activeTab={tab}
+              onTabChange={handleTabChange}
+              showAllTabs={true}
+            />
+          )}
 
           {/* Main Content Area */}
           <div className="flex-1 overflow-y-auto">
@@ -1287,9 +1319,9 @@ export default function SpaceSettingsPage() {
               <TabsContent value="details" className="space-y-6 w-full">
                 {/* Space Detail Header */}
                 <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Space Detail</h2>
+                  <h2 className="text-2xl font-bold text-foreground">Space Detail</h2>
                   {selectedSpace?.description && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                    <p className="text-sm text-muted-foreground mt-2">
                       {selectedSpace.description}
                     </p>
                   )}
@@ -1397,47 +1429,74 @@ export default function SpaceSettingsPage() {
                   </CardHeader>
                       <CardContent className="space-y-6">
                         <div className="space-y-2">
-                          <Label htmlFor="login-image-url" className="text-sm font-medium">Login Image URL</Label>
-                      <Input
-                        id="login-image-url"
-                        defaultValue={(() => {
-                          const features = spaceDetails?.features || null
-                          try { return typeof features === 'string' ? JSON.parse(features)?.login_image_url || '' : (features?.login_image_url || '') } catch { return '' }
-                        })()}
-                        placeholder="https://.../image.jpg"
-                            className="border border-input bg-background"
-                        onBlur={async (e) => {
-                          const url = e.currentTarget.value.trim()
-                          setSavingLoginImage(true)
-                          try {
-                            // Merge into existing features JSON
-                            let features: any = {}
-                            if (spaceDetails?.features) {
-                              if (typeof spaceDetails.features === 'string') {
-                                try { features = JSON.parse(spaceDetails.features) || {} } catch { features = {} }
-                              } else {
-                                features = spaceDetails.features || {}
+                          <Label className="text-sm font-medium">Login Background</Label>
+                          <ColorPickerPopover
+                            value={(() => {
+                              const features = spaceDetails?.features || null
+                              try {
+                                const parsed = typeof features === 'string' ? JSON.parse(features) : features
+                                return parsed?.login_image_url || parsed?.login_background || ''
+                              } catch {
+                                return ''
                               }
-                            }
-                            features.login_image_url = url || null
-                            const res = await fetch(`/api/spaces/${selectedSpace.id}`, {
-                              method: 'PUT',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ features })
-                            })
-                            if (res.ok) {
-                              showSuccess('Login image saved')
-                              const j = await res.json().catch(()=>({}))
-                              setSpaceDetails(j.space || { ...spaceDetails, features })
-                            } else {
-                              showError('Failed to save login image')
-                            }
-                          } finally {
-                            setSavingLoginImage(false)
-                          }
-                        }}
-                      />
-                          <p className="text-xs text-muted-foreground">Shown on the left side of the space-specific login page.</p>
+                            })()}
+                            onChange={async (value) => {
+                              setSavingLoginImage(true)
+                              try {
+                                // Merge into existing features JSON
+                                let features: any = {}
+                                if (spaceDetails?.features) {
+                                  if (typeof spaceDetails.features === 'string') {
+                                    try { features = JSON.parse(spaceDetails.features) || {} } catch { features = {} }
+                                  } else {
+                                    features = spaceDetails.features || {}
+                                  }
+                                }
+                                features.login_image_url = value || null
+                                features.login_background = value || null
+                                const res = await fetch(`/api/spaces/${selectedSpace.id}`, {
+                                  method: 'PUT',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ features })
+                                })
+                                if (res.ok) {
+                                  showSuccess('Login background saved')
+                                  const j = await res.json().catch(()=>({}))
+                                  setSpaceDetails(j.space || { ...spaceDetails, features })
+                                } else {
+                                  showError('Failed to save login background')
+                                }
+                              } finally {
+                                setSavingLoginImage(false)
+                              }
+                            }}
+                            allowImageVideo={true}
+                          >
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-10 h-10 rounded border border-border cursor-pointer"
+                                style={{
+                                  background: (() => {
+                                    const features = spaceDetails?.features || null
+                                    try {
+                                      const parsed = typeof features === 'string' ? JSON.parse(features) : features
+                                      const bg = parsed?.login_image_url || parsed?.login_background || ''
+                                      if (bg.startsWith('url(') || bg.startsWith('http') || bg.startsWith('video(')) {
+                                        return `url(${bg.replace('url(', '').replace(')', '').replace('video(', '').replace(')', '')})`
+                                      }
+                                      return bg || '#ffffff'
+                                    } catch {
+                                      return '#ffffff'
+                                    }
+                                  })(),
+                                  backgroundSize: 'cover',
+                                  backgroundPosition: 'center'
+                                }}
+                              />
+                              <span className="text-sm text-muted-foreground">Click to choose solid color, gradient, image, or video</span>
+                            </div>
+                          </ColorPickerPopover>
+                          <p className="text-xs text-muted-foreground">Shown on the left side of the space-specific login page. Choose from solid color, gradient, image, or video.</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -1449,8 +1508,8 @@ export default function SpaceSettingsPage() {
               <TabsContent value="members" className="space-y-6 w-full">
                 {/* Members Header */}
                 <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Members</h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                  <h2 className="text-2xl font-bold text-foreground">Members</h2>
+                  <p className="text-sm text-muted-foreground mt-2">
                     Manage team members, permissions, and access control for this space
                   </p>
                 </div>
@@ -1550,12 +1609,6 @@ export default function SpaceSettingsPage() {
 
               
 
-              <TabsContent value="space-studio" className="space-y-6 w-full">
-                {/* Redirect to layout selection page */}
-                <EffectRedirect 
-                  to={`/${selectedSpace?.slug || selectedSpace?.id || params.space}/settings/layout`}
-                />
-              </TabsContent>
 
               <TabsContent value="data-model" className="space-y-6 w-full">
                 <DataModelTreeView
@@ -1590,8 +1643,8 @@ export default function SpaceSettingsPage() {
                             onClick={() => setActiveModelTab('details')}
                             className={`flex items-center gap-2 px-1 py-4 text-sm font-medium border-b-2 transition-colors ${
                               activeModelTab === 'details'
-                                ? 'border-blue-500 text-blue-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                ? 'border-primary text-primary'
+                                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/50'
                             }`}
                           >
                             <Database className="h-4 w-4" />
@@ -1601,8 +1654,8 @@ export default function SpaceSettingsPage() {
                             onClick={() => setActiveModelTab('attributes')}
                             className={`flex items-center gap-2 px-1 py-4 text-sm font-medium border-b-2 transition-colors ${
                               activeModelTab === 'attributes'
-                                ? 'border-blue-500 text-blue-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                ? 'border-primary text-primary'
+                                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/50'
                             }`}
                           >
                             <Type className="h-4 w-4" />
@@ -1612,8 +1665,8 @@ export default function SpaceSettingsPage() {
                             onClick={() => setActiveModelTab('activity')}
                             className={`flex items-center gap-2 px-1 py-4 text-sm font-medium border-b-2 transition-colors ${
                               activeModelTab === 'activity'
-                                ? 'border-blue-500 text-blue-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                ? 'border-primary text-primary'
+                                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/50'
                             }`}
                           >
                             <History className="h-4 w-4" />
@@ -2380,11 +2433,11 @@ export default function SpaceSettingsPage() {
                     <div className="space-y-4 py-4">
                       <button
                         onClick={() => handleSelectDataModelType('internal')}
-                        className="w-full p-6 text-left border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
+                        className="w-full p-6 text-left border-2 rounded-lg hover:border-primary hover:bg-primary/10 transition-all"
                       >
                         <div className="flex items-center gap-4">
-                          <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                            <Database className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                          <div className="p-3 bg-primary/10 rounded-lg">
+                            <Database className="h-6 w-6 text-primary" />
                           </div>
                           <div className="flex-1">
                             <div className="font-semibold text-lg">Internal Data Model</div>
@@ -2396,11 +2449,11 @@ export default function SpaceSettingsPage() {
                       </button>
                       <button
                         onClick={() => handleSelectDataModelType('external')}
-                        className="w-full p-6 text-left border-2 rounded-lg hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all"
+                        className="w-full p-6 text-left border-2 rounded-lg hover:border-primary hover:bg-primary/10 transition-all"
                       >
                         <div className="flex items-center gap-4">
-                          <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                            <ExternalLink className="h-6 w-6 text-green-600 dark:text-green-400" />
+                          <div className="p-3 bg-primary/10 rounded-lg">
+                            <ExternalLink className="h-6 w-6 text-primary" />
                           </div>
                           <div className="flex-1">
                             <div className="font-semibold text-lg">External Data Source</div>
@@ -2436,7 +2489,7 @@ export default function SpaceSettingsPage() {
                     <div className="space-y-4 py-4">
                       {/* Search */}
                       <div className="relative">
-                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           placeholder="Search data sources..."
                           value={databaseSearch}
@@ -2456,7 +2509,7 @@ export default function SpaceSettingsPage() {
                             <button
                               key={db.id}
                               onClick={() => handleSelectDatabase(db.id as 'postgres' | 'mysql' | 'api')}
-                              className="w-full p-4 text-left border rounded-lg hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
+                              className="w-full p-4 text-left border rounded-lg hover:border-primary hover:bg-primary/10 transition-all"
                             >
                               <div className="flex items-center gap-4">
                                 <div className="text-3xl">{db.icon}</div>
@@ -2782,16 +2835,16 @@ export default function SpaceSettingsPage() {
                       {connectionTestResult && (
                         <div className={`p-4 rounded-lg ${
                           connectionTestResult.success
-                            ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
-                            : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+                            ? 'bg-primary/10 border border-primary/30'
+                            : 'bg-destructive/10 border border-destructive/30'
                         }`}>
                           <div className={`font-medium ${
-                            connectionTestResult.success ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'
+                            connectionTestResult.success ? 'text-primary' : 'text-destructive'
                           }`}>
                             {connectionTestResult.success ? '✓ Connection Successful' : '✗ Connection Failed'}
                           </div>
                           {connectionTestResult.error && (
-                            <div className="text-sm text-red-700 dark:text-red-300 mt-1">
+                            <div className="text-sm text-destructive mt-1">
                               {connectionTestResult.error}
                             </div>
                           )}
@@ -2884,7 +2937,7 @@ export default function SpaceSettingsPage() {
               </TabsContent>
 
               <TabsContent value="attachments" className="space-y-6 w-full">
-                <Card className="bg-card">
+                <Card className="bg-transparent">
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
                       <Database className="h-5 w-5" />
@@ -2908,7 +2961,7 @@ export default function SpaceSettingsPage() {
                           <SelectTrigger className="w-full">
                             <SelectValue placeholder="Select storage provider" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-white">
                             <SelectItem value="minio">
                               <div className="flex items-center gap-2">
                                 {getStorageProviderIcon('minio')}
@@ -2942,7 +2995,7 @@ export default function SpaceSettingsPage() {
 
                       {/* MinIO Configuration */}
                       {attachmentStorage.provider === 'minio' && (
-                        <div className="space-y-4 border rounded-lg p-4">
+                        <div className="space-y-4 border rounded-lg p-4 bg-transparent shadow-lg">
                           <h4 className="font-medium">MinIO Configuration</h4>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
@@ -3055,7 +3108,7 @@ export default function SpaceSettingsPage() {
 
                       {/* AWS S3 Configuration */}
                       {attachmentStorage.provider === 's3' && (
-                        <div className="space-y-4 border rounded-lg p-4">
+                        <div className="space-y-4 border rounded-lg p-4 bg-transparent shadow-lg">
                           <h4 className="font-medium">AWS S3 Configuration</h4>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
@@ -3133,7 +3186,7 @@ export default function SpaceSettingsPage() {
 
                       {/* SFTP Configuration */}
                       {attachmentStorage.provider === 'sftp' && (
-                        <div className="space-y-4 border rounded-lg p-4">
+                        <div className="space-y-4 border rounded-lg p-4 bg-transparent shadow-lg">
                           <h4 className="font-medium">SFTP Configuration</h4>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
@@ -3229,7 +3282,7 @@ export default function SpaceSettingsPage() {
 
                       {/* FTP Configuration */}
                       {attachmentStorage.provider === 'ftp' && (
-                        <div className="space-y-4 border rounded-lg p-4">
+                        <div className="space-y-4 border rounded-lg p-4 bg-transparent shadow-lg">
                           <h4 className="font-medium">FTP Configuration</h4>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
@@ -3359,23 +3412,23 @@ export default function SpaceSettingsPage() {
                         {storageTestResult && (
                           <div className={`p-4 rounded-lg ${
                             storageTestResult.success 
-                              ? 'bg-green-50 border border-green-200' 
-                              : 'bg-red-50 border border-red-200'
+                              ? 'bg-primary/10 border border-primary/30' 
+                              : 'bg-destructive/10 border border-destructive/30'
                           }`}>
                             <div className={`font-medium ${
-                              storageTestResult.success ? 'text-green-800' : 'text-red-800'
+                              storageTestResult.success ? 'text-primary' : 'text-destructive'
                             }`}>
                               {storageTestResult.success ? 'Connection Successful' : 'Connection Failed'}
                             </div>
                             {storageTestResult.message && (
                               <div className={`text-sm mt-1 ${
-                                storageTestResult.success ? 'text-green-700' : 'text-red-700'
+                                storageTestResult.success ? 'text-primary' : 'text-destructive'
                               }`}>
                                 {storageTestResult.message}
                               </div>
                             )}
                             {storageTestResult.error && (
-                              <div className="text-sm mt-1 text-red-700">
+                              <div className="text-sm mt-1 text-destructive">
                                 Error: {storageTestResult.error}
                               </div>
                             )}
@@ -3388,9 +3441,9 @@ export default function SpaceSettingsPage() {
               </TabsContent>
 
               <TabsContent value="danger" className="space-y-6 w-full">
-                <Card className="border-red-200">
+                <Card className="border-destructive/30">
                   <CardHeader>
-                    <CardTitle className="flex items-center space-x-2 text-red-600">
+                    <CardTitle className="flex items-center space-x-2 text-destructive">
                       <AlertTriangle className="h-5 w-5" />
                       <span>Danger Zone</span>
                     </CardTitle>
@@ -3399,11 +3452,11 @@ export default function SpaceSettingsPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="border border-red-200 rounded-lg p-4 bg-red-50">
+                    <div className="border border-destructive/30 rounded-lg p-4 bg-destructive/10">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h4 className="font-medium text-red-900">Delete Space</h4>
-                          <p className="text-sm text-red-700 mt-1">
+                          <h4 className="font-medium text-destructive">Delete Space</h4>
+                          <p className="text-sm text-destructive/80 mt-1">
                             Permanently delete this space and all its data. This action cannot be undone.
                           </p>
                         </div>
@@ -3411,7 +3464,7 @@ export default function SpaceSettingsPage() {
                           <DialogTrigger asChild>
                             <Button 
                               variant="destructive" 
-                              className="ml-4"
+                              className="ml-4 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
                               Delete Space
@@ -3419,7 +3472,7 @@ export default function SpaceSettingsPage() {
                           </DialogTrigger>
                           <DialogContent>
                             <DialogHeader>
-                              <DialogTitle className="text-red-600">Delete Space</DialogTitle>
+                              <DialogTitle className="text-destructive">Delete Space</DialogTitle>
                               <DialogDescription>
                                 Are you absolutely sure you want to delete "{selectedSpace?.name}"? This will permanently delete:
                                 <ul className="list-disc list-inside mt-2 space-y-1">
@@ -3429,7 +3482,7 @@ export default function SpaceSettingsPage() {
                                   <li>All workflows and automation</li>
                                   <li>All imported/exported data</li>
                                 </ul>
-                                <strong className="text-red-600 mt-3 block">
+                                <strong className="text-destructive mt-3 block">
                                   This action cannot be undone.
                                 </strong>
                               </DialogDescription>
@@ -3440,6 +3493,7 @@ export default function SpaceSettingsPage() {
                               </Button>
                               <Button 
                                 variant="destructive" 
+                                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
                                 onClick={async () => {
                                   try {
                                     const response = await fetch(`/api/spaces/${selectedSpace.id}`, {

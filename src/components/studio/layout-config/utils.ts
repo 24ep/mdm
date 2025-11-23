@@ -2,11 +2,7 @@ import { ComponentConfig } from './types'
 
 // Map built-in page IDs to menuItems keys
 export function getMenuItemKey(pageId: string): keyof NonNullable<ComponentConfig['menuItems']> | null {
-  if (pageId === 'space-settings') return 'space-settings'
-  if (pageId === 'dashboard') return 'dashboard'
-  if (pageId === 'assignment') return 'assignment'
-  if (pageId === 'workflows') return 'workflows'
-  if (pageId === 'bulk-action') return 'bulkAction'
+  // All built-in pages removed: dashboard, assignment, space-settings, workflows, bulk-action
   return null
 }
 

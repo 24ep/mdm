@@ -433,7 +433,7 @@ const PopoverContent = React.forwardRef<
     <div
       ref={contentRef}
       className={cn(
-        "min-w-[8rem] rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none [background-color:hsl(var(--popover))]",
+        "min-w-[8rem] rounded-md border border-border bg-card p-1 text-popover-foreground shadow-lg outline-none backdrop-blur-xl",
         className
       )}
       style={{
@@ -448,7 +448,8 @@ const PopoverContent = React.forwardRef<
         display: 'block',
         pointerEvents: 'auto',
         transform: 'none',
-        backgroundColor: 'hsl(var(--popover))', // Ensure background is set
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
         ...props.style, // Merge with props.style but our styles take precedence for visibility
       }}
       {...(Object.fromEntries(Object.entries(props).filter(([key]) => key !== 'style')))}

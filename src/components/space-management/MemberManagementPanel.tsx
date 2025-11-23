@@ -18,7 +18,6 @@ import {
   Upload, 
   MoreVertical, 
   UserPlus, 
-  Users, 
   Shield, 
   Clock, 
   CheckCircle, 
@@ -81,9 +80,12 @@ export function MemberManagementPanel({
   const [showBulkDialog, setShowBulkDialog] = useState(false)
   const [bulkOperation, setBulkOperation] = useState('')
 
+  // Ensure members is always an array
+  const safeMembers = Array.isArray(members) ? members : []
+
   // Filter members based on search and filters
   const filteredMembers = useMemo(() => {
-    return members.filter(member => {
+    return safeMembers.filter(member => {
       const matchesSearch = 
         member.user_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         member.user_email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -97,22 +99,7 @@ export function MemberManagementPanel({
       
       return matchesSearch && matchesRole && matchesStatus && matchesGroup
     })
-  }, [members, searchTerm, roleFilter, statusFilter, groupFilter])
-
-  // Member statistics
-  const stats = useMemo(() => {
-    const total = members.length
-    const active = members.filter(m => m.is_active).length
-    const admins = members.filter(m => m.role === 'admin' || m.role === 'owner').length
-    const recent = members.filter(m => {
-      if (!m.last_active) return false
-      const lastActive = new Date(m.last_active)
-      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-      return lastActive > weekAgo
-    }).length
-
-    return { total, active, admins, recent }
-  }, [members])
+  }, [safeMembers, searchTerm, roleFilter, statusFilter, groupFilter])
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -170,21 +157,21 @@ export function MemberManagementPanel({
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'owner': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-      case 'admin': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-      case 'member': return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+      case 'owner': return 'bg-destructive/10 text-destructive'
+      case 'admin': return 'bg-primary/10 text-primary'
+      case 'member': return 'bg-muted text-muted-foreground'
+      default: return 'bg-muted text-muted-foreground'
     }
   }
 
   const getStatusIcon = (member: Member) => {
-    if (!member.is_active) return <XCircle className="h-4 w-4 text-red-500" />
+    if (!member.is_active) return <XCircle className="h-4 w-4 text-destructive" />
     if (member.last_active) {
       const lastActive = new Date(member.last_active)
       const hourAgo = new Date(Date.now() - 60 * 60 * 1000)
       return lastActive > hourAgo ? 
-        <CheckCircle className="h-4 w-4 text-green-500" /> : 
-        <Clock className="h-4 w-4 text-yellow-500" />
+        <CheckCircle className="h-4 w-4 text-primary" /> : 
+        <Clock className="h-4 w-4 text-warning" />
     }
     return <AlertTriangle className="h-4 w-4 text-muted-foreground" />
   }
@@ -193,43 +180,6 @@ export function MemberManagementPanel({
 
   return (
     <div className="space-y-6">
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-blue-500" />
-              <div>
-                <p className="text-2xl font-bold">{stats.total}</p>
-                <p className="text-sm text-muted-foreground">Total Members</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              <div>
-                <p className="text-2xl font-bold">{stats.active}</p>
-                <p className="text-sm text-muted-foreground">Active</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-purple-500" />
-              <div>
-                <p className="text-2xl font-bold">{stats.admins}</p>
-                <p className="text-sm text-muted-foreground">Admins</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       <div className="w-full space-y-4">
         {/* Invite Button and Search */}
         <Card>
@@ -253,7 +203,7 @@ export function MemberManagementPanel({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Groups</SelectItem>
-                    {Array.from(new Set(members.map(m => m.group).filter(Boolean))).map(group => {
+                    {Array.from(new Set(safeMembers.map(m => m.group).filter(Boolean))).map(group => {
                       const groupValue = String(group || '__no_group__')
                       return (
                         <SelectItem key={groupValue} value={groupValue}>
@@ -414,7 +364,7 @@ export function MemberManagementPanel({
                   </thead>
                   <tbody>
                     {filteredMembers.map((member) => (
-                      <tr key={member.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <tr key={member.id} className="border-b hover:bg-muted">
                         <td className="p-4">
                           <Checkbox
                             checked={selectedMembers.includes(member.user_id)}
@@ -514,10 +464,10 @@ export function MemberManagementPanel({
                               }
                               className={
                                 member.is_active 
-                                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                                  ? "bg-primary/10 text-primary"
                                   : member.status === 'invite'
-                                  ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
-                                  : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                                  ? "bg-warning/20 text-warning"
+                                  : "bg-muted text-muted-foreground"
                               }
                             >
                               {member.status === 'invite' ? 'Invite' : 
@@ -547,7 +497,7 @@ export function MemberManagementPanel({
                                     Edit Role
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
-                                    className="text-red-600"
+                                    className="text-destructive"
                                     onClick={() => onRemoveMember(member.user_id)}
                                   >
                                     <Trash2 className="h-4 w-4 mr-2" />

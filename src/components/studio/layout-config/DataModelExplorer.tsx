@@ -186,7 +186,7 @@ export function DataModelExplorer({
   // Helper to create attribute badge DOM element
   const createAttributeBadge = (attr: Attribute, attrName: string): HTMLSpanElement => {
     const badge = document.createElement('span')
-    badge.className = 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 border border-blue-200 dark:border-blue-700 mr-1'
+    badge.className = 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium bg-primary/10 text-primary border border-primary/30 mr-1'
     badge.setAttribute('data-attribute', attrName)
     badge.contentEditable = 'false'
     
@@ -262,7 +262,7 @@ export function DataModelExplorer({
             return (
               <span
                 key={idx}
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 border border-blue-200 dark:border-blue-700 mr-1"
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium bg-primary/10 text-primary border border-primary/30 mr-1"
                 contentEditable={false}
                 data-attribute={part.content}
               >
@@ -280,15 +280,15 @@ export function DataModelExplorer({
   const getAttributeIcon = (type: string) => {
     const lowerType = type.toLowerCase()
     if (lowerType.includes('number') || lowerType.includes('integer') || lowerType.includes('decimal')) {
-      return <Hash className="h-3 w-3 text-blue-500" />
+      return <Hash className="h-3 w-3 text-primary" />
     }
     if (lowerType.includes('date') || lowerType.includes('time')) {
-      return <Calendar className="h-3 w-3 text-green-500" />
+      return <Calendar className="h-3 w-3 text-primary" />
     }
     if (lowerType.includes('money') || lowerType.includes('currency')) {
-      return <DollarSign className="h-3 w-3 text-yellow-500" />
+      return <DollarSign className="h-3 w-3 text-warning" />
     }
-    return <Type className="h-3 w-3 text-gray-500" />
+    return <Type className="h-3 w-3 text-muted-foreground" />
   }
 
   const isNumeric = (type: string): boolean => {
@@ -337,9 +337,9 @@ export function DataModelExplorer({
 
       <div className="flex-1 overflow-y-auto">
         {loading ? (
-          <div className="p-4 text-center text-xs text-gray-500">Loading data models...</div>
+          <div className="p-4 text-center text-xs text-muted-foreground">Loading data models...</div>
         ) : filteredModels.length === 0 ? (
-          <div className="p-4 text-center text-xs text-gray-500">
+          <div className="p-4 text-center text-xs text-muted-foreground">
             {searchQuery ? 'No models found' : 'No data models available'}
           </div>
         ) : (
@@ -355,8 +355,8 @@ export function DataModelExplorer({
                 <div key={model.id} className="mb-1">
                   <div
                     className={cn(
-                      "flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-gray-100 transition-colors",
-                      isSelected && "bg-blue-50 border border-blue-200"
+                      "flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-muted transition-colors",
+                      isSelected && "bg-primary/10 border border-primary/30"
                     )}
                     onClick={() => {
                       toggleModel(model.id)
@@ -364,14 +364,14 @@ export function DataModelExplorer({
                     }}
                   >
                     {isExpanded ? (
-                      <ChevronDown className="h-3 w-3 text-gray-500" />
+                      <ChevronDown className="h-3 w-3 text-muted-foreground" />
                     ) : (
-                      <ChevronRight className="h-3 w-3 text-gray-500" />
+                      <ChevronRight className="h-3 w-3 text-muted-foreground" />
                     )}
-                    <Database className="h-4 w-4 text-blue-600" />
+                    <Database className="h-4 w-4 text-primary" />
                     <span className="text-xs font-medium flex-1">{model.display_name || model.name}</span>
                     {attributes.length > 0 && (
-                      <span className="text-xs text-gray-400">{attributes.length}</span>
+                      <span className="text-xs text-muted-foreground">{attributes.length}</span>
                     )}
                   </div>
 
@@ -380,7 +380,7 @@ export function DataModelExplorer({
                       {/* Dimensions Section */}
                       {dimensionAttributes.length > 0 && (
                         <div>
-                          <div className="text-xs font-semibold text-gray-600 mb-1 px-1">
+                          <div className="text-xs font-semibold text-muted-foreground mb-1 px-1">
                             Dimensions
                           </div>
                           <div className="space-y-0.5">
@@ -395,12 +395,12 @@ export function DataModelExplorer({
                                 onDragEnd={(e) => {
                                   e.stopPropagation()
                                 }}
-                                className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-grab active:cursor-grabbing group transition-colors bg-white dark:bg-gray-800 border border-transparent hover:border-blue-200 dark:hover:border-blue-800"
+                                className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-primary/10 cursor-grab active:cursor-grabbing group transition-colors bg-background border border-transparent hover:border-primary/30"
                                 title={`Drag to dimensions: ${attr.display_name || attr.name} (${attr.type})`}
                               >
                                 {getAttributeIcon(attr.type)}
-                                <span className="text-xs flex-1 text-gray-900 dark:text-gray-100">{attr.display_name || attr.name}</span>
-                                <span className="text-[10px] text-gray-400 opacity-0 group-hover:opacity-100">
+                                <span className="text-xs flex-1 text-foreground">{attr.display_name || attr.name}</span>
+                                <span className="text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100">
                                   {attr.type}
                                 </span>
                               </div>
@@ -412,7 +412,7 @@ export function DataModelExplorer({
                       {/* Measures Section */}
                       {numericAttributes.length > 0 && (
                         <div>
-                          <div className="text-xs font-semibold text-gray-600 mb-1 px-1 flex items-center gap-1">
+                          <div className="text-xs font-semibold text-muted-foreground mb-1 px-1 flex items-center gap-1">
                             <TrendingUp className="h-3 w-3" />
                             Measures
                           </div>
@@ -428,12 +428,12 @@ export function DataModelExplorer({
                                 onDragEnd={(e) => {
                                   e.stopPropagation()
                                 }}
-                                className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-grab active:cursor-grabbing group transition-colors bg-white dark:bg-gray-800 border border-transparent hover:border-blue-200 dark:hover:border-blue-800"
+                                className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-primary/10 cursor-grab active:cursor-grabbing group transition-colors bg-background border border-transparent hover:border-primary/30"
                                 title={`Drag to measures: ${attr.display_name || attr.name} (${attr.type})`}
                               >
                                 {getAttributeIcon(attr.type)}
-                                <span className="text-xs flex-1 text-gray-900 dark:text-gray-100">{attr.display_name || attr.name}</span>
-                                <span className="text-[10px] text-gray-400 opacity-0 group-hover:opacity-100">
+                                <span className="text-xs flex-1 text-foreground">{attr.display_name || attr.name}</span>
+                                <span className="text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100">
                                   {attr.type}
                                 </span>
                               </div>
@@ -443,7 +443,7 @@ export function DataModelExplorer({
                       )}
 
                       {attributes.length === 0 && (
-                        <div className="text-xs text-gray-400 px-2 py-1">No attributes found</div>
+                        <div className="text-xs text-muted-foreground px-2 py-1">No attributes found</div>
                       )}
                     </div>
                   )}
@@ -537,12 +537,12 @@ export function DataModelExplorer({
                         }, 0)
                       }
                     }}
-                    className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer group transition-colors bg-white dark:bg-gray-800 border border-transparent hover:border-blue-200 dark:hover:border-blue-800"
+                    className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-primary/10 cursor-pointer group transition-colors bg-background border border-transparent hover:border-primary/30"
                     title={`Drag or click to insert: ${attr.name}`}
                   >
                     {getAttributeIcon(attr.type)}
-                    <span className="text-xs flex-1 text-gray-900 dark:text-gray-100">{attr.display_name || attr.name}</span>
-                    <span className="text-[10px] text-gray-400 opacity-0 group-hover:opacity-100">
+                    <span className="text-xs flex-1 text-foreground">{attr.display_name || attr.name}</span>
+                    <span className="text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100">
                       {attr.type}
                     </span>
                   </div>
@@ -685,9 +685,9 @@ export function DataModelExplorer({
                   
                   {/* Validation Error */}
                   {sqlValidationError && (
-                    <div className="absolute bottom-0 left-0 right-0 p-2 bg-red-50 dark:bg-red-900/20 border-t border-red-200 dark:border-red-800 flex items-center gap-2">
-                      <AlertCircle className="h-3 w-3 text-red-600 dark:text-red-400 flex-shrink-0" />
-                      <span className="text-[10px] text-red-600 dark:text-red-400">{sqlValidationError}</span>
+                    <div className="absolute bottom-0 left-0 right-0 p-2 bg-destructive/10 border-t border-destructive/30 flex items-center gap-2">
+                      <AlertCircle className="h-3 w-3 text-destructive flex-shrink-0" />
+                      <span className="text-[10px] text-destructive">{sqlValidationError}</span>
                     </div>
                   )}
                   
@@ -701,14 +701,14 @@ export function DataModelExplorer({
                     
                     if (uniqueDetected.length > 0) {
                       return (
-                        <div className="absolute bottom-2 left-2 right-2 flex flex-wrap gap-1 p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
-                          <span className="text-[10px] text-gray-600 dark:text-gray-400 mr-1">Detected attributes:</span>
+                        <div className="absolute bottom-2 left-2 right-2 flex flex-wrap gap-1 p-2 bg-primary/10 rounded border border-primary/30">
+                          <span className="text-[10px] text-muted-foreground mr-1">Detected attributes:</span>
                           {uniqueDetected.map((attrName, idx) => {
                             const attr = attrs.find(a => a.name.toLowerCase() === attrName.toLowerCase())
                             return (
                               <span
                                 key={idx}
-                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 border border-blue-200 dark:border-blue-700"
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium bg-primary/10 text-primary border border-primary/30"
                               >
                                 {attr && getAttributeIcon(attr.type)}
                                 <span>{attrName}</span>
@@ -725,7 +725,7 @@ export function DataModelExplorer({
                   {showSuggestions && attributeSuggestions.length > 0 && (
                     <div
                       ref={suggestionsRef}
-                      className="absolute z-10 mt-1 bg-white dark:bg-gray-800 border rounded shadow-lg max-h-48 overflow-y-auto"
+                      className="absolute z-10 mt-1 bg-background border rounded shadow-lg max-h-48 overflow-y-auto"
                       style={{
                         top: '100%',
                         left: 0,
@@ -757,13 +757,13 @@ export function DataModelExplorer({
                             setShowSuggestions(false)
                           }}
                           className={cn(
-                            "px-3 py-2 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center gap-2",
-                            idx === suggestionIndex && "bg-blue-100 dark:bg-blue-900/40"
+                            "px-3 py-2 cursor-pointer hover:bg-primary/10 flex items-center gap-2",
+                            idx === suggestionIndex && "bg-primary/20"
                           )}
                         >
                           {getAttributeIcon(attr.type)}
                           <span className="text-xs">{attr.display_name || attr.name}</span>
-                          <span className="text-[10px] text-gray-400 ml-auto">{attr.type}</span>
+                          <span className="text-[10px] text-muted-foreground ml-auto">{attr.type}</span>
                         </div>
                       ))}
                     </div>

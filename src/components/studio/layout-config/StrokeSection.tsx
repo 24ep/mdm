@@ -17,14 +17,14 @@ interface StrokeSectionProps {
   widget: PlacedWidget
   selectedWidgetId: string
   setPlacedWidgets: React.Dispatch<React.SetStateAction<PlacedWidget[]>>
-  globalStyle?: ComponentStyle
+  themeStyle?: ComponentStyle
 }
 
 export function StrokeSection({
   widget,
   selectedWidgetId,
   setPlacedWidgets,
-  globalStyle,
+  themeStyle,
 }: StrokeSectionProps) {
   const updateProperty = (key: string, value: any) => {
     setPlacedWidgets(prev => prev.map(w => 
@@ -50,13 +50,13 @@ export function StrokeSection({
   // Get effective values
   const effectiveBorderColor = getEffectiveStyle(
     widget.properties?.borderColor,
-    globalStyle,
+    themeStyle,
     'borderColor'
   ) || '#e5e7eb'
 
   const effectiveBorderWidth = getEffectiveStyle(
     widget.properties?.borderWidth,
-    globalStyle,
+    themeStyle,
     'borderWidth'
   ) || 1
 
@@ -86,15 +86,15 @@ export function StrokeSection({
     })
   }
 
-  const isBorderColorGlobal = isUsingGlobalStyle(
+  const isBorderColorUsingTheme = isUsingGlobalStyle(
     widget.properties?.borderColor,
-    globalStyle,
+    themeStyle,
     'borderColor'
   )
 
-  const isBorderWidthGlobal = isUsingGlobalStyle(
+  const isBorderWidthUsingTheme = isUsingGlobalStyle(
     widget.properties?.borderWidth,
-    globalStyle,
+    themeStyle,
     'borderWidth'
   )
 
@@ -141,13 +141,13 @@ export function StrokeSection({
               placeholder="#e5e7eb"
               inputClassName="h-7 text-xs pl-7 w-full"
             />
-            {!isBorderColorGlobal && globalStyle && (
+            {!isBorderColorUsingTheme && themeStyle && (
               <Button
                 variant="ghost"
                 size="sm"
                 className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5 p-0"
                 onClick={() => resetProperty('borderColor')}
-                title="Reset to global style"
+                title="Reset to theme default"
               >
                 <RotateCcw className="h-3 w-3" />
               </Button>
@@ -219,13 +219,13 @@ export function StrokeSection({
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1">
               <Label className="text-xs text-muted-foreground">Border Width</Label>
-              {!isBorderWidthGlobal && globalStyle && (
+              {!isBorderWidthUsingTheme && themeStyle && (
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-4 w-4 p-0"
                   onClick={() => resetProperty('borderWidth')}
-                  title="Reset to global style"
+                  title="Reset to theme default"
                 >
                   <RotateCcw className="h-2.5 w-2.5" />
                 </Button>

@@ -32,6 +32,7 @@ interface WidgetContextMenuProps {
   onBringForward?: () => void
   onSendBackward?: () => void
   children: React.ReactNode
+  menuPosition?: { x: number; y: number } | null
 }
 
 export function WidgetContextMenu({
@@ -54,6 +55,7 @@ export function WidgetContextMenu({
   onBringForward,
   onSendBackward,
   children,
+  menuPosition,
 }: WidgetContextMenuProps) {
   const [internalOpen, setInternalOpen] = useState(false)
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen
@@ -62,7 +64,10 @@ export function WidgetContextMenu({
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       {children}
-      <DropdownMenuContent className="w-48">
+      <DropdownMenuContent 
+        className="w-48"
+        customPosition={menuPosition}
+      >
         <DropdownMenuItem onClick={() => { if (!isLocked) { onCopy(); setOpen(false) } }}>
           <Copy className="h-4 w-4 mr-2" />
           Copy
@@ -155,7 +160,7 @@ export function WidgetContextMenu({
         
         <DropdownMenuSeparator />
         
-        <DropdownMenuItem onClick={() => { if (!isLocked) { onDelete(); setOpen(false) } }} className="text-red-600 focus:text-red-600">
+        <DropdownMenuItem onClick={() => { if (!isLocked) { onDelete(); setOpen(false) } }} className="text-destructive focus:text-destructive">
           <Trash2 className="h-4 w-4 mr-2" />
           Delete
           <DropdownMenuShortcut>⌫</DropdownMenuShortcut>

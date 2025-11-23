@@ -116,12 +116,12 @@ export function PagePublishingManager({
 
   const getStatusColor = useCallback((status: PagePublication['status']) => {
     switch (status) {
-      case 'draft': return 'bg-gray-100 text-gray-800'
-      case 'scheduled': return 'bg-blue-100 text-blue-800'
-      case 'published': return 'bg-green-100 text-green-800'
-      case 'archived': return 'bg-yellow-100 text-yellow-800'
-      case 'error': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'draft': return 'bg-muted text-muted-foreground'
+      case 'scheduled': return 'bg-primary/10 text-primary'
+      case 'published': return 'bg-primary/10 text-primary'
+      case 'archived': return 'bg-warning/20 text-warning'
+      case 'error': return 'bg-destructive/10 text-destructive'
+      default: return 'bg-muted text-muted-foreground'
     }
   }, [])
 
@@ -228,7 +228,7 @@ export function PagePublishingManager({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Globe className="h-5 w-5 text-green-600" />
+              <Globe className="h-5 w-5 text-primary" />
               <div>
                 <div className="text-2xl font-bold">
                   {publications.filter(p => p.status === 'published').length}
@@ -241,7 +241,7 @@ export function PagePublishingManager({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-blue-600" />
+              <Clock className="h-5 w-5 text-primary" />
               <div>
                 <div className="text-2xl font-bold">
                   {publications.filter(p => p.status === 'scheduled').length}
@@ -254,7 +254,7 @@ export function PagePublishingManager({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Edit className="h-5 w-5 text-gray-600" />
+              <Edit className="h-5 w-5 text-muted-foreground" />
               <div>
                 <div className="text-2xl font-bold">
                   {publications.filter(p => p.status === 'draft').length}
@@ -267,7 +267,7 @@ export function PagePublishingManager({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-purple-600" />
+              <TrendingUp className="h-5 w-5 text-primary" />
               <div>
                 <div className="text-2xl font-bold">
                   {publications.reduce((sum, p) => sum + p.analytics.views, 0)}
@@ -474,7 +474,7 @@ export function PagePublishingManager({
                       variant="outline"
                       size="sm"
                       onClick={() => onDeletePublication(publication.id)}
-                      className="text-red-600 hover:text-red-700"
+                      className="text-destructive hover:text-destructive/80"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -502,12 +502,12 @@ export function PagePublishingManager({
                 </div>
                 
                 {publication.performance.issues.length > 0 && (
-                  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <div className="flex items-center gap-2 text-yellow-600">
+                  <div className="mt-4 p-3 bg-warning/20 border border-warning/30 rounded-lg">
+                    <div className="flex items-center gap-2 text-warning">
                       <AlertCircle className="h-4 w-4" />
                       <span className="text-sm font-medium">Performance Issues</span>
                     </div>
-                    <ul className="text-sm text-yellow-600 mt-1">
+                    <ul className="text-sm text-warning mt-1">
                       {publication.performance.issues.map((issue, index) => (
                         <li key={index}>• {issue}</li>
                       ))}
@@ -552,7 +552,7 @@ export function PagePublishingManager({
                       variant="outline"
                       size="sm"
                       onClick={() => onDeletePublication(publication.id)}
-                      className="text-red-600 hover:text-red-700"
+                      className="text-destructive hover:text-destructive/80"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -584,19 +584,19 @@ export function PagePublishingManager({
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-blue-600">{publication.analytics.views}</div>
+                        <div className="text-2xl font-bold text-primary">{publication.analytics.views}</div>
                         <div className="text-sm text-muted-foreground">Total Views</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-green-600">{publication.analytics.uniqueViews}</div>
+                        <div className="text-2xl font-bold text-primary">{publication.analytics.uniqueViews}</div>
                         <div className="text-sm text-muted-foreground">Unique Views</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-orange-600">{publication.analytics.bounceRate}%</div>
+                        <div className="text-2xl font-bold text-warning">{publication.analytics.bounceRate}%</div>
                         <div className="text-sm text-muted-foreground">Bounce Rate</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-purple-600">{publication.analytics.avgTimeOnPage}s</div>
+                        <div className="text-2xl font-bold text-primary">{publication.analytics.avgTimeOnPage}s</div>
                         <div className="text-sm text-muted-foreground">Avg. Time</div>
                       </div>
                     </div>

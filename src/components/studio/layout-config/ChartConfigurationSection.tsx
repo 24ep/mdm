@@ -1490,7 +1490,7 @@ export function ChartConfigurationSection({
                         const rules = widget.properties?.conditionalFormattingRules || []
                         updateProperty('conditionalFormattingRules', rules.filter((_: any, i: number) => i !== index))
                       }}
-                      className="text-xs text-red-500 hover:text-red-700"
+                      className="text-xs text-destructive hover:text-destructive/80"
                     >
                       Remove
                     </button>
@@ -1659,10 +1659,12 @@ export function ChartConfigurationSection({
       {/* X-axis - Looker Studio style */}
       {hasAxes && (
         <AccordionItem value="xAxis" className="border-0">
-          <AccordionTrigger className="text-xs font-semibold py-2 px-4 hover:no-underline">
-            <div className="flex items-center gap-2 flex-1">
-              <MoveVertical className="h-3.5 w-3.5 text-muted-foreground rotate-90" />
-              <span>X-axis</span>
+          <AccordionTrigger className="text-xs font-semibold py-2 px-4 no-underline hover:no-underline w-full">
+            <div className="w-full">
+              <div className="flex items-center gap-2">
+                <MoveVertical className="h-3.5 w-3.5 text-muted-foreground rotate-90" />
+                <span>X-axis</span>
+              </div>
             </div>
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-3">
@@ -1772,10 +1774,12 @@ export function ChartConfigurationSection({
       {/* Y-axis - Looker Studio style */}
       {hasAxes && (
         <AccordionItem value="yAxis" className="border-0">
-          <AccordionTrigger className="text-xs font-semibold py-2 px-4 hover:no-underline">
-            <div className="flex items-center gap-2 flex-1">
-              <MoveVertical className="h-3.5 w-3.5 text-muted-foreground" />
-              <span>Y-axis</span>
+          <AccordionTrigger className="text-xs font-semibold py-2 px-4 no-underline hover:no-underline w-full">
+            <div className="w-full">
+              <div className="flex items-center gap-2">
+                <MoveVertical className="h-3.5 w-3.5 text-muted-foreground" />
+                <span>Y-axis</span>
+              </div>
             </div>
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-3">

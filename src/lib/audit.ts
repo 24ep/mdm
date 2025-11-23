@@ -32,10 +32,44 @@ export async function createAuditLog(data: AuditLogData) {
       return uuidRegex.test(str)
     }
 
-    // Cast entityId to UUID if it's a valid UUID, otherwise use NULL
-    const entityIdValue = data.entityId && isValidUUID(data.entityId) 
-      ? data.entityId 
-      : null
+    // Generate a deterministic UUID from a string (for non-UUID entityIds)
+    const generateDeterministicUUID = (str: string): string => {
+      // Use a simple hash to generate a deterministic UUID v4-like string
+      let hash = 0
+      for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i)
+        hash = ((hash << 5) - hash) + char
+        hash = hash & hash // Convert to 32-bit integer
+      }
+      
+      // Generate a 32-character hex string from the hash
+      // Use multiple hash iterations to get enough entropy
+      const hash1 = Math.abs(hash).toString(16).padStart(8, '0')
+      const hash2 = Math.abs((hash * 31 + str.length)).toString(16).padStart(8, '0')
+      const hash3 = Math.abs((hash * 17 + (str.charCodeAt(0) || 0))).toString(16).padStart(8, '0')
+      const hash4 = Math.abs((hash * 7 + (str.charCodeAt(str.length - 1) || 0))).toString(16).padStart(8, '0')
+      
+      const hex = (hash1 + hash2 + hash3 + hash4).slice(0, 32).padStart(32, '0')
+      
+      // Format as UUID v4: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+      // y must be one of 8, 9, a, or b (first hex digit of 4th segment)
+      // Ensure we have enough hex characters - hex should be 32 chars after padding
+      const y = (parseInt(hex[19] || '0', 16) & 0x3 | 0x8).toString(16)
+      // 4th segment needs exactly 4 hex digits: y + next 3 digits from hex[17:20]
+      // Extract exactly 3 characters from position 17-19, pad if needed
+      const next3 = (hex.substring(17, 20) || '000').padEnd(3, '0').substring(0, 3)
+      // Combine y (1 char) + next3 (3 chars) = 4 chars total
+      const segment4 = (y + next3).substring(0, 4).padEnd(4, '0')
+      return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-${segment4}-${hex.slice(20, 32)}`
+    }
+
+    // Cast entityId to UUID if it's a valid UUID, otherwise generate a deterministic UUID
+    // For non-UUID entityIds like 'system', we generate a deterministic UUID based on the value
+    const entityIdValue = data.entityId && isValidUUID(data.entityId)
+      ? data.entityId
+      : data.entityId
+        ? generateDeterministicUUID(data.entityId)
+        : generateDeterministicUUID('unknown')
 
     // Validate userId is a UUID
     const userIdValue = data.userId && isValidUUID(data.userId)
@@ -46,40 +80,24 @@ export async function createAuditLog(data: AuditLogData) {
       throw new Error(`Invalid userId: must be a valid UUID, got: ${data.userId}`)
     }
 
-    // Use conditional SQL to handle NULL entity_id properly
-    const insertQuery = entityIdValue
-      ? `
-        INSERT INTO audit_logs (action, entity_type, entity_id, old_value, new_value, user_id, ip_address, user_agent)
-        VALUES ($1, $2, $3::uuid, $4, $5, $6::uuid, $7, $8)
-        RETURNING id, created_at
-      `
-      : `
-        INSERT INTO audit_logs (action, entity_type, entity_id, old_value, new_value, user_id, ip_address, user_agent)
-        VALUES ($1, $2, NULL, $3, $4, $5::uuid, $6, $7)
-        RETURNING id, created_at
-      `
+    // Always use entityIdValue (now guaranteed to be a UUID)
+    // Generate UUID for id using gen_random_uuid() if available, otherwise let Prisma handle it
+    const insertQuery = `
+      INSERT INTO audit_logs (id, action, entity_type, entity_id, old_value, new_value, user_id, ip_address, user_agent, created_at)
+      VALUES (gen_random_uuid(), $1, $2, $3::uuid, $4, $5, $6::uuid, $7, $8, NOW())
+      RETURNING id, created_at
+    `
 
-    const result = await query(insertQuery, entityIdValue
-      ? [
-          data.action,
-          data.entityType,
-          entityIdValue,
-          data.oldValue ? JSON.stringify(data.oldValue) : null,
-          data.newValue ? JSON.stringify(data.newValue) : null,
-          userIdValue,
-          data.ipAddress || null,
-          data.userAgent || null
-        ]
-      : [
-          data.action,
-          data.entityType,
-          data.oldValue ? JSON.stringify(data.oldValue) : null,
-          data.newValue ? JSON.stringify(data.newValue) : null,
-          userIdValue,
-          data.ipAddress || null,
-          data.userAgent || null
-        ]
-    )
+    const result = await query(insertQuery, [
+      data.action,
+      data.entityType,
+      entityIdValue,
+      data.oldValue ? JSON.stringify(data.oldValue) : null,
+      data.newValue ? JSON.stringify(data.newValue) : null,
+      userIdValue,
+      data.ipAddress || null,
+      data.userAgent || null
+    ])
 
     const auditLog = result.rows[0]
 

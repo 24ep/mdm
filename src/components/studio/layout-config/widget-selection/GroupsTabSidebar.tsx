@@ -107,7 +107,7 @@ export function GroupsTabSidebar({
                 {collapsedGroups.has(group.id) ? (
                   <Folder className="h-4 w-4 text-muted-foreground" />
                 ) : (
-                  <FolderOpen className="h-4 w-4 text-blue-600" />
+                  <FolderOpen className="h-4 w-4 text-primary" />
                 )}
                 <span className="flex-1 truncate">{group.name}</span>
                 <span className="text-xs text-muted-foreground">

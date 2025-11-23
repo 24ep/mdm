@@ -1,20 +1,10 @@
 'use client'
 
 import { useSession, signOut } from 'next-auth/react'
-import { useTheme } from 'next-themes'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { LogOut, User, Bell, CheckCircle, AlertCircle, Info, AlertTriangle, ExternalLink, MoreHorizontal, Moon, Sun, Monitor, Palette, ChevronDown } from 'lucide-react'
+import { LogOut, User, Bell, CheckCircle, AlertCircle, Info, AlertTriangle, ExternalLink, MoreHorizontal } from 'lucide-react'
 import { Z_INDEX } from '@/lib/z-index'
 import { useEffect, useState } from 'react'
 import { loadBrandingConfig } from '@/lib/branding'
@@ -32,6 +22,8 @@ interface TopMenuBarProps {
   activeTab: string
   applicationName?: string
   logoUrl?: string
+  spaceName?: string
+  showSpaceName?: boolean
 }
 
 // Get feature name from activeTab
@@ -85,20 +77,16 @@ const getFeatureName = (activeTab: string): string => {
   return tabNames[activeTab] || activeTab.charAt(0).toUpperCase() + activeTab.slice(1).replace(/([A-Z])/g, ' $1')
 }
 
-export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform', logoUrl }: TopMenuBarProps) {
+export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform', logoUrl, spaceName, showSpaceName = false }: TopMenuBarProps) {
   const { data: session } = useSession()
-  const { theme, setTheme, systemTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
   const [branding, setBranding] = useState<BrandingConfig | null>(null)
   const [notificationPopoverOpen, setNotificationPopoverOpen] = useState(false)
   const [notificationDrawerOpen, setNotificationDrawerOpen] = useState(false)
   const [profileModalOpen, setProfileModalOpen] = useState(false)
   const [profilePopoverOpen, setProfilePopoverOpen] = useState(false)
-  const [themeDropdownOpen, setThemeDropdownOpen] = useState(false)
   const { notifications, unreadCount, isLoading, markAsRead } = useNotifications()
 
   useEffect(() => {
-    setMounted(true)
     // Load branding config
     loadBrandingConfig().then((config) => {
       if (config) {
@@ -176,35 +164,48 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
           <img 
             src={displayLogo} 
             alt={displayName}
-            className="h-5 w-5 object-contain flex-shrink-0"
+            className="h-5 w-5 object-contain flex-shrink-0 ml-2 mr-2"
             onError={(e) => {
               (e.target as HTMLImageElement).style.display = 'none'
             }}
           />
         ) : (
-          <div className="h-5 w-5 rounded bg-primary flex items-center justify-center flex-shrink-0">
+          <div className="h-5 w-5 rounded bg-primary flex items-center justify-center flex-shrink-0 ml-2 mr-2">
             <span className="text-primary-foreground text-[10px] font-bold">
               {displayName.charAt(0)}
             </span>
           </div>
         )}
         
-        {/* Application Name */}
-        {displayName && (
+        {/* Space Name or Application Name */}
+        {showSpaceName && spaceName ? (
+          <div className="flex flex-col min-w-0">
+            <span className="font-semibold text-sm whitespace-nowrap" style={{ color: 'var(--brand-top-menu-text, hsl(var(--foreground)))' }}>
+              {spaceName}
+            </span>
+            <span className="text-xs text-muted-foreground whitespace-nowrap" style={{ color: 'var(--brand-top-menu-text, hsl(var(--muted-foreground)))', opacity: 0.7 }}>
+              {displayName}
+            </span>
+          </div>
+        ) : displayName && (
           <>
             <span className="font-semibold text-sm whitespace-nowrap" style={{ color: 'var(--brand-top-menu-text, hsl(var(--foreground)))' }}>
               {displayName}
             </span>
             
             {/* Separator */}
-            <span className="text-sm" style={{ color: 'var(--brand-top-menu-text, hsl(var(--muted-foreground)))', opacity: 0.6 }}>|</span>
+            {!showSpaceName && (
+              <>
+                <span className="text-sm" style={{ color: 'var(--brand-top-menu-text, hsl(var(--muted-foreground)))', opacity: 0.6 }}>|</span>
+                
+                {/* Selected Feature */}
+                <span className="text-sm truncate" style={{ color: 'var(--brand-top-menu-text, hsl(var(--muted-foreground)))', opacity: 0.8 }}>
+                  {featureName}
+                </span>
+              </>
+            )}
           </>
         )}
-        
-        {/* Selected Feature */}
-        <span className="text-sm truncate" style={{ color: 'var(--brand-top-menu-text, hsl(var(--muted-foreground)))', opacity: 0.8 }}>
-          {featureName}
-        </span>
       </div>
 
       {/* Right Section: Notifications and User Avatar */}
@@ -389,153 +390,6 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile Settings</span>
               </Button>
-              
-              {/* Theme Dropdown */}
-              <DropdownMenu open={themeDropdownOpen} onOpenChange={setThemeDropdownOpen}>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-between font-normal h-9 px-3"
-                    onMouseDown={(e) => {
-                      // Prevent this from closing the parent popover
-                      e.stopPropagation()
-                    }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Palette className="h-4 w-4" />
-                      <span>Theme:</span>
-                      <div className="flex items-center gap-1.5">
-                        {mounted && theme === 'dark' ? (
-                          <>
-                            <Moon className="h-4 w-4" />
-                            <span className="text-xs">Dark</span>
-                          </>
-                        ) : mounted && theme === 'light' ? (
-                          <>
-                            <Sun className="h-4 w-4" />
-                            <span className="text-xs">Light</span>
-                          </>
-                        ) : (
-                          <>
-                            <Monitor className="h-4 w-4" />
-                            <span className="text-xs">System</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <ChevronDown className="h-4 w-4 opacity-50" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent 
-                  align="end" 
-                  className="w-48"
-                  onMouseDown={(e) => {
-                    // Prevent clicks inside dropdown from closing parent popover
-                    e.stopPropagation()
-                  }}
-                  onClick={(e) => {
-                    // Prevent clicks inside dropdown from closing parent popover
-                    e.stopPropagation()
-                  }}
-                >
-                  <DropdownMenuLabel>Theme</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuRadioGroup 
-                    value={mounted ? (theme || 'system') : 'system'} 
-                    onValueChange={(value) => {
-                      if (mounted) {
-                        const newTheme = value as 'light' | 'dark' | 'system'
-                        setTheme(newTheme)
-                        // Ensure dark class is applied/removed immediately
-                        const root = document.documentElement
-                        if (newTheme === 'dark') {
-                          root.classList.add('dark')
-                        } else if (newTheme === 'light') {
-                          root.classList.remove('dark')
-                        } else {
-                          // System mode - let next-themes handle it
-                          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-                          if (prefersDark) {
-                            root.classList.add('dark')
-                          } else {
-                            root.classList.remove('dark')
-                          }
-                        }
-                        // Close dropdown after a short delay to ensure theme is applied
-                        setTimeout(() => {
-                          setThemeDropdownOpen(false)
-                        }, 100)
-                      }
-                    }}
-                  >
-                    <DropdownMenuRadioItem 
-                      value="light"
-                      checked={mounted && theme === 'light'}
-                      onMouseDown={(e) => {
-                        e.stopPropagation()
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        if (mounted) {
-                          setTheme('light')
-                          document.documentElement.classList.remove('dark')
-                          setTimeout(() => {
-                            setThemeDropdownOpen(false)
-                          }, 100)
-                        }
-                      }}
-                    >
-                      <Sun className="mr-2 h-4 w-4" />
-                      <span>Light</span>
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem 
-                      value="dark"
-                      checked={mounted && theme === 'dark'}
-                      onMouseDown={(e) => {
-                        e.stopPropagation()
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        if (mounted) {
-                          setTheme('dark')
-                          document.documentElement.classList.add('dark')
-                          setTimeout(() => {
-                            setThemeDropdownOpen(false)
-                          }, 100)
-                        }
-                      }}
-                    >
-                      <Moon className="mr-2 h-4 w-4" />
-                      <span>Dark</span>
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem 
-                      value="system"
-                      checked={mounted && (theme === 'system' || !theme)}
-                      onMouseDown={(e) => {
-                        e.stopPropagation()
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        if (mounted) {
-                          setTheme('system')
-                          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-                          if (prefersDark) {
-                            document.documentElement.classList.add('dark')
-                          } else {
-                            document.documentElement.classList.remove('dark')
-                          }
-                          setTimeout(() => {
-                            setThemeDropdownOpen(false)
-                          }, 100)
-                        }
-                      }}
-                    >
-                      <Monitor className="mr-2 h-4 w-4" />
-                      <span>System</span>
-                    </DropdownMenuRadioItem>
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
               
               <div className="border-t border-border my-1" />
               

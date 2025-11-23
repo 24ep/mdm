@@ -48,8 +48,6 @@ export async function PUT(request: NextRequest) {
       return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-    logger.apiRequest('PUT', '/api/admin/branding', { userId: session.user.id })
-
     const bodySchema = z.object({
       branding: z.object({
         applicationName: z.string(),
@@ -66,7 +64,7 @@ export async function PUT(request: NextRequest) {
           platformSidebarTextColor: z.string(),
           secondarySidebarTextColor: z.string(),
           bodyBackgroundColor: z.string(),
-        }),
+        }).optional(),
         darkMode: z.object({
           primaryColor: z.string(),
           secondaryColor: z.string(),
@@ -79,7 +77,7 @@ export async function PUT(request: NextRequest) {
           platformSidebarTextColor: z.string(),
           secondarySidebarTextColor: z.string(),
           bodyBackgroundColor: z.string(),
-        }),
+        }).optional(),
         loginBackground: z.object({
           type: z.enum(['color', 'gradient', 'image']),
           color: z.string().optional(),
@@ -103,8 +101,40 @@ export async function PUT(request: NextRequest) {
           textareaBorderRadius: z.string(),
           textareaBorderWidth: z.string(),
         }),
-        componentStyling: z.record(z.string(), z.object({
-          light: z.object({
+        componentStyling: z.record(z.string(), z.union([
+          // Nested structure with light/dark
+          z.object({
+            light: z.object({
+              backgroundColor: z.string().optional(),
+              textColor: z.string().optional(),
+              borderColor: z.string().optional(),
+              borderRadius: z.string().optional(),
+              borderWidth: z.string().optional(),
+              padding: z.string().optional(),
+              fontSize: z.string().optional(),
+              fontWeight: z.string().optional(),
+              boxShadow: z.string().optional(),
+              backdropFilter: z.string().optional(),
+              transition: z.string().optional(),
+              opacity: z.string().optional(),
+            }).optional(),
+            dark: z.object({
+              backgroundColor: z.string().optional(),
+              textColor: z.string().optional(),
+              borderColor: z.string().optional(),
+              borderRadius: z.string().optional(),
+              borderWidth: z.string().optional(),
+              padding: z.string().optional(),
+              fontSize: z.string().optional(),
+              fontWeight: z.string().optional(),
+              boxShadow: z.string().optional(),
+              backdropFilter: z.string().optional(),
+              transition: z.string().optional(),
+              opacity: z.string().optional(),
+            }).optional(),
+          }),
+          // Flat structure (legacy format)
+          z.object({
             backgroundColor: z.string().optional(),
             textColor: z.string().optional(),
             borderColor: z.string().optional(),
@@ -113,18 +143,12 @@ export async function PUT(request: NextRequest) {
             padding: z.string().optional(),
             fontSize: z.string().optional(),
             fontWeight: z.string().optional(),
+            boxShadow: z.string().optional(),
+            backdropFilter: z.string().optional(),
+            transition: z.string().optional(),
+            opacity: z.string().optional(),
           }),
-          dark: z.object({
-            backgroundColor: z.string().optional(),
-            textColor: z.string().optional(),
-            borderColor: z.string().optional(),
-            borderRadius: z.string().optional(),
-            borderWidth: z.string().optional(),
-            padding: z.string().optional(),
-            fontSize: z.string().optional(),
-            fontWeight: z.string().optional(),
-          }),
-        })).optional(),
+        ])).optional(),
       }),
     })
 

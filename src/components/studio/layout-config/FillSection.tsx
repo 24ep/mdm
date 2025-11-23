@@ -14,14 +14,14 @@ interface FillSectionProps {
   widget: PlacedWidget
   selectedWidgetId: string
   setPlacedWidgets: React.Dispatch<React.SetStateAction<PlacedWidget[]>>
-  globalStyle?: ComponentStyle
+  themeStyle?: ComponentStyle
 }
 
 export function FillSection({
   widget,
   selectedWidgetId,
   setPlacedWidgets,
-  globalStyle,
+  themeStyle,
 }: FillSectionProps) {
   const updateProperty = (key: string, value: any) => {
     setPlacedWidgets(prev => prev.map(w => 
@@ -43,22 +43,22 @@ export function FillSection({
   }
 
   const showFill = widget.properties?.showBackground !== false
-  const fillOpacity = widget.properties?.fillOpacity ?? (globalStyle?.opacity ? globalStyle.opacity / 100 : 1)
+  const fillOpacity = widget.properties?.fillOpacity ?? (themeStyle?.opacity ? themeStyle.opacity / 100 : 1)
 
-  // Get effective values (widget property or global style)
+  // Get effective values (widget property or theme style)
   const effectiveBackgroundColor = getEffectiveStyle(
     widget.properties?.backgroundColor,
-    globalStyle,
+    themeStyle,
     'backgroundColor'
   ) || '#f6f6f6'
 
-  const isBgColorGlobal = isUsingGlobalStyle(
+  const isBgColorUsingTheme = isUsingGlobalStyle(
     widget.properties?.backgroundColor,
-    globalStyle,
+    themeStyle,
     'backgroundColor'
   )
 
-  const isOpacityGlobal = widget.properties?.fillOpacity === undefined && widget.properties?.opacity === undefined
+  const isOpacityUsingTheme = (widget.properties?.fillOpacity === undefined && widget.properties?.opacity === undefined) && themeStyle?.opacity !== undefined
 
   const handleAdd = () => {
     updateProperty('showBackground', true)
@@ -88,13 +88,13 @@ export function FillSection({
             placeholder="#f6f6f6"
             inputClassName="h-7 text-xs pl-7 w-full"
           />
-          {!isBgColorGlobal && globalStyle && (
+          {!isBgColorUsingTheme && themeStyle && (
             <Button
               variant="ghost"
               size="sm"
               className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5 p-0"
               onClick={() => resetProperty('backgroundColor')}
-              title="Reset to global style"
+              title="Reset to theme default"
             >
               <RotateCcw className="h-3 w-3" />
             </Button>
@@ -120,7 +120,7 @@ export function FillSection({
             placeholder="100"
           />
           <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
-          {!isOpacityGlobal && globalStyle && (
+          {!isOpacityUsingTheme && themeStyle && (
             <Button
               variant="ghost"
               size="sm"
@@ -129,7 +129,7 @@ export function FillSection({
                 resetProperty('fillOpacity')
                 resetProperty('opacity')
               }}
-              title="Reset to global style"
+              title="Reset to theme default"
             >
               <RotateCcw className="h-3 w-3" />
             </Button>

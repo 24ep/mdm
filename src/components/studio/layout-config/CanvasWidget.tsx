@@ -1,7 +1,7 @@
 'use client'
 
 import React, { RefObject, useState } from 'react'
-import { Square, Lock } from 'lucide-react'
+import { Square, Lock, MoreVertical } from 'lucide-react'
 import { widgetsPalette, PlacedWidget } from './widgets'
 import { WidgetRenderer } from './WidgetRenderer'
 import { ResizeHandles } from './ResizeHandles'
@@ -103,6 +103,8 @@ export function CanvasWidget({
   const isLocked = widget.properties?.locked === true
   const isHidden = widget.properties?.hidden === true
   const [contextMenuOpen, setContextMenuOpen] = useState(false)
+  const [showMenuButton, setShowMenuButton] = useState(false)
+  const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null)
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).classList.contains('resize-handle')) {
@@ -228,6 +230,8 @@ export function CanvasWidget({
         pointerEvents: isHidden ? 'none' : 'auto',
       }}
       onClick={handleClick}
+      onMouseEnter={() => setShowMenuButton(true)}
+      onMouseLeave={() => !isSelected && setShowMenuButton(false)}
       onContextMenu={(e) => {
         e.preventDefault()
         e.stopPropagation()
@@ -235,6 +239,8 @@ export function CanvasWidget({
         if (setSelectedWidgetIds) {
           setSelectedWidgetIds(new Set([widget.id]))
         }
+        // Store mouse position for popover positioning
+        setMenuPosition({ x: e.clientX, y: e.clientY })
         setContextMenuOpen(true)
       }}
       onDragStart={(e) => {
@@ -244,17 +250,49 @@ export function CanvasWidget({
     >
       {/* Lock indicator */}
       {isLocked && (
-        <div className="absolute top-1 right-1 bg-yellow-100 dark:bg-yellow-900/30 rounded-full p-1" style={{ zIndex: Z_INDEX.canvasLockIndicator }}>
-          <Lock className="h-3 w-3 text-yellow-600 dark:text-yellow-400" />
+        <div className="absolute top-1 right-1 bg-warning/20 rounded-full p-1" style={{ zIndex: Z_INDEX.canvasLockIndicator }}>
+          <Lock className="h-3 w-3 text-warning" />
         </div>
       )}
-      
+
+      {/* 3-dot menu button - top outside element */}
+      {(isSelected || showMenuButton) && !isLocked && (
+        <button
+          data-icon-button
+          className="absolute z-50 flex items-center justify-center w-6 h-6 rounded transition-colors shadow-sm"
+          style={{ 
+            pointerEvents: 'auto',
+            zIndex: Z_INDEX.canvasElementSelected + 10,
+            top: '-24px',
+            right: '4px'
+          }}
+          onClick={(e) => {
+            e.stopPropagation()
+            // Store mouse position for popover positioning
+            setMenuPosition({ x: e.clientX, y: e.clientY })
+            setContextMenuOpen(true)
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onMouseEnter={() => setShowMenuButton(true)}
+          onMouseLeave={() => !isSelected && setShowMenuButton(false)}
+        >
+          <MoreVertical className="h-3.5 w-3.5" />
+        </button>
+      )}
+
+      {/* Context menu (for both button click and right-click) */}
       <WidgetContextMenu
         widget={widget}
         isLocked={isLocked}
         isHidden={isHidden}
         open={contextMenuOpen}
-        onOpenChange={setContextMenuOpen}
+        onOpenChange={(open) => {
+          setContextMenuOpen(open)
+          if (!open) {
+            setMenuPosition(null)
+          }
+        }}
+        menuPosition={menuPosition}
         onCopy={() => {
           setSelectedWidgetId(widget.id)
           if (setSelectedWidgetIds) {
@@ -301,37 +339,32 @@ export function CanvasWidget({
         </DropdownMenuTrigger>
       </WidgetContextMenu>
 
+      {/* Resize handles - positioned on outer container to overlay the chart */}
+      {isSelected && !isLocked && (
+        <ResizeHandles
+          widget={widget}
+          setIsResizing={setIsResizing}
+          resizeStateRef={resizeStateRef}
+        />
+      )}
+
       {isFilter ? (
         <>
           {/* Selected border indicator - square on top of border */}
           {isSelected && (
-            <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 bg-blue-500 dark:bg-blue-400 border-2 border-white dark:border-gray-900 z-30" />
-          )}
-          {isSelected && !isLocked && (
-            <ResizeHandles
-              widget={widget}
-              setIsResizing={setIsResizing}
-              resizeStateRef={resizeStateRef}
-            />
+            <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-2 h-2 z-30" style={{ backgroundColor: '#3b82f6' }} />
           )}
           <div className="w-full h-full flex items-center">
             <WidgetRenderer widget={widget} isMobile={isMobile} spaceId={spaceId} />
           </div>
         </>
       ) : (
-        <div className={`w-full h-full ${isSelected ? 'border border-blue-500/70 dark:border-blue-400/70' : ''} rounded-lg shadow-lg overflow-hidden flex flex-col relative`} style={{
+        <div className={`w-full h-full ${isSelected ? 'border-2 border-blue-500 ring-2 ring-blue-500/20' : ''} rounded-lg shadow-lg overflow-hidden flex flex-col relative`} style={{
           backgroundColor: widget.properties?.backgroundColor || undefined,
         }}>
           {/* Selected border indicator - square on top of border */}
           {isSelected && (
-            <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 bg-blue-500 dark:bg-blue-400 border-2 border-white dark:border-gray-900 z-30" />
-          )}
-          {isSelected && !isLocked && (
-            <ResizeHandles
-              widget={widget}
-              setIsResizing={setIsResizing}
-              resizeStateRef={resizeStateRef}
-            />
+            <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-2 h-2 z-30" style={{ backgroundColor: '#3b82f6' }} />
           )}
           {/* Removed legacy canvas header bar to avoid duplicate headers; element header is now configurable via properties and rendered by the widget itself */}
           <div className="flex-1 overflow-hidden" style={{

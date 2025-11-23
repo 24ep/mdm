@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
+import { Card } from '@/components/ui/card'
 import { X, Bot, Menu, Loader2 } from 'lucide-react'
 import * as Icons from 'lucide-react'
 import { ChatbotConfig } from './types'
@@ -514,7 +515,7 @@ export default function ChatPage() {
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col overflow-hidden relative">
           {/* Top Bar with Menu and Preview Type */}
-          <div className="h-14 border-b border-border bg-background/95 backdrop-blur-sm flex items-center justify-between px-4 z-10">
+          <div className="h-14 border-b border-border bg-background/95 backdrop-blur-sm flex items-center justify-between px-6 z-10 transition-all duration-200 ease-out">
             <div className="flex items-center gap-2">
               {!threadManagementEnabled && !sidebarOpen && (
                 <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)} className="h-8 w-8 p-0">
@@ -550,8 +551,12 @@ export default function ChatPage() {
           </div>
           
           {/* Chat Container */}
-          <div className="flex-1 flex flex-col" style={chatStyle}>
-            {renderChatContent()}
+          <div className="flex-1 flex flex-col p-6">
+            <div className="flex-1 flex flex-col overflow-hidden relative">
+              <div className="flex-1 flex flex-col overflow-hidden" style={chatStyle}>
+                {renderChatContent()}
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -36,7 +36,7 @@ export class ChartErrorBoundary extends React.Component<ChartErrorBoundaryProps,
       return (
         <div className="w-full h-full p-3 flex flex-col items-center justify-center">
           <BarChart3 className="h-8 w-8 mb-2 text-muted-foreground" />
-          <div className="text-xs text-red-500 text-center font-medium">
+          <div className="text-xs text-destructive text-center font-medium">
             Chart Error
           </div>
           <div className="text-xs text-muted-foreground text-center mt-1 px-2">

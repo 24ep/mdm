@@ -29,7 +29,7 @@ export function ChatHeader({ chatbot, onClearSession, onClose }: ChatHeaderProps
   }
 
   // Shared button styles for header action buttons
-  const headerButtonClassName = "h-8 w-8 p-0 hover:opacity-80 flex items-center justify-center"
+  const headerButtonClassName = "h-8 w-8 p-0 flex items-center justify-center transition-all duration-200 ease-out hover:scale-110 active:scale-95 hover:bg-white/10 rounded-md"
   const headerButtonStyle = { 
     color: chatbot.headerFontColor || 'white'
   }
@@ -46,7 +46,7 @@ export function ChatHeader({ chatbot, onClearSession, onClose }: ChatHeaderProps
 
   return (
     <div 
-      className="flex items-center gap-3"
+      className="flex items-center gap-4 transition-all duration-200 ease-out"
       style={{ 
         // Individual padding sides (with fallback to X/Y)
         paddingTop: headerPaddingTop,
@@ -74,7 +74,7 @@ export function ChatHeader({ chatbot, onClearSession, onClose }: ChatHeaderProps
         <img 
           src={chatbot.headerLogo} 
           alt={chatbot.name}
-          className="w-8 h-8 object-contain flex-shrink-0"
+          className="w-8 h-8 object-contain flex-shrink-0 transition-transform duration-200 ease-out hover:scale-105"
           onError={(e) => {
             (e.target as HTMLImageElement).style.display = 'none'
           }}
@@ -89,7 +89,7 @@ export function ChatHeader({ chatbot, onClearSession, onClose }: ChatHeaderProps
             <img 
               src={imageSrc} 
               alt={chatbot.name}
-              className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+              className="w-8 h-8 rounded-full object-cover flex-shrink-0 transition-transform duration-200 ease-out hover:scale-105 ring-2 ring-white/20"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none'
               }}
@@ -102,24 +102,24 @@ export function ChatHeader({ chatbot, onClearSession, onClose }: ChatHeaderProps
           const bgColor = chatbot.headerAvatarBackgroundColor || chatbot.avatarBackgroundColor || chatbot.primaryColor || '#3b82f6'
           return (
             <div 
-              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-transform duration-200 ease-out hover:scale-105 ring-2 ring-white/20"
               style={{ backgroundColor: bgColor }}
             >
-              <IconComponent className="h-5 w-5" style={{ color: iconColor }} />
+              <IconComponent className="h-5 w-5 transition-transform duration-200" style={{ color: iconColor }} />
             </div>
           )
         }
         return null
       })()}
-      <div className="flex-1">
-        <h3 className="font-semibold">{chatbot.headerTitle || chatbot.name}</h3>
+      <div className="flex-1 min-w-0">
+        <h3 className="font-semibold text-sm leading-tight truncate">{chatbot.headerTitle || chatbot.name}</h3>
         {chatbot.headerDescription && (
-          <p className="text-xs opacity-90">{chatbot.headerDescription}</p>
+          <p className="text-xs opacity-90 mt-0.5 truncate">{chatbot.headerDescription}</p>
         )}
       </div>
       
       {/* Button Container - Ensures both buttons are aligned */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         {/* ChatKit Custom Buttons (when useChatKitInRegularStyle is enabled) */}
         {useChatKitInRegularStyle && chatkitCustomButtons.map((button: any, index: number) => {
           const IconName = button.icon || 'Bot'

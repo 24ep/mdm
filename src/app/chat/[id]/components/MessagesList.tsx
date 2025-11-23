@@ -35,8 +35,8 @@ export function MessagesList({
   threadId,
 }: MessagesListProps) {
   return (
-    <ScrollArea className="flex-1 p-4" ref={scrollAreaRef as any}>
-      <div className="space-y-4">
+    <ScrollArea className="flex-1 px-6 py-5 pb-28" ref={scrollAreaRef as any}>
+      <div className="space-y-5 max-w-4xl mx-auto">
         {messages.length === 0 && !isLoading && (chatbot as any).showStartConversation !== false && (() => {
           const openerText = chatbot.openaiAgentSdkGreeting || chatbot.conversationOpener || 'Start a conversation'
           const position = (chatbot as any).conversationOpenerPosition || 'center'

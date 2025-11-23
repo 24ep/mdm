@@ -3,13 +3,11 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { WidgetSelectionDrawer } from './WidgetSelectionDrawer'
-import { GlobalStyleDrawer } from './GlobalStyleDrawer'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Monitor, Smartphone, Tablet, Save, Box, Grid3x3, Move, Eye, EyeOff, History, Database, MoreVertical, Palette } from 'lucide-react'
+import { Monitor, Smartphone, Tablet, Save, Box, Grid3x3, Move, Eye, EyeOff, History, Database, MoreVertical, ChevronRight } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { ComponentConfig } from './types'
 import { LayoutTitle } from './LayoutTitle'
 import { widgetsPalette } from './widgets'
@@ -63,7 +61,7 @@ export function LayoutToolbar({
   spaceId,
 }: LayoutToolbarProps) {
   const [widgetDrawerOpen, setWidgetDrawerOpen] = useState(false)
-  const [globalStyleDrawerOpen, setGlobalStyleDrawerOpen] = useState(false)
+  const [configPopoverOpen, setConfigPopoverOpen] = useState(false)
   
   return (
     <div 
@@ -84,229 +82,219 @@ export function LayoutToolbar({
       
       {/* Right Side Groups */}
       <div className={`flex ${isMobileViewport ? 'flex-wrap gap-2 w-full' : 'items-center gap-0'}`}>
-        {/* Version Control Button */}
-        {onOpenVersions && (
-          <Button
-            variant="ghost"
-            size={isMobileViewport ? "default" : "sm"}
-            onClick={onOpenVersions}
-            className={`${isMobileViewport ? 'h-10 w-full' : 'h-8 px-3'} flex items-center gap-2 border-0 rounded-none`}
-          >
-            <History className={isMobileViewport ? "h-5 w-5" : "h-4 w-4"} />
-            <span className={isMobileViewport ? "text-sm" : "text-xs"}>See Versions</span>
-          </Button>
-        )}
-        
-        {/* Widgets Button */}
-        <Button
-          variant="ghost"
-          size={isMobileViewport ? "default" : "sm"}
-          onClick={() => setWidgetDrawerOpen(true)}
-          className={`${isMobileViewport ? 'h-10 w-full' : 'h-8 px-3'} flex items-center gap-2 border-0 rounded-none ${onOpenVersions && !isMobileViewport ? 'border-l border-border' : ''}`}
-        >
-          <Box className={isMobileViewport ? "h-5 w-5" : "h-4 w-4"} />
-          <span className={isMobileViewport ? "text-sm" : "text-xs"}>Widgets</span>
-        </Button>
-        
-        {/* Widget Selection Drawer */}
-        <WidgetSelectionDrawer
-          open={widgetDrawerOpen}
-          onOpenChange={setWidgetDrawerOpen}
-        />
-        
-        {/* Global Style Button */}
-        {spaceId && (
-          <Button
-            variant="ghost"
-            size={isMobileViewport ? "default" : "sm"}
-            onClick={() => setGlobalStyleDrawerOpen(true)}
-            className={`${isMobileViewport ? 'h-10 w-full' : 'h-8 px-3'} flex items-center gap-2 border-0 rounded-none ${!isMobileViewport ? 'border-l border-border' : ''}`}
-          >
-            <Palette className={isMobileViewport ? "h-5 w-5" : "h-4 w-4"} />
-            <span className={isMobileViewport ? "text-sm" : "text-xs"}>Global Style</span>
-          </Button>
-        )}
-        
-        {/* Global Style Drawer */}
-        {spaceId && (
-          <GlobalStyleDrawer
-            open={globalStyleDrawerOpen}
-            onOpenChange={setGlobalStyleDrawerOpen}
-            spaceId={spaceId}
-            isMobileViewport={isMobileViewport}
-            componentConfigs={componentConfigs}
-            handleComponentConfigUpdate={handleComponentConfigUpdate}
-          />
-        )}
-        
-        {/* More Menu Popover */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="ghost"
-              size={isMobileViewport ? "default" : "sm"}
-              className={`${isMobileViewport ? 'h-10 w-full' : 'h-8 px-3'} flex items-center gap-2 border-0 rounded-none ${!isMobileViewport ? 'border-l border-border' : ''}`}
-            >
-              <MoreVertical className={isMobileViewport ? "h-5 w-5" : "h-4 w-4"} />
-              <span className={isMobileViewport ? "text-sm" : "text-xs"}>Configuration</span>
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-64 p-4" align="end">
-            <div className="space-y-2">
-              {/* Canvas Mode */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-medium text-muted-foreground">Canvas Mode</Label>
-                  <Select value={canvasMode} onValueChange={(value: string) => setCanvasMode(value as 'freeform' | 'grid')}>
-                    <SelectTrigger className="h-9 w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="freeform">
-                        <Move className="h-3.5 w-3.5 mr-2 inline-block" />
-                        Freeform
-                      </SelectItem>
-                      <SelectItem value="grid">
-                        <Grid3x3 className="h-3.5 w-3.5 mr-2 inline-block" />
-                        Grid
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="border-t border-border my-1" />
-
-              {/* Data Model Panel Toggle */}
-              {onToggleDataModelPanel && (
-                <>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs font-medium text-muted-foreground">Show data model panel</Label>
-                      <Switch
-                        checked={showDataModelPanel || false}
-                        onCheckedChange={(checked) => {
-                          if (checked !== (showDataModelPanel || false)) {
-                            onToggleDataModelPanel()
-                          }
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div className="border-t border-border my-1" />
-                </>
-              )}
-
-              {/* View Grid */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-medium text-muted-foreground">View Grid</Label>
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={showGrid}
-                      onCheckedChange={setShowGrid}
-                    />
-                    {showGrid && (
-                      <span className="text-xs font-medium text-foreground">
-                        {gridSize}px
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Grid Size - Only show when View Grid is on */}
-              {showGrid && (
-                <>
-                  <div className="border-t border-border my-1" />
-                <div className="space-y-2">
-                  <Label className="text-xs font-medium text-muted-foreground">Grid Size</Label>
-                  <RadioGroup
-                    value={gridSize.toString()}
-                    onValueChange={(value) => setGridSize(parseInt(value))}
-                    className="flex flex-row gap-1 flex-wrap"
-                  >
-                    {[5, 10, 15, 20].map(size => {
-                      const isSelected = gridSize === size
-                      return (
-                        <label
-                          key={size}
-                          htmlFor={`grid-size-${size}`}
-                          className="flex flex-col items-center gap-0.5 cursor-pointer"
-                        >
-                          <div className="relative">
-                            <RadioGroupItem
-                              value={size.toString()}
-                              id={`grid-size-${size}`}
-                              className="sr-only"
-                            />
-                            <div
-                              className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors ${
-                                isSelected
-                                  ? 'bg-primary/10'
-                                  : 'opacity-60 hover:opacity-80'
-                              }`}
-                            >
-                              <Grid3x3 className={`h-3.5 w-3.5 ${
-                                isSelected ? 'text-primary' : 'text-muted-foreground'
-                              }`} />
-                            </div>
-                          </div>
-                          <span className={`text-[9px] ${
-                            isSelected ? 'text-primary font-medium' : 'text-muted-foreground'
-                          }`}>
-                            {size}
-                          </span>
-                        </label>
-                      )
-                    })}
-                  </RadioGroup>
-                </div>
-                </>
-              )}
-            </div>
-          </PopoverContent>
-        </Popover>
-
         {/* Device Mode Group */}
-        <div className={`flex items-center ${isMobileViewport ? 'justify-center w-full' : 'gap-0'} ${isMobileViewport ? 'mt-2' : ''} ${!isMobileViewport ? 'border-l border-border' : ''}`}>
-          <Button 
-            variant="ghost" 
-            size={isMobileViewport ? "default" : "sm"} 
-            aria-label="Desktop" 
-            onClick={() => { setDeviceMode('desktop'); setPreviewScale(1) }}
-            className={`${isMobileViewport ? 'h-10 flex-1' : 'h-8 px-3'} border-0 rounded-none ${deviceMode === 'desktop' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'bg-background hover:bg-muted'}`}
+        <div
+          role="radiogroup"
+          className={cn(
+            "flex items-center gap-0",
+            isMobileViewport ? 'justify-center w-full' : '',
+            !isMobileViewport ? 'border-l border-border' : ''
+          )}
+        >
+          <label
+            htmlFor="device-desktop"
+            className={cn(
+              "inline-flex items-center justify-center cursor-pointer transition-colors duration-150",
+              isMobileViewport ? 'h-10 flex-1' : 'h-8 px-3',
+              "border-0 rounded-none",
+              deviceMode === 'desktop' 
+                ? '!bg-muted !text-foreground font-medium' 
+                : 'bg-background hover:bg-muted hover:text-foreground text-muted-foreground'
+            )}
           >
-            <Monitor className={isMobileViewport ? "h-5 w-5" : "h-4 w-4"} />
-          </Button>
-          <Button 
-            variant="ghost" 
-            size={isMobileViewport ? "default" : "sm"} 
-            aria-label="Tablet" 
-            onClick={() => { setDeviceMode('tablet'); setPreviewScale(0.75) }}
-            className={`${isMobileViewport ? 'h-10 flex-1' : 'h-8 px-3'} border-0 rounded-none border-l border-border ${deviceMode === 'tablet' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'bg-background hover:bg-muted'}`}
+            <input
+              type="radio"
+              id="device-desktop"
+              name="device-mode"
+              value="desktop"
+              defaultChecked={deviceMode === 'desktop' || !deviceMode}
+              checked={deviceMode === 'desktop'}
+              onChange={() => {
+                setDeviceMode('desktop')
+                setPreviewScale(1)
+              }}
+              className="sr-only"
+            />
+            <Monitor 
+              className={cn(
+                isMobileViewport ? "h-5 w-5" : "h-4 w-4",
+                "transition-colors",
+                deviceMode === 'desktop' ? 'text-foreground' : 'text-muted-foreground'
+              )} 
+            />
+            <span className="sr-only">Desktop</span>
+          </label>
+          <label
+            htmlFor="device-tablet"
+            className={cn(
+              "inline-flex items-center justify-center cursor-pointer transition-colors duration-150",
+              isMobileViewport ? 'h-10 flex-1' : 'h-8 px-3',
+              "border-0 rounded-none border-l border-border",
+              deviceMode === 'tablet' 
+                ? '!bg-muted !text-foreground font-medium' 
+                : 'bg-background hover:bg-muted hover:text-foreground text-muted-foreground'
+            )}
           >
-            <Tablet className={isMobileViewport ? "h-5 w-5" : "h-4 w-4"} />
-          </Button>
-          <Button 
-            variant="ghost" 
-            size={isMobileViewport ? "default" : "sm"} 
-            aria-label="Mobile" 
-            onClick={() => { setDeviceMode('mobile'); setPreviewScale(0.5) }}
-            className={`${isMobileViewport ? 'h-10 flex-1' : 'h-8 px-3'} border-0 rounded-none border-l border-border ${deviceMode === 'mobile' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'bg-background hover:bg-muted'}`}
+            <input
+              type="radio"
+              id="device-tablet"
+              name="device-mode"
+              value="tablet"
+              checked={deviceMode === 'tablet'}
+              onChange={() => {
+                setDeviceMode('tablet')
+                setPreviewScale(0.75)
+              }}
+              className="sr-only"
+            />
+            <Tablet 
+              className={cn(
+                isMobileViewport ? "h-5 w-5" : "h-4 w-4",
+                "transition-colors",
+                deviceMode === 'tablet' ? 'text-foreground' : 'text-muted-foreground'
+              )} 
+            />
+            <span className="sr-only">Tablet</span>
+          </label>
+          <label
+            htmlFor="device-mobile"
+            className={cn(
+              "inline-flex items-center justify-center cursor-pointer transition-colors duration-150",
+              isMobileViewport ? 'h-10 flex-1' : 'h-8 px-3',
+              "border-0 rounded-none border-l border-border",
+              deviceMode === 'mobile' 
+                ? '!bg-muted !text-foreground font-medium' 
+                : 'bg-background hover:bg-muted hover:text-foreground text-muted-foreground'
+            )}
           >
-            <Smartphone className={isMobileViewport ? "h-5 w-5" : "h-4 w-4"} />
-          </Button>
+            <input
+              type="radio"
+              id="device-mobile"
+              name="device-mode"
+              value="mobile"
+              checked={deviceMode === 'mobile'}
+              onChange={() => {
+                setDeviceMode('mobile')
+                setPreviewScale(0.5)
+              }}
+              className="sr-only"
+            />
+            <Smartphone 
+              className={cn(
+                isMobileViewport ? "h-5 w-5" : "h-4 w-4",
+                "transition-colors",
+                deviceMode === 'mobile' ? 'text-foreground' : 'text-muted-foreground'
+              )} 
+            />
+            <span className="sr-only">Mobile</span>
+          </label>
         </div>
       </div>
       {!isMobileViewport && (
-        <Button 
-          size="sm" 
-          onClick={handleSave}
-          className="h-8 px-3 bg-blue-600 hover:bg-blue-700 text-white ml-2"
-        >
-          <Save className="h-4 w-4 mr-2" /> Save
-        </Button>
+        <div className="flex items-center gap-2 ml-2">
+          <Button 
+            size="sm" 
+            onClick={handleSave}
+            className="h-8 px-3"
+          >
+            <Save className="h-4 w-4 mr-2" /> Save
+          </Button>
+          <Popover open={configPopoverOpen} onOpenChange={setConfigPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                aria-label="Configuration"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent 
+              className="w-56 p-1.5 bg-card border border-border shadow-lg" 
+              align="end" 
+            >
+              <div className="space-y-1">
+                {/* Canvas Mode */}
+                <div className="flex items-center justify-between px-1.5 py-1">
+                  <span className="text-xs text-foreground">Canvas mode</span>
+                  <Select value={canvasMode} onValueChange={(value: string) => setCanvasMode(value as 'freeform' | 'grid')}>
+                    <SelectTrigger className="h-6 w-16 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="freeform">Freeform</SelectItem>
+                      <SelectItem value="grid">Grid</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Data Model Panel Toggle */}
+                {onToggleDataModelPanel && (
+                  <div className="flex items-center justify-between px-1.5 py-1">
+                    <span className="text-xs text-foreground">Data model panel</span>
+                    <Switch
+                      checked={showDataModelPanel || false}
+                      onCheckedChange={() => onToggleDataModelPanel()}
+                    />
+                  </div>
+                )}
+
+                {/* View Grid */}
+                <div className="flex items-center justify-between px-1.5 py-1">
+                  <span className="text-xs text-foreground">View grid</span>
+                  <Switch
+                    checked={showGrid}
+                    onCheckedChange={setShowGrid}
+                  />
+                </div>
+
+                {/* Grid Size - Only show when View Grid is on */}
+                {showGrid && (
+                  <div className="flex items-center justify-between px-1.5 py-1">
+                    <span className="text-xs text-foreground">Grid size</span>
+                    <Select
+                      value={gridSize.toString()}
+                      onValueChange={(value) => setGridSize(parseInt(value))}
+                    >
+                      <SelectTrigger className="h-6 w-12 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">5px</SelectItem>
+                        <SelectItem value="10">10px</SelectItem>
+                        <SelectItem value="15">15px</SelectItem>
+                        <SelectItem value="20">20px</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* See Versions Button */}
+                {onOpenVersions && (
+                  <>
+                    <div className="border-t border-border/50 my-2" />
+                    <div
+                      className="w-full cursor-pointer rounded px-1.5 py-1 hover:bg-muted/50 transition-colors"
+                      onClick={() => {
+                        setConfigPopoverOpen(false)
+                        onOpenVersions()
+                      }}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <History className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-xs text-foreground">See versions</span>
+                        </div>
+                        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
       )}
       {isMobileViewport && (
         <>
@@ -320,7 +308,7 @@ export function LayoutToolbar({
           <Button 
             size="default" 
             onClick={handleSave}
-            className="h-10 w-full bg-blue-600 hover:bg-blue-700 text-white"
+            className="h-10 w-full"
           >
             <Save className="h-4 w-4 mr-2" /> Save
           </Button>

@@ -31,9 +31,15 @@ export async function GET(
     }
 
     // Build query conditions
-    let whereConditions = ['al.space_id = $1::uuid']
-    let queryParams = [spaceId]
-    let paramIndex = 2
+    // Note: audit_logs table doesn't have space_id column, so we filter by entity_id if it matches the space
+    let whereConditions: string[] = []
+    let queryParams: any[] = []
+    let paramIndex = 1
+    
+    // Filter by entity_id matching the space_id (assuming spaces are tracked as entityType='space')
+    whereConditions.push(`(al.entity_id = $${paramIndex}::uuid AND al.entity_type = 'space')`)
+    queryParams.push(spaceId)
+    paramIndex++
 
     if (action) {
       whereConditions.push(`al.action = $${paramIndex}`)
@@ -104,25 +110,27 @@ export async function POST(
     }
 
     // Log the activity
+    // Note: audit_logs table uses entity_id and entity_type instead of space_id
     const result = await query(`
       INSERT INTO audit_logs (
-        space_id, 
+        entity_id,
+        entity_type,
         user_id, 
         action, 
-        description, 
-        metadata, 
+        old_value,
+        new_value,
         ip_address, 
         user_agent, 
         created_at
       )
-      VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7, NOW())
+      VALUES ($1::uuid, 'space', $2::uuid, $3, $4, $5, $6, $7, NOW())
       RETURNING id
     `, [
       spaceId,
       session.user.id,
       action,
-      description,
-      JSON.stringify(metadata || {}),
+      null, // old_value
+      JSON.stringify({ description, ...metadata } || {}), // new_value
       ip_address || null,
       user_agent || null
     ])

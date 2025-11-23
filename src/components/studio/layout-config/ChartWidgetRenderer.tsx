@@ -165,8 +165,8 @@ export function ChartWidgetRenderer({ widget, props, style, chartData, dataLoadi
   if (dataError && props.dataSource !== 'sample') {
     return (
       <div className="w-full h-full p-3 flex flex-col items-center justify-center" style={style}>
-        <BarChart3 className="h-8 w-8 mb-2 text-red-500" />
-        <div className="text-xs text-red-500 text-center font-medium">
+        <BarChart3 className="h-8 w-8 mb-2 text-destructive" />
+        <div className="text-xs text-destructive text-center font-medium">
           Data Error
         </div>
         <div className="text-xs text-muted-foreground text-center mt-1 px-2">

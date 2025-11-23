@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useEffect, useRef } from "react"
 
 import { cn } from "@/lib/utils"
 
@@ -6,15 +7,88 @@ export interface InputProps
   extends React.InputHTMLAttributes<HTMLInputElement> {}
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, ...props }, ref) => {
+  ({ className, type, style, ...props }, ref) => {
+    const inputRef = useRef<HTMLInputElement | null>(null)
+    
+    // Function to apply theme-aware styles
+    const applyThemeStyles = React.useCallback((node: HTMLInputElement) => {
+      if (!node) return
+      
+      // Skip if inside a space (data-space attribute)
+      if (node.closest('[data-space]')) return
+      
+      // Get theme-aware colors from CSS variables
+      const root = document.documentElement
+      const borderHsl = root.style.getPropertyValue('--border') || getComputedStyle(root).getPropertyValue('--border')
+      const inputHsl = root.style.getPropertyValue('--input') || getComputedStyle(root).getPropertyValue('--input')
+      const foregroundHsl = root.style.getPropertyValue('--foreground') || getComputedStyle(root).getPropertyValue('--foreground')
+      
+      // Apply background
+      if (inputHsl) {
+        node.style.setProperty('background-color', `hsl(${inputHsl})`, 'important')
+      } else {
+        // Fallback for light theme
+        node.style.setProperty('background-color', 'rgba(0, 0, 0, 0.04)', 'important')
+      }
+      node.style.setProperty('background-image', 'none', 'important')
+      
+      // Apply text color
+      if (foregroundHsl) {
+        node.style.setProperty('color', `hsl(${foregroundHsl})`, 'important')
+      } else {
+        node.style.setProperty('color', 'rgb(15, 23, 42)', 'important')
+      }
+      
+      // Border color: use theme-aware border color from CSS variable
+      // Don't set border-color directly - let CSS variable handle it via globals.css
+      // This ensures it updates when theme changes
+    }, [])
+    
+    // Update styles when theme changes
+    useEffect(() => {
+      if (inputRef.current) {
+        applyThemeStyles(inputRef.current)
+        
+        // Watch for theme changes by observing the document element
+        const observer = new MutationObserver(() => {
+          if (inputRef.current) {
+            applyThemeStyles(inputRef.current)
+          }
+        })
+        
+        observer.observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ['class', 'style'],
+        })
+        
+        return () => observer.disconnect()
+      }
+    }, [applyThemeStyles])
+    
+    const handleRef = React.useCallback((node: HTMLInputElement | null) => {
+      // Handle forwarded ref
+      if (typeof ref === 'function') {
+        ref(node)
+      } else if (ref) {
+        ref.current = node
+      }
+      
+      inputRef.current = node
+      
+      if (node) {
+        applyThemeStyles(node)
+      }
+    }, [ref, applyThemeStyles])
+    
     return (
       <input
         type={type}
         className={cn(
-          "flex h-10 w-full rounded-[4px] px-3 py-2 text-xs ring-offset-background file:border-0 file:bg-transparent file:text-xs file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 border-0 bg-border text-foreground",
+          "w-full px-2 py-1.5 text-xs border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 file:border-0 file:bg-transparent file:text-xs file:font-medium placeholder:text-muted-foreground",
           className
         )}
-        ref={ref}
+        style={style}
+        ref={handleRef}
         {...props}
       />
     )

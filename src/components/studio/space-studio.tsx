@@ -339,7 +339,7 @@ export function SpaceStudio({
                         {seed.name}
                       </CardTitle>
                       {isCurrent && (
-                        <Badge variant="secondary" className="border border-blue-500 text-blue-700 bg-blue-50">Current</Badge>
+                        <Badge variant="secondary" className="border border-primary text-primary bg-primary/10">Current</Badge>
                       )}
                     </div>
                   </CardHeader>
