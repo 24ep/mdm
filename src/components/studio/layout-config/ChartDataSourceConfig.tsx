@@ -869,7 +869,8 @@ export function ChartDataSourceConfig({
   {/* Filters section removed */}
 
   {/* Totals & Subtotals Configuration */}
-      <DialogContent className="sm:max-w-[720px]">
+      <Dialog open={isFilterDialogOpen} onOpenChange={setIsFilterDialogOpen}>
+        <DialogContent className="sm:max-w-[720px]">
         <DialogHeader>
           <DialogTitle className="text-sm">Configure Filters</DialogTitle>
         </DialogHeader>
@@ -1130,7 +1131,6 @@ export function ChartDataSourceConfig({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  </div>
 
   {/* Totals & Subtotals Configuration */}
   <div className="space-y-3 border-t pt-3 mt-2">
