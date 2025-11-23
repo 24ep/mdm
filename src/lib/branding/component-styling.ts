@@ -2044,8 +2044,6 @@ export function applyComponentStyling(branding: BrandingConfig) {
     console.warn('[Branding] Text input CSS NOT found in generated CSS!')
   }
   
-  styleElement.textContent = cssRules
-  
     // Also apply styles directly to existing input elements as a fallback
     // This ensures styles are applied even if CSS doesn't override properly
     const textInputStyleDirect = branding.componentStyling?.['text-input']
@@ -2183,6 +2181,159 @@ export function applyComponentStyling(branding: BrandingConfig) {
       }
     }
   
+  // Also apply form styles directly to existing form elements as a fallback
+  const formStyleDirect = branding.componentStyling?.['form']
+  if (formStyleDirect) {
+    console.log('[Branding] Applying form styles directly to existing form elements')
+    
+    // Function to apply styles to a form element
+    const applyFormStyles = (form: HTMLFormElement) => {
+      if (!form.closest('[data-space]')) {
+        // Apply background color
+        if (formStyleDirect.backgroundColor) {
+          const bgColor = formStyleDirect.backgroundColor.trim()
+          form.style.setProperty('background-color', bgColor, 'important')
+          form.style.setProperty('background', bgColor, 'important')
+          form.style.setProperty('background-image', 'none', 'important')
+        }
+        
+        // Apply border styles
+        if (formStyleDirect.borderColor) {
+          form.style.setProperty('border-color', formStyleDirect.borderColor.trim(), 'important')
+          // Ensure width is set if color is set
+          if (!formStyleDirect.borderWidth || !formStyleDirect.borderWidth.trim() || 
+              formStyleDirect.borderWidth.trim() === '0px' || formStyleDirect.borderWidth.trim() === '0') {
+            form.style.setProperty('border-width', '1px', 'important')
+          }
+        }
+        if (formStyleDirect.borderWidth && formStyleDirect.borderWidth.trim() && 
+            formStyleDirect.borderWidth.trim() !== '0px' && formStyleDirect.borderWidth.trim() !== '0') {
+          form.style.setProperty('border-width', formStyleDirect.borderWidth.trim(), 'important')
+        }
+        if (formStyleDirect.borderStyle && formStyleDirect.borderStyle.trim()) {
+          form.style.setProperty('border-style', formStyleDirect.borderStyle.trim(), 'important')
+        } else if (formStyleDirect.borderColor || formStyleDirect.borderWidth) {
+          form.style.setProperty('border-style', 'solid', 'important')
+        }
+        
+        // Apply individual border sides
+        if (formStyleDirect.borderTopColor) {
+          form.style.setProperty('border-top-color', formStyleDirect.borderTopColor.trim(), 'important')
+          if (!formStyleDirect.borderTopWidth || !formStyleDirect.borderTopWidth.trim()) {
+            form.style.setProperty('border-top-width', formStyleDirect.borderWidth?.trim() || '1px', 'important')
+          }
+        }
+        if (formStyleDirect.borderTopWidth && formStyleDirect.borderTopWidth.trim()) {
+          form.style.setProperty('border-top-width', formStyleDirect.borderTopWidth.trim(), 'important')
+        }
+        if (formStyleDirect.borderTopStyle && formStyleDirect.borderTopStyle.trim()) {
+          form.style.setProperty('border-top-style', formStyleDirect.borderTopStyle.trim(), 'important')
+        }
+        
+        if (formStyleDirect.borderRightColor) {
+          form.style.setProperty('border-right-color', formStyleDirect.borderRightColor.trim(), 'important')
+          if (!formStyleDirect.borderRightWidth || !formStyleDirect.borderRightWidth.trim()) {
+            form.style.setProperty('border-right-width', formStyleDirect.borderWidth?.trim() || '1px', 'important')
+          }
+        }
+        if (formStyleDirect.borderRightWidth && formStyleDirect.borderRightWidth.trim()) {
+          form.style.setProperty('border-right-width', formStyleDirect.borderRightWidth.trim(), 'important')
+        }
+        if (formStyleDirect.borderRightStyle && formStyleDirect.borderRightStyle.trim()) {
+          form.style.setProperty('border-right-style', formStyleDirect.borderRightStyle.trim(), 'important')
+        }
+        
+        if (formStyleDirect.borderBottomColor) {
+          form.style.setProperty('border-bottom-color', formStyleDirect.borderBottomColor.trim(), 'important')
+          if (!formStyleDirect.borderBottomWidth || !formStyleDirect.borderBottomWidth.trim()) {
+            form.style.setProperty('border-bottom-width', formStyleDirect.borderWidth?.trim() || '1px', 'important')
+          }
+        }
+        if (formStyleDirect.borderBottomWidth && formStyleDirect.borderBottomWidth.trim()) {
+          form.style.setProperty('border-bottom-width', formStyleDirect.borderBottomWidth.trim(), 'important')
+        }
+        if (formStyleDirect.borderBottomStyle && formStyleDirect.borderBottomStyle.trim()) {
+          form.style.setProperty('border-bottom-style', formStyleDirect.borderBottomStyle.trim(), 'important')
+        }
+        
+        if (formStyleDirect.borderLeftColor) {
+          form.style.setProperty('border-left-color', formStyleDirect.borderLeftColor.trim(), 'important')
+          if (!formStyleDirect.borderLeftWidth || !formStyleDirect.borderLeftWidth.trim()) {
+            form.style.setProperty('border-left-width', formStyleDirect.borderWidth?.trim() || '1px', 'important')
+          }
+        }
+        if (formStyleDirect.borderLeftWidth && formStyleDirect.borderLeftWidth.trim()) {
+          form.style.setProperty('border-left-width', formStyleDirect.borderLeftWidth.trim(), 'important')
+        }
+        if (formStyleDirect.borderLeftStyle && formStyleDirect.borderLeftStyle.trim()) {
+          form.style.setProperty('border-left-style', formStyleDirect.borderLeftStyle.trim(), 'important')
+        }
+        
+        // Apply other styles
+        if (formStyleDirect.borderRadius) {
+          form.style.setProperty('border-radius', formStyleDirect.borderRadius.trim(), 'important')
+        }
+        if (formStyleDirect.padding) {
+          form.style.setProperty('padding', formStyleDirect.padding.trim(), 'important')
+        }
+        if (formStyleDirect.margin) {
+          form.style.setProperty('margin', formStyleDirect.margin.trim(), 'important')
+        }
+      }
+    }
+    
+    // Apply to existing forms immediately and after delays
+    const applyToExistingForms = () => {
+      const forms = document.querySelectorAll('body:not([data-space]) form')
+      forms.forEach((form: Element) => {
+        applyFormStyles(form as HTMLFormElement)
+      })
+      console.log(`[Branding] Applied styles directly to ${forms.length} form elements`)
+    }
+    
+    // Apply immediately
+    if (typeof window !== 'undefined') {
+      requestAnimationFrame(() => {
+        applyToExistingForms()
+        setTimeout(applyToExistingForms, 0)
+        setTimeout(applyToExistingForms, 50)
+        setTimeout(applyToExistingForms, 100)
+        setTimeout(applyToExistingForms, 300)
+        setTimeout(applyToExistingForms, 500)
+        setTimeout(applyToExistingForms, 1000)
+      })
+    }
+    
+    // Use MutationObserver to apply styles to dynamically created forms
+    if (typeof window !== 'undefined' && !(window as any).__formStyleObserver) {
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === 1) { // Element node
+              const element = node as Element
+              // Check if it's a form or contains forms
+              const forms = element.matches && element.matches('form')
+                ? [element as HTMLFormElement]
+                : Array.from(element.querySelectorAll?.('form') || []) as HTMLFormElement[]
+              
+              forms.forEach((form) => {
+                applyFormStyles(form)
+              })
+            }
+          })
+        })
+      })
+      
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      })
+      
+      ;(window as any).__formStyleObserver = observer
+      console.log('[Branding] MutationObserver set up for forms')
+    }
+  }
+  
   // Verify the CSS was actually set
   if (styleElement.textContent !== cssRules) {
     console.error('[Branding] ERROR: CSS was not set correctly!')
@@ -2229,7 +2380,58 @@ export function applyComponentStyling(branding: BrandingConfig) {
       console.log('[Branding] Text input config exists:', branding.componentStyling['text-input'])
     }
   }
-
+  
+  // Debug: Log if form CSS was generated
+  const hasFormCSS = cssRules.includes('form') && (cssRules.includes('body:not([data-space]) form') || cssRules.includes('[data-component="form"]'))
+  if (hasFormCSS) {
+    console.log('[Branding] Form CSS generated. Length:', cssRules.length)
+    const formMatch = cssRules.match(/body:not\(\[data-space\]\) form[\s\S]*?\{[\s\S]*?\}/)
+    if (formMatch) {
+      console.log('[Branding] Form CSS sample:', formMatch[0].substring(0, 500))
+    }
+    // Check if form styling config exists
+    if (branding.componentStyling?.['form']) {
+      const formStyle = branding.componentStyling['form']
+      console.log('[Branding] Form config:', {
+        backgroundColor: formStyle.backgroundColor,
+        borderColor: formStyle.borderColor,
+        borderWidth: formStyle.borderWidth,
+        borderStyle: formStyle.borderStyle,
+        borderRadius: formStyle.borderRadius,
+        padding: formStyle.padding,
+        margin: formStyle.margin
+      })
+      // Check if border properties are in the CSS
+      if (formStyle.borderColor) {
+        const borderColorInCSS = cssRules.includes(`border-color: ${formStyle.borderColor.trim()}`) || 
+                                 cssRules.includes(`border-top-color: ${formStyle.borderColor.trim()}`) ||
+                                 cssRules.includes(`border-bottom-color: ${formStyle.borderColor.trim()}`)
+        console.log('[Branding] Form borderColor in CSS:', borderColorInCSS, 'Value:', formStyle.borderColor)
+      }
+      if (formStyle.borderWidth) {
+        const borderWidthInCSS = cssRules.includes(`border-width: ${formStyle.borderWidth.trim()}`) ||
+                                cssRules.includes(`border-top-width: ${formStyle.borderWidth.trim()}`) ||
+                                cssRules.includes(`border-bottom-width: ${formStyle.borderWidth.trim()}`)
+        console.log('[Branding] Form borderWidth in CSS:', borderWidthInCSS, 'Value:', formStyle.borderWidth)
+      }
+    }
+  } else {
+    console.warn('[Branding] Form CSS NOT found in generated CSS!')
+    console.log('[Branding] Available component IDs:', Object.keys(branding.componentStyling || {}))
+    if (branding.componentStyling?.['form']) {
+      console.log('[Branding] Form config exists:', branding.componentStyling['form'])
+      console.log('[Branding] Form hasStyles check:', {
+        hasBorderColor: !!branding.componentStyling['form'].borderColor,
+        hasBorderWidth: !!branding.componentStyling['form'].borderWidth,
+        hasBorderStyle: !!branding.componentStyling['form'].borderStyle,
+        hasBackgroundColor: !!branding.componentStyling['form'].backgroundColor,
+        hasPadding: !!branding.componentStyling['form'].padding,
+        hasMargin: !!branding.componentStyling['form'].margin
+      })
+    } else {
+      console.log('[Branding] Form component styling NOT found in branding.componentStyling')
+    }
+  }
 
   styleElement.textContent = cssRules
 }
