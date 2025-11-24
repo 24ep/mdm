@@ -209,11 +209,31 @@ export function HorizonSidebar({
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'vms' | 'services')} className="flex-1 flex flex-col min-h-0">
           <div className="px-4 pt-2 border-b border-border flex-shrink-0">
             <TabsList className="w-full grid grid-cols-2">
-              <TabsTrigger value="vms" className="text-xs flex items-center gap-2">
+              <TabsTrigger 
+                value="vms" 
+                className="text-xs flex items-center gap-2 hover:shadow-none hover:!shadow-none [&[aria-selected=true]]:after:!bottom-0"
+                style={{ boxShadow: 'none' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.boxShadow = 'none'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.boxShadow = 'none'
+                }}
+              >
                 <Server className="h-4 w-4" />
                 VMs
               </TabsTrigger>
-              <TabsTrigger value="services" className="text-xs flex items-center gap-2">
+              <TabsTrigger 
+                value="services" 
+                className="text-xs flex items-center gap-2 hover:shadow-none hover:!shadow-none [&[aria-selected=true]]:after:!bottom-0"
+                style={{ boxShadow: 'none' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.boxShadow = 'none'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.boxShadow = 'none'
+                }}
+              >
                 <Settings className="h-4 w-4" />
                 Services
               </TabsTrigger>

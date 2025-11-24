@@ -7,6 +7,7 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerDescription,
+  DrawerClose,
 } from '@/components/ui/drawer'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,6 +25,7 @@ import {
   Search,
   FileDiff,
   Download,
+  X,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import toast from 'react-hot-toast'
@@ -250,14 +252,21 @@ export function LayoutVersionControlDialog({
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent widthClassName="w-[600px]">
-        <DrawerHeader>
-          <DrawerTitle className="flex items-center gap-2">
-            <History className="h-5 w-5" />
-            Layout Version Control
-          </DrawerTitle>
-          <DrawerDescription>
-            Manage and restore previous versions of your layout configuration
-          </DrawerDescription>
+        <DrawerHeader className="flex items-center justify-between">
+          <div>
+            <DrawerTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" />
+              Layout Version Control
+            </DrawerTitle>
+            <DrawerDescription>
+              Manage and restore previous versions of your layout configuration
+            </DrawerDescription>
+          </div>
+          <DrawerClose asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted">
+              <X className="h-4 w-4" />
+            </Button>
+          </DrawerClose>
         </DrawerHeader>
 
         <ScrollArea className="flex-1" style={{ maxHeight: 'calc(100vh - 120px)' }}>

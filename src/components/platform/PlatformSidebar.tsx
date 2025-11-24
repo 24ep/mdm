@@ -317,7 +317,6 @@ export function PlatformSidebar({
       { id: 'security', name: 'Security', icon: Shield, href: '/system/security' },
       { id: 'performance', name: 'Performance', icon: Activity, href: '/system/performance' },
       { id: 'settings', name: 'System Settings', icon: Settings, href: '/system/settings' },
-      { id: 'page-templates', name: 'Page Templates', icon: FileText, href: '/system/page-templates' },
       { id: 'themes', name: 'Theme & Branding', icon: Palette, href: '/system/themes' },
       { id: 'integrations', name: 'Integrations', icon: Key, href: '/system/integrations' },
       { id: 'api', name: 'API Management', icon: Key, href: '/system/api' }
@@ -345,7 +344,7 @@ export function PlatformSidebar({
     kernels: ['kernels'],
     system: ['health', 'logs', 'audit', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache', 'backup'],
     security: ['security', 'performance'],
-    integrations: ['settings', 'page-templates', 'themes', 'integrations', 'api']
+    integrations: ['settings', 'themes', 'integrations', 'api']
   }
 
   // Define tool categories for the Tools group

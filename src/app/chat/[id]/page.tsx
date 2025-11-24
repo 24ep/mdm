@@ -20,7 +20,6 @@ import { useChatFileHandling } from './hooks/useChatFileHandling'
 import { useChatbotLoader } from './hooks/useChatbotLoader'
 import { useChatVoice } from './hooks/useChatVoice'
 import { useOpenAIRealtimeVoice } from './hooks/useOpenAIRealtimeVoice'
-import { useAgentBuilderVoice } from './hooks/useAgentBuilderVoice'
 import { useAgentThread } from './hooks/useAgentThread'
 import {
   getChatStyle,
@@ -174,17 +173,6 @@ export default function ChatPage() {
     },
   })
 
-  // Agent Builder voice
-  const agentBuilderVoice = useAgentBuilderVoice({
-    chatbot: voiceProvider === 'agentbuilder' ? chatbot : null,
-    onTranscript: (transcript) => {
-      setInput(transcript)
-      // Auto-send for Agent Builder
-      sendMessage(transcript)
-    },
-  })
-
-
   // Select the appropriate voice hook based on provider
   const voiceState = voiceProvider === 'openai-realtime' 
     ? {
@@ -198,20 +186,6 @@ export default function ChatPage() {
           // For OpenAI Realtime, toggle is handled by the API
           if (openaiRealtimeVoice.isSpeaking) {
             openaiRealtimeVoice.stopRecording()
-          }
-        },
-      }
-    : voiceProvider === 'agentbuilder'
-    ? {
-        isRecording: agentBuilderVoice.isRecording,
-        isVoiceEnabled: agentBuilderVoice.isVoiceEnabled,
-        isSpeaking: agentBuilderVoice.isSpeaking,
-        handleStartRecording: agentBuilderVoice.startRecording,
-        handleStopRecording: agentBuilderVoice.stopRecording,
-        toggleVoiceOutput: () => {
-          // For Agent Builder, toggle is handled by the API
-          if (agentBuilderVoice.isSpeaking) {
-            agentBuilderVoice.stopRecording()
           }
         },
       }

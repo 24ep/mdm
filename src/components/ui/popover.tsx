@@ -429,11 +429,45 @@ const PopoverContent = React.forwardRef<
     finalPosition = { top: 100, left: 100 }
   }
 
+  // Get popover background color with opacity
+  const getPopoverBg = () => {
+    if (typeof window === 'undefined') return 'rgba(255, 255, 255, 0.50)'
+    const root = document.documentElement
+    const popoverValue = getComputedStyle(root).getPropertyValue('--popover').trim()
+    const isDark = root.classList.contains('dark')
+    
+    // Parse HSL: "h s% l%" format
+    const hslMatch = popoverValue.match(/(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)%?/)
+    if (hslMatch) {
+      const h = parseFloat(hslMatch[1]) / 360
+      const s = parseFloat(hslMatch[2]) / 100
+      const l = parseFloat(hslMatch[3]) / 100
+      
+      // Convert HSL to RGB
+      const c = (1 - Math.abs(2 * l - 1)) * s
+      const x = c * (1 - Math.abs(((h * 6) % 2) - 1))
+      const m = l - c / 2
+      
+      let r = 0, g = 0, b = 0
+      if (h < 1/6) { r = c; g = x; b = 0 }
+      else if (h < 2/6) { r = x; g = c; b = 0 }
+      else if (h < 3/6) { r = 0; g = c; b = x }
+      else if (h < 4/6) { r = 0; g = x; b = c }
+      else if (h < 5/6) { r = x; g = 0; b = c }
+      else { r = c; g = 0; b = x }
+      
+      return `rgba(${Math.round((r + m) * 255)}, ${Math.round((g + m) * 255)}, ${Math.round((b + m) * 255)}, 0.50)`
+    }
+    
+    // Fallback
+    return isDark ? 'rgba(17, 24, 39, 0.50)' : 'rgba(255, 255, 255, 0.50)'
+  }
+
   const content = (
     <div
       ref={contentRef}
       className={cn(
-        "min-w-[8rem] rounded-md border border-border bg-card p-1 text-popover-foreground shadow-lg outline-none backdrop-blur-xl",
+        "min-w-[8rem] rounded-md border border-border p-1 text-popover-foreground shadow-lg outline-none backdrop-blur-xl",
         className
       )}
       style={{
@@ -448,6 +482,7 @@ const PopoverContent = React.forwardRef<
         display: 'block',
         pointerEvents: 'auto',
         transform: 'none',
+        backgroundColor: getPopoverBg(), // Reduced opacity (50%) for more transparency
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
         ...props.style, // Merge with props.style but our styles take precedence for visibility

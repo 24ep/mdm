@@ -1,32 +1,24 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { 
   Database, 
   Folder, 
-  FolderOpen, 
   ChevronRight, 
   ChevronDown,
-  Plus,
-  Edit,
-  Trash2,
   Search,
-  FolderPlus,
   Table,
   RefreshCw,
   CheckCircle,
   XCircle,
   AlertTriangle,
-  Settings,
-  Eye,
-  EyeOff,
-  GitBranch
+  GitBranch,
+  MoreVertical,
+  Sparkles
 } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import ERDDiagram from '@/components/erd/ERDDiagram'
@@ -34,6 +26,7 @@ import { DatabaseConnection } from '../types'
 import { getDatabaseTypes, type Asset } from '@/lib/assets'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
+import { BrandingConfig } from '@/app/admin/features/system/types'
 
 interface DataModel {
   id: string
@@ -76,7 +69,7 @@ interface DatabaseSchema {
 export function DatabaseDataModelMerged() {
   // Database state
   const [connections, setConnections] = useState<DatabaseConnection[]>([])
-  const [selectedDatabase, setSelectedDatabase] = useState<string | null>('all')
+  const [selectedDatabase, setSelectedDatabase] = useState<string | null>(null)
   const [databaseTypes, setDatabaseTypes] = useState<Asset[]>([])
   const [isLoadingDatabases, setIsLoadingDatabases] = useState(false)
 
@@ -97,15 +90,34 @@ export function DatabaseDataModelMerged() {
   const [erdRelationships, setErdRelationships] = useState<any[]>([])
   const [isLoadingERD, setIsLoadingERD] = useState(false)
 
+  // Theme config state
+  const [themeConfig, setThemeConfig] = useState<BrandingConfig | null>(null)
+
   useEffect(() => {
     loadDatabaseTypes()
     loadConnections()
     loadModels()
     loadFolders()
+    loadThemeConfig()
   }, [])
 
+  const loadThemeConfig = async () => {
+    try {
+      const response = await fetch('/api/themes')
+      if (response.ok) {
+        const data = await response.json()
+        const activeTheme = data.themes?.find((t: any) => t.isActive)
+        if (activeTheme?.config) {
+          setThemeConfig(activeTheme.config as BrandingConfig)
+        }
+      }
+    } catch (error) {
+      console.error('Error loading theme config:', error)
+    }
+  }
+
   useEffect(() => {
-    if (viewMode === 'schema' && selectedDatabase && selectedDatabase !== 'all') {
+    if (viewMode === 'schema' && selectedDatabase) {
       loadDatabaseSchema(selectedDatabase)
     }
   }, [viewMode, selectedDatabase])
@@ -135,6 +147,10 @@ export function DatabaseDataModelMerged() {
           ...conn,
           lastConnected: conn.lastConnected ? new Date(conn.lastConnected) : undefined
         })))
+        // Auto-select first database if none selected
+        if (!selectedDatabase && data.connections.length > 0) {
+          setSelectedDatabase(data.connections[0].id)
+        }
       }
     } catch (error) {
       console.error('Error loading connections:', error)
@@ -193,13 +209,11 @@ export function DatabaseDataModelMerged() {
   const loadERDData = async () => {
     setIsLoadingERD(true)
     try {
-      // Load data models
       const modelsRes = await fetch('/api/data-models')
       const modelsData = await modelsRes.json()
       
       const modelsWithAttributes: any[] = []
       
-      // Load attributes for each model
       for (const model of modelsData.dataModels || []) {
         try {
           const attrsRes = await fetch(`/api/data-models/${model.id}/attributes`)
@@ -231,7 +245,6 @@ export function DatabaseDataModelMerged() {
       
       setErdModels(modelsWithAttributes)
       
-      // Create relationships based on foreign keys
       const relationships: any[] = []
       modelsWithAttributes.forEach(model => {
         model.attributes.forEach((attr: any) => {
@@ -272,7 +285,7 @@ export function DatabaseDataModelMerged() {
   const getDatabaseIcon = (type: string) => {
     const asset = databaseTypes.find(t => t.code === type)
     if (asset?.icon) {
-      return <span className="text-lg">{asset.icon}</span>
+      return <span className="text-base">{asset.icon}</span>
     }
     return <Database className="h-4 w-4 text-blue-500" />
   }
@@ -280,11 +293,11 @@ export function DatabaseDataModelMerged() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'connected':
-        return <CheckCircle className="h-4 w-4 text-green-500" />
+        return <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" />
       case 'disconnected':
-        return <XCircle className="h-4 w-4 text-gray-500" />
+        return <div className="h-2 w-2 rounded-full bg-gray-400" />
       case 'error':
-        return <AlertTriangle className="h-4 w-4 text-red-500" />
+        return <div className="h-2 w-2 rounded-full bg-red-500" />
       default:
         return null
     }
@@ -350,19 +363,41 @@ export function DatabaseDataModelMerged() {
   }
 
   const renderModelItem = (model: DataModel) => (
-    <div key={`model:${model.id}`} className="p-2 ml-6 rounded-md hover:bg-muted transition-colors cursor-pointer">
-      <div className="flex items-center gap-2">
-        <Database className="h-4 w-4 text-blue-500" />
-        <div className="flex-1 min-w-0">
-          <div className="font-medium truncate">
-            {model.display_name || model.name}
-          </div>
-          {model.description && (
-            <div className="text-xs text-muted-foreground truncate mt-1">
-              {model.description}
-            </div>
-          )}
+    <div 
+      key={`model:${model.id}`} 
+      className="group flex items-center gap-3 px-3 py-2.5 ml-6 rounded-lg transition-all duration-200 cursor-pointer"
+      style={{
+        backgroundColor: 'transparent',
+        borderRadius: borderRadius,
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = `color-mix(in srgb, ${primaryColor} 3%, transparent)`
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = 'transparent'
+      }}
+    >
+      <div 
+        className="flex items-center justify-center w-5 h-5 rounded-md"
+        style={{ backgroundColor: `color-mix(in srgb, ${primaryColor} 10%, transparent)` }}
+      >
+        <Database className="h-3.5 w-3.5" style={{ color: primaryColor }} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div 
+          className="font-medium text-sm truncate"
+          style={{ color: bodyText }}
+        >
+          {model.display_name || model.name}
         </div>
+        {model.description && (
+          <div 
+            className="text-xs truncate mt-0.5"
+            style={{ color: bodyText, opacity: 0.6 }}
+          >
+            {model.description}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -373,35 +408,56 @@ export function DatabaseDataModelMerged() {
     return (
       <div key={`folder:${folder.id}`} className="select-none">
         <div
-          className="flex items-center gap-2 p-2 rounded-md hover:bg-muted transition-colors cursor-pointer"
-          style={{ paddingLeft: `${level * 16 + 8}px` }}
+          className={cn(
+            "group flex items-center gap-2 px-3 py-2.5 rounded-lg transition-all duration-200 cursor-pointer",
+            level === 0 && "font-medium"
+          )}
+          style={{ 
+            paddingLeft: `${level * 16 + 12}px`,
+            backgroundColor: 'transparent',
+            borderRadius: borderRadius,
+          }}
           onClick={() => toggleFolder(folder.id)}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = `color-mix(in srgb, ${primaryColor} 3%, transparent)`
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent'
+          }}
         >
           <button
             onClick={(e) => {
               e.stopPropagation()
               toggleFolder(folder.id)
             }}
-            className="p-1 hover:bg-background rounded"
+            className="p-0.5 hover:bg-white/20 dark:hover:bg-white/10 rounded transition-colors"
           >
             {isExpanded ? (
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              <ChevronDown className="h-3.5 w-3.5" style={{ color: bodyText, opacity: 0.6 }} />
             ) : (
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              <ChevronRight className="h-3.5 w-3.5" style={{ color: bodyText, opacity: 0.6 }} />
             )}
           </button>
           
-          <Folder className={cn("h-4 w-4", isExpanded ? "text-blue-500" : "text-muted-foreground")} />
-          <span className="font-medium flex-1 truncate">{folder.name}</span>
+          <Folder 
+            className="h-4 w-4 transition-colors"
+            style={{ color: isExpanded ? primaryColor : bodyText, opacity: isExpanded ? 1 : 0.6 }}
+          />
+          <span 
+            className="flex-1 truncate text-sm"
+            style={{ color: bodyText }}
+          >
+            {folder.name}
+          </span>
           {folder.models && folder.models.length > 0 && (
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="secondary" className="text-xs px-1.5 py-0 h-5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
               {folder.models.length}
             </Badge>
           )}
         </div>
         
         {isExpanded && (
-          <div>
+          <div className="mt-1">
             {(folder.models || []).map(renderModelItem)}
             {(folder.children || []).map(childFolder => renderFolderItem(childFolder, level + 1))}
           </div>
@@ -412,352 +468,544 @@ export function DatabaseDataModelMerged() {
 
   const selectedConnection = connections.find(c => c.id === selectedDatabase)
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <Database className="h-6 w-6" />
-            Databases & Data Models
-          </h2>
-          <p className="text-muted-foreground">
-            Manage database connections and data models in one place
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={loadConnections} disabled={isLoadingDatabases}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingDatabases ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-        </div>
-      </div>
+  // Get theme colors - precise engineering approach
+  const primaryColor = themeConfig?.primaryColor || '#007AFF'
+  const uiBg = themeConfig?.uiBackgroundColor || themeConfig?.topMenuBackgroundColor || '#ffffff'
+  const uiBorder = themeConfig?.uiBorderColor || 'rgba(0, 0, 0, 0.06)'
+  const bodyText = themeConfig?.bodyTextColor || '#0F172A'
+  const bodyBg = themeConfig?.bodyBackgroundColor || '#FAFAFA'
+  
+  // Precise border styling
+  const borderColor = uiBorder
+  const borderWidth = themeConfig?.globalStyling?.borderWidth || '0.5px'
+  const borderRadius = themeConfig?.globalStyling?.borderRadius || '8px'
+  
+  // Subtle backdrop for panels
+  const panelBg = `color-mix(in srgb, ${uiBg} 95%, transparent)`
+  const panelBackdrop = 'blur(30px) saturate(200%)'
 
-      {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Column - Database List */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Database className="h-5 w-5" />
-              Databases
-            </CardTitle>
-            <CardDescription>Select a database connection</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[600px]">
-              <div className="space-y-2">
-                <Button
-                  variant={selectedDatabase === 'all' ? 'default' : 'outline'}
-                  className="w-full justify-start"
-                  onClick={() => setSelectedDatabase('all')}
+  return (
+    <div className="h-[calc(100vh-8rem)] flex flex-col font-sans" style={{ fontFamily: themeConfig?.globalStyling?.fontFamily || '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif' }}>
+      {/* Main Layout - Split View */}
+      <div className="flex-1 flex gap-4 overflow-hidden">
+        {/* Left Panel - Database List */}
+        <div className="w-80 flex-shrink-0 flex flex-col">
+          {/* Precise Panel */}
+          <div 
+            className="flex-1 flex flex-col overflow-hidden"
+            style={{
+              backgroundColor: panelBg,
+              backdropFilter: panelBackdrop,
+              borderRadius: borderRadius,
+              borderColor: borderColor,
+              borderWidth: borderWidth,
+              borderStyle: 'solid',
+            }}
+          >
+            {/* Header */}
+            <div 
+              className="px-5 py-4 border-b"
+              style={{ borderColor: uiBorder }}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <h2 
+                  className="text-lg font-semibold tracking-tight"
+                  style={{ color: bodyText }}
                 >
-                  <Database className="h-4 w-4 mr-2" />
-                  All Databases
+                  Databases
+                </h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={loadConnections}
+                  disabled={isLoadingDatabases}
+                  className="h-7 w-7 p-0 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 rounded-lg transition-all"
+                >
+                  <RefreshCw className={cn("h-3.5 w-3.5 text-gray-500 dark:text-gray-400", isLoadingDatabases && "animate-spin")} />
                 </Button>
-                
+              </div>
+              <p 
+                className="text-xs"
+                style={{ color: bodyText, opacity: 0.6 }}
+              >
+                {connections.length} connection{connections.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+
+            {/* Database List */}
+            <ScrollArea className="flex-1">
+              <div className="p-3 space-y-1">
                 {isLoadingDatabases ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <RefreshCw className="h-6 w-6 mx-auto animate-spin mb-2" />
-                    Loading databases...
+                  <div 
+                    className="flex flex-col items-center justify-center py-12"
+                    style={{ color: bodyText, opacity: 0.6 }}
+                  >
+                    <RefreshCw className="h-6 w-6 animate-spin mb-3" />
+                    <p className="text-sm">Loading databases...</p>
                   </div>
                 ) : connections.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Database className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>No database connections</p>
+                  <div 
+                    className="flex flex-col items-center justify-center py-12"
+                    style={{ color: bodyText, opacity: 0.6 }}
+                  >
+                    <Database className="h-10 w-10 mb-3 opacity-50" />
+                    <p className="text-sm font-medium">No databases</p>
+                    <p className="text-xs mt-1">Add a connection to get started</p>
                   </div>
                 ) : (
-                  connections.map(connection => (
-                    <Button
-                      key={connection.id}
-                      variant={selectedDatabase === connection.id ? 'default' : 'outline'}
-                      className="w-full justify-start"
-                      onClick={() => setSelectedDatabase(connection.id)}
-                    >
-                      <div className="flex items-center gap-2 flex-1">
-                        {getDatabaseIcon(connection.type)}
-                        <div className="flex-1 text-left">
-                          <div className="font-medium">{connection.name}</div>
-                          <div className="text-xs text-muted-foreground">
+                  connections.map(connection => {
+                    const isSelected = selectedDatabase === connection.id
+                    return (
+                      <button
+                        key={connection.id}
+                        onClick={() => setSelectedDatabase(connection.id)}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 text-left",
+                          isSelected && "shadow-sm"
+                        )}
+                        style={{
+                          backgroundColor: isSelected 
+                            ? `color-mix(in srgb, ${primaryColor} 6%, transparent)` 
+                            : 'transparent',
+                          border: isSelected 
+                            ? `${borderWidth} solid color-mix(in srgb, ${primaryColor} 15%, transparent)` 
+                            : 'none',
+                          borderRadius: borderRadius,
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isSelected) {
+                            e.currentTarget.style.backgroundColor = `color-mix(in srgb, ${primaryColor} 3%, transparent)`
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isSelected) {
+                            e.currentTarget.style.backgroundColor = 'transparent'
+                          }
+                        }}
+                      >
+                        <div className="flex-shrink-0">
+                          {getDatabaseIcon(connection.type)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span 
+                              className="text-sm font-medium truncate"
+                              style={{ 
+                                color: isSelected ? primaryColor : bodyText 
+                              }}
+                            >
+                              {connection.name}
+                            </span>
+                            {getStatusIcon(connection.status)}
+                          </div>
+                          <div 
+                            className="text-xs truncate"
+                            style={{ color: bodyText, opacity: 0.6 }}
+                          >
                             {connection.host}:{connection.port}
                           </div>
                         </div>
-                        {getStatusIcon(connection.status)}
-                      </div>
-                    </Button>
-                  ))
+                      </button>
+                    )
+                  })
                 )}
               </div>
             </ScrollArea>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        {/* Right Column - Data Models or Schema */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  {viewMode === 'schema' ? (
-                    <>
-                      <Table className="h-5 w-5" />
-                      Database Schema
-                    </>
-                  ) : viewMode === 'erd' ? (
-                    <>
-                      <GitBranch className="h-5 w-5" />
-                      ERD Diagram
-                    </>
-                  ) : (
-                    <>
-                      <Folder className="h-5 w-5" />
-                      Data Models
-                    </>
+        {/* Right Body - Data Models or Tables */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Precise Panel */}
+          <div 
+            className="flex-1 flex flex-col overflow-hidden"
+            style={{
+              backgroundColor: panelBg,
+              backdropFilter: panelBackdrop,
+              borderRadius: borderRadius,
+              borderColor: borderColor,
+              borderWidth: borderWidth,
+              borderStyle: 'solid',
+            }}
+          >
+            {/* Header */}
+            <div 
+              className="px-6 py-4 border-b"
+              style={{ borderColor: uiBorder }}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 mb-1">
+                    {viewMode === 'schema' ? (
+                      <Table className="h-5 w-5" style={{ color: primaryColor }} />
+                    ) : viewMode === 'erd' ? (
+                      <GitBranch className="h-5 w-5" style={{ color: primaryColor }} />
+                    ) : (
+                      <Folder className="h-5 w-5" style={{ color: primaryColor }} />
+                    )}
+                    <h2 
+                      className="text-lg font-semibold tracking-tight"
+                      style={{ color: bodyText }}
+                    >
+                      {viewMode === 'schema' ? 'Database Schema' : viewMode === 'erd' ? 'ERD Diagram' : 'Data Models'}
+                    </h2>
+                  </div>
+                  <p 
+                    className="text-xs ml-8"
+                    style={{ color: bodyText, opacity: 0.6 }}
+                  >
+                    {viewMode === 'schema'
+                      ? selectedConnection 
+                        ? `Schema for ${selectedConnection.name}`
+                        : 'Select a database to view schema'
+                      : viewMode === 'erd'
+                      ? 'Entity Relationship Diagram'
+                      : 'Organize your data models'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select value={viewMode} onValueChange={(value: any) => setViewMode(value)}>
+                    <SelectTrigger className="w-[140px] h-8 text-xs border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="models">
+                        <div className="flex items-center gap-2">
+                          <Folder className="h-3.5 w-3.5" />
+                          <span>Models</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="schema" disabled={!selectedDatabase}>
+                        <div className="flex items-center gap-2">
+                          <Table className="h-3.5 w-3.5" />
+                          <span>Schema</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="erd">
+                        <div className="flex items-center gap-2">
+                          <GitBranch className="h-3.5 w-3.5" />
+                          <span>ERD</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {viewMode === 'models' && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={loadModels}
+                      className="h-8 w-8 p-0 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 rounded-lg"
+                    >
+                      <RefreshCw className={cn("h-3.5 w-3.5 text-gray-500 dark:text-gray-400", isLoadingModels && "animate-spin")} />
+                    </Button>
                   )}
-                </CardTitle>
-                <CardDescription>
-                  {viewMode === 'schema'
-                    ? selectedConnection 
-                      ? `Schema for ${selectedConnection.name}`
-                      : 'Select a database to view schema'
-                    : viewMode === 'erd'
-                    ? 'Entity Relationship Diagram - Visualize and manage data model relationships'
-                    : 'Organize your data models in folders'
-                  }
-                </CardDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                <Select value={viewMode} onValueChange={(value: any) => setViewMode(value)}>
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="models">
-                      <div className="flex items-center gap-2">
-                        <Folder className="h-4 w-4" />
-                        Models
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="schema" disabled={!selectedDatabase || selectedDatabase === 'all'}>
-                      <div className="flex items-center gap-2">
-                        <Table className="h-4 w-4" />
-                        Schema
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="erd">
-                      <div className="flex items-center gap-2">
-                        <GitBranch className="h-4 w-4" />
-                        ERD
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                {viewMode === 'models' && (
-                  <Button variant="outline" size="sm" onClick={loadModels}>
-                    <RefreshCw className={`h-4 w-4 ${isLoadingModels ? 'animate-spin' : ''}`} />
-                  </Button>
-                )}
-                {viewMode === 'erd' && (
-                  <Button variant="outline" size="sm" onClick={loadERDData}>
-                    <RefreshCw className={`h-4 w-4 ${isLoadingERD ? 'animate-spin' : ''}`} />
-                  </Button>
-                )}
+                  {viewMode === 'erd' && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={loadERDData}
+                      className="h-8 w-8 p-0 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 rounded-lg"
+                    >
+                      <RefreshCw className={cn("h-3.5 w-3.5 text-gray-500 dark:text-gray-400", isLoadingERD && "animate-spin")} />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
-          </CardHeader>
-          <CardContent>
-            {viewMode === 'schema' ? (
-              // Database Schema View
-              <ScrollArea className="h-[600px]">
-                {isLoadingSchema ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <RefreshCw className="h-6 w-6 mx-auto animate-spin mb-2" />
-                    Loading schema...
-                  </div>
-                ) : !databaseSchema ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Table className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>Select a database to view schema</p>
-                  </div>
-                ) : databaseSchema.tables.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Table className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>No tables found</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {databaseSchema.tables.map(table => (
-                      <div key={table.name} className="border rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Table className="h-4 w-4 text-blue-500" />
-                          <h3 className="font-semibold">{table.name}</h3>
-                        </div>
-                        <div className="space-y-2">
-                          {table.columns.map(column => (
-                            <div key={column.name} className="flex items-center justify-between text-sm py-1 border-b last:border-0">
-                              <div className="flex items-center gap-2">
-                                <span className="font-mono font-medium">{column.name}</span>
-                                <Badge variant="outline" className="text-xs">
-                                  {column.type}
-                                </Badge>
-                                {!column.nullable && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    NOT NULL
-                                  </Badge>
-                                )}
-                              </div>
-                              {column.default && (
-                                <span className="text-muted-foreground text-xs">
-                                  Default: {column.default}
-                                </span>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
-            ) : viewMode === 'erd' ? (
-              // ERD Diagram View
-              <div className="h-[600px] relative">
-                {isLoadingERD ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <RefreshCw className="h-6 w-6 mx-auto animate-spin mb-2" />
-                    Loading ERD diagram...
-                  </div>
-                ) : erdModels.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <GitBranch className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p className="text-lg font-medium">No data models found</p>
-                    <p className="text-sm">Create data models to visualize relationships</p>
-                  </div>
-                ) : (
-                  <ERDDiagram
-                    models={erdModels.map(model => ({
-                      id: model.id,
-                      name: model.name,
-                      display_name: model.display_name || model.name,
-                      description: model.description,
-                      attributes: model.attributes || [],
-                      position: model.position
-                    }))}
-                    onUpdateModel={(updatedModel) => {
-                      setErdModels(prev => prev.map(m => m.id === updatedModel.id ? { ...m, ...updatedModel } : m))
-                    }}
-                    onUpdateAttribute={async (modelId, attribute) => {
-                      try {
-                        const res = await fetch(`/api/data-models/${modelId}/attributes/${attribute.id}`, {
-                          method: 'PUT',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify(attribute)
-                        })
-                        if (res.ok) {
-                          setErdModels(prev => prev.map(model => 
-                            model.id === modelId 
-                              ? { ...model, attributes: model.attributes.map((attr: any) => 
-                                  attr.id === attribute.id ? attribute : attr
-                                )}
-                              : model
-                          ))
-                        }
-                      } catch (error) {
-                        console.error('Error updating attribute:', error)
-                        toast.error('Failed to update attribute')
-                      }
-                    }}
-                    onDeleteAttribute={async (modelId, attributeId) => {
-                      try {
-                        const res = await fetch(`/api/data-models/${modelId}/attributes/${attributeId}`, {
-                          method: 'DELETE'
-                        })
-                        if (res.ok) {
-                          setErdModels(prev => prev.map(model => 
-                            model.id === modelId 
-                              ? { ...model, attributes: model.attributes.filter((attr: any) => attr.id !== attributeId)}
-                              : model
-                          ))
-                        }
-                      } catch (error) {
-                        console.error('Error deleting attribute:', error)
-                        toast.error('Failed to delete attribute')
-                      }
-                    }}
-                    onCreateRelationship={(relationship) => {
-                      const newRelationship = {
-                        ...relationship,
-                        id: `${relationship.fromModel}-${relationship.fromAttribute}-${relationship.toModel}-${relationship.toAttribute}`
-                      }
-                      setErdRelationships(prev => [...prev, newRelationship])
-                      toast.success('Relationship created')
-                    }}
-                    onUpdateRelationship={(relationship) => {
-                      setErdRelationships(prev => prev.map(r => r.id === relationship.id ? relationship : r))
-                      toast.success('Relationship updated')
-                    }}
-                    onDeleteRelationship={(relationshipId) => {
-                      setErdRelationships(prev => prev.filter(r => r.id !== relationshipId))
-                      toast.success('Relationship deleted')
-                    }}
-                  />
-                )}
-              </div>
-            ) : (
-              // Data Model View
-              <div className="space-y-4">
-                {/* Search */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Search models..."
-                    value={searchValue}
-                    onChange={(e) => setSearchValue(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
 
-                {/* Tree View */}
-                <ScrollArea className="h-[500px]">
-                  {isLoadingModels ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <RefreshCw className="h-6 w-6 mx-auto animate-spin mb-2" />
-                      Loading models...
+            {/* Content */}
+            <div className="flex-1 overflow-hidden">
+              {viewMode === 'schema' ? (
+                // Database Schema View
+                <ScrollArea className="h-full">
+                  <div className="p-6">
+                    {!selectedDatabase ? (
+                      <div 
+                        className="flex flex-col items-center justify-center py-16"
+                        style={{ color: bodyText, opacity: 0.6 }}
+                      >
+                        <Table className="h-12 w-12 mb-4 opacity-50" />
+                        <p className="text-sm font-medium">Select a database</p>
+                        <p className="text-xs mt-1">Choose a database from the left panel to view its schema</p>
+                      </div>
+                    ) : isLoadingSchema ? (
+                      <div 
+                        className="flex flex-col items-center justify-center py-16"
+                        style={{ color: bodyText, opacity: 0.6 }}
+                      >
+                        <RefreshCw className="h-6 w-6 animate-spin mb-3" />
+                        <p className="text-sm">Loading schema...</p>
+                      </div>
+                    ) : !databaseSchema ? (
+                      <div 
+                        className="flex flex-col items-center justify-center py-16"
+                        style={{ color: bodyText, opacity: 0.6 }}
+                      >
+                        <Table className="h-12 w-12 mb-4 opacity-50" />
+                        <p className="text-sm font-medium">No schema data</p>
+                      </div>
+                    ) : databaseSchema.tables.length === 0 ? (
+                      <div 
+                        className="flex flex-col items-center justify-center py-16"
+                        style={{ color: bodyText, opacity: 0.6 }}
+                      >
+                        <Table className="h-12 w-12 mb-4 opacity-50" />
+                        <p className="text-sm font-medium">No tables found</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {databaseSchema.tables.map(table => (
+                          <div 
+                            key={table.name} 
+                            className="p-5 transition-all border"
+                            style={{
+                              backgroundColor: `color-mix(in srgb, ${uiBg} 98%, transparent)`,
+                              borderColor: borderColor,
+                              borderWidth: borderWidth,
+                              borderRadius: borderRadius,
+                              borderStyle: 'solid',
+                            }}
+                          >
+                            <div className="flex items-center gap-2 mb-4">
+                              <div 
+                                className="flex items-center justify-center w-8 h-8 rounded-lg"
+                                style={{ backgroundColor: `color-mix(in srgb, ${primaryColor} 10%, transparent)` }}
+                              >
+                                <Table className="h-4 w-4" style={{ color: primaryColor }} />
+                              </div>
+                              <h3 
+                                className="font-semibold text-sm font-mono"
+                                style={{ color: bodyText }}
+                              >
+                                {table.name}
+                              </h3>
+                            </div>
+                            <div className="space-y-2">
+                              {table.columns.map(column => (
+                                <div 
+                                  key={column.name} 
+                                  className="flex items-center justify-between py-2.5 px-3 transition-colors border-b last:border-0"
+                                  style={{
+                                    borderColor: borderColor,
+                                    backgroundColor: 'transparent',
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = `color-mix(in srgb, ${primaryColor} 3%, transparent)`
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'transparent'
+                                  }}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <span 
+                                      className="font-mono font-medium text-sm"
+                                      style={{ color: bodyText }}
+                                    >
+                                      {column.name}
+                                    </span>
+                                    <Badge 
+                                      variant="outline" 
+                                      className="text-xs px-2 py-0.5 h-5 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
+                                    >
+                                      {column.type}
+                                    </Badge>
+                                    {!column.nullable && (
+                                      <Badge 
+                                        variant="secondary" 
+                                        className="text-xs px-2 py-0.5 h-5 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900/50"
+                                      >
+                                        NOT NULL
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  {column.default && (
+                                    <span 
+                                      className="text-xs font-mono"
+                                      style={{ color: bodyText, opacity: 0.6 }}
+                                    >
+                                      {column.default}
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              ) : viewMode === 'erd' ? (
+                // ERD Diagram View
+                <div className="h-full relative">
+                  {isLoadingERD ? (
+                    <div 
+                      className="flex flex-col items-center justify-center h-full"
+                      style={{ color: bodyText, opacity: 0.6 }}
+                    >
+                      <RefreshCw className="h-6 w-6 animate-spin mb-3" />
+                      <p className="text-sm">Loading ERD diagram...</p>
+                    </div>
+                  ) : erdModels.length === 0 ? (
+                    <div 
+                      className="flex flex-col items-center justify-center h-full"
+                      style={{ color: bodyText, opacity: 0.6 }}
+                    >
+                      <GitBranch className="h-12 w-12 mb-4 opacity-50" />
+                      <p className="text-sm font-medium">No data models found</p>
+                      <p className="text-xs mt-1">Create data models to visualize relationships</p>
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      {/* Root Models */}
-                      {rootModels.length > 0 && (
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 p-3 text-sm font-medium bg-muted rounded-lg">
-                            <Database className="h-4 w-4" />
-                            <span>Root Models ({rootModels.length})</span>
-                          </div>
-                          <div className="space-y-1">
-                            {rootModels.map(renderModelItem)}
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Folders */}
-                      {treeStructure.map(folder => renderFolderItem(folder))}
+                    <ERDDiagram
+                      models={erdModels.map(model => ({
+                        id: model.id,
+                        name: model.name,
+                        display_name: model.display_name || model.name,
+                        description: model.description,
+                        attributes: model.attributes || [],
+                        position: model.position
+                      }))}
+                      onUpdateModel={(updatedModel) => {
+                        setErdModels(prev => prev.map(m => m.id === updatedModel.id ? { ...m, ...updatedModel } : m))
+                      }}
+                      onUpdateAttribute={async (modelId, attribute) => {
+                        try {
+                          const res = await fetch(`/api/data-models/${modelId}/attributes/${attribute.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(attribute)
+                          })
+                          if (res.ok) {
+                            setErdModels(prev => prev.map(model => 
+                              model.id === modelId 
+                                ? { ...model, attributes: model.attributes.map((attr: any) => 
+                                    attr.id === attribute.id ? attribute : attr
+                                  )}
+                                : model
+                            ))
+                          }
+                        } catch (error) {
+                          console.error('Error updating attribute:', error)
+                          toast.error('Failed to update attribute')
+                        }
+                      }}
+                      onDeleteAttribute={async (modelId, attributeId) => {
+                        try {
+                          const res = await fetch(`/api/data-models/${modelId}/attributes/${attributeId}`, {
+                            method: 'DELETE'
+                          })
+                          if (res.ok) {
+                            setErdModels(prev => prev.map(model => 
+                              model.id === modelId 
+                                ? { ...model, attributes: model.attributes.filter((attr: any) => attr.id !== attributeId)}
+                                : model
+                            ))
+                          }
+                        } catch (error) {
+                          console.error('Error deleting attribute:', error)
+                          toast.error('Failed to delete attribute')
+                        }
+                      }}
+                      onCreateRelationship={(relationship) => {
+                        const newRelationship = {
+                          ...relationship,
+                          id: `${relationship.fromModel}-${relationship.fromAttribute}-${relationship.toModel}-${relationship.toAttribute}`
+                        }
+                        setErdRelationships(prev => [...prev, newRelationship])
+                        toast.success('Relationship created')
+                      }}
+                      onUpdateRelationship={(relationship) => {
+                        setErdRelationships(prev => prev.map(r => r.id === relationship.id ? relationship : r))
+                        toast.success('Relationship updated')
+                      }}
+                      onDeleteRelationship={(relationshipId) => {
+                        setErdRelationships(prev => prev.filter(r => r.id !== relationshipId))
+                        toast.success('Relationship deleted')
+                      }}
+                    />
+                  )}
+                </div>
+              ) : (
+                // Data Model View
+                <div className="flex flex-col h-full">
+                  {/* Search Bar */}
+                  <div 
+                    className="px-6 pt-4 pb-3 border-b"
+                    style={{ borderColor: uiBorder }}
+                  >
+                    <div className="relative">
+                      <Search 
+                        className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" 
+                        style={{ color: bodyText, opacity: 0.5 }}
+                      />
+                      <Input
+                        placeholder="Search models..."
+                        value={searchValue}
+                        onChange={(e) => setSearchValue(e.target.value)}
+                        className="pl-10 h-9 backdrop-blur-sm text-sm"
+                        style={{
+                          backgroundColor: `color-mix(in srgb, ${uiBg} 98%, transparent)`,
+                          borderColor: borderColor,
+                          borderWidth: borderWidth,
+                          borderRadius: borderRadius,
+                        }}
+                      />
+                    </div>
+                  </div>
 
-                      {/* Empty State */}
-                      {models.length === 0 && folders.length === 0 && (
-                        <div className="text-center py-8 text-muted-foreground">
-                          <Folder className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                          <p className="text-lg font-medium">No data models yet</p>
-                          <p className="text-sm">Create your first data model to get started</p>
+                  {/* Tree View */}
+                  <ScrollArea className="flex-1">
+                    <div className="p-4">
+                      {isLoadingModels ? (
+                        <div 
+                          className="flex flex-col items-center justify-center py-16"
+                          style={{ color: bodyText, opacity: 0.6 }}
+                        >
+                          <RefreshCw className="h-6 w-6 animate-spin mb-3" />
+                          <p className="text-sm">Loading models...</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          {/* Root Models */}
+                          {rootModels.length > 0 && (
+                            <div className="space-y-1 mb-4">
+                              <div 
+                                className="flex items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider"
+                                style={{ color: bodyText, opacity: 0.6 }}
+                              >
+                                <Database className="h-3.5 w-3.5" />
+                                <span>Root Models ({rootModels.length})</span>
+                              </div>
+                              <div className="space-y-0.5">
+                                {rootModels.map(renderModelItem)}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Folders */}
+                          {treeStructure.map(folder => renderFolderItem(folder))}
+
+                          {/* Empty State */}
+                          {models.length === 0 && folders.length === 0 && (
+                            <div 
+                              className="flex flex-col items-center justify-center py-16"
+                              style={{ color: bodyText, opacity: 0.6 }}
+                            >
+                              <Folder className="h-12 w-12 mb-4 opacity-50" />
+                              <p className="text-sm font-medium">No data models yet</p>
+                              <p className="text-xs mt-1">Create your first data model to get started</p>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
-                  )}
-                </ScrollArea>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  </ScrollArea>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
 }
-

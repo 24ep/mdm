@@ -627,7 +627,8 @@ export function ChartDataSourceConfig({
                         <PopoverTrigger asChild>
                           <button
                             type="button"
-                            className="p-0.5 rounded hover:bg-primary/20 flex-shrink-0"
+                            className="p-0 bg-transparent border-0 hover:bg-transparent flex-shrink-0 outline-none focus:outline-none focus-visible:outline-none"
+                            style={{ backgroundColor: 'transparent', border: 'none' }}
                             title={`${dim.label} style`}
                             onClick={(e) => e.stopPropagation()}
                           >

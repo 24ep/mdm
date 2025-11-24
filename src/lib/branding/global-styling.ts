@@ -117,10 +117,10 @@ export function applyGlobalStyling(branding: BrandingConfig) {
   styleElement.textContent = `
     /* Global styling - excludes space modules, platform sidebar, top menu bar, and navigation */
     /* Apply to buttons that are NOT inside platform sidebar, top menu bar, or navigation */
-    body:not([data-space]) button:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"]):not([data-component="color-input-trigger"]):not(.color-input-trigger),
-    body:not([data-space]) [role="button"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"]):not([data-component="color-input-trigger"]):not(.color-input-trigger),
-    body:not([data-space]) .btn:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([data-component="select-trigger"]):not([data-component="color-input-trigger"]):not(.color-input-trigger),
-    body:not([data-space]) [class*="button"]:not([data-space]):not([data-space] *):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"]):not([data-component="color-input-trigger"]):not(.color-input-trigger) {
+    body:not([data-space]) button:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"]):not([data-component="color-input-trigger"]):not(.color-input-trigger):not(.solid-color-swatch-button):not(.color-set-selector):not(.color-palette-swatch),
+    body:not([data-space]) [role="button"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"]):not([data-component="color-input-trigger"]):not(.color-input-trigger):not(.solid-color-swatch-button):not(.color-set-selector):not(.color-palette-swatch),
+    body:not([data-space]) .btn:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([data-component="select-trigger"]):not([data-component="color-input-trigger"]):not(.color-input-trigger):not(.solid-color-swatch-button):not(.color-set-selector):not(.color-palette-swatch),
+    body:not([data-space]) [class*="button"]:not([data-space]):not([data-space] *):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"]):not([data-component="color-input-trigger"]):not(.color-input-trigger):not(.solid-color-swatch-button):not(.color-set-selector):not(.color-palette-swatch) {
       border-radius: var(--brand-button-border-radius, ${styling.buttonBorderRadius}) !important;
       border-width: var(--brand-button-border-width, ${styling.buttonBorderWidth}) !important;
       border-color: var(--brand-border-color, ${borderColor}) !important;

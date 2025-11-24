@@ -35,8 +35,8 @@ export function InfrastructurePlaceholder({
             </Button>
           )}
           {onAddService && (
-            <Button onClick={onAddService} variant="outline" className="gap-2">
-              <Settings className="h-4 w-4" />
+            <Button onClick={onAddService} className="gap-2">
+              <Plus className="h-4 w-4" />
               Add Service
             </Button>
           )}

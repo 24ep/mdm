@@ -128,14 +128,20 @@ function IconSelectCombobox({ value, onValueChange }: { value: string; onValueCh
               {iconOptions.map((option) => {
                 const IconComponent = option.icon
                 const isSelected = (value || 'none') === option.value
+                const handleSelect = () => {
+                  onValueChange(option.value === 'none' ? '' : option.value)
+                  setOpen(false)
+                }
                 return (
                   <CommandItem
                     key={option.value}
-                    value={option.label}
+                    value={option.value}
                     keywords={[option.value.toLowerCase(), option.label.toLowerCase()]}
-                    onSelect={() => {
-                      onValueChange(option.value === 'none' ? '' : option.value)
-                      setOpen(false)
+                    onSelect={handleSelect}
+                    onMouseDown={(e) => {
+                      // Fallback handler in case onSelect doesn't fire
+                      e.preventDefault()
+                      handleSelect()
                     }}
                   >
                     <Check
@@ -191,8 +197,8 @@ export function ConfigTab({ formData, setFormData }: ConfigTabProps) {
       {/* Start Conversation / Opener Message (NOT for ChatKit - uses ChatKit configuration) */}
       {!isChatKitEngine && (
         <div className="space-y-4 border-b pb-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1">
               <Label>Show Start Conversation Message</Label>
               <p className="text-xs text-muted-foreground">Display an initial greeting message when the chat opens</p>
             </div>
@@ -203,26 +209,30 @@ export function ConfigTab({ formData, setFormData }: ConfigTabProps) {
           </div>
           
           {(formData as any).showStartConversation !== false && (
-            <div className="space-y-2 pl-4 border-l-2 border-muted">
-              <Label>Start Conversation Message</Label>
-              <Textarea
-                value={formData.conversationOpener || (formData as any).openaiAgentSdkGreeting || ''}
-                onChange={(e) => {
-                  const value = e.target.value
-                  setFormData({ 
-                    ...formData, 
-                    conversationOpener: value,
-                    // Also update Agent SDK greeting if it's an Agent SDK chatbot
-                    ...(isAgentSDK && { openaiAgentSdkGreeting: value })
-                  } as any)
-                }}
-                placeholder="Hello! How can I help you today?"
-                rows={3}
-                className="resize-none"
-              />
-              <p className="text-xs text-muted-foreground">
-                Initial message shown when the chat opens. For Agent SDK workflows, this may be overridden by the workflow configuration.
-              </p>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <Label>Start Conversation Message</Label>
+                <p className="text-xs text-muted-foreground">
+                  Initial message shown when the chat opens. For Agent SDK workflows, this may be overridden by the workflow configuration.
+                </p>
+              </div>
+              <div className="w-[400px]">
+                <Textarea
+                  value={formData.conversationOpener || (formData as any).openaiAgentSdkGreeting || ''}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setFormData({ 
+                      ...formData, 
+                      conversationOpener: value,
+                      // Also update Agent SDK greeting if it's an Agent SDK chatbot
+                      ...(isAgentSDK && { openaiAgentSdkGreeting: value })
+                    } as any)
+                  }}
+                  placeholder="Hello! How can I help you today?"
+                  rows={3}
+                  className="resize-none"
+                />
+              </div>
             </div>
           )}
         </div>
@@ -231,13 +241,14 @@ export function ConfigTab({ formData, setFormData }: ConfigTabProps) {
       {/* Start Screen Prompts (for Agent SDK and other engines, NOT for ChatKit) */}
       {!isChatKitEngine && (
       <div className="space-y-4 border-b pb-4">
-        <div className="space-y-2">
-          <Label>Start Screen Prompts</Label>
-          <p className="text-xs text-muted-foreground">
-            Add quick prompt buttons that appear when the chat starts (for Agent SDK and other engines)
-          </p>
-          
-          <div className="space-y-2 mt-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <Label>Start Screen Prompts</Label>
+            <p className="text-xs text-muted-foreground">
+              Add quick prompt buttons that appear when the chat starts (for Agent SDK and other engines)
+            </p>
+          </div>
+          <div className="w-[400px] space-y-2">
             {((formData as any).startScreenPrompts || []).map((prompt: { label?: string; prompt: string; icon?: string }, index: number) => (
               <div key={index} className="border rounded-lg p-3 space-y-2">
                 <div className="flex gap-2 items-start">
@@ -307,44 +318,53 @@ export function ConfigTab({ formData, setFormData }: ConfigTabProps) {
       </div>
       )}
 
-      <div className="space-y-2">
-        <Label>Follow-up Questions</Label>
-        <div className="flex gap-2">
-          <Input
-            value={newFollowUpQuestion}
-            onChange={(e) => setNewFollowUpQuestion(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && addFollowUpQuestion()}
-            placeholder="Enter a follow-up question"
-          />
-          <Button onClick={addFollowUpQuestion}>Add</Button>
+      <div className="flex items-start justify-between gap-4 border-b pb-4">
+        <div className="flex-1">
+          <Label>Follow-up Questions</Label>
+          <p className="text-xs text-muted-foreground">Add suggested follow-up questions for users</p>
         </div>
-        <div className="space-y-2 mt-2">
-          {(formData.followUpQuestions || []).map((question, index) => (
-            <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded">
-              <span className="flex-1">{question}</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => removeFollowUpQuestion(index)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
+        <div className="w-[400px] space-y-2">
+          <div className="flex gap-2">
+            <Input
+              value={newFollowUpQuestion}
+              onChange={(e) => setNewFollowUpQuestion(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && addFollowUpQuestion()}
+              placeholder="Enter a follow-up question"
+            />
+            <Button onClick={addFollowUpQuestion}>Add</Button>
+          </div>
+          <div className="space-y-2">
+            {(formData.followUpQuestions || []).map((question, index) => (
+              <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded">
+                <span className="flex-1">{question}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeFollowUpQuestion(index)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Label>Enable File Upload</Label>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-1">
+            <Label>Enable File Upload</Label>
+          </div>
           <Switch
             checked={formData.enableFileUpload}
             onCheckedChange={(checked) => setFormData({ ...formData, enableFileUpload: checked })}
           />
         </div>
         {!isChatKitEngine && !isAgentSDK && (
-          <div className="flex items-center justify-between">
-            <Label>Show Citations and Attributions</Label>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1">
+              <Label>Show Citations and Attributions</Label>
+            </div>
             <Switch
               checked={formData.showCitations}
               onCheckedChange={(checked) => setFormData({ ...formData, showCitations: checked })}
@@ -352,9 +372,9 @@ export function ConfigTab({ formData, setFormData }: ConfigTabProps) {
           </div>
         )}
         {!isChatKitEngine && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
+          <>
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1">
                 <Label>Enable Voice Agent</Label>
                 <p className="text-xs text-muted-foreground">Allow users to interact via voice input and hear responses</p>
               </div>
@@ -366,88 +386,101 @@ export function ConfigTab({ formData, setFormData }: ConfigTabProps) {
             
             {formData.enableVoiceAgent && (
               <div className="space-y-4 pl-4 border-l-2 border-muted">
-                <div className="space-y-2">
-                  <Label>Voice Provider</Label>
-                  <Select
-                    value={formData.voiceProvider || 'browser'}
-                    onValueChange={(value: string) => setFormData({ ...formData, voiceProvider: value as 'browser' | 'openai-realtime' | 'agentbuilder' })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="browser">Browser Web Speech API</SelectItem>
-                      <SelectItem value="openai-realtime">OpenAI Realtime API</SelectItem>
-                      <SelectItem value="agentbuilder">Agent Builder Voice</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    {formData.voiceProvider === 'openai-realtime' 
-                      ? 'Uses OpenAI Realtime API for high-quality voice interactions (requires OpenAI API key)'
-                      : formData.voiceProvider === 'agentbuilder'
-                        ? 'Uses Agent Builder voice capabilities (requires Agent Builder engine)'
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <Label>Voice Provider</Label>
+                    <p className="text-xs text-muted-foreground">
+                      {formData.voiceProvider === 'openai-realtime' 
+                        ? 'Uses OpenAI Realtime API for high-quality voice interactions (requires OpenAI API key)'
                         : 'Uses browser built-in speech recognition and synthesis'}
-                  </p>
+                    </p>
+                  </div>
+                  <div className="w-[400px]">
+                    <Select
+                      value={formData.voiceProvider || 'browser'}
+                      onValueChange={(value: string) => setFormData({ ...formData, voiceProvider: value as 'browser' | 'openai-realtime' })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="browser">Browser Web Speech API</SelectItem>
+                        <SelectItem value="openai-realtime">OpenAI Realtime API</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 
-                <div className="space-y-2">
-                  <Label>Voice UI Style</Label>
-                  <Select
-                    value={formData.voiceUIStyle || 'chat'}
-                    onValueChange={(value: string) => setFormData({ ...formData, voiceUIStyle: value as 'chat' | 'wave' })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="chat">Chat-like (Current)</SelectItem>
-                      <SelectItem value="wave">Wave Animation Background</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    {formData.voiceUIStyle === 'wave' 
-                      ? 'Shows wave animation in background with turn on/off voice button and subtitle'
-                      : 'Uses the current chat interface for voice interactions'}
-                  </p>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <Label>Voice UI Style</Label>
+                    <p className="text-xs text-muted-foreground">
+                      {formData.voiceUIStyle === 'wave' 
+                        ? 'Shows wave animation in background with turn on/off voice button and subtitle'
+                        : 'Uses the current chat interface for voice interactions'}
+                    </p>
+                  </div>
+                  <div className="w-[400px]">
+                    <Select
+                      value={formData.voiceUIStyle || 'chat'}
+                      onValueChange={(value: string) => setFormData({ ...formData, voiceUIStyle: value as 'chat' | 'wave' })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="chat">Chat-like (Current)</SelectItem>
+                        <SelectItem value="wave">Wave Animation Background</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 {/* Realtime Voice Settings - Only show when voice is enabled and provider is openai-realtime */}
                 {formData.voiceProvider === 'openai-realtime' && (
-                  <div className="space-y-3 pt-2 border-t">
+                  <div className="space-y-4 pt-2 border-t">
                     <h5 className="text-sm font-medium">Realtime Voice Settings</h5>
                     <p className="text-xs text-muted-foreground">
                       Configure prompt for OpenAI Realtime Voice API. If prompt ID is provided, it will be used instead of instructions.
                     </p>
                     
-                    <div className="space-y-2">
-                      <Label>Realtime Voice Prompt ID (Optional)</Label>
-                      <Input
-                        value={(formData as any).openaiAgentSdkRealtimePromptId || ''}
-                        onChange={(e) => setFormData({ ...formData, openaiAgentSdkRealtimePromptId: e.target.value } as any)}
-                        placeholder="pmpt_6910de2213d881909b426f4ebc8644010d67268fbf2a125c"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Enter the prompt ID from OpenAI Realtime API. This will be used for voice interactions instead of instructions.
-                        You can create prompts at <a href="https://platform.openai.com/prompts" target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 underline">OpenAI Platform</a>.
-                      </p>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <Label>Realtime Voice Prompt ID (Optional)</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Enter the prompt ID from OpenAI Realtime API. This will be used for voice interactions instead of instructions.
+                          You can create prompts at <a href="https://platform.openai.com/prompts" target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 underline">OpenAI Platform</a>.
+                        </p>
+                      </div>
+                      <div className="w-[400px]">
+                        <Input
+                          value={(formData as any).openaiAgentSdkRealtimePromptId || ''}
+                          onChange={(e) => setFormData({ ...formData, openaiAgentSdkRealtimePromptId: e.target.value } as any)}
+                          placeholder="pmpt_6910de2213d881909b426f4ebc8644010d67268fbf2a125c"
+                        />
+                      </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label>Prompt Version (Optional)</Label>
-                      <Input
-                        value={(formData as any).openaiAgentSdkRealtimePromptVersion || '1'}
-                        onChange={(e) => setFormData({ ...formData, openaiAgentSdkRealtimePromptVersion: e.target.value } as any)}
-                        placeholder="1"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Version of the prompt to use. Defaults to "1" if not specified.
-                      </p>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <Label>Prompt Version (Optional)</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Version of the prompt to use. Defaults to "1" if not specified.
+                        </p>
+                      </div>
+                      <div className="w-[400px]">
+                        <Input
+                          value={(formData as any).openaiAgentSdkRealtimePromptVersion || '1'}
+                          onChange={(e) => setFormData({ ...formData, openaiAgentSdkRealtimePromptVersion: e.target.value } as any)}
+                          placeholder="1"
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
               </div>
             )}
-          </div>
+          </>
         )}
       </div>
 

@@ -34,7 +34,7 @@ export function ChatWindowSection({ formData, setFormData }: ChatWindowSectionPr
                   placeholder="380"
                   className="pr-8"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
               </div>
             </div>
             <div className="space-y-2">
@@ -47,7 +47,7 @@ export function ChatWindowSection({ formData, setFormData }: ChatWindowSectionPr
                   placeholder="600"
                   className="pr-8"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
               </div>
             </div>
           </div>
@@ -181,7 +181,7 @@ export function ChatWindowSection({ formData, setFormData }: ChatWindowSectionPr
                   placeholder="4"
                   className="pr-8"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
               </div>
             </div>
           </div>

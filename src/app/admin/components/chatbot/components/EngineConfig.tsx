@@ -30,8 +30,6 @@ interface EngineConfigProps {
 export function EngineConfig({ formData, setFormData }: EngineConfigProps) {
   const [availableModels, setAvailableModels] = useState<AIModel[]>([])
   const [isLoadingModels, setIsLoadingModels] = useState(false)
-  const [availableEngines, setAvailableEngines] = useState<Array<{ id: string; name: string; description?: string }>>([])
-  const [isLoadingEngines, setIsLoadingEngines] = useState(false)
   const [isFetchingWorkflowConfig, setIsFetchingWorkflowConfig] = useState(false)
 
   const engineType = formData.engineType || 'custom'
@@ -42,11 +40,6 @@ export function EngineConfig({ formData, setFormData }: EngineConfigProps) {
     }
   }, [engineType])
 
-  useEffect(() => {
-    if (engineType === 'agentbuilder') {
-      loadAgentBuilderEngines()
-    }
-  }, [engineType])
 
   const loadAIModels = async () => {
     setIsLoadingModels(true)
@@ -69,23 +62,6 @@ export function EngineConfig({ formData, setFormData }: EngineConfigProps) {
     }
   }
 
-  const loadAgentBuilderEngines = async () => {
-    setIsLoadingEngines(true)
-    try {
-      const response = await fetch('/api/admin/agentbuilder/engines')
-      if (response.ok) {
-        const data = await response.json()
-        setAvailableEngines(data.engines || [])
-      } else {
-        setAvailableEngines([])
-      }
-    } catch (error) {
-      console.error('Error loading AgentBuilder engines:', error)
-      setAvailableEngines([])
-    } finally {
-      setIsLoadingEngines(false)
-    }
-  }
 
   return (
     <div className="space-y-4 pt-4">
@@ -122,7 +98,7 @@ export function EngineConfig({ formData, setFormData }: EngineConfigProps) {
         <Select
           value={engineType}
           onValueChange={(v: string) => {
-            const engineTypeValue = v as 'custom' | 'agentbuilder' | 'openai' | 'chatkit' | 'dify' | 'openai-agent-sdk'
+            const engineTypeValue = v as 'custom' | 'openai' | 'chatkit' | 'dify' | 'openai-agent-sdk'
             setFormData({ 
               ...formData, 
               engineType: engineTypeValue,
@@ -137,7 +113,6 @@ export function EngineConfig({ formData, setFormData }: EngineConfigProps) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="custom">Custom API Endpoint</SelectItem>
-            <SelectItem value="agentbuilder">AgentBuilder Engine</SelectItem>
             <SelectItem value="openai">OpenAI Platform</SelectItem>
             <SelectItem value="chatkit">OpenAI ChatKit</SelectItem>
             <SelectItem value="openai-agent-sdk">OpenAI Agent SDK</SelectItem>
@@ -182,46 +157,6 @@ export function EngineConfig({ formData, setFormData }: EngineConfigProps) {
           </Select>
           <p className="text-xs text-muted-foreground">
             Select an OpenAI model to use for this chatbot. Make sure OpenAI is configured in API Configuration.
-          </p>
-        </div>
-      )}
-
-      {engineType === 'agentbuilder' && (
-        <div className="space-y-2">
-          <Label>AgentBuilder Engine *</Label>
-          <Select
-            value={formData.selectedEngineId || ''}
-            onValueChange={(v) => setFormData({ ...formData, selectedEngineId: v })}
-          >
-            <SelectTrigger disabled={isLoadingEngines}>
-              <SelectValue placeholder={isLoadingEngines ? "Loading engines..." : "Select AgentBuilder engine"} />
-            </SelectTrigger>
-            <SelectContent>
-              {isLoadingEngines ? (
-                <div className="flex items-center justify-center p-4">
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Loading engines...
-                </div>
-              ) : availableEngines.length === 0 ? (
-                <div className="p-4 text-sm text-muted-foreground text-center">
-                  No AgentBuilder engines available.
-                </div>
-              ) : (
-                availableEngines.map((engine) => (
-                  <SelectItem key={engine.id} value={engine.id}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{engine.name}</span>
-                      {engine.description && (
-                        <span className="text-xs text-muted-foreground">{engine.description}</span>
-                      )}
-                    </div>
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-muted-foreground">
-            Select an AgentBuilder engine to use for this chatbot.
           </p>
         </div>
       )}

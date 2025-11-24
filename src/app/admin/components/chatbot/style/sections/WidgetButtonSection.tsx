@@ -89,7 +89,7 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                   placeholder="10"
                   className="pr-8"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
               </div>
               <p className="text-xs text-muted-foreground">Spacing between widget button and popover window</p>
             </div>
@@ -108,7 +108,7 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                   placeholder="60"
                   className="pr-8"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
               </div>
             </div>
             <div className="space-y-2">
@@ -217,7 +217,7 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                   placeholder="8"
                   className="pr-8"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
               </div>
             </div>
           </div>
@@ -232,7 +232,7 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                   placeholder="0"
                   className="pr-8"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
               </div>
               <p className="text-xs text-muted-foreground">Horizontal shadow offset</p>
             </div>
@@ -246,7 +246,7 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                   placeholder="0"
                   className="pr-8"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
               </div>
               <p className="text-xs text-muted-foreground">Vertical shadow offset</p>
             </div>
@@ -262,7 +262,7 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                   placeholder="0"
                   className="pr-8"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
               </div>
               <p className="text-xs text-muted-foreground">Shadow spread radius (positive values expand, negative values contract)</p>
             </div>
@@ -360,7 +360,7 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                   placeholder="20"
                   className="pr-8"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
               </div>
             </div>
             <div className="space-y-2">
@@ -373,7 +373,7 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                   placeholder="20"
                   className="pr-8"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
               </div>
             </div>
           </div>

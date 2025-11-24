@@ -176,7 +176,6 @@ export function ThreadSelector({
                                    chatbot.engineType === 'chatkit' ? 'ChatKit' :
                                    chatbot.engineType === 'dify' ? 'Dify' :
                                    chatbot.engineType === 'openai' ? 'OpenAI' :
-                                   chatbot.engineType === 'agentbuilder' ? 'Agent Builder' :
                                    chatbot.engineType === 'custom' ? 'Custom' :
                                    chatbot.engineType}
                                 </span>

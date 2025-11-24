@@ -20,6 +20,14 @@ export function BrandingInitializer() {
   useEffect(() => {
     if (!mounted) return
     
+    // Skip theme config application if page is in an iframe (emulator mode)
+    // This ensures chatbot style settings from ai-chat-ui are used instead of theme config
+    const isInIframe = typeof window !== 'undefined' && window.self !== window.top
+    if (isInIframe) {
+      // In iframe mode, don't apply theme config - let chatbot styles from formData take precedence
+      return
+    }
+    
     // Load user's selected theme or active theme and apply its themeMode and branding
     const loadAndApplyTheme = async () => {
       try {

@@ -256,8 +256,8 @@ export async function POST(request: NextRequest) {
         screenshots, documentation_url, support_url, pricing_info, verified,
         created_at, updated_at
       ) VALUES (
-        gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, 'pending', $8, $9, $10, $11,
-        $12, $13, $14, $15, $16, $17, $18, $19, $20, false, NOW(), NOW()
+        gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, 'pending', $8::jsonb, $9, $10, $11::jsonb,
+        $12, $13::jsonb, $14, $15, $16, $17, $18, $19, $20::jsonb, false, NOW(), NOW()
       ) RETURNING id`,
       [
         name,

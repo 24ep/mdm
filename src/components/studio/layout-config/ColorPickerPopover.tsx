@@ -8,7 +8,229 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Upload, Video, Image, Play, Droplet, Plus, Trash2, Move, Copy, Check, Eye, Star, Sliders, Grid3x3, Circle } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { COLOR_PATTERNS, getPatternById } from './color-utils'
+import { COLOR_PATTERNS, getPatternById, getSwatchStyle, SWATCH_SIZE } from './color-utils'
+
+// Global styles for color input trigger button (same as ColorInput)
+const COLOR_INPUT_TRIGGER_STYLES = `
+  body:not([data-space]) button.color-input-trigger,
+  body:not([data-space]) button.color-input-trigger[type="button"] {
+    width: ${SWATCH_SIZE.width} !important;
+    height: ${SWATCH_SIZE.height} !important;
+    min-width: ${SWATCH_SIZE.minWidth} !important;
+    min-height: ${SWATCH_SIZE.minHeight} !important;
+    max-width: ${SWATCH_SIZE.maxWidth} !important;
+    max-height: ${SWATCH_SIZE.maxHeight} !important;
+    border: none !important;
+    border-width: 0 !important;
+    border-style: none !important;
+    border-color: transparent !important;
+    outline: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    aspect-ratio: 1 / 1 !important;
+  }
+`
+
+// Global styles for color set selector - no border, shadow, or background, exclude from theme config
+const COLOR_SET_SELECTOR_STYLES = `
+  body:not([data-space]) button[data-component="select-trigger"].color-set-selector,
+  body:not([data-space]) button[data-component="select-trigger"].color-set-selector[type="button"],
+  body:not([data-space]) [data-component="select-trigger"].color-set-selector {
+    border: none !important;
+    border-width: 0 !important;
+    border-style: none !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    outline: none !important;
+  }
+  
+  /* Preset palette buttons - exclude from theme config but keep their own borders */
+  body:not([data-space]) button.color-palette-swatch,
+  body:not([data-space]) button.color-palette-swatch[type="button"] {
+    /* Allow borders to be set by className, but prevent theme config from overriding */
+    box-shadow: none !important;
+  }
+`
+
+// Global styles for color swatch buttons to ensure 1:1 aspect ratio and circular shape
+const COLOR_SWATCH_STYLES = `
+  .color-picker-swatch-button {
+    aspect-ratio: 1 / 1 !important;
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    min-height: 24px !important;
+    max-width: 24px !important;
+    max-height: 24px !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    border-radius: 50% !important;
+  }
+  .color-picker-swatch-container {
+    display: grid !important;
+    grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    align-items: center !important;
+  }
+  body:not([data-space]) button.solid-color-swatch-button,
+  body:not([data-space]) button.solid-color-swatch-button[type="button"],
+  body:not([data-space]) button[type="button"].solid-color-swatch-button,
+  body:not([data-space]) button.solid-color-swatch-button.absolute,
+  body:not([data-space]) button.solid-color-swatch-button[class*="absolute"] {
+    aspect-ratio: 1 / 1 !important;
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    min-height: 24px !important;
+    max-width: 24px !important;
+    max-height: 24px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    border: none !important;
+    border-width: 0 !important;
+    border-style: none !important;
+    border-color: transparent !important;
+    border-top-width: 0 !important;
+    border-right-width: 0 !important;
+    border-bottom-width: 0 !important;
+    border-left-width: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
+    flex-shrink: 0 !important;
+    flex-grow: 0 !important;
+    flex-basis: 24px !important;
+    display: block !important;
+    position: absolute !important;
+    line-height: 0 !important;
+    vertical-align: middle !important;
+  }
+  
+  /* Override any Tailwind classes that might affect size */
+  body:not([data-space]) button.solid-color-swatch-button.h-6,
+  body:not([data-space]) button.solid-color-swatch-button.w-6,
+  body:not([data-space]) button.solid-color-swatch-button.h-5,
+  body:not([data-space]) button.solid-color-swatch-button.w-5,
+  body:not([data-space]) button.solid-color-swatch-button.h-7,
+  body:not([data-space]) button.solid-color-swatch-button.w-7,
+  body:not([data-space]) button.solid-color-swatch-button[class*="h-"],
+  body:not([data-space]) button.solid-color-swatch-button[class*="w-"] {
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    min-height: 24px !important;
+    max-width: 24px !important;
+    max-height: 24px !important;
+  }
+`
+
+// Swatch button component that ensures background color is applied
+const ColorSwatchButton = React.memo(({ 
+  color, 
+  isSelected, 
+  onClick 
+}: { 
+  color: string
+  isSelected: boolean
+  onClick: () => void
+}) => {
+  const buttonRef = React.useRef<HTMLButtonElement>(null)
+  
+  React.useEffect(() => {
+    if (buttonRef.current) {
+      const size = '24px'
+      buttonRef.current.style.setProperty('background-color', color, 'important')
+      buttonRef.current.style.setProperty('background', color, 'important')
+      buttonRef.current.style.setProperty('border', 'none', 'important')
+      buttonRef.current.style.setProperty('border-width', '0', 'important')
+      buttonRef.current.style.setProperty('aspect-ratio', '1 / 1', 'important')
+      buttonRef.current.style.setProperty('width', size, 'important')
+      buttonRef.current.style.setProperty('height', size, 'important')
+      buttonRef.current.style.setProperty('min-width', size, 'important')
+      buttonRef.current.style.setProperty('min-height', size, 'important')
+      buttonRef.current.style.setProperty('max-width', size, 'important')
+      buttonRef.current.style.setProperty('max-height', size, 'important')
+      buttonRef.current.style.setProperty('padding', '0', 'important')
+      buttonRef.current.style.setProperty('box-sizing', 'border-box', 'important')
+      buttonRef.current.style.setProperty('border-radius', '50%', 'important')
+    }
+  }, [color])
+  
+  return (
+    <button
+      ref={buttonRef}
+      type="button"
+      onClick={onClick}
+      className={`color-picker-swatch-button transition-all hover:scale-110 ${
+        isSelected
+          ? 'ring-2 ring-blue-500/20'
+          : ''
+      }`}
+      style={{ 
+        border: 'none',
+        aspectRatio: '1 / 1',
+        width: '24px',
+        height: '24px',
+        minWidth: '24px',
+        minHeight: '24px',
+        maxWidth: '24px',
+        maxHeight: '24px',
+        padding: 0,
+        boxSizing: 'border-box'
+      }}
+      title={color}
+    >
+      {isSelected && (
+        <div className="w-2 h-2 bg-background rounded-full mx-auto shadow-sm border border-border" />
+      )}
+    </button>
+  )
+})
+ColorSwatchButton.displayName = 'ColorSwatchButton'
+
+// Shared component for rendering color swatch grids
+const ColorSwatchGrid = React.memo(({
+  colors,
+  selectedColor,
+  onColorSelect,
+  showFavoriteIcon = false
+}: {
+  colors: string[]
+  selectedColor: string
+  onColorSelect: (color: string) => void
+  showFavoriteIcon?: boolean
+}) => {
+  if (colors.length === 0) return null
+
+  return (
+    <div className="color-picker-swatch-container">
+      {colors.map((color, index) => (
+        showFavoriteIcon ? (
+          <div key={color} className="relative">
+            <ColorSwatchButton
+              color={color}
+              isSelected={selectedColor.toLowerCase() === color.toLowerCase()}
+              onClick={() => onColorSelect(color)}
+            />
+            <Star className="absolute -top-1 -right-1 h-3 w-3 fill-yellow-400 text-yellow-400 pointer-events-none z-10" />
+          </div>
+        ) : (
+          <ColorSwatchButton
+            key={`${color}-${index}`}
+            color={color}
+            isSelected={selectedColor.toLowerCase() === color.toLowerCase()}
+            onClick={() => onColorSelect(color)}
+          />
+        )
+      ))}
+    </div>
+  )
+})
+ColorSwatchGrid.displayName = 'ColorSwatchGrid'
 
 interface ColorPickerPopoverProps {
   value: string
@@ -289,9 +511,195 @@ export function ColorPickerPopover({
   const [showColorFormats, setShowColorFormats] = useState(false)
   const [isPickingColor, setIsPickingColor] = useState(false)
   // Default to 'recent' if available, otherwise 'quick'
+  // Quick colors array
+  const quickColors = [
+    '#000000', '#ffffff', '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e',
+    '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7',
+    '#d946ef', '#ec4899', '#f43f5e', '#6b7280', '#64748b', '#71717a', '#737373', '#78716c',
+    '#1e40af', '#dc2626', '#16a34a', '#ca8a04', '#9333ea', '#ea580c', '#0891b2', '#be123c'
+  ]
+
   const [selectedColorSet, setSelectedColorSet] = useState<string>(
     recentColors.length > 0 ? 'recent' : 'quick'
   )
+  
+  // Refs for color picker inputs
+  const colorInputRef = React.useRef<HTMLInputElement>(null)
+  const solidColorTextInputRef = React.useRef<HTMLInputElement>(null)
+  const solidColorSwatchButtonRef = React.useRef<HTMLButtonElement>(null)
+  const gradientColorInputRefs = React.useRef<Map<number, HTMLInputElement>>(new Map())
+  
+  // Recalculate swatch style when solidColor or opacity changes (same as ColorInput)
+  // This needs to be before the callback ref so it can use it
+  const actualColor = React.useMemo(() => {
+    return opacity < 1 ? hexToRgba(solidColor, opacity) : solidColor
+  }, [solidColor, opacity])
+
+  const swatchStyle = React.useMemo(() => getSwatchStyle(actualColor), [actualColor])
+
+  // Callback ref to apply size styles immediately when button is mounted
+  // The useEffect will handle background colors/styles when swatchStyle is ready
+  const solidColorSwatchButtonRefCallback = React.useCallback((button: HTMLButtonElement | null) => {
+    solidColorSwatchButtonRef.current = button
+    if (!button) return
+    
+    // Apply size styles immediately when button is available (always 1:1)
+    const size = '20px'
+    button.style.setProperty('aspect-ratio', '1 / 1', 'important')
+    button.style.setProperty('width', size, 'important')
+    button.style.setProperty('height', size, 'important')
+    button.style.setProperty('min-width', size, 'important')
+    button.style.setProperty('min-height', size, 'important')
+    button.style.setProperty('max-width', size, 'important')
+    button.style.setProperty('max-height', size, 'important')
+    button.style.setProperty('padding', '0', 'important')
+    button.style.setProperty('margin', '0', 'important')
+    button.style.setProperty('border', 'none', 'important')
+    button.style.setProperty('border-width', '0', 'important')
+    button.style.setProperty('border-radius', '0', 'important')
+    button.style.setProperty('box-sizing', 'border-box', 'important')
+  }, [])
+  
+  // Calculate proper padding: button width (20px) + left offset (4px) + gap (6px) = 30px
+  // Using 6px gap to ensure no overlap (same as ColorInput)
+  const BUTTON_WIDTH = 20
+  const BUTTON_LEFT_OFFSET = 4
+  const BUTTON_TEXT_GAP = 6
+  const INPUT_LEFT_PADDING = BUTTON_WIDTH + BUTTON_LEFT_OFFSET + BUTTON_TEXT_GAP // 30px
+  
+  const DEFAULT_INPUT_CLASS_NAME = `h-7 text-xs w-full rounded-[2px] bg-input border-0 focus:outline-none focus:ring-0 focus:border-0`
+  
+  // Build input className with proper left padding to avoid button overlap (same as ColorInput)
+  const finalInputClassName = DEFAULT_INPUT_CLASS_NAME
+  
+  // Callback ref to set padding immediately when input is available (same as ColorInput)
+  const solidColorTextInputRefCallback = React.useCallback((input: HTMLInputElement | null) => {
+    solidColorTextInputRef.current = input
+    if (input) {
+      // Set padding-left with !important to override any className padding
+      input.style.setProperty('padding-left', `${INPUT_LEFT_PADDING}px`, 'important')
+    }
+  }, [])
+  
+  // Reapply padding when component updates (same as ColorInput)
+  React.useEffect(() => {
+    const input = solidColorTextInputRef.current
+    if (input) {
+      // Reapply padding to ensure it's always correct
+      input.style.setProperty('padding-left', `${INPUT_LEFT_PADDING}px`, 'important')
+    }
+  }, [solidColor, opacity])
+  
+  // Apply swatch styles to button with !important - same approach as ColorInput
+  // This function applies all styles and can be called multiple times
+  const applyButtonStyles = React.useCallback(() => {
+    const button = solidColorSwatchButtonRef.current
+    if (!button) return
+
+    // Force strict 1:1 aspect ratio - set width and height to be exactly equal (same as ColorInput)
+    const size = '20px'
+    button.style.setProperty('aspect-ratio', '1 / 1', 'important')
+    button.style.setProperty('width', size, 'important')
+    button.style.setProperty('height', size, 'important')
+    button.style.setProperty('min-width', size, 'important')
+    button.style.setProperty('min-height', size, 'important')
+    button.style.setProperty('max-width', size, 'important')
+    button.style.setProperty('max-height', size, 'important')
+    button.style.setProperty('padding', '0', 'important')
+    button.style.setProperty('margin', '0', 'important')
+    button.style.setProperty('border', 'none', 'important')
+    button.style.setProperty('border-width', '0', 'important')
+    button.style.setProperty('border-radius', '0', 'important')
+    button.style.setProperty('box-sizing', 'border-box', 'important')
+
+    // Clear any existing background styles first
+    button.style.removeProperty('background')
+    button.style.removeProperty('background-color')
+    button.style.removeProperty('background-image')
+    button.style.removeProperty('background-size')
+    button.style.removeProperty('background-position')
+    button.style.removeProperty('background-repeat')
+
+    // Apply swatch styles with !important (same as ColorInput)
+    if (swatchStyle.background) {
+      // For gradients, use the background shorthand
+      button.style.setProperty('background', swatchStyle.background, 'important')
+    } else {
+      // For other types, use individual properties
+      if (swatchStyle.backgroundColor) {
+        button.style.setProperty('background-color', swatchStyle.backgroundColor, 'important')
+      } else {
+        button.style.setProperty('background-color', '#e5e5e5', 'important')
+      }
+      if (swatchStyle.backgroundImage) {
+        button.style.setProperty('background-image', swatchStyle.backgroundImage, 'important')
+      }
+      if (swatchStyle.backgroundSize) {
+        button.style.setProperty('background-size', swatchStyle.backgroundSize, 'important')
+      }
+      if (swatchStyle.backgroundPosition) {
+        button.style.setProperty('background-position', swatchStyle.backgroundPosition, 'important')
+      }
+      if (swatchStyle.backgroundRepeat) {
+        button.style.setProperty('background-repeat', swatchStyle.backgroundRepeat, 'important')
+      }
+    }
+  }, [swatchStyle])
+
+  // Apply styles immediately on mount and whenever swatchStyle changes (same as ColorInput)
+  React.useEffect(() => {
+    const button = solidColorSwatchButtonRef.current
+    if (!button) return
+
+    // Force strict 1:1 aspect ratio - set width and height to be exactly equal (same as ColorInput)
+    const size = '20px'
+    button.style.setProperty('aspect-ratio', '1 / 1', 'important')
+    button.style.setProperty('width', size, 'important')
+    button.style.setProperty('height', size, 'important')
+    button.style.setProperty('min-width', size, 'important')
+    button.style.setProperty('min-height', size, 'important')
+    button.style.setProperty('max-width', size, 'important')
+    button.style.setProperty('max-height', size, 'important')
+    button.style.setProperty('padding', '0', 'important')
+    button.style.setProperty('margin', '0', 'important')
+    button.style.setProperty('border', 'none', 'important')
+    button.style.setProperty('border-width', '0', 'important')
+    button.style.setProperty('border-radius', '0', 'important')
+    button.style.setProperty('box-sizing', 'border-box', 'important')
+
+    // Clear any existing background styles first
+    button.style.removeProperty('background')
+    button.style.removeProperty('background-color')
+    button.style.removeProperty('background-image')
+    button.style.removeProperty('background-size')
+    button.style.removeProperty('background-position')
+    button.style.removeProperty('background-repeat')
+
+    // Apply swatch styles with !important (same as ColorInput)
+    if (swatchStyle.background) {
+      // For gradients, use the background shorthand
+      button.style.setProperty('background', swatchStyle.background, 'important')
+    } else {
+      // For other types, use individual properties
+      if (swatchStyle.backgroundColor) {
+        button.style.setProperty('background-color', swatchStyle.backgroundColor, 'important')
+      } else {
+        button.style.setProperty('background-color', '#e5e5e5', 'important')
+      }
+      if (swatchStyle.backgroundImage) {
+        button.style.setProperty('background-image', swatchStyle.backgroundImage, 'important')
+      }
+      if (swatchStyle.backgroundSize) {
+        button.style.setProperty('background-size', swatchStyle.backgroundSize, 'important')
+      }
+      if (swatchStyle.backgroundPosition) {
+        button.style.setProperty('background-position', swatchStyle.backgroundPosition, 'important')
+      }
+      if (swatchStyle.backgroundRepeat) {
+        button.style.setProperty('background-repeat', swatchStyle.backgroundRepeat, 'important')
+      }
+    }
+  }, [swatchStyle])
 
   // Auto-switch to valid set if current becomes unavailable (only when selectedColorSet changes, not when colors are added)
   React.useEffect(() => {
@@ -551,40 +959,49 @@ export function ColorPickerPopover({
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild disabled={disabled}>
-        {children}
-      </PopoverTrigger>
-      <PopoverContent
-        className={`w-[320px] ${isSpaceLayoutConfig ? 'px-0' : 'p-0'}`}
+    <>
+      <style>{COLOR_INPUT_TRIGGER_STYLES}</style>
+      <style>{COLOR_SET_SELECTOR_STYLES}</style>
+      <style>{COLOR_SWATCH_STYLES}</style>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild disabled={disabled}>
+          {children}
+        </PopoverTrigger>
+        <PopoverContent
+        className={`w-[360px] ${isSpaceLayoutConfig ? 'px-0' : 'p-0'}`}
         align="start"
         onClick={(e) => e.stopPropagation()}
-        style={{ width: '320px', minWidth: '320px', maxWidth: '320px' }}
+        style={{ width: '360px', minWidth: '360px', maxWidth: '360px' }}
       >
         <div className={`w-full ${isSpaceLayoutConfig ? 'space-y-2' : ''}`}>
           <Tabs value={colorType} onValueChange={(v) => setColorType(v as any)}>
-            <TabsList className={`w-full grid h-9 ${allowImageVideo ? 'grid-cols-5' : 'grid-cols-3'}`}>
-            <TabsTrigger value="solid" className="text-xs px-3 py-2 flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50" title="Solid">
-              <Droplet className="h-4 w-4" />
+            <TabsList className={`w-full grid h-9 px-2 ${allowImageVideo ? 'grid-cols-5' : 'grid-cols-3'}`}>
+            <TabsTrigger value="solid" className="text-xs px-3 py-2 inline-flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50 relative" title="Solid">
+              <Droplet className="h-4 w-4 flex-shrink-0" />
               <span>Solid</span>
+              {colorType === 'solid' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
             </TabsTrigger>
-            <TabsTrigger value="gradient" className="text-xs px-3 py-2 flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50" title="Gradient">
-              <Sliders className="h-4 w-4" />
+            <TabsTrigger value="gradient" className="text-xs px-3 py-2 inline-flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50 relative" title="Gradient">
+              <Sliders className="h-4 w-4 flex-shrink-0" />
               <span>Gradient</span>
+              {colorType === 'gradient' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
             </TabsTrigger>
-            <TabsTrigger value="pattern" className="text-xs px-3 py-2 flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50" title="Pattern">
-              <Grid3x3 className="h-4 w-4" />
+            <TabsTrigger value="pattern" className="text-xs px-3 py-2 inline-flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50 relative" title="Pattern">
+              <Grid3x3 className="h-4 w-4 flex-shrink-0" />
               <span>Pattern</span>
+              {colorType === 'pattern' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
             </TabsTrigger>
             {allowImageVideo && (
               <>
-                <TabsTrigger value="image" className="text-xs px-3 py-2 flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50" title="Image">
-                  <Image className="h-4 w-4" />
+                <TabsTrigger value="image" className="text-xs px-3 py-2 inline-flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50 relative" title="Image">
+                  <Image className="h-4 w-4 flex-shrink-0" />
                   <span>Image</span>
+                  {colorType === 'image' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
                 </TabsTrigger>
-                <TabsTrigger value="video" className="text-xs px-3 py-2 flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50" title="Video">
-                  <Play className="h-4 w-4" />
+                <TabsTrigger value="video" className="text-xs px-3 py-2 inline-flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50 relative" title="Video">
+                  <Play className="h-4 w-4 flex-shrink-0" />
                   <span>Video</span>
+                  {colorType === 'video' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
                 </TabsTrigger>
               </>
             )}
@@ -592,10 +1009,13 @@ export function ColorPickerPopover({
 
           <TabsContent value="solid" className={`${isSpaceLayoutConfig ? 'py-4' : 'p-4'} space-y-2 mt-0`}>
             {/* Color Set Selector */}
-            <div className="space-y-1">
+            <div className="flex items-center justify-between gap-2">
               <Label className="text-xs">Color Set</Label>
               <Select value={selectedColorSet} onValueChange={setSelectedColorSet}>
-                <SelectTrigger className="h-7 text-xs w-full">
+                <SelectTrigger 
+                  className="h-7 text-xs w-32 border-0 shadow-none bg-transparent color-set-selector"
+                  data-component="select-trigger"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -609,111 +1029,50 @@ export function ColorPickerPopover({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
 
               {/* Quick Colors */}
               {selectedColorSet === 'quick' && (
-                <div className="grid grid-cols-8 gap-1.5">
-                  {[
-                    '#000000', '#ffffff', '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e',
-                    '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7',
-                    '#d946ef', '#ec4899', '#f43f5e', '#6b7280', '#64748b', '#71717a', '#737373', '#78716c',
-                    '#1e40af', '#dc2626', '#16a34a', '#ca8a04', '#9333ea', '#ea580c', '#0891b2', '#be123c'
-                  ].map((color) => (
-                    <button
-                      key={color}
-                      type="button"
-                      onClick={() => handleSolidColorChange(color)}
-                      className={`h-6 w-6 rounded border-2 transition-all hover:scale-110 ${
-                        solidColor.toLowerCase() === color.toLowerCase()
-                          ? 'border-blue-500 ring-2 ring-blue-500/20'
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                      style={{ backgroundColor: color }}
-                      title={color}
-                    >
-                      {solidColor.toLowerCase() === color.toLowerCase() && (
-                        <div className="w-2 h-2 bg-background rounded-full mx-auto shadow-sm border border-border" />
-                      )}
-                    </button>
-                  ))}
-                </div>
+                <ColorSwatchGrid
+                  colors={quickColors}
+                  selectedColor={solidColor}
+                  onColorSelect={handleSolidColorChange}
+                />
               )}
 
               {/* Recent Colors */}
-              {selectedColorSet === 'recent' && recentColors.length > 0 && (
-                <div className="grid grid-cols-8 gap-1.5">
-                  {recentColors.map((color, index) => (
-                    <button
-                      key={`recent-${color}-${index}`}
-                      type="button"
-                      onClick={() => handleSolidColorChange(color)}
-                      className={`h-6 w-6 rounded border-2 transition-all hover:scale-110 ${
-                        solidColor.toLowerCase() === color.toLowerCase()
-                          ? 'border-blue-500 ring-2 ring-blue-500/20'
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                      style={{ backgroundColor: color }}
-                      title={color}
-                    >
-                      {solidColor.toLowerCase() === color.toLowerCase() && (
-                        <div className="w-2 h-2 bg-background rounded-full mx-auto shadow-sm border border-border" />
-                      )}
-                    </button>
-                  ))}
-                </div>
+              {selectedColorSet === 'recent' && (
+                <ColorSwatchGrid
+                  colors={recentColors}
+                  selectedColor={solidColor}
+                  onColorSelect={handleSolidColorChange}
+                />
               )}
 
               {/* Favorite Colors */}
-              {selectedColorSet === 'favorites' && favoriteColors.length > 0 && (
-                <div className="grid grid-cols-8 gap-1.5">
-                  {favoriteColors.map((color) => (
-                    <button
-                      key={color}
-                      type="button"
-                      onClick={() => handleSolidColorChange(color)}
-                      className={`h-6 w-6 rounded border-2 transition-all hover:scale-110 relative ${
-                        solidColor.toLowerCase() === color.toLowerCase()
-                          ? 'border-blue-500 ring-2 ring-blue-500/20'
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                      style={{ backgroundColor: color }}
-                      title={color}
-                    >
-                      {solidColor.toLowerCase() === color.toLowerCase() && (
-                        <div className="w-2 h-2 bg-background rounded-full mx-auto shadow-sm border border-border" />
-                      )}
-                      <Star className="absolute -top-1 -right-1 h-3 w-3 fill-yellow-400 text-yellow-400" />
-                    </button>
-                  ))}
-                </div>
+              {selectedColorSet === 'favorites' && (
+                <ColorSwatchGrid
+                  colors={favoriteColors}
+                  selectedColor={solidColor}
+                  onColorSelect={handleSolidColorChange}
+                  showFavoriteIcon={true}
+                />
               )}
 
               {/* Preset Palettes */}
-              {Object.entries(colorPalettes).map(([name, colors]) => {
-                const paletteKey = name.toLowerCase().replace(/\s+/g, '-')
-                if (selectedColorSet === paletteKey) {
-                  return (
-                    <div key={name} className="grid grid-cols-10 gap-1">
-                      {colors.map((color) => (
-                        <button
-                          key={color}
-                          type="button"
-                          onClick={() => handleSolidColorChange(color)}
-                          className={`h-5 w-5 rounded border transition-all hover:scale-110 ${
-                            solidColor.toLowerCase() === color.toLowerCase()
-                              ? 'border-blue-500 ring-1 ring-blue-500/50'
-                              : 'border-border hover:border-primary/50'
-                          }`}
-                          style={{ backgroundColor: color }}
-                          title={color}
-                        />
-                      ))}
-                    </div>
-                  )
-                }
-                return null
-              })}
-            </div>
+              {Object.entries(colorPalettes)
+                .filter(([name]) => {
+                  const paletteKey = name.toLowerCase().replace(/\s+/g, '-')
+                  return selectedColorSet === paletteKey
+                })
+                .map(([name, colors]) => (
+                  <ColorSwatchGrid
+                    key={name}
+                    colors={colors}
+                    selectedColor={solidColor}
+                    onColorSelect={handleSolidColorChange}
+                  />
+                ))}
 
             {/* Custom Color Input */}
             <div className="space-y-1">
@@ -725,63 +1084,110 @@ export function ColorPickerPopover({
                     variant="ghost"
                     size="sm"
                     className="h-6 px-1.5 text-xs"
-                    onClick={startEyeDropper}
-                    disabled={isPickingColor || !('EyeDropper' in window)}
-                    title="Pick color from screen (Eye dropper)"
-                  >
-                    <Eye className={`h-3 w-3 ${isPickingColor ? 'animate-pulse' : ''}`} />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-1.5 text-xs"
-                    onClick={() => toggleFavorite(solidColor)}
-                    title={isFavorite(solidColor) ? 'Remove from favorites' : 'Add to favorites'}
-                  >
-                    <Star className={`h-3 w-3 ${isFavorite(solidColor) ? 'fill-yellow-400 text-yellow-400' : ''}`} />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-1.5 text-xs"
                     onClick={() => setShowColorFormats(!showColorFormats)}
                     title="Show color formats"
                   >
                     {showColorFormats ? 'Hide' : 'Formats'}
                   </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-1.5 text-xs"
-                    onClick={copyColorToClipboard}
-                    title="Copy color value"
-                  >
-                    {copied ? (
-                      <Check className="h-3 w-3" />
-                    ) : (
-                      <Copy className="h-3 w-3" />
-                    )}
-                  </Button>
                 </div>
               </div>
-              <div className="relative">
+              <div className="flex items-center gap-2">
+                {/* Color input with swatch button inside - same UI as ColorInput */}
+                <div className="relative flex-1">
+                  {/* Hidden color input */}
+                  <input
+                    ref={colorInputRef}
+                    type="color"
+                    value={solidColor}
+                    onChange={(e) => {
+                      e.stopPropagation()
+                      handleSolidColorChange(e.target.value)
+                    }}
+                    style={{
+                      position: 'absolute',
+                      width: '1px',
+                      height: '1px',
+                      opacity: 0,
+                      clip: 'rect(0, 0, 0, 0)',
+                      overflow: 'hidden',
+                      zIndex: -1,
+                      pointerEvents: 'auto' // Allow programmatic clicks
+                    }}
+                    tabIndex={-1}
+                  />
+                  {/* Color swatch button that triggers native color picker - same as ColorInput */}
+                  <button
+                    ref={solidColorSwatchButtonRefCallback}
+                    type="button"
+                    data-component="color-input-trigger"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      if (colorInputRef.current) {
+                        colorInputRef.current.click()
+                      }
+                    }}
+                    className="absolute left-1 top-1/2 -translate-y-1/2 cursor-pointer z-40 border-0 outline-none shadow-none flex-shrink-0 p-0 color-input-trigger"
+                    style={{
+                      pointerEvents: 'auto',
+                      zIndex: 40,
+                      display: 'block',
+                    }}
+                    title="Click to open color picker"
+                    aria-label="Open color picker"
+                  />
+                  <Input
+                    ref={solidColorTextInputRefCallback}
+                    type="text"
+                    value={actualColor}
+                    onChange={(e) => {
+                      // Parse the input - if it's rgba, extract the base color
+                      const inputValue = e.target.value
+                      if (inputValue.startsWith('rgba')) {
+                        // Extract base color from rgba
+                        const baseColor = extractBaseColor(inputValue)
+                        handleSolidColorChange(baseColor)
+                        // Update opacity from rgba
+                        const newOpacity = extractOpacity(inputValue)
+                        if (newOpacity !== opacity) {
+                          handleOpacityChange(newOpacity)
+                        }
+                      } else {
+                        // Regular hex or rgb color
+                        handleSolidColorChange(inputValue)
+                      }
+                    }}
+                    className={finalInputClassName}
+                    placeholder="#ffffff"
+                    disabled={disabled}
+                    style={{
+                      pointerEvents: 'auto'
+                    }}
+                    onPointerDown={(e) => {
+                      // Don't prevent pointer events on the input itself, but allow button clicks
+                      const target = e.target as HTMLElement
+                      if (target.closest('button')) {
+                        return
+                      }
+                    }}
+                  />
+                </div>
+                
+                {/* Opacity input on the right */}
                 <Input
-                  type="color"
-                  value={solidColor}
-                  onChange={(e) => handleSolidColorChange(e.target.value)}
-                  className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 p-0 border-0 cursor-pointer rounded-none z-10"
-                  style={{ appearance: 'none', WebkitAppearance: 'none', border: 'none', outline: 'none' }}
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={Math.round(opacity * 100)}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value) || 0
+                    const clamped = Math.max(0, Math.min(100, val))
+                    handleOpacityChange(clamped / 100)
+                  }}
+                  className="h-8 w-16 text-xs"
+                  placeholder="100"
                 />
-                <Input
-                  type="text"
-                  value={solidColor}
-                  onChange={(e) => handleSolidColorChange(e.target.value)}
-                  className="h-8 text-xs pl-7"
-                  placeholder="#ffffff"
-                />
+                <span className="text-xs text-muted-foreground">%</span>
               </div>
               
               {/* Color Format Display */}
@@ -810,43 +1216,13 @@ export function ColorPickerPopover({
               )}
             </div>
 
-            {/* Opacity/Transparency Control */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs">Opacity</Label>
-                <span className="text-xs text-muted-foreground">{Math.round(opacity * 100)}%</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  value={opacity}
-                  onChange={(e) => handleOpacityChange(parseFloat(e.target.value))}
-                  className="flex-1 h-2 bg-muted rounded-lg appearance-none cursor-pointer"
-                />
-                <Input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={Math.round(opacity * 100)}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value) || 0
-                    const clamped = Math.max(0, Math.min(100, val))
-                    handleOpacityChange(clamped / 100)
-                  }}
-                  className="h-7 w-16 text-xs"
-                />
-              </div>
-            </div>
           </TabsContent>
 
           <TabsContent value="gradient" className={`${isSpaceLayoutConfig ? 'py-4' : 'p-4'} space-y-2 mt-0`}>
             <div className="space-y-2">
               {/* Gradient Type */}
               <div className="space-y-1">
-                <Label className="text-xs">Type</Label>
+                <Label className="text-xs text-left">Type</Label>
                 <Select 
                   value={gradientConfig.type} 
                    onValueChange={(value: string) => handleGradientChange({ ...gradientConfig, type: value as 'linear' | 'radial' })}
@@ -928,44 +1304,83 @@ export function ColorPickerPopover({
                     <Plus className="h-3 w-3" />
                   </Button>
                 </div>
-                {gradientConfig.stops.map((stop, index) => (
-                  <div key={`stop-${index}-${stop.color}-${stop.position}`} className="flex items-center gap-2">
-                    <div className="relative flex-1">
+                {gradientConfig.stops.map((stop, index) => {
+                  const setGradientColorInputRef = (el: HTMLInputElement | null) => {
+                    if (el) {
+                      gradientColorInputRefs.current.set(index, el)
+                    } else {
+                      gradientColorInputRefs.current.delete(index)
+                    }
+                  }
+                  
+                  return (
+                    <div key={`stop-${index}-${stop.color}-${stop.position}`} className="flex items-center gap-2">
+                      <div className="relative flex items-center gap-2 flex-1">
+                        {/* Hidden color input */}
+                        <input
+                          ref={setGradientColorInputRef}
+                          type="color"
+                          value={stop.color}
+                          onChange={(e) => {
+                            e.stopPropagation()
+                            updateGradientStop(index, { color: e.target.value })
+                          }}
+                          style={{
+                            position: 'absolute',
+                            width: '1px',
+                            height: '1px',
+                            opacity: 0,
+                            clip: 'rect(0, 0, 0, 0)',
+                            overflow: 'hidden',
+                            zIndex: -1,
+                            pointerEvents: 'auto' // Allow programmatic clicks
+                          }}
+                          tabIndex={-1}
+                        />
+                        {/* Color swatch button that triggers native color picker */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            const colorInput = gradientColorInputRefs.current.get(index)
+                            if (colorInput) {
+                              colorInput.click()
+                            }
+                          }}
+                          className="h-7 w-7 rounded border-2 border-border hover:border-primary/50 transition-all hover:scale-110 flex-shrink-0 cursor-pointer"
+                          style={getSwatchStyle(stop.color)}
+                          title="Click to open color picker"
+                        />
+                        <Input
+                          type="text"
+                          value={stop.color}
+                          onChange={(e) => updateGradientStop(index, { color: e.target.value })}
+                          className="h-7 text-xs flex-1"
+                        />
+                      </div>
                       <Input
-                        type="color"
-                        value={stop.color}
-                        onChange={(e) => updateGradientStop(index, { color: e.target.value })}
-                        className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 p-0 border-0 cursor-pointer rounded-none z-10"
-                        style={{ appearance: 'none', WebkitAppearance: 'none', border: 'none', outline: 'none' }}
+                        type="number"
+                        value={stop.position}
+                        onChange={(e) => updateGradientStop(index, { position: parseInt(e.target.value) || 0 })}
+                        className="h-7 text-xs w-16"
+                        min={0}
+                        max={100}
                       />
-                      <Input
-                        type="text"
-                        value={stop.color}
-                        onChange={(e) => updateGradientStop(index, { color: e.target.value })}
-                        className="h-7 text-xs pl-7 flex-1"
-                      />
+                      <div className="text-xs text-muted-foreground">%</div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        onClick={() => removeGradientStop(index)}
+                        disabled={gradientConfig.stops.length <= 2}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                     </div>
-                    <Input
-                      type="number"
-                      value={stop.position}
-                      onChange={(e) => updateGradientStop(index, { position: parseInt(e.target.value) || 0 })}
-                      className="h-7 text-xs w-16"
-                      min={0}
-                      max={100}
-                    />
-                    <div className="text-xs text-muted-foreground">%</div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0"
-                      onClick={() => removeGradientStop(index)}
-                      disabled={gradientConfig.stops.length <= 2}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
 
               {/* Generated CSS */}
@@ -1098,6 +1513,7 @@ export function ColorPickerPopover({
         </div>
       </PopoverContent>
     </Popover>
+    </>
   )
 }
 

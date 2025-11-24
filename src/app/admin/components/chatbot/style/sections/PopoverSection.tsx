@@ -51,7 +51,7 @@ export function PopoverSection({ formData, setFormData, chatkitOptions }: Sectio
                     placeholder="10"
                     className="pr-8"
                   />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Spacing between widget button and popover window
@@ -72,7 +72,7 @@ export function PopoverSection({ formData, setFormData, chatkitOptions }: Sectio
                     placeholder="380"
                     className="pr-8"
                   />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Width of the popover chat window
@@ -88,7 +88,7 @@ export function PopoverSection({ formData, setFormData, chatkitOptions }: Sectio
                     placeholder="600"
                     className="pr-8"
                   />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Height of the popover chat window
@@ -143,7 +143,7 @@ export function PopoverSection({ formData, setFormData, chatkitOptions }: Sectio
                     placeholder="4"
                     className="pr-8"
                   />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Blur radius of the popover container shadow

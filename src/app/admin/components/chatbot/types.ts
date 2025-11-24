@@ -165,7 +165,7 @@ export interface Chatbot {
   name: string
   website: string
   description?: string
-  engineType: 'custom' | 'agentbuilder' | 'openai' | 'chatkit' | 'dify' | 'openai-agent-sdk'
+  engineType: 'custom' | 'openai' | 'chatkit' | 'dify' | 'openai-agent-sdk'
   apiEndpoint: string
   apiAuthType: 'none' | 'bearer' | 'api_key' | 'custom'
   apiAuthValue: string
@@ -318,7 +318,7 @@ export interface Chatbot {
   enableFileUpload: boolean
   showCitations: boolean
   enableVoiceAgent?: boolean
-  voiceProvider?: 'browser' | 'openai-realtime' | 'agentbuilder' // Voice provider: 'browser' for Web Speech API, 'openai-realtime' for OpenAI Realtime API, 'agentbuilder' for Agent Builder voice
+  voiceProvider?: 'browser' | 'openai-realtime' // Voice provider: 'browser' for Web Speech API, 'openai-realtime' for OpenAI Realtime API
   voiceUIStyle?: 'chat' | 'wave' // Voice UI style: 'chat' for chat-like UI, 'wave' for background wave animation
   showMessageFeedback?: boolean // Show like/dislike buttons on messages
   showMessageRetry?: boolean // Show retry button on messages

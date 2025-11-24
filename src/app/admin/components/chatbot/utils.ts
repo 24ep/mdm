@@ -58,10 +58,6 @@ export function validateChatbot(formData: Partial<Chatbot>): { valid: boolean; e
     if (!formData.selectedModelId || formData.selectedModelId.trim() === '') {
       errors.push('OpenAI Model is required')
     }
-  } else if (engineType === 'agentbuilder') {
-    if (!formData.selectedEngineId || formData.selectedEngineId.trim() === '') {
-      errors.push('AgentBuilder Engine is required')
-    }
   } else if (engineType === 'chatkit') {
     if (!formData.chatkitAgentId || formData.chatkitAgentId.trim() === '') {
       errors.push('Agent Builder Agent ID is required for ChatKit')

@@ -223,7 +223,7 @@ const DropdownMenuContent = React.forwardRef<
       <div
         ref={contentRef}
         className={cn(
-          "min-w-[8rem] rounded-md border border-border bg-card p-1 text-popover-foreground shadow-lg outline-none backdrop-blur-xl",
+          "min-w-[8rem] rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none backdrop-blur-xl",
           className
         )}
         style={{
@@ -383,7 +383,7 @@ const DropdownMenuSubContent = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "min-w-[8rem] rounded-md border border-border bg-card p-1 text-popover-foreground shadow-lg outline-none backdrop-blur-xl",
+      "min-w-[8rem] rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none backdrop-blur-xl",
       className
     )}
     style={{

@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useCallback, useState, useEffect, useMemo } from 'react'
+import { memo, useCallback, useState, useEffect, useMemo, useRef, useContext } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Building2, Layout, Users as UsersIcon, Database, FolderPlus, Archive, AlertTriangle, ChevronDown, ChevronRight, Settings, Plus, MoreVertical, Trash2, Pencil, FileIcon } from 'lucide-react'
 import { SpacesEditorManager, SpacesEditorPage } from '@/lib/space-studio-manager'
 import { useSpace } from '@/contexts/space-context'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Z_INDEX } from '@/lib/z-index'
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core'
@@ -129,95 +129,81 @@ function SortablePageItem({
     >
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            onClick={() => onPageClick(page)}
-            {...(editMode ? { ...attributes, ...listeners } : {})}
-            className={cn(
-              "platform-sidebar-menu-button w-full justify-between text-sm font-medium h-10 px-4 transition-colors duration-150 cursor-pointer text-foreground !hover:bg-muted !hover:text-foreground rounded-none",
-              editMode ? 'cursor-grab active:cursor-grabbing' : '',
-              isActive
-                ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm"
-                : ""
-            )}
-            style={{ 
-              pointerEvents: 'auto', 
-              position: 'relative', 
-              zIndex: Z_INDEX.sidebar + 1
-            }}
-          >
-            <IconComponent className="h-4 w-4 mr-3 flex-shrink-0" />
-            <span className="truncate flex-1 text-left">{page.displayName || page.name || 'Untitled Page'}</span>
+          <div className="relative flex items-center w-full">
+            <Button
+              variant="ghost"
+              onClick={() => onPageClick(page)}
+              {...(editMode ? { ...attributes, ...listeners } : {})}
+              className={cn(
+                "platform-sidebar-menu-button w-full justify-between text-sm font-medium h-10 px-4 transition-colors duration-150 cursor-pointer text-foreground !hover:bg-muted !hover:text-foreground rounded-none",
+                editMode ? 'cursor-grab active:cursor-grabbing' : '',
+                isActive
+                  ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm"
+                  : ""
+              )}
+              style={{ 
+                pointerEvents: 'auto', 
+                position: 'relative', 
+                zIndex: Z_INDEX.sidebar + 1
+              }}
+            >
+              <IconComponent className="h-4 w-4 mr-3 flex-shrink-0" />
+              <span className="truncate flex-1 text-left">{page.displayName || page.name || 'Untitled Page'}</span>
+              {editMode && <div className="h-8 w-8 flex-shrink-0" />}
+            </Button>
             {editMode && (
               <Popover open={menuOpen === page.id} onOpenChange={(open) => onMenuOpenChange(open ? page.id : null)}>
                 <PopoverTrigger asChild>
-                  <Button
-                    size="icon"
-                    variant="ghost"
+                  <a
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation()
-                      onMenuOpenChange(menuOpen === page.id ? null : page.id)
                     }}
                     onMouseDown={(e) => {
                       e.stopPropagation()
                     }}
-                    className="h-8 w-8 flex-shrink-0"
+                    className="h-8  p-2 absolute right-1 flex items-center justify-center bg-transparent border-0 hover:bg-transparent p-0"
                     style={{ 
-                      color: 'var(--brand-secondary-sidebar-text, hsl(var(--muted-foreground)))',
-                      position: 'relative',
-                      zIndex: Z_INDEX.dropdown
+                      color: 'hsl(var(--primary))',
+                      zIndex: Z_INDEX.dropdown,
                     }}
                   >
                     <MoreVertical className="h-4 w-4" />
-                  </Button>
+                  </a>
                 </PopoverTrigger>
                 <PopoverContent 
-                  className="w-48 p-1" 
+                  className="w-40 bg-popover" 
                   align="start" 
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="flex flex-col gap-0.5">
-                    <Button
-                      variant="ghost"
+                  <div className="flex flex-col">
+                    <button
                       onClick={() => {
                         onRename(page)
+                        onMenuOpenChange(null)
                       }}
-                      className={cn(
-                        "platform-sidebar-menu-button w-full justify-start text-sm font-medium h-10 px-4 transition-colors duration-150 cursor-pointer text-foreground !hover:bg-muted !hover:text-foreground rounded-none"
-                      )}
-                      style={{ 
-                        pointerEvents: 'auto', 
-                        position: 'relative', 
-                        zIndex: Z_INDEX.sidebar + 1
-                      }}
+                      className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                     >
-                      <Pencil className="h-4 w-4 mr-3 flex-shrink-0" />
+                      <Pencil className="h-4 w-4 mr-2 flex-shrink-0" />
                       <span className="truncate">Rename</span>
-                    </Button>
-                    <Button
-                      variant="ghost"
+                    </button>
+                    <button
                       onClick={() => {
                         if (confirm('Are you sure you want to delete this page?')) {
                           onDelete(page.id)
                         }
+                        onMenuOpenChange(null)
                       }}
-                      className={cn(
-                        "platform-sidebar-menu-button w-full justify-start text-sm font-medium h-10 px-4 transition-colors duration-150 cursor-pointer text-foreground !hover:bg-muted !hover:text-foreground rounded-none text-destructive hover:text-destructive/80"
-                      )}
-                      style={{ 
-                        pointerEvents: 'auto', 
-                        position: 'relative', 
-                        zIndex: Z_INDEX.sidebar + 1
-                      }}
+                      className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-destructive focus:bg-accent focus:text-destructive text-destructive"
                     >
-                      <Trash2 className="h-4 w-4 mr-3 flex-shrink-0" />
+                      <Trash2 className="h-4 w-4 mr-2 flex-shrink-0" />
                       <span className="truncate">Delete</span>
-                    </Button>
+                    </button>
                   </div>
                 </PopoverContent>
               </Popover>
             )}
-          </Button>
+          </div>
         </TooltipTrigger>
         <TooltipContent>
           <p>{page.displayName || page.name || 'Untitled Page'}</p>
@@ -575,13 +561,17 @@ export const SpaceSidebar = memo(function SpaceSidebar({
             <div className="mt-auto pt-2.5">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button
-                    onClick={handleAddPage}
-                    className="platform-sidebar-menu-button w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-sm text-sm transition-colors cursor-pointer"
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      handleAddPage()
+                    }}
+                    className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-sm text-muted-foreground hover:bg-muted/50 rounded-sm"
                   >
-                    <Plus className="h-4 w-4 flex-shrink-0" />
-                    <span className="truncate">New Page</span>
-                  </button>
+                    <Plus className="h-4 w-4" />
+                    <span>New Page</span>
+                  </a>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Add New Page</p>

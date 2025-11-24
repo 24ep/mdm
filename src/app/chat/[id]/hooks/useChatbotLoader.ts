@@ -62,7 +62,14 @@ export function useChatbotLoader({
       if (!data || typeof data !== 'object') return
       if (data.type === 'chatbot-config-update' && data.id === chatbotId) {
         const cfg = data.config || {}
-        setChatbot((prev) => ({ ...(prev || ({} as any)), ...cfg }))
+        // When config is updated from editor, ensure chatbot styles take precedence over theme config
+        // This ensures the emulator uses style settings from ai-chat-ui, not theme config
+        setChatbot((prev) => {
+          const updated = { ...(prev || ({} as any)), ...cfg }
+          // Mark that this config came from the editor to ensure styles are applied
+          ;(updated as any)._fromEditor = true
+          return updated
+        })
       } else if (data.type === 'emulator-config-update' && data.id === chatbotId) {
         const emulatorCfg = data.emulatorConfig || {}
         setEmulatorConfig(emulatorCfg)

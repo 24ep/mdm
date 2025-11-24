@@ -34,8 +34,8 @@ async function registerPlugin(plugin: PluginDefinition): Promise<void> {
         screenshots, documentation_url, support_url, pricing_info, verified,
         created_at, updated_at
       ) VALUES (
-        gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
-        $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, NOW(), NOW()
+        gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10, $11, $12::jsonb,
+        $13, $14::jsonb, $15, $16, $17, $18, $19, $20, $21::jsonb, $22, NOW(), NOW()
       )`,
       [
         plugin.name,

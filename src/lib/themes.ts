@@ -43,7 +43,7 @@ export const lightThemes: ThemeConfig[] = [
       foreground: '222.2 84% 4.9%',
       card: '0 0% 100%',
       cardForeground: '222.2 84% 4.9%',
-      popover: '0 0% 100%',
+      popover: '0 0% 100%', // Pure white
       popoverForeground: '222.2 84% 4.9%',
       primary: '221.2 83.2% 53.3%',
       primaryForeground: '210 40% 98%',

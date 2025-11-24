@@ -204,12 +204,12 @@ export const defaultBrandingConfig: BrandingConfig = {
         'text-input': {
             light: {
                 backgroundColor: 'rgba(0,0,0,0.04)', // Refined, minimal background
-                borderColor: 'rgba(0,0,0,0.06)', // Ultra-subtle border
+                borderColor: 'transparent', // Transparent border to match theme
                 borderRadius: '8px',
             },
             dark: {
                 backgroundColor: 'rgba(255,255,255,0.08)', // Refined, minimal background
-                borderColor: 'rgba(255,255,255,0.08)', // Ultra-subtle border
+                borderColor: 'transparent', // Transparent border to match theme
                 borderRadius: '8px',
             },
         },
@@ -243,16 +243,16 @@ export const defaultBrandingConfig: BrandingConfig = {
                 borderRadius: '8px',
             },
         },
-        // Textarea - Ultra-clean with soft focus states
+        // Textarea - Ultra-clean with soft focus states (matches text-input)
         'textarea': {
             light: {
                 backgroundColor: 'rgba(0,0,0,0.04)', // Refined, minimal background
-                borderColor: 'rgba(0,0,0,0.06)', // Ultra-subtle border
+                borderColor: 'transparent', // Transparent border to match text-input
                 borderRadius: '8px',
             },
             dark: {
                 backgroundColor: 'rgba(255,255,255,0.08)', // Refined, minimal background
-                borderColor: 'rgba(255,255,255,0.08)', // Ultra-subtle border
+                borderColor: 'transparent', // Transparent border to match text-input
                 borderRadius: '8px',
             },
         },

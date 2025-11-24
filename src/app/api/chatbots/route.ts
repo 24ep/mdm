@@ -284,10 +284,6 @@ export async function POST(request: NextRequest) {
       if (!selectedModelId) {
         return NextResponse.json({ error: 'Missing required fields: OpenAI Model is required' }, { status: 400 })
       }
-    } else if (engine === 'agentbuilder') {
-      if (!selectedEngineId) {
-        return NextResponse.json({ error: 'Missing required fields: AgentBuilder Engine is required' }, { status: 400 })
-      }
     } else if (engine === 'chatkit') {
       if (!chatkitAgentId) {
         return NextResponse.json({ error: 'Missing required fields: Agent Builder Agent ID is required for ChatKit' }, { status: 400 })

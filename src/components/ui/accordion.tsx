@@ -88,11 +88,13 @@ const AccordionTrigger = React.forwardRef<
     <button
       ref={ref}
       type="button"
+      data-component="accordion-trigger"
       onClick={() => itemValue && context?.onValueChange(itemValue)}
       className={cn(
         "flex flex-1 items-center justify-between w-full py-3 font-medium transition-all",
         "bg-white dark:bg-black text-foreground",
         "hover:bg-accent hover:text-accent-foreground",
+        "no-underline",
         isOpen && "[&>svg:last-child]:rotate-180",
         className
       )}

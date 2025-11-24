@@ -321,11 +321,11 @@ export function EditVMDialog({ open, onOpenChange, vm, onSuccess }: EditVMDialog
                   Refresh
                 </Button>
                 <Button
-                  variant="outline"
                   size="sm"
                   onClick={() => setShowAddService(!showAddService)}
+                  className="gap-2"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="h-4 w-4" />
                   Add Service
                 </Button>
               </div>

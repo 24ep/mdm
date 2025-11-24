@@ -3,9 +3,7 @@
 import { usePathname } from 'next/navigation'
 import { PlatformLayout } from '@/components/platform/PlatformLayout'
 import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Plus } from 'lucide-react'
-import { InfrastructureProvider, useInfrastructureContext } from '@/contexts/infrastructure-context'
+import { InfrastructureProvider } from '@/contexts/infrastructure-context'
 
 const pathToTabMap: Record<string, string> = {
   '/infrastructure': 'infrastructure',
@@ -18,7 +16,6 @@ function InfrastructureLayoutContent({
 }) {
   const pathname = usePathname()
   const [activeTab, setActiveTab] = useState('infrastructure')
-  const { setShowAddDialog } = useInfrastructureContext()
 
   useEffect(() => {
     const tab = pathToTabMap[pathname || ''] || 'infrastructure'
@@ -34,12 +31,6 @@ function InfrastructureLayoutContent({
     <PlatformLayout
       activeTab={activeTab}
       onTabChange={handleTabChange}
-      breadcrumbActions={
-        <Button onClick={() => setShowAddDialog(true)} size="sm">
-          <Plus className="mr-2 h-4 w-4" />
-          Add Instance
-        </Button>
-      }
     >
       {children}
     </PlatformLayout>

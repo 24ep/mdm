@@ -71,7 +71,7 @@ export function MessagesSection({ formData, setFormData }: MessagesSectionProps)
                     placeholder="14"
                     className="pr-8"
                   />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
                 </div>
               </div>
             </div>
@@ -406,7 +406,7 @@ export function MessagesSection({ formData, setFormData }: MessagesSectionProps)
                     placeholder="14"
                     className="pr-8"
                   />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">px</span>
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
                 </div>
               </div>
             </div>

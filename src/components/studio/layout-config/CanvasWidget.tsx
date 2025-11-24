@@ -257,7 +257,8 @@ export function CanvasWidget({
 
       {/* 3-dot menu button - top outside element */}
       {(isSelected || showMenuButton) && !isLocked && (
-        <button
+        <a
+          href="#"
           data-icon-button
           className="absolute z-50 flex items-center justify-center w-6 h-6 rounded transition-colors shadow-sm"
           style={{ 
@@ -267,6 +268,7 @@ export function CanvasWidget({
             right: '4px'
           }}
           onClick={(e) => {
+            e.preventDefault()
             e.stopPropagation()
             // Store mouse position for popover positioning
             setMenuPosition({ x: e.clientX, y: e.clientY })
@@ -277,7 +279,7 @@ export function CanvasWidget({
           onMouseLeave={() => !isSelected && setShowMenuButton(false)}
         >
           <MoreVertical className="h-3.5 w-3.5" />
-        </button>
+        </a>
       )}
 
       {/* Context menu (for both button click and right-click) */}

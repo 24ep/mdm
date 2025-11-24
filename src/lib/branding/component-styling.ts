@@ -36,8 +36,12 @@ export function applyComponentStyling(branding: BrandingConfig) {
     // Append to end of head to ensure it comes after globals.css and can override it
     document.head.appendChild(styleElement)
   } else {
-    // If style element exists, move it to the end to ensure it's after globals.css
-    document.head.appendChild(styleElement)
+    // Only move the element if it's not already at the end to avoid unnecessary DOM mutations
+    // Check if it's the last child - if not, move it to the end
+    const lastChild = document.head.lastElementChild
+    if (lastChild !== styleElement) {
+      document.head.appendChild(styleElement)
+    }
   }
 
   // Always initialize CSS rules (even if empty, to clear previous styles)
@@ -262,6 +266,16 @@ export function applyComponentStyling(branding: BrandingConfig) {
         // Use the shared rgbaToHsl function which handles hex, rgba/rgb, and hsl formats
         const mutedHsl = rgbaToHsl(bgColor)
         componentCSS += `      --muted: ${mutedHsl} !important;\n`
+      }
+      // For iconButton, aggressively override Tailwind's background classes
+      // This ensures transparent backgrounds properly override hover states and other Tailwind utilities
+      if (componentId === 'iconButton') {
+        const bgColor = componentStyle.backgroundColor.trim()
+        componentCSS += `      background: ${bgColor} !important;\n`
+        componentCSS += `      background-color: ${bgColor} !important;\n`
+        componentCSS += `      background-image: none !important;\n`
+        // Override Tailwind's opacity utilities that might affect background
+        componentCSS += `      --tw-bg-opacity: 1 !important;\n`
       }
     }
 
@@ -520,14 +534,18 @@ export function applyComponentStyling(branding: BrandingConfig) {
         console.log('[Branding] Setting text-input border-color:', borderColorValue, 'borderWidth:', componentStyle.borderWidth)
       }
       // Ensure width is set if borderColor is set but borderWidth is not explicitly set
-      if (!componentStyle.borderWidth || !componentStyle.borderWidth.trim() || componentStyle.borderWidth.trim() === '0px' || componentStyle.borderWidth.trim() === '0') {
+      // Only set width if borderWidth is not explicitly "0px" or "0"
+      const borderWidthValue = componentStyle.borderWidth ? componentStyle.borderWidth.trim() : ''
+      const isExplicitlyZero = borderWidthValue === '0px' || borderWidthValue === '0'
+      
+      if (!isExplicitlyZero && (!componentStyle.borderWidth || !borderWidthValue)) {
         // Check if any individual side widths are set
         const hasIndividualWidths = (componentStyle.borderTopWidth && componentStyle.borderTopWidth.trim()) ||
                                     (componentStyle.borderRightWidth && componentStyle.borderRightWidth.trim()) ||
                                     (componentStyle.borderBottomWidth && componentStyle.borderBottomWidth.trim()) ||
                                     (componentStyle.borderLeftWidth && componentStyle.borderLeftWidth.trim())
         if (!hasIndividualWidths) {
-          // Default to 1px if color is set but no width
+          // Default to 1px if color is set but no width (and width is not explicitly 0)
           componentCSS += `      border-width: 1px !important;\n`
         }
       }
@@ -1101,6 +1119,133 @@ export function applyComponentStyling(branding: BrandingConfig) {
       }
       cssRules += `    }\n\n`
     }
+    
+    // Special handling for textarea to override Tailwind classes and globals.css
+    // This must come AFTER the main component CSS to ensure it overrides globals.css
+    if (componentId === 'textarea') {
+      cssRules += `    /* Aggressive override for textarea to override Tailwind classes and globals.css */\n`
+      cssRules += `    /* This rule has higher specificity and comes after globals.css */\n`
+      cssRules += `    /* Target all textarea elements */\n`
+      cssRules += `    body:not([data-space]) textarea,\n`
+      cssRules += `    body:not([data-space]) [data-component="textarea"],\n`
+      cssRules += `    body:not([data-space]) [data-component="textarea"] textarea,\n`
+      cssRules += `    body:not([data-space]) [class*="Textarea"],\n`
+      cssRules += `    body:not([data-space]) [class*="Textarea"] textarea,\n`
+      cssRules += `    body:not([data-space]) textarea[class*="textarea"],\n`
+      cssRules += `    body:not([data-space]) textarea[class*="Textarea"],\n`
+      cssRules += `    body:not([data-space]) textarea.text-foreground,\n`
+      cssRules += `    body:not([data-space]) textarea.bg-border,\n`
+      cssRules += `    body:not([data-space]) textarea.bg-input,\n`
+      cssRules += `    body:not([data-space]) textarea[class*="bg-border"],\n`
+      cssRules += `    body:not([data-space]) textarea[class*="text-foreground"],\n`
+      cssRules += `    body:not([data-space]) textarea[class*="bg-input"] {\n`
+      if (componentStyle.backgroundColor) {
+        const bgColor = componentStyle.backgroundColor.trim()
+        cssRules += `      background: ${bgColor} !important;\n`
+        cssRules += `      background-color: ${bgColor} !important;\n`
+        cssRules += `      background-image: none !important;\n`
+        // Override Tailwind's --border and --input CSS variables
+        // IMPORTANT: If the background color has an alpha channel, use it directly
+        // because HSL conversion loses the alpha, making transparent colors appear opaque/black
+        if (hasAlphaChannel(bgColor)) {
+          cssRules += `      --border: ${bgColor} !important;\n`
+          cssRules += `      --input: ${bgColor} !important;\n`
+        } else {
+          const borderHsl = rgbaToHsl(bgColor)
+          cssRules += `      --border: ${borderHsl} !important;\n`
+          cssRules += `      --input: ${borderHsl} !important;\n`
+        }
+      }
+      if (componentStyle.textColor) {
+        const textColor = componentStyle.textColor.trim()
+        cssRules += `      color: ${textColor} !important;\n`
+        // Override Tailwind's text-foreground class by setting CSS variable
+        // Use the shared rgbaToHsl function which handles hex, rgba/rgb, and hsl formats
+        const foregroundHsl = rgbaToHsl(textColor)
+        cssRules += `      --foreground: ${foregroundHsl} !important;\n`
+      }
+      if (componentStyle.borderColor && componentStyle.borderColor.trim()) {
+        const borderColorValue = componentStyle.borderColor.trim()
+        cssRules += `      border-color: ${borderColorValue} !important;\n`
+        // Also set --border CSS variable for Tailwind classes
+        // IMPORTANT: If the border color has an alpha channel, use it directly
+        // because HSL conversion loses the alpha, making transparent colors appear opaque/black
+        if (hasAlphaChannel(borderColorValue)) {
+          cssRules += `      --border: ${borderColorValue} !important;\n`
+          cssRules += `      --input: ${borderColorValue} !important;\n`
+        } else {
+          const borderHsl = rgbaToHsl(borderColorValue)
+          cssRules += `      --border: ${borderHsl} !important;\n`
+          cssRules += `      --input: ${borderHsl} !important;\n`
+        }
+        // Ensure width is set if borderColor is set but borderWidth is not explicitly set
+        if (!componentStyle.borderWidth || !componentStyle.borderWidth.trim() || componentStyle.borderWidth.trim() === '0px' || componentStyle.borderWidth.trim() === '0') {
+          // Check if any individual side widths are set
+          const hasIndividualWidths = (componentStyle.borderTopWidth && componentStyle.borderTopWidth.trim()) ||
+                                    (componentStyle.borderRightWidth && componentStyle.borderRightWidth.trim()) ||
+                                    (componentStyle.borderBottomWidth && componentStyle.borderBottomWidth.trim()) ||
+                                    (componentStyle.borderLeftWidth && componentStyle.borderLeftWidth.trim())
+          if (!hasIndividualWidths) {
+            // Default to 1px if color is set but no width
+            cssRules += `      border-width: 1px !important;\n`
+          }
+        }
+        // Ensure style is set if borderColor is set but borderStyle is not explicitly set
+        if (!componentStyle.borderStyle || !componentStyle.borderStyle.trim()) {
+          // Check if any individual side styles are set
+          const hasIndividualStyles = (componentStyle.borderTopStyle && componentStyle.borderTopStyle.trim()) ||
+                                    (componentStyle.borderRightStyle && componentStyle.borderRightStyle.trim()) ||
+                                    (componentStyle.borderBottomStyle && componentStyle.borderBottomStyle.trim()) ||
+                                    (componentStyle.borderLeftStyle && componentStyle.borderLeftStyle.trim())
+          if (!hasIndividualStyles) {
+            cssRules += `      border-style: solid !important;\n`
+          }
+        }
+      }
+      if (componentStyle.borderWidth && componentStyle.borderWidth.trim()) {
+        cssRules += `      border-width: ${componentStyle.borderWidth.trim()} !important;\n`
+        if (componentStyle.borderWidth.trim() === '0px' || componentStyle.borderWidth.trim() === '0') {
+          cssRules += `      border: none !important;\n`
+        }
+      }
+      if (componentStyle.borderRadius) {
+        cssRules += `      border-radius: ${componentStyle.borderRadius.trim()} !important;\n`
+      }
+      if (componentStyle.padding) {
+        cssRules += `      padding: ${componentStyle.padding.trim()} !important;\n`
+      }
+      if (componentStyle.fontSize) {
+        cssRules += `      font-size: ${componentStyle.fontSize.trim()} !important;\n`
+      }
+      if (componentStyle.lineHeight) {
+        cssRules += `      line-height: ${componentStyle.lineHeight.trim()} !important;\n`
+      }
+      cssRules += `    }\n\n`
+      
+      // Additional override specifically for Textarea component with Tailwind classes
+      cssRules += `    /* Override Textarea component with Tailwind classes */\n`
+      cssRules += `    body:not([data-space]) textarea.text-foreground,\n`
+      cssRules += `    body:not([data-space]) textarea.bg-border,\n`
+      cssRules += `    body:not([data-space]) textarea.bg-input,\n`
+      cssRules += `    body:not([data-space]) textarea[class*="text-foreground"],\n`
+      cssRules += `    body:not([data-space]) textarea[class*="bg-border"],\n`
+      cssRules += `    body:not([data-space]) textarea[class*="bg-input"] {\n`
+      if (componentStyle.backgroundColor) {
+        const bgColor = componentStyle.backgroundColor.trim()
+        cssRules += `      background: ${bgColor} !important;\n`
+        cssRules += `      background-color: ${bgColor} !important;\n`
+        cssRules += `      background-image: none !important;\n`
+      }
+      if (componentStyle.textColor) {
+        const textColor = componentStyle.textColor.trim()
+        cssRules += `      color: ${textColor} !important;\n`
+        // Convert to HSL for --foreground
+        // Use the shared rgbaToHsl function which handles hex, rgba/rgb, and hsl formats
+        const foregroundHsl = rgbaToHsl(textColor)
+        cssRules += `      --foreground: ${foregroundHsl} !important;\n`
+      }
+      cssRules += `    }\n\n`
+    }
   })
   
   // Final aggressive override for text-input - must come after all component CSS to override globals.css
@@ -1275,6 +1420,174 @@ export function applyComponentStyling(branding: BrandingConfig) {
     cssRules += `    }\n\n`
   } else {
     console.warn('[Branding] text-input style not found in componentStyling!')
+    console.log('[Branding] Available component IDs:', Object.keys(branding.componentStyling || {}))
+  }
+
+  // Final aggressive override for textarea - must come after all component CSS to override globals.css
+  // This uses maximum specificity to override globals.css rule: textarea { background-color: hsl(var(--border)) !important; }
+  const textareaStyle = branding.componentStyling?.['textarea']
+  if (textareaStyle) {
+    console.log('[Branding] Final override for textarea:', textareaStyle)
+    cssRules += `    /* Final override for textarea - MAXIMUM specificity to override globals.css */\n`
+    cssRules += `    /* This must override: textarea { background-color: hsl(var(--border)) !important; } */\n`
+    cssRules += `    body:not([data-space]) body:not([data-space]) textarea,\n`
+    cssRules += `    body:not([data-space]) body:not([data-space]) [data-component="textarea"] textarea,\n`
+    cssRules += `    body:not([data-space]) body:not([data-space]) [class*="Textarea"] textarea,\n`
+    cssRules += `    body:not([data-space]) body:not([data-space]) textarea.text-foreground,\n`
+    cssRules += `    body:not([data-space]) body:not([data-space]) textarea.bg-border,\n`
+    cssRules += `    body:not([data-space]) body:not([data-space]) textarea.bg-input,\n`
+    cssRules += `    body:not([data-space]) body:not([data-space]) [data-component="textarea"] textarea,\n`
+    cssRules += `    body:not([data-space]) body:not([data-space]) textarea[class*="Textarea"] {\n`
+    if (textareaStyle.backgroundColor) {
+      const bgColor = textareaStyle.backgroundColor.trim()
+      cssRules += `      background: ${bgColor} !important;\n`
+      cssRules += `      background-color: ${bgColor} !important;\n`
+      cssRules += `      background-image: none !important;\n`
+      // Override both --border and --input CSS variables (used by bg-border and bg-input classes)
+      // IMPORTANT: If the background color has an alpha channel, use it directly
+      // because HSL conversion loses the alpha, making transparent colors appear opaque/black
+      if (hasAlphaChannel(bgColor)) {
+        cssRules += `      --border: ${bgColor} !important;\n`
+        cssRules += `      --input: ${bgColor} !important;\n`
+        console.log('[Branding] Setting textarea background:', bgColor, '(using rgba directly)')
+      } else {
+        const borderHsl = rgbaToHsl(bgColor)
+        cssRules += `      --border: ${borderHsl} !important;\n`
+        cssRules += `      --input: ${borderHsl} !important;\n`
+        console.log('[Branding] Setting textarea background:', bgColor, 'HSL:', borderHsl)
+      }
+    }
+    if (textareaStyle.textColor) {
+      const textColor = textareaStyle.textColor.trim()
+      cssRules += `      color: ${textColor} !important;\n`
+      // Also override CSS variable
+      // Use the shared rgbaToHsl function which handles hex, rgba/rgb, and hsl formats
+      const foregroundHsl = rgbaToHsl(textColor)
+      cssRules += `      --foreground: ${foregroundHsl} !important;\n`
+      console.log('[Branding] Setting textarea text color:', textColor, 'HSL:', foregroundHsl)
+    }
+    if (textareaStyle.borderColor && textareaStyle.borderColor.trim()) {
+      const borderColorValue = textareaStyle.borderColor.trim()
+      cssRules += `      border-color: ${borderColorValue} !important;\n`
+      console.log('[Branding] Setting textarea border-color:', borderColorValue, 'borderWidth:', textareaStyle.borderWidth)
+      // Also set --border CSS variable for Tailwind classes
+      // IMPORTANT: If the border color has an alpha channel, use it directly
+      // because HSL conversion loses the alpha, making transparent colors appear opaque/black
+      if (hasAlphaChannel(borderColorValue)) {
+        cssRules += `      --border: ${borderColorValue} !important;\n`
+        cssRules += `      --input: ${borderColorValue} !important;\n`
+        console.log('[Branding] Using rgba border color directly (has alpha channel):', borderColorValue)
+      } else {
+        const borderHsl = rgbaToHsl(borderColorValue)
+        cssRules += `      --border: ${borderHsl} !important;\n`
+        cssRules += `      --input: ${borderHsl} !important;\n`
+        console.log('[Branding] Converted border color to HSL:', borderHsl)
+      }
+      // Ensure width is set if borderColor is set but borderWidth is not explicitly set
+      if (!textareaStyle.borderWidth || !textareaStyle.borderWidth.trim() || textareaStyle.borderWidth.trim() === '0px' || textareaStyle.borderWidth.trim() === '0') {
+        // Default to 1px if color is set but no width
+        cssRules += `      border-width: 1px !important;\n`
+        console.log('[Branding] textarea borderWidth was missing/0, defaulting to 1px')
+      }
+      // Ensure style is set if borderColor is set but borderStyle is not explicitly set
+      if (!textareaStyle.borderStyle || !textareaStyle.borderStyle.trim()) {
+        cssRules += `      border-style: solid !important;\n`
+        console.log('[Branding] textarea borderStyle was missing, defaulting to solid')
+      }
+    } else {
+      console.warn('[Branding] textarea borderColor is missing or empty!', {
+        hasBorderColor: !!textareaStyle.borderColor,
+        borderColor: textareaStyle.borderColor
+      })
+    }
+    if (textareaStyle.borderWidth && textareaStyle.borderWidth.trim()) {
+      cssRules += `      border-width: ${textareaStyle.borderWidth.trim()} !important;\n`
+      if (textareaStyle.borderWidth.trim() === '0px' || textareaStyle.borderWidth.trim() === '0') {
+        cssRules += `      border: none !important;\n`
+      }
+    }
+    if (textareaStyle.borderRadius) {
+      cssRules += `      border-radius: ${textareaStyle.borderRadius.trim()} !important;\n`
+    }
+    if (textareaStyle.padding) {
+      cssRules += `      padding: ${textareaStyle.padding.trim()} !important;\n`
+    }
+    if (textareaStyle.fontSize) {
+      cssRules += `      font-size: ${textareaStyle.fontSize.trim()} !important;\n`
+    }
+    if (textareaStyle.lineHeight) {
+      cssRules += `      line-height: ${textareaStyle.lineHeight.trim()} !important;\n`
+    }
+    cssRules += `    }\n\n`
+    
+    // ULTIMATE OVERRIDE - Target ALL textareas with maximum specificity
+    cssRules += `    /* ULTIMATE OVERRIDE - Maximum specificity for textareas */\n`
+    cssRules += `    body:not([data-space]) textarea,\n`
+    cssRules += `    body:not([data-space]) textarea.bg-border,\n`
+    cssRules += `    body:not([data-space]) textarea.text-foreground,\n`
+    cssRules += `    body:not([data-space]) textarea[class*="bg-border"],\n`
+    cssRules += `    body:not([data-space]) textarea[class*="text-foreground"] {\n`
+    if (textareaStyle.backgroundColor) {
+      const bgColor = textareaStyle.backgroundColor.trim()
+      cssRules += `      background: ${bgColor} !important;\n`
+      cssRules += `      background-color: ${bgColor} !important;\n`
+      cssRules += `      background-image: none !important;\n`
+    }
+    if (textareaStyle.textColor) {
+      const textColor = textareaStyle.textColor.trim()
+      cssRules += `      color: ${textColor} !important;\n`
+      // Convert to HSL for --foreground
+      // Use the shared rgbaToHsl function which handles hex, rgba/rgb, and hsl formats
+      const foregroundHsl = rgbaToHsl(textColor)
+      cssRules += `      --foreground: ${foregroundHsl} !important;\n`
+    }
+    // Also set border properties in ULTIMATE OVERRIDE for maximum specificity
+    if (textareaStyle.borderColor && textareaStyle.borderColor.trim()) {
+      const borderColorValue = textareaStyle.borderColor.trim()
+      cssRules += `      border-color: ${borderColorValue} !important;\n`
+      // Also set --border CSS variable for Tailwind classes
+      // IMPORTANT: If the border color has an alpha channel, use it directly
+      // because HSL conversion loses the alpha, making transparent colors appear opaque/black
+      if (hasAlphaChannel(borderColorValue)) {
+        cssRules += `      --border: ${borderColorValue} !important;\n`
+        cssRules += `      --input: ${borderColorValue} !important;\n`
+      } else {
+        const borderHsl = rgbaToHsl(borderColorValue)
+        cssRules += `      --border: ${borderHsl} !important;\n`
+        cssRules += `      --input: ${borderHsl} !important;\n`
+      }
+      // Ensure width is set if borderColor is set but borderWidth is not explicitly set
+      if (!textareaStyle.borderWidth || !textareaStyle.borderWidth.trim() || textareaStyle.borderWidth.trim() === '0px' || textareaStyle.borderWidth.trim() === '0') {
+        cssRules += `      border-width: 1px !important;\n`
+      } else {
+        cssRules += `      border-width: ${textareaStyle.borderWidth.trim()} !important;\n`
+      }
+      // Ensure style is set
+      if (!textareaStyle.borderStyle || !textareaStyle.borderStyle.trim()) {
+        cssRules += `      border-style: solid !important;\n`
+      } else {
+        cssRules += `      border-style: ${textareaStyle.borderStyle.trim()} !important;\n`
+      }
+    }
+    if (textareaStyle.borderWidth && textareaStyle.borderWidth.trim() && 
+        textareaStyle.borderWidth.trim() !== '0px' && textareaStyle.borderWidth.trim() !== '0') {
+      cssRules += `      border-width: ${textareaStyle.borderWidth.trim()} !important;\n`
+    }
+    if (textareaStyle.borderRadius) {
+      cssRules += `      border-radius: ${textareaStyle.borderRadius.trim()} !important;\n`
+    }
+    if (textareaStyle.padding) {
+      cssRules += `      padding: ${textareaStyle.padding.trim()} !important;\n`
+    }
+    if (textareaStyle.fontSize) {
+      cssRules += `      font-size: ${textareaStyle.fontSize.trim()} !important;\n`
+    }
+    if (textareaStyle.lineHeight) {
+      cssRules += `      line-height: ${textareaStyle.lineHeight.trim()} !important;\n`
+    }
+    cssRules += `    }\n\n`
+  } else {
+    console.warn('[Branding] textarea style not found in componentStyling!')
     console.log('[Branding] Available component IDs:', Object.keys(branding.componentStyling || {}))
   }
 
