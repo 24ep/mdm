@@ -452,7 +452,7 @@ export const SpaceSidebar = memo(function SpaceSidebar({
       >
         <nav className="flex-1 flex flex-col p-2.5 space-y-1 overflow-y-auto">
           {/* Pages Section */}
-          <div className="mb-4">
+       
             <div className="px-2.5 py-1.5">
               <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Pages
@@ -492,7 +492,7 @@ export const SpaceSidebar = memo(function SpaceSidebar({
                 </SortableContext>
               </DndContext>
             )}
-          </div>
+         
 
           {/* Space Settings Section */}
           <div>
