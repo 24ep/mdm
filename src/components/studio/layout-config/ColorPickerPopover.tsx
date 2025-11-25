@@ -975,30 +975,31 @@ export function ColorPickerPopover({
       >
         <div className={`w-full ${isSpaceLayoutConfig ? 'space-y-2' : ''}`}>
           <Tabs value={colorType} onValueChange={(v) => setColorType(v as any)}>
-            <TabsList className={`w-full grid h-9 px-2 ${allowImageVideo ? 'grid-cols-5' : 'grid-cols-3'}`}>
-            <TabsTrigger value="solid" className="text-xs px-3 py-2 inline-flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50 relative" title="Solid">
+            <div className="mb-2">
+            <TabsList className={`w-full grid h-9 px-2 mt-2 mb-2 ${allowImageVideo ? 'grid-cols-5' : 'grid-cols-3'}`}>
+            <TabsTrigger value="solid" className="text-xs px-3 py-2 mx-1 inline-flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50 relative" title="Solid">
               <Droplet className="h-4 w-4 flex-shrink-0" />
               <span>Solid</span>
               {colorType === 'solid' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
             </TabsTrigger>
-            <TabsTrigger value="gradient" className="text-xs px-3 py-2 inline-flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50 relative" title="Gradient">
+            <TabsTrigger value="gradient" className="text-xs px-3 py-2 mx-1 inline-flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50 relative" title="Gradient">
               <Sliders className="h-4 w-4 flex-shrink-0" />
               <span>Gradient</span>
               {colorType === 'gradient' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
             </TabsTrigger>
-            <TabsTrigger value="pattern" className="text-xs px-3 py-2 inline-flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50 relative" title="Pattern">
+            <TabsTrigger value="pattern" className="text-xs px-3 py-2 mx-1 inline-flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50 relative" title="Pattern">
               <Grid3x3 className="h-4 w-4 flex-shrink-0" />
               <span>Pattern</span>
               {colorType === 'pattern' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
             </TabsTrigger>
             {allowImageVideo && (
               <>
-                <TabsTrigger value="image" className="text-xs px-3 py-2 inline-flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50 relative" title="Image">
+                <TabsTrigger value="image" className="text-xs px-3 py-2 mx-1 inline-flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50 relative" title="Image">
                   <Image className="h-4 w-4 flex-shrink-0" />
                   <span>Image</span>
                   {colorType === 'image' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
                 </TabsTrigger>
-                <TabsTrigger value="video" className="text-xs px-3 py-2 inline-flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50 relative" title="Video">
+                <TabsTrigger value="video" className="text-xs px-3 py-2 mx-1 inline-flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50 relative" title="Video">
                   <Play className="h-4 w-4 flex-shrink-0" />
                   <span>Video</span>
                   {colorType === 'video' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
@@ -1006,6 +1007,7 @@ export function ColorPickerPopover({
               </>
             )}
           </TabsList>
+            </div>
 
           <TabsContent value="solid" className={`${isSpaceLayoutConfig ? 'py-4' : 'p-4'} space-y-2 mt-0`}>
             {/* Color Set Selector */}

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Trash, Palette, Database, Settings, Square, Box, Layers, BarChart3 } from 'lucide-react'
+import { Input } from '@/components/ui/input'
 import { widgetsPalette, PlacedWidget } from './widgets'
 import { ComponentStyle } from './types'
 import { getWidgetComponentType } from './globalStyleUtils'
@@ -87,24 +88,34 @@ export function WidgetProperties({
 
   return (
     <div className="space-y-3">
-      <div className="px-4 border-b pb-2">
-        <div className="flex items-center gap-2 mb-1">
-          {widgetDef.icon && <widgetDef.icon className="h-4 w-4 text-muted-foreground" />}
-          <h3 className="font-semibold text-sm">{widgetDef.label}</h3>
+      <div className="px-4 pt-6 border-b pb-6">
+        <div className="flex items-center gap-2 mb-2">
+          {widgetDef.icon && <widgetDef.icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
+          <Input
+            value={widget.properties?.name || widgetDef.label}
+            onChange={(e) => {
+              setPlacedWidgets(prev => prev.map(w => 
+                w.id === selectedWidgetId 
+                  ? { ...w, properties: { ...w.properties, name: e.target.value } }
+                  : w
+              ))
+            }}
+            className="h-8 text-base font-semibold px-2 border-0 bg-transparent hover:bg-muted/50 focus:bg-muted/50 focus-visible:ring-0"
+            placeholder={widgetDef.label}
+          />
         </div>
-        <p className="text-xs text-muted-foreground">Widget Properties</p>
       </div>
 
-      <div className="w-full">
+      <div className="w-full mb-4">
       <Tabs defaultValue={needsDataSource ? "datasource" : "properties"}>
-        <TabsList className={`grid ${needsDataSource ? 'grid-cols-2' : 'grid-cols-1'} h-8 border-0 bg-transparent gap-1 px-4`}>
+        <TabsList className={`flex h-8 border-0 bg-transparent gap-1 mx-4`}>
           {needsDataSource && (
-            <TabsTrigger value="datasource" className="text-xs px-3 data-[state=active]:bg-muted data-[state=active]:border-0 data-[state=active]:border-b-0">
+            <TabsTrigger value="datasource" className="flex-1 text-xs px-3 data-[state=active]:bg-transparent data-[state=active]:border-0 data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:underline">
               <Database className="h-3.5 w-3.5 mr-1.5" />
               Data Source
             </TabsTrigger>
           )}
-          <TabsTrigger value="properties" className="text-xs px-3 data-[state=active]:bg-muted data-[state=active]:border-0 data-[state=active]:border-b-0">
+          <TabsTrigger value="properties" className={`${needsDataSource ? 'flex-1' : 'w-full'} text-xs px-3 data-[state=active]:bg-transparent data-[state=active]:border-0 data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:underline`}>
             <Palette className="h-3.5 w-3.5 mr-1.5" />
             Properties
           </TabsTrigger>
@@ -132,9 +143,9 @@ export function WidgetProperties({
               collapsible 
               defaultValue={widget.type.includes('chart') ? 'chart-style' : (widget.type === 'text' ? 'text' : 'layout')}
             >
-            {/* Text-specific section (replaces Header) */}
-            {widget.type === 'text' && (
-              <AccordionItem value="text" className="border-0">
+             {/* Text-specific section (replaces Header) */}
+             {widget.type === 'text' && (
+               <AccordionItem value="text" className="border-0 border-t border-b-0">
                 <AccordionTrigger className="text-xs font-semibold py-2 px-4 hover:no-underline">
                   <div className="flex items-center gap-2 flex-1">
                     <Settings className="h-3.5 w-3.5 text-muted-foreground" />
@@ -161,8 +172,8 @@ export function WidgetProperties({
 
             
 
-            {/* Layout - standalone group */}
-            <AccordionItem value="layout" className="border-0">
+             {/* Layout - standalone group */}
+             <AccordionItem value="layout" className="border-0 border-t border-b-0">
               <AccordionTrigger className="text-xs font-semibold py-2 px-4 hover:no-underline">
                 <div className="flex items-center gap-2 flex-1">
                   <Settings className="h-3.5 w-3.5 text-muted-foreground" />
@@ -180,8 +191,8 @@ export function WidgetProperties({
               </AccordionContent>
             </AccordionItem>
 
-            {/* Background */}
-            <AccordionItem value="background" className="border-0">
+             {/* Background */}
+             <AccordionItem value="background" className="border-0 border-t border-b-0">
               <AccordionTrigger className="text-xs font-semibold py-2 px-4 hover:no-underline">
                 <div className="flex items-center gap-2 flex-1">
                   <Square className="h-3.5 w-3.5 text-muted-foreground" />
@@ -200,8 +211,8 @@ export function WidgetProperties({
               </AccordionContent>
             </AccordionItem>
 
-            {/* Appearance */}
-            <AccordionItem value="appearance" className="border-0">
+             {/* Appearance */}
+             <AccordionItem value="appearance" className="border-0 border-t border-b-0">
               <AccordionTrigger className="text-xs font-semibold py-2 px-4 hover:no-underline">
                 <div className="flex items-center gap-2 flex-1">
                   <Square className="h-3.5 w-3.5 text-muted-foreground" />
@@ -220,8 +231,8 @@ export function WidgetProperties({
               </AccordionContent>
             </AccordionItem>
 
-            {/* Spacing */}
-            <AccordionItem value="spacing" className="border-0">
+             {/* Spacing */}
+             <AccordionItem value="spacing" className="border-0 border-t border-b-0">
               <AccordionTrigger className="text-xs font-semibold py-2 px-4 hover:no-underline">
                 <div className="flex items-center gap-2 flex-1">
                   <Settings className="h-3.5 w-3.5 text-muted-foreground" />
@@ -237,8 +248,8 @@ export function WidgetProperties({
               </AccordionContent>
             </AccordionItem>
 
-            {/* Border - Looker Studio style */}
-            <AccordionItem value="border" className="border-0">
+             {/* Border - Looker Studio style */}
+             <AccordionItem value="border" className="border-0 border-t border-b-0">
               <AccordionTrigger className="text-xs font-semibold py-2 px-4 hover:no-underline">
                 <div className="flex items-center gap-2 flex-1">
                   <Box className="h-3.5 w-3.5 text-muted-foreground" />
@@ -257,8 +268,8 @@ export function WidgetProperties({
               </AccordionContent>
             </AccordionItem>
 
-            {/* Shadow */}
-            <AccordionItem value="effects" className="border-0">
+             {/* Shadow */}
+             <AccordionItem value="effects" className="border-0 border-t border-b-0">
               <AccordionTrigger className="text-xs font-semibold py-2 px-4 hover:no-underline">
                 <div className="flex items-center gap-2 flex-1">
                   <Layers className="h-3.5 w-3.5 text-muted-foreground" />
@@ -286,8 +297,8 @@ export function WidgetProperties({
               />
             )}
 
-            {/* Position - moved to bottom, just above Other */}
-            <AccordionItem value="position" className="border-0">
+             {/* Position - moved to bottom, just above Other */}
+             <AccordionItem value="position" className="border-0 border-t border-b-0">
               <AccordionTrigger className="text-xs font-semibold py-2 px-4 hover:no-underline">
                 <div className="flex items-center gap-2 flex-1">
                   <Settings className="h-3.5 w-3.5 text-muted-foreground" />
@@ -305,8 +316,8 @@ export function WidgetProperties({
               </AccordionContent>
             </AccordionItem>
 
-            {/* Other Properties - Moved to bottom */}
-            <AccordionItem value="other" className="border-0">
+             {/* Other Properties - Moved to bottom */}
+             <AccordionItem value="other" className="border-0 border-t border-b-0">
               <AccordionTrigger className="text-xs font-semibold py-2 px-4 hover:no-underline">
                 <div className="flex items-center gap-2 flex-1">
                   <Settings className="h-3.5 w-3.5 text-muted-foreground" />

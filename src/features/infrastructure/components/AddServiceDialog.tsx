@@ -45,13 +45,14 @@ export function AddServiceDialog({
   const [failedIcons, setFailedIcons] = useState<Set<string>>(new Set())
   const router = useRouter()
 
-  // Fetch plugins with management UI (service-management category)
+  // Fetch only installed plugins with management UI (service-management category)
   const { plugins, loading: loadingPlugins } = useMarketplacePlugins({
     category: 'service-management',
     spaceId,
     filters: {
       status: 'approved',
       verified: true,
+      installedOnly: true, // Only show installed plugins
     },
   })
 
@@ -291,11 +292,11 @@ export function AddServiceDialog({
               <div className="text-center py-12 space-y-4">
                 <div className="text-muted-foreground">
                   {searchQuery ? (
-                    <p>No services found matching your search</p>
+                    <p>No installed services found matching your search</p>
                   ) : (
                     <>
-                      <p className="mb-2">No services with management UI available</p>
-                      <p className="text-sm">Browse the marketplace to discover and add service management plugins</p>
+                      <p className="mb-2">No installed service management plugins available</p>
+                      <p className="text-sm">Install plugins from the marketplace to use them here</p>
                     </>
                   )}
                 </div>

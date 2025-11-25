@@ -20,6 +20,26 @@ export function applyComponentStyling(branding: BrandingConfig) {
   root.style.setProperty('--brand-secondary-sidebar-bg', branding.secondarySidebarBackgroundColor)
   root.style.setProperty('--brand-secondary-sidebar-text', branding.secondarySidebarTextColor)
   
+  // Set CSS variables for text-input padding and fontSize so textarea can use them
+  const textInputStyle = branding.componentStyling?.['text-input']
+  if (textInputStyle?.padding) {
+    root.style.setProperty('--text-input-padding', textInputStyle.padding)
+  }
+  if (textInputStyle?.fontSize) {
+    root.style.setProperty('--text-input-font-size', textInputStyle.fontSize)
+  }
+  
+  // Set CSS variables for textarea (will use text-input values if not set)
+  const textareaStyle = branding.componentStyling?.['textarea']
+  const textareaPadding = textareaStyle?.padding || textInputStyle?.padding
+  const textareaFontSize = textareaStyle?.fontSize || textInputStyle?.fontSize
+  if (textareaPadding) {
+    root.style.setProperty('--textarea-padding', textareaPadding)
+  }
+  if (textareaFontSize) {
+    root.style.setProperty('--textarea-font-size', textareaFontSize)
+  }
+  
   // Also apply global text color to all text elements (excluding space modules)
   const globalTextColor = branding.bodyTextColor || (
     branding.bodyBackgroundColor && (
@@ -92,8 +112,8 @@ export function applyComponentStyling(branding: BrandingConfig) {
 
     if (selectors.length === 0 || !componentStyle) return
     
-    // Debug logging for platform sidebar, text-input, and form
-    if (componentId === 'platform-sidebar-primary' || componentId === 'platform-sidebar-secondary' || componentId === 'text-input' || componentId === 'form') {
+    // Debug logging for platform sidebar, text-input, form, badge, and accordion
+    if (componentId === 'platform-sidebar-primary' || componentId === 'platform-sidebar-secondary' || componentId === 'text-input' || componentId === 'form' || componentId === 'badge' || componentId.startsWith('accordion-trigger')) {
       console.log(`[Branding] Processing ${componentId}:`, componentStyle)
       console.log(`[Branding] Selectors:`, selectors)
     }
@@ -172,7 +192,17 @@ export function applyComponentStyling(branding: BrandingConfig) {
       if (componentId === 'platform-sidebar-primary' || componentId === 'platform-sidebar-secondary') {
         console.log(`[Branding] No styles found for ${componentId}`)
       }
-      return
+      // Always generate CSS for accordion-trigger even if hasStyles is false (to ensure transparent background)
+      if (!componentId.startsWith('accordion-trigger')) {
+        return
+      }
+      // For accordion, ensure we have at least transparent background and 0px border radius
+      if (!componentStyle.backgroundColor) {
+        componentStyle.backgroundColor = 'transparent'
+      }
+      if (!componentStyle.borderRadius) {
+        componentStyle.borderRadius = '0px'
+      }
     }
 
     const selector = selectors.join(',\n    ')
@@ -276,6 +306,34 @@ export function applyComponentStyling(branding: BrandingConfig) {
         componentCSS += `      background-image: none !important;\n`
         // Override Tailwind's opacity utilities that might affect background
         componentCSS += `      --tw-bg-opacity: 1 !important;\n`
+      }
+      // For accordion-trigger components, aggressively override Tailwind's bg-white/dark:bg-black and hover:bg-accent classes
+      if (componentId.startsWith('accordion-trigger')) {
+        const bgColor = componentStyle.backgroundColor ? componentStyle.backgroundColor.trim() : 'transparent'
+        console.log(`[Branding] Generating accordion CSS for ${componentId} with backgroundColor: ${bgColor}`)
+        componentCSS += `      background: ${bgColor} !important;\n`
+        componentCSS += `      background-color: ${bgColor} !important;\n`
+        componentCSS += `      background-image: none !important;\n`
+        componentCSS += `      background-size: auto !important;\n`
+        componentCSS += `      background-position: initial !important;\n`
+        componentCSS += `      background-repeat: initial !important;\n`
+        // Override Tailwind's dark mode background
+        componentCSS += `      --tw-bg-opacity: 1 !important;\n`
+        // Override any rounded classes from Tailwind
+        if (componentStyle.borderRadius) {
+          const borderRadius = componentStyle.borderRadius.trim()
+          componentCSS += `      border-radius: ${borderRadius} !important;\n`
+          componentCSS += `      border-top-left-radius: ${borderRadius} !important;\n`
+          componentCSS += `      border-top-right-radius: ${borderRadius} !important;\n`
+          componentCSS += `      border-bottom-left-radius: ${borderRadius} !important;\n`
+          componentCSS += `      border-bottom-right-radius: ${borderRadius} !important;\n`
+        }
+        // Override hover states
+        if (componentId === 'accordion-trigger-hover') {
+          componentCSS += `      background: ${bgColor} !important;\n`
+          componentCSS += `      background-color: ${bgColor} !important;\n`
+          componentCSS += `      background-image: none !important;\n`
+        }
       }
     }
 
@@ -567,6 +625,29 @@ export function applyComponentStyling(branding: BrandingConfig) {
       if (componentId.startsWith('platform-sidebar-menu')) {
       componentCSS += `      border-radius: ${componentStyle.borderRadius.trim()} !important;\n`
       }
+      // For badge, aggressively override Tailwind rounded-full class
+      if (componentId === 'badge') {
+        const borderRadius = componentStyle.borderRadius.trim()
+        componentCSS += `      border-radius: ${borderRadius} !important;\n`
+        componentCSS += `      border-top-left-radius: ${borderRadius} !important;\n`
+        componentCSS += `      border-top-right-radius: ${borderRadius} !important;\n`
+        componentCSS += `      border-bottom-left-radius: ${borderRadius} !important;\n`
+        componentCSS += `      border-bottom-right-radius: ${borderRadius} !important;\n`
+      }
+      // For accordion-trigger, aggressively override any rounded classes
+      if (componentId.startsWith('accordion-trigger')) {
+        const borderRadius = componentStyle.borderRadius.trim()
+        componentCSS += `      border-radius: ${borderRadius} !important;\n`
+        componentCSS += `      border-top-left-radius: ${borderRadius} !important;\n`
+        componentCSS += `      border-top-right-radius: ${borderRadius} !important;\n`
+        componentCSS += `      border-bottom-left-radius: ${borderRadius} !important;\n`
+        componentCSS += `      border-bottom-right-radius: ${borderRadius} !important;\n`
+        // Also ensure background is transparent if not already set in backgroundColor block
+        if (!componentStyle.backgroundColor || !componentStyle.backgroundColor.trim()) {
+          componentCSS += `      background: transparent !important;\n`
+          componentCSS += `      background-color: transparent !important;\n`
+        }
+      }
     }
     if (componentStyle.borderWidth && componentStyle.borderWidth.trim()) {
       const borderWidth = componentStyle.borderWidth.trim()
@@ -579,6 +660,10 @@ export function applyComponentStyling(branding: BrandingConfig) {
         componentCSS += `      border-left: none !important;\n`
         componentCSS += `      border-top: none !important;\n`
         componentCSS += `      border-bottom: none !important;\n`
+        // For badge, also override Tailwind border classes
+        if (componentId === 'badge') {
+          componentCSS += `      --tw-border-opacity: 0 !important;\n`
+        }
       } else if (componentStyle.borderStyle && componentStyle.borderStyle.trim()) {
         // Use custom border style if provided
         componentCSS += `      border-style: ${componentStyle.borderStyle.trim()} !important;\n`
@@ -595,6 +680,27 @@ export function applyComponentStyling(branding: BrandingConfig) {
       // For platform-sidebar-menu, aggressively override button padding
       if (componentId.startsWith('platform-sidebar-menu')) {
       componentCSS += `      padding: ${componentStyle.padding.trim()} !important;\n`
+      }
+      // For badge, aggressively override Tailwind padding classes (px-*, py-*)
+      if (componentId === 'badge') {
+        const padding = componentStyle.padding.trim()
+        // Parse shorthand padding (e.g., "0.125rem 0.375rem" = vertical horizontal)
+        const paddingParts = padding.split(/\s+/)
+        if (paddingParts.length === 2) {
+          // Two values: vertical horizontal
+          const vertical = paddingParts[0]
+          const horizontal = paddingParts[1]
+          componentCSS += `      padding-top: ${vertical} !important;\n`
+          componentCSS += `      padding-bottom: ${vertical} !important;\n`
+          componentCSS += `      padding-left: ${horizontal} !important;\n`
+          componentCSS += `      padding-right: ${horizontal} !important;\n`
+        } else {
+          // Single value or other format, use as-is
+          componentCSS += `      padding: ${padding} !important;\n`
+        }
+        // Override Tailwind's padding utilities
+        componentCSS += `      --tw-padding-x: 0 !important;\n`
+        componentCSS += `      --tw-padding-y: 0 !important;\n`
       }
     }
     if (componentStyle.margin && componentStyle.margin.trim()) {
@@ -1211,11 +1317,15 @@ export function applyComponentStyling(branding: BrandingConfig) {
       if (componentStyle.borderRadius) {
         cssRules += `      border-radius: ${componentStyle.borderRadius.trim()} !important;\n`
       }
-      if (componentStyle.padding) {
-        cssRules += `      padding: ${componentStyle.padding.trim()} !important;\n`
+      // For textarea, use text-input's padding and fontSize to match text-input styling exactly
+      const textInputStyleForTextarea = componentId === 'textarea' ? branding.componentStyling?.['text-input'] : null
+      const padding = componentStyle.padding || textInputStyleForTextarea?.padding
+      const fontSize = componentStyle.fontSize || textInputStyleForTextarea?.fontSize
+      if (padding) {
+        cssRules += `      padding: ${padding.trim()} !important;\n`
       }
-      if (componentStyle.fontSize) {
-        cssRules += `      font-size: ${componentStyle.fontSize.trim()} !important;\n`
+      if (fontSize) {
+        cssRules += `      font-size: ${fontSize.trim()} !important;\n`
       }
       if (componentStyle.lineHeight) {
         cssRules += `      line-height: ${componentStyle.lineHeight.trim()} !important;\n`
@@ -1244,13 +1354,23 @@ export function applyComponentStyling(branding: BrandingConfig) {
         const foregroundHsl = rgbaToHsl(textColor)
         cssRules += `      --foreground: ${foregroundHsl} !important;\n`
       }
+      // Use text-input's padding and fontSize to match text-input styling exactly
+      const textInputStyleForTextareaOverride = componentId === 'textarea' ? branding.componentStyling?.['text-input'] : null
+      const paddingOverride = componentStyle.padding || textInputStyleForTextareaOverride?.padding
+      const fontSizeOverride = componentStyle.fontSize || textInputStyleForTextareaOverride?.fontSize
+      if (paddingOverride) {
+        cssRules += `      padding: ${paddingOverride.trim()} !important;\n`
+      }
+      if (fontSizeOverride) {
+        cssRules += `      font-size: ${fontSizeOverride.trim()} !important;\n`
+      }
       cssRules += `    }\n\n`
     }
   })
   
   // Final aggressive override for text-input - must come after all component CSS to override globals.css
   // This uses maximum specificity to override globals.css rule: input:not([type="checkbox"])... { background-color: hsl(var(--border)) !important; }
-  const textInputStyle = branding.componentStyling?.['text-input']
+  // Reuse the textInputStyle variable declared earlier in the function
   if (textInputStyle) {
     console.log('[Branding] Final override for text-input:', textInputStyle)
     cssRules += `    /* Final override for text-input - MAXIMUM specificity to override globals.css */\n`
@@ -1344,6 +1464,12 @@ export function applyComponentStyling(branding: BrandingConfig) {
     if (textInputStyle.borderRadius) {
       cssRules += `      border-radius: ${textInputStyle.borderRadius.trim()} !important;\n`
     }
+    if (textInputStyle.padding) {
+      cssRules += `      padding: ${textInputStyle.padding.trim()} !important;\n`
+    }
+    if (textInputStyle.fontSize) {
+      cssRules += `      font-size: ${textInputStyle.fontSize.trim()} !important;\n`
+    }
     cssRules += `    }\n\n`
     
     // ULTIMATE OVERRIDE - Target ALL inputs with maximum specificity
@@ -1417,6 +1543,12 @@ export function applyComponentStyling(branding: BrandingConfig) {
     if (textInputStyle.borderRadius) {
       cssRules += `      border-radius: ${textInputStyle.borderRadius.trim()} !important;\n`
     }
+    if (textInputStyle.padding) {
+      cssRules += `      padding: ${textInputStyle.padding.trim()} !important;\n`
+    }
+    if (textInputStyle.fontSize) {
+      cssRules += `      font-size: ${textInputStyle.fontSize.trim()} !important;\n`
+    }
     cssRules += `    }\n\n`
   } else {
     console.warn('[Branding] text-input style not found in componentStyling!')
@@ -1425,7 +1557,8 @@ export function applyComponentStyling(branding: BrandingConfig) {
 
   // Final aggressive override for textarea - must come after all component CSS to override globals.css
   // This uses maximum specificity to override globals.css rule: textarea { background-color: hsl(var(--border)) !important; }
-  const textareaStyle = branding.componentStyling?.['textarea']
+  // Textarea should match text-input styling exactly, using text-input's padding and fontSize if textarea doesn't have its own
+  // Note: textInputStyle and textareaStyle are already defined above where we set CSS variables, so we reuse them here
   if (textareaStyle) {
     console.log('[Branding] Final override for textarea:', textareaStyle)
     cssRules += `    /* Final override for textarea - MAXIMUM specificity to override globals.css */\n`
@@ -1509,11 +1642,22 @@ export function applyComponentStyling(branding: BrandingConfig) {
     if (textareaStyle.borderRadius) {
       cssRules += `      border-radius: ${textareaStyle.borderRadius.trim()} !important;\n`
     }
-    if (textareaStyle.padding) {
-      cssRules += `      padding: ${textareaStyle.padding.trim()} !important;\n`
+    // Use text-input's padding and fontSize to match text-input styling exactly
+    const textareaPadding = textareaStyle.padding || textInputStyle?.padding
+    const textareaFontSize = textareaStyle.fontSize || textInputStyle?.fontSize
+    console.log('[Branding] textarea padding/fontSize:', {
+      textareaPadding: textareaStyle.padding,
+      textInputPadding: textInputStyle?.padding,
+      finalPadding: textareaPadding,
+      textareaFontSize: textareaStyle.fontSize,
+      textInputFontSize: textInputStyle?.fontSize,
+      finalFontSize: textareaFontSize
+    })
+    if (textareaPadding) {
+      cssRules += `      padding: ${textareaPadding.trim()} !important;\n`
     }
-    if (textareaStyle.fontSize) {
-      cssRules += `      font-size: ${textareaStyle.fontSize.trim()} !important;\n`
+    if (textareaFontSize) {
+      cssRules += `      font-size: ${textareaFontSize.trim()} !important;\n`
     }
     if (textareaStyle.lineHeight) {
       cssRules += `      line-height: ${textareaStyle.lineHeight.trim()} !important;\n`
@@ -1576,11 +1720,14 @@ export function applyComponentStyling(branding: BrandingConfig) {
     if (textareaStyle.borderRadius) {
       cssRules += `      border-radius: ${textareaStyle.borderRadius.trim()} !important;\n`
     }
-    if (textareaStyle.padding) {
-      cssRules += `      padding: ${textareaStyle.padding.trim()} !important;\n`
+    // Use text-input's padding and fontSize to match text-input styling exactly
+    const textareaPaddingUltimate = textareaStyle.padding || textInputStyle?.padding
+    const textareaFontSizeUltimate = textareaStyle.fontSize || textInputStyle?.fontSize
+    if (textareaPaddingUltimate) {
+      cssRules += `      padding: ${textareaPaddingUltimate.trim()} !important;\n`
     }
-    if (textareaStyle.fontSize) {
-      cssRules += `      font-size: ${textareaStyle.fontSize.trim()} !important;\n`
+    if (textareaFontSizeUltimate) {
+      cssRules += `      font-size: ${textareaFontSizeUltimate.trim()} !important;\n`
     }
     if (textareaStyle.lineHeight) {
       cssRules += `      line-height: ${textareaStyle.lineHeight.trim()} !important;\n`

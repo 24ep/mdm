@@ -1,3 +1,5 @@
+export type PluginSource = 'built-in' | 'external' | 'local-folder' | 'npm' | 'cdn' | 'git'
+
 export interface PluginDefinition {
   id: string
   name: string
@@ -26,15 +28,30 @@ export interface PluginDefinition {
   reviewCount?: number
   verified?: boolean
   securityAudit?: Record<string, any>
+  
+  // External plugin support
+  source?: PluginSource
+  sourcePath?: string  // Path to plugin folder (relative or absolute)
+  sourceUrl?: string   // URL for remote plugins (CDN, Git, etc.)
+  projectFolder?: string  // Different project folder name
+  downloadUrl?: string    // URL to download plugin package
+  checksum?: string        // SHA256 checksum for verification
+  installedPath?: string   // Where plugin is installed locally
 }
 
 export type PluginCategory = 
-  | 'business-intelligence' 
-  | 'service-management' 
-  | 'data-integration'
-  | 'automation'
-  | 'analytics'
-  | 'other'
+  | 'business-intelligence'      // BI tools (Power BI, Looker Studio, etc.)
+  | 'monitoring-observability'   // Monitoring tools (Grafana, Prometheus, etc.)
+  | 'service-management'         // Infrastructure service management
+  | 'database-management'        // Database tools (PostgreSQL, Redis, etc.)
+  | 'api-gateway'                // API gateway tools (Kong, etc.)
+  | 'storage-management'         // Storage tools (MinIO, S3, etc.)
+  | 'data-integration'           // Data connectors and ETL
+  | 'automation'                 // Workflow automation
+  | 'analytics'                  // Analytics platforms
+  | 'security'                   // Security tools
+  | 'development-tools'          // Developer tools
+  | 'other'                      // Other plugins
 
 export type PluginStatus = 'pending' | 'approved' | 'rejected' | 'deprecated'
 
@@ -60,6 +77,7 @@ export interface UseMarketplacePluginsOptions {
     status?: PluginStatus
     verified?: boolean
     serviceType?: string
+    installedOnly?: boolean // Only show plugins installed in the space
   }
 }
 

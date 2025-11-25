@@ -1,43 +1,23 @@
-import { PluginDefinition } from '../types'
+import { PluginDefinition, PluginSource } from '../types'
+
+// Only import external plugin loader on server side
+const isServer = typeof window === 'undefined'
+let externalPluginLoader: any = null
+
+if (isServer) {
+  try {
+    externalPluginLoader = require('./external-plugin-loader').externalPluginLoader
+  } catch (error) {
+    console.warn('External plugin loader not available:', error)
+  }
+}
 
 // Static import map for plugin components (required by Next.js)
-// Next.js requires static paths for dynamic imports
+// NOTE: All plugins are now in the hub, so this map is empty.
+// Components are loaded dynamically from installed plugins in .plugins/installed/
 const PLUGIN_COMPONENT_MAP: Record<string, () => Promise<any>> = {
-  // Power BI
-  '@/features/marketplace/plugins/power-bi/components/PowerBIIntegrationUI': () =>
-    import('@/features/marketplace/plugins/power-bi/components/PowerBIIntegrationUI'),
-  
-  // Grafana
-  '@/features/marketplace/plugins/grafana/components/GrafanaIntegrationUI': () =>
-    import('@/features/marketplace/plugins/grafana/components/GrafanaIntegrationUI'),
-  
-  // Looker Studio
-  '@/features/marketplace/plugins/looker-studio/components/LookerStudioIntegrationUI': () =>
-    import('@/features/marketplace/plugins/looker-studio/components/LookerStudioIntegrationUI'),
-  
-  // MinIO Management
-  '@/features/marketplace/plugins/minio-management/components/MinIOManagementUI': () =>
-    import('@/features/marketplace/plugins/minio-management/components/MinIOManagementUI'),
-  
-  // Kong Management
-  '@/features/marketplace/plugins/kong-management/components/KongManagementUI': () =>
-    import('@/features/marketplace/plugins/kong-management/components/KongManagementUI'),
-  
-  // Grafana Management
-  '@/features/marketplace/plugins/grafana-management/components/GrafanaManagementUI': () =>
-    import('@/features/marketplace/plugins/grafana-management/components/GrafanaManagementUI'),
-  
-  // Prometheus Management
-  '@/features/marketplace/plugins/prometheus-management/components/PrometheusManagementUI': () =>
-    import('@/features/marketplace/plugins/prometheus-management/components/PrometheusManagementUI'),
-  
-  // Redis Management
-  '@/features/marketplace/plugins/redis-management/components/RedisManagementUI': () =>
-    import('@/features/marketplace/plugins/redis-management/components/RedisManagementUI'),
-  
-  // PostgreSQL Management
-  '@/features/marketplace/plugins/postgresql-management/components/PostgreSQLManagementUI': () =>
-    import('@/features/marketplace/plugins/postgresql-management/components/PostgreSQLManagementUI'),
+  // All plugins are now loaded from the hub
+  // Components are loaded from installed plugin paths
 }
 
 /**
@@ -81,7 +61,7 @@ export class PluginLoader {
 
   /**
    * Load plugin UI component dynamically
-   * Uses static import map to satisfy Next.js build requirements
+   * Supports both built-in and external plugins
    */
   async loadComponent(plugin: PluginDefinition, componentPath?: string): Promise<any> {
     const cacheKey = `${plugin.id}:${componentPath || 'default'}`
@@ -97,23 +77,126 @@ export class PluginLoader {
         throw new Error(`No component path specified for plugin ${plugin.id}`)
       }
 
-      // Check if path exists in static import map
-      const importFn = PLUGIN_COMPONENT_MAP[path]
-      
-      if (!importFn) {
-        throw new Error(
-          `Component path "${path}" not found in static import map. ` +
-          `Please add it to PLUGIN_COMPONENT_MAP in plugin-loader.ts`
-        )
+      // All plugins are now from hub - check if it's installed
+      if (plugin.source && plugin.source !== 'built-in') {
+        return await this.loadExternalComponent(plugin, path)
       }
 
-      // Use static import function
-      const component = await importFn()
-      this.loadedComponents.set(cacheKey, component)
-      return component
+      // For installed plugins, try to load from installed path
+      if (plugin.installedPath) {
+        return await this.loadFromInstalledPath(plugin, path)
+      }
+
+      // Try static import map (for backward compatibility, though it should be empty)
+      const importFn = PLUGIN_COMPONENT_MAP[path]
+      
+      if (importFn) {
+        const component = await importFn()
+        this.loadedComponents.set(cacheKey, component)
+        return component
+      }
+
+      // If no path found, try to load from hub-installed location
+      throw new Error(
+        `Component path "${path}" not found. ` +
+        `Plugin may need to be installed from hub first. ` +
+        `Source: ${plugin.source || 'unknown'}`
+      )
     } catch (error) {
       console.error(`Failed to load component for plugin ${plugin.id}:`, error)
       throw new Error(`Failed to load plugin component: ${error}`)
+    }
+  }
+
+  /**
+   * Load component from external plugin (hub)
+   */
+  private async loadExternalComponent(plugin: PluginDefinition, componentPath: string): Promise<any> {
+    // Try to load from installed path first (plugins installed from hub)
+    if (plugin.installedPath) {
+      return await this.loadFromInstalledPath(plugin, componentPath)
+    }
+
+    // For server-side loading from hub source
+    if (isServer && externalPluginLoader) {
+      try {
+        // Load the external plugin module
+        const pluginModule = await externalPluginLoader.loadExternalPlugin(plugin)
+        
+        // Extract component from module
+        const componentName = componentPath.split('/').pop()?.replace('.tsx', '').replace('.ts', '') || 'default'
+        
+        // Try to find component in module
+        if (pluginModule[componentName]) {
+          return pluginModule[componentName]
+        }
+        
+        if (pluginModule.default) {
+          return pluginModule.default
+        }
+        
+        // If component path is a file path, try to load it
+        if (plugin.source === 'local-folder' && plugin.sourcePath) {
+          // Resolve component path relative to plugin
+          let componentFile: string
+          if (componentPath.startsWith('@/') || componentPath.startsWith('./')) {
+            // Relative to plugin root
+            const pluginRoot = plugin.installedPath || plugin.sourcePath
+            const path = require('path')
+            componentFile = path.join(pluginRoot, componentPath.replace('@/', '').replace('./', ''))
+          } else {
+            const path = require('path')
+            componentFile = path.join(plugin.sourcePath, componentPath)
+          }
+          
+          // Load component file
+          const componentModule = await externalPluginLoader.importFromPath(componentFile)
+          return componentModule.default || componentModule
+        }
+      } catch (error) {
+        console.warn(`Failed to load from external source, trying installed path:`, error)
+      }
+    }
+    
+    throw new Error(`Component not found for plugin: ${plugin.slug} at path: ${componentPath}`)
+  }
+
+  /**
+   * Load component from installed plugin path
+   */
+  private async loadFromInstalledPath(plugin: PluginDefinition, componentPath: string): Promise<any> {
+    if (!isServer) {
+      throw new Error('Installed plugin components can only be loaded on the server side')
+    }
+
+    if (!externalPluginLoader) {
+      throw new Error('External plugin loader not available')
+    }
+
+    try {
+      // Resolve component path relative to installed plugin
+      let componentFile: string
+      
+      if (componentPath.startsWith('@/')) {
+        // Convert @/ path to relative path from installed plugin
+        const relativePath = componentPath.replace('@/features/marketplace/plugins/', '')
+        const path = require('path')
+        componentFile = path.join(plugin.installedPath!, relativePath)
+      } else if (componentPath.startsWith('./')) {
+        const path = require('path')
+        componentFile = path.join(plugin.installedPath!, componentPath.replace('./', ''))
+      } else {
+        // Assume it's relative to plugin root
+        const path = require('path')
+        componentFile = path.join(plugin.installedPath!, componentPath)
+      }
+
+      // Load component file using external plugin loader
+      const componentModule = await externalPluginLoader.importFromPath(componentFile)
+      return componentModule.default || componentModule
+    } catch (error) {
+      console.error(`Failed to load component from installed path:`, error)
+      throw error
     }
   }
 

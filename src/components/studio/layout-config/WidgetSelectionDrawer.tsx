@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/drawer'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Search, Box, X } from 'lucide-react'
 import { WidgetsTab } from './widget-selection/WidgetsTab'
 import { LayoutGrid, PanelLeft, Shapes, SlidersHorizontal, Image } from 'lucide-react'
@@ -87,9 +88,9 @@ export function WidgetSelectionDrawer({
             </DrawerDescription>
           </div>
           <DrawerClose asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 bg-transparent hover:bg-transparent">
+            <a className="inline-flex items-center justify-center h-8 w-8 bg-transparent hover:bg-transparent cursor-pointer">
               <X className="h-4 w-4" />
-            </Button>
+            </a>
           </DrawerClose>
         </DrawerHeader>
         
@@ -116,21 +117,17 @@ export function WidgetSelectionDrawer({
                   const Icon = category.icon
                   const isSelected = selectedCategories.has(category.id)
                   return (
-                    <button
+                    <Badge
                       key={category.id}
                       onClick={() => toggleCategory(category.id)}
+                      variant={isSelected ? "default" : "outline"}
                       className={cn(
-                        "inline-flex items-center justify-center gap-1.5 px-3 h-7 text-xs font-medium transition-colors",
-                        "border !rounded-full whitespace-nowrap",
-                        isSelected
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-background text-primary border-border hover:bg-accent hover:text-accent-foreground"
+                        "inline-flex items-center justify-center gap-1.5 px-3 h-7 text-xs font-medium cursor-pointer"
                       )}
-                      style={{ borderRadius: '9999px' }}
                     >
                       {Icon && <Icon className="h-3 w-3 flex-shrink-0" />}
                       <span>{category.label}</span>
-                    </button>
+                    </Badge>
                   )
                 })}
               </div>

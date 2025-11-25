@@ -1,35 +1,22 @@
 /**
  * Marketplace Plugin Registry
  * 
- * This file exports all available marketplace plugins.
- * Plugins are registered here and can be loaded dynamically.
+ * All plugins are now loaded from the plugin hub.
+ * See plugin-hub/plugins/ for available plugins.
+ * 
+ * To use hub plugins, set USE_PLUGIN_HUB=true in .env
  */
 
-import { powerBIPlugin } from './power-bi/plugin'
-import { grafanaPlugin } from './grafana/plugin'
-import { lookerStudioPlugin } from './looker-studio/plugin'
-import { minioManagementPlugin } from './minio-management/plugin'
-import { kongManagementPlugin } from './kong-management/plugin'
-import { grafanaManagementPlugin } from './grafana-management/plugin'
-import { prometheusManagementPlugin } from './prometheus-management/plugin'
-import { redisManagementPlugin } from './redis-management/plugin'
-import { postgresqlManagementPlugin } from './postgresql-management/plugin'
 import { PluginDefinition } from '../types'
 
 /**
  * All available marketplace plugins
+ * 
+ * NOTE: Plugins are loaded from the hub, not built-in.
+ * This array is kept for backward compatibility but will be empty.
+ * Use the hub API to fetch plugins: /api/plugin-hub/plugins
  */
-export const marketplacePlugins: PluginDefinition[] = [
-  powerBIPlugin,
-  grafanaPlugin,
-  lookerStudioPlugin,
-  minioManagementPlugin,
-  kongManagementPlugin,
-  grafanaManagementPlugin,
-  prometheusManagementPlugin,
-  redisManagementPlugin,
-  postgresqlManagementPlugin,
-]
+export const marketplacePlugins: PluginDefinition[] = []
 
 /**
  * Get plugin by slug

@@ -6,7 +6,7 @@ export default function MarketplacePage() {
   return (
     <MarketplaceHome 
       spaceId={null}
-      showSpaceSelector={true}
+      showSpaceSelector={false}
     />
   )
 }

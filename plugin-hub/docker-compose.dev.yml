@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  plugin-hub:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: deps
+    container_name: mdm-plugin-hub-dev
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - PLUGIN_HUB_DIR=./plugins
+      - MAIN_APP_URL=${MAIN_APP_URL:-http://localhost:3000}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8302}
+    volumes:
+      # Mount source code for hot reload
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+      # Mount plugins directory
+      - ./plugins:/app/plugins
+    command: npm run dev
+    restart: unless-stopped
+    networks:
+      - mdm-network
+
+networks:
+  mdm-network:
+    external: true
+    name: mdm-network
+

@@ -53,7 +53,10 @@ export async function POST(request: NextRequest) {
           status, space_id, created_by, created_at, updated_at
         ) VALUES (
           gen_random_uuid(), 'Remote Services', 'cloud_instance', 'remote', 'http',
-          'http', '{}'::jsonb, 'online', $1, $2, NOW(), NOW()
+          'http', '{}'::jsonb, 'online', 
+          CAST($1 AS uuid), 
+          CAST($2 AS uuid), 
+          NOW(), NOW()
         ) RETURNING id`,
         [spaceId || null, session.user.id]
       )

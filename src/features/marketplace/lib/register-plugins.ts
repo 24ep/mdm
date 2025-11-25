@@ -3,11 +3,16 @@
  * 
  * This script registers all marketplace plugins in the database.
  * Run this during application startup or as a migration script.
+ * 
+ * NOTE: If using plugin hub (USE_PLUGIN_HUB=true), plugins are registered
+ * from the hub instead of built-in plugins.
  */
 
 import { query } from '@/lib/db'
 import { marketplacePlugins } from '../plugins'
 import { PluginDefinition } from '../types'
+
+const USE_PLUGIN_HUB = process.env.USE_PLUGIN_HUB === 'true'
 
 /**
  * Register a plugin in the database
@@ -74,6 +79,19 @@ async function registerPlugin(plugin: PluginDefinition): Promise<void> {
  * Register all marketplace plugins
  */
 export async function registerAllPlugins(): Promise<void> {
+  // Skip if using plugin hub (plugins are registered from hub)
+  if (USE_PLUGIN_HUB) {
+    console.log('Plugin hub mode enabled - skipping built-in plugin registration')
+    console.log('Plugins should be registered from the hub via /api/plugin-hub/plugins/[slug]/install')
+    return
+  }
+
+  // Skip if no built-in plugins
+  if (marketplacePlugins.length === 0) {
+    console.log('No built-in plugins to register (using hub mode or empty registry)')
+    return
+  }
+
   console.log(`Registering ${marketplacePlugins.length} marketplace plugins...`)
 
   for (const plugin of marketplacePlugins) {

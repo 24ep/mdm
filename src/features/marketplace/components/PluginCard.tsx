@@ -4,21 +4,25 @@ import { PluginDefinition } from '../types'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Star, Download, ExternalLink, CheckCircle2 } from 'lucide-react'
+import { Star, Download, ExternalLink, CheckCircle2, Trash2 } from 'lucide-react'
 
 export interface PluginCardProps {
   plugin: PluginDefinition
   onInstall: () => void
+  onUninstall?: () => void
   installing?: boolean
   installed?: boolean
 }
 
-export function PluginCard({ plugin, onInstall, installing = false, installed = false }: PluginCardProps) {
+export function PluginCard({ plugin, onInstall, onUninstall, installing = false, installed = false }: PluginCardProps) {
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex-1">
+            <div className="mb-2">
+              <Badge variant="secondary" className="mb-2">{plugin.category}</Badge>
+            </div>
             <div className="flex items-center gap-2 mb-2">
               <CardTitle className="text-lg">{plugin.name}</CardTitle>
               {plugin.verified && (
@@ -31,24 +35,18 @@ export function PluginCard({ plugin, onInstall, installing = false, installed = 
             <CardDescription>{plugin.description}</CardDescription>
           </div>
         </div>
-        <div className="flex items-center gap-2 mt-2">
-          <Badge variant="secondary">{plugin.category}</Badge>
-          {plugin.rating && (
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-              <span>{plugin.rating.toFixed(1)}</span>
-              {plugin.reviewCount && plugin.reviewCount > 0 && (
-                <span className="text-xs">({plugin.reviewCount})</span>
-              )}
-            </div>
-          )}
-        </div>
+        {plugin.rating && (
+          <div className="flex items-center gap-1 text-sm text-muted-foreground mt-2">
+            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+            <span>{plugin.rating.toFixed(1)}</span>
+            {plugin.reviewCount && plugin.reviewCount > 0 && (
+              <span className="text-xs">({plugin.reviewCount})</span>
+            )}
+          </div>
+        )}
       </CardHeader>
       <CardContent>
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            {plugin.installationCount || 0} installations
-          </div>
+        <div className="flex items-center justify-end">
           <div className="flex items-center gap-2">
             {plugin.documentationUrl && (
               <Button
@@ -63,7 +61,20 @@ export function PluginCard({ plugin, onInstall, installing = false, installed = 
               </Button>
             )}
             {installed ? (
-              <Badge variant="outline">Installed</Badge>
+              onUninstall ? (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onUninstall()
+                  }}
+                  disabled={installing}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {installing ? 'Uninstalling...' : 'Uninstall'}
+                </Button>
+              ) : null
             ) : (
               <Button
                 size="sm"

@@ -20,10 +20,11 @@ import {
 } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Search, Download, Star, ExternalLink, Loader, AlertCircle, RefreshCw } from 'lucide-react'
+import { Search, Download, Star, ExternalLink, Loader, AlertCircle, RefreshCw, Plus, BarChart3, Activity, Database, HardDrive, Globe, Settings, Workflow, TrendingUp, Shield, Code, Package } from 'lucide-react'
 import { useSpace } from '@/contexts/space-context'
 import { PluginCard } from './PluginCard'
 import { InstallationWizard } from './InstallationWizard'
+// Add Plugin functionality moved to Plugin Hub
 
 export interface MarketplaceHomeProps {
   spaceId?: string | null
@@ -61,6 +62,7 @@ export function MarketplaceHome({
   const [registering, setRegistering] = useState(false)
   const [registerError, setRegisterError] = useState<string | null>(null)
   const [registerSuccess, setRegisterSuccess] = useState(false)
+  // Add Plugin functionality moved to Plugin Hub
 
   const isAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'SUPER_ADMIN'
 
@@ -75,7 +77,43 @@ export function MarketplaceHome({
     spaceId: effectiveSpaceId,
   })
 
-  const { install, loading: installing } = usePluginInstallation()
+  const { install, uninstall, loading: installing } = usePluginInstallation()
+  
+  // Fetch installations to check which plugins are installed
+  const [installations, setInstallations] = useState<Map<string, string>>(new Map()) // Map<serviceId, installationId>
+  const [loadingInstallations, setLoadingInstallations] = useState(false)
+
+  // Fetch installations when space changes
+  const fetchInstallations = async () => {
+    const effectiveSpace = effectiveSpaceId || currentSpace?.id
+    if (!effectiveSpace) {
+      setInstallations(new Map())
+      return
+    }
+
+    try {
+      setLoadingInstallations(true)
+      const response = await fetch(`/api/marketplace/installations?spaceId=${effectiveSpace}`)
+      if (response.ok) {
+        const data = await response.json()
+        const installationMap = new Map<string, string>()
+        data.installations?.forEach((inst: any) => {
+          if (inst.status === 'active') {
+            installationMap.set(inst.serviceId, inst.id)
+          }
+        })
+        setInstallations(installationMap)
+      }
+    } catch (error) {
+      console.error('Error fetching installations:', error)
+    } finally {
+      setLoadingInstallations(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchInstallations()
+  }, [effectiveSpaceId, currentSpace?.id])
 
   const handleRegisterPlugins = async () => {
     setRegistering(true)
@@ -114,6 +152,21 @@ export function MarketplaceHome({
     return true
   })
 
+  // Group plugins by category
+  const pluginsByCategory = filteredPlugins.reduce((acc, plugin) => {
+    const category = plugin.category || 'other'
+    if (!acc[category]) {
+      acc[category] = []
+    }
+    acc[category].push(plugin)
+    return acc
+  }, {} as Record<string, PluginDefinition[]>)
+
+  // Get category info for display
+  const getCategoryInfo = (category: string) => {
+    return categories.find(cat => cat.value === category) || categories.find(cat => cat.value === 'other')!
+  }
+
   const handleInstall = async (plugin: PluginDefinition) => {
     const effectiveSpace = effectiveSpaceId || currentSpace?.id
     if (!effectiveSpace) {
@@ -135,20 +188,52 @@ export function MarketplaceHome({
       return
     }
 
-    await install(plugin.id, effectiveSpace, config)
+    const installation = await install(plugin.id, effectiveSpace, config)
     setShowInstallWizard(false)
     setSelectedPlugin(null)
+    
+    // Refresh installations to get the latest status
+    await fetchInstallations()
     refetch()
   }
 
-  const categories: Array<{ value: PluginCategory | 'all'; label: string }> = [
-    { value: 'all', label: 'All Categories' },
-    { value: 'business-intelligence', label: 'Business Intelligence' },
-    { value: 'service-management', label: 'Service Management' },
-    { value: 'data-integration', label: 'Data Integration' },
-    { value: 'automation', label: 'Automation' },
-    { value: 'analytics', label: 'Analytics' },
-    { value: 'other', label: 'Other' },
+  const handleUninstall = async (plugin: PluginDefinition) => {
+    const effectiveSpace = effectiveSpaceId || currentSpace?.id
+    if (!effectiveSpace) {
+      return
+    }
+
+    const installationId = installations.get(plugin.id)
+    if (!installationId) {
+      return
+    }
+
+    if (!confirm(`Are you sure you want to uninstall "${plugin.name}"?`)) {
+      return
+    }
+
+    const success = await uninstall(installationId)
+    if (success) {
+      // Refresh installations to get the latest status
+      await fetchInstallations()
+      refetch()
+    }
+  }
+
+  const categories: Array<{ value: PluginCategory | 'all'; label: string; icon: any }> = [
+    { value: 'all', label: 'All Categories', icon: Package },
+    { value: 'business-intelligence', label: 'Business Intelligence', icon: BarChart3 },
+    { value: 'monitoring-observability', label: 'Monitoring & Observability', icon: Activity },
+    { value: 'database-management', label: 'Database Management', icon: Database },
+    { value: 'storage-management', label: 'Storage Management', icon: HardDrive },
+    { value: 'api-gateway', label: 'API Gateway', icon: Globe },
+    { value: 'service-management', label: 'Service Management', icon: Settings },
+    { value: 'data-integration', label: 'Data Integration', icon: Workflow },
+    { value: 'automation', label: 'Automation', icon: Workflow },
+    { value: 'analytics', label: 'Analytics', icon: TrendingUp },
+    { value: 'security', label: 'Security', icon: Shield },
+    { value: 'development-tools', label: 'Development Tools', icon: Code },
+    { value: 'other', label: 'Other', icon: Package },
   ]
 
   return (
@@ -162,23 +247,32 @@ export function MarketplaceHome({
           </p>
         </div>
         {isAdmin && (
-          <Button
-            variant="outline"
-            onClick={handleRegisterPlugins}
-            disabled={registering}
-          >
-            {registering ? (
-              <>
-                <Loader className="mr-2 h-4 w-4 animate-spin" />
-                Registering...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Register Plugins
-              </>
-            )}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => window.location.href = '/plugin-hub'}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Manage Plugins
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleRegisterPlugins}
+              disabled={registering}
+            >
+              {registering ? (
+                <>
+                  <Loader className="mr-2 h-4 w-4 animate-spin" />
+                  Registering...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Register Plugins
+                </>
+              )}
+            </Button>
+          </div>
         )}
       </div>
 
@@ -218,7 +312,60 @@ export function MarketplaceHome({
         </Alert>
       )}
 
-      {/* Filters */}
+      {/* Categories Section */}
+      <div className="flex flex-wrap gap-2">
+          {categories.map((cat) => {
+            const Icon = cat.icon
+            // Count plugins in this category
+            const categoryCount = cat.value === 'all' 
+              ? plugins.length 
+              : plugins.filter(p => p.category === cat.value).length
+            
+            // Don't show categories with no plugins (except "All Categories")
+            if (cat.value !== 'all' && categoryCount === 0) {
+              return null
+            }
+            
+            const isSelected = selectedCategory === cat.value
+            return (
+              <Badge
+                key={cat.value}
+                variant={isSelected ? 'default' : 'outline'}
+                className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-full cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={(e) => {
+                  e.preventDefault()
+                  setSelectedCategory(cat.value as PluginCategory | 'all')
+                }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    setSelectedCategory(cat.value as PluginCategory | 'all')
+                  }
+                }}
+              >
+                <Icon className="h-4 w-4" />
+                {cat.label}
+                {categoryCount > 0 && (
+                  <Badge 
+                    variant={isSelected ? 'secondary' : 'default'} 
+                    className="ml-2 h-5 rounded-full flex items-center justify-center text-xs font-semibold"
+                    style={{
+                      minWidth: categoryCount < 10 ? '20px' : '24px',
+                      width: categoryCount < 10 ? '20px' : 'auto',
+                      padding: categoryCount < 10 ? '0' : '0 6px'
+                    }}
+                  >
+                    {categoryCount}
+                  </Badge>
+                )}
+              </Badge>
+            )
+          })}
+      </div>
+
+      {/* Filters Section */}
       <div className="flex items-center gap-4 flex-wrap">
         {showSpaceSelector && (
           <SpaceSelector
@@ -239,77 +386,81 @@ export function MarketplaceHome({
               className="pl-10"
             />
           </div>
-
-          <Select
-            value={selectedCategory}
-            onValueChange={(value) => setSelectedCategory(value as PluginCategory | 'all')}
-          >
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((cat) => (
-                <SelectItem key={cat.value} value={cat.value}>
-                  {cat.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
       </div>
 
-      {/* Content */}
-      {loading ? (
-        <div className="flex items-center justify-center h-64">
-          <Loader className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredPlugins.length === 0 ? (
-            <div className="col-span-full text-center py-12 space-y-4">
-              <div className="text-muted-foreground">
-                <p className="text-lg font-medium mb-2">No plugins found.</p>
-                <p className="text-sm">
-                  {error 
-                    ? 'There was an error loading plugins. Please check the error message above.'
-                    : 'No approved plugins are available in the marketplace.'}
-                </p>
-                {isAdmin && !error && (
-                  <div className="mt-4">
-                    <p className="text-sm mb-2">As an admin, you can register plugins to make them available.</p>
-                    <Button
-                      variant="outline"
-                      onClick={handleRegisterPlugins}
-                      disabled={registering}
-                    >
-                      {registering ? (
-                        <>
-                          <Loader className="mr-2 h-4 w-4 animate-spin" />
-                          Registering...
-                        </>
-                      ) : (
-                        <>
-                          <RefreshCw className="mr-2 h-4 w-4" />
-                          Register Plugins
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                )}
-              </div>
+      {/* Plugins Section - Grouped by Category */}
+      <div className="space-y-8">
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <Loader className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : filteredPlugins.length === 0 ? (
+          <div className="text-center py-12 space-y-4">
+            <div className="text-muted-foreground">
+              <p className="text-lg font-medium mb-2">No plugins found.</p>
+              <p className="text-sm">
+                {error 
+                  ? 'There was an error loading plugins. Please check the error message above.'
+                  : 'No approved plugins are available in the marketplace.'}
+              </p>
+              {isAdmin && !error && (
+                <div className="mt-4">
+                  <p className="text-sm mb-2">As an admin, you can register plugins to make them available.</p>
+                  <Button
+                    variant="outline"
+                    onClick={handleRegisterPlugins}
+                    disabled={registering}
+                  >
+                    {registering ? (
+                      <>
+                        <Loader className="mr-2 h-4 w-4 animate-spin" />
+                        Registering...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Register Plugins
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
-          ) : (
-            filteredPlugins.map((plugin) => (
-              <PluginCard
-                key={plugin.id}
-                plugin={plugin}
-                onInstall={() => handleInstall(plugin)}
-                installing={installing}
-              />
-            ))
-          )}
-        </div>
-      )}
+          </div>
+        ) : (
+          Object.entries(pluginsByCategory).map(([category, categoryPlugins]) => {
+            const categoryInfo = getCategoryInfo(category)
+            const Icon = categoryInfo.icon
+            return (
+              <div key={category} className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Icon className="h-5 w-5 text-muted-foreground" />
+                    <h3 className="text-lg font-semibold">{categoryInfo.label}</h3>
+                  </div>
+                  <div className="flex-1 border-t"></div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {categoryPlugins.map((plugin) => {
+                    const isInstalled = installations.has(plugin.id)
+                    return (
+                      <PluginCard
+                        key={plugin.id}
+                        plugin={plugin}
+                        onInstall={() => handleInstall(plugin)}
+                        onUninstall={isInstalled ? () => handleUninstall(plugin) : undefined}
+                        installing={installing}
+                        installed={isInstalled}
+                      />
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })
+        )}
+      </div>
 
       {/* Installation Wizard */}
       {showInstallWizard && selectedPlugin && (
@@ -321,6 +472,9 @@ export function MarketplaceHome({
           onComplete={handleInstallationComplete}
         />
       )}
+
+      {/* Add Plugin functionality moved to Plugin Hub */}
+      {/* Visit /plugin-hub to add new plugins */}
     </div>
   )
 }

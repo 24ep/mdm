@@ -67,6 +67,61 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
   const [showDataModelPanel, setShowDataModelPanel] = useState(true)
   const canvasRef = useRef<HTMLDivElement>(null)
   
+  // Resizable sidebar state
+  const [sidebarWidth, setSidebarWidth] = useState(20) // Percentage
+  const [isResizing, setIsResizing] = useState(false)
+  const resizeRef = useRef<HTMLDivElement>(null)
+  const sidebarResizeStartX = useRef<number>(0)
+  const sidebarResizeStartWidth = useRef<number>(20)
+  
+  // Sidebar resize handlers
+  const handleSidebarResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsResizing(true)
+    sidebarResizeStartX.current = e.clientX
+    sidebarResizeStartWidth.current = sidebarWidth
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+  }, [sidebarWidth])
+  
+  const handleSidebarResizeMove = useCallback((e: MouseEvent) => {
+    if (!isResizing || !resizeRef.current) return
+    
+    const containerRect = resizeRef.current.getBoundingClientRect()
+    const containerWidth = containerRect.width
+    
+    if (containerWidth === 0) return // Avoid division by zero
+    
+    const deltaX = e.clientX - sidebarResizeStartX.current
+    const deltaPercent = (deltaX / containerWidth) * 100
+    
+    let newWidth = sidebarResizeStartWidth.current - deltaPercent
+    
+    // Constrain between 15% and 40%
+    newWidth = Math.max(15, Math.min(40, newWidth))
+    
+    setSidebarWidth(newWidth)
+  }, [isResizing])
+  
+  const handleSidebarResizeEnd = useCallback(() => {
+    setIsResizing(false)
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+  }, [])
+  
+  // Add global mouse event listeners when resizing
+  useEffect(() => {
+    if (isResizing) {
+      window.addEventListener('mousemove', handleSidebarResizeMove, { passive: true })
+      window.addEventListener('mouseup', handleSidebarResizeEnd)
+      return () => {
+        window.removeEventListener('mousemove', handleSidebarResizeMove)
+        window.removeEventListener('mouseup', handleSidebarResizeEnd)
+      }
+    }
+  }, [isResizing, handleSidebarResizeMove, handleSidebarResizeEnd])
+  
   // Wrapper for setPlacedWidgets that tracks history
   const setPlacedWidgets = useCallback((updater: React.SetStateAction<PlacedWidget[]>) => {
     setPlacedWidgetsState(prev => {
@@ -967,10 +1022,17 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
         }}
       />
 
-        {/* Layout: 60% body | 20% main panel | 20% data model (or 80% body | 20% main panel if data model hidden) - Responsive */}
-        <div className={`flex-1 ${isMobileViewport ? 'flex flex-col' : 'flex'} border overflow-hidden min-h-0`}>
-          {/* Body/Preview area - 60% or 80% depending on data model panel visibility */}
-          <div className={`${isMobileViewport ? 'w-full' : showDataModelPanel ? 'w-[60%]' : 'w-[80%]'} overflow-hidden h-full flex flex-col min-h-0 border-r`}>
+        {/* Layout: dynamic body | resizable main panel | 20% data model (or dynamic body | resizable main panel if data model hidden) - Responsive */}
+        <div ref={resizeRef} className={`flex-1 ${isMobileViewport ? 'flex flex-col' : 'flex'} border overflow-hidden min-h-0`}>
+          {/* Body/Preview area - dynamic width based on sidebar width */}
+          <div 
+            className={`${isMobileViewport ? 'w-full' : ''} overflow-hidden h-full flex flex-col min-h-0 border-r`}
+            style={!isMobileViewport ? {
+              width: showDataModelPanel 
+                ? `calc(100% - ${sidebarWidth}% - 20%)` 
+                : `calc(100% - ${sidebarWidth}%)`
+            } : {}}
+          >
         <Preview
           isMobileViewport={isMobileViewport}
           deviceMode={deviceMode}
@@ -1001,9 +1063,36 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
         />
             </div>
 
-        {/* Main Panel - 20% */}
+        {/* Resize Handle */}
             {!isMobileViewport && (
-          <div className="w-[20%] border-r overflow-auto min-h-0">
+          <div
+            className="flex-shrink-0 relative z-30 group"
+            style={{ 
+              width: '4px',
+              cursor: 'col-resize',
+              userSelect: 'none',
+              touchAction: 'none'
+            }}
+            onMouseDown={handleSidebarResizeStart}
+          >
+            {/* Visible resize handle */}
+            <div
+              className="absolute inset-y-0 left-0 w-1 bg-border group-hover:bg-primary transition-colors"
+            />
+            {/* Expanded hit area for easier grabbing - invisible but clickable */}
+            <div 
+              className="absolute inset-y-0 -left-4 -right-4 cursor-col-resize z-10"
+              onMouseDown={handleSidebarResizeStart}
+            />
+          </div>
+        )}
+        
+        {/* Main Panel - Resizable */}
+            {!isMobileViewport && (
+          <div 
+            className="border-r overflow-auto min-h-0 flex-shrink-0"
+            style={{ width: `${sidebarWidth}%` }}
+          >
             <SettingsPanelContent
               spaceId={spaceId}
               isMobileViewport={isMobileViewport}

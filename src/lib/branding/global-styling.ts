@@ -117,10 +117,10 @@ export function applyGlobalStyling(branding: BrandingConfig) {
   styleElement.textContent = `
     /* Global styling - excludes space modules, platform sidebar, top menu bar, and navigation */
     /* Apply to buttons that are NOT inside platform sidebar, top menu bar, or navigation */
-    body:not([data-space]) button:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"]):not([data-component="color-input-trigger"]):not(.color-input-trigger):not(.solid-color-swatch-button):not(.color-set-selector):not(.color-palette-swatch),
-    body:not([data-space]) [role="button"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"]):not([data-component="color-input-trigger"]):not(.color-input-trigger):not(.solid-color-swatch-button):not(.color-set-selector):not(.color-palette-swatch),
-    body:not([data-space]) .btn:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([data-component="select-trigger"]):not([data-component="color-input-trigger"]):not(.color-input-trigger):not(.solid-color-swatch-button):not(.color-set-selector):not(.color-palette-swatch),
-    body:not([data-space]) [class*="button"]:not([data-space]):not([data-space] *):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"]):not([data-component="color-input-trigger"]):not(.color-input-trigger):not(.solid-color-swatch-button):not(.color-set-selector):not(.color-palette-swatch) {
+    body:not([data-space]) button:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"]):not([data-component="color-input-trigger"]):not([data-component="accordion-trigger"]):not(.color-input-trigger):not(.solid-color-swatch-button):not(.color-set-selector):not(.color-palette-swatch),
+    body:not([data-space]) [role="button"]:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"]):not([data-component="color-input-trigger"]):not([data-component="accordion-trigger"]):not(.color-input-trigger):not(.solid-color-swatch-button):not(.color-set-selector):not(.color-palette-swatch),
+    body:not([data-space]) .btn:not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([data-component="select-trigger"]):not([data-component="color-input-trigger"]):not([data-component="accordion-trigger"]):not(.color-input-trigger):not(.solid-color-swatch-button):not(.color-set-selector):not(.color-palette-swatch),
+    body:not([data-space]) [class*="button"]:not([data-space]):not([data-space] *):not(.platform-sidebar-menu-button):not(.platform-sidebar-menu-button-active):not([role="tab"]):not([data-component="select-trigger"]):not([data-component="color-input-trigger"]):not([data-component="accordion-trigger"]):not(.color-input-trigger):not(.solid-color-swatch-button):not(.color-set-selector):not(.color-palette-swatch) {
       border-radius: var(--brand-button-border-radius, ${styling.buttonBorderRadius}) !important;
       border-width: var(--brand-button-border-width, ${styling.buttonBorderWidth}) !important;
       border-color: var(--brand-border-color, ${borderColor}) !important;
@@ -154,7 +154,9 @@ export function applyGlobalStyling(branding: BrandingConfig) {
     body:not([data-space]) .platform-sidebar-menu-button-active,
     body:not([data-space]) .platform-sidebar-menu-button.platform-sidebar-menu-button-active,
     body:not([data-space]) [role="tablist"][aria-orientation="vertical"] [role="tab"],
-    body:not([data-space]) [role="tablist"][aria-orientation="vertical"] button[role="tab"] {
+    body:not([data-space]) [role="tablist"][aria-orientation="vertical"] button[role="tab"],
+    body:not([data-space]) button[data-component="accordion-trigger"],
+    body:not([data-space]) [data-component="accordion-trigger"] {
       /* Reset button styling - these use their own component-specific styling */
       border-radius: revert !important;
       border-width: revert !important;

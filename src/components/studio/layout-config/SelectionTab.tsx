@@ -4,7 +4,6 @@ import React, { useMemo } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { ComponentConfig } from './types'
 import { PlacedWidget, widgetsPalette } from './widgets'
-import { X } from 'lucide-react'
 import { WidgetProperties } from './WidgetProperties'
 import { ComponentProperties } from './ComponentProperties'
 
@@ -120,7 +119,7 @@ export function SelectionTab({
               <Badge
                 key={type}
                 variant={selectedComponent === type ? 'default' : 'outline'}
-                className="cursor-pointer hover:bg-primary/80 capitalize"
+                className="cursor-pointer hover:bg-primary/80 capitalize m-0.5"
                 onClick={() => handleComponentClick(type)}
               >
                 {config.type}
@@ -145,13 +144,10 @@ export function SelectionTab({
                     <Badge
                       key={widget.id}
                       variant={isSelected ? 'default' : 'outline'}
-                      className="cursor-pointer hover:bg-primary/80"
+                      className="cursor-pointer hover:bg-primary/80 m-0.5"
                       onClick={() => handleWidgetClick(widget.id)}
                     >
                       {widgetDef?.label || widget.type}
-                      {isSelected && (
-                        <X className="h-3 w-3 ml-1" />
-                      )}
                     </Badge>
                   )
                 })}

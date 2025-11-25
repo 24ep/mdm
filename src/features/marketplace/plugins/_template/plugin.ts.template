@@ -1,0 +1,137 @@
+/**
+ * Plugin Template
+ * 
+ * Copy this file to create a new plugin:
+ * 1. Create a new folder: src/features/marketplace/plugins/your-plugin-name/
+ * 2. Copy this file to: src/features/marketplace/plugins/your-plugin-name/plugin.ts
+ * 3. Update all the values below
+ * 4. Add the plugin to src/features/marketplace/plugins/index.ts
+ * 5. Register it via API: POST /api/marketplace/plugins/register
+ */
+
+import { PluginDefinition } from '../../types'
+
+export const yourPluginName: PluginDefinition = {
+  // Required: Unique identifier (usually same as slug)
+  id: 'your-plugin-slug',
+  
+  // Required: Display name
+  name: 'Your Plugin Name',
+  
+  // Required: URL-friendly identifier (must be unique)
+  slug: 'your-plugin-slug',
+  
+  // Optional: Description of what the plugin does
+  description: 'A brief description of your plugin and what it does',
+  
+  // Required: Version string
+  version: '1.0.0',
+  
+  // Required: Provider/company name
+  provider: 'Your Company Name',
+  
+  // Optional: Provider website URL
+  providerUrl: 'https://yourcompany.com',
+  
+  // Required: Category - choose one:
+  // 'business-intelligence' | 'service-management' | 'data-integration' | 'automation' | 'analytics' | 'other'
+  category: 'other',
+  
+  // Required: Status - 'pending' | 'approved' | 'rejected' | 'deprecated'
+  status: 'approved',
+  
+  // Optional: Whether plugin is verified (default: false)
+  verified: true,
+  
+  // Optional: Plugin capabilities (custom object)
+  capabilities: {
+    // Define what your plugin can do
+    // Example: customFeature: true,
+  },
+  
+  // Optional: Base URL for plugin API
+  apiBaseUrl: 'https://api.example.com',
+  
+  // Optional: Authentication type - 'oauth2' | 'api_key' | 'bearer' | 'none'
+  apiAuthType: 'none',
+  
+  // Optional: Authentication configuration
+  apiAuthConfig: {
+    // OAuth example:
+    // authorizationUrl: 'https://example.com/oauth/authorize',
+    // tokenUrl: 'https://example.com/oauth/token',
+    // scopes: ['read', 'write'],
+    
+    // API Key example:
+    // headerName: 'X-API-Key',
+  },
+  
+  // Optional: UI type - 'iframe' | 'react_component' | 'web_component'
+  uiType: 'react_component',
+  
+  // Optional: UI configuration
+  uiConfig: {
+    // For react_component:
+    componentPath: '@/features/marketplace/plugins/your-plugin-name/components/YourPluginUI',
+    
+    // Optional: Configuration fields for installation
+    configFields: {
+      // Example field:
+      // apiKey: {
+      //   label: 'API Key',
+      //   type: 'text',
+      //   placeholder: 'Enter your API key',
+      //   required: true,
+      // },
+    },
+    
+    // For iframe:
+    // iframeUrl: 'https://example.com/embed',
+    // iframeHeight: '600px',
+  },
+  
+  // Optional: Whether plugin supports webhooks
+  webhookSupported: false,
+  
+  // Optional: List of webhook events
+  webhookEvents: [],
+  
+  // Optional: Icon URL (place icon in /public/icons/)
+  iconUrl: '/icons/your-plugin.svg',
+  
+  // Optional: Screenshot URLs
+  screenshots: [],
+  
+  // Optional: Documentation URL
+  documentationUrl: 'https://docs.example.com',
+  
+  // Optional: Support URL
+  supportUrl: 'https://support.example.com',
+  
+  // Optional: Pricing information
+  pricingInfo: {
+    type: 'free', // 'free' | 'subscription' | 'one-time'
+    // For subscription:
+    // tiers: [
+    //   { name: 'Basic', price: 0, features: ['Feature 1'] },
+    //   { name: 'Pro', price: 9.99, features: ['Feature 1', 'Feature 2'] },
+    // ],
+  },
+  
+  // Optional: Installation count (default: 0)
+  installationCount: 0,
+  
+  // Optional: Rating (0-5)
+  rating: undefined,
+  
+  // Optional: Review count
+  reviewCount: 0,
+  
+  // Optional: Security audit information
+  securityAudit: {
+    lastAudited: new Date().toISOString(),
+    vulnerabilities: [],
+    compliance: [],
+  },
+}
+

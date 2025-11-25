@@ -1,9 +1,28 @@
 /**
  * Encryption utility for sensitive data like API keys
  * Uses AES-256-GCM encryption with a key derived from environment variable
+ * 
+ * NOTE: This module uses Node.js crypto and should only be used on the server side
  */
 
-import crypto from 'crypto'
+// Only import crypto on server side
+// Use lazy loading to avoid webpack analysis at module load time
+const isServer = typeof window === 'undefined'
+
+function getCrypto() {
+  if (!isServer) {
+    throw new Error('Encryption can only be used on the server side')
+  }
+  // Lazy require - only called at runtime, not at module load time
+  // This prevents webpack from analyzing it during build
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    return require('crypto')
+  } catch (error) {
+    console.error('Failed to load crypto module:', error)
+    throw new Error('Crypto module not available')
+  }
+}
 
 const ALGORITHM = 'aes-256-gcm'
 const IV_LENGTH = 16 // 16 bytes for AES
@@ -17,6 +36,7 @@ const ITERATIONS = 100000 // PBKDF2 iterations
  * Falls back to a default key if not set (WARNING: Not secure for production)
  */
 function getEncryptionKey(): Buffer {
+  const crypto = getCrypto()
   const envKey = process.env.ENCRYPTION_KEY
   
   if (!envKey) {
@@ -43,7 +63,12 @@ export function encrypt(value: string): string {
     return value
   }
 
+  if (!isServer) {
+    throw new Error('Encryption can only be used on the server side')
+  }
+
   try {
+    const crypto = getCrypto()
     const key = getEncryptionKey()
     const salt = crypto.randomBytes(SALT_LENGTH)
     const iv = crypto.randomBytes(IV_LENGTH)
@@ -82,6 +107,10 @@ export function decrypt(encryptedValue: string): string {
     return encryptedValue
   }
 
+  if (!isServer) {
+    throw new Error('Decryption can only be used on the server side')
+  }
+
   // Check if the value appears to be encrypted before attempting decryption
   if (!isEncrypted(encryptedValue)) {
     // Not encrypted, return as-is (plain text for backward compatibility)
@@ -89,6 +118,7 @@ export function decrypt(encryptedValue: string): string {
   }
 
   try {
+    const crypto = getCrypto()
     const key = getEncryptionKey()
     const combined = Buffer.from(encryptedValue, 'hex')
     

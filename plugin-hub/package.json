@@ -1,0 +1,26 @@
+{
+  "name": "mdm-plugin-hub",
+  "version": "1.0.0",
+  "description": "Plugin Hub for MDM Marketplace",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "^16.0.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "typescript": "^5.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "eslint-config-next": "^16.0.1"
+  }
+}
+

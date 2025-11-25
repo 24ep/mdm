@@ -22,13 +22,13 @@ export async function GET(request: NextRequest) {
     let paramIndex = 1
 
     if (spaceId) {
-      whereConditions.push(`si.space_id = $${paramIndex}`)
+      whereConditions.push(`si.space_id = CAST($${paramIndex} AS uuid)`)
       queryParams.push(spaceId)
       paramIndex++
     }
 
     if (serviceId) {
-      whereConditions.push(`si.service_id = $${paramIndex}`)
+      whereConditions.push(`si.service_id = CAST($${paramIndex} AS uuid)`)
       queryParams.push(serviceId)
       paramIndex++
     }
@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
     // Check if already installed
     const existing = await query(
       `SELECT id FROM service_installations 
-       WHERE service_id = $1 AND space_id = $2 AND deleted_at IS NULL`,
+       WHERE service_id = CAST($1 AS uuid) AND space_id = CAST($2 AS uuid) AND deleted_at IS NULL`,
       [serviceId, spaceId]
     )
 
@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
       `INSERT INTO service_installations (
         id, service_id, space_id, installed_by, config, credentials, status, installed_at, updated_at
       ) VALUES (
-        gen_random_uuid(), $1, $2, $3, $4, $5, 'active', NOW(), NOW()
+        gen_random_uuid(), CAST($1 AS uuid), CAST($2 AS uuid), CAST($3 AS uuid), $4::jsonb, $5::jsonb, 'active', NOW(), NOW()
       ) RETURNING id`,
       [
         serviceId,
@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
     await query(
       `UPDATE service_registry 
        SET installation_count = installation_count + 1, updated_at = NOW()
-       WHERE id = $1`,
+       WHERE id = CAST($1 AS uuid)`,
       [serviceId]
     )
 

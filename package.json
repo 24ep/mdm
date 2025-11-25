@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 prisma generate && cross-env NODE_OPTIONS=--max-old-space-size=4096 next build --webpack",
     "start": "next start",
     "lint": "next lint",
@@ -24,7 +24,8 @@
     "update-themes": "tsx prisma/update-themes.ts",
     "remove-default-light": "tsx prisma/remove-default-light.ts",
     "migrate-drawer-style": "tsx prisma/migrate-drawer-style.ts",
-    "migrate-icon-button": "tsx prisma/migrate-icon-button.ts"
+    "migrate-icon-button": "tsx prisma/migrate-icon-button.ts",
+    "update-badge-theme": "node scripts/update-badge-theme-config.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.932.0",

@@ -39,6 +39,26 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         node.style.setProperty('color', 'rgb(15, 23, 42)', 'important')
       }
       
+      // Apply padding and fontSize from theme to match text-input
+      // Get values from CSS custom properties set by component-styling.ts
+      // Try textarea-specific values first, then fall back to text-input values
+      const textareaPadding = root.style.getPropertyValue('--textarea-padding')?.trim() || 
+                              getComputedStyle(root).getPropertyValue('--textarea-padding')?.trim() ||
+                              root.style.getPropertyValue('--text-input-padding')?.trim() ||
+                              getComputedStyle(root).getPropertyValue('--text-input-padding')?.trim()
+      
+      const textareaFontSize = root.style.getPropertyValue('--textarea-font-size')?.trim() || 
+                               getComputedStyle(root).getPropertyValue('--textarea-font-size')?.trim() ||
+                               root.style.getPropertyValue('--text-input-font-size')?.trim() ||
+                               getComputedStyle(root).getPropertyValue('--text-input-font-size')?.trim()
+      
+      if (textareaPadding) {
+        node.style.setProperty('padding', textareaPadding, 'important')
+      }
+      if (textareaFontSize) {
+        node.style.setProperty('font-size', textareaFontSize, 'important')
+      }
+      
       // Border color: use theme-aware border color from CSS variable
       // Don't set border-color directly - let CSS variable handle it via globals.css
       // This ensures it updates when theme changes

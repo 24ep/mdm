@@ -10,6 +10,12 @@ out/
 build/
 dist/
 
+# Plugin Hub (separate service)
+plugin-hub/.next/
+plugin-hub/out/
+plugin-hub/build/
+plugin-hub/dist/
+
 # Environment variables
 .env
 .env.local

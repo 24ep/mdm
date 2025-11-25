@@ -48,6 +48,20 @@ export function useMarketplacePlugins(
         params.append('serviceType', filters.serviceType)
       }
 
+      if (filters.installedOnly) {
+        params.append('installedOnly', 'true')
+      }
+
+      if (spaceId) {
+        params.append('spaceId', spaceId)
+      }
+
+      // Fetch from hub by default (can be overridden)
+      if (!params.has('source')) {
+        const source = process.env.NEXT_PUBLIC_USE_PLUGIN_HUB === 'true' ? 'hub' : 'installed'
+        params.append('source', source)
+      }
+      
       const response = await fetch(`/api/marketplace/plugins?${params.toString()}`)
       
       if (!response.ok) {

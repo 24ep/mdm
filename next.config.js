@@ -22,6 +22,15 @@ const nextConfig = {
   // Add empty turbopack config to silence Next.js 16 warning (we use webpack)
   turbopack: {},
   webpack: (config, { isServer, webpack }) => {
+    // Exclude plugin-hub directory from build analysis (it's a separate service)
+    config.watchOptions = {
+      ...config.watchOptions,
+      ignored: [
+        ...(Array.isArray(config.watchOptions?.ignored) ? config.watchOptions.ignored : []),
+        '**/plugin-hub/**',
+      ],
+    }
+    
     // CRITICAL: Don't bail on first error - show all errors
     config.bail = false
     
@@ -91,9 +100,32 @@ const nextConfig = {
           resourceRegExp: /^@openai\/chatkit-react$/,
         })
       )
-      // Exclude native modules from server bundle
+      // Ignore plugin-hub directory (separate service) - prevent any resolution attempts
+      config.plugins.push(
+        new webpack.IgnorePlugin({
+          resourceRegExp: /plugin-hub/,
+        })
+      )
+      // Also add to externals to prevent any module resolution
+      if (!Array.isArray(config.externals)) {
+        config.externals = [config.externals].filter(Boolean)
+      }
+      config.externals.push(({ request }, callback) => {
+        if (request && request.includes('plugin-hub')) {
+          return callback(null, 'commonjs ' + request)
+        }
+        callback()
+      })
+      // Exclude native modules from server bundle - mark Node.js built-ins as external
       config.externals = config.externals || []
-      config.externals.push('ssh2-sftp-client', 'ftp', 'ssh2')
+      config.externals.push('ssh2-sftp-client', 'ftp', 'ssh2', 'child_process')
+      // Mark Node.js built-in modules as external (they're available at runtime)
+      const nodeBuiltins = ['crypto', 'fs', 'path', 'util', 'stream', 'os', 'net', 'tls', 'http', 'https', 'zlib', 'url', 'assert']
+      nodeBuiltins.forEach(module => {
+        if (!config.externals.includes(module)) {
+          config.externals.push(module)
+        }
+      })
     } else {
       // For client-side builds, configure fallbacks for Node.js modules
       config.resolve.fallback = {
@@ -110,7 +142,15 @@ const nextConfig = {
         assert: false,
         os: false,
         path: false,
+        child_process: false,
+        util: false,
       }
+      // Ignore child_process and util on client side
+      config.plugins.push(
+        new webpack.IgnorePlugin({
+          resourceRegExp: /^(child_process|util)$/,
+        })
+      )
     }
     
     // Handle mqtt and socket.io-client - they use dynamic imports
@@ -125,9 +165,7 @@ const nextConfig = {
     return config
   },
   // Experimental: Continue build even with errors
-  experimental: {
-    // This helps show all errors
-  },
+  // Note: turbo config removed - use --webpack flag to avoid Turbopack
   // Logging configuration - disable request logs
   logging: {
     fetches: {

@@ -27,6 +27,40 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
     const verified = searchParams.get('verified')
     const serviceType = searchParams.get('serviceType')
+    const source = searchParams.get('source') // 'hub' or 'installed' or 'all'
+    const spaceId = searchParams.get('spaceId') // Filter by installed plugins in space
+    const installedOnly = searchParams.get('installedOnly') === 'true' // Only show installed plugins
+
+    // If source is 'hub', fetch from plugin hub
+    if (source === 'hub' || process.env.USE_PLUGIN_HUB === 'true') {
+      try {
+        // Fetch from hub API via HTTP (hub runs as separate service)
+        const hubUrl = process.env.PLUGIN_HUB_URL || 'http://localhost:3001'
+        const hubApiUrl = new URL('/api/plugins', hubUrl)
+        
+        // Copy search params except 'source'
+        searchParams.forEach((value, key) => {
+          if (key !== 'source') {
+            hubApiUrl.searchParams.append(key, value)
+          }
+        })
+        
+        // Make HTTP request to hub
+        const hubResponse = await fetch(hubApiUrl.toString(), {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+        
+        if (hubResponse.ok) {
+          const hubData = await hubResponse.json()
+          return NextResponse.json(hubData)
+        }
+      } catch (error) {
+        console.warn('Failed to fetch from plugin hub, falling back to database:', error)
+      }
+    }
 
     // Marketplace is accessible to all authenticated users
     // Skip permission check for admins, and allow all authenticated users access
@@ -82,6 +116,14 @@ export async function GET(request: NextRequest) {
       paramIndex++
     }
 
+    // If installedOnly is true, join with service_installations to filter
+    let joinClause = ''
+    if (installedOnly && spaceId) {
+      joinClause = `INNER JOIN service_installations si ON si.service_id = sr.id AND si.space_id = $${paramIndex} AND si.status = 'active'`
+      queryParams.push(spaceId)
+      paramIndex++
+    }
+
     const whereClause = whereConditions.join(' AND ')
 
     const pluginsQuery = `
@@ -116,6 +158,7 @@ export async function GET(request: NextRequest) {
         sr.created_at,
         sr.updated_at
       FROM service_registry sr
+      ${joinClause}
       WHERE ${whereClause}
       ORDER BY sr.installation_count DESC, sr.created_at DESC
     `
@@ -133,37 +176,55 @@ export async function GET(request: NextRequest) {
       throw dbError
     }
 
-    const plugins = pluginsResult.rows.map((row: any) => ({
-      id: row.id,
-      name: row.name,
-      slug: row.slug,
-      description: row.description,
-      version: row.version,
-      provider: row.provider,
-      providerUrl: row.provider_url,
-      category: row.category,
-      status: row.status,
-      capabilities: row.capabilities,
-      apiBaseUrl: row.api_base_url,
-      apiAuthType: row.api_auth_type,
-      apiAuthConfig: row.api_auth_config,
-      uiType: row.ui_type,
-      uiConfig: row.ui_config,
-      webhookSupported: row.webhook_supported,
-      webhookEvents: row.webhook_events,
-      iconUrl: row.icon_url,
-      screenshots: row.screenshots,
-      documentationUrl: row.documentation_url,
-      supportUrl: row.support_url,
-      pricingInfo: row.pricing_info,
-      installationCount: row.installation_count,
-      rating: row.rating ? parseFloat(row.rating) : null,
-      reviewCount: row.review_count,
-      verified: row.verified,
-      securityAudit: row.security_audit,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-    }))
+    const plugins = pluginsResult.rows.map((row: any) => {
+      const capabilities = row.capabilities || {}
+      const plugin: any = {
+        id: row.id,
+        name: row.name,
+        slug: row.slug,
+        description: row.description,
+        version: row.version,
+        provider: row.provider,
+        providerUrl: row.provider_url,
+        category: row.category,
+        status: row.status,
+        capabilities: capabilities,
+        apiBaseUrl: row.api_base_url,
+        apiAuthType: row.api_auth_type,
+        apiAuthConfig: row.api_auth_config,
+        uiType: row.ui_type,
+        uiConfig: row.ui_config,
+        webhookSupported: row.webhook_supported,
+        webhookEvents: row.webhook_events,
+        iconUrl: row.icon_url,
+        screenshots: row.screenshots,
+        documentationUrl: row.documentation_url,
+        supportUrl: row.support_url,
+        pricingInfo: row.pricing_info,
+        installationCount: row.installation_count,
+        rating: row.rating ? parseFloat(row.rating) : null,
+        reviewCount: row.review_count,
+        verified: row.verified,
+        securityAudit: row.security_audit,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      }
+
+      // Extract external plugin metadata from capabilities
+      if (capabilities.source) {
+        plugin.source = capabilities.source
+        plugin.sourcePath = capabilities.sourcePath
+        plugin.sourceUrl = capabilities.sourceUrl
+        plugin.projectFolder = capabilities.projectFolder
+        plugin.downloadUrl = capabilities.downloadUrl
+        plugin.checksum = capabilities.checksum
+        plugin.installedPath = capabilities.installedPath
+      } else {
+        plugin.source = 'built-in'
+      }
+
+      return plugin
+    })
 
     await logAPIRequest(
       session.user.id,

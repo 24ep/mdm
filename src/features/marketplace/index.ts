@@ -17,5 +17,7 @@ export { PluginReviews } from './components/PluginReviews'
 // Lib
 export { PluginRegistry } from './lib/plugin-registry'
 export { PluginLoader, pluginLoader } from './lib/plugin-loader'
-export { PluginGateway } from './lib/plugin-gateway'
+// PluginGateway is server-only (uses credential-manager which uses encryption)
+// Only import it in API routes, not client components
+// export { PluginGateway } from './lib/plugin-gateway'
 
