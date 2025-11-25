@@ -452,9 +452,15 @@ export function PlatformLayout({
             onMouseEnter={() => setSidebarCollapsed(false)}
             onMouseLeave={(e) => {
               // Only collapse if not moving to secondary sidebar
-              const relatedTarget = e.relatedTarget as HTMLElement
-              if (!relatedTarget?.closest('[data-sidebar="secondary"]') && 
-                  !relatedTarget?.closest('.flex-shrink-0.border-r')) {
+              const relatedTarget = e.relatedTarget
+              // Check if relatedTarget is an Element (has closest method)
+              if (relatedTarget && relatedTarget instanceof Element) {
+                if (!relatedTarget.closest('[data-sidebar="secondary"]') && 
+                    !relatedTarget.closest('.flex-shrink-0.border-r')) {
+                  setSidebarCollapsed(true)
+                }
+              } else {
+                // If relatedTarget is null or not an Element, collapse the sidebar
                 setSidebarCollapsed(true)
               }
             }}

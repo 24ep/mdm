@@ -65,6 +65,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # Note: NEXT_PUBLIC_* variables are set at build time and embedded in the bundle
 # Runtime ENV vars here are for reference only (they won't affect client-side code)
 
+# Install PostgreSQL client tools for database health checks
+RUN apk add --no-cache postgresql-client
+
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
