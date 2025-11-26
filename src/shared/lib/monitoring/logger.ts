@@ -11,6 +11,23 @@ const getElasticsearchLogger = async () => {
   return () => Promise.resolve()
 }
 
+// Dynamic import for SigNoz (server-side only)
+const getSigNozLogger = async () => {
+  if (typeof window === 'undefined') {
+    try {
+      const { sendLogToSigNoz, isSigNozEnabled } = await import('@/lib/signoz-client')
+      const enabled = await isSigNozEnabled()
+      if (enabled) {
+        return sendLogToSigNoz
+      }
+      return null
+    } catch (error) {
+      return null
+    }
+  }
+  return null
+}
+
 export enum LogLevel {
   DEBUG = 'debug',
   INFO = 'info',
@@ -74,6 +91,28 @@ export class Logger {
         spaceId: entry.spaceId,
         timestamp: entry.timestamp?.toISOString()
       }).catch(() => {}) // Silently fail
+    })
+
+    // Send to SigNoz (fire and forget)
+    getSigNozLogger().then(sendLog => {
+      if (sendLog) {
+        const severityMap: Record<LogLevel, 'TRACE' | 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'FATAL'> = {
+          [LogLevel.DEBUG]: 'DEBUG',
+          [LogLevel.INFO]: 'INFO',
+          [LogLevel.WARN]: 'WARN',
+          [LogLevel.ERROR]: 'ERROR'
+        }
+        sendLog({
+          severity: severityMap[level] || 'INFO',
+          message,
+          attributes: {
+            ...entry.context,
+            userId: entry.userId,
+            spaceId: entry.spaceId
+          },
+          timestamp: entry.timestamp?.getTime()
+        }).catch(() => {}) // Silently fail
+      }
     })
   }
 

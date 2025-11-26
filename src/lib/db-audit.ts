@@ -261,6 +261,32 @@ class DatabaseAuditLogger {
           success: auditLog.success,
           errorMessage: auditLog.errorMessage
         }).catch(() => {}) // Silently fail
+
+        // Send to SigNoz (fire and forget)
+        const { sendLogToSigNoz, isSigNozEnabled } = await import('./signoz-client')
+        const signozEnabled = await isSigNozEnabled()
+        if (signozEnabled) {
+          sendLogToSigNoz({
+            severity: auditLog.success ? 'INFO' : 'ERROR',
+            message: `DB Audit: ${auditLog.action} on ${auditLog.resourceType}`,
+            attributes: {
+              id: auditLogId,
+              userId: auditLog.userId,
+              userName: auditLog.userName,
+              userEmail: auditLog.userEmail,
+              action: auditLog.action,
+              resourceType: auditLog.resourceType,
+              resourceId: auditLog.resourceId,
+              resourceName: auditLog.resourceName,
+              connectionId: auditLog.connectionId,
+              spaceId: auditLog.spaceId,
+              executionTime: auditLog.executionTime,
+              rowCount: auditLog.rowCount,
+              success: auditLog.success,
+              errorMessage: auditLog.errorMessage
+            }
+          }).catch(() => {}) // Silently fail
+        }
       }
 
       return auditLogId

@@ -9,6 +9,7 @@ export interface PerformanceMetric {
 
 /**
  * Performance monitor for measuring operation durations
+ * Integrated with SigNoz for observability
  */
 export class PerformanceMonitor {
   private measurements: Map<string, number> = new Map()
@@ -33,10 +34,33 @@ export class PerformanceMonitor {
     const endTime = performance.now()
     const duration = endTime - startTime
 
-    // Record metric
+    // Record metric in metrics collector (which sends to SigNoz)
     metricsCollector.histogram(`performance.${name}`, duration, {
       unit: 'ms',
     })
+
+    // Also send directly to SigNoz for immediate visibility
+    if (typeof window === 'undefined') {
+      // Server-side only
+      import('@/lib/signoz-client').then(({ sendMetricToSigNoz, isSigNozEnabled }) => {
+        isSigNozEnabled().then(enabled => {
+          if (enabled) {
+            sendMetricToSigNoz({
+              name: `performance.${name}`,
+              value: duration,
+              type: 'histogram',
+              unit: 'ms',
+              attributes: {
+                'metric.type': 'performance',
+                'metric.name': name
+              }
+            }).catch(() => {
+              // Silently fail
+            })
+          }
+        }).catch(() => {})
+      }).catch(() => {})
+    }
 
     this.measurements.delete(name)
 

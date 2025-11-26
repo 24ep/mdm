@@ -121,6 +121,33 @@ export async function POST(request: NextRequest) {
           }
           break
 
+        case 'gitlab':
+          // Test GitLab connection
+          if (config?.token && config?.projectId) {
+            try {
+              const { GitLabProjectManagementService } = await import('@/lib/gitlab-project-management')
+              const gitlabService = new GitLabProjectManagementService({
+                token: config.token,
+                projectId: config.projectId,
+                baseUrl: config.baseUrl
+              })
+              const result = await gitlabService.testConnection()
+              testResult = {
+                success: result.success,
+                error: result.error || '',
+                data: result.data
+              }
+            } catch (error: any) {
+              testResult = {
+                success: false,
+                error: error.message || 'Failed to connect to GitLab'
+              }
+            }
+          } else {
+            testResult = { success: false, error: 'Token and Project ID are required' }
+          }
+          break
+
         case 'vault':
           // Test Vault connection
           if (config?.vaultUrl && config?.token) {
@@ -215,6 +242,58 @@ export async function POST(request: NextRequest) {
             testResult = {
               success: false,
               error: esError.message || 'Failed to connect to Elasticsearch'
+            }
+          }
+          break
+
+        case 'signoz':
+          // Test SigNoz connection
+          if (!config?.url) {
+            testResult = { success: false, error: 'SigNoz URL is required' }
+            break
+          }
+
+          try {
+            // Test SigNoz API health endpoint
+            const signozUrl = config.url.replace(/\/$/, '') // Remove trailing slash
+            const healthUrl = `${signozUrl}/api/v1/health`
+            
+            const response = await fetch(healthUrl, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(config.apiKey && { 'Authorization': `Bearer ${config.apiKey}` })
+              },
+              signal: AbortSignal.timeout(10000)
+            })
+
+            // SigNoz health endpoint may return 200 or 404 (if endpoint doesn't exist)
+            // Try alternative: check if the base URL is accessible
+            if (!response.ok && response.status !== 404) {
+              // If health endpoint doesn't exist, try the base URL
+              const baseResponse = await fetch(signozUrl, {
+                method: 'GET',
+                headers: {
+                  'Content-Type': 'application/json',
+                  ...(config.apiKey && { 'Authorization': `Bearer ${config.apiKey}` })
+                },
+                signal: AbortSignal.timeout(10000)
+              })
+              
+              testResult = {
+                success: baseResponse.ok || baseResponse.status === 401, // 401 means auth works
+                error: baseResponse.ok ? '' : `HTTP ${baseResponse.status}: ${baseResponse.statusText}`
+              }
+            } else {
+              testResult = {
+                success: true,
+                error: ''
+              }
+            }
+          } catch (signozError: any) {
+            testResult = {
+              success: false,
+              error: signozError.message || 'Failed to connect to SigNoz'
             }
           }
           break

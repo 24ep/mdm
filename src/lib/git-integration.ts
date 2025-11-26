@@ -1,5 +1,7 @@
 import { Octokit } from '@octokit/rest'
-import { GitLab } from '@gitbeaker/node'
+// @ts-ignore - @gitbeaker/node has incorrect type definitions
+import * as GitLabModule from '@gitbeaker/node'
+const { GitLab } = GitLabModule as any
 
 export interface GitConfig {
   provider: 'github' | 'gitlab'

@@ -8,6 +8,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { logger } from './logger'
 import { addSecurityHeaders } from './security-headers'
+import { withTracing } from './tracing-middleware'
 
 /**
  * API Handler type
@@ -113,6 +114,26 @@ export function withAuthAndErrorHandling<T = {}>(
   context?: string
 ) {
   return withErrorHandling(withAuth(handler), context)
+}
+
+/**
+ * Combined middleware: tracing + authentication + error handling
+ * Automatically creates distributed traces for all API requests
+ */
+export function withTracingAndAuth<T = {}>(
+  handler: ApiHandler<T & ApiContext>,
+  options: {
+    traceName?: string | ((request: NextRequest) => string)
+    context?: string
+  } = {}
+) {
+  const tracedHandler = withTracing(
+    withAuthAndErrorHandling(handler, options.context),
+    {
+      traceName: options.traceName
+    }
+  )
+  return tracedHandler
 }
 
 /**

@@ -71,6 +71,30 @@ export async function GET(
               }
             }
           }
+        },
+        project: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        module: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        milestone: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        release: {
+          select: {
+            id: true,
+            name: true
+          }
         }
       }
     })
@@ -157,6 +181,10 @@ export async function PUT(
       labels: z.array(z.string()).optional(),
       estimate: z.number().optional(),
       attributes: z.array(z.any()).optional(),
+      projectId: z.string().uuid().optional().nullable(),
+      moduleId: z.string().uuid().optional().nullable(),
+      milestoneId: z.string().uuid().optional().nullable(),
+      releaseId: z.string().uuid().optional().nullable(),
     })
     
     const bodyValidation = await validateBody(request, bodySchema)
@@ -174,7 +202,11 @@ export async function PUT(
       assignedTo,
       labels,
       estimate,
-      attributes
+      attributes,
+      projectId,
+      moduleId,
+      milestoneId,
+      releaseId
     } = bodyValidation.data
 
     // Check if ticket exists and user has access
@@ -226,6 +258,10 @@ export async function PUT(
     if (assignedTo !== undefined) updateData.assignedTo = assignedTo || null
     if (labels !== undefined) updateData.labels = labels
     if (estimate !== undefined) updateData.estimate = estimate
+    if (projectId !== undefined) updateData.projectId = projectId || null
+    if (moduleId !== undefined) updateData.moduleId = moduleId || null
+    if (milestoneId !== undefined) updateData.milestoneId = milestoneId || null
+    if (releaseId !== undefined) updateData.releaseId = releaseId || null
 
     // Update ticket
     const ticket = await db.ticket.update({
@@ -255,6 +291,30 @@ export async function PUT(
         attributes: {
           orderBy: {
             sortOrder: 'asc'
+          }
+        },
+        project: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        module: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        milestone: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        release: {
+          select: {
+            id: true,
+            name: true
           }
         }
       }
@@ -310,6 +370,30 @@ export async function PUT(
           attributes: {
             orderBy: {
               sortOrder: 'asc'
+            }
+          },
+          project: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          module: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          milestone: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          release: {
+            select: {
+              id: true,
+              name: true
             }
           }
         }

@@ -107,15 +107,15 @@ export default function SpaceSettingsPage() {
   // Handle tab change and update URL to preserve from parameter
   const handleTabChange = (newTab: string) => {
     setTab(newTab)
-    const params = new URLSearchParams(searchParams?.toString() || '')
-    params.set('tab', newTab)
+    const queryParams = new URLSearchParams(searchParams?.toString() || '')
+    queryParams.set('tab', newTab)
     // Preserve from parameter if it exists
     if (fromDataManagement) {
-      params.set('from', 'data-management')
+      queryParams.set('from', 'data-management')
     } else if (fromSpaceSidebar) {
-      params.set('from', 'space-sidebar')
+      queryParams.set('from', 'space-sidebar')
     }
-    router.push(`/${params.space}/settings?${params.toString()}`)
+    router.push(`/${params.space}/settings?${queryParams.toString()}`)
   }
 
   const [members, setMembers] = useState<any[]>([])

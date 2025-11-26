@@ -1,5 +1,5 @@
 declare module '@gitbeaker/node' {
-  export class GitLab {
+  export default class GitLab {
     constructor(options?: any)
     Projects: {
       all: (options?: any) => Promise<any>
@@ -24,6 +24,23 @@ declare module '@gitbeaker/node' {
       all: (projectId: string | number, options?: any) => Promise<any>
       show: (projectId: string | number, mergerequestIid: number, options?: any) => Promise<any>
       create: (projectId: string | number, options?: any) => Promise<any>
+    }
+    ProjectMilestones: {
+      all: (projectId: string | number, options?: any) => Promise<any>
+      show: (projectId: string | number, milestoneId: number, options?: any) => Promise<any>
+      create: (projectId: string | number, options?: any) => Promise<any>
+      edit: (projectId: string | number, milestoneId: number, options?: any) => Promise<any>
+    }
+    Tags: {
+      all: (projectId: string | number, options?: any) => Promise<any>
+      show: (projectId: string | number, tagName: string, options?: any) => Promise<any>
+      create: (projectId: string | number, options?: any) => Promise<any>
+    }
+    Releases: {
+      all: (projectId: string | number, options?: any) => Promise<any>
+      show: (projectId: string | number, tagName: string, options?: any) => Promise<any>
+      create: (projectId: string | number, options?: any) => Promise<any>
+      update: (projectId: string | number, tagName: string, options?: any) => Promise<any>
     }
   }
 }

@@ -82,6 +82,7 @@ export default function PageLayoutSelectionPage() {
     name: string
     description?: string
     icon: typeof Layout
+    config?: any
   }>>([])
 
   useEffect(() => {

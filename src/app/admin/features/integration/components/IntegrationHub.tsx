@@ -193,6 +193,12 @@ export function IntegrationHub() {
           { key: 'apiKey', label: 'API Key', type: 'password', required: true },
           { key: 'technicianKey', label: 'Technician Key', type: 'password', required: false }
         ]
+      case 'gitlab':
+        return [
+          { key: 'token', label: 'Personal Access Token', type: 'password', required: true, placeholder: 'glpat-...' },
+          { key: 'projectId', label: 'Project ID', type: 'text', required: true, placeholder: 'group/project or numeric ID' },
+          { key: 'baseUrl', label: 'GitLab URL (optional)', type: 'text', required: false, placeholder: 'https://gitlab.com' }
+        ]
       case 'powerbi':
         return [
           { key: 'clientId', label: 'Client ID', type: 'text', required: true },

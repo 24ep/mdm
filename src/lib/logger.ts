@@ -17,6 +17,23 @@ const getElasticsearchLogger = async () => {
   return () => Promise.resolve()
 }
 
+// Dynamic import for SigNoz (server-side only)
+const getSigNozLogger = async () => {
+  if (typeof window === 'undefined') {
+    try {
+      const { sendLogToSigNoz, isSigNozEnabled } = await import('./signoz-client')
+      const enabled = await isSigNozEnabled()
+      if (enabled) {
+        return sendLogToSigNoz
+      }
+      return null
+    } catch (error) {
+      return null
+    }
+  }
+  return null
+}
+
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
 interface LogContext {
@@ -55,6 +72,20 @@ class Logger {
           environment: this.isProduction ? 'production' : 'development'
         }).catch(() => {}) // Silently fail
       })
+
+      // Send to SigNoz (fire and forget)
+      getSigNozLogger().then(sendLog => {
+        if (sendLog) {
+          sendLog({
+            severity: 'DEBUG',
+            message,
+            attributes: {
+              ...context,
+              environment: this.isProduction ? 'production' : 'development'
+            }
+          }).catch(() => {}) // Silently fail
+        }
+      })
     }
   }
 
@@ -71,6 +102,20 @@ class Logger {
           environment: this.isProduction ? 'production' : 'development'
         }).catch(() => {}) // Silently fail
       })
+
+      // Send to SigNoz (fire and forget)
+      getSigNozLogger().then(sendLog => {
+        if (sendLog) {
+          sendLog({
+            severity: 'INFO',
+            message,
+            attributes: {
+              ...context,
+              environment: this.isProduction ? 'production' : 'development'
+            }
+          }).catch(() => {}) // Silently fail
+        }
+      })
     }
   }
 
@@ -86,6 +131,20 @@ class Logger {
           ...context,
           environment: this.isProduction ? 'production' : 'development'
         }).catch(() => {}) // Silently fail
+      })
+
+      // Send to SigNoz (fire and forget)
+      getSigNozLogger().then(sendLog => {
+        if (sendLog) {
+          sendLog({
+            severity: 'WARN',
+            message,
+            attributes: {
+              ...context,
+              environment: this.isProduction ? 'production' : 'development'
+            }
+          }).catch(() => {}) // Silently fail
+        }
       })
     }
   }
@@ -110,6 +169,20 @@ class Logger {
           ...errorContext,
           environment: this.isProduction ? 'production' : 'development'
         }).catch(() => {}) // Silently fail
+      })
+
+      // Send to SigNoz (fire and forget)
+      getSigNozLogger().then(sendLog => {
+        if (sendLog) {
+          sendLog({
+            severity: 'ERROR',
+            message,
+            attributes: {
+              ...errorContext,
+              environment: this.isProduction ? 'production' : 'development'
+            }
+          }).catch(() => {}) // Silently fail
+        }
       })
     }
   }

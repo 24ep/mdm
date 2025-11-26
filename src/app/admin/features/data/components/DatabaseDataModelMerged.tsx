@@ -675,12 +675,14 @@ export function DatabaseDataModelMerged() {
                           <span>Models</span>
                         </div>
                       </SelectItem>
-                      <SelectItem value="schema" disabled={!selectedDatabase}>
-                        <div className="flex items-center gap-2">
-                          <Table className="h-3.5 w-3.5" />
-                          <span>Schema</span>
-                        </div>
-                      </SelectItem>
+                      {selectedDatabase ? (
+                        <SelectItem value="schema">
+                          <div className="flex items-center gap-2">
+                            <Table className="h-3.5 w-3.5" />
+                            <span>Schema</span>
+                          </div>
+                        </SelectItem>
+                      ) : null}
                       <SelectItem value="erd">
                         <div className="flex items-center gap-2">
                           <GitBranch className="h-3.5 w-3.5" />

@@ -25,8 +25,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent } from '@/components/ui/card'
 import { 
   Calendar, Clock, User, X, Plus, MessageSquare, Paperclip, 
-  ListChecks, GitBranch, Trash2, Edit, Download, ExternalLink, Loader
+  ListChecks, GitBranch, Trash2, Edit, Download, ExternalLink, Loader, Network
 } from 'lucide-react'
+import { TicketRelationshipGraph } from './TicketRelationshipGraph'
+import { TicketRelationshipsPanel } from './TicketRelationshipsPanel'
 import { format } from 'date-fns'
 import { useToast } from '@/hooks/use-toast'
 
@@ -105,11 +107,27 @@ export function TicketDetailModalEnhanced({
   const [newServiceDeskLink, setNewServiceDeskLink] = useState({ requestId: '', linkType: 'relates_to' })
   const [updatingServiceDesk, setUpdatingServiceDesk] = useState(false)
   const [deletingServiceDesk, setDeletingServiceDesk] = useState(false)
+  const [pushingToGitLab, setPushingToGitLab] = useState(false)
+  const [gitLabConfig, setGitLabConfig] = useState<any>(null)
+  const [gitLabIssueUrl, setGitLabIssueUrl] = useState<string | null>(null)
+  const [gitLabRepositories, setGitLabRepositories] = useState<Array<{id: number, projectId: string, name: string, path: string}>>([])
+  const [selectedRepository, setSelectedRepository] = useState<string>('')
+  const [loadingRepositories, setLoadingRepositories] = useState(false)
+  const [projects, setProjects] = useState<Array<{id: string, name: string}>>([])
+  const [selectedProject, setSelectedProject] = useState<string>('')
+  const [modules, setModules] = useState<Array<{id: string, name: string, projectId: string}>>([])
+  const [selectedModule, setSelectedModule] = useState<string>('')
+  const [milestones, setMilestones] = useState<Array<{id: string, name: string, projectId: string}>>([])
+  const [selectedMilestone, setSelectedMilestone] = useState<string>('')
+  const [releases, setReleases] = useState<Array<{id: string, name: string, projectId: string}>>([])
+  const [selectedRelease, setSelectedRelease] = useState<string>('')
 
   useEffect(() => {
     if (ticket?.id && open) {
       loadAllData()
       checkServiceDeskConfig()
+      checkGitLabConfig()
+      loadProjectsAndModules()
       // Load ticket type from attributes
       const typeAttr = ticket.attributes?.find(attr => 
         attr.name.toLowerCase() === 'ticket type' || 
@@ -136,6 +154,26 @@ export function TicketDetailModalEnhanced({
         setServiceDeskRequestId(metadata.serviceDeskRequestId)
         loadServiceDeskData(metadata.serviceDeskRequestId)
       }
+      // Load GitLab issue URL and repository from metadata
+      if (metadata?.gitlabIssueUrl) {
+        setGitLabIssueUrl(metadata.gitlabIssueUrl)
+      }
+      if (metadata?.gitlabRepository || metadata?.gitlabProjectId) {
+        setSelectedRepository(metadata.gitlabRepository || metadata.gitlabProjectId)
+      }
+      // Load project/module/milestone/release from ticket
+      if ((ticket as any).projectId) {
+        setSelectedProject((ticket as any).projectId)
+      }
+      if ((ticket as any).moduleId) {
+        setSelectedModule((ticket as any).moduleId)
+      }
+      if ((ticket as any).milestoneId) {
+        setSelectedMilestone((ticket as any).milestoneId)
+      }
+      if ((ticket as any).releaseId) {
+        setSelectedRelease((ticket as any).releaseId)
+      }
     }
   }, [ticket?.id, open, ticket?.attributes, ticket?.tags])
 
@@ -153,6 +191,159 @@ export function TicketDetailModalEnhanced({
       }
     } catch (error) {
       console.error('Failed to check ServiceDesk config:', error)
+    }
+  }
+
+  const checkGitLabConfig = async () => {
+    try {
+      const response = await fetch('/api/admin/integrations/list')
+      if (response.ok) {
+        const data = await response.json()
+        const gitlabIntegration = data.integrations?.find((i: any) => 
+          i.type?.toLowerCase() === 'gitlab' && i.status === 'active' && i.isEnabled
+        )
+        if (gitlabIntegration) {
+          setGitLabConfig({ isConfigured: true, ...gitlabIntegration })
+          // Load repositories
+          loadGitLabRepositories()
+        }
+      }
+    } catch (error) {
+      console.error('Failed to check GitLab config:', error)
+    }
+  }
+
+  const loadGitLabRepositories = async () => {
+    setLoadingRepositories(true)
+    try {
+      const response = await fetch('/api/integrations/gitlab/repositories')
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.repositories) {
+          setGitLabRepositories(data.repositories)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load GitLab repositories:', error)
+    } finally {
+      setLoadingRepositories(false)
+    }
+  }
+
+  const loadProjectsAndModules = async () => {
+    if (!ticket?.spaces || ticket.spaces.length === 0) return
+    const spaceId = ticket.spaces[0].spaceId || ticket.spaces[0].space?.id
+    if (!spaceId) return
+
+    try {
+      // Load projects
+      const projectsRes = await fetch(`/api/projects?space_id=${spaceId}`)
+      if (projectsRes.ok) {
+        const projectsData = await projectsRes.json()
+        setProjects(projectsData.projects || [])
+      }
+
+      // Load modules if project is selected
+      if (selectedProject) {
+        const modulesRes = await fetch(`/api/modules?project_id=${selectedProject}`)
+        if (modulesRes.ok) {
+          const modulesData = await modulesRes.json()
+          setModules(modulesData.modules || [])
+        }
+      }
+
+      // Load milestones if project is selected
+      if (selectedProject) {
+        const milestonesRes = await fetch(`/api/milestones?projectId=${selectedProject}`)
+        if (milestonesRes.ok) {
+          const milestonesData = await milestonesRes.json()
+          setMilestones(milestonesData.milestones || [])
+        }
+      }
+
+      // Load releases if project is selected
+      if (selectedProject) {
+        const releasesRes = await fetch(`/api/releases?projectId=${selectedProject}`)
+        if (releasesRes.ok) {
+          const releasesData = await releasesRes.json()
+          setReleases(releasesData.releases || [])
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load projects/modules:', error)
+    }
+  }
+
+  useEffect(() => {
+    if (selectedProject) {
+      loadProjectsAndModules()
+    }
+  }, [selectedProject])
+
+  const handlePushToGitLab = async () => {
+    if (!ticket?.spaces || ticket.spaces.length === 0) {
+      toast({
+        title: 'Error',
+        description: 'Unable to determine space',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    const spaceId = ticket.spaces[0].spaceId || ticket.spaces[0].space?.id
+    if (!spaceId) {
+      toast({
+        title: 'Error',
+        description: 'Unable to determine space',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    setPushingToGitLab(true)
+    try {
+      const response = await fetch('/api/integrations/gitlab/push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ticket_id: ticket.id,
+          space_id: spaceId,
+          syncComments: true,
+          syncAttachments: false,
+          repository: selectedRepository || undefined,
+          projectId: selectedRepository || undefined
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        if (result.data?.issueUrl) {
+          setGitLabIssueUrl(result.data.issueUrl)
+        }
+        toast({
+          title: 'Success',
+          description: result.message || `Ticket ${result.data?.issueIid ? 'updated' : 'synced'} to GitLab successfully. Issue #${result.data?.issueIid || 'N/A'}`,
+        })
+        // Refresh ticket to get updated metadata
+        if (onSave) {
+          onSave(ticket)
+        }
+      } else {
+        toast({
+          title: 'Push Failed',
+          description: result.error || 'Failed to push ticket to GitLab',
+          variant: 'destructive'
+        })
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to push ticket to GitLab',
+        variant: 'destructive'
+      })
+    } finally {
+      setPushingToGitLab(false)
     }
   }
 
@@ -817,7 +1008,7 @@ export function TicketDetailModalEnhanced({
 
         <div className="mt-4">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="comments">
               Comments {comments.length > 0 && `(${comments.length})`}
@@ -829,6 +1020,10 @@ export function TicketDetailModalEnhanced({
               Subtasks {subtasks.length > 0 && `(${subtasks.length})`}
             </TabsTrigger>
             <TabsTrigger value="dependencies">Dependencies</TabsTrigger>
+            <TabsTrigger value="relationships">
+              <Network className="h-4 w-4 mr-1" />
+              Relationships
+            </TabsTrigger>
             <TabsTrigger value="time">
               Time {totalHours > 0 && `(${totalHours.toFixed(1)}h)`}
             </TabsTrigger>
@@ -911,6 +1106,95 @@ export function TicketDetailModalEnhanced({
                 </div>
               </div>
             )}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="project">Project</Label>
+                <Select
+                  value={selectedProject}
+                  onValueChange={(value) => {
+                    setSelectedProject(value)
+                    setSelectedModule('')
+                    setSelectedMilestone('')
+                    setSelectedRelease('')
+                  }}
+                >
+                  <SelectTrigger className="mt-1" id="project">
+                    <SelectValue placeholder="Select project" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    {projects.map((project) => (
+                      <SelectItem key={project.id} value={project.id}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {selectedProject && (
+                <div>
+                  <Label htmlFor="module">Module</Label>
+                  <Select
+                    value={selectedModule}
+                    onValueChange={setSelectedModule}
+                  >
+                    <SelectTrigger className="mt-1" id="module">
+                      <SelectValue placeholder="Select module" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {modules.map((module) => (
+                        <SelectItem key={module.id} value={module.id}>
+                          {module.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+            {selectedProject && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="milestone">Milestone</Label>
+                  <Select
+                    value={selectedMilestone}
+                    onValueChange={setSelectedMilestone}
+                  >
+                    <SelectTrigger className="mt-1" id="milestone">
+                      <SelectValue placeholder="Select milestone" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {milestones.map((milestone) => (
+                        <SelectItem key={milestone.id} value={milestone.id}>
+                          {milestone.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="release">Release</Label>
+                  <Select
+                    value={selectedRelease}
+                    onValueChange={setSelectedRelease}
+                  >
+                    <SelectTrigger className="mt-1" id="release">
+                      <SelectValue placeholder="Select release" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {releases.map((release) => (
+                        <SelectItem key={release.id} value={release.id}>
+                          {release.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="comments" className="space-y-4 mt-4">
@@ -985,17 +1269,62 @@ export function TicketDetailModalEnhanced({
 
           <TabsContent value="subtasks" className="space-y-4 mt-4">
             <div className="space-y-2">
-              {subtasks.map((subtask) => (
-                <Card key={subtask.id}>
-                  <CardContent className="p-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <input type="checkbox" className="rounded" />
-                      <span className="text-sm">{subtask.title}</span>
-                      <Badge variant="outline" className="text-xs">{subtask.status}</Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+              <div className="text-sm text-muted-foreground mb-2">
+                Todo List / Subtasks ({subtasks.length})
+              </div>
+              {subtasks.map((subtask) => {
+                const subtaskMetadata = (subtask as any).metadata || {}
+                const isCompleted = subtask.status === 'DONE' || subtask.status === 'CANCELLED'
+                return (
+                  <Card key={subtask.id} className={isCompleted ? 'opacity-60' : ''}>
+                    <CardContent className="p-3 flex items-center justify-between">
+                      <div className="flex items-center gap-3 flex-1">
+                        <input 
+                          type="checkbox" 
+                          className="rounded" 
+                          checked={isCompleted}
+                          onChange={async () => {
+                            // Toggle subtask status
+                            const newStatus = isCompleted ? 'TODO' : 'DONE'
+                            try {
+                              const response = await fetch(`/api/tickets/${subtask.id}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ status: newStatus })
+                              })
+                              if (response.ok) {
+                                loadAllData()
+                                toast({
+                                  title: 'Success',
+                                  description: `Subtask ${newStatus === 'DONE' ? 'completed' : 'reopened'}`,
+                                })
+                              }
+                            } catch (error) {
+                              toast({
+                                title: 'Error',
+                                description: 'Failed to update subtask',
+                                variant: 'destructive'
+                              })
+                            }
+                          }}
+                        />
+                        <div className="flex-1">
+                          <span className={`text-sm ${isCompleted ? 'line-through' : ''}`}>
+                            {subtask.title}
+                          </span>
+                          {subtaskMetadata?.gitlabRepository && (
+                            <Badge variant="outline" className="text-xs ml-2">
+                              <GitBranch className="h-3 w-3 mr-1" />
+                              {subtaskMetadata.gitlabRepository.split('/').pop()}
+                            </Badge>
+                          )}
+                        </div>
+                        <Badge variant="outline" className="text-xs">{subtask.status}</Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
               <div className="flex gap-2">
                 <Input
                   placeholder="Subtask title"
@@ -1040,6 +1369,40 @@ export function TicketDetailModalEnhanced({
                   ))}
                 </div>
               )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="relationships" className="space-y-4 mt-4">
+            <div className="space-y-6">
+              <TicketRelationshipGraph
+                ticketId={ticket.id}
+                onNodeClick={(nodeId, nodeType) => {
+                  if (nodeType === 'ticket') {
+                    // Could open ticket detail modal
+                    console.log('Clicked ticket:', nodeId)
+                  }
+                }}
+                onNodeDoubleClick={(nodeId, nodeType) => {
+                  if (nodeType === 'ticket') {
+                    // Could open ticket detail modal
+                    console.log('Double-clicked ticket:', nodeId)
+                  }
+                }}
+              />
+              <TicketRelationshipsPanel
+                ticketId={ticket.id}
+                onAddRelationship={() => {
+                  // Could open a dialog to add relationship
+                  toast({
+                    title: 'Add Relationship',
+                    description: 'Feature to add relationships coming soon',
+                  })
+                }}
+                onViewTicket={(ticketId) => {
+                  // Could open ticket detail modal
+                  console.log('View ticket:', ticketId)
+                }}
+              />
             </div>
           </TabsContent>
 
@@ -1402,8 +1765,75 @@ export function TicketDetailModalEnhanced({
               Push to ServiceDesk
             </Button>
           )}
+          {gitLabConfig?.isConfigured && (
+            <>
+              {gitLabRepositories.length > 0 && (
+                <Select
+                  value={selectedRepository}
+                  onValueChange={setSelectedRepository}
+                >
+                  <SelectTrigger className="w-64">
+                    <SelectValue placeholder="Select Repository (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Use Default Repository</SelectItem>
+                    {gitLabRepositories.map((repo) => (
+                      <SelectItem key={repo.id} value={repo.projectId}>
+                        {repo.name} ({repo.path})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <Button
+                variant="outline"
+                onClick={handlePushToGitLab}
+                disabled={pushingToGitLab || loadingRepositories}
+              >
+                {pushingToGitLab ? (
+                  <Loader className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <GitBranch className="h-4 w-4 mr-2" />
+                )}
+                {gitLabIssueUrl ? 'Update GitLab Issue' : 'Push to GitLab'}
+              </Button>
+            </>
+          )}
+          {gitLabIssueUrl && (
+            <Button
+              variant="outline"
+              onClick={() => window.open(gitLabIssueUrl, '_blank')}
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              View in GitLab
+            </Button>
+          )}
           <Button 
             onClick={async () => {
+              // Save project/module/milestone/release
+              if (ticket?.id) {
+                try {
+                  const updateData: any = {}
+                  if (selectedProject) updateData.projectId = selectedProject
+                  else updateData.projectId = null
+                  if (selectedModule) updateData.moduleId = selectedModule
+                  else updateData.moduleId = null
+                  if (selectedMilestone) updateData.milestoneId = selectedMilestone
+                  else updateData.milestoneId = null
+                  if (selectedRelease) updateData.releaseId = selectedRelease
+                  else updateData.releaseId = null
+
+                  if (Object.keys(updateData).length > 0) {
+                    await fetch(`/api/tickets/${ticket.id}`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(updateData)
+                    })
+                  }
+                } catch (error) {
+                  console.error('Error saving project/module:', error)
+                }
+              }
               // Save ticket type as attribute if set
               if (ticketType && ticket?.id) {
                 try {

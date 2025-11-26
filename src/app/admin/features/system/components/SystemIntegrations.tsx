@@ -34,6 +34,7 @@ export function SystemIntegrations() {
   const [isTesting, setIsTesting] = useState(false)
   const [configForm, setConfigForm] = useState<Record<string, any>>({})
   const [showPassword, setShowPassword] = useState<Record<string, boolean>>({})
+  const [isEnabled, setIsEnabled] = useState(true)
 
   useEffect(() => {
     loadIntegrations()
@@ -55,7 +56,8 @@ export function SystemIntegrations() {
             ...integration,
             isConfigured: !!saved,
             status: saved?.status || 'inactive',
-            config: saved?.config || {}
+            config: saved?.config || {},
+            isEnabled: saved?.isEnabled !== false // Default to true if not set
           }
         })
         setIntegrations(merged)
@@ -87,7 +89,45 @@ export function SystemIntegrations() {
   const handleConfigure = (integration: IntegrationConfig) => {
     setSelectedIntegration(integration)
     setConfigForm(integration.config || {})
+    setIsEnabled((integration as any).isEnabled !== false) // Default to true
     setShowConfigDialog(true)
+  }
+
+  const handleToggleEnabled = async (integration: IntegrationConfig, enabled: boolean) => {
+    try {
+      const response = await fetch('/api/admin/integrations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: integration.type,
+          name: integration.name,
+          config: integration.config || {},
+          isActive: enabled
+        })
+      })
+
+      if (response.ok) {
+        toast.success(`${integration.name} ${enabled ? 'enabled' : 'disabled'}`)
+        
+        // Clear cache for specific integration types
+        if (integration.type === 'signoz') {
+          try {
+            const { clearSigNozCache } = await import('@/lib/signoz-client')
+            clearSigNozCache()
+          } catch (error) {
+            // Silently fail if module not available
+          }
+        }
+        
+        loadIntegrations()
+      } else {
+        const error = await response.json().catch(() => ({}))
+        toast.error(error.error || 'Failed to update integration')
+      }
+    } catch (error) {
+      console.error('Error toggling integration:', error)
+      toast.error('Failed to update integration')
+    }
   }
 
   const handleSave = async () => {
@@ -102,12 +142,23 @@ export function SystemIntegrations() {
           type: selectedIntegration.type,
           name: selectedIntegration.name,
           config: configForm,
-          isActive: true
+          isActive: isEnabled
         })
       })
 
       if (response.ok) {
         toast.success(`${selectedIntegration.name} configured successfully`)
+        
+        // Clear cache for specific integration types
+        if (selectedIntegration.type === 'signoz') {
+          try {
+            const { clearSigNozCache } = await import('@/lib/signoz-client')
+            clearSigNozCache()
+          } catch (error) {
+            // Silently fail if module not available
+          }
+        }
+        
         setShowConfigDialog(false)
         loadIntegrations()
       } else {
@@ -198,6 +249,14 @@ export function SystemIntegrations() {
           { key: 'password', label: 'Password (optional)', type: 'password', required: false },
           { key: 'apiKey', label: 'API Key (optional)', type: 'password', required: false },
           { key: 'indexPrefix', label: 'Index Prefix', type: 'text', required: false, placeholder: 'mdm-logs (default)' }
+        ]
+      case 'signoz':
+        return [
+          { key: 'url', label: 'SigNoz URL', type: 'text', required: true, placeholder: 'http://localhost:3301' },
+          { key: 'otlpEndpoint', label: 'OTLP Endpoint', type: 'text', required: false, placeholder: 'http://localhost:4318' },
+          { key: 'apiKey', label: 'API Key (optional)', type: 'password', required: false },
+          { key: 'serviceName', label: 'Service Name', type: 'text', required: false, placeholder: 'mdm-platform' },
+          { key: 'environment', label: 'Environment', type: 'text', required: false, placeholder: 'production' }
         ]
       default:
         return [
@@ -325,6 +384,19 @@ export function SystemIntegrations() {
                   </Badge>
                 </div>
 
+                {integration.isConfigured && (
+                  <div className="flex items-center justify-between p-2 bg-muted rounded-md">
+                    <Label htmlFor={`enable-${integration.id}`} className="text-sm font-medium">
+                      Enable Integration
+                    </Label>
+                    <Switch
+                      id={`enable-${integration.id}`}
+                      checked={(integration as any).isEnabled !== false}
+                      onCheckedChange={(checked) => handleToggleEnabled(integration, checked)}
+                    />
+                  </div>
+                )}
+
                 <div className="flex items-center gap-2">
                   <Button
                     size="sm"
@@ -364,6 +436,22 @@ export function SystemIntegrations() {
 
           <div className="space-y-4 py-4">
             {selectedIntegration && renderConfigForm(getConfigFields(selectedIntegration.type))}
+            
+            <div className="flex items-center justify-between p-4 bg-muted rounded-md">
+              <div>
+                <Label htmlFor="enable-integration" className="text-sm font-medium">
+                  Enable Integration
+                </Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Turn on or off this integration
+                </p>
+              </div>
+              <Switch
+                id="enable-integration"
+                checked={isEnabled}
+                onCheckedChange={setIsEnabled}
+              />
+            </div>
           </div>
 
           <DialogFooter>

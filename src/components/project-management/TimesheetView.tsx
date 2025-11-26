@@ -14,8 +14,9 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card } from '@/components/ui/card'
-import { Plus, Clock } from 'lucide-react'
+import { Plus, Clock, Trash2, Loader } from 'lucide-react'
 import { format } from 'date-fns'
+import { useToast } from '@/hooks/use-toast'
 
 interface TimeLog {
   id: string
@@ -49,11 +50,20 @@ interface Ticket {
 
 interface TimesheetViewProps {
   tickets: Ticket[]
-  onAddTimeLog?: (ticketId: string, hours: number, description: string, loggedAt: Date) => void
+  onAddTimeLog?: (ticketId: string, hours: number, description: string, loggedAt: Date) => Promise<void> | void
+  onDeleteTimeLog?: (ticketId: string, timeLogId: string) => Promise<void> | void
   onTicketClick?: (ticket: Ticket) => void
+  loading?: boolean
 }
 
-export function TimesheetView({ tickets, onAddTimeLog, onTicketClick }: TimesheetViewProps) {
+export function TimesheetView({ 
+  tickets, 
+  onAddTimeLog, 
+  onDeleteTimeLog,
+  onTicketClick,
+  loading = false 
+}: TimesheetViewProps) {
+  const { toast } = useToast()
   const [expandedTickets, setExpandedTickets] = useState<Set<string>>(new Set())
   const [newTimeLog, setNewTimeLog] = useState<{
     ticketId: string
@@ -61,6 +71,8 @@ export function TimesheetView({ tickets, onAddTimeLog, onTicketClick }: Timeshee
     description: string
     loggedAt: string
   } | null>(null)
+  const [savingTimeLog, setSavingTimeLog] = useState(false)
+  const [deletingTimeLogId, setDeletingTimeLogId] = useState<string | null>(null)
 
   const toggleTicket = (ticketId: string) => {
     const newExpanded = new Set(expandedTickets)
@@ -81,15 +93,69 @@ export function TimesheetView({ tickets, onAddTimeLog, onTicketClick }: Timeshee
     })
   }
 
-  const handleSaveTimeLog = () => {
-    if (newTimeLog && onAddTimeLog && newTimeLog.hours) {
-      onAddTimeLog(
+  const handleSaveTimeLog = async () => {
+    if (!newTimeLog || !onAddTimeLog || !newTimeLog.hours) {
+      return
+    }
+
+    const hours = parseFloat(newTimeLog.hours)
+    if (isNaN(hours) || hours <= 0) {
+      toast({
+        title: 'Invalid hours',
+        description: 'Please enter a valid number of hours greater than 0',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    try {
+      setSavingTimeLog(true)
+      await onAddTimeLog(
         newTimeLog.ticketId,
-        parseFloat(newTimeLog.hours),
+        hours,
         newTimeLog.description,
         new Date(newTimeLog.loggedAt)
       )
       setNewTimeLog(null)
+      toast({
+        title: 'Time log added',
+        description: 'Time has been successfully logged',
+      })
+    } catch (error) {
+      console.error('Error saving time log:', error)
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to save time log',
+        variant: 'destructive',
+      })
+    } finally {
+      setSavingTimeLog(false)
+    }
+  }
+
+  const handleDeleteTimeLog = async (ticketId: string, timeLogId: string) => {
+    if (!onDeleteTimeLog) return
+
+    if (!confirm('Are you sure you want to delete this time log?')) {
+      return
+    }
+
+    try {
+      setDeletingTimeLogId(timeLogId)
+      await onDeleteTimeLog(ticketId, timeLogId)
+      toast({
+        title: 'Time log deleted',
+        description: 'Time log has been successfully deleted',
+      })
+    } catch (error) {
+      console.error('Error deleting time log:', error)
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to delete time log',
+        variant: 'destructive',
+      })
+    } finally {
+      setDeletingTimeLogId(null)
     }
   }
 
@@ -100,6 +166,14 @@ export function TimesheetView({ tickets, onAddTimeLog, onTicketClick }: Timeshee
   const allTimeLogs = tickets.flatMap((ticket) => {
     return (ticket.timeLogs || []).map((log) => ({ ...log, ticket }))
   })
+
+  if (loading && tickets.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">
@@ -122,8 +196,13 @@ export function TimesheetView({ tickets, onAddTimeLog, onTicketClick }: Timeshee
       </div>
 
       {/* Time Logs Table */}
-      <div className="border rounded-lg overflow-auto">
-        <Table>
+      {tickets.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          No tickets found. Create your first ticket to start tracking time.
+        </div>
+      ) : (
+        <div className="border rounded-lg overflow-auto">
+          <Table>
           <TableHeader>
             <TableRow>
               <TableHead className="w-[50px]"></TableHead>
@@ -231,7 +310,23 @@ export function TimesheetView({ tickets, onAddTimeLog, onTicketClick }: Timeshee
                             {Number(log.hours).toFixed(2)}h
                           </TableCell>
                           <TableCell className="text-sm">{log.description || '—'}</TableCell>
-                          <TableCell></TableCell>
+                          <TableCell>
+                            {onDeleteTimeLog && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                onClick={() => handleDeleteTimeLog(ticket.id, log.id)}
+                                disabled={deletingTimeLogId === log.id}
+                              >
+                                {deletingTimeLogId === log.id ? (
+                                  <Loader className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
+                              </Button>
+                            )}
+                          </TableCell>
                         </TableRow>
                       ))}
 
@@ -277,14 +372,22 @@ export function TimesheetView({ tickets, onAddTimeLog, onTicketClick }: Timeshee
                               <Button
                                 size="sm"
                                 onClick={handleSaveTimeLog}
-                                disabled={!newTimeLog.hours}
+                                disabled={!newTimeLog.hours || savingTimeLog}
                               >
-                                Save
+                                {savingTimeLog ? (
+                                  <>
+                                    <Loader className="mr-2 h-4 w-4 animate-spin" />
+                                    Saving...
+                                  </>
+                                ) : (
+                                  'Save'
+                                )}
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setNewTimeLog(null)}
+                                disabled={savingTimeLog}
                               >
                                 Cancel
                               </Button>
@@ -299,7 +402,8 @@ export function TimesheetView({ tickets, onAddTimeLog, onTicketClick }: Timeshee
             })}
           </TableBody>
         </Table>
-      </div>
+        </div>
+      )}
     </div>
   )
 }

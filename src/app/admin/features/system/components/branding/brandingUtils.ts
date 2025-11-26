@@ -32,16 +32,16 @@ export const getComponentStyling = (branding: BrandingConfig, componentId: strin
     }
 
     // Ensure input/selection components have default background if empty
-    const styling = branding.componentStyling[componentId]
+    const styling = branding.componentStyling[componentId] as any
     if (inputSelectionComponents.includes(componentId)) {
         return {
             light: {
-                ...styling.light,
-                backgroundColor: styling.light?.backgroundColor || defaultBackgroundColor,
+                ...(styling?.light || {}),
+                backgroundColor: styling?.light?.backgroundColor || defaultBackgroundColor,
             },
             dark: {
-                ...styling.dark,
-                backgroundColor: styling.dark?.backgroundColor || defaultBackgroundColor,
+                ...(styling?.dark || {}),
+                backgroundColor: styling?.dark?.backgroundColor || defaultBackgroundColor,
             },
         }
     }

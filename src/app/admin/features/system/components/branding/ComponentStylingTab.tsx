@@ -24,7 +24,6 @@ import {
     Underline,
     Eye,
     Sparkles,
-    Shadow,
     Filter,
     RotateCw,
     MousePointer,

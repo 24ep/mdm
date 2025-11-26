@@ -14,3 +14,6 @@ export function ProjectsManagement() {
     </div>
   )
 }
+
+// Note: Users can switch to timesheet view using the view mode buttons in TicketsList
+// The timesheet view is now fully integrated and supports time tracking features

@@ -131,6 +131,12 @@ export const SYSTEM_CONFIG_INTEGRATIONS: Omit<IntegrationConfig, 'id' | 'isConfi
     description: 'Service desk integration (ManageEngine, Jira, etc.)'
   },
   {
+    name: 'GitLab',
+    type: 'gitlab',
+    icon: Link,
+    description: 'GitLab integration for project management (sync tickets to GitLab issues)'
+  },
+  {
     name: 'Vault',
     type: 'vault',
     icon: Lock,
@@ -141,6 +147,12 @@ export const SYSTEM_CONFIG_INTEGRATIONS: Omit<IntegrationConfig, 'id' | 'isConfi
     type: 'elasticsearch',
     icon: Search,
     description: 'Elasticsearch integration for centralized logging and search'
+  },
+  {
+    name: 'SigNoz',
+    type: 'signoz',
+    icon: Activity,
+    description: 'SigNoz observability platform for traces, metrics, and logs'
   }
 ]
 

@@ -8,4 +8,8 @@ export { SpreadsheetView } from './SpreadsheetView'
 export { GanttChartView } from './GanttChartView'
 export { TimesheetView } from './TimesheetView'
 export { IntakeForm } from './IntakeForm'
+export { IntakeFormBuilder } from './IntakeFormBuilder'
+export { IntakeFormList } from './IntakeFormList'
+export { IntakeSubmissionList } from './IntakeSubmissionList'
+export { IntakeFormManagement } from './IntakeFormManagement'
 

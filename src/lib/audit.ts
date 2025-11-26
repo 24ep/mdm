@@ -13,6 +13,23 @@ const getElasticsearchLogger = async () => {
   return () => Promise.resolve()
 }
 
+// Dynamic import for SigNoz (server-side only)
+const getSigNozLogger = async () => {
+  if (typeof window === 'undefined') {
+    try {
+      const { sendLogToSigNoz, isSigNozEnabled } = await import('./signoz-client')
+      const enabled = await isSigNozEnabled()
+      if (enabled) {
+        return sendLogToSigNoz
+      }
+      return null
+    } catch (error) {
+      return null
+    }
+  }
+  return null
+}
+
 export interface AuditLogData {
   action: string
   entityType: string
@@ -115,6 +132,26 @@ export async function createAuditLog(data: AuditLogData) {
         userAgent: data.userAgent,
         createdAt: auditLog.created_at
       }).catch(() => {}) // Silently fail
+    })
+
+    // Send to SigNoz (fire and forget)
+    getSigNozLogger().then(sendLog => {
+      if (sendLog) {
+        sendLog({
+          severity: 'INFO',
+          message: `Audit: ${data.action} on ${data.entityType}`,
+          attributes: {
+            id: auditLog.id,
+            action: data.action,
+            entityType: data.entityType,
+            entityId: data.entityId,
+            userId: data.userId,
+            ipAddress: data.ipAddress,
+            userAgent: data.userAgent
+          },
+          timestamp: new Date(auditLog.created_at).getTime()
+        }).catch(() => {}) // Silently fail
+      }
     })
 
     return auditLog

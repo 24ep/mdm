@@ -39,6 +39,18 @@ export interface Ticket {
     id: string
     name: string
   }>
+  timeLogs?: Array<{
+    id: string
+    hours: number | string
+    description?: string | null
+    loggedAt: string | Date
+    user: {
+      id: string
+      name: string
+      email?: string
+      avatar?: string | null
+    }
+  }>
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -60,7 +72,7 @@ export interface TicketFilters {
 
 export interface TicketsListProps {
   spaceId?: string | null
-  viewMode?: 'list' | 'kanban' | 'table'
+  viewMode?: 'list' | 'kanban' | 'table' | 'timesheet'
   showFilters?: boolean
   showSpaceSelector?: boolean
 }

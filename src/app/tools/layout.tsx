@@ -2,7 +2,8 @@
 
 import { usePathname } from 'next/navigation'
 import { PlatformLayout } from '@/components/platform/PlatformLayout'
-import { useState, useEffect, createContext, useContext, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { BreadcrumbActionsContext } from './hooks'
 
 const pathToTabMap: Record<string, string> = {
   '/tools/bigquery': 'bigquery',
@@ -14,19 +15,6 @@ const pathToTabMap: Record<string, string> = {
   '/tools/storage': 'storage',
   '/tools/data-governance': 'data-governance',
   '/tools/api-client': 'api-client',
-}
-
-// Context to share breadcrumb actions from child pages
-const BreadcrumbActionsContext = createContext<{
-  setBreadcrumbActions: (actions: React.ReactNode) => void
-} | null>(null)
-
-export function useBreadcrumbActions() {
-  const context = useContext(BreadcrumbActionsContext)
-  if (!context) {
-    return { setBreadcrumbActions: () => {} }
-  }
-  return context
 }
 
 export default function ToolsLayout({

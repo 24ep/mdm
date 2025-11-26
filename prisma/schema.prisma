@@ -34,6 +34,11 @@ model User {
   assignedTickets              TicketAssignee[]              @relation("TicketAssignees")
   ticketComments               TicketComment[]               @relation("TicketCommentAuthor")
   ticketTimeLogs               TicketTimeLog[]               @relation("TicketTimeLogUser")
+  createdProjects              Project[]                     @relation("ProjectCreator")
+  createdMilestones            Milestone[]                   @relation("MilestoneCreator")
+  createdReleases              Release[]                     @relation("ReleaseCreator")
+  createdModules               Module[]                      @relation("ModuleCreator")
+  leadModules                  Module[]                      @relation("ModuleLead")
   intakeSubmissions            IntakeSubmission[]            @relation("IntakeSubmissionUser")
   importProfiles               ImportProfile[]               @relation("ImportProfileCreator")
   importJobs                   ImportJob[]                   @relation("ImportJobCreator")
@@ -100,6 +105,7 @@ model Space {
   ticketSpaces            TicketSpace[]            @relation("SpaceTicketSpaces")
   kanbanConfigs           KanbanConfig[]           @relation("SpaceKanbanConfigs")
   intakeForms             IntakeForm[]             @relation("SpaceIntakeForms")
+  projects                Project[]                @relation("SpaceProjects")
   importProfiles          ImportProfile[]          @relation("SpaceImportProfiles")
   importJobs              ImportJob[]              @relation("SpaceImportJobs")
   exportJobs              ExportJob[]              @relation("SpaceExportJobs")
@@ -834,6 +840,109 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+// Project Management - Projects
+model Project {
+  id          String     @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  status      String     @default("PLANNING") // PLANNING, ACTIVE, ON_HOLD, COMPLETED, CANCELLED
+  startDate   DateTime?  @map("start_date")
+  endDate     DateTime?  @map("end_date")
+  spaceId     String     @map("space_id") @db.Uuid
+  createdBy   String     @map("created_by") @db.Uuid
+  metadata    Json?      @default("{}")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  deletedAt   DateTime?  @map("deleted_at")
+
+  // Relations
+  space      Space       @relation("SpaceProjects", fields: [spaceId], references: [id], onDelete: Cascade)
+  creator    User        @relation("ProjectCreator", fields: [createdBy], references: [id])
+  milestones Milestone[] @relation("ProjectMilestones")
+  releases   Release[]   @relation("ProjectReleases")
+  modules    Module[]    @relation("ProjectModules")
+  tickets    Ticket[]    @relation("ProjectTickets")
+
+  @@map("projects")
+}
+
+// Project Management - Milestones
+model Milestone {
+  id          String    @id @default(uuid()) @db.Uuid
+  projectId   String    @map("project_id") @db.Uuid
+  name        String
+  description String?
+  status      String    @default("UPCOMING") // UPCOMING, IN_PROGRESS, COMPLETED, CANCELLED
+  startDate   DateTime? @map("start_date")
+  dueDate     DateTime? @map("due_date")
+  completedAt DateTime? @map("completed_at")
+  createdBy   String    @map("created_by") @db.Uuid
+  metadata    Json?     @default("{}")
+  position    Int       @default(0) // For ordering
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  project Project @relation("ProjectMilestones", fields: [projectId], references: [id], onDelete: Cascade)
+  creator User    @relation("MilestoneCreator", fields: [createdBy], references: [id])
+  tickets Ticket[] @relation("MilestoneTickets")
+
+  @@map("milestones")
+}
+
+// Project Management - Releases
+model Release {
+  id          String    @id @default(uuid()) @db.Uuid
+  projectId   String    @map("project_id") @db.Uuid
+  name        String    // Release name (e.g., "v1.0.0", "2024 Q1 Release")
+  version     String?   // Semantic version (e.g., "1.0.0")
+  description String?
+  status      String    @default("PLANNED") // PLANNED, IN_PROGRESS, RELEASED, CANCELLED
+  releaseDate DateTime? @map("release_date") // Actual release date
+  targetDate  DateTime? @map("target_date") // Planned release date
+  createdBy   String    @map("created_by") @db.Uuid
+  metadata    Json?     @default("{}") // GitLab release info, tags, etc.
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  project Project @relation("ProjectReleases", fields: [projectId], references: [id], onDelete: Cascade)
+  creator User    @relation("ReleaseCreator", fields: [createdBy], references: [id])
+  tickets Ticket[] @relation("ReleaseTickets")
+
+  @@index([projectId, version])
+  @@map("releases")
+}
+
+// Project Management - Modules
+model Module {
+  id          String    @id @default(uuid()) @db.Uuid
+  projectId   String    @map("project_id") @db.Uuid
+  name        String
+  description String?
+  status      String    @default("PLANNED") // PLANNED, IN_PROGRESS, COMPLETED, CANCELLED
+  startDate   DateTime? @map("start_date")
+  targetDate  DateTime? @map("target_date") // Target completion date
+  completedAt DateTime? @map("completed_at")
+  leadId      String?   @map("lead_id") @db.Uuid // Module lead/owner
+  createdBy   String    @map("created_by") @db.Uuid
+  metadata    Json?     @default("{}") // Additional metadata
+  position    Int       @default(0) // For ordering
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  project Project @relation("ProjectModules", fields: [projectId], references: [id], onDelete: Cascade)
+  creator User    @relation("ModuleCreator", fields: [createdBy], references: [id])
+  lead    User?   @relation("ModuleLead", fields: [leadId], references: [id], onDelete: SetNull)
+  tickets Ticket[] @relation("ModuleTickets")
+
+  @@map("modules")
+}
+
 // Project Management - Tickets
 model Ticket {
   id          String    @id @default(uuid()) @db.Uuid
@@ -848,6 +957,10 @@ model Ticket {
   estimate    Int? // Story points or hours
   metadata    Json?     @default("{}")
   parentId    String?   @map("parent_id") @db.Uuid // For subtasks
+  projectId   String?   @map("project_id") @db.Uuid // Link to project
+  milestoneId String?   @map("milestone_id") @db.Uuid // Link to milestone
+  releaseId   String?   @map("release_id") @db.Uuid // Link to release
+  moduleId    String?   @map("module_id") @db.Uuid // Link to module
   position    Int       @default(0) // For ordering
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
@@ -857,6 +970,10 @@ model Ticket {
   spaces       TicketSpace[]      @relation("TicketSpaces")
   assignees    TicketAssignee[]   @relation("TicketAssignees")
   creator      User               @relation("TicketCreator", fields: [createdBy], references: [id])
+  project      Project?           @relation("ProjectTickets", fields: [projectId], references: [id], onDelete: SetNull)
+  milestone    Milestone?         @relation("MilestoneTickets", fields: [milestoneId], references: [id], onDelete: SetNull)
+  release      Release?           @relation("ReleaseTickets", fields: [releaseId], references: [id], onDelete: SetNull)
+  module       Module?            @relation("ModuleTickets", fields: [moduleId], references: [id], onDelete: SetNull)
   attributes   TicketAttribute[]  @relation("TicketAttributes")
   tags         TicketTag[]        @relation("TicketTags")
   comments     TicketComment[]    @relation("TicketComments")
@@ -995,7 +1112,8 @@ model TicketDependency {
   id          String   @id @default(uuid()) @db.Uuid
   ticketId    String   @map("ticket_id") @db.Uuid
   dependsOnId String   @map("depends_on_id") @db.Uuid
-  type        String   @default("BLOCKS") // BLOCKS, BLOCKED_BY, RELATES_TO
+  type        String   @default("BLOCKS") // BLOCKS, BLOCKED_BY, RELATES_TO, PARENT, CHILD, DUPLICATE, CLONES
+  metadata    Json?    @default("{}") // Visual metadata (position, color, etc.)
   createdAt   DateTime @default(now()) @map("created_at")
 
   // Relations
