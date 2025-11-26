@@ -1,4 +1,4 @@
-export type PluginSource = 'built-in' | 'external' | 'local-folder' | 'npm' | 'cdn' | 'git'
+export type PluginSource = 'built-in' | 'external' | 'local-folder' | 'npm' | 'cdn' | 'git' | 'hub'
 
 export interface PluginDefinition {
   id: string

@@ -4,7 +4,7 @@ import { TicketsList } from '@/features/tickets'
 
 export default function ProjectsPage() {
   return (
-    <div className="h-screen">
+    <div className="h-screen p-6">
       <TicketsList 
         spaceId={null}
         viewMode="kanban"

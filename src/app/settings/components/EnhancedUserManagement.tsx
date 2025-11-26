@@ -580,8 +580,9 @@ export function EnhancedUserManagement() {
             </DialogDescription>
           </DialogHeader>
           
-          <Tabs value={editDialogTab} onValueChange={setEditDialogTab} className="w-full">
-            <TabsList className="w-full flex justify-start gap-2">
+          <div className="w-full">
+            <Tabs value={editDialogTab} onValueChange={setEditDialogTab}>
+              <TabsList className="w-full flex justify-start gap-2">
               <TabsTrigger value="basic" className="flex items-center gap-2">
                 <User className="h-4 w-4" />
                 Basic Info
@@ -760,7 +761,8 @@ export function EnhancedUserManagement() {
                 </div>
               </div>
             </TabsContent>
-          </Tabs>
+            </Tabs>
+          </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditDialog(false)}>

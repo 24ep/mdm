@@ -302,7 +302,15 @@ export function TicketsList({
         />
       ) : view === 'timesheet' ? (
         <TimesheetView
-          tickets={ticketsWithTimeLogsResult.ticketsWithTimeLogs || filteredTickets}
+          tickets={(ticketsWithTimeLogsResult.ticketsWithTimeLogs || filteredTickets).map(ticket => ({
+            ...ticket,
+            timeLogs: ticket.timeLogs?.map(log => ({
+              ...log,
+              hours: typeof log.hours === 'string' ? parseFloat(log.hours) || 0 : log.hours,
+              loggedAt: typeof log.loggedAt === 'string' ? log.loggedAt : log.loggedAt.toISOString(),
+              ticket: { id: ticket.id, title: ticket.title }
+            }))
+          }))}
           onAddTimeLog={handleAddTimeLog}
           onDeleteTimeLog={handleDeleteTimeLog}
           onTicketClick={handleTicketClick}

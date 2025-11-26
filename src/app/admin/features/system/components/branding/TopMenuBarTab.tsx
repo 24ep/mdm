@@ -11,7 +11,7 @@ import {
     CornerUpRight,
     Minus,
     Sparkles,
-    Shadow,
+    Box,
     Zap,
     Move,
     Bold
@@ -38,7 +38,6 @@ export function TopMenuBarTab({
     updateComponentStyling
 }: TopMenuBarTabProps) {
     const currentMode = isDarkMode ? 'dark' : 'light'
-    const colors = branding[currentMode === 'light' ? 'lightMode' : 'darkMode']
     const styling = getComponentStyling('top-menu-bar')
     const currentStyling = styling[currentMode]
 
@@ -62,14 +61,11 @@ export function TopMenuBarTab({
                             Background Color
                         </Label>
                         <ColorInput
-                            value={colors.topMenuBackgroundColor}
+                            value={branding.topMenuBackgroundColor}
                             onChange={(color) =>
                                 setBranding({
                                     ...branding,
-                                    [currentMode === 'light' ? 'lightMode' : 'darkMode']: {
-                                        ...colors,
-                                        topMenuBackgroundColor: color,
-                                    },
+                                    topMenuBackgroundColor: color,
                                 })
                             }
                             allowImageVideo={false}
@@ -85,14 +81,11 @@ export function TopMenuBarTab({
                             Text Color
                         </Label>
                         <ColorInput
-                            value={colors.topMenuTextColor}
+                            value={branding.topMenuTextColor}
                             onChange={(color) =>
                                 setBranding({
                                     ...branding,
-                                    [currentMode === 'light' ? 'lightMode' : 'darkMode']: {
-                                        ...colors,
-                                        topMenuTextColor: color,
-                                    },
+                                    topMenuTextColor: color,
                                 })
                             }
                             allowImageVideo={false}
@@ -197,7 +190,7 @@ export function TopMenuBarTab({
 
                     <div className="space-y-2">
                         <Label className="text-sm font-medium flex items-center gap-2">
-                            <Shadow className="h-3.5 w-3.5 text-muted-foreground" />
+                            <Box className="h-3.5 w-3.5 text-muted-foreground" />
                             Box Shadow
                         </Label>
                         <Input

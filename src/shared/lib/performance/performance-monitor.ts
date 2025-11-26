@@ -27,7 +27,8 @@ export class PerformanceMonitor {
   end(name: string): PerformanceMetric | null {
     const startTime = this.measurements.get(name)
     if (!startTime) {
-      console.warn(`Performance metric "${name}" was not started`)
+      // Silently return null instead of warning - this can happen in edge cases
+      // where metrics are called from different contexts or during cleanup
       return null
     }
 

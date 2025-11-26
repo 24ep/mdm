@@ -50,8 +50,8 @@ export function applyGlobalStyling(branding: BrandingConfig) {
   root.style.setProperty('--brand-input-border-width', styling.inputBorderWidth)
   root.style.setProperty('--brand-select-border-radius', styling.selectBorderRadius)
   root.style.setProperty('--brand-select-border-width', styling.selectBorderWidth)
-  root.style.setProperty('--brand-textarea-border-radius', styling.textareaBorderRadius)
-  root.style.setProperty('--brand-textarea-border-width', styling.textareaBorderWidth)
+  root.style.setProperty('--brand-textarea-border-radius', styling.textareaBorderRadius || null)
+  root.style.setProperty('--brand-textarea-border-width', styling.textareaBorderWidth || null)
 
   // Apply font families
   if (styling.fontFamily && styling.fontFamily.trim()) {

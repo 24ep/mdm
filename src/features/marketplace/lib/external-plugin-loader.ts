@@ -12,8 +12,11 @@ const isServer = typeof window === 'undefined'
 let fs: any, path: any, crypto: any
 
 if (isServer) {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   fs = require('fs').promises
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   path = require('path')
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   crypto = require('crypto')
 }
 
@@ -99,7 +102,7 @@ export class ExternalPluginLoader {
 
     if (plugin.installedPath) {
       // Use installed path if available
-      pluginPath = resolve(plugin.installedPath)
+      pluginPath = path.resolve(plugin.installedPath)
     } else if (plugin.sourcePath) {
     // Resolve from sourcePath (can be relative or absolute)
     if (plugin.sourcePath.startsWith('/') || plugin.sourcePath.match(/^[A-Z]:/)) {
@@ -176,7 +179,7 @@ export class ExternalPluginLoader {
     try {
       await fs.access(cachePath)
       // Load from cache
-      const pluginFile = join(cachePath, 'plugin.ts')
+      const pluginFile = path.join(cachePath, 'plugin.ts')
       return await this.importFromPath(pluginFile)
     } catch {
       // Download and cache
@@ -297,7 +300,11 @@ export class ExternalPluginLoader {
     // Since we're in server context, we can use require
     try {
       // Clear require cache to allow hot reloading
-      delete require.cache[require.resolve(filePath)]
+      // Webpack warning suppression: dynamic require is intentional for plugin loading
+      // @ts-ignore - dynamic require for plugin loading
+      const resolvedPath = require.resolve(filePath)
+      delete require.cache[resolvedPath]
+      // @ts-ignore - dynamic require for plugin loading
       const pluginModule = require(filePath)
       return pluginModule
     } catch (error) {

@@ -20,7 +20,7 @@ export function useAgentBuilderVoice({
   const audioContextRef = useRef<AudioContext | null>(null)
 
   useEffect(() => {
-    if (chatbot?.enableVoiceAgent && chatbot?.voiceProvider === 'agentbuilder' && chatbot?.engineType === 'agentbuilder') {
+    if (chatbot?.enableVoiceAgent && chatbot?.engineType === 'openai-agent-sdk') {
       setIsVoiceEnabled(true)
     } else {
       setIsVoiceEnabled(false)

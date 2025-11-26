@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
 
           const componentName = slug
             .split('-')
-            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
             .join('')
 
           const componentFilePath = join(componentsDir, `${componentName}UI.tsx`)
@@ -356,7 +356,7 @@ async function registerPluginFromCode(slug: string): Promise<void> {
   }
 }
 
-async function updatePluginIndex(slug: string, name: string): Promise<void> {
+async function updatePluginIndex(slug: string, name: string): Promise<boolean> {
   const projectRoot = process.cwd()
   const indexPath = join(
     projectRoot,

@@ -517,9 +517,6 @@ export function PagesTab({
                               sidebarPositionOpen={sidebarPositionOpen}
                               handlePageReorder={handlePageReorder}
                               handleIconUpdate={handleIconUpdate}
-                              isPageVisibleInSidebar={isPageVisibleInSidebar}
-                              updateSidebarMenuItem={updateSidebarMenuItem}
-                              updateCustomPageSidebarVisibility={updateCustomPageSidebarVisibility}
                               setSelectedPageId={setSelectedPageId}
                               setSelectedComponent={setSelectedComponent}
                               setSelectedPageForPermissions={setSelectedPageForPermissions}
@@ -641,9 +638,6 @@ export function PagesTab({
                               sidebarPositionOpen={sidebarPositionOpen}
                               handlePageReorder={handlePageReorder}
                               handleIconUpdate={handleIconUpdate}
-                              isPageVisibleInSidebar={isPageVisibleInSidebar}
-                              updateSidebarMenuItem={updateSidebarMenuItem}
-                              updateCustomPageSidebarVisibility={updateCustomPageSidebarVisibility}
                               setPages={setPages}
                               setAllPages={setAllPages}
                               setSelectedPageId={setSelectedPageId}

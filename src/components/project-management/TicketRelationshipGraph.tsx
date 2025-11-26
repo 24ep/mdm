@@ -161,8 +161,8 @@ export function TicketRelationshipGraph({
   onNodeClick,
   onNodeDoubleClick 
 }: TicketRelationshipGraphProps) {
-  const [nodes, setNodes, onNodesChange] = useNodesState([])
-  const [edges, setEdges, onEdgesChange] = useEdgesState([])
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   const [filterType, setFilterType] = useState<string>('all')
 
   // Fetch relationships
@@ -214,7 +214,7 @@ export function TicketRelationshipGraph({
         id: `project-${relationships.project.id}`,
         type: 'project',
         position: { x, y },
-        data: relationships.project
+        data: relationships.project as unknown as Record<string, unknown>
       })
       newEdges.push({
         id: `edge-project-${ticketId}`,
@@ -234,7 +234,7 @@ export function TicketRelationshipGraph({
         id: `milestone-${relationships.milestone.id}`,
         type: 'milestone',
         position: { x, y },
-        data: relationships.milestone
+        data: relationships.milestone as unknown as Record<string, unknown>
       })
       newEdges.push({
         id: `edge-milestone-${ticketId}`,
@@ -254,7 +254,7 @@ export function TicketRelationshipGraph({
         id: `release-${relationships.release.id}`,
         type: 'release',
         position: { x, y },
-        data: relationships.release
+        data: relationships.release as unknown as Record<string, unknown>
       })
       newEdges.push({
         id: `edge-release-${ticketId}`,
@@ -274,7 +274,7 @@ export function TicketRelationshipGraph({
         id: relationships.parent.id,
         type: 'ticket',
         position: { x, y },
-        data: relationships.parent
+        data: relationships.parent as unknown as Record<string, unknown>
       })
       newEdges.push({
         id: `edge-parent-${ticketId}`,
@@ -295,7 +295,7 @@ export function TicketRelationshipGraph({
         id: child.id,
         type: 'ticket',
         position: { x, y },
-        data: child
+        data: child as unknown as Record<string, unknown>
       })
       newEdges.push({
         id: `edge-child-${child.id}`,
@@ -316,7 +316,7 @@ export function TicketRelationshipGraph({
         id: dep.relatedTicket.id,
         type: 'ticket',
         position: { x, y },
-        data: dep.relatedTicket
+        data: dep.relatedTicket as unknown as Record<string, unknown>
       })
       const edgeColor = dep.type === 'BLOCKS' ? '#ef4444' : '#6b7280'
       newEdges.push({
@@ -338,7 +338,7 @@ export function TicketRelationshipGraph({
         id: dep.relatedTicket.id,
         type: 'ticket',
         position: { x, y },
-        data: dep.relatedTicket
+        data: dep.relatedTicket as unknown as Record<string, unknown>
       })
       const edgeColor = dep.type === 'BLOCKS' ? '#ef4444' : '#6b7280'
       newEdges.push({
@@ -362,19 +362,19 @@ export function TicketRelationshipGraph({
 
   const filteredEdges = useMemo(() => {
     if (filterType === 'all') return edges
-    return edges.filter(edge => {
+    return edges.filter((edge: Edge) => {
       // Filter logic based on edge type/color
       if (filterType === 'blocking') {
-        return edge.style?.stroke === '#ef4444'
+        return (edge.style as any)?.stroke === '#ef4444'
       }
       if (filterType === 'project') {
-        return edge.style?.stroke === '#3b82f6'
+        return (edge.style as any)?.stroke === '#3b82f6'
       }
       if (filterType === 'milestone') {
-        return edge.style?.stroke === '#a855f7'
+        return (edge.style as any)?.stroke === '#a855f7'
       }
       if (filterType === 'release') {
-        return edge.style?.stroke === '#10b981'
+        return (edge.style as any)?.stroke === '#10b981'
       }
       return true
     })

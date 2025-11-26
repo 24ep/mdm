@@ -16,7 +16,7 @@ describe('PluginRegistry', () => {
         slug: 'test-plugin',
         version: '1.0.0',
         provider: 'Test Provider',
-        category: 'test',
+        category: 'other',
         status: 'approved',
         capabilities: {},
       }
@@ -34,7 +34,7 @@ describe('PluginRegistry', () => {
         slug: 'test-plugin',
         version: '1.0.0',
         provider: 'Test Provider',
-        category: 'test',
+        category: 'other',
         status: 'approved',
         capabilities: {},
       }
@@ -53,7 +53,7 @@ describe('PluginRegistry', () => {
         slug: 'test-plugin',
         version: '1.0.0',
         provider: 'Test Provider',
-        category: 'test',
+        category: 'other',
         status: 'approved',
         capabilities: {},
       }
@@ -78,37 +78,7 @@ describe('PluginRegistry', () => {
         slug: 'plugin-1',
         version: '1.0.0',
         provider: 'Provider',
-        category: 'test',
-        status: 'approved',
-        capabilities: {},
-      }
-
-      const plugin2: PluginDefinition = {
-        id: 'plugin-2',
-        name: 'Plugin 2',
-        slug: 'plugin-2',
-        version: '1.0.0',
-        provider: 'Provider',
-        category: 'test',
-        status: 'approved',
-        capabilities: {},
-      }
-
-      registry.register(plugin1)
-      registry.register(plugin2)
-
-      const plugins = registry.list()
-      expect(plugins).toHaveLength(2)
-    })
-
-    it('should filter plugins by category', () => {
-      const plugin1: PluginDefinition = {
-        id: 'plugin-1',
-        name: 'Plugin 1',
-        slug: 'plugin-1',
-        version: '1.0.0',
-        provider: 'Provider',
-        category: 'test',
+        category: 'other',
         status: 'approved',
         capabilities: {},
       }
@@ -127,7 +97,37 @@ describe('PluginRegistry', () => {
       registry.register(plugin1)
       registry.register(plugin2)
 
-      const plugins = registry.list({ category: 'test' })
+      const plugins = registry.list()
+      expect(plugins).toHaveLength(2)
+    })
+
+    it('should filter plugins by category', () => {
+      const plugin1: PluginDefinition = {
+        id: 'plugin-1',
+        name: 'Plugin 1',
+        slug: 'plugin-1',
+        version: '1.0.0',
+        provider: 'Provider',
+        category: 'other',
+        status: 'approved',
+        capabilities: {},
+      }
+
+      const plugin2: PluginDefinition = {
+        id: 'plugin-2',
+        name: 'Plugin 2',
+        slug: 'plugin-2',
+        version: '1.0.0',
+        provider: 'Provider',
+        category: 'other',
+        status: 'approved',
+        capabilities: {},
+      }
+
+      registry.register(plugin1)
+      registry.register(plugin2)
+
+      const plugins = registry.list({ category: 'other' })
       expect(plugins).toHaveLength(1)
       expect(plugins[0].slug).toBe('plugin-1')
     })

@@ -74,6 +74,17 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
   const sidebarResizeStartX = useRef<number>(0)
   const sidebarResizeStartWidth = useRef<number>(20)
   
+  // Stub functions for sidebar visibility (removed but still needed by some components)
+  const isPageVisibleInSidebar = useCallback((pageId: string, pageType: 'built-in' | 'custom') => {
+    return true // Default to visible
+  }, [])
+  const updateSidebarMenuItem = useCallback((key: string | number | symbol, value: boolean) => {
+    // No-op: sidebar visibility is now handled by secondary platform sidebar
+  }, [])
+  const updateCustomPageSidebarVisibility = useCallback((pageId: string, visible: boolean) => {
+    // No-op: sidebar visibility is now handled by secondary platform sidebar
+  }, [])
+
   // Sidebar resize handlers
   const handleSidebarResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
@@ -965,7 +976,6 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
         showDataModelPanel={showDataModelPanel}
         onToggleDataModelPanel={() => setShowDataModelPanel(!showDataModelPanel)}
         spaceId={spaceId}
-        pages={pages}
           />
           
       {/* Version Control Dialog */}
@@ -1179,9 +1189,6 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
                 setPermissionsDialogOpen={setPermissionsDialogOpen}
                 handlePageReorder={handlePageReorder}
                 handleComponentConfigUpdate={handleComponentConfigUpdate}
-                isPageVisibleInSidebar={isPageVisibleInSidebar}
-                updateSidebarMenuItem={updateSidebarMenuItem}
-                updateCustomPageSidebarVisibility={updateCustomPageSidebarVisibility}
                 setAllPages={setAllPages}
               />
             </div>

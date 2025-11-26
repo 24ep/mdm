@@ -231,7 +231,6 @@ export function CanvasWidget({
       }}
       onClick={handleClick}
       onMouseEnter={() => setShowMenuButton(true)}
-      onMouseLeave={() => !isSelected && setShowMenuButton(false)}
       onContextMenu={(e) => {
         e.preventDefault()
         e.stopPropagation()

@@ -1,4 +1,6 @@
-import { renderHook, waitFor } from '@testing-library/react'
+import { renderHook } from '@testing-library/react'
+// @ts-ignore - waitFor is available at runtime but types may be missing
+import { waitFor } from '@testing-library/react'
 import { useTickets } from '../hooks/useTickets'
 import { useSpaceFilter } from '@/shared/hooks/useSpaceFilter'
 

@@ -967,13 +967,14 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                 <Separator />
                                 <div>
                                     <h3 className="text-sm font-semibold mb-4">Platform Sidebar Menu Items</h3>
-                                    <Tabs defaultValue="normal" className="w-full">
-                                        <TabsList className="grid w-full grid-cols-3">
-                                            <TabsTrigger value="normal">Normal</TabsTrigger>
-                                            <TabsTrigger value="hover">Hover</TabsTrigger>
-                                            <TabsTrigger value="active">Active</TabsTrigger>
-                                        </TabsList>
-                                        <TabsContent value="normal" className="space-y-3 mt-4">
+                                    <div className="w-full">
+                                        <Tabs defaultValue="normal">
+                                            <TabsList className="grid w-full grid-cols-3">
+                                                <TabsTrigger value="normal">Normal</TabsTrigger>
+                                                <TabsTrigger value="hover">Hover</TabsTrigger>
+                                                <TabsTrigger value="active">Active</TabsTrigger>
+                                            </TabsList>
+                                            <TabsContent value="normal" className="space-y-3 mt-4">
                                             <ColorInputField onChange={handleChange} label="Background" path="componentStyling.platform-sidebar-menu-normal.backgroundColor" value={config.componentStyling?.['platform-sidebar-menu-normal']?.backgroundColor} />
                                             <ColorInputField onChange={handleChange} label="Text" path="componentStyling.platform-sidebar-menu-normal.textColor" value={config.componentStyling?.['platform-sidebar-menu-normal']?.textColor} />
                                             <TextInput onChange={handleChange} label="Border Radius" path="componentStyling.platform-sidebar-menu-normal.borderRadius" value={config.componentStyling?.['platform-sidebar-menu-normal']?.borderRadius} placeholder="8px" />
@@ -1011,8 +1012,9 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                             <TextInput onChange={handleChange} label="Transition" path="componentStyling.platform-sidebar-menu-active.transition" value={config.componentStyling?.['platform-sidebar-menu-active']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
                                             <BorderConfig basePath="componentStyling.platform-sidebar-menu-active" />
                                             <AdvancedStyling basePath="componentStyling.platform-sidebar-menu-active" />
-                                        </TabsContent>
-                                    </Tabs>
+                                            </TabsContent>
+                                        </Tabs>
+                                    </div>
                                 </div>
                                 <Separator />
                                 <div>
@@ -1530,13 +1532,14 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                 {/* Space Settings Menu */}
                                 <div>
                                     <h3 className="text-sm font-semibold mb-4">Space Settings Menu</h3>
-                                    <Tabs defaultValue="normal" className="w-full">
-                                        <TabsList className="grid w-full grid-cols-3">
-                                            <TabsTrigger value="normal">Normal</TabsTrigger>
-                                            <TabsTrigger value="hover">Hover</TabsTrigger>
-                                            <TabsTrigger value="active">Active</TabsTrigger>
-                                        </TabsList>
-                                        <TabsContent value="normal" className="space-y-3 mt-4">
+                                    <div className="w-full">
+                                        <Tabs defaultValue="normal">
+                                            <TabsList className="grid w-full grid-cols-3">
+                                                <TabsTrigger value="normal">Normal</TabsTrigger>
+                                                <TabsTrigger value="hover">Hover</TabsTrigger>
+                                                <TabsTrigger value="active">Active</TabsTrigger>
+                                            </TabsList>
+                                            <TabsContent value="normal" className="space-y-3 mt-4">
                                             <ColorInputField onChange={handleChange} label="Background" path="componentStyling.space-settings-menu-normal.backgroundColor" value={config.componentStyling?.['space-settings-menu-normal']?.backgroundColor} />
                                             <ColorInputField onChange={handleChange} label="Text" path="componentStyling.space-settings-menu-normal.textColor" value={config.componentStyling?.['space-settings-menu-normal']?.textColor} />
                                             <TextInput onChange={handleChange} label="Border Radius" path="componentStyling.space-settings-menu-normal.borderRadius" value={config.componentStyling?.['space-settings-menu-normal']?.borderRadius} placeholder="6px" />
@@ -1569,8 +1572,9 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                             <TextInput onChange={handleChange} label="Transition" path="componentStyling.space-settings-menu-active.transition" value={config.componentStyling?.['space-settings-menu-active']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
                                             <BorderConfig basePath="componentStyling.space-settings-menu-active" />
                                             <AdvancedStyling basePath="componentStyling.space-settings-menu-active" />
-                                        </TabsContent>
-                                    </Tabs>
+                                            </TabsContent>
+                                        </Tabs>
+                                    </div>
                                 </div>
                             </TabsContent>
                         </ScrollArea>

@@ -231,8 +231,9 @@ const SelectItem = React.forwardRef<
           return String(node)
         }
         if (React.isValidElement(node)) {
-          if (node.props.children) {
-            return React.Children.toArray(node.props.children)
+          const props = node.props as { children?: React.ReactNode }
+          if (props.children) {
+            return React.Children.toArray(props.children)
               .map(extractText)
               .join('')
           }
@@ -249,10 +250,13 @@ const SelectItem = React.forwardRef<
           if (typeof child === 'string' || typeof child === 'number') {
             return String(child)
           }
-          if (React.isValidElement(child) && child.props.children) {
-            return React.Children.toArray(child.props.children)
+          if (React.isValidElement(child)) {
+            const props = child.props as { children?: React.ReactNode }
+            if (props.children) {
+              return React.Children.toArray(props.children)
               .filter(c => typeof c === 'string' || typeof c === 'number')
               .join('')
+            }
           }
           return ''
         })

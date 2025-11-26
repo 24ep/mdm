@@ -84,7 +84,13 @@ export async function getThemeComponentStyle(componentType: string): Promise<Com
       }
     }
     if (themeComponentStyle.borderRadius) {
-      componentStyle.borderRadius = themeComponentStyle.borderRadius
+      // Convert string like "8px" to number (extract numeric value)
+      const borderRadius = typeof themeComponentStyle.borderRadius === 'string' 
+        ? parseFloat(themeComponentStyle.borderRadius.replace(/[^0-9.]/g, '')) 
+        : themeComponentStyle.borderRadius
+      if (!isNaN(borderRadius)) {
+        componentStyle.borderRadius = borderRadius
+      }
     }
     
     // Padding (convert object to number if needed)
@@ -114,7 +120,26 @@ export async function getThemeComponentStyle(componentType: string): Promise<Com
     
     // Font weight
     if (themeComponentStyle.fontWeight) {
-      componentStyle.fontWeight = themeComponentStyle.fontWeight
+      const fontWeight = themeComponentStyle.fontWeight
+      if (fontWeight === 'normal' || fontWeight === 'medium' || fontWeight === 'semibold' || fontWeight === 'bold') {
+        componentStyle.fontWeight = fontWeight
+      } else if (typeof fontWeight === 'string') {
+        // Map common string values to valid types
+        const weightMap: Record<string, 'normal' | 'medium' | 'semibold' | 'bold'> = {
+          '400': 'normal',
+          '500': 'medium',
+          '600': 'semibold',
+          '700': 'bold',
+          'normal': 'normal',
+          'medium': 'medium',
+          'semibold': 'semibold',
+          'bold': 'bold'
+        }
+        const mapped = weightMap[fontWeight.toLowerCase()]
+        if (mapped) {
+          componentStyle.fontWeight = mapped
+        }
+      }
     }
     
     // Opacity (from global styling if available)
@@ -175,7 +200,13 @@ export function getThemeComponentStyleSync(
     }
   }
   if (themeComponentStyle.borderRadius) {
-    componentStyle.borderRadius = themeComponentStyle.borderRadius
+    // Convert string like "8px" to number (extract numeric value)
+    const borderRadius = typeof themeComponentStyle.borderRadius === 'string' 
+      ? parseFloat(themeComponentStyle.borderRadius.replace(/[^0-9.]/g, '')) 
+      : themeComponentStyle.borderRadius
+    if (!isNaN(borderRadius)) {
+      componentStyle.borderRadius = borderRadius
+    }
   }
   
   // Padding
@@ -204,7 +235,26 @@ export function getThemeComponentStyleSync(
   
   // Font weight
   if (themeComponentStyle.fontWeight) {
-    componentStyle.fontWeight = themeComponentStyle.fontWeight
+    const fontWeight = themeComponentStyle.fontWeight
+    if (fontWeight === 'normal' || fontWeight === 'medium' || fontWeight === 'semibold' || fontWeight === 'bold') {
+      componentStyle.fontWeight = fontWeight
+    } else if (typeof fontWeight === 'string') {
+      // Map common string values to valid types
+      const weightMap: Record<string, 'normal' | 'medium' | 'semibold' | 'bold'> = {
+        '400': 'normal',
+        '500': 'medium',
+        '600': 'semibold',
+        '700': 'bold',
+        'normal': 'normal',
+        'medium': 'medium',
+        'semibold': 'semibold',
+        'bold': 'bold'
+      }
+      const mapped = weightMap[fontWeight.toLowerCase()]
+      if (mapped) {
+        componentStyle.fontWeight = mapped
+      }
+    }
   }
   
   // Shadow

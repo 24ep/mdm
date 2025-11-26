@@ -112,9 +112,9 @@ export async function POST(request: NextRequest) {
         password = creds?.password
       }
     } else {
-      apiKey = config.api_auth_apikey_value ? decryptApiKey(config.api_auth_apikey_value) : undefined
-      username = config.api_auth_username ? decryptApiKey(config.api_auth_username) : undefined
-      password = config.api_auth_password ? decryptApiKey(config.api_auth_password) : undefined
+      apiKey = config.api_auth_apikey_value ? decryptApiKey(config.api_auth_apikey_value) ?? undefined : undefined
+      username = config.api_auth_username ? decryptApiKey(config.api_auth_username) ?? undefined : undefined
+      password = config.api_auth_password ? decryptApiKey(config.api_auth_password) ?? undefined : undefined
     }
 
     // Initialize ITSM service
@@ -195,7 +195,7 @@ export async function POST(request: NextRequest) {
       for (const comment of ticket.comments) {
         try {
           await itsmService.addComment(result.ticketId, {
-            content: `${comment.author?.name || 'User'}: ${comment.content}`,
+            content: `${(comment as any).author?.name || 'User'}: ${comment.content}`,
             isPublic: true
           })
           syncedComments++

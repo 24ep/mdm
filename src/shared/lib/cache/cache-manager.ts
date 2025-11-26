@@ -5,6 +5,28 @@ export interface CacheOptions {
   namespace?: string
 }
 
+export class CacheManager {
+  async get<T>(key: string): Promise<T | null> {
+    return getCache<T>(key)
+  }
+
+  async set<T>(key: string, value: T, ttl?: number): Promise<void> {
+    return setCache(key, value, { ttl })
+  }
+
+  async delete(key: string): Promise<void> {
+    return deleteCache(key)
+  }
+
+  async clearNamespace(namespace: string): Promise<void> {
+    try {
+      await delPattern(`${namespace}:*`)
+    } catch (error) {
+      console.error('Cache clear namespace error:', error)
+    }
+  }
+}
+
 /**
  * Get value from cache
  */

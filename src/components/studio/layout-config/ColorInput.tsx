@@ -37,13 +37,13 @@ const COLOR_INPUT_TRIGGER_STYLES = `
 // Calculate proper padding: left offset (4px from left-1) + button width (matches input height) + gap (6px)
 // Button is absolutely positioned at left-1 (4px), so padding = 4px + buttonWidth + 6px
 // Using 6px gap to ensure no overlap
-// Default to 36px (h-9) but will be adjusted dynamically
-const DEFAULT_BUTTON_SIZE = 36 // h-9 default height
+// Default to 28px (h-7) but will be adjusted dynamically
+const DEFAULT_BUTTON_SIZE = 28 // h-7 default height
 const BUTTON_LEFT_OFFSET = 4 // from left-1 class
 const BUTTON_TEXT_GAP = 6
-const INPUT_LEFT_PADDING = BUTTON_LEFT_OFFSET + DEFAULT_BUTTON_SIZE + BUTTON_TEXT_GAP // 46px default
+const INPUT_LEFT_PADDING = BUTTON_LEFT_OFFSET + DEFAULT_BUTTON_SIZE + BUTTON_TEXT_GAP // 38px default
 
-const DEFAULT_INPUT_CLASS_NAME = `h-9 text-xs w-full rounded-[2px] bg-input border-0 focus:outline-none focus:ring-0 focus:border-0`
+const DEFAULT_INPUT_CLASS_NAME = `h-7 text-xs w-full rounded-[2px] bg-input border-0 focus:outline-none focus:ring-0 focus:border-0`
 
 const TRIGGER_BUTTON_STYLE: React.CSSProperties = {
   pointerEvents: 'auto',
@@ -68,19 +68,13 @@ export function ColorInput({
   inputClassName,
   isSpaceLayoutConfig = false,
 }: ColorInputProps) {
-  // Remove padding-left classes (pl-*) and height classes (h-*) from inputClassName
-  // since we manage left padding and height via inline styles and defaults
+  // Remove only padding-left classes (pl-*) from inputClassName since we manage left padding via inline styles
   // Keep px-* classes as they also set right padding which we want to preserve
   const cleanInputClassName = React.useMemo(() => {
     if (!inputClassName) return DEFAULT_INPUT_CLASS_NAME
-    // Remove pl-* (left padding) and h-* (height) classes, keep px-* (horizontal padding) for right padding
-    const classes = inputClassName.split(' ').filter(cls => !cls.match(/^(pl-|h-\d+)/))
-    const cleaned = classes.join(' ').trim()
-    // Always include our default height (h-9) at the end to ensure it takes precedence
-    const defaultHeight = 'h-9'
-    // Get other default classes without height
-    const defaultWithoutHeight = DEFAULT_INPUT_CLASS_NAME.replace(/\bh-\d+\b/, '').trim()
-    return cleaned ? `${defaultWithoutHeight} ${cleaned} ${defaultHeight}` : `${defaultWithoutHeight} ${defaultHeight}`
+    // Remove only pl-* classes (left padding), keep px-* (horizontal padding) for right padding
+    const classes = inputClassName.split(' ').filter(cls => !cls.match(/^pl-/))
+    return classes.join(' ') || DEFAULT_INPUT_CLASS_NAME
   }, [inputClassName])
   
   const finalInputClassName = cleanInputClassName
@@ -112,9 +106,7 @@ export function ColorInput({
       const inputHeight = inputRect.height || input.offsetHeight
       
       if (inputHeight > 0) {
-        // Make swatch 75% of input height to make it smaller
-        const swatchHeight = Math.round(inputHeight * 0.75)
-        const height = `${swatchHeight}px`
+        const height = `${inputHeight}px`
         button.style.setProperty('height', height, 'important')
         button.style.setProperty('min-height', height, 'important')
         button.style.setProperty('max-height', height, 'important')
@@ -125,7 +117,7 @@ export function ColorInput({
         
         // Update input padding to account for new button size
         // Button is absolutely positioned at left-1 (4px), so padding = left offset + button width + gap
-        const newPadding = BUTTON_LEFT_OFFSET + swatchHeight + BUTTON_TEXT_GAP
+        const newPadding = BUTTON_LEFT_OFFSET + inputHeight + BUTTON_TEXT_GAP
         input.style.setProperty('padding-left', `${newPadding}px`, 'important')
       }
     }
@@ -155,25 +147,9 @@ export function ColorInput({
   // Apply swatch styles directly to the button element using setProperty with important
   useEffect(() => {
     const button = buttonRef.current
-    const input = inputRef.current
-    if (!button || !input) return
+    if (!button) return
 
-    // Use requestAnimationFrame to ensure we get the latest input height
-    requestAnimationFrame(() => {
-      // Recalculate swatch size based on current input height (75% of input height)
-      const inputHeight = input.getBoundingClientRect().height || input.offsetHeight
-      if (inputHeight > 0) {
-        const swatchHeight = Math.round(inputHeight * 0.75)
-        const height = `${swatchHeight}px`
-        button.style.setProperty('height', height, 'important')
-        button.style.setProperty('min-height', height, 'important')
-        button.style.setProperty('max-height', height, 'important')
-        button.style.setProperty('width', height, 'important')
-        button.style.setProperty('min-width', height, 'important')
-        button.style.setProperty('max-width', height, 'important')
-      }
-    })
-
+    // Height and width are set by the resize observer to match input height
     // Keep aspect ratio 1:1 for square swatch
     button.style.setProperty('aspect-ratio', '1 / 1', 'important')
     button.style.setProperty('padding', '0', 'important')
@@ -194,7 +170,7 @@ export function ColorInput({
     // Apply swatch styles with !important
     if (swatchStyle.background) {
       // For gradients, use the background shorthand
-      button.style.setProperty('background', swatchStyle.background, 'important')
+      button.style.setProperty('background', String(swatchStyle.background), 'important')
     } else {
       // For other types, use individual properties
       if (swatchStyle.backgroundColor) {
@@ -206,16 +182,16 @@ export function ColorInput({
         button.style.setProperty('background-image', swatchStyle.backgroundImage, 'important')
       }
       if (swatchStyle.backgroundSize) {
-        button.style.setProperty('background-size', swatchStyle.backgroundSize, 'important')
+        button.style.setProperty('background-size', String(swatchStyle.backgroundSize), 'important')
       }
       if (swatchStyle.backgroundPosition) {
-        button.style.setProperty('background-position', swatchStyle.backgroundPosition, 'important')
+        button.style.setProperty('background-position', String(swatchStyle.backgroundPosition), 'important')
       }
       if (swatchStyle.backgroundRepeat) {
         button.style.setProperty('background-repeat', swatchStyle.backgroundRepeat, 'important')
       }
     }
-  }, [swatchStyle, inputClassName])
+  }, [swatchStyle])
 
   // Combined button style with swatch background
   // Height and width will be set dynamically to match input height

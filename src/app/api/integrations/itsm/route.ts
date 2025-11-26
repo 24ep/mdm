@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
     
     if (useVault) {
       const connectionId = `itsm-${Date.now()}`
-      await secretsManager.setSecret(`itsm-integrations/${connectionId}/credentials`, {
+      await secretsManager.storeSecret(`itsm-integrations/${connectionId}/credentials`, {
         apiKey,
         username,
         password

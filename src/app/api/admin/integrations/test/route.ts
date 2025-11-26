@@ -135,8 +135,8 @@ export async function POST(request: NextRequest) {
               testResult = {
                 success: result.success,
                 error: result.error || '',
-                data: result.data
-              }
+                ...(result.data && { data: result.data })
+              } as { success: boolean; error: string; data?: any }
             } catch (error: any) {
               testResult = {
                 success: false,

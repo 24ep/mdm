@@ -623,7 +623,7 @@ export function ColorPickerPopover({
     // Apply swatch styles with !important (same as ColorInput)
     if (swatchStyle.background) {
       // For gradients, use the background shorthand
-      button.style.setProperty('background', swatchStyle.background, 'important')
+      button.style.setProperty('background', String(swatchStyle.background), 'important')
     } else {
       // For other types, use individual properties
       if (swatchStyle.backgroundColor) {
@@ -635,10 +635,10 @@ export function ColorPickerPopover({
         button.style.setProperty('background-image', swatchStyle.backgroundImage, 'important')
       }
       if (swatchStyle.backgroundSize) {
-        button.style.setProperty('background-size', swatchStyle.backgroundSize, 'important')
+        button.style.setProperty('background-size', String(swatchStyle.backgroundSize), 'important')
       }
       if (swatchStyle.backgroundPosition) {
-        button.style.setProperty('background-position', swatchStyle.backgroundPosition, 'important')
+        button.style.setProperty('background-position', String(swatchStyle.backgroundPosition), 'important')
       }
       if (swatchStyle.backgroundRepeat) {
         button.style.setProperty('background-repeat', swatchStyle.backgroundRepeat, 'important')
@@ -678,7 +678,7 @@ export function ColorPickerPopover({
     // Apply swatch styles with !important (same as ColorInput)
     if (swatchStyle.background) {
       // For gradients, use the background shorthand
-      button.style.setProperty('background', swatchStyle.background, 'important')
+      button.style.setProperty('background', String(swatchStyle.background), 'important')
     } else {
       // For other types, use individual properties
       if (swatchStyle.backgroundColor) {
@@ -690,10 +690,10 @@ export function ColorPickerPopover({
         button.style.setProperty('background-image', swatchStyle.backgroundImage, 'important')
       }
       if (swatchStyle.backgroundSize) {
-        button.style.setProperty('background-size', swatchStyle.backgroundSize, 'important')
+        button.style.setProperty('background-size', String(swatchStyle.backgroundSize), 'important')
       }
       if (swatchStyle.backgroundPosition) {
-        button.style.setProperty('background-position', swatchStyle.backgroundPosition, 'important')
+        button.style.setProperty('background-position', String(swatchStyle.backgroundPosition), 'important')
       }
       if (swatchStyle.backgroundRepeat) {
         button.style.setProperty('background-repeat', swatchStyle.backgroundRepeat, 'important')

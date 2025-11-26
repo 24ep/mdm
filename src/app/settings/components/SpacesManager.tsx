@@ -422,8 +422,8 @@ export default function SpacesManager() {
                           toast.error('Failed to set icon') 
                         }
                       }}
-                    >
-                      <div className="flex items-center gap-3">
+                    />
+                    <div className="flex items-center gap-3">
                         {selectedSpace!.icon ? (
                           (() => {
                             const IconComponent = (LucideIcons as any)[selectedSpace!.icon!] as React.ComponentType<{ className?: string }>
@@ -444,7 +444,6 @@ export default function SpacesManager() {
                           Select Icon
                         </Button>
                       </div>
-                    </IconPickerPopover>
                     <p className="text-xs text-muted-foreground">Choose an icon from the icon library. Picking an icon will clear the logo.</p>
                   </div>
                   )}

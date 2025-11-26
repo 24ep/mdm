@@ -31,8 +31,8 @@ export async function traceExternalCall<T>(
  */
 export async function traceDatabaseOperation<T>(
   operation: string,
-  table?: string,
-  operationFn: () => Promise<T>
+  operationFn: () => Promise<T>,
+  table?: string
 ): Promise<T> {
   return createChildSpan(
     `db.${operation}`,

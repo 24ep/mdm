@@ -34,9 +34,6 @@ interface GroupItemProps {
   sidebarPositionOpen: string | null
   handlePageReorder: (fromIndex: number, toIndex: number, currentPages: UnifiedPage[], currentCustomPages: SpacesEditorPage[]) => Promise<void>
   handleIconUpdate: (pageId: string, icon: string) => Promise<void>
-  isPageVisibleInSidebar: (pageId: string, pageType: 'built-in' | 'custom') => boolean
-  updateSidebarMenuItem: (key: string | number | symbol, value: boolean) => void
-  updateCustomPageSidebarVisibility: (pageId: string, visible: boolean) => void
   setSelectedPageId: React.Dispatch<React.SetStateAction<string | null>>
   setSelectedComponent: React.Dispatch<React.SetStateAction<string | null>>
   setSelectedPageForPermissions: React.Dispatch<React.SetStateAction<SpacesEditorPage | null>>
@@ -204,9 +201,6 @@ export function GroupItem(props: GroupItemProps) {
                     sidebarPositionOpen={props.sidebarPositionOpen}
                     handlePageReorder={props.handlePageReorder}
                     handleIconUpdate={props.handleIconUpdate}
-                    isPageVisibleInSidebar={props.isPageVisibleInSidebar}
-                    updateSidebarMenuItem={props.updateSidebarMenuItem}
-                    updateCustomPageSidebarVisibility={props.updateCustomPageSidebarVisibility}
                     setPages={props.setPages}
                     setAllPages={setAllPages}
                     setSelectedPageId={props.setSelectedPageId}

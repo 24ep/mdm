@@ -130,7 +130,7 @@ export async function POST(
       session.user.id,
       action,
       null, // old_value
-      JSON.stringify({ description, ...metadata } || {}), // new_value
+      JSON.stringify({ description, ...metadata }), // new_value
       ip_address || null,
       user_agent || null
     ])

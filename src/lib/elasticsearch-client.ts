@@ -218,7 +218,7 @@ export async function sendLogToElasticsearch(
     client.index({
       index: indexName,
       body: logData
-    }).catch((error) => {
+    }).catch((error: unknown) => {
       // Silently fail - don't break application if ES is down
       console.error('Failed to send log to Elasticsearch:', error)
     })
@@ -278,7 +278,7 @@ export async function bulkSendLogsToElasticsearch(
     })
 
     // Send bulk request (fire and forget)
-    client.bulk({ body }).catch((error) => {
+    client.bulk({ body }).catch((error: unknown) => {
       console.error('Failed to bulk send logs to Elasticsearch:', error)
     })
   } catch (error) {

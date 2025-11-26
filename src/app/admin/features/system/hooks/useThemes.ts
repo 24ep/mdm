@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { ThemeListItem, Theme } from '../types-theme';
+import { initializeBranding } from '@/lib/branding';
 
 export function useThemes() {
     const [themes, setThemes] = useState<ThemeListItem[]>([]);
@@ -170,7 +171,7 @@ export function useThemes() {
             toast.success('Theme updated successfully');
             await fetchThemes();
             // Apply new branding immediately if active theme was updated
-            initializeBranding();
+            await initializeBranding();
         } catch (err) {
             const msg = err instanceof Error ? err.message : 'Failed to update theme';
             toast.error(msg);

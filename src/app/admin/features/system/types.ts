@@ -172,8 +172,8 @@ export interface BrandingConfig {
     inputBorderWidth: string
     selectBorderRadius: string
     selectBorderWidth: string
-    textareaBorderRadius: string
-    textareaBorderWidth: string
+    textareaBorderRadius?: string
+    textareaBorderWidth?: string
     transitionDuration?: string // e.g., "200ms"
     transitionTiming?: string // e.g., "cubic-bezier(0.4, 0, 0.2, 1)"
     shadowSm?: string
@@ -267,6 +267,21 @@ export interface BrandingConfig {
       pointerEvents?: string // e.g., "none", "auto"
       userSelect?: string // e.g., "none", "text", "all"
       transition?: string // e.g., "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
+      position?: string // e.g., "absolute", "relative", "fixed"
+      top?: string
+      right?: string
+      bottom?: string
+      left?: string
+      display?: string // e.g., "flex", "grid", "block"
+      flexDirection?: string // e.g., "row", "column"
+      flexWrap?: string // e.g., "wrap", "nowrap"
+      justifyContent?: string // e.g., "center", "flex-start"
+      alignItems?: string // e.g., "center", "flex-start"
+      alignContent?: string // e.g., "center", "flex-start"
+      gridTemplateColumns?: string
+      gridTemplateRows?: string
+      gridColumn?: string
+      gridRow?: string
     }
   }
 }

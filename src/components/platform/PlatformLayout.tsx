@@ -321,10 +321,12 @@ export function PlatformLayout({
       setVmCredentials(null) // Show credentials card
     } else {
       // Use stored credentials
-      setVmCredentials({
-        username: vm.connectionConfig.username,
-        password: vm.connectionConfig.password,
-      })
+      if (vm.connectionConfig) {
+        setVmCredentials({
+          username: vm.connectionConfig.username,
+          password: vm.connectionConfig.password,
+        })
+      }
     }
   }, [])
 

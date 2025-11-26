@@ -118,7 +118,7 @@ export class ITSMService {
       } else if (this.config.authType === 'basic' && this.config.username && this.config.password) {
         const credentials = Buffer.from(`${this.config.username}:${this.config.password}`).toString('base64')
         headers['Authorization'] = `Basic ${credentials}`
-      } else if (this.config.authType === 'bearer' && this.config.apiKey) {
+      } else if (this.config.authType === 'apikey' && this.config.apiKey) {
         headers['Authorization'] = `Bearer ${this.config.apiKey}`
       }
     }

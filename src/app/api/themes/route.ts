@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/db'
 
 // GET /api/themes - List all themes
 export async function GET(request: NextRequest) {
@@ -96,8 +94,27 @@ export async function GET(request: NextRequest) {
         })
 
         return NextResponse.json({ themes: themesWithPreview })
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error fetching themes:', error)
+        
+        // Check if it's a database connection error
+        const isConnectionError = error?.code === 'P1001' || 
+                                 error?.message?.includes('Can\'t reach database server') ||
+                                 error?.message?.includes('connect ECONNREFUSED')
+        
+        if (isConnectionError) {
+            return NextResponse.json(
+                { 
+                    error: 'Database connection failed',
+                    message: 'Please ensure your database server is running',
+                    details: process.env.NODE_ENV === 'development' 
+                        ? error.message 
+                        : undefined
+                },
+                { status: 503 } // Service Unavailable
+            )
+        }
+        
         return NextResponse.json(
             { error: 'Failed to fetch themes' },
             { status: 500 }

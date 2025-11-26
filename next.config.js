@@ -162,6 +162,17 @@ const nextConfig = {
         contextRegExp: /src\/features\/api-client/,
       })
     )
+    
+    // Suppress critical dependency warnings for external-plugin-loader.ts
+    // These warnings are expected because we intentionally use dynamic requires for plugin loading
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings || []),
+      {
+        module: /external-plugin-loader\.ts/,
+        message: /Critical dependency: the request of a dependency is an expression/,
+      },
+    ]
+    
     return config
   },
   // Experimental: Continue build even with errors

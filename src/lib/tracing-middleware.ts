@@ -231,6 +231,9 @@ export function withTracing<T = {}>(
       ? options.traceName(request)
       : options.traceName || `${request.method} ${new URL(request.url).pathname}`
 
+    // Start performance monitoring
+    performanceMonitor.start(traceName)
+
     // Extract request metadata
     const url = new URL(request.url)
     const metadata = getRequestMetadata(request)
@@ -285,7 +288,7 @@ export function withTracing<T = {}>(
       metricsCollector.histogram(`api.request.duration`, duration, {
         method: request.method,
         path: url.pathname,
-        status: statusCode
+        status: String(statusCode)
       })
       metricsCollector.increment(`api.request.count`, 1, {
         method: request.method,

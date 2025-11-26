@@ -179,7 +179,7 @@ export async function POST(
       releaseId: z.string().uuid().optional(),
       parentId: z.string().uuid().optional(),
       type: z.enum(['BLOCKS', 'BLOCKED_BY', 'RELATES_TO', 'PARENT', 'CHILD', 'DUPLICATE', 'CLONES']).optional(),
-      metadata: z.record(z.any()).optional()
+      metadata: z.record(z.string(), z.any()).optional()
     })
 
     const validation = schema.safeParse(body)

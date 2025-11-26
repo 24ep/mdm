@@ -222,8 +222,10 @@ export function PageEditor({ spaceSlug, pageId, editMode: editModeProp = false }
         if (canUndo) {
           isUndoRedoOperation.current = true
           const prevState = undoWidgets()
-          setPlacedWidgetsState(prevState)
-          lastWidgetStateRef.current = prevState
+          if (prevState) {
+            setPlacedWidgetsState(prevState)
+            lastWidgetStateRef.current = prevState
+          }
           setTimeout(() => {
             isUndoRedoOperation.current = false
           }, 0)
@@ -235,8 +237,10 @@ export function PageEditor({ spaceSlug, pageId, editMode: editModeProp = false }
         if (canRedo) {
           isUndoRedoOperation.current = true
           const nextState = redoWidgets()
-          setPlacedWidgetsState(nextState)
-          lastWidgetStateRef.current = nextState
+          if (nextState) {
+            setPlacedWidgetsState(nextState)
+            lastWidgetStateRef.current = nextState
+          }
           setTimeout(() => {
             isUndoRedoOperation.current = false
           }, 0)
@@ -390,7 +394,7 @@ export function PageEditor({ spaceSlug, pageId, editMode: editModeProp = false }
   }
 
   // If in edit mode and page has no layout, redirect to layout selection
-  if (editMode && !page.placedWidgets && !(page as any).layoutConfig) {
+  if (editMode && !(page as any).placedWidgets && !(page as any).layoutConfig) {
     // This will be handled by the parent component's redirect logic
     return (
       <div className="flex flex-1 items-center justify-center">

@@ -124,10 +124,17 @@ export function ModuleList({ projectId, spaceId, onModuleClick }: ModuleListProp
   const [users, setUsers] = useState<Array<{ id: string; name: string | null; email: string; avatar?: string | null }>>([])
   const { toast } = useToast()
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string
+    description: string
+    status: 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
+    startDate: string
+    targetDate: string
+    leadId: string
+  }>({
     name: '',
     description: '',
-    status: 'PLANNED' as const,
+    status: 'PLANNED',
     startDate: '',
     targetDate: '',
     leadId: ''

@@ -13,7 +13,7 @@ const moduleSchema = z.object({
   startDate: z.string().datetime().optional().nullable(),
   targetDate: z.string().datetime().optional().nullable(),
   leadId: z.string().uuid().optional().nullable(),
-  metadata: z.record(z.any()).optional().default({}),
+  metadata: z.record(z.string(), z.any()).optional().default({}),
 })
 
 // Get all modules for a project

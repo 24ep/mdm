@@ -353,10 +353,15 @@ export function ModuleDetail({ moduleId, onBack, onTicketClick }: ModuleDetailPr
                       title: ticket.title,
                       status: ticket.status,
                       priority: ticket.priority,
-                      assignee: ticket.assignees?.[0]?.user || null,
+                      assignee: ticket.assignees?.[0]?.user ? {
+                        id: ticket.assignees[0].user.id,
+                        name: ticket.assignees[0].user.name || '',
+                        email: '',
+                        avatar: ticket.assignees[0].user.avatar
+                      } : null,
                       labels: ticket.tags?.map(t => t.name) || []
                     }}
-                    onTicketClick={() => onTicketClick?.(ticket.id)}
+                    onClick={() => onTicketClick?.(ticket.id)}
                   />
                 </div>
               ))}

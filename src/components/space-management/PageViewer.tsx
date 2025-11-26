@@ -84,7 +84,7 @@ export function PageViewer({ spaceSlug, pageId }: PageViewerProps) {
       <div className="flex-1 overflow-auto">
         <div className="w-full h-full relative bg-muted/30">
           <Canvas
-            canvasRef={canvasRef}
+            canvasRef={canvasRef as React.RefObject<HTMLDivElement>}
             isMobile={false}
             isDraggingWidget={false}
             selectedComponent={null}

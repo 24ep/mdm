@@ -31,8 +31,8 @@ import {
     MoreVertical,
     AlignJustify,
     Grid3x3,
-    Stack,
-    Zap
+    Zap,
+    Box
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { BrandingConfig } from '../../types'
@@ -435,7 +435,7 @@ export function ComponentStylingTab({
 
                 <div className="space-y-2">
                     <Label className="text-sm font-medium flex items-center gap-2">
-                        <Stack className="h-3.5 w-3.5 text-muted-foreground" />
+                        <Layers className="h-3.5 w-3.5 text-muted-foreground" />
                         Z-Index
                     </Label>
                     <Input
@@ -658,7 +658,7 @@ export function ComponentStylingTab({
 
                 <div className="space-y-2">
                     <Label className="text-sm font-medium flex items-center gap-2">
-                        <Shadow className="h-3.5 w-3.5 text-muted-foreground" />
+                        <Box className="h-3.5 w-3.5 text-muted-foreground" />
                         Box Shadow
                     </Label>
                     <Input

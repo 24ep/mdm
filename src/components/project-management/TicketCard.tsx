@@ -21,7 +21,7 @@ interface TicketCardProps {
     assignee?: {
       id: string
       name: string
-      email: string
+      email?: string
       avatar?: string | null
     } | null
     spaces?: Array<{

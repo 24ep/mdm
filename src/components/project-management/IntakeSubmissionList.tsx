@@ -31,6 +31,7 @@ import {
   Calendar,
   Loader2,
   ExternalLink,
+  Eye,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { format } from 'date-fns'
@@ -57,6 +58,7 @@ interface IntakeSubmission {
 
 interface IntakeSubmissionListProps {
   formId: string
+  spaceId?: string
   onClose?: () => void
 }
 

@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
     
     if (useVault) {
       const connectionId = `esm-portal-${Date.now()}`
-      await secretsManager.setSecret(`esm-portal-integrations/${connectionId}/credentials`, {
+      await secretsManager.storeSecret(`esm-portal-integrations/${connectionId}/credentials`, {
         apiKey,
         username,
         password

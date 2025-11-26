@@ -9,7 +9,7 @@ import {
     CornerUpRight,
     Minus,
     Sparkles,
-    Shadow,
+    Box,
     Zap
 } from 'lucide-react'
 import { BrandingConfig } from '../../types'
@@ -333,7 +333,7 @@ export function TypographyTab({ branding, setBranding, handleApplyBrandingColors
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label className="text-sm font-medium flex items-center gap-2">
-                            <Shadow className="h-3.5 w-3.5 text-muted-foreground" />
+                            <Box className="h-3.5 w-3.5 text-muted-foreground" />
                             Shadow Small
                         </Label>
                         <Input
@@ -351,7 +351,7 @@ export function TypographyTab({ branding, setBranding, handleApplyBrandingColors
 
                     <div className="space-y-2">
                         <Label className="text-sm font-medium flex items-center gap-2">
-                            <Shadow className="h-3.5 w-3.5 text-muted-foreground" />
+                            <Box className="h-3.5 w-3.5 text-muted-foreground" />
                             Shadow Medium
                         </Label>
                         <Input
@@ -369,7 +369,7 @@ export function TypographyTab({ branding, setBranding, handleApplyBrandingColors
 
                     <div className="space-y-2">
                         <Label className="text-sm font-medium flex items-center gap-2">
-                            <Shadow className="h-3.5 w-3.5 text-muted-foreground" />
+                            <Box className="h-3.5 w-3.5 text-muted-foreground" />
                             Shadow Large
                         </Label>
                         <Input
@@ -387,7 +387,7 @@ export function TypographyTab({ branding, setBranding, handleApplyBrandingColors
 
                     <div className="space-y-2">
                         <Label className="text-sm font-medium flex items-center gap-2">
-                            <Shadow className="h-3.5 w-3.5 text-muted-foreground" />
+                            <Box className="h-3.5 w-3.5 text-muted-foreground" />
                             Shadow Extra Large
                         </Label>
                         <Input

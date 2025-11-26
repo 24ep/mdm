@@ -31,9 +31,6 @@ interface PageListItemProps {
   sidebarPositionOpen: string | null
   handlePageReorder: (fromIndex: number, toIndex: number, currentPages: UnifiedPage[], currentCustomPages: SpacesEditorPage[]) => Promise<void>
   handleIconUpdate: (pageId: string, icon: string) => Promise<void>
-  isPageVisibleInSidebar: (pageId: string, pageType: 'built-in' | 'custom') => boolean
-  updateSidebarMenuItem: (key: string | number | symbol, value: boolean) => void
-  updateCustomPageSidebarVisibility: (pageId: string, visible: boolean) => void
   setPages: React.Dispatch<React.SetStateAction<SpacesEditorPage[]>>
   setAllPages: React.Dispatch<React.SetStateAction<UnifiedPage[]>>
   setSelectedPageId: React.Dispatch<React.SetStateAction<string | null>>
@@ -63,9 +60,6 @@ export function PageListItem({
   sidebarPositionOpen,
   handlePageReorder,
   handleIconUpdate,
-  isPageVisibleInSidebar,
-  updateSidebarMenuItem,
-  updateCustomPageSidebarVisibility,
   setPages,
   setAllPages,
   setSelectedPageId,
@@ -249,9 +243,6 @@ export function PageListItem({
           isBuiltIn={isBuiltInPage}
           isMobileViewport={isMobileViewport}
           spaceId={spaceId}
-          isPageVisibleInSidebar={isPageVisibleInSidebar}
-          updateSidebarMenuItem={updateSidebarMenuItem}
-          updateCustomPageSidebarVisibility={updateCustomPageSidebarVisibility}
           setPages={setPages}
           setAllPages={setAllPages}
           setSelectedPageForPermissions={setSelectedPageForPermissions}

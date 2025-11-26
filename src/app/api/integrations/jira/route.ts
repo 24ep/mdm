@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
     
     if (useVault) {
       const connectionId = `jira-${Date.now()}`
-      await secretsManager.setSecret(`jira-integrations/${connectionId}/credentials`, {
+      await secretsManager.storeSecret(`jira-integrations/${connectionId}/credentials`, {
         apiToken,
         email
       })

@@ -206,7 +206,7 @@ export async function POST(request: NextRequest) {
       for (const comment of ticket.comments) {
         try {
           await jiraService.addComment(result.issueKey, {
-            body: `${comment.author?.name || 'User'}: ${comment.content}`
+            body: `${(comment as any).author?.name || 'User'}: ${comment.content}`
           })
           syncedComments++
         } catch (error) {

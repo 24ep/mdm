@@ -11,7 +11,7 @@ import {
     CornerUpRight,
     Minus,
     Sparkles,
-    Shadow,
+    Box,
     Zap,
     Move
 } from 'lucide-react'
@@ -37,7 +37,6 @@ export function PlatformSidebarTab({
     updateComponentStyling
 }: PlatformSidebarTabProps) {
     const currentMode = isDarkMode ? 'dark' : 'light'
-    const colors = branding[currentMode === 'light' ? 'lightMode' : 'darkMode']
     
     // Get styling for primary sidebar, secondary sidebar, and menu states
     const primarySidebarStyling = getComponentStyling('platform-sidebar-primary')
@@ -72,14 +71,11 @@ export function PlatformSidebarTab({
                             Background Color
                         </Label>
                         <ColorInput
-                            value={colors.platformSidebarBackgroundColor}
+                            value={branding.platformSidebarBackgroundColor}
                             onChange={(color) =>
                                 setBranding({
                                     ...branding,
-                                    [currentMode === 'light' ? 'lightMode' : 'darkMode']: {
-                                        ...colors,
-                                        platformSidebarBackgroundColor: color,
-                                    },
+                                    platformSidebarBackgroundColor: color,
                                 })
                             }
                             allowImageVideo={false}
@@ -95,14 +91,11 @@ export function PlatformSidebarTab({
                             Text Color
                         </Label>
                         <ColorInput
-                            value={colors.platformSidebarTextColor}
+                            value={branding.platformSidebarTextColor}
                             onChange={(color) =>
                                 setBranding({
                                     ...branding,
-                                    [currentMode === 'light' ? 'lightMode' : 'darkMode']: {
-                                        ...colors,
-                                        platformSidebarTextColor: color,
-                                    },
+                                    platformSidebarTextColor: color,
                                 })
                             }
                             allowImageVideo={false}
@@ -150,14 +143,11 @@ export function PlatformSidebarTab({
                             Background Color
                         </Label>
                         <ColorInput
-                            value={colors.secondarySidebarBackgroundColor}
+                            value={branding.secondarySidebarBackgroundColor}
                             onChange={(color) =>
                                 setBranding({
                                     ...branding,
-                                    [currentMode === 'light' ? 'lightMode' : 'darkMode']: {
-                                        ...colors,
-                                        secondarySidebarBackgroundColor: color,
-                                    },
+                                    secondarySidebarBackgroundColor: color,
                                 })
                             }
                             allowImageVideo={false}
@@ -173,14 +163,11 @@ export function PlatformSidebarTab({
                             Text Color
                         </Label>
                         <ColorInput
-                            value={colors.secondarySidebarTextColor}
+                            value={branding.secondarySidebarTextColor}
                             onChange={(color) =>
                                 setBranding({
                                     ...branding,
-                                    [currentMode === 'light' ? 'lightMode' : 'darkMode']: {
-                                        ...colors,
-                                        secondarySidebarTextColor: color,
-                                    },
+                                    secondarySidebarTextColor: color,
                                 })
                             }
                             allowImageVideo={false}
@@ -304,7 +291,7 @@ export function PlatformSidebarTab({
 
                     <div className="space-y-2">
                         <Label className="text-sm font-medium flex items-center gap-2">
-                            <Shadow className="h-3.5 w-3.5 text-muted-foreground" />
+                            <Box className="h-3.5 w-3.5 text-muted-foreground" />
                             Box Shadow
                         </Label>
                         <Input

@@ -87,7 +87,7 @@ export interface GitLabIssueUpdate {
 
 export class GitLabProjectManagementService {
   private config: GitLabProjectManagementConfig
-  private gitlab: GitLab
+  private gitlab: typeof GitLab
 
   constructor(config: GitLabProjectManagementConfig) {
     this.config = config

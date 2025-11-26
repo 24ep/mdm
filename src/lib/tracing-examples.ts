@@ -7,9 +7,11 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { 
-  withTracingAndAuth, 
-  withTracing 
+  withTracingAndAuth
 } from './api-middleware'
+import {
+  withTracing
+} from './tracing-middleware'
 import { 
   createChildSpan, 
   startSpan, 
@@ -33,7 +35,7 @@ import {
 
 export async function exampleBasicTracing(request: NextRequest) {
   // Automatically traces the request with default settings
-  return withTracing(async (req) => {
+  return withTracing(async (req: NextRequest) => {
     // Your handler code here
     return NextResponse.json({ data: 'example' })
   })(request, {})
@@ -137,7 +139,6 @@ export async function exampleExternalCall() {
 export async function exampleDatabaseTracing() {
   return traceDatabaseOperation(
     'select',
-    'users',
     async () => {
       // Database query
       const { query } = await import('./db')

@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
         '{}', // api_auth_config
         'react_component', // ui_type
         JSON.stringify({
-          componentPath: sourcePath || `@/plugins/${slug}/components/${slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('')}UI`,
+          componentPath: sourcePath || `@/plugins/${slug}/components/${slug.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join('')}UI`,
         }),
         false, // webhook_supported
         [], // webhook_events
