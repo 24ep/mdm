@@ -39,9 +39,6 @@ export class MetricsCollector {
       timestamp: metric.timestamp || new Date(),
     })
 
-    // In production, send to metrics service (e.g., Prometheus, DataDog)
-    logger.info('Metric recorded', { metric })
-
     // Send to SigNoz (fire and forget)
     getSigNozMetrics().then(sendMetric => {
       if (sendMetric) {
