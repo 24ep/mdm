@@ -14,7 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { Paintbrush, Type, Layout, Image as ImageIcon, Component, Eye, X, Settings, ArrowUp, ArrowRight, ArrowDown, ArrowLeft, ArrowLeftRight, Minus, Maximize2, Minimize2, AlignLeft, AlignCenter, AlignRight, AlignJustify, CaseUpper, Underline, Italic, Bold, EyeOff, MousePointer, Focus, Grid3x3, Layers, Move, RotateCw, Filter as FilterIcon, Sparkles, Box, Zap, MoreVertical } from 'lucide-react'
 import { ColorInput } from '@/components/studio/layout-config/ColorInput'
-import { applyBrandingColors, applyGlobalStyling, applyComponentStyling } from '@/lib/branding'
+import { applyBrandingColors, applyGlobalStyling, applyComponentStyling, initializeBranding } from '@/lib/branding'
 
 interface ThemeConfigPanelProps {
     theme: Theme
@@ -796,7 +796,8 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                     </div>
                 </div>
                 <div className="flex-1 overflow-hidden">
-                    <Tabs defaultValue="general" className="h-full flex flex-col">
+                    <div className="h-full flex flex-col">
+                    <Tabs defaultValue="general">
                         <div className="px-6 py-2 border-b bg-muted/30">
                             <TabsList className="grid w-full grid-cols-6">
                                 <TabsTrigger value="general" className="text-xs"><Settings className="w-3 h-3 mr-2" />General</TabsTrigger>
@@ -967,7 +968,8 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                 <Separator />
                                 <div>
                                     <h3 className="text-sm font-semibold mb-4">Platform Sidebar Menu Items</h3>
-                                    <Tabs defaultValue="normal" className="w-full">
+                                    <div className="w-full">
+                                    <Tabs defaultValue="normal">
                                         <TabsList className="grid w-full grid-cols-3">
                                             <TabsTrigger value="normal">Normal</TabsTrigger>
                                             <TabsTrigger value="hover">Hover</TabsTrigger>
@@ -1013,6 +1015,7 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                             <AdvancedStyling basePath="componentStyling.platform-sidebar-menu-active" />
                                         </TabsContent>
                                     </Tabs>
+                                    </div>
                                 </div>
                                 <Separator />
                                 <div>
@@ -1530,7 +1533,8 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                 {/* Space Settings Menu */}
                                 <div>
                                     <h3 className="text-sm font-semibold mb-4">Space Settings Menu</h3>
-                                    <Tabs defaultValue="normal" className="w-full">
+                                    <div className="w-full">
+                                    <Tabs defaultValue="normal">
                                         <TabsList className="grid w-full grid-cols-3">
                                             <TabsTrigger value="normal">Normal</TabsTrigger>
                                             <TabsTrigger value="hover">Hover</TabsTrigger>
@@ -1571,10 +1575,12 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                             <AdvancedStyling basePath="componentStyling.space-settings-menu-active" />
                                         </TabsContent>
                                     </Tabs>
+                                    </div>
                                 </div>
                             </TabsContent>
                         </ScrollArea>
                     </Tabs>
+                    </div>
                 </div>
             </div>
 

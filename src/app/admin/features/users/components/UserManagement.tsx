@@ -854,7 +854,8 @@ export function UserManagement() {
             </DialogDescription>
           </DialogHeader>
           
-          <Tabs value={editDialogTab} onValueChange={setEditDialogTab} className="w-full">
+          <div className="w-full">
+          <Tabs value={editDialogTab} onValueChange={setEditDialogTab}>
             <TabsList className="w-full flex justify-start gap-2">
               <TabsTrigger value="basic" className="flex items-center gap-2">
                 <UserIcon className="h-4 w-4" />
@@ -997,6 +998,7 @@ export function UserManagement() {
               )}
             </TabsContent>
           </Tabs>
+          </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditDialog(false)}>

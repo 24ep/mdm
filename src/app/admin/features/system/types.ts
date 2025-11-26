@@ -172,8 +172,8 @@ export interface BrandingConfig {
     inputBorderWidth: string
     selectBorderRadius: string
     selectBorderWidth: string
-    textareaBorderRadius: string
-    textareaBorderWidth: string
+    textareaBorderRadius?: string
+    textareaBorderWidth?: string
     transitionDuration?: string // e.g., "200ms"
     transitionTiming?: string // e.g., "cubic-bezier(0.4, 0, 0.2, 1)"
     shadowSm?: string

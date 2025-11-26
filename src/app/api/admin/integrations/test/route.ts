@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Test connection based on integration type
-    let testResult = { success: false, error: 'Unknown integration type' }
+    let testResult: { success: boolean; error: string; data?: any } = { success: false, error: 'Unknown integration type' }
 
     try {
       switch (type.toLowerCase()) {

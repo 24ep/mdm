@@ -17,9 +17,9 @@ const intakeFormSchema = z.object({
     required: z.boolean().optional().default(false),
     options: z.array(z.string()).optional(),
     placeholder: z.string().optional(),
-    validation: z.record(z.any()).optional(),
+    validation: z.record(z.string(), z.any()).optional(),
   })),
-  workflow: z.record(z.any()).optional().nullable(),
+  workflow: z.record(z.string(), z.any()).optional().nullable(),
   isActive: z.boolean().optional().default(true),
 })
 

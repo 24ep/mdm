@@ -14,7 +14,7 @@ const updateModuleSchema = z.object({
   targetDate: z.string().datetime().optional().nullable(),
   leadId: z.string().uuid().optional().nullable(),
   position: z.number().int().optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 })
 
 // Get a specific module

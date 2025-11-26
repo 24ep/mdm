@@ -149,21 +149,15 @@ export function ThemeBranding() {
   useEffect(() => {
     if (isInitialLoad.current) return
 
-    const isDark = isDarkMode ||
-      document.documentElement.classList.contains('dark') ||
-      window.matchMedia('(prefers-color-scheme: dark)').matches
-    applyBrandingColors(branding, isDark)
-  }, [branding.lightMode, branding.darkMode, isDarkMode])
+    applyBrandingColors(branding)
+  }, [branding.primaryColor, branding.secondaryColor, branding.bodyBackgroundColor, isDarkMode])
 
   // Apply component styling when it changes
   useEffect(() => {
     if (isInitialLoad.current) return
 
     if (branding && branding.componentStyling && Object.keys(branding.componentStyling).length > 0) {
-      const isDark = isDarkMode ||
-        document.documentElement.classList.contains('dark') ||
-        window.matchMedia('(prefers-color-scheme: dark)').matches
-      applyComponentStyling(branding, isDark)
+      applyComponentStyling(branding)
     }
   }, [branding, branding.componentStyling, isDarkMode])
 
@@ -171,12 +165,9 @@ export function ThemeBranding() {
   useEffect(() => {
     if (isInitialLoad.current) return
 
-    const isDark = isDarkMode ||
-      document.documentElement.classList.contains('dark') ||
-      window.matchMedia('(prefers-color-scheme: dark)').matches
-    applyBrandingColors(branding, isDark)
+    applyBrandingColors(branding)
     applyGlobalStyling(branding)
-    applyComponentStyling(branding, isDark)
+    applyComponentStyling(branding)
 
     if (branding.drawerOverlay) {
       const root = document.documentElement
@@ -196,36 +187,17 @@ export function ThemeBranding() {
           const loadedBranding: BrandingConfig = {
             ...defaultBrandingConfig,
             ...data.branding,
-            lightMode: { ...defaultBrandingConfig.lightMode, ...data.branding.lightMode },
-            darkMode: { ...defaultBrandingConfig.darkMode, ...data.branding.darkMode },
             loginBackground: { ...defaultBrandingConfig.loginBackground, ...data.branding.loginBackground },
             globalStyling: { ...defaultBrandingConfig.globalStyling, ...data.branding.globalStyling },
             drawerOverlay: { ...defaultBrandingConfig.drawerOverlay, ...data.branding.drawerOverlay },
-            componentStyling: { ...defaultBrandingConfig.componentStyling },
-          }
-
-          if (data.branding.componentStyling) {
-            Object.keys(data.branding.componentStyling).forEach(key => {
-              if (loadedBranding.componentStyling[key]) {
-                loadedBranding.componentStyling[key] = {
-                  light: { ...loadedBranding.componentStyling[key].light, ...data.branding.componentStyling[key].light },
-                  dark: { ...loadedBranding.componentStyling[key].dark, ...data.branding.componentStyling[key].dark },
-                }
-              } else {
-                loadedBranding.componentStyling[key] = data.branding.componentStyling[key]
-              }
-            })
+            componentStyling: { ...defaultBrandingConfig.componentStyling, ...data.branding.componentStyling },
           }
 
           setBranding(loadedBranding)
 
-          const isDark = isDarkMode ||
-            document.documentElement.classList.contains('dark') ||
-            window.matchMedia('(prefers-color-scheme: dark)').matches
-
-          applyBrandingColors(loadedBranding, isDark)
+          applyBrandingColors(loadedBranding)
           applyGlobalStyling(loadedBranding)
-          applyComponentStyling(loadedBranding, isDark)
+          applyComponentStyling(loadedBranding)
         }
       }
     } catch (error) {
@@ -257,12 +229,9 @@ export function ThemeBranding() {
         setBranding(importedConfig)
         toast.success('Configuration imported successfully. Click Save to persist.')
 
-        const isDark = isDarkMode ||
-          document.documentElement.classList.contains('dark') ||
-          window.matchMedia('(prefers-color-scheme: dark)').matches
-        applyBrandingColors(importedConfig, isDark)
+        applyBrandingColors(importedConfig)
         applyGlobalStyling(importedConfig)
-        applyComponentStyling(importedConfig, isDark)
+        applyComponentStyling(importedConfig)
       } catch (error) {
         console.error('Error parsing imported config:', error)
         toast.error('Failed to import configuration. Invalid JSON.')
@@ -300,11 +269,9 @@ export function ThemeBranding() {
   }
 
   const handleApplyBrandingColors = () => {
-    const isDark = document.documentElement.classList.contains('dark') ||
-      window.matchMedia('(prefers-color-scheme: dark)').matches
-    applyBrandingColors(branding, isDark)
+    applyBrandingColors(branding)
     applyGlobalStyling(branding)
-    applyComponentStyling(branding, isDark)
+    applyComponentStyling(branding)
     toast.success('Branding applied successfully')
   }
 

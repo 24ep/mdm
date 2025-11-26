@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { ThemeListItem, Theme } from '../types-theme';
+import { initializeBranding } from '@/lib/branding';
 
 export function useThemes() {
     const [themes, setThemes] = useState<ThemeListItem[]>([]);
