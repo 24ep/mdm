@@ -60,8 +60,93 @@ const IS_BUILD_TIME = (() => {
 let redisClient: any = null
 let redisAvailable = false
 
-// In-memory fallback store
-const memoryStore = new Map<string, { value: any; expiresAt?: number }>()
+// In-memory fallback store with size limits and cleanup
+interface MemoryEntry {
+  value: any
+  expiresAt?: number
+  lastAccessed: number
+}
+
+const memoryStore = new Map<string, MemoryEntry>()
+
+// Configuration for in-memory store
+const MEMORY_STORE_CONFIG = {
+  maxSize: 10000, // Maximum number of entries
+  cleanupInterval: 60000, // Clean up expired entries every 60 seconds
+  maxAge: 3600000, // Maximum age for entries without TTL (1 hour)
+}
+
+// Track last cleanup time
+let lastCleanup = Date.now()
+let cleanupTimer: NodeJS.Timeout | null = null
+
+/**
+ * Clean up expired entries and enforce size limits
+ */
+function cleanupMemoryStore(): void {
+  if (IS_BUILD_TIME) return
+  
+  const now = Date.now()
+  let cleaned = 0
+  let removed = 0
+
+  // Remove expired entries
+  for (const [key, entry] of memoryStore.entries()) {
+    if (entry.expiresAt && now > entry.expiresAt) {
+      memoryStore.delete(key)
+      cleaned++
+    } else if (!entry.expiresAt && (now - entry.lastAccessed) > MEMORY_STORE_CONFIG.maxAge) {
+      // Remove entries without TTL that are older than maxAge
+      memoryStore.delete(key)
+      cleaned++
+    }
+  }
+
+  // If still over limit, remove least recently accessed entries (LRU eviction)
+  if (memoryStore.size > MEMORY_STORE_CONFIG.maxSize) {
+    const entries = Array.from(memoryStore.entries())
+      .sort((a, b) => a[1].lastAccessed - b[1].lastAccessed)
+    
+    const toRemove = memoryStore.size - MEMORY_STORE_CONFIG.maxSize
+    for (let i = 0; i < toRemove; i++) {
+      memoryStore.delete(entries[i][0])
+      removed++
+    }
+  }
+
+  if (cleaned > 0 || removed > 0) {
+    console.log(`[MemoryStore] Cleaned ${cleaned} expired entries, evicted ${removed} LRU entries. Current size: ${memoryStore.size}`)
+  }
+
+  lastCleanup = now
+}
+
+/**
+ * Start periodic cleanup if not already running
+ */
+function startCleanupTimer(): void {
+  if (IS_BUILD_TIME || cleanupTimer) return
+  
+  cleanupTimer = setInterval(() => {
+    cleanupMemoryStore()
+  }, MEMORY_STORE_CONFIG.cleanupInterval)
+  
+  // Clean up on process exit
+  if (typeof process !== 'undefined') {
+    process.on('exit', () => {
+      if (cleanupTimer) {
+        clearInterval(cleanupTimer)
+      }
+    })
+  }
+}
+
+// Start cleanup timer when module loads (if not in build mode)
+if (!IS_BUILD_TIME && typeof process !== 'undefined') {
+  startCleanupTimer()
+  // Initial cleanup after a short delay
+  setTimeout(cleanupMemoryStore, 5000)
+}
 
 // Helper function to check if we're in build time at execution time (for use in callbacks)
 // Uses inverted logic: only return false (not build) if we have CLEAR runtime indicators
@@ -268,11 +353,16 @@ export async function get(key: string): Promise<string | null> {
   const entry = memoryStore.get(key)
   if (!entry) return null
 
+  const now = Date.now()
+  
   // Check expiration
-  if (entry.expiresAt && Date.now() > entry.expiresAt) {
+  if (entry.expiresAt && now > entry.expiresAt) {
     memoryStore.delete(key)
     return null
   }
+
+  // Update last accessed time
+  entry.lastAccessed = now
 
   return typeof entry.value === 'string' ? entry.value : JSON.stringify(entry.value)
 }
@@ -298,8 +388,28 @@ export async function set(key: string, value: string, ttlSeconds?: number): Prom
     }
   }
 
-  const expiresAt = ttlSeconds ? Date.now() + (ttlSeconds * 1000) : undefined
-  memoryStore.set(key, { value, expiresAt })
+  const now = Date.now()
+  const expiresAt = ttlSeconds ? now + (ttlSeconds * 1000) : undefined
+  
+  // Check if we need to evict entries before adding
+  if (memoryStore.size >= MEMORY_STORE_CONFIG.maxSize && !memoryStore.has(key)) {
+    // Evict least recently used entry
+    let oldestKey: string | null = null
+    let oldestTime = Infinity
+    
+    for (const [k, entry] of memoryStore.entries()) {
+      if (entry.lastAccessed < oldestTime) {
+        oldestTime = entry.lastAccessed
+        oldestKey = k
+      }
+    }
+    
+    if (oldestKey) {
+      memoryStore.delete(oldestKey)
+    }
+  }
+  
+  memoryStore.set(key, { value, expiresAt, lastAccessed: now })
 }
 
 /**
@@ -385,10 +495,30 @@ export async function incr(key: string): Promise<number> {
     }
   }
 
+  const now = Date.now()
   const entry = memoryStore.get(key)
   const current = entry ? (typeof entry.value === 'number' ? entry.value : parseInt(entry.value) || 0) : 0
   const newValue = current + 1
-  memoryStore.set(key, { value: newValue })
+  
+  // Check if we need to evict entries before adding
+  if (memoryStore.size >= MEMORY_STORE_CONFIG.maxSize && !memoryStore.has(key)) {
+    // Evict least recently used entry
+    let oldestKey: string | null = null
+    let oldestTime = Infinity
+    
+    for (const [k, entry] of memoryStore.entries()) {
+      if (entry.lastAccessed < oldestTime) {
+        oldestTime = entry.lastAccessed
+        oldestKey = k
+      }
+    }
+    
+    if (oldestKey) {
+      memoryStore.delete(oldestKey)
+    }
+  }
+  
+  memoryStore.set(key, { value: newValue, lastAccessed: now })
   return newValue
 }
 
