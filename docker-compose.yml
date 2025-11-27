@@ -6,7 +6,7 @@ services:
     image: mdm-app:latest
     build: .
     ports:
-      - "8301:3000"
+      - "8301:8301"
     environment:
       - NODE_ENV=production
       - DATABASE_URL=${DATABASE_URL:-postgres://postgres:postgres@postgres-db:5432/postgres}
@@ -50,7 +50,7 @@ services:
       - NODE_ENV=production
       - PORT=3001
       - PLUGIN_HUB_DIR=./plugins
-      - MAIN_APP_URL=${MAIN_APP_URL:-http://app:3000}
+      - MAIN_APP_URL=${MAIN_APP_URL:-http://app:8301}
     volumes:
       # Mount plugins directory for persistence
       - ./plugin-hub/plugins:/app/plugins

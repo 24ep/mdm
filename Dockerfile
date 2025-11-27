@@ -97,9 +97,9 @@ RUN chmod +x /docker-entrypoint.sh
 
 USER nextjs
 
-EXPOSE 3000
+EXPOSE 8301
 
-ENV PORT=3000
+ENV PORT=8301
 # set hostname to localhost
 ENV HOSTNAME="0.0.0.0"
 
