@@ -23,6 +23,7 @@ import { PluginDefinition, PluginCategory } from '../types'
 import { showSuccess, showError } from '@/lib/toast-utils'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { AddPluginDialog } from './AddPluginDialog'
+import { useSpace } from '@/contexts/space-context'
 
 export function PluginHub() {
   const [plugins, setPlugins] = useState<PluginDefinition[]>([])
@@ -31,6 +32,7 @@ export function PluginHub() {
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [addPluginOpen, setAddPluginOpen] = useState(false)
+  const { currentSpace } = useSpace()
 
   const categories: Array<{ value: PluginCategory | 'all'; label: string }> = [
     { value: 'all', label: 'All Categories' },
@@ -55,7 +57,7 @@ export function PluginHub() {
       if (categoryFilter !== 'all') params.append('category', categoryFilter)
       if (statusFilter !== 'all') params.append('status', statusFilter)
 
-      const response = await fetch(`/api/plugin-hub/plugins?${params.toString()}`)
+      const response = await fetch(`/api/marketplace/plugins?${params.toString()}`)
       
       if (!response.ok) {
         throw new Error('Failed to fetch plugins')
@@ -89,10 +91,18 @@ export function PluginHub() {
 
   const handleInstall = async (plugin: PluginDefinition) => {
     try {
-      const response = await fetch(`/api/plugin-hub/plugins/${plugin.slug}/install`, {
+      if (!currentSpace?.id) {
+        showError('Please select a space to install the plugin')
+        return
+      }
+
+      const response = await fetch(`/api/marketplace/installations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
+        body: JSON.stringify({
+          serviceId: plugin.id,
+          spaceId: currentSpace.id,
+        }),
       })
 
       if (!response.ok) {

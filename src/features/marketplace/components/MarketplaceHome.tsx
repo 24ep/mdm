@@ -250,7 +250,7 @@ export function MarketplaceHome({
           <div className="flex gap-2">
             <Button
               variant="outline"
-              onClick={() => window.location.href = '/plugin-hub'}
+              onClick={() => window.location.href = '/marketplace?tab=hub'}
             >
               <Plus className="mr-2 h-4 w-4" />
               Manage Plugins
@@ -474,7 +474,7 @@ export function MarketplaceHome({
       )}
 
       {/* Add Plugin functionality moved to Plugin Hub */}
-      {/* Visit /plugin-hub to add new plugins */}
+      {/* Use the marketplace to add new plugins */}
     </div>
   )
 }

@@ -13,6 +13,7 @@ export { PluginCard } from './components/PluginCard'
 export { InstallationWizard } from './components/InstallationWizard'
 export { PluginRenderer } from './components/PluginRenderer'
 export { PluginReviews } from './components/PluginReviews'
+export { PluginHub } from './components/PluginHub'
 
 // Lib
 export { PluginRegistry } from './lib/plugin-registry'
