@@ -38,6 +38,7 @@ COPY public ./public
 COPY src ./src
 COPY prisma ./prisma
 COPY scripts ./scripts
+COPY sql ./sql
 
 # Accept build arguments for NEXT_PUBLIC_* variables
 # These must be set at build time to be embedded in the client bundle
@@ -85,10 +86,12 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copy scripts and node_modules for initialization
+# Copy scripts, prisma, and sql directories for initialization
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nextjs:nodejs /app/sql ./sql
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
-# Copy only production node_modules (pg, bcryptjs, etc.) needed for scripts
+# Copy only production node_modules (pg, bcryptjs, tsx, etc.) needed for scripts
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 # Copy and set up entrypoint script (before switching user)
@@ -102,6 +105,8 @@ EXPOSE 8301
 ENV PORT=8301
 # set hostname to localhost
 ENV HOSTNAME="0.0.0.0"
+# Increase Node.js memory limit to prevent heap out of memory errors
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 
 # Use entrypoint to handle initialization before starting the server
 ENTRYPOINT ["/docker-entrypoint.sh"]
