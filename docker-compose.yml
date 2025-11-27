@@ -22,6 +22,8 @@ services:
       - VAULT_TOKEN=${VAULT_ROOT_TOKEN:-dev-root-token}
       - VAULT_SECRET_MOUNT=${VAULT_SECRET_MOUNT:-secret}
       - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - PLUGIN_HUB_URL=${PLUGIN_HUB_URL:-http://plugin-hub:3001}
+      - USE_PLUGIN_HUB=${USE_PLUGIN_HUB:-false}
     # volumes:
       # - ./uploads:/app/uploads
     depends_on:
@@ -30,6 +32,37 @@ services:
       - minio
       - vault
       - redis
+      - plugin-hub
+    networks:
+      - mdm-network
+
+  # Plugin Hub Service
+  plugin-hub:
+    build:
+      context: ./plugin-hub
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8302}
+    container_name: mdm-plugin-hub
+    ports:
+      - "8308:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - PLUGIN_HUB_DIR=./plugins
+      - MAIN_APP_URL=${MAIN_APP_URL:-http://app:3000}
+    volumes:
+      # Mount plugins directory for persistence
+      - ./plugin-hub/plugins:/app/plugins
+    restart: unless-stopped
+    networks:
+      - mdm-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3001/api/plugins || curl -f http://localhost:3001/api/plugins || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   # PostgreSQL Database
   postgres-db:
@@ -47,6 +80,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - mdm-network
 
   # Database initialization is now handled by docker-entrypoint.sh in the app container
   # This runs automatically when the app starts for the first time
@@ -68,6 +103,8 @@ services:
       PGRST_DB_MAX_ROWS: 1000
     ports:
       - "8302:3000"
+    networks:
+      - mdm-network
 
   # MinIO (S3 compatible)
   minio:
@@ -81,6 +118,8 @@ services:
       - "8305:9001"
     volumes:
       - minio_data:/data
+    networks:
+      - mdm-network
 
   # HashiCorp Vault
   vault:
@@ -100,6 +139,8 @@ services:
     # For production, use:
     # command: vault server -config=/vault/config/vault.hcl
     # and mount a config file
+    networks:
+      - mdm-network
 
   # Redis (for rate limiting and caching in agent SDK)
   redis:
@@ -114,6 +155,8 @@ services:
       interval: 10s
       timeout: 3s
       retries: 3
+    networks:
+      - mdm-network
 
 volumes:
   postgres_db:
@@ -121,4 +164,8 @@ volumes:
   vault_data:
   vault_logs:
   redis_data:
+
+networks:
+  mdm-network:
+    driver: bridge
 
