@@ -1,5 +1,5 @@
-# Use the official Node.js 18 image
-FROM node:18-alpine AS base
+# Use the official Node.js 20 image (required for Next.js 16)
+FROM node:20-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -7,8 +7,10 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Copy package files for better caching
+# Copy package files and prisma schema (needed for postinstall script)
+# IMPORTANT: prisma directory must be copied before npm install to allow postinstall script to run
 COPY package.json package-lock.json* ./
+COPY prisma ./prisma
 # Remove Windows-specific packages from lock file and install
 # Use BuildKit cache mount for npm cache (faster subsequent builds)
 # Use --prefer-offline and --no-audit for faster installs
