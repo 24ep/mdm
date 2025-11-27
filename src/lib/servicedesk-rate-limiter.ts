@@ -1,5 +1,5 @@
 import { query } from './db'
-import { get, set, incr, expire, isRedisAvailable } from '../../lib/redis-client'
+import { get, set, incr, expire, isRedisAvailable } from './redis-client'
 
 // In-memory rate limit store (fallback when Redis is not available)
 const rateLimitStore = new Map<string, {

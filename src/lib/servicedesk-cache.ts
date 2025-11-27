@@ -1,4 +1,4 @@
-import { get, set, del, isRedisAvailable } from '../../lib/redis-client'
+import { get, set, del, isRedisAvailable } from './redis-client'
 
 const CACHE_TTL = 300 // 5 minutes
 const CACHE_PREFIX = 'servicedesk:'

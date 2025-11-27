@@ -1,6 +1,6 @@
 import crypto from 'crypto'
 import { PrismaClient } from '@prisma/client'
-import { get, set, del, delPattern, isRedisAvailable } from '../../lib/redis-client'
+import { get, set, del, delPattern, isRedisAvailable } from './redis-client'
 
 // Conditionally import redis-init only if not in build mode
 // This prevents Redis from initializing during build
@@ -15,7 +15,7 @@ if (typeof process !== 'undefined') {
   
   // Only import if development mode OR we have runtime indicators
   if (isDevelopment || hasRuntime) {
-    import('../../lib/redis-init').catch(() => {
+    import('./redis-init').catch(() => {
       // Silently fail - Redis is optional
     })
   }
