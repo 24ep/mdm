@@ -67,7 +67,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 
-RUN mkdir .next && chown nextjs:nodejs .next && chmod +x /docker-entrypoint.sh
+RUN mkdir -p .next && chown nextjs:nodejs .next && chmod +x /docker-entrypoint.sh
 
 USER nextjs
 EXPOSE 8301
