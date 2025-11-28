@@ -5,7 +5,7 @@ echo "=== Docker Entrypoint: Starting initialization ==="
 
 # Wait for database to be ready
 echo "Waiting for database to be ready..."
-MAX_WAIT=60
+MAX_WAIT=120
 WAITED=0
 until pg_isready -h postgres-db -U postgres -p 5432 > /dev/null 2>&1; do
   if [ $WAITED -ge $MAX_WAIT ]; then
@@ -18,6 +18,8 @@ until pg_isready -h postgres-db -U postgres -p 5432 > /dev/null 2>&1; do
 done
 if pg_isready -h postgres-db -U postgres -p 5432 > /dev/null 2>&1; then
   echo "✓ Database is ready"
+else
+  echo "⚠️  Warning: Database health check failed, but continuing..."
 fi
 
 # Run Prisma migrations
