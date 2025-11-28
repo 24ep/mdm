@@ -4,7 +4,18 @@ services:
   app:
     # Standalone Docker: build locally and tag image
     image: mdm-app:latest
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # Limit build resources to reduce system load
+      args:
+        BUILDKIT_INLINE_CACHE: 1
+    # Resource limits for build process (optional, uncomment if needed)
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '2'
+    #       memory: 4G
     ports:
       - "8301:8301"
     environment:

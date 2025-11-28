@@ -14,11 +14,14 @@ COPY prisma ./prisma
 # Remove Windows-specific packages from lock file and install
 # Use BuildKit cache mounts for npm cache and node_modules (faster subsequent builds)
 # Use --prefer-offline and --no-audit for faster installs
+# Limit npm install to use fewer resources (maxsockets=1, maxconcurrent=1)
 RUN --mount=type=cache,target=/root/.npm \
     --mount=type=cache,target=/app/node_modules/.cache \
     if [ -f package-lock.json ]; then \
       sed -i.bak '/@next\/swc-win32/d' package-lock.json 2>/dev/null || true; \
     fi && \
+    npm config set maxsockets 1 && \
+    npm config set maxconcurrent 1 && \
     (npm ci --prefer-offline --no-audit --legacy-peer-deps 2>/dev/null || \
      npm install --no-audit --legacy-peer-deps)
 
@@ -41,6 +44,8 @@ COPY public src prisma scripts sql ./
 ARG NEXT_PUBLIC_API_URL=http://localhost:8302
 ARG NEXT_PUBLIC_WS_PROXY_URL=ws://localhost:3002/api/openai-realtime
 ARG NEXT_PUBLIC_WS_PROXY_PORT=3002
+# Build memory limit (can be overridden: --build-arg BUILD_MEMORY_LIMIT=1024)
+ARG BUILD_MEMORY_LIMIT=2048
 
 # Set envs for build to avoid SSR failures during prerender
 # Note: PostgREST API URL (not Supabase)
@@ -53,9 +58,10 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 # Build the application with optimizations
 # Use BuildKit cache mounts for Next.js cache and node_modules (faster subsequent builds)
+# Limit build resources: reduce memory usage during build
 RUN --mount=type=cache,target=/app/.next/cache \
     --mount=type=cache,target=/app/node_modules/.cache \
-    npm run build
+    NODE_OPTIONS="--max-old-space-size=${BUILD_MEMORY_LIMIT}" npm run build
 
 # Production image, copy all the files and run next
 FROM base AS runner
@@ -100,8 +106,8 @@ EXPOSE 8301
 ENV PORT=8301
 # set hostname to localhost
 ENV HOSTNAME="0.0.0.0"
-# Increase Node.js memory limit to prevent heap out of memory errors
-ENV NODE_OPTIONS="--max-old-space-size=4096"
+# Increase Node.js memory limit to prevent heap out of memory errors (reduced from 4096 to 2048 for runtime)
+ENV NODE_OPTIONS="--max-old-space-size=2048"
 
 # Use entrypoint to handle initialization before starting the server
 ENTRYPOINT ["/docker-entrypoint.sh"]
