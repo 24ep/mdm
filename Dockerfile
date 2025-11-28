@@ -12,6 +12,9 @@ RUN --mount=type=cache,target=/root/.npm \
       sed -i.bak '/@next\/swc-win32/d' package-lock.json 2>/dev/null || true; \
     fi && \
     npm config set maxsockets 1 && \
+    npm config set fetch-retries 2 && \
+    npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retry-maxtimeout 120000 && \
     (npm ci --prefer-offline --no-audit --legacy-peer-deps 2>/dev/null || \
      npm install --no-audit --legacy-peer-deps)
 
@@ -30,7 +33,7 @@ COPY sql ./sql
 ARG NEXT_PUBLIC_API_URL=http://localhost:8302
 ARG NEXT_PUBLIC_WS_PROXY_URL=ws://localhost:3002/api/openai-realtime
 ARG NEXT_PUBLIC_WS_PROXY_PORT=3002
-ARG BUILD_MEMORY_LIMIT=2048
+ARG BUILD_MEMORY_LIMIT=1536
 
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NEXT_PUBLIC_WS_PROXY_URL=${NEXT_PUBLIC_WS_PROXY_URL}
@@ -38,10 +41,13 @@ ENV NEXT_PUBLIC_WS_PROXY_PORT=${NEXT_PUBLIC_WS_PROXY_PORT}
 ENV NODE_ENV=production
 ENV DOCKER_BUILD=true
 ENV NEXT_TELEMETRY_DISABLED=1
+# Reduce build resource usage
+ENV CI=true
 
 RUN --mount=type=cache,target=/app/.next/cache \
     --mount=type=cache,target=/app/node_modules/.cache \
-    NODE_OPTIONS="--max-old-space-size=${BUILD_MEMORY_LIMIT}" npm run build
+    NODE_OPTIONS="--max-old-space-size=${BUILD_MEMORY_LIMIT} --max-semi-space-size=128" \
+    npm run build
 
 # Production image
 FROM base AS runner
