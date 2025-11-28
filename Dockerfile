@@ -33,10 +33,15 @@ COPY --from=deps /app/node_modules ./node_modules
 
 # Copy only necessary files for build (better caching)
 # Copy config files first (they change less frequently)
-COPY package.json next.config.js tsconfig.json tailwind.config.ts postcss.config.js ./
+COPY package.json package-lock.json* ./
+COPY next.config.js tsconfig.json tailwind.config.ts postcss.config.js ./
 
-# Copy source code directories (combine to reduce layers)
-COPY public src prisma scripts sql ./
+# Copy source code directories (copy src separately to ensure proper structure)
+COPY public ./public
+COPY src ./src
+COPY prisma ./prisma
+COPY scripts ./scripts
+COPY sql ./sql
 
 # Accept build arguments for NEXT_PUBLIC_* variables
 # These must be set at build time to be embedded in the client bundle
