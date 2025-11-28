@@ -14,14 +14,13 @@ COPY prisma ./prisma
 # Remove Windows-specific packages from lock file and install
 # Use BuildKit cache mounts for npm cache and node_modules (faster subsequent builds)
 # Use --prefer-offline and --no-audit for faster installs
-# Limit npm install to use fewer resources (maxsockets=1, maxconcurrent=1)
+# Limit npm install to use fewer resources (maxsockets=1 to reduce concurrent connections)
 RUN --mount=type=cache,target=/root/.npm \
     --mount=type=cache,target=/app/node_modules/.cache \
     if [ -f package-lock.json ]; then \
       sed -i.bak '/@next\/swc-win32/d' package-lock.json 2>/dev/null || true; \
     fi && \
     npm config set maxsockets 1 && \
-    npm config set maxconcurrent 1 && \
     (npm ci --prefer-offline --no-audit --legacy-peer-deps 2>/dev/null || \
      npm install --no-audit --legacy-peer-deps)
 
