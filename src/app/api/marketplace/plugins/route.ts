@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, withErrorHandling, requireAuthWithId} from '@/lib/api-middleware'
 import { query } from '@/lib/db'
 import { logAPIRequest } from '@/shared/lib/security/audit-logger'
 import { checkPermission } from '@/shared/lib/security/permission-checker'
@@ -17,10 +16,11 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const session = await getServerSession(authOptions)
+    const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
@@ -234,16 +234,11 @@ export async function GET(request: NextRequest) {
     )
 
     return NextResponse.json({ plugins })
-  } catch (error) {
-    console.error('Error fetching plugins:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
 }
 
-export async function POST(request: NextRequest) {
+export const GET = withErrorHandling(getHandler, 'GET /api/marketplace/plugins')
+
+async function postHandler(request: NextRequest) {
   // Apply rate limiting
   const rateLimitResponse = await rateLimitMiddleware(request, {
     windowMs: 60000,
@@ -253,16 +248,9 @@ export async function POST(request: NextRequest) {
     return rateLimitResponse
   }
 
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Only admins can register plugins
-    if (session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+  const authResult = await requireAdmin()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const body = await request.json()
     const {
@@ -357,12 +345,7 @@ export async function POST(request: NextRequest) {
       { id: pluginId, message: 'Plugin registered successfully' },
       { status: 201 }
     )
-  } catch (error) {
-    console.error('Error registering plugin:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/marketplace/plugins')
 

@@ -1,14 +1,13 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { changeApproval } from '@/lib/db-change-approval'
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler(request: NextRequest) {
+    const authResult = await requireAuth()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
@@ -27,21 +26,25 @@ export async function GET(request: NextRequest) {
       success: true,
       changeRequests
     })
-  } catch (error: any) {
-    console.error('Error getting change requests:', error)
-    return NextResponse.json(
-      { error: 'Failed to get change requests', details: error.message },
+  ,
       { status: 500 }
     )
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+
+
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/db/change-requests')
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\db\change-requests\route.ts')
+async function postHandler(request: NextRequest) {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\db\change-requests\route.ts')
 
     const body = await request.json()
     const {
@@ -81,12 +84,11 @@ export async function POST(request: NextRequest) {
       success: true,
       changeRequestId
     })
-  } catch (error: any) {
-    console.error('Error creating change request:', error)
-    return NextResponse.json(
-      { error: 'Failed to create change request', details: error.message },
+  ,
       { status: 500 }
     )
   }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/db/change-requests')
 

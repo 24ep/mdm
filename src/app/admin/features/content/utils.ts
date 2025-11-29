@@ -4,38 +4,29 @@
  */
 
 import { Attachment, ChangeRequest, Ticket } from './types'
-import { formatFileSize } from '@/lib/formatters'
-
-// Re-export shared utilities
-export { formatFileSize }
+import { getApprovalStatusColor, getPriorityColor } from '@/lib/status-colors'
+import { filterBySearch, filterByValue, filterByStatus } from '@/lib/filter-utils'
 
 /**
  * Filter attachments by search query
+ * Uses shared filter utility
  */
 export function filterAttachmentsBySearch(
   attachments: Attachment[],
   query: string
 ): Attachment[] {
-  if (!query.trim()) return attachments
-  
-  const lowerQuery = query.toLowerCase()
-  return attachments.filter(attachment =>
-    attachment.name?.toLowerCase().includes(lowerQuery) ||
-    attachment.originalName?.toLowerCase().includes(lowerQuery) ||
-    attachment.description?.toLowerCase().includes(lowerQuery) ||
-    attachment.tags?.some(tag => tag.toLowerCase().includes(lowerQuery))
-  )
+  return filterBySearch(attachments, query, ['name', 'originalName', 'description', 'tags'])
 }
 
 /**
  * Filter attachments by MIME type
+ * Uses shared filter utility
  */
 export function filterAttachmentsByType(
   attachments: Attachment[],
   mimeType: string
 ): Attachment[] {
-  if (!mimeType || mimeType === 'all') return attachments
-  return attachments.filter(attachment => attachment.mimeType === mimeType)
+  return filterByValue(attachments, 'mimeType', mimeType === 'all' ? 'all' : mimeType as any)
 }
 
 /**
@@ -47,19 +38,10 @@ export function isAttachmentPublic(attachment: Attachment): boolean {
 
 /**
  * Get change request status color
+ * Uses shared status color utility
  */
 export function getChangeRequestStatusColor(status: ChangeRequest['status']): string {
-  switch (status) {
-    case 'approved':
-    case 'merged':
-      return 'bg-green-600'
-    case 'rejected':
-      return 'bg-red-600'
-    case 'pending':
-      return 'bg-yellow-600'
-    default:
-      return 'bg-gray-600'
-  }
+  return getApprovalStatusColor(status as 'approved' | 'rejected' | 'pending' | 'merged')
 }
 
 /**
@@ -71,51 +53,43 @@ export function isChangeRequestPending(changeRequest: ChangeRequest): boolean {
 
 /**
  * Filter change requests by status
+ * Uses shared filter utility
  */
 export function filterChangeRequestsByStatus(
   changeRequests: ChangeRequest[],
   status: ChangeRequest['status'] | 'all'
 ): ChangeRequest[] {
-  if (status === 'all') return changeRequests
-  return changeRequests.filter(cr => cr.status === status)
+  return filterByStatus(changeRequests, status as any)
 }
 
 /**
  * Get ticket priority color
+ * Uses shared status color utility
  */
 export function getTicketPriorityColor(priority: string): string {
-  switch (priority.toLowerCase()) {
-    case 'high':
-    case 'critical':
-      return 'bg-red-600'
-    case 'medium':
-      return 'bg-yellow-600'
-    case 'low':
-      return 'bg-blue-600'
-    default:
-      return 'bg-gray-600'
-  }
+  const normalizedPriority = priority.toLowerCase() as 'high' | 'medium' | 'low' | 'critical'
+  return getPriorityColor(normalizedPriority)
 }
 
 /**
  * Filter tickets by status
+ * Uses shared filter utility
  */
 export function filterTicketsByStatus(
   tickets: Ticket[],
   status: string
 ): Ticket[] {
-  if (!status || status === 'all') return tickets
-  return tickets.filter(ticket => ticket.status === status)
+  return filterByStatus(tickets, status === 'all' ? 'all' : status as any)
 }
 
 /**
  * Filter tickets by priority
+ * Uses shared filter utility
  */
 export function filterTicketsByPriority(
   tickets: Ticket[],
   priority: string
 ): Ticket[] {
-  if (!priority || priority === 'all') return tickets
-  return tickets.filter(ticket => ticket.priority === priority)
+  return filterByValue(tickets, 'priority', priority === 'all' ? 'all' : priority as any)
 }
 

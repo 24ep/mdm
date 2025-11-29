@@ -1,22 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, withErrorHandling } from '@/lib/api-middleware'
 import { query } from '@/lib/db'
 import { logAPIRequest } from '@/shared/lib/security/audit-logger'
 import { applyRateLimit } from '@/app/api/v1/middleware'
 import { parsePaginationParams, createPaginationResponse } from '@/shared/lib/api/pagination'
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   const rateLimitResponse = await applyRateLimit(request)
   if (rateLimitResponse) {
     return rateLimitResponse
   }
 
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { searchParams } = new URL(request.url)
     const searchQuery = searchParams.get('q')
@@ -189,12 +186,7 @@ export async function GET(request: NextRequest) {
       documents: response.data,
       ...response,
     })
-  } catch (error) {
-    console.error('Error searching:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
 }
+
+export const GET = withErrorHandling(getHandler, 'GET /api/knowledge/search')
 

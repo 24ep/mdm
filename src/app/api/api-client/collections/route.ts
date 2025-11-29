@@ -1,14 +1,12 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { searchParams } = new URL(request.url)
     const workspaceId = searchParams.get('workspaceId')
@@ -35,21 +33,14 @@ export async function GET(request: NextRequest) {
     })
 
     return NextResponse.json({ collections })
-  } catch (error) {
-    console.error('Error fetching collections:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch collections' },
-      { status: 500 }
-    )
-  }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+export const GET = withErrorHandling(getHandler, 'GET /api/api-client/collections')
+
+async function postHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const body = await request.json()
     const { workspaceId, name, description, parentId, order } = body
@@ -66,12 +57,7 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({ collection })
-  } catch (error) {
-    console.error('Error creating collection:', error)
-    return NextResponse.json(
-      { error: 'Failed to create collection' },
-      { status: 500 }
-    )
-  }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/api-client/collections')
 

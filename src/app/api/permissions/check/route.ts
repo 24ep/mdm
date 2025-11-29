@@ -1,15 +1,16 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { checkPermission, getUserRoleContext } from '@/lib/permission-checker'
 import { query } from '@/lib/db'
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler(request: NextRequest) {
+    const authResult = await requireAuth()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\permissions\check\route.ts')
 
     const { searchParams } = new URL(request.url)
     const permissionId = searchParams.get('permissionId')
@@ -64,9 +65,9 @@ export async function GET(request: NextRequest) {
       source: result.source,
       role: result.role
     })
-  } catch (error) {
-    console.error('Error checking permission:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  , { status: 500 })
   }
 }
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/permissions/check')
 

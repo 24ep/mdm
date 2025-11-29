@@ -1,11 +1,13 @@
 import { test, expect } from '@playwright/test'
+import { login } from './helpers/auth-helper'
+
+test.setTimeout(120000)
 
 test.describe('Reports Feature', () => {
+  const TEST_SPACE = process.env.TEST_SPACE || 'default'
+
   test.beforeEach(async ({ page }) => {
-    // Navigate to login page and authenticate
-    await page.goto('/login')
-    // TODO: Add actual login steps based on your auth flow
-    // For now, assuming user is already logged in or using test credentials
+    await login(page)
   })
 
   test('should display reports list', async ({ page }) => {

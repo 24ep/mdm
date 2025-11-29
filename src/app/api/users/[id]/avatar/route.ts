@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { query } from '@/lib/db'
 import { requireRole } from '@/lib/rbac'
 import { createAuditLog } from '@/lib/audit'
@@ -9,21 +8,17 @@ import { join } from 'path'
 import { existsSync } from 'fs'
 import { logger } from '@/lib/logger'
 import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
 // POST /api/users/[id]/avatar - upload user avatar
-export async function POST(
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -31,7 +26,7 @@ export async function POST(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -43,32 +38,32 @@ export async function POST(
     
     if (!isOwnProfile && !isManager) {
       logger.warn('Forbidden avatar upload attempt', { targetUserId: id, userId: session.user.id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const formData = await request.formData()
     const file = formData.get('avatar') as File
 
     if (!file) {
-      return addSecurityHeaders(NextResponse.json({ error: 'No file uploaded' }, { status: 400 }))
+      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 })
     }
 
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
     if (!allowedTypes.includes(file.type)) {
       logger.warn('Invalid file type for avatar upload', { fileType: file.type, userId: id })
-      return addSecurityHeaders(NextResponse.json({ 
+      return NextResponse.json({ 
         error: 'Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.' 
-      }, { status: 400 }))
+      }, { status: 400 })
     }
 
     // Validate file size (max 5MB)
     const maxSize = 5 * 1024 * 1024 // 5MB
     if (file.size > maxSize) {
       logger.warn('File too large for avatar upload', { fileSize: file.size, userId: id })
-      return addSecurityHeaders(NextResponse.json({ 
+      return NextResponse.json({ 
         error: 'File too large. Maximum size is 5MB.' 
-      }, { status: 400 }))
+      }, { status: 400 })
     }
 
     // Check if user exists
@@ -79,7 +74,7 @@ export async function POST(
 
     if (userResult.rows.length === 0) {
       logger.warn('User not found for avatar upload', { userId: id })
-      return addSecurityHeaders(NextResponse.json({ error: 'User not found' }, { status: 404 }))
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     const user = userResult.rows[0]
@@ -125,29 +120,24 @@ export async function POST(
       fileSize: file.size,
       fileType: file.type,
     })
-    return addSecurityHeaders(NextResponse.json({ 
+    return NextResponse.json({ 
       success: true, 
       avatar: avatarUrl,
       message: 'Avatar uploaded successfully' 
-    }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('POST', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'User Avatar API POST')
-  }
+    })
 }
 
+export const POST = withErrorHandling(postHandler, 'POST /api/users/[id]/avatar')
+
 // PUT /api/users/[id]/avatar - set avatar from URL (library selection)
-export async function PUT(
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -155,7 +145,7 @@ export async function PUT(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -167,7 +157,7 @@ export async function PUT(
     
     if (!isOwnProfile && !isManager) {
       logger.warn('Forbidden avatar update attempt', { targetUserId: id, userId: session.user.id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const bodySchema = z.object({
@@ -186,7 +176,7 @@ export async function PUT(
 
     const bodyValidation = await validateBody(request, bodySchema)
     if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
+      return bodyValidation.response
     }
 
     const { avatarUrl } = bodyValidation.data
@@ -199,7 +189,7 @@ export async function PUT(
 
     if (userResult.rows.length === 0) {
       logger.warn('User not found for avatar update', { userId: id })
-      return addSecurityHeaders(NextResponse.json({ error: 'User not found' }, { status: 404 }))
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     const user = userResult.rows[0]
@@ -225,29 +215,24 @@ export async function PUT(
 
     const duration = Date.now() - startTime
     logger.apiResponse('PUT', `/api/users/${id}/avatar`, 200, duration)
-    return addSecurityHeaders(NextResponse.json({ 
+    return NextResponse.json({ 
       success: true, 
       avatar: avatarUrl,
       message: 'Avatar set successfully' 
-    }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('PUT', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'User Avatar API PUT')
-  }
+    })
 }
 
+export const PUT = withErrorHandling(putHandler, 'PUT /api/users/[id]/avatar')
+
 // DELETE /api/users/[id]/avatar - remove user avatar
-export async function DELETE(
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -255,7 +240,7 @@ export async function DELETE(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -267,7 +252,7 @@ export async function DELETE(
     
     if (!isOwnProfile && !isManager) {
       logger.warn('Forbidden avatar deletion attempt', { targetUserId: id, userId: session.user.id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     // Check if user exists and get current avatar
@@ -278,7 +263,7 @@ export async function DELETE(
 
     if (userResult.rows.length === 0) {
       logger.warn('User not found for avatar deletion', { userId: id })
-      return addSecurityHeaders(NextResponse.json({ error: 'User not found' }, { status: 404 }))
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     const user = userResult.rows[0]
@@ -304,13 +289,10 @@ export async function DELETE(
 
     const duration = Date.now() - startTime
     logger.apiResponse('DELETE', `/api/users/${id}/avatar`, 200, duration)
-    return addSecurityHeaders(NextResponse.json({ 
+    return NextResponse.json({ 
       success: true, 
       message: 'Avatar removed successfully' 
-    }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('DELETE', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'User Avatar API DELETE')
-  }
+    })
 }
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/users/[id]/avatar')

@@ -2,11 +2,29 @@
 
 This report identifies potentially unnecessary files in the codebase that can be removed or archived.
 
+**Last Updated:** 2025-01-XX
+
+## 📊 Summary
+
+- **🔴 High Priority (Safe to Remove):** 6 files
+  - 2 build artifacts/logs
+  - 3 one-time migration scripts (review needed)
+  - 2 unused example/test files
+  
+- **🟡 Medium Priority (Review Needed):** 2 potential duplicate routes
+  
+- **🟢 Low Priority (Keep for Reference):** 3 migration scripts
+
 ## 🔴 High Priority - Safe to Remove
 
-### 1. Build Artifacts
+### 1. Build Artifacts & Logs
 - **`tsconfig.tsbuildinfo`** - TypeScript build cache file (should be in .gitignore)
   - This file is regenerated on each build and should not be committed
+  - **Status:** File exists and is NOT in .gitignore
+
+- **`build-output.txt`** - Build log file containing build output/errors
+  - Contains build errors and should not be committed to version control
+  - **Status:** File exists and is NOT in .gitignore (should be added)
 
 ### 2. One-Time Migration Scripts (Already Executed)
 These scripts were likely run once and are no longer needed:
@@ -49,12 +67,14 @@ These scripts might be useful for reference or future migrations:
 1. **Add to .gitignore:**
    ```
    *.tsbuildinfo
+   build-output.txt
    ```
 
 2. **Remove immediately:**
-   - `tsconfig.tsbuildinfo`
-   - `src/examples/orm-usage.ts`
-   - `src/components/test/attachment-test.tsx`
+   - `tsconfig.tsbuildinfo` (build cache - regenerated on build)
+   - `build-output.txt` (build log - contains errors from previous build)
+   - `src/examples/orm-usage.ts` (example file - not imported anywhere)
+   - `src/components/test/attachment-test.tsx` (test component - not imported anywhere)
 
 3. **Review and potentially remove:**
    - `src/app/data-science-dashboard/page.tsx` (if duplicate)

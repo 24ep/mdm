@@ -1,25 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { query } from '@/lib/db'
 import nodemailer from 'nodemailer'
 import { logger } from '@/lib/logger'
 import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { env } from '@/lib/env'
 import { z } from 'zod'
 
-export async function POST(
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -27,7 +23,7 @@ export async function POST(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id: spaceId } = paramValidation.data
@@ -40,12 +36,16 @@ export async function POST(
 
     const bodyValidation = await validateBody(request, bodySchema)
     if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
+      return bodyValidation.response
     }
 
     const { email, role = 'member' } = bodyValidation.data
 
-    // Check if current user has permission to invite members
+    // Check if current user has access to this space
+    const accessResult = await requireSpaceAccess(spaceId, session.user.id!)
+    if (!accessResult.success) return accessResult.response
+
+    // Check if current user has permission to invite members (must be owner or admin)
     const memberCheck = await query(`
       SELECT role FROM space_members 
       WHERE space_id = $1 AND user_id = $2
@@ -53,7 +53,7 @@ export async function POST(
 
     if (memberCheck.rows.length === 0 || !['owner', 'admin'].includes(memberCheck.rows[0].role)) {
       logger.warn('Insufficient permissions to invite member', { spaceId, userId: session.user.id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 }))
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
     // Get space details
@@ -63,7 +63,7 @@ export async function POST(
 
     if (spaceResult.rows.length === 0) {
       logger.warn('Space not found for invitation', { spaceId })
-      return addSecurityHeaders(NextResponse.json({ error: 'Space not found' }, { status: 404 }))
+      return NextResponse.json({ error: 'Space not found' }, { status: 404 })
     }
 
     const space = spaceResult.rows[0]
@@ -84,7 +84,7 @@ export async function POST(
 
       if (existingMember.rows.length > 0) {
         logger.warn('User is already a member of space', { spaceId, email })
-        return addSecurityHeaders(NextResponse.json({ error: 'User is already a member of this space' }, { status: 400 }))
+        return NextResponse.json({ error: 'User is already a member of this space' }, { status: 400 })
       }
 
       // Add user to space
@@ -99,11 +99,11 @@ export async function POST(
         email,
         role,
       })
-      return addSecurityHeaders(NextResponse.json({
+      return NextResponse.json({
         success: true,
         message: 'User added to space successfully',
         user: user
-      }))
+      })
     }
 
     // User doesn't exist, send invitation email
@@ -124,17 +124,14 @@ export async function POST(
       email,
       role,
     })
-    return addSecurityHeaders(NextResponse.json({
+    return NextResponse.json({
       success: true,
       message: 'Invitation sent successfully',
       email: email
-    }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('POST', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Space Invite API')
-  }
+    })
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/spaces/[id]/invite')
 
 function generateInvitationToken(): string {
   return Math.random().toString(36).substring(2) + Date.now().toString(36)

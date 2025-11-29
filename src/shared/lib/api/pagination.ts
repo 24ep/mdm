@@ -2,6 +2,8 @@
  * Pagination utilities for API routes
  */
 
+import { DEFAULT_PAGINATION } from '@/lib/constants/defaults'
+
 export interface PaginationParams {
   page: number
   limit: number
@@ -21,8 +23,11 @@ export interface PaginationResult<T> {
  */
 export function parsePaginationParams(request: { url: string }): PaginationParams {
   const url = new URL(request.url)
-  const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10))
-  const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '20', 10)))
+  const page = Math.max(1, parseInt(url.searchParams.get('page') || String(DEFAULT_PAGINATION.page), 10))
+  const limit = Math.min(
+    DEFAULT_PAGINATION.maxLimit,
+    Math.max(1, parseInt(url.searchParams.get('limit') || String(DEFAULT_PAGINATION.limit), 10))
+  )
   const offset = (page - 1) * limit
 
   return { page, limit, offset }

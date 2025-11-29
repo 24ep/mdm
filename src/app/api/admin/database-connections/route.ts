@@ -1,9 +1,9 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import { getSecretsManager } from '@/lib/secrets-manager'
 import { encryptApiKey } from '@/lib/encryption'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { createAuditContext } from '@/lib/audit-context-helper'
 
 const prisma = new PrismaClient()
@@ -57,12 +57,13 @@ export async function GET() {
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function postHandler(request: NextRequest) {
+    const authResult = await requireAdmin()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\database-connections\route.ts')
 
     // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
@@ -170,8 +171,8 @@ export async function POST(request: NextRequest) {
         dataModels: []
       }
     })
-  } catch (error) {
-    console.error('Error creating database connection:', error)
-    return NextResponse.json({ error: 'Failed to create connection' }, { status: 500 })
+  , { status: 500 })
   }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/admin/database-connections')

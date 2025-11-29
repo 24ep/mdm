@@ -1,23 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { query } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -25,7 +20,7 @@ export async function GET(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -49,29 +44,24 @@ export async function GET(
     const company = res.rows[0]
     if (!company) {
       logger.warn('Company not found', { companyId: id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Company not found' }, { status: 404 }))
+      return NextResponse.json({ error: 'Company not found' }, { status: 404 })
     }
 
     const duration = Date.now() - startTime
     logger.apiResponse('GET', `/api/companies/${id}`, 200, duration)
-    return addSecurityHeaders(NextResponse.json(company))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Company API GET')
-  }
+    return NextResponse.json(company)
 }
 
-export async function PUT(
+export const GET = withErrorHandling(getHandler, 'GET /api/companies/[id]')
+
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -79,7 +69,7 @@ export async function PUT(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -92,7 +82,7 @@ export async function PUT(
     }))
     
     if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
+      return bodyValidation.response
     }
     
     const { name, description, is_active } = bodyValidation.data
@@ -102,7 +92,7 @@ export async function PUT(
     const currentCompany = current.rows[0]
     if (!currentCompany) {
       logger.warn('Company not found for update', { companyId: id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Company not found' }, { status: 404 }))
+      return NextResponse.json({ error: 'Company not found' }, { status: 404 })
     }
 
     if (name && name !== currentCompany.name) {
@@ -112,10 +102,10 @@ export async function PUT(
       )
       if (existing.rows[0]) {
         logger.warn('Company with this name already exists', { name, companyId: id })
-        return addSecurityHeaders(NextResponse.json(
+        return NextResponse.json(
           { error: 'Company with this name already exists' },
           { status: 400 }
-        ))
+        )
       }
     }
 
@@ -133,24 +123,19 @@ export async function PUT(
 
     const duration = Date.now() - startTime
     logger.apiResponse('PUT', `/api/companies/${id}`, 200, duration)
-    return addSecurityHeaders(NextResponse.json(updatedCompany))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('PUT', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Company API PUT')
-  }
+    return NextResponse.json(updatedCompany)
 }
 
-export async function DELETE(
+export const PUT = withErrorHandling(putHandler, 'PUT /api/companies/[id]')
+
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -158,7 +143,7 @@ export async function DELETE(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -170,10 +155,10 @@ export async function DELETE(
     )
     if ((cnt.rows[0]?.total || 0) > 0) {
       logger.warn('Cannot delete company with associated customers', { companyId: id, customerCount: cnt.rows[0]?.total })
-      return addSecurityHeaders(NextResponse.json(
+      return NextResponse.json(
         { error: 'Cannot delete company with associated customers' },
         { status: 400 }
-      ))
+      )
     }
 
     await query(
@@ -188,10 +173,7 @@ export async function DELETE(
 
     const duration = Date.now() - startTime
     logger.apiResponse('DELETE', `/api/companies/${id}`, 200, duration)
-    return addSecurityHeaders(NextResponse.json({ message: 'Company deleted successfully' }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('DELETE', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Company API DELETE')
-  }
+    return NextResponse.json({ message: 'Company deleted successfully' })
 }
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/companies/[id]')

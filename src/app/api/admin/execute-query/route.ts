@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAdmin, withErrorHandling } from '@/lib/api-middleware'
 import { query } from '@/lib/db'
 import { sqlLinter } from '@/lib/sql-linter'
 import { auditLogger } from '@/lib/db-audit'
@@ -8,47 +7,32 @@ import { dataMasking } from '@/lib/data-masking'
 import { queryPerformanceTracker } from '@/lib/query-performance'
 import { logger } from '@/lib/logger'
 import { validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { env } from '@/lib/env'
 import { z } from 'zod'
 
-export async function POST(request: NextRequest) {
+async function postHandler(request: NextRequest) {
   const startTime = Date.now()
-  let userId: string | null = null
-  let userName: string | null = null
-  let userEmail: string | null = null
-  let userRole: string | null = null
+  const authResult = await requireAdmin()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const userId = session.user.id!
+  const userName = session.user.name || null
+  const userEmail = session.user.email || null
+  const userRole = session.user.role || null
 
-    userId = session.user.id
-    userName = session.user.name || null
-    userEmail = session.user.email || null
-    userRole = session.user.role || null
+  logger.apiRequest('POST', '/api/admin/execute-query', { userId, userRole })
 
-    logger.apiRequest('POST', '/api/admin/execute-query', { userId, userRole })
+  const bodySchema = z.object({
+    query: z.string().min(1),
+    spaceId: z.string().uuid().optional().nullable(),
+    skipMasking: z.boolean().optional().default(false),
+  })
 
-    // Check if user has admin privileges
-    if (!['ADMIN', 'SUPER_ADMIN'].includes(userRole || '')) {
-      logger.warn('Insufficient permissions for query execution', { userId, userRole })
-      return addSecurityHeaders(NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 }))
-    }
-
-    const bodySchema = z.object({
-      query: z.string().min(1),
-      spaceId: z.string().uuid().optional().nullable(),
-      skipMasking: z.boolean().optional().default(false),
-    })
-
-    const bodyValidation = await validateBody(request, bodySchema)
-    if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
-    }
+  const bodyValidation = await validateBody(request, bodySchema)
+  if (!bodyValidation.success) {
+    return bodyValidation.response
+  }
 
     const { query: sqlQuery, spaceId, skipMasking } = bodyValidation.data
 
@@ -81,8 +65,7 @@ export async function POST(request: NextRequest) {
         columns: [],
         executionTime: Date.now() - startTime,
         status: 'error'
-      }, { status: 400 })
-    }
+      }}
 
     // Get IP address and user agent
     const ipAddress = request.headers.get('x-forwarded-for') || 
@@ -153,7 +136,7 @@ export async function POST(request: NextRequest) {
         rowCount: result.rows.length,
         executionTime: executionTime,
       })
-      return addSecurityHeaders(NextResponse.json({
+      return NextResponse.json({
         success: true,
         results: maskedResults,
         columns,
@@ -164,7 +147,7 @@ export async function POST(request: NextRequest) {
           summary: lintResult.summary,
           issues: lintResult.issues
         } : null
-      }))
+      })
     } catch (dbError: any) {
       const executionTime = Date.now() - startTime
       
@@ -186,7 +169,7 @@ export async function POST(request: NextRequest) {
 
       const duration = Date.now() - startTime
       logger.apiResponse('POST', '/api/admin/execute-query', 500, duration)
-      return addSecurityHeaders(NextResponse.json({
+      return NextResponse.json({
         success: false,
         results: [],
         columns: [],
@@ -197,26 +180,7 @@ export async function POST(request: NextRequest) {
           score: lintResult.score,
           summary: lintResult.summary
         } : null
-      }))
-    }
-  } catch (error: any) {
-    const executionTime = Date.now() - startTime
-    
-    // Audit logging for system error
-    if (userId) {
-      await auditLogger.log({
-        userId,
-          userName: userName || undefined,
-          userEmail: userEmail || undefined,
-        action: 'EXECUTE_QUERY',
-        resourceType: 'query',
-        success: false,
-        errorMessage: error.message || 'Unknown error',
-        executionTime
-      })
-    }
-
-    logger.apiResponse('POST', '/api/admin/execute-query', 500, executionTime)
-    return handleApiError(error, 'Admin Execute Query API')
-  }
+      }}
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/admin/execute-query')

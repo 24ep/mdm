@@ -33,7 +33,7 @@ import {
   ExternalLink,
   Eye,
 } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
+import { showError, showSuccess, showInfo } from '@/lib/toast-utils'
 import { format } from 'date-fns'
 
 interface IntakeSubmission {
@@ -90,7 +90,6 @@ const statusConfig = {
 }
 
 export function IntakeSubmissionList({ formId, onClose }: IntakeSubmissionListProps) {
-  const { toast } = useToast()
   const [submissions, setSubmissions] = useState<IntakeSubmission[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedSubmission, setSelectedSubmission] = useState<IntakeSubmission | null>(null)
@@ -115,11 +114,7 @@ export function IntakeSubmissionList({ formId, onClose }: IntakeSubmissionListPr
       }
     } catch (error) {
       console.error('Error loading submissions:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to load submissions',
-        variant: 'destructive',
-      })
+      showError('Failed to load submissions')
     } finally {
       setLoading(false)
     }
@@ -134,25 +129,14 @@ export function IntakeSubmissionList({ formId, onClose }: IntakeSubmissionListPr
       })
 
       if (response.ok) {
-        toast({
-          title: 'Success',
-          description: 'Submission status updated',
-        })
+        showSuccess('Submission status updated')
         loadSubmissions()
       } else {
         const result = await response.json()
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to update status',
-          variant: 'destructive',
-        })
+        showError(result.error || 'Failed to update status')
       }
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'An unexpected error occurred',
-        variant: 'destructive',
-      })
+      showError(error.message || 'An unexpected error occurred')
     }
   }
 
@@ -174,26 +158,15 @@ export function IntakeSubmissionList({ formId, onClose }: IntakeSubmissionListPr
 
       const result = await response.json()
       if (response.ok) {
-        toast({
-          title: 'Success',
-          description: 'Submission converted to ticket successfully',
-        })
+        showSuccess('Submission converted to ticket successfully')
         setIsConvertDialogOpen(false)
         setSelectedSubmission(null)
         loadSubmissions()
       } else {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to convert submission',
-          variant: 'destructive',
-        })
+        showError(result.error || 'Failed to convert submission')
       }
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'An unexpected error occurred',
-        variant: 'destructive',
-      })
+      showError(error.message || 'An unexpected error occurred')
     } finally {
       setConverting(false)
     }

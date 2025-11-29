@@ -1,6 +1,6 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { logAPIRequest } from '@/shared/lib/security/audit-logger'
 import { applyRateLimit } from '@/app/api/v1/middleware'
@@ -8,17 +8,15 @@ import { parsePaginationParams, createPaginationResponse } from '@/shared/lib/ap
 import { parseSortParams, buildOrderByClause } from '@/shared/lib/api/sorting'
 import { buildSearchClause } from '@/shared/lib/api/filtering'
 
-export async function GET(request: NextRequest) {
-  const rateLimitResponse = await applyRateLimit(request)
+async function getHandler(request: NextRequest) {
+    const rateLimitResponse = await applyRateLimit(request)
   if (rateLimitResponse) {
     return rateLimitResponse
   }
 
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
     const { searchParams } = new URL(request.url)
     const collectionId = searchParams.get('collectionId')
@@ -169,31 +167,25 @@ export async function GET(request: NextRequest) {
       200
     )
 
-    const response = createPaginationResponse(documents, total, page, limit)
-    return NextResponse.json({
-      documents: response.data,
-      ...response,
-    })
-  } catch (error) {
-    console.error('Error fetching documents:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
+  const response = createPaginationResponse(documents, total, page, limit)
+  return NextResponse.json({
+    documents: response.data,
+    ...response,
+  })
 }
 
-export async function POST(request: NextRequest) {
-  const rateLimitResponse = await applyRateLimit(request)
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/knowledge/documents')
+async function postHandler(request: NextRequest) {
+    const rateLimitResponse = await applyRateLimit(request)
   if (rateLimitResponse) {
     return rateLimitResponse
   }
 
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
     const body = await request.json()
     const { collectionId, title, content, contentHtml, parentId, isTemplate, isPublic, isPinned, order } = body
@@ -310,14 +302,9 @@ export async function POST(request: NextRequest) {
         createdBy: document.created_by,
         createdAt: document.created_at,
         updatedAt: document.updated_at,
-      },
-    }, { status: 201 })
-  } catch (error) {
-    console.error('Error creating document:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
+    },
+  }, { status: 201 })
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/knowledge/documents')
 

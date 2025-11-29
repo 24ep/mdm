@@ -1,15 +1,15 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function postHandler(request: NextRequest) {
+    const authResult = await requireAdmin()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\users\import\route.ts')
 
     // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
@@ -138,12 +138,11 @@ export async function POST(request: NextRequest) {
         failed: results.failed.length
       }
     })
-  } catch (error) {
-    console.error('Error importing users:', error)
-    return NextResponse.json(
-      { error: 'Failed to import users' },
+  ,
       { status: 500 }
     )
   }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/admin/users/import')
 

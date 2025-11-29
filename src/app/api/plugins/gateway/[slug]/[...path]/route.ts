@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, withErrorHandling } from '@/lib/api-middleware'
 import { query } from '@/lib/db'
 import { pluginGateway } from '@/features/marketplace/lib/plugin-gateway'
 
 /**
  * Plugin API Gateway - Routes requests to plugin APIs
  */
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string; path: string[] }> }
 ) {
@@ -15,7 +14,7 @@ export async function GET(
   return handleGatewayRequest(request, resolvedParams, 'GET')
 }
 
-export async function POST(
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string; path: string[] }> }
 ) {
@@ -23,7 +22,7 @@ export async function POST(
   return handleGatewayRequest(request, resolvedParams, 'POST')
 }
 
-export async function PUT(
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string; path: string[] }> }
 ) {
@@ -31,7 +30,7 @@ export async function PUT(
   return handleGatewayRequest(request, resolvedParams, 'PUT')
 }
 
-export async function DELETE(
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string; path: string[] }> }
 ) {
@@ -39,16 +38,19 @@ export async function DELETE(
   return handleGatewayRequest(request, resolvedParams, 'DELETE')
 }
 
+export const GET = withErrorHandling(getHandler, 'GET /api/plugins/gateway/[slug]/[...path]')
+export const POST = withErrorHandling(postHandler, 'POST /api/plugins/gateway/[slug]/[...path]')
+export const PUT = withErrorHandling(putHandler, 'PUT /api/plugins/gateway/[slug]/[...path]')
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/plugins/gateway/[slug]/[...path]')
+
 async function handleGatewayRequest(
   request: NextRequest,
   params: { slug: string; path: string[] },
   method: string
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { slug, path } = params
     const installationId = request.nextUrl.searchParams.get('installationId')
@@ -67,8 +69,7 @@ async function handleGatewayRequest(
     )
 
     if (pluginResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Plugin not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Plugin not found' }}
 
     const row = pluginResult.rows[0]
     const plugin = {
@@ -120,12 +121,5 @@ async function handleGatewayRequest(
       status: response.status,
       headers: responseHeaders,
     })
-  } catch (error) {
-    console.error('Error in plugin gateway:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
 }
 

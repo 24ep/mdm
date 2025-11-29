@@ -1,46 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/database'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { logger } from '@/lib/logger'
 import { validateQuery, commonSchemas } from '@/lib/api-validation'
 import { handleApiError } from '@/lib/api-middleware'
 import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    const userId = session?.user?.id || request.headers.get('x-user-id')
-    
-    if (!userId) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
+  const userId = session.user.id!
 
-    // Validate query parameters
-    const queryValidation = validateQuery(request, z.object({
-      spaceId: commonSchemas.id,
-      period: z.enum(['7d', '30d', '90d', '1y']).optional().default('30d'),
-    }))
-    
-    if (!queryValidation.success) {
-      return addSecurityHeaders(queryValidation.response)
-    }
-    
-    const { spaceId, period = '30d' } = queryValidation.data
-    logger.apiRequest('GET', '/api/files/analytics', { userId, spaceId, period })
+  // Validate query parameters
+  const queryValidation = validateQuery(request, z.object({
+    spaceId: commonSchemas.id,
+    period: z.enum(['7d', '30d', '90d', '1y']).optional().default('30d'),
+  }))
+  
+  if (!queryValidation.success) {
+    return queryValidation.response
+  }
+  
+  const { spaceId, period = '30d' } = queryValidation.data
+  logger.apiRequest('GET', '/api/files/analytics', { userId, spaceId, period })
 
-    // Check if user has access to this space
-    const memberResult = await query(
-      'SELECT role FROM space_members WHERE space_id = $1 AND user_id = $2',
-      [spaceId, userId]
-    )
-
-    if (memberResult.rows.length === 0) {
-      logger.warn('Space not found or access denied for file analytics', { spaceId, userId })
-      return addSecurityHeaders(NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 }))
-    }
+  // Check if user has access to this space
+  const accessResult = await requireSpaceAccess(spaceId, userId)
+  if (!accessResult.success) return accessResult.response
 
     // Calculate date range based on period
     const now = new Date()
@@ -212,7 +200,7 @@ export async function GET(request: NextRequest) {
 
     const duration = Date.now() - startTime
     logger.apiResponse('GET', '/api/files/analytics', 200, duration, { period })
-    return addSecurityHeaders(NextResponse.json({
+    return NextResponse.json({
       period,
       dateRange: {
         from: startDate,
@@ -249,10 +237,7 @@ export async function GET(request: NextRequest) {
         totalSize: parseInt(row.total_size)
       })),
       quota: quotaUsage
-    }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', '/api/files/analytics', 500, duration)
-    return handleApiError(error, 'File Analytics API GET')
-  }
+    })
 }
+
+export const GET = withErrorHandling(getHandler, 'GET /api/files/analytics')

@@ -1,13 +1,13 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+async function postHandler(request: NextRequest) {
+    try {
+    const authResult = await requireAuth()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\export\csv\route.ts')
 
     const { dataModelId, filters, columns, elementId, datasourceId } = await request.json()
 
@@ -94,7 +94,9 @@ export async function POST(request: NextRequest) {
     })
 
     return response
-  } catch (error: any) {
+}
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/export/csv') catch (error: any) {
     console.error('Error exporting to CSV:', error)
     return NextResponse.json(
       { error: error.message || 'Failed to export data to CSV' },

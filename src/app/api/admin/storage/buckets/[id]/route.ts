@@ -1,22 +1,25 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 
-// DELETE - Delete a bucket (space)
-export async function DELETE(
+// = body - Delete a bucket (space)
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } 
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\admin\storage\buckets\[id]\route.ts')= authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const POST = withErrorHandling(deleteHandler, '
 
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Insufficient permissions' }}
 
     const { id: bucketId } = await params
 
@@ -26,8 +29,7 @@ export async function DELETE(
     })
 
     if (!space) {
-      return NextResponse.json({ error: 'Bucket not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Bucket not found' }}
 
     // Delete all attachment storage files first (cascade should handle this, but being explicit)
     await db.spaceAttachmentStorage.deleteMany({
@@ -40,11 +42,4 @@ export async function DELETE(
     })
 
     return NextResponse.json({ message: 'Bucket deleted successfully' })
-  } catch (error: any) {
-    console.error('Error deleting bucket:', error)
-    return NextResponse.json({ 
-      error: error.message || 'Internal server error' 
-    }, { status: 500 })
-  }
-}
 

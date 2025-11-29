@@ -1,6 +1,6 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 
 async function getPrometheusConfig(instanceId: string) {
@@ -34,15 +34,13 @@ async function getPrometheusConfig(instanceId: string) {
   return { apiUrl }
 }
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ instanceId: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { instanceId } = await params
     const config = await getPrometheusConfig(instanceId)
@@ -59,14 +57,7 @@ export async function GET(
     const alerts = data.data?.alerts || []
 
     return NextResponse.json({ alerts })
-  } catch (error) {
-    console.error('Error listing alerts:', error)
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Failed to list alerts',
-      },
-      { status: 500 }
-    )
-  }
 }
+
+export const GET = withErrorHandling(getHandler, 'GET /api/prometheus/[instanceId]/alerts')
 

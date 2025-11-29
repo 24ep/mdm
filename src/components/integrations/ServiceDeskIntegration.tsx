@@ -30,7 +30,7 @@ import {
   Webhook,
   Trash2
 } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
+import { showError, showSuccess } from '@/lib/toast-utils'
 
 interface ServiceDeskConfig {
   id?: string
@@ -47,7 +47,6 @@ interface ServiceDeskIntegrationProps {
 }
 
 export function ServiceDeskIntegration({ spaceId }: ServiceDeskIntegrationProps) {
-  const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [testing, setTesting] = useState(false)
   const [config, setConfig] = useState<ServiceDeskConfig | null>(null)

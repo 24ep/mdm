@@ -1,15 +1,18 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { createAuditLog } from '@/lib/audit'
 
-export async function PUT(
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } 
+
+export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\data-models\attributes\[id]\route.ts')= authResult
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id } = await params
@@ -18,7 +21,7 @@ export async function PUT(
 
     const fields: string[] = []
     const values: any[] = []
-    const push = (col: string, val: any) => { values.push(val); fields.push(`${col} = $${values.length}`) }
+    const push = (col: string, val: any) => { values.push(val); fields.push(`${col} = ${values.length}`) }
     if (name !== undefined) push('name', name)
     if (display_name !== undefined) push('display_name', display_name)
     if (type !== undefined) push('type', type)
@@ -37,7 +40,7 @@ export async function PUT(
 
     values.push(id)
     const { rows } = await query(
-      `UPDATE public.data_model_attributes SET ${fields.join(', ')} WHERE id = $${values.length} RETURNING *`,
+      `UPDATE public.data_model_attributes SET ${fields.join(', ')} WHERE id = ${values.length} RETURNING *`,
       values
     )
 
@@ -54,27 +57,25 @@ export async function PUT(
     })
 
     return NextResponse.json({ attribute: rows[0] })
-  } catch (error) {
-    console.error('Error updating attribute:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
 
-export async function DELETE(
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id } = await params
     await query('UPDATE public.data_model_attributes SET is_active = FALSE, deleted_at = NOW() WHERE id = $1::uuid', [id])
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Error deleting attribute:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\data-models\attributes\[id]\route.ts') catch (error) {
+    console.error('Error deleting attribute:', error)
+    return NextResponse.json({ error: 'Internal server error' }}
 }
 
 

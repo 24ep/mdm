@@ -1,6 +1,6 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 
 async function getKongConfig(instanceId: string) {
@@ -35,15 +35,13 @@ async function getKongConfig(instanceId: string) {
   return { adminUrl, apiKey }
 }
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ instanceId: string; id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { instanceId, id } = await params
     const config = await getKongConfig(instanceId)
@@ -71,26 +69,19 @@ export async function GET(
     const route = await response.json()
 
     return NextResponse.json({ route })
-  } catch (error) {
-    console.error('Error getting route:', error)
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Failed to get route',
-      },
-      { status: 500 }
-    )
-  }
 }
 
-export async function PUT(
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/kong/[instanceId]/routes/[id]')
+
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ instanceId: string; id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { instanceId, id } = await params
     const body = await request.json()
@@ -121,26 +112,19 @@ export async function PUT(
       success: true,
       route,
     })
-  } catch (error) {
-    console.error('Error updating route:', error)
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Failed to update route',
-      },
-      { status: 500 }
-    )
-  }
 }
 
-export async function DELETE(
+
+
+export const PUT = withErrorHandling(putHandler, 'PUT /api/kong/[instanceId]/routes/[id]')
+
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ instanceId: string; id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { instanceId, id } = await params
     const config = await getKongConfig(instanceId)
@@ -169,14 +153,7 @@ export async function DELETE(
       success: true,
       message: 'Route deleted successfully',
     })
-  } catch (error) {
-    console.error('Error deleting route:', error)
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Failed to delete route',
-      },
-      { status: 500 }
-    )
-  }
 }
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/kong/[instanceId]/routes/[id]')
 

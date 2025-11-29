@@ -1,14 +1,13 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler(request: NextRequest) {
+    const authResult = await requireAuth()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
 
     const { searchParams } = new URL(request.url)
     const spaceId = searchParams.get('spaceId')
@@ -40,18 +39,23 @@ export async function GET(request: NextRequest) {
     })
 
     return NextResponse.json({ notebooks })
-  } catch (error) {
-    console.error('Error fetching notebooks:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  , { status: 500 })
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+
+
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/admin/notebooks')
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\notebooks\route.ts')
+async function postHandler(request: NextRequest) {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\notebooks\route.ts')
 
     const body = await request.json()
     const { name, description, spaceId, tags = [], isPublic = false } = body
@@ -98,8 +102,8 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({ notebook }, { status: 201 })
-  } catch (error) {
-    console.error('Error creating notebook:', error)
-    return NextResponse.json({ error: 'Failed to create notebook' }, { status: 500 })
+  , { status: 500 })
   }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/admin/notebooks')

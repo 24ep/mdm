@@ -1,15 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { query } from '@/lib/db';
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
+import { NextRequest, NextResponse } from 'next/server'
+import { query } from '@/lib/db'
 
 // GET /api/notifications/stats - Get notification statistics for the current user
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+async function getHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     // Get total count
     const totalQuery = `
@@ -59,18 +57,12 @@ export async function GET(request: NextRequest) {
       return acc;
     }, {} as Record<string, number>);
 
-    return NextResponse.json({
-      total,
-      unread,
-      by_type: byType,
-      by_priority: byPriority,
-    });
-
-  } catch (error) {
-    console.error('Error fetching notification stats:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch notification stats' },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json({
+    total,
+    unread,
+    by_type: byType,
+    by_priority: byPriority,
+  })
 }
+
+export const GET = withErrorHandling(getHandler, 'GET /api/notifications/stats')

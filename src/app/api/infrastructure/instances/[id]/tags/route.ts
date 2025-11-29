@@ -1,18 +1,16 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { logAPIRequest } from '@/shared/lib/security/audit-logger'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { id } = await params
 
@@ -51,9 +49,7 @@ export async function GET(
     )
 
     return NextResponse.json({ tags })
-  } catch (error) {
-    console.error('Error fetching tags:', error)
-    return NextResponse.json({ tags: [] })
-  }
 }
+
+export const GET = withErrorHandling(getHandler, 'GET /api/infrastructure/instances/[id]/tags')
 

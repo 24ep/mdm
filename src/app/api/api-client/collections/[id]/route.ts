@@ -1,17 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { prisma } from '@/lib/prisma'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { id } = await params
     const collection = await prisma.apiCollection.findUnique({
@@ -27,24 +24,17 @@ export async function GET(
     }
 
     return NextResponse.json({ collection })
-  } catch (error) {
-    console.error('Error fetching collection:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch collection' },
-      { status: 500 }
-    )
-  }
 }
 
-export async function PUT(
+export const GET = withErrorHandling(getHandler, 'GET /api/api-client/collections/[id]')
+
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { id } = await params
     const body = await request.json()
@@ -61,24 +51,17 @@ export async function PUT(
     })
 
     return NextResponse.json({ collection })
-  } catch (error) {
-    console.error('Error updating collection:', error)
-    return NextResponse.json(
-      { error: 'Failed to update collection' },
-      { status: 500 }
-    )
-  }
 }
 
-export async function DELETE(
+export const PUT = withErrorHandling(putHandler, 'PUT /api/api-client/collections/[id]')
+
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { id } = await params
     await prisma.apiCollection.delete({
@@ -86,12 +69,7 @@ export async function DELETE(
     })
 
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Error deleting collection:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete collection' },
-      { status: 500 }
-    )
-  }
 }
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/api-client/collections/[id]')
 

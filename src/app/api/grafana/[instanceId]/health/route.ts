@@ -1,6 +1,6 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 
 async function getGrafanaConfig(instanceId: string) {
@@ -35,15 +35,13 @@ async function getGrafanaConfig(instanceId: string) {
   return { baseUrl, apiKey }
 }
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ instanceId: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { instanceId } = await params
     const config = await getGrafanaConfig(instanceId)
@@ -81,15 +79,7 @@ export async function GET(
       version: data.version,
       baseUrl: config.baseUrl,
     })
-  } catch (error) {
-    console.error('Grafana connection test failed:', error)
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Connection failed',
-      },
-      { status: 500 }
-    )
-  }
 }
+
+export const GET = withErrorHandling(getHandler, 'GET /api/grafana/[instanceId]/health')
 

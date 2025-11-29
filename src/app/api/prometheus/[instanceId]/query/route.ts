@@ -1,6 +1,6 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 
 async function getPrometheusConfig(instanceId: string) {
@@ -34,15 +34,13 @@ async function getPrometheusConfig(instanceId: string) {
   return { apiUrl }
 }
 
-export async function POST(
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ instanceId: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { instanceId } = await params
     const body = await request.json()
@@ -80,14 +78,7 @@ export async function POST(
       success: true,
       data: data.data,
     })
-  } catch (error) {
-    console.error('Error executing query:', error)
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Failed to execute query',
-      },
-      { status: 500 }
-    )
-  }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/prometheus/[instanceId]/query')
 

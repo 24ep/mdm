@@ -1,14 +1,14 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
+async function getHandler(request: NextRequest) {
+    const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     const { searchParams } = new URL(request.url)
     const assetTypeCode = searchParams.get('assetTypeCode')
@@ -74,21 +74,33 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(assets)
-  } catch (error) {
-    console.error('Error fetching assets:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch assets' },
+  ,
       { status: 500 }
     )
-  }
+}
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
+
+
+
+
+
+
+
+
+
+
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/admin/assets')
+async function postHandler(request: NextRequest) {
+    const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\assets\route.ts')
 
     const body = await request.json()
     const {
@@ -150,18 +162,22 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json(asset)
-  } catch (error: any) {
-    console.error('Error creating asset:', error)
-    if (error.code === 'P2002') {
-      return NextResponse.json(
-        { error: 'Asset code already exists for this type' },
+  ,
         { status: 409 }
       )
-    }
+}
     return NextResponse.json(
       { error: 'Failed to create asset' },
       { status: 500 }
     )
   }
 }
+
+
+
+
+
+
+
+
 

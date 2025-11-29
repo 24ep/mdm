@@ -16,7 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card } from '@/components/ui/card'
 import { Plus, Clock, Trash2, Loader } from 'lucide-react'
 import { format } from 'date-fns'
-import { useToast } from '@/hooks/use-toast'
+import { showError, showSuccess } from '@/lib/toast-utils'
 
 interface TimeLog {
   id: string
@@ -63,7 +63,6 @@ export function TimesheetView({
   onTicketClick,
   loading = false 
 }: TimesheetViewProps) {
-  const { toast } = useToast()
   const [expandedTickets, setExpandedTickets] = useState<Set<string>>(new Set())
   const [newTimeLog, setNewTimeLog] = useState<{
     ticketId: string
@@ -100,11 +99,7 @@ export function TimesheetView({
 
     const hours = parseFloat(newTimeLog.hours)
     if (isNaN(hours) || hours <= 0) {
-      toast({
-        title: 'Invalid hours',
-        description: 'Please enter a valid number of hours greater than 0',
-        variant: 'destructive',
-      })
+      showError('Please enter a valid number of hours greater than 0')
       return
     }
 
@@ -117,17 +112,10 @@ export function TimesheetView({
         new Date(newTimeLog.loggedAt)
       )
       setNewTimeLog(null)
-      toast({
-        title: 'Time log added',
-        description: 'Time has been successfully logged',
-      })
+      showSuccess('Time has been successfully logged')
     } catch (error) {
       console.error('Error saving time log:', error)
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to save time log',
-        variant: 'destructive',
-      })
+      showError(error instanceof Error ? error.message : 'Failed to save time log')
     } finally {
       setSavingTimeLog(false)
     }
@@ -143,17 +131,10 @@ export function TimesheetView({
     try {
       setDeletingTimeLogId(timeLogId)
       await onDeleteTimeLog(ticketId, timeLogId)
-      toast({
-        title: 'Time log deleted',
-        description: 'Time log has been successfully deleted',
-      })
+      showSuccess('Time log has been successfully deleted')
     } catch (error) {
       console.error('Error deleting time log:', error)
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to delete time log',
-        variant: 'destructive',
-      })
+      showError(error instanceof Error ? error.message : 'Failed to delete time log')
     } finally {
       setDeletingTimeLogId(null)
     }

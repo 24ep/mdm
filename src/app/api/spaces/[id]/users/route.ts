@@ -1,23 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { query } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { validateParams, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -25,23 +21,15 @@ export async function GET(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id: spaceId } = paramValidation.data
     logger.apiRequest('GET', `/api/spaces/${spaceId}/users`, { userId: session.user.id })
 
     // Check if user has access to this space
-    const spaceAccess = await query(`
-      SELECT sm.role
-      FROM space_members sm
-      WHERE sm.space_id = $1 AND sm.user_id = $2
-    `, [spaceId, session.user.id])
-
-    if (spaceAccess.rows.length === 0) {
-      logger.warn('Access denied to space users', { spaceId, userId: session.user.id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Access denied' }, { status: 403 }))
-    }
+    const accessResult = await requireSpaceAccess(spaceId, session.user.id!)
+    if (!accessResult.success) return accessResult.response
 
     // Get all users in this space
     const { rows } = await query(`
@@ -62,13 +50,10 @@ export async function GET(
     logger.apiResponse('GET', `/api/spaces/${spaceId}/users`, 200, duration, {
       userCount: rows.length
     })
-    return addSecurityHeaders(NextResponse.json({ 
+    return NextResponse.json({ 
       users: rows,
       count: rows.length 
-    }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Space Users API')
-  }
+    })
 }
+
+export const GET = withErrorHandling(getHandler, 'GET /api/spaces/[id]/users')

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
+import { safeParseTheme, safeParseBrandingConfig, UpdateThemeInputSchema } from '@/lib/theme-types'
 
 const prisma = new PrismaClient()
 
@@ -37,6 +38,13 @@ export async function GET(
             )
         }
 
+        // Validate theme before returning
+        const validation = safeParseTheme(theme)
+        if (!validation.success) {
+            console.warn(`[GET /api/themes/${id}] Invalid theme data:`, validation.error)
+            // Still return the theme but log the validation error
+        }
+
         return NextResponse.json({ theme })
     } catch (error) {
         console.error('Error fetching theme:', error)
@@ -64,7 +72,18 @@ export async function PUT(
         }
         
         const body = await request.json()
-        const { name, description, config } = body
+        
+        // Validate input
+        const inputValidation = UpdateThemeInputSchema.safeParse(body)
+        if (!inputValidation.success) {
+            return NextResponse.json(
+                { 
+                    error: 'Invalid theme input',
+                    details: inputValidation.error.errors
+                },
+                { status: 400 }
+            )
+        }
 
         // Check if theme exists
         const existingTheme = await prisma.theme.findUnique({
@@ -80,10 +99,23 @@ export async function PUT(
 
         // Prepare update data
         const updateData: any = {}
-        if (name !== undefined) updateData.name = name
-        if (description !== undefined) updateData.description = description
-        if (body.tags !== undefined) updateData.tags = body.tags // Use tags directly from request
-        if (config !== undefined) updateData.config = config
+        if (inputValidation.data.name !== undefined) updateData.name = inputValidation.data.name
+        if (inputValidation.data.description !== undefined) updateData.description = inputValidation.data.description
+        if (inputValidation.data.tags !== undefined) updateData.tags = inputValidation.data.tags
+        if (inputValidation.data.config !== undefined) {
+            // Validate config before updating
+            const configValidation = safeParseBrandingConfig(inputValidation.data.config)
+            if (!configValidation.success) {
+                return NextResponse.json(
+                    { 
+                        error: 'Invalid theme configuration',
+                        details: configValidation.error.errors
+                    },
+                    { status: 400 }
+                )
+            }
+            updateData.config = configValidation.data
+        }
 
         const theme = await prisma.theme.update({
             where: { id },

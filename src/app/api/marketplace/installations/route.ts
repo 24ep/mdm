@@ -1,17 +1,15 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { logAPIRequest } from '@/shared/lib/security/audit-logger'
 import { storeCredentials } from '@/shared/lib/security/credential-manager'
 import { checkPermission } from '@/shared/lib/security/permission-checker'
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler(request: NextRequest) {
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { searchParams } = new URL(request.url)
     const spaceId = searchParams.get('spaceId')
@@ -100,21 +98,14 @@ export async function GET(request: NextRequest) {
     )
 
     return NextResponse.json({ installations })
-  } catch (error) {
-    console.error('Error fetching installations:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+export const GET = withErrorHandling(getHandler, 'GET /api/marketplace/installations')
+
+async function postHandler(request: NextRequest) {
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const body = await request.json()
     const { serviceId, spaceId, config, credentials } = body
@@ -207,12 +198,7 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     )
-  } catch (error) {
-    console.error('Error installing plugin:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/marketplace/installations')
 

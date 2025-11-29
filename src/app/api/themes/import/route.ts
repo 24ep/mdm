@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import yaml from 'js-yaml'
+import { safeParseBrandingConfig, ImportThemeInputSchema } from '@/lib/theme-types'
 
 const prisma = new PrismaClient()
 
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Validate structure
+        // Validate structure using Zod
         if (!parsedData.config) {
             return NextResponse.json(
                 { error: 'Invalid theme file. Missing "config" property.' },
@@ -51,15 +52,16 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Validate required config properties (flattened structure)
-        const requiredProps = ['primaryColor', 'secondaryColor', 'bodyBackgroundColor', 'loginBackground', 'globalStyling']
-        for (const prop of requiredProps) {
-            if (!parsedData.config[prop]) {
-                return NextResponse.json(
-                    { error: `Invalid theme file. Missing "config.${prop}" property.` },
-                    { status: 400 }
-                )
-            }
+        // Validate config with Zod schema
+        const configValidation = safeParseBrandingConfig(parsedData.config)
+        if (!configValidation.success) {
+            return NextResponse.json(
+                { 
+                    error: 'Invalid theme configuration',
+                    details: configValidation.error.errors
+                },
+                { status: 400 }
+            )
         }
 
         // Extract theme name (use from file or generate)
@@ -75,13 +77,13 @@ export async function POST(request: NextRequest) {
             themeName = `${themeName} (${timestamp})`
         }
 
-        // Create the theme
+        // Create the theme with validated config
         const theme = await prisma.theme.create({
             data: {
                 name: themeName,
                 description: parsedData.theme?.description || parsedData.description || 'Imported theme',
                 themeMode: parsedData.themeMode || parsedData.theme?.themeMode || 'light', // Default to 'light' if not specified
-                config: parsedData.config,
+                config: configValidation.data, // Use validated config
                 isActive: false,
                 isDefault: false
             }

@@ -1,29 +1,31 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { AttachmentStorageService } from '@/lib/attachment-storage'
 
-export async function PUT(
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } 
+
+export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\admin\storage\files\[id]\rename\route.ts')= authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const POST = withErrorHandling(putHandler, '
 
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Insufficient permissions' }}
 
     const { id: fileId } = await params
     const { newName } = await request.json()
 
     if (!newName || !newName.trim()) {
-      return NextResponse.json({ error: 'New name is required' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'New name is required' }}
 
     // Get the file to get its current path and spaceId
     const existingFile = await db.spaceAttachmentStorage.findUnique({
@@ -32,8 +34,7 @@ export async function PUT(
     })
 
     if (!existingFile) {
-      return NextResponse.json({ error: 'File not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'File not found' }}
 
     // Get active storage connection
     const storageConnection = await db.storageConnection.findFirst({
@@ -44,8 +45,7 @@ export async function PUT(
     })
 
     if (!storageConnection) {
-      return NextResponse.json({ error: 'No active storage connection found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'No active storage connection found' }}
 
     // Create storage service instance
     const storageService = new AttachmentStorageService({
@@ -65,8 +65,7 @@ export async function PUT(
     if (!renameResult.success) {
       return NextResponse.json({ 
         error: renameResult.error || 'Failed to rename file in storage' 
-      }, { status: 500 })
-    }
+      }}
 
     // Update file path and name in database
     const pathParts = existingFile.filePath?.split('/') || []
@@ -89,11 +88,4 @@ export async function PUT(
         createdAt: updatedFile.createdAt
       }
     })
-  } catch (error: any) {
-    console.error('Error renaming file:', error)
-    return NextResponse.json({ 
-      error: error.message || 'Internal server error' 
-    }, { status: 500 })
-  }
-}
 

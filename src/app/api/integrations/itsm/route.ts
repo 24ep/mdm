@@ -1,37 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { query } from '@/lib/db'
 import { getSecretsManager } from '@/lib/secrets-manager'
 import { encryptApiKey, decryptApiKey } from '@/lib/encryption'
 import { ITSMService } from '@/lib/itsm-service'
 
 // Get ITSM configuration
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    const { searchParams } = new URL(request.url)
-    const spaceId = searchParams.get('space_id')
+  const { searchParams } = new URL(request.url)
+  const spaceId = searchParams.get('space_id')
 
-    if (!spaceId) {
-      return NextResponse.json(
-        { error: 'space_id is required' },
-        { status: 400 }
-      )
-    }
-
-    // Check access
-    const { rows: access } = await query(
-      'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',
-      [spaceId, session.user.id]
+  if (!spaceId) {
+    return NextResponse.json(
+      { error: 'space_id is required' },
+      { status: 400 }
     )
-    if (access.length === 0) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+  }
+
+  // Check access
+  const accessResult = await requireSpaceAccess(spaceId, session.user.id!)
+  if (!accessResult.success) return accessResult.response
 
     // Get ITSM configuration
     const { rows: configRows } = await query(
@@ -71,53 +64,41 @@ export async function GET(request: NextRequest) {
       },
       isConfigured: true
     })
-  } catch (error: any) {
-    console.error('Error fetching ITSM config:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to fetch ITSM configuration' },
-      { status: 500 }
-    )
-  }
 }
 
+export const GET = withErrorHandling(getHandler, 'GET /api/integrations/itsm')
+
 // Configure ITSM integration
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function postHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    const body = await request.json()
-    const { 
-      space_id, 
-      baseUrl, 
-      provider, 
-      apiKey, 
-      username, 
-      password, 
-      authType, 
-      instanceName,
-      customEndpoints,
-      fieldMappings,
-      name 
-    } = body
+  const body = await request.json()
+  const { 
+    space_id, 
+    baseUrl, 
+    provider, 
+    apiKey, 
+    username, 
+    password, 
+    authType, 
+    instanceName,
+    customEndpoints,
+    fieldMappings,
+    name 
+  } = body
 
-    if (!space_id || !baseUrl || !provider) {
-      return NextResponse.json(
-        { error: 'space_id, baseUrl, and provider are required' },
-        { status: 400 }
-      )
-    }
-
-    // Check access
-    const { rows: access } = await query(
-      'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',
-      [space_id, session.user.id]
+  if (!space_id || !baseUrl || !provider) {
+    return NextResponse.json(
+      { error: 'space_id, baseUrl, and provider are required' },
+      { status: 400 }
     )
-    if (access.length === 0) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+  }
+
+  // Check access
+  const accessResult = await requireSpaceAccess(space_id, session.user.id!)
+  if (!accessResult.success) return accessResult.response
 
     // Validate auth based on provider
     if (provider === 'servicenow' && (!username || !password)) {
@@ -252,22 +233,15 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'ITSM integration configured successfully'
     })
-  } catch (error: any) {
-    console.error('Error configuring ITSM:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to configure ITSM integration' },
-      { status: 500 }
-    )
-  }
 }
 
+export const POST = withErrorHandling(postHandler, 'POST /api/integrations/itsm')
+
 // Test connection
-export async function PUT(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function putHandler(request: NextRequest) {
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const body = await request.json()
     const { baseUrl, provider, apiKey, username, password, authType, instanceName, customEndpoints, fieldMappings } = body
@@ -295,12 +269,7 @@ export async function PUT(request: NextRequest) {
     const result = await service.testConnection()
 
     return NextResponse.json(result)
-  } catch (error: any) {
-    console.error('Error testing ITSM connection:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to test connection' },
-      { status: 500 }
-    )
-  }
 }
+
+export const PUT = withErrorHandling(putHandler, 'PUT /api/integrations/itsm')
 

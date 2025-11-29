@@ -1,23 +1,24 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { AttachmentStorageService } from '@/lib/attachment-storage'
 
-// POST - Test a storage connection
-export async function POST(
+// = body - Test a storage connection
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const POST = withErrorHandling(postHandler, '
 
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Insufficient permissions' }}
 
     const { id } = await params
     const connection = await prisma.storageConnection.findUnique({
@@ -25,8 +26,7 @@ export async function POST(
     })
 
     if (!connection) {
-      return NextResponse.json({ error: 'Storage connection not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Storage connection not found' }}
 
     if (!connection.isActive) {
       return NextResponse.json({ 
@@ -88,28 +88,4 @@ export async function POST(
       })
 
       return NextResponse.json(testResult)
-    } catch (error: any) {
-      const errorMessage = error.message || 'Connection test failed'
-      
-      await prisma.storageConnection.update({
-        where: { id },
-        data: {
-          status: 'error',
-          lastTested: new Date(),
-          lastError: errorMessage
-        }
-      })
-
-      return NextResponse.json({ 
-        success: false, 
-        error: errorMessage 
-      })
-    }
-  } catch (error: any) {
-    console.error('Error testing storage connection:', error)
-    return NextResponse.json({ 
-      error: error.message || 'Internal server error' 
-    }, { status: 500 })
-  }
-}
 

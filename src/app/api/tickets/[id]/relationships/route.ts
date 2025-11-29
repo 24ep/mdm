@@ -1,19 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
+import { requireProjectSpaceAccess } from '@/lib/space-access'
 import { db } from '@/lib/db'
 import { z } from 'zod'
 
 // Get all relationships for a ticket (dependencies, project links, etc.)
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
 
     const resolvedParams = await params
     const ticketId = resolvedParams.id
@@ -144,29 +141,22 @@ export async function GET(
       release: ticket.release
     }
 
-    return NextResponse.json({
-      success: true,
-      relationships
-    })
-  } catch (error: any) {
-    console.error('Error fetching relationships:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to fetch relationships' },
-      { status: 500 }
-    )
-  }
+  return NextResponse.json({
+    success: true,
+    relationships
+  })
 }
 
+export const GET = withErrorHandling(getHandler, 'GET /api/tickets/[id]/relationships')
+
 // Create a relationship
-export async function POST(
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const ticketId = resolvedParams.id
@@ -192,13 +182,20 @@ export async function POST(
 
     const { relatedTicketId, projectId, milestoneId, releaseId, parentId, type, metadata } = validation.data
 
-    // Get ticket
+    // Get ticket to check access
     const ticket = await db.ticket.findUnique({
-      where: { id: ticketId }
+      where: { id: ticketId },
+      select: { id: true, projectId: true }
     })
 
     if (!ticket) {
       return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
+    }
+
+    // Check access if ticket has a project
+    if (ticket.projectId) {
+      const accessResult = await requireProjectSpaceAccess(ticket.projectId, session.user.id!)
+      if (!accessResult.success) return accessResult.response
     }
 
     // Handle different relationship types
@@ -264,28 +261,37 @@ export async function POST(
         { status: 400 }
       )
     }
-  } catch (error: any) {
-    console.error('Error creating relationship:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to create relationship' },
-      { status: 500 }
-    )
-  }
 }
 
+export const POST = withErrorHandling(postHandler, 'POST /api/tickets/[id]/relationships')
+
 // Delete a relationship
-export async function DELETE(
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const ticketId = resolvedParams.id
+
+    // Get ticket to check access
+    const ticket = await db.ticket.findUnique({
+      where: { id: ticketId },
+      select: { id: true, projectId: true }
+    })
+
+    if (!ticket) {
+      return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
+    }
+
+    // Check access if ticket has a project
+    if (ticket.projectId) {
+      const accessResult = await requireProjectSpaceAccess(ticket.projectId, session.user.id!)
+      if (!accessResult.success) return accessResult.response
+    }
 
     const { searchParams } = new URL(request.url)
     const relationshipId = searchParams.get('relationshipId')
@@ -317,16 +323,11 @@ export async function DELETE(
       })
     }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Relationship deleted successfully'
-    })
-  } catch (error: any) {
-    console.error('Error deleting relationship:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to delete relationship' },
-      { status: 500 }
-    )
-  }
+  return NextResponse.json({
+    success: true,
+    message: 'Relationship deleted successfully'
+  })
 }
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/tickets/[id]/relationships')
 

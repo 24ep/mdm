@@ -1,0 +1,25 @@
+/**
+ * Centralized constants for theme management
+ * All theme-related constants should be defined here
+ */
+
+export const THEME_STORAGE_KEYS = {
+  VARIANT_ID: 'theme-variant-id',
+  MODE: 'theme-mode',
+  LAST_APPLIED: 'theme-last-applied',
+} as const
+
+export const THEME_DEFAULTS = {
+  MODE: 'light' as const,
+  VARIANT: 'default' as const,
+} as const
+
+export const THEME_ERROR_MESSAGES = {
+  INVALID_THEME: 'Invalid theme configuration',
+  THEME_NOT_FOUND: 'Theme not found',
+  FAILED_TO_LOAD: 'Failed to load theme',
+  FAILED_TO_APPLY: 'Failed to apply theme',
+} as const
+
+export const THEME_VERSION = '1.0.0' as const
+

@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { FileUpload } from '@/components/ui/file-upload'
 import { FilePreview } from '@/components/ui/file-preview'
 import { useAttachments } from '@/hooks/use-attachments'
+import { useFileDragDrop } from '@/hooks/use-file-drag-drop'
 import { Upload, File, AlertCircle, Loader2 } from 'lucide-react'
 import { FILE_UPLOAD_LIMITS, validateFileSize, isFileTypeAllowed } from '@/lib/storage-config'
 
@@ -42,9 +42,7 @@ export function AttachmentManager({
     autoLoad: true
   })
 
-  const [dragOver, setDragOver] = useState(false)
-
-  const handleFileSelect = async (files: FileList | null) => {
+  const handleFileSelect = async (files: FileList) => {
     if (!files || files.length === 0) return
 
     const fileArray = Array.from(files)
@@ -74,29 +72,22 @@ export function AttachmentManager({
     }
   }
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setDragOver(false)
-    
-    if (disabled) return
-    
-    const files = e.dataTransfer.files
-    handleFileSelect(files).catch(error => {
-      console.error('Upload error:', error)
-    })
-  }
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    if (!disabled) {
-      setDragOver(true)
+  const {
+    dragOver,
+    fileInputRef,
+    handleDrop,
+    handleDragOver,
+    handleDragLeave,
+    handleFileInputChange,
+    openFileDialog
+  } = useFileDragDrop({
+    disabled,
+    onFilesSelected: (files) => {
+      handleFileSelect(files).catch(error => {
+        console.error('Upload error:', error)
+      })
     }
-  }
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault()
-    setDragOver(false)
-  }
+  })
 
   const canUploadMore = attachments.length < maxFiles
 
@@ -104,16 +95,26 @@ export function AttachmentManager({
     <div className={`space-y-4 ${className}`}>
       {/* Upload Area */}
       {canUploadMore && (
-        <div
-          className={`
-            border-2 border-dashed rounded-lg p-6 text-center transition-colors
-            ${dragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}
-            ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-gray-400'}
-          `}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-        >
+        <>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            onChange={handleFileInputChange}
+            className="hidden"
+            disabled={disabled}
+          />
+          <div
+            className={`
+              border-2 border-dashed rounded-lg p-6 text-center transition-colors
+              ${dragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}
+              ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-gray-400'}
+            `}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onClick={openFileDialog}
+          >
           <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
           <p className="text-sm text-gray-600 mb-1">
             {dragOver ? 'Drop files here' : 'Click to upload or drag and drop'}
@@ -125,6 +126,7 @@ export function AttachmentManager({
             )}
           </p>
         </div>
+        </>
       )}
 
       {/* Upload Progress */}

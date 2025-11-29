@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { prisma } from '@/lib/prisma'
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { searchParams } = new URL(request.url)
     const workspaceId = searchParams.get('workspaceId')
@@ -23,21 +20,14 @@ export async function GET(request: NextRequest) {
     })
 
     return NextResponse.json({ history })
-  } catch (error) {
-    console.error('Error fetching history:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch history' },
-      { status: 500 }
-    )
-  }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+export const GET = withErrorHandling(getHandler, 'GET /api/api-client/history')
+
+async function postHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const body = await request.json()
     const {
@@ -72,12 +62,7 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({ history: historyItem })
-  } catch (error) {
-    console.error('Error creating history:', error)
-    return NextResponse.json(
-      { error: 'Failed to create history' },
-      { status: 500 }
-    )
-  }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/api-client/history')
 

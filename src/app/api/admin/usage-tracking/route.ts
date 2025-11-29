@@ -1,30 +1,28 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { logAPIRequest } from '@/shared/lib/security/audit-logger'
 import { checkPermission } from '@/shared/lib/security/permission-checker'
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler(request: NextRequest) {
+  const authResult = await requireAdmin()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    // Check permission
-    const permission = await checkPermission({
-      resource: 'analytics',
-      action: 'read',
-      spaceId: null,
-    })
+  // Check permission (additional check if needed)
+  const permission = await checkPermission({
+    resource: 'analytics',
+    action: 'read',
+    spaceId: null,
+  })
 
-    if (!permission.allowed) {
-      return NextResponse.json(
-        { error: 'Forbidden', reason: permission.reason },
-        { status: 403 }
-      )
-    }
+  if (!permission.allowed) {
+    return NextResponse.json(
+      { error: 'Forbidden', reason: permission.reason },
+      { status: 403 }
+    )
+  }
 
     const { searchParams } = new URL(request.url)
     const range = searchParams.get('range') || '7d'
@@ -173,12 +171,7 @@ export async function GET(request: NextRequest) {
         memberCount: parseInt(row.member_count || '0'),
       })),
     })
-  } catch (error) {
-    console.error('Error fetching usage tracking:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
 }
+
+export const GET = withErrorHandling(getHandler, 'GET /api/admin/usage-tracking')
 

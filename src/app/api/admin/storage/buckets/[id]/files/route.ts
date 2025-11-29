@@ -1,21 +1,24 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } 
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\storage\buckets\[id]\files\route.ts')= authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+
 
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Insufficient permissions' }}
 
     const { id: bucketId } = await params
     const { searchParams } = new URL(request.url)
@@ -28,8 +31,7 @@ export async function GET(
     })
 
     if (!space) {
-      return NextResponse.json({ error: 'Bucket not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Bucket not found' }}
 
     // Parse the path to get current directory level
     const pathParts = path ? path.split('/').filter(p => p) : []
@@ -151,9 +153,4 @@ export async function GET(
     })
 
     return NextResponse.json({ files: allItems })
-  } catch (error) {
-    console.error('Error fetching files:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
 

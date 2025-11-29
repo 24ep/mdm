@@ -56,8 +56,7 @@ export async function GET() {
     return NextResponse.json({ reports })
   } catch (error) {
     console.error('Error fetching reports:', error)
-    return NextResponse.json({ error: 'Failed to fetch reports' }, { status: 500 })
-  }
+    return NextResponse.json({ error: 'Failed to fetch reports' }}
 }
 
 export async function POST(request: NextRequest) {
@@ -85,6 +84,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ report })
   } catch (error) {
     console.error('Error creating report:', error)
-    return NextResponse.json({ error: 'Failed to create report' }, { status: 500 })
-  }
+    return NextResponse.json({ error: 'Failed to create report' }}
 }

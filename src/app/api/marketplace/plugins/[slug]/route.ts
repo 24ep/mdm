@@ -1,18 +1,18 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { logAPIRequest } from '@/shared/lib/security/audit-logger'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     const { slug } = await params
 
@@ -22,8 +22,7 @@ export async function GET(
     )
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Plugin not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Plugin not found' }}
 
     const row = result.rows[0]
 
@@ -67,28 +66,22 @@ export async function GET(
     )
 
     return NextResponse.json({ plugin })
-  } catch (error) {
-    console.error('Error fetching plugin:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
 
-export async function PUT(
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\marketplace\plugins\[slug]\route.ts')
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     if (session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Forbidden' }}
 
     const { slug } = await params
     const body = await request.json()
@@ -120,8 +113,7 @@ export async function PUT(
     }
 
     if (updates.length === 0) {
-      return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'No valid fields to update' }}
 
     updates.push(`updated_at = NOW()`)
     values.push(slug)
@@ -136,8 +128,7 @@ export async function PUT(
     const result = await query(updateQuery, values)
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Plugin not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Plugin not found' }}
 
     await logAPIRequest(
       session.user.id,
@@ -147,28 +138,24 @@ export async function PUT(
     )
 
     return NextResponse.json({ message: 'Plugin updated successfully' })
-  } catch (error) {
-    console.error('Error updating plugin:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
 
-export async function DELETE(
+
+
+export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\marketplace\plugins\[slug]\route.ts')
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\marketplace\plugins\[slug]\route.ts')
 
     if (session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Forbidden' }}
 
     const { slug } = await params
 
@@ -181,8 +168,7 @@ export async function DELETE(
     )
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Plugin not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Plugin not found' }}
 
     await logAPIRequest(
       session.user.id,
@@ -192,12 +178,4 @@ export async function DELETE(
     )
 
     return NextResponse.json({ message: 'Plugin deleted successfully' })
-  } catch (error) {
-    console.error('Error deleting plugin:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
 

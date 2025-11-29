@@ -1,6 +1,6 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { getSecretsManager } from '@/lib/secrets-manager'
 import { encryptApiKey, decryptApiKey } from '@/lib/encryption'
@@ -8,18 +8,17 @@ import { ManageEngineServiceDeskService } from '@/lib/manageengine-servicedesk'
 import { createAuditContext } from '@/lib/audit-context-helper'
 
 // Get ServiceDesk configuration for a space
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
+async function getHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     const { searchParams } = new URL(request.url)
     const spaceId = searchParams.get('space_id')
     if (!spaceId) {
-      return NextResponse.json({ error: 'space_id is required' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'space_id is required' }}
 
     // Check access
     const { rows: access } = await query(
@@ -27,8 +26,7 @@ export async function GET(request: NextRequest) {
       [spaceId, session.user.id]
     )
     if (access.length === 0) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Forbidden' }}
 
     // Get configuration from external_connections table
     const { rows } = await query(
@@ -62,19 +60,16 @@ export async function GET(request: NextRequest) {
         updatedAt: config.updated_at
       }
     })
-  } catch (error) {
-    console.error('GET /integrations/manageengine-servicedesk error', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
 
 // Configure ServiceDesk integration
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\integrations\manageengine-servicedesk\route.ts')
+async function postHandler(request: NextRequest) {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
 
     const body = await request.json()
     const { space_id, baseUrl, apiKey, technicianKey, name } = body
@@ -92,8 +87,7 @@ export async function POST(request: NextRequest) {
       [space_id, session.user.id]
     )
     if (access.length === 0) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Forbidden' }}
 
     // Test connection first
     const service = new ManageEngineServiceDeskService({
@@ -199,7 +193,7 @@ export async function POST(request: NextRequest) {
             undefined,
             auditContext
           )
-          try {
+          
             await secretsManager.deleteSecret(`servicedesk-integrations/${tempId}/credentials`)
           } catch (error) {
             // Ignore if already deleted
@@ -213,19 +207,22 @@ export async function POST(request: NextRequest) {
       message: 'ServiceDesk integration configured successfully',
       connectionId
     })
-  } catch (error) {
-    console.error('POST /integrations/manageengine-servicedesk error', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 // Test connection
-export async function PUT(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+
+
+
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/integrations/manageengine-servicedesk')
+async function putHandler(request: NextRequest) {
+    const authResult = await requireAuth()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
+
+export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\integrations\manageengine-servicedesk\route.ts')
 
     const body = await request.json()
     const { space_id, baseUrl, apiKey, technicianKey } = body
@@ -249,7 +246,6 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json(result)
   } catch (error) {
     console.error('PUT /integrations/manageengine-servicedesk error', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+    return NextResponse.json({ error: 'Internal server error' }}
 }
 

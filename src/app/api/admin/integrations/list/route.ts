@@ -1,14 +1,17 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\integrations\list\route.ts')
 
     // Query integrations from database
     const sql = `
@@ -42,7 +45,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ 
       error: 'Failed to fetch integrations',
       details: error.message 
-    }, { status: 500 })
-  }
+    }}
 }
 

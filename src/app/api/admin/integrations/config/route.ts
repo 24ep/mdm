@@ -1,21 +1,23 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 
-export async function POST(request: NextRequest) {
+async function postHandler(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\integrations\config\route.ts')
 
     const body = await request.json()
     const { name, type, config } = body
 
     if (!name || !type) {
-      return NextResponse.json({ error: 'Name and type are required' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'Name and type are required' }}
 
     // Check if integration exists
     const checkSql = `
@@ -79,7 +81,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       error: 'Failed to save configuration',
       details: error.message 
-    }, { status: 500 })
-  }
+    }}
 }
 

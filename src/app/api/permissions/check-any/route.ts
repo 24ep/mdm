@@ -1,14 +1,15 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { getUserPermissions, getUserRoleContext } from '@/lib/permission-checker'
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function postHandler(request: NextRequest) {
+    const authResult = await requireAuth()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\permissions\check-any\route.ts')
 
     const body = await request.json()
     const { permissionIds, spaceId } = body
@@ -29,11 +30,11 @@ export async function POST(request: NextRequest) {
       hasPermission: hasAny,
       source: hasAny ? 'combined' : 'none'
     })
-  } catch (error) {
-    console.error('Error checking permissions:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  , { status: 500 })
   }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/permissions/check-any')
 
 
 

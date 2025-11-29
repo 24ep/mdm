@@ -17,7 +17,7 @@ import {
   Search,
   Filter
 } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
+import { showError, showSuccess } from '@/lib/toast-utils'
 
 interface Relationship {
   dependencies: Array<{
@@ -83,7 +83,6 @@ export function TicketRelationshipsPanel({
   onAddRelationship,
   onViewTicket
 }: TicketRelationshipsPanelProps) {
-  const { toast } = useToast()
   const [relationships, setRelationships] = useState<Relationship | null>(null)
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -122,18 +121,11 @@ export function TicketRelationshipsPanel({
         { method: 'DELETE' }
       )
       if (response.ok) {
-        toast({
-          title: 'Success',
-          description: 'Relationship deleted successfully'
-        })
+        showSuccess('Relationship deleted successfully')
         loadRelationships()
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to delete relationship',
-        variant: 'destructive'
-      })
+      showError('Failed to delete relationship')
     }
   }
 

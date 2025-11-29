@@ -1,23 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { validateParams, validateBody, validateQuery, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -25,7 +21,7 @@ export async function GET(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -69,24 +65,19 @@ export async function GET(
       dependencyCount: dependencies.length,
       dependentCount: dependents.length,
     })
-    return addSecurityHeaders(NextResponse.json({ dependencies, dependents }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Ticket Dependencies API GET')
-  }
+    return NextResponse.json({ dependencies, dependents })
 }
 
-export async function POST(
+export const GET = withErrorHandling(getHandler, 'GET /api/tickets/[id]/dependencies')
+
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -94,7 +85,7 @@ export async function POST(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -107,14 +98,32 @@ export async function POST(
 
     const bodyValidation = await validateBody(request, bodySchema)
     if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
+      return bodyValidation.response
     }
 
     const { dependsOnId, type } = bodyValidation.data
 
     if (id === dependsOnId) {
       logger.warn('Ticket cannot depend on itself', { ticketId: id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Ticket cannot depend on itself' }, { status: 400 }))
+      return NextResponse.json({ error: 'Ticket cannot depend on itself' }, { status: 400 })
+    }
+
+    // Check if ticket exists and user has access
+    const ticket = await db.ticket.findUnique({
+      where: { id },
+      include: { spaces: true }
+    })
+
+    if (!ticket || ticket.deletedAt) {
+      logger.warn('Ticket not found for dependency creation', { ticketId: id })
+      return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
+    }
+
+    // Check access - user must have access to at least one space associated with the ticket
+    const spaceId = ticket.spaces?.[0]?.spaceId
+    if (spaceId) {
+      const accessResult = await requireSpaceAccess(spaceId, session.user.id!)
+      if (!accessResult.success) return accessResult.response
     }
 
     // Check if dependency already exists
@@ -129,7 +138,7 @@ export async function POST(
 
     if (existing) {
       logger.warn('Dependency already exists', { ticketId: id, dependsOnId })
-      return addSecurityHeaders(NextResponse.json({ error: 'Dependency already exists' }, { status: 400 }))
+      return NextResponse.json({ error: 'Dependency already exists' }, { status: 400 })
     }
 
     const dependency = await db.ticketDependency.create({
@@ -154,24 +163,19 @@ export async function POST(
       dependencyId: dependency.id,
       dependsOnId,
     })
-    return addSecurityHeaders(NextResponse.json(dependency, { status: 201 }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('POST', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Ticket Dependencies API POST')
-  }
+    return NextResponse.json(dependency, { status: 201 })
 }
 
-export async function DELETE(
+export const POST = withErrorHandling(postHandler, 'POST /api/tickets/[id]/dependencies')
+
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -179,7 +183,7 @@ export async function DELETE(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -191,10 +195,28 @@ export async function DELETE(
 
     const queryValidation = validateQuery(request, querySchema)
     if (!queryValidation.success) {
-      return addSecurityHeaders(queryValidation.response)
+      return queryValidation.response
     }
 
     const { dependsOnId } = queryValidation.data
+
+    // Check if ticket exists and user has access
+    const ticket = await db.ticket.findUnique({
+      where: { id },
+      include: { spaces: true }
+    })
+
+    if (!ticket || ticket.deletedAt) {
+      logger.warn('Ticket not found for dependency deletion', { ticketId: id })
+      return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
+    }
+
+    // Check access - user must have access to at least one space associated with the ticket
+    const spaceId = ticket.spaces?.[0]?.spaceId
+    if (spaceId) {
+      const accessResult = await requireSpaceAccess(spaceId, session.user.id!)
+      if (!accessResult.success) return accessResult.response
+    }
 
     await db.ticketDependency.delete({
       where: {
@@ -207,11 +229,8 @@ export async function DELETE(
 
     const duration = Date.now() - startTime
     logger.apiResponse('DELETE', `/api/tickets/${id}/dependencies`, 200, duration, { dependsOnId })
-    return addSecurityHeaders(NextResponse.json({ success: true }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('DELETE', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Ticket Dependencies API DELETE')
-  }
+    return NextResponse.json({ success: true })
 }
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/tickets/[id]/dependencies')
 

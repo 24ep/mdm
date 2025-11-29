@@ -1,24 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { db } from '@/lib/db'
 import { createAuditLog } from '@/lib/audit'
 import { logger } from '@/lib/logger'
 import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -26,7 +21,7 @@ export async function GET(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -41,29 +36,24 @@ export async function GET(
 
     if (!record) {
       logger.warn('Data record not found', { recordId: id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Not found' }, { status: 404 }))
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
     
     const duration = Date.now() - startTime
     logger.apiResponse('GET', `/api/data-records/${id}`, 200, duration)
-    return addSecurityHeaders(NextResponse.json({ record }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Data Records API GET')
-  }
+    return NextResponse.json({ record })
 }
 
-export async function PUT(
+export const GET = withErrorHandling(getHandler, 'GET /api/data-records/[id]')
+
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -71,7 +61,7 @@ export async function PUT(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -86,7 +76,7 @@ export async function PUT(
 
     const bodyValidation = await validateBody(request, bodySchema)
     if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
+      return bodyValidation.response
     }
 
     const { values } = bodyValidation.data
@@ -122,7 +112,7 @@ export async function PUT(
 
     if (!record) {
       logger.warn('Data record not found for update', { recordId: id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Record not found' }, { status: 404 }))
+      return NextResponse.json({ error: 'Record not found' }, { status: 404 })
     }
 
     // Create audit log
@@ -139,24 +129,19 @@ export async function PUT(
 
     const duration = Date.now() - startTime
     logger.apiResponse('PUT', `/api/data-records/${id}`, 200, duration)
-    return addSecurityHeaders(NextResponse.json({ record }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('PUT', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Data Records API PUT')
-  }
+    return NextResponse.json({ record })
 }
 
-export async function DELETE(
+export const PUT = withErrorHandling(putHandler, 'PUT /api/data-records/[id]')
+
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -164,7 +149,7 @@ export async function DELETE(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -179,12 +164,9 @@ export async function DELETE(
 
     const duration = Date.now() - startTime
     logger.apiResponse('DELETE', `/api/data-records/${id}`, 200, duration)
-    return addSecurityHeaders(NextResponse.json({ success: true }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('DELETE', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Data Records API DELETE')
-  }
+    return NextResponse.json({ success: true })
 }
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/data-records/[id]')
 
 

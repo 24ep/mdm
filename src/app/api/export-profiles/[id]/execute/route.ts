@@ -1,19 +1,22 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { query } from '@/lib/db'
 import * as XLSX from 'xlsx'
 
-export async function POST(
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const POST = withErrorHandling(postHandler, '
 
     const { id: profileId } = await params
 
@@ -39,8 +42,7 @@ export async function POST(
     `, [profileId])
 
     if (profileResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Export profile not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Export profile not found' }}
 
     const profile = profileResult.rows[0]
 
@@ -53,8 +55,7 @@ export async function POST(
                      )
 
     if (!hasAccess) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Access denied' }}
 
     // Get data model attributes to build the query
     const attributesResult = await query(`
@@ -68,8 +69,7 @@ export async function POST(
     const selectedColumns = profile.columns || []
 
     if (selectedColumns.length === 0) {
-      return NextResponse.json({ error: 'No columns selected for export' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'No columns selected for export' }}
 
     // Build the SQL query based on selected columns and filters
     let selectClause = selectedColumns.map((col: any) => {
@@ -112,8 +112,7 @@ export async function POST(
     const exportData = dataResult.rows
 
     if (exportData.length === 0) {
-      return NextResponse.json({ error: 'No data found matching the criteria' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'No data found matching the criteria' }}
 
     // Generate the file based on format
     let fileBuffer: Buffer

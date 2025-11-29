@@ -1,23 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -25,7 +21,7 @@ export async function GET(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -58,24 +54,19 @@ export async function GET(
     logger.apiResponse('GET', `/api/tickets/${id}/subtasks`, 200, duration, {
       subtaskCount: subtasks.length
     })
-    return addSecurityHeaders(NextResponse.json({ subtasks }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Ticket Subtasks API GET')
-  }
+    return NextResponse.json({ subtasks })
 }
 
-export async function POST(
+export const GET = withErrorHandling(getHandler, 'GET /api/tickets/[id]/subtasks')
+
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -83,7 +74,7 @@ export async function POST(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -99,7 +90,7 @@ export async function POST(
 
     const bodyValidation = await validateBody(request, bodySchema)
     if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
+      return bodyValidation.response
     }
 
     const { title, description, status, priority, spaceIds } = bodyValidation.data
@@ -112,7 +103,14 @@ export async function POST(
 
     if (!parentTicket) {
       logger.warn('Parent ticket not found for subtask creation', { ticketId: id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Parent ticket not found' }, { status: 404 }))
+      return NextResponse.json({ error: 'Parent ticket not found' }, { status: 404 })
+    }
+
+    // Check access - user must have access to at least one space associated with the parent ticket
+    const spaceId = parentTicket.spaces?.[0]?.spaceId
+    if (spaceId) {
+      const accessResult = await requireSpaceAccess(spaceId, session.user.id!)
+      if (!accessResult.success) return accessResult.response
     }
 
     // Get max position for subtasks
@@ -159,11 +157,8 @@ export async function POST(
     logger.apiResponse('POST', `/api/tickets/${id}/subtasks`, 201, duration, {
       subtaskId: subtask.id
     })
-    return addSecurityHeaders(NextResponse.json(subtask, { status: 201 }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('POST', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Ticket Subtasks API POST')
-  }
+    return NextResponse.json(subtask, { status: 201 })
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/tickets/[id]/subtasks')
 

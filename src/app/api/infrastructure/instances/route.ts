@@ -1,13 +1,13 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { logAPIRequest } from '@/shared/lib/security/audit-logger'
 import { checkPermission } from '@/shared/lib/security/permission-checker'
 import { rateLimitMiddleware } from '@/shared/middleware/api-rate-limit'
 
-export async function GET(request: NextRequest) {
-  // Apply rate limiting
+async function getHandler(request: NextRequest) {
+    // Apply rate limiting
   const rateLimitResponse = await rateLimitMiddleware(request, {
     windowMs: 60000,
     maxRequests: 100,
@@ -16,11 +16,10 @@ export async function GET(request: NextRequest) {
     return rateLimitResponse
   }
 
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
 
     const { searchParams } = new URL(request.url)
     const spaceId = searchParams.get('spaceId')
@@ -146,18 +145,14 @@ export async function GET(request: NextRequest) {
       spaceId || undefined
     )
 
-    return NextResponse.json({ instances, total: instances.length })
-  } catch (error) {
-    console.error('Error fetching instances:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
+  return NextResponse.json({ instances, total: instances.length })
 }
 
-export async function POST(request: NextRequest) {
-  // Apply rate limiting
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/infrastructure/instances')
+async function postHandler(request: NextRequest) {
+    // Apply rate limiting
   const rateLimitResponse = await rateLimitMiddleware(request, {
     windowMs: 60000,
     maxRequests: 50, // Lower limit for POST
@@ -166,11 +161,10 @@ export async function POST(request: NextRequest) {
     return rateLimitResponse
   }
 
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
 
     const body = await request.json()
     const {
@@ -242,12 +236,7 @@ export async function POST(request: NextRequest) {
       { id: instanceId, message: 'Instance created successfully' },
       { status: 201 }
     )
-  } catch (error) {
-    console.error('Error creating instance:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/infrastructure/instances')
 

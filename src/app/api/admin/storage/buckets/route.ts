@@ -1,15 +1,14 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 
 // GET - List all buckets (spaces as buckets)
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler(request: NextRequest) {
+    const authResult = await requireAdmin()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
 
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
@@ -41,19 +40,24 @@ export async function GET(request: NextRequest) {
     }))
 
     return NextResponse.json({ buckets })
-  } catch (error) {
-    console.error('Error fetching buckets:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  , { status: 500 })
   }
 }
 
 // POST - Create a new bucket (creates a new space)
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+
+
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/admin/storage/buckets')
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\storage\buckets\route.ts')
+async function postHandler(request: NextRequest) {
+    const authResult = await requireAdmin()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\storage\buckets\route.ts')
 
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
@@ -115,11 +119,9 @@ export async function POST(request: NextRequest) {
         spaceName: space.name
       }
     })
-  } catch (error: any) {
-    console.error('Error creating bucket:', error)
-    return NextResponse.json({ 
-      error: error.message || 'Internal server error' 
-    }, { status: 500 })
+  , { status: 500 })
   }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/admin/storage/buckets')
 

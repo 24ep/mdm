@@ -72,6 +72,5 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ items })
   } catch (error) {
     console.error('Error fetching storage contents:', error)
-    return NextResponse.json({ error: 'Failed to fetch contents' }, { status: 500 })
-  }
+    return NextResponse.json({ error: 'Failed to fetch contents' }}
 }

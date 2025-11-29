@@ -1,6 +1,6 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { decryptApiKey } from '@/lib/encryption'
 import { getSecretsManager } from '@/lib/secrets-manager'
 import { createAuditContext } from '@/lib/audit-context-helper'
@@ -10,21 +10,25 @@ import { db as prisma } from '@/lib/db'
  * GET /api/admin/ai-providers/[id]/key
  * Get decrypted API key for a provider (for 2-way sync with Chat UI)
  */
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } 
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\ai-providers\[id]\key\route.ts')= authResult
     
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+
 
     // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Insufficient permissions' }}
 
     const { id } = await params
 
@@ -39,8 +43,7 @@ export async function GET(
     })
 
     if (!provider) {
-      return NextResponse.json({ error: 'Provider not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Provider not found' }}
 
     if (!provider.isConfigured || !provider.apiKey) {
       return NextResponse.json({ apiKey: null })
@@ -58,8 +61,7 @@ export async function GET(
         decryptedApiKey = await secretsManager.getApiKey(provider.provider, auditContext)
       } catch (error) {
         console.error('Error retrieving API key from Vault:', error)
-        return NextResponse.json({ error: 'Failed to retrieve API key from Vault' }, { status: 500 })
-      }
+        return NextResponse.json({ error: 'Failed to retrieve API key from Vault' }}
     } else {
       // Decrypt from database
       decryptedApiKey = decryptApiKey(provider.apiKey)
@@ -68,7 +70,6 @@ export async function GET(
     return NextResponse.json({ apiKey: decryptedApiKey })
   } catch (error) {
     console.error('Error fetching API key:', error)
-    return NextResponse.json({ error: 'Failed to fetch API key' }, { status: 500 })
-  }
+    return NextResponse.json({ error: 'Failed to fetch API key' }}
 }
 

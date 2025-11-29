@@ -1,23 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { query } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -25,11 +21,15 @@ export async function GET(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id: spaceId } = paramValidation.data
     logger.apiRequest('GET', `/api/spaces/${spaceId}`, { userId: session.user.id })
+
+    // Check if user has access to this space
+    const accessResult = await requireSpaceAccess(spaceId, session.user.id!)
+    if (!accessResult.success) return accessResult.response
 
     // Get space details with member information
     const space = await query(`
@@ -46,16 +46,10 @@ export async function GET(
 
     if (space.rows.length === 0) {
       logger.warn('Space not found', { spaceId })
-      return addSecurityHeaders(NextResponse.json({ error: 'Space not found' }, { status: 404 }))
+      return NextResponse.json({ error: 'Space not found' }, { status: 404 })
     }
 
     const spaceData = space.rows[0]
-
-    // Check if user has access to this space
-    if (!spaceData.user_role) {
-      logger.warn('Access denied to space', { spaceId, userId: session.user.id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Access denied' }, { status: 403 }))
-    }
 
     // Get space members
     const members = await query(`
@@ -72,27 +66,22 @@ export async function GET(
 
     const duration = Date.now() - startTime
     logger.apiResponse('GET', `/api/spaces/${spaceId}`, 200, duration)
-    return addSecurityHeaders(NextResponse.json({
+    return NextResponse.json({
       space: spaceData,
       members: members.rows
-    }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Spaces API GET')
-  }
+    })
 }
 
-export async function PUT(
+export const GET = withErrorHandling(getHandler, 'GET /api/spaces/[id]')
+
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -100,11 +89,15 @@ export async function PUT(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id: spaceId } = paramValidation.data
     logger.apiRequest('PUT', `/api/spaces/${spaceId}`, { userId: session.user.id })
+    
+    // Check if user has access to this space
+    const accessResult = await requireSpaceAccess(spaceId, session.user.id!)
+    if (!accessResult.success) return accessResult.response
     
     const bodySchema = z.object({
       name: z.string().min(1).optional(),
@@ -119,7 +112,7 @@ export async function PUT(
 
     const bodyValidation = await validateBody(request, bodySchema)
     if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
+      return bodyValidation.response
     }
 
     const { name, description, is_default, slug, icon, logo_url, features, sidebar_config } = bodyValidation.data
@@ -128,7 +121,7 @@ export async function PUT(
     const featuresProvided = Object.prototype.hasOwnProperty.call(bodyValidation.data, 'features')
     const sidebarProvided = Object.prototype.hasOwnProperty.call(bodyValidation.data, 'sidebar_config')
 
-    // Check if user has permission to update this space
+    // Check if user has permission to update this space (admin/owner only)
     const memberCheck = await query(`
       SELECT role FROM space_members 
       WHERE space_id = $1::uuid AND user_id = $2::uuid
@@ -136,7 +129,7 @@ export async function PUT(
 
     if (memberCheck.rows.length === 0 || !['owner', 'admin'].includes(memberCheck.rows[0].role)) {
       logger.warn('Insufficient permissions to update space', { spaceId, userId: session.user.id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 }))
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
     // Update the space
@@ -158,32 +151,27 @@ export async function PUT(
 
     if (result.rows.length === 0) {
       logger.warn('Space not found for update', { spaceId })
-      return addSecurityHeaders(NextResponse.json({ error: 'Space not found' }, { status: 404 }))
+      return NextResponse.json({ error: 'Space not found' }, { status: 404 })
     }
 
     const duration = Date.now() - startTime
     logger.apiResponse('PUT', `/api/spaces/${spaceId}`, 200, duration)
-    return addSecurityHeaders(NextResponse.json({
+    return NextResponse.json({
       space: result.rows[0],
       message: 'Space updated successfully'
-    }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('PUT', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Spaces API PUT')
-  }
+    })
 }
 
-export async function DELETE(
+export const PUT = withErrorHandling(putHandler, 'PUT /api/spaces/[id]')
+
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -210,12 +198,9 @@ export async function DELETE(
 
     const duration = Date.now() - startTime
     logger.apiResponse('DELETE', `/api/spaces/${spaceId}`, 200, duration)
-    return addSecurityHeaders(NextResponse.json({
+    return NextResponse.json({
       message: 'Space deleted successfully'
-    }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('DELETE', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Spaces API DELETE')
-  }
+    })
 }
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/spaces/[id]')

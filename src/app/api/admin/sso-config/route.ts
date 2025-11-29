@@ -1,18 +1,16 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { createAuditLog } from '@/lib/audit'
 import { getSecretsManager } from '@/lib/secrets-manager'
 import { encryptApiKey, decryptApiKey } from '@/lib/encryption'
 import { createAuditContext } from '@/lib/audit-context-helper'
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler(request: NextRequest) {
+    const authResult = await requireAdmin()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
     // Check if user is admin
     if (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN') {
@@ -82,7 +80,7 @@ export async function GET(request: NextRequest) {
       } else {
         config[key] = value
       }
-    }
+}
 
     return NextResponse.json({ config })
   } catch (error) {
@@ -91,12 +89,18 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function PUT(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+
+
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/admin/sso-config')
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\sso-config\route.ts')
+async function putHandler(request: NextRequest) {
+    const authResult = await requireAdmin()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+
+export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\admin\sso-config\route.ts')
 
     // Check if user is admin
     if (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN') {
@@ -142,7 +146,7 @@ export async function PUT(request: NextRequest) {
       if (sensitiveFields.includes(key) && value && String(value).trim() !== '') {
         if (useVault) {
           // Store in Vault
-          try {
+          
             await secretsManager.storeSecret(
               `sso/${key}`,
               { value: String(value) },
@@ -193,8 +197,8 @@ export async function PUT(request: NextRequest) {
       success: true,
       message: 'SSO configuration saved successfully'
     })
-  } catch (error) {
-    console.error('Error updating SSO config:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  , { status: 500 })
   }
 }
+
+export const PUT = withErrorHandling(putHandler, 'PUT PUT /api/admin/sso-config')

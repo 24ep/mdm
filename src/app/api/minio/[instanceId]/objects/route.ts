@@ -1,6 +1,6 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { Client as MinioClient } from 'minio'
 
@@ -54,15 +54,13 @@ async function getMinIOClient(instanceId: string) {
   })
 }
 
-export async function POST(
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ instanceId: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { instanceId } = await params
     if (!instanceId) {
@@ -108,14 +106,7 @@ export async function POST(
       objectName,
       size: buffer.length,
     })
-  } catch (error) {
-    console.error('Error uploading object:', error)
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Failed to upload object',
-      },
-      { status: 500 }
-    )
-  }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/minio/[instanceId]/objects')
 

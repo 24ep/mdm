@@ -1,22 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, withErrorHandling } from '@/lib/api-middleware'
 import { query } from '@/lib/db'
 import { createExternalClient } from '@/lib/external-db'
 import { isUuid } from '@/lib/validation'
 import { logger } from '@/lib/logger'
 import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     // Validate query parameters
     const queryValidation = validateQuery(request, z.object({
@@ -28,7 +23,7 @@ export async function GET(request: NextRequest) {
     }).passthrough()) // Allow filter_* params to pass through
     
     if (!queryValidation.success) {
-      return addSecurityHeaders(queryValidation.response)
+      return queryValidation.response
     }
     
     const { data_model_id: dataModelId, page, limit = 20, sort_by: sortBy, sort_direction: sortDirectionRaw } = queryValidation.data
@@ -48,8 +43,7 @@ export async function GET(request: NextRequest) {
     const model = modelRows[0]
     if (!model) {
       logger.warn('Data model not found', { dataModelId })
-      return addSecurityHeaders(NextResponse.json({ error: 'data_model not found' }, { status: 404 }))
-    }
+      return NextResponse.json({ error: 'data_model not found' }}
     
     // Extract filters from search params
     const { searchParams } = new URL(request.url)
@@ -183,10 +177,10 @@ export async function GET(request: NextRequest) {
 
         const duration = Date.now() - startTime
         logger.apiResponse('GET', '/api/data-records', 200, duration, { total, recordsCount: mapped.length, sourceType: 'EXTERNAL' })
-        return addSecurityHeaders(NextResponse.json({
+        return NextResponse.json({
           records: mapped,
           pagination: { page, limit, total, pages: Math.ceil(total / limit) },
-        }))
+        })
       } finally {
         await client.close()
       }
@@ -329,24 +323,19 @@ export async function GET(request: NextRequest) {
 
     const duration = Date.now() - startTime
     logger.apiResponse('GET', '/api/data-records', 200, duration, { total, recordsCount: records.length })
-    return addSecurityHeaders(NextResponse.json({
+    return NextResponse.json({
       records: records || [],
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
-    }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', '/api/data-records', 500, duration)
-    return handleApiError(error, 'Data Records API GET')
-  }
+    })
 }
 
-export async function POST(request: NextRequest) {
+export const GET = withErrorHandling(getHandler, 'GET /api/data-records')
+
+async function postHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     // Validate request body
     const bodyValidation = await validateBody(request, z.object({
@@ -358,7 +347,7 @@ export async function POST(request: NextRequest) {
     }))
     
     if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
+      return bodyValidation.response
     }
     
     const { data_model_id, values } = bodyValidation.data
@@ -388,12 +377,8 @@ export async function POST(request: NextRequest) {
     )
     const duration = Date.now() - startTime
     logger.apiResponse('POST', '/api/data-records', 201, duration, { recordId: record.id })
-    return addSecurityHeaders(NextResponse.json({ record: fullRows[0] }, { status: 201 }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('POST', '/api/data-records', 500, duration)
-    return handleApiError(error, 'Data Records API POST')
-  }
-}
+    return NextResponse.json({ record: fullRows[0] }}
+
+export const POST = withErrorHandling(postHandler, 'POST /api/data-records')
 
 

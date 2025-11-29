@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useFormState } from '@/hooks/common/useFormState'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -34,37 +34,35 @@ interface IntakeFormProps {
 }
 
 export function IntakeForm({ formFields, onSubmit, onCancel }: IntakeFormProps) {
-  const [formData, setFormData] = useState<Record<string, any>>({})
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  // Initialize form with empty values for all fields
+  const initialValues = formFields.reduce((acc, field) => {
+    acc[field.name] = field.type === 'checkbox' ? false : ''
+    return acc
+  }, {} as Record<string, any>)
+
+  const {
+    values: formData,
+    errors,
+    handleChange,
+    handleSubmit: handleFormSubmit,
+  } = useFormState({
+    initialValues,
+    validate: (values) => {
+      const validationErrors: Record<string, string | null> = {}
+      formFields.forEach((field) => {
+        if (field.required && !values[field.name]) {
+          validationErrors[field.name] = `${field.label} is required`
+        }
+      })
+      return validationErrors
+    },
+    onSubmit: async (values) => {
+      onSubmit(values)
+    },
+  })
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-
-    // Validate required fields
-    const newErrors: Record<string, string> = {}
-    formFields.forEach((field) => {
-      if (field.required && !formData[field.name]) {
-        newErrors[field.name] = `${field.label} is required`
-      }
-    })
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
-      return
-    }
-
-    onSubmit(formData)
-  }
-
-  const handleFieldChange = (name: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [name]: value }))
-    if (errors[name]) {
-      setErrors((prev) => {
-        const newErrors = { ...prev }
-        delete newErrors[name]
-        return newErrors
-      })
-    }
+    handleFormSubmit(e)
   }
 
   return (
@@ -85,7 +83,7 @@ export function IntakeForm({ formFields, onSubmit, onCancel }: IntakeFormProps) 
                 <Input
                   id={field.name}
                   value={formData[field.name] || ''}
-                  onChange={(e) => handleFieldChange(field.name, e.target.value)}
+                  onChange={(e) => handleChange(field.name)(e.target.value)}
                   placeholder={field.placeholder}
                   className="mt-1"
                   required={field.required}
@@ -95,7 +93,7 @@ export function IntakeForm({ formFields, onSubmit, onCancel }: IntakeFormProps) 
                 <Textarea
                   id={field.name}
                   value={formData[field.name] || ''}
-                  onChange={(e) => handleFieldChange(field.name, e.target.value)}
+                  onChange={(e) => handleChange(field.name)(e.target.value)}
                   placeholder={field.placeholder}
                   className="mt-1"
                   required={field.required}
@@ -104,7 +102,7 @@ export function IntakeForm({ formFields, onSubmit, onCancel }: IntakeFormProps) 
               {field.type === 'select' && (
                 <Select
                   value={formData[field.name] || ''}
-                  onValueChange={(value) => handleFieldChange(field.name, value)}
+                  onValueChange={handleChange(field.name)}
                 >
                   <SelectTrigger className="mt-1">
                     <SelectValue placeholder={field.placeholder || 'Select an option'} />
@@ -123,7 +121,7 @@ export function IntakeForm({ formFields, onSubmit, onCancel }: IntakeFormProps) 
                   id={field.name}
                   type="number"
                   value={formData[field.name] || ''}
-                  onChange={(e) => handleFieldChange(field.name, parseFloat(e.target.value))}
+                  onChange={(e) => handleChange(field.name)(parseFloat(e.target.value))}
                   placeholder={field.placeholder}
                   className="mt-1"
                   required={field.required}
@@ -134,7 +132,7 @@ export function IntakeForm({ formFields, onSubmit, onCancel }: IntakeFormProps) 
                   id={field.name}
                   type="date"
                   value={formData[field.name] || ''}
-                  onChange={(e) => handleFieldChange(field.name, e.target.value)}
+                  onChange={(e) => handleChange(field.name)(e.target.value)}
                   className="mt-1"
                   required={field.required}
                 />
@@ -144,7 +142,7 @@ export function IntakeForm({ formFields, onSubmit, onCancel }: IntakeFormProps) 
                   <Checkbox
                     id={field.name}
                     checked={formData[field.name] || false}
-                    onCheckedChange={(checked) => handleFieldChange(field.name, checked)}
+                    onCheckedChange={handleChange(field.name)}
                   />
                   <Label htmlFor={field.name} className="font-normal">
                     {field.placeholder}

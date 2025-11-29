@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, withErrorHandling } from '@/lib/api-middleware'
 import { query } from '@/lib/db'
 import { pluginLoader } from '@/features/marketplace/lib/plugin-loader'
 import { pluginRegistry } from '@/features/marketplace/lib/plugin-registry'
@@ -8,15 +7,13 @@ import { pluginRegistry } from '@/features/marketplace/lib/plugin-registry'
 /**
  * Plugin runtime endpoint - loads and executes plugin code
  */
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { slug } = await params
 
@@ -27,8 +24,7 @@ export async function GET(
     )
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Plugin not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Plugin not found' }}
 
     const row = result.rows[0]
     const plugin = {
@@ -57,12 +53,7 @@ export async function GET(
     }
 
     return NextResponse.json({ plugin })
-  } catch (error) {
-    console.error('Error loading plugin:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
 }
+
+export const GET = withErrorHandling(getHandler, 'GET /api/plugins/[slug]')
 

@@ -1,12 +1,12 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { logAPIRequest } from '@/shared/lib/security/audit-logger'
 import { checkPermission } from '@/shared/lib/security/permission-checker'
 import { applyRateLimit } from '@/app/api/v1/middleware'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -15,11 +15,9 @@ export async function GET(
     return rateLimitResponse
   }
 
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { id } = await params
 
@@ -106,16 +104,11 @@ export async function GET(
         updatedAt: collection.updated_at,
       },
     })
-  } catch (error) {
-    console.error('Error fetching collection:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
 }
 
-export async function PUT(
+export const GET = withErrorHandling(getHandler, 'GET /api/knowledge/collections/[id]')
+
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -124,13 +117,11 @@ export async function PUT(
     return rateLimitResponse
   }
 
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    const { id } = await params
+  const { id } = await params
     const body = await request.json()
     const { name, description, icon, color, isPrivate } = body
 
@@ -213,16 +204,11 @@ export async function PUT(
     return NextResponse.json({
       collection: result.rows[0],
     })
-  } catch (error) {
-    console.error('Error updating collection:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
 }
 
-export async function DELETE(
+export const PUT = withErrorHandling(putHandler, 'PUT /api/knowledge/collections/[id]')
+
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -231,13 +217,11 @@ export async function DELETE(
     return rateLimitResponse
   }
 
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    const { id } = await params
+  const { id } = await params
 
     // Check if user is admin or creator
     const memberCheck = await query(
@@ -278,12 +262,7 @@ export async function DELETE(
     )
 
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Error deleting collection:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
 }
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/knowledge/collections/[id]')
 

@@ -1,6 +1,6 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { getServiceDeskService } from '@/lib/manageengine-servicedesk-helper'
 import { checkServiceDeskRateLimit, getServiceDeskRateLimitConfig } from '@/lib/servicedesk-rate-limiter'
@@ -8,20 +8,22 @@ import { createAuditLog } from '@/lib/audit'
 import { db } from '@/lib/db'
 
 // Delete a ServiceDesk ticket
-export async function POST(request: NextRequest) {
+async function postHandler(request: NextRequest) {
   const startTime = Date.now()
   let auditLogId: string | null = null
   let space_id: string | undefined = undefined
   let session: any = null
   
-  try {
-    session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+
+
 
     const body = await request.json()
-    const parsed = body
+    const parsed 
     space_id = parsed.space_id
     const { request_id, ticket_id } = parsed
 
@@ -39,7 +41,6 @@ export async function POST(request: NextRequest) {
     )
     if (access.length === 0) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
 
     // Rate limiting check
     const rateLimitConfig = await getServiceDeskRateLimitConfig(space_id)
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
       const userAgent = request.headers.get('user-agent') || undefined
       
       const auditResult = await createAuditLog({
-        action: 'SERVICEDESK_TICKET_DELETE_ATTEMPTED',
+        action: 'SERVICEDESK_TICKET__ATTEMPTED',
         entityType: 'ServiceDeskIntegration',
         entityId: space_id,
         userId: session.user.id,
@@ -134,7 +135,7 @@ export async function POST(request: NextRequest) {
       // Update audit log on success
       if (auditLogId) {
         await createAuditLog({
-          action: 'SERVICEDESK_TICKET_DELETED',
+          action: 'SERVICEDESK_TICKET_D',
           entityType: 'ServiceDeskIntegration',
           entityId: space_id,
           userId: session.user.id,
@@ -167,7 +168,7 @@ export async function POST(request: NextRequest) {
       // Update audit log on error
       if (auditLogId) {
         await createAuditLog({
-          action: 'SERVICEDESK_TICKET_DELETE_FAILED',
+          action: 'SERVICEDESK_TICKET__FAILED',
           entityType: 'ServiceDeskIntegration',
           entityId: space_id,
           userId: session.user.id,
@@ -186,28 +187,7 @@ export async function POST(request: NextRequest) {
         { error: result.error || 'Failed to delete ticket from ServiceDesk' },
         { status: 400 }
       )
-    }
-  } catch (error) {
-    console.error('POST /integrations/manageengine-servicedesk/delete error', error)
-    
-    // Update audit log on exception
-    if (auditLogId) {
-      await createAuditLog({
-        action: 'SERVICEDESK_TICKET_DELETE_FAILED',
-        entityType: 'ServiceDeskIntegration',
-        entityId: space_id || 'unknown',
-        userId: session?.user?.id || 'unknown',
-        newValue: {
-          error: error instanceof Error ? error.message : 'Unknown error',
-          duration: Date.now() - (startTime || Date.now()),
-          status: 'failed'
-        },
-        ipAddress: request?.headers?.get('x-forwarded-for') || request?.headers?.get('x-real-ip') || undefined,
-        userAgent: request?.headers?.get('user-agent') || undefined
-      }).catch(() => {})
-    }
 
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
 
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/integrations/manageengine-servicedesk')

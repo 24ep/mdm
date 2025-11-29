@@ -1,14 +1,15 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id } = await params
@@ -27,8 +28,7 @@ export async function GET(
     )
 
     if (rows.length === 0) {
-      return NextResponse.json({ error: 'Sync schedule not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Sync schedule not found' }}
 
     // Check access
     const { rows: access } = await query(
@@ -38,18 +38,17 @@ export async function GET(
     if (access.length === 0) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     return NextResponse.json({ schedule: rows[0] })
-  } catch (error) {
-    console.error('GET /data-sync-schedules/[id] error', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
 
-export async function PUT(
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\data-sync-schedules\[id]\route.ts')
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id } = await params
@@ -63,8 +62,7 @@ export async function PUT(
     )
 
     if (existing.length === 0) {
-      return NextResponse.json({ error: 'Sync schedule not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Sync schedule not found' }}
 
     // Check access
     const { rows: access } = await query(
@@ -92,8 +90,7 @@ export async function PUT(
     }
 
     if (fields.length === 0) {
-      return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'No fields to update' }}
 
     // Recalculate next_run_at if schedule changed
     if (updates.schedule_type || updates.schedule_config) {
@@ -118,18 +115,17 @@ export async function PUT(
     )
 
     return NextResponse.json({ schedule: rows[0] })
-  } catch (error) {
-    console.error('PUT /data-sync-schedules/[id] error', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
 
-export async function DELETE(
+
+
+export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\data-sync-schedules\[id]\route.ts')
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id } = await params
@@ -141,8 +137,9 @@ export async function DELETE(
     )
 
     if (existing.length === 0) {
-      return NextResponse.json({ error: 'Sync schedule not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Sync schedule not found' }}
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\data-sync-schedules\[id]\route.ts')
 
     // Check access
     const { rows: access } = await query(
@@ -159,11 +156,6 @@ export async function DELETE(
     )
 
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('DELETE /data-sync-schedules/[id] error', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
 
 function calculateNextRunTime(scheduleType: string, scheduleConfig: any): Date | null {
   if (scheduleType === 'MANUAL') return null

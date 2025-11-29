@@ -1,24 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { query } from '@/lib/db'
 import { createAuditLog } from '@/lib/audit'
 import { logger } from '@/lib/logger'
 import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -26,7 +21,7 @@ export async function GET(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -38,29 +33,24 @@ export async function GET(
     )
     if (!rows[0]) {
       logger.warn('Data model not found', { dataModelId: id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Not found' }, { status: 404 }))
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
     
     const duration = Date.now() - startTime
     logger.apiResponse('GET', `/api/data-models/${id}`, 200, duration)
-    return addSecurityHeaders(NextResponse.json({ dataModel: rows[0] }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Data Models API GET')
-  }
+    return NextResponse.json({ dataModel: rows[0] })
 }
 
-export async function PUT(
+export const GET = withErrorHandling(getHandler, 'GET /api/data-models/[id]')
+
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -68,7 +58,7 @@ export async function PUT(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -99,7 +89,7 @@ export async function PUT(
     let slug = slugInput
     
     if (!name && !display_name && description === undefined && is_active === undefined && icon === undefined && sort_order === undefined && is_pinned === undefined && source_type === undefined && external_connection_id === undefined && external_schema === undefined && external_table === undefined && external_primary_key === undefined && slug === undefined) {
-      return addSecurityHeaders(NextResponse.json({ error: 'No fields to update' }, { status: 400 }))
+      return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
     }
 
     const fields: string[] = []
@@ -132,7 +122,7 @@ export async function PUT(
         .replace(/^-+|-+$/g, '')
       slug = toSlug(slug)
       if (!slug) {
-        return addSecurityHeaders(NextResponse.json({ error: 'Invalid slug' }, { status: 400 }))
+        return NextResponse.json({ error: 'Invalid slug' }, { status: 400 })
       }
       // Ensure unique (excluding current record)
       const { rows: conflict } = await query(
@@ -141,7 +131,7 @@ export async function PUT(
       )
       if (conflict.length > 0) {
         logger.warn('Slug already in use', { dataModelId: id, slug })
-        return addSecurityHeaders(NextResponse.json({ error: 'Slug already in use' }, { status: 409 }))
+        return NextResponse.json({ error: 'Slug already in use' }, { status: 409 })
       }
       fields.push(`slug = $${idx++}`)
       values.push(slug)
@@ -156,7 +146,7 @@ export async function PUT(
     const { rows } = await query(sql, values)
     if (!rows[0]) {
       logger.warn('Data model not found for update', { dataModelId: id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Not found' }, { status: 404 }))
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
     // Create audit log
@@ -173,24 +163,19 @@ export async function PUT(
 
     const duration = Date.now() - startTime
     logger.apiResponse('PUT', `/api/data-models/${id}`, 200, duration)
-    return addSecurityHeaders(NextResponse.json({ dataModel: rows[0] }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('PUT', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Data Models API PUT')
-  }
+    return NextResponse.json({ dataModel: rows[0] })
 }
 
-export async function DELETE(
+export const PUT = withErrorHandling(putHandler, 'PUT /api/data-models/[id]')
+
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -198,7 +183,7 @@ export async function DELETE(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -214,7 +199,7 @@ export async function DELETE(
     )
     if (!rows[0]) {
       logger.warn('Data model not found for deletion', { dataModelId: id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Not found' }, { status: 404 }))
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
     // Create audit log
@@ -231,10 +216,7 @@ export async function DELETE(
 
     const duration = Date.now() - startTime
     logger.apiResponse('DELETE', `/api/data-models/${id}`, 200, duration)
-    return addSecurityHeaders(NextResponse.json({ ok: true }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('DELETE', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Data Models API DELETE')
-  }
+    return NextResponse.json({ ok: true })
 }
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/data-models/[id]')

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuthWithId } from '@/lib/api-middleware'
+import { requireSpaceAccess, requireProjectSpaceAccess } from '@/lib/space-access'
 import { db } from '@/lib/db'
 import { z } from 'zod'
 import { validateBody } from '@/lib/api-validation'
@@ -19,10 +19,9 @@ const moduleSchema = z.object({
 // Get all modules for a project
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.get('project_id')
@@ -44,23 +43,11 @@ export async function GET(request: NextRequest) {
       })
 
       if (!project) {
-        return NextResponse.json({ error: 'Project not found' }, { status: 404 })
-      }
+        return NextResponse.json({ error: 'Project not found' }}
 
       // Check access
-      const spaceMember = await db.spaceMember.findFirst({
-        where: { spaceId: project.spaceId, userId: session.user.id }
-      })
-      const isSpaceOwner = await db.space.findFirst({
-        where: { id: project.spaceId, createdBy: session.user.id }
-      })
-
-      if (!spaceMember && !isSpaceOwner) {
-        return NextResponse.json(
-          { error: 'Forbidden: Not a member or owner of the project\'s space' },
-          { status: 403 }
-        )
-      }
+      const accessResult = await requireProjectSpaceAccess(projectId, session.user.id)
+      if (!accessResult.success) return accessResult.response
 
       modules = await db.module.findMany({
         where: {
@@ -103,19 +90,8 @@ export async function GET(request: NextRequest) {
       })
     } else {
       // Get all modules for a space (across all projects)
-      const spaceMember = await db.spaceMember.findFirst({
-        where: { spaceId: spaceId!, userId: session.user.id }
-      })
-      const isSpaceOwner = await db.space.findFirst({
-        where: { id: spaceId!, createdBy: session.user.id }
-      })
-
-      if (!spaceMember && !isSpaceOwner) {
-        return NextResponse.json(
-          { error: 'Forbidden: Not a member or owner of the space' },
-          { status: 403 }
-        )
-      }
+      const accessResult = await requireSpaceAccess(spaceId!, session.user.id)
+      if (!accessResult.success) return accessResult.response
 
       modules = await db.module.findMany({
         where: {
@@ -200,10 +176,9 @@ export async function GET(request: NextRequest) {
 // Create a new module
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
     const bodyValidation = await validateBody(request, moduleSchema)
     if (!bodyValidation.success) {
@@ -219,22 +194,11 @@ export async function POST(request: NextRequest) {
     })
 
     if (!project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Project not found' }}
 
-    const spaceMember = await db.spaceMember.findFirst({
-      where: { spaceId: project.spaceId, userId: session.user.id }
-    })
-    const isSpaceOwner = await db.space.findFirst({
-      where: { id: project.spaceId, createdBy: session.user.id }
-    })
-
-    if (!spaceMember && !isSpaceOwner) {
-      return NextResponse.json(
-        { error: 'Forbidden: Not a member or owner of the project\'s space' },
-        { status: 403 }
-      )
-    }
+    // Check access
+    const accessResult = await requireProjectSpaceAccess(projectId, session.user.id)
+    if (!accessResult.success) return accessResult.response
 
     // Get the highest position for this project
     const lastModule = await db.module.findFirst({
@@ -282,8 +246,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    return NextResponse.json({ success: true, module }, { status: 201 })
-  } catch (error: any) {
+    return NextResponse.json({ success: true, module }} catch (error: any) {
     console.error('Error creating module:', error)
     return NextResponse.json(
       { error: error.message || 'Failed to create module' },

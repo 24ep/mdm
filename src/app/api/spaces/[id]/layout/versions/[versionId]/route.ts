@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/database'
 import { logger } from '@/lib/logger'
 import { validateParams, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
+import { handleApiError, requireAuthWithId} from '@/lib/api-middleware'
 import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
 // GET /api/spaces/[id]/layout/versions/[versionId] - Get a specific version
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; versionId: string }> }
 ) {
   const startTime = Date.now()
   try {
-    const session = await getServerSession(authOptions)
+    const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user?.id) {
       return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
@@ -85,16 +85,23 @@ export async function GET(
 }
 
 // DELETE /api/spaces/[id]/layout/versions/[versionId] - Delete a version
-export async function DELETE(
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\spaces\[id]\layout\versions\[versionId]\route.ts')
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; versionId: string }> }
 ) {
   const startTime = Date.now()
   try {
-    const session = await getServerSession(authOptions)
+    const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user?.id) {
       return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\spaces\[id]\layout\versions\[versionId]\route.ts')
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({

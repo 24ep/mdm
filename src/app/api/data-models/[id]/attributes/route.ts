@@ -1,27 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
 import { z } from 'zod'
-import { addSecurityHeaders } from '@/lib/security-headers'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const resolvedParams = await params
-    const paramValidation = validateParams(resolvedParams, z.object({
-      id: commonSchemas.id,
-    }))
-    
-    if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
+
+  const resolvedParams = await params
+  const paramValidation = validateParams(resolvedParams, z.object({
+    id: commonSchemas.id,
+  }))
+  
+  if (!paramValidation.success) {
+    return paramValidation.response
+  }
     
     const { id: dataModelId } = paramValidation.data
     logger.apiRequest('GET', `/api/data-models/${dataModelId}/attributes`)
@@ -73,35 +74,29 @@ export async function GET(
       
       const duration = Date.now() - startTime
       logger.apiResponse('GET', `/api/data-models/${dataModelId}/attributes`, 200, duration)
-      return addSecurityHeaders(NextResponse.json(response))
+      return NextResponse.json(response)
       
     } catch (queryError: any) {
       logger.dbError('SELECT attributes', queryError, { dataModelId })
       
       // Return empty array on error
-      return addSecurityHeaders(NextResponse.json({ 
+      return NextResponse.json({ 
         attributes: [],
         count: 0
-      }))
+      })
     }
-
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'ATTRIBUTES API')
-  }
 }
 
-export async function POST(
+export const GET = withErrorHandling(getHandler, 'GET /api/data-models/[id]/attributes')
+
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -109,7 +104,7 @@ export async function POST(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id: dataModelId } = paramValidation.data
@@ -143,6 +138,13 @@ export async function POST(
       return NextResponse.json({ error: 'Data model not found' }, { status: 404 })
     }
 
+    // Check if user has access to the space
+    const spaceId = dataModel.spaces[0].spaceId
+    if (spaceId) {
+      const accessResult = await requireSpaceAccess(spaceId, session.user.id!)
+      if (!accessResult.success) return accessResult.response
+    }
+
     const space = dataModel.spaces[0].space
     const userMembership = space.members[0]
     const userRole = userMembership?.role
@@ -150,7 +152,7 @@ export async function POST(
     const canCreate = userRole === 'ADMIN' || userRole === 'MEMBER' || isOwner
 
     if (!canCreate) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Insufficient permissions to create attributes' }, { status: 403 }))
+      return NextResponse.json({ error: 'Insufficient permissions to create attributes' }, { status: 403 })
     }
 
     // Validate request body
@@ -179,7 +181,7 @@ export async function POST(
 
     const bodyValidation = await validateBody(request, bodySchema)
     if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
+      return bodyValidation.response
     }
 
     const {
@@ -269,10 +271,7 @@ export async function POST(
     logger.apiResponse('POST', `/api/data-models/${dataModelId}/attributes`, 201, duration, { 
       attributeId: attribute.id 
     })
-    return addSecurityHeaders(NextResponse.json({ attribute: response }, { status: 201 }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('POST', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'ATTRIBUTES API POST')
-  }
+    return NextResponse.json({ attribute: response }, { status: 201 })
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/data-models/[id]/attributes')

@@ -1,19 +1,19 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { logAPIRequest } from '@/shared/lib/security/audit-logger'
 import { checkPermission } from '@/shared/lib/security/permission-checker'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     const { id } = await params
 
@@ -32,8 +32,7 @@ export async function GET(
     )
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Report not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Report not found' }}
 
     const row = result.rows[0]
     const report = {
@@ -58,24 +57,19 @@ export async function GET(
     )
 
     return NextResponse.json({ report })
-  } catch (error) {
-    console.error('Error fetching report:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
 
-export async function PUT(
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\v1\reports\[id]\route.ts')
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     const { id } = await params
     const body = await request.json()
@@ -119,8 +113,7 @@ export async function PUT(
     }
 
     if (updates.length === 0) {
-      return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'No fields to update' }}
 
     updates.push(`updated_at = NOW()`)
     values.push(id)
@@ -135,8 +128,7 @@ export async function PUT(
     const result = await query(updateQuery, values)
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Report not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Report not found' }}
 
     await logAPIRequest(
       session.user.id,
@@ -146,24 +138,21 @@ export async function PUT(
     )
 
     return NextResponse.json({ message: 'Report updated successfully' })
-  } catch (error) {
-    console.error('Error updating report:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
 
-export async function DELETE(
+
+
+export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\v1\reports\[id]\route.ts')
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\v1\reports\[id]\route.ts')
 
     const { id } = await params
 
@@ -189,8 +178,7 @@ export async function DELETE(
     )
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Report not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Report not found' }}
 
     await logAPIRequest(
       session.user.id,
@@ -200,12 +188,4 @@ export async function DELETE(
     )
 
     return NextResponse.json({ message: 'Report deleted successfully' })
-  } catch (error) {
-    console.error('Error deleting report:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
 

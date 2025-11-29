@@ -17,7 +17,6 @@ export type {
 
 // Utils
 export {
-  formatFileSize,
   filterAttachmentsBySearch,
   filterAttachmentsByType,
   isAttachmentPublic,

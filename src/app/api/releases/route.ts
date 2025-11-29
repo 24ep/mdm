@@ -1,110 +1,87 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
+import { requireProjectSpaceAccess } from '@/lib/space-access'
 import { db } from '@/lib/db'
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler(request: NextRequest) {
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
 
-    const { searchParams } = new URL(request.url)
-    const projectId = searchParams.get('projectId')
-    const status = searchParams.get('status')
+  const { searchParams } = new URL(request.url)
+  const projectId = searchParams.get('projectId')
+  const status = searchParams.get('status')
 
-    const where: any = {
-      deletedAt: null
-    }
+  const where: any = {
+    deletedAt: null
+  }
 
-    if (projectId) {
-      where.projectId = projectId
-    }
+  if (projectId) {
+    where.projectId = projectId
+  }
 
-    if (status) {
-      where.status = status
-    }
+  if (status) {
+    where.status = status
+  }
 
-    const releases = await db.release.findMany({
-      where,
-      include: {
-        creator: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true
-          }
-        },
-        project: {
-          select: {
-            id: true,
-            name: true,
-            spaceId: true
-          }
-        },
-        _count: {
-          select: { tickets: true }
+  const releases = await db.release.findMany({
+    where,
+    include: {
+      creator: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          avatar: true
         }
       },
-      orderBy: {
-        targetDate: 'desc'
+      project: {
+        select: {
+          id: true,
+          name: true,
+          spaceId: true
+        }
+      },
+      _count: {
+        select: { tickets: true }
       }
-    })
+    },
+    orderBy: {
+      targetDate: 'desc'
+    }
+  })
 
-    return NextResponse.json({ releases })
-  } catch (error: any) {
-    console.error('Error fetching releases:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to fetch releases' },
-      { status: 500 }
-    )
-  }
+  return NextResponse.json({ releases })
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+export const GET = withErrorHandling(getHandler, 'GET /api/releases')
 
-    const body = await request.json()
-    const { name, version, description, status, targetDate, releaseDate, projectId, metadata } = body
+async function postHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    if (!name || !projectId) {
-      return NextResponse.json(
-        { error: 'Name and projectId are required' },
-        { status: 400 }
-      )
-    }
+  const body = await request.json()
+  const { name, version, description, status, targetDate, releaseDate, projectId, metadata } = body
 
-    // Check if user has access to the project's space
-    const project = await db.project.findUnique({
-      where: { id: projectId },
-      include: {
-        space: {
-          include: {
-            members: {
-              where: { userId: session.user.id }
-            }
-          }
-        }
-      }
-    })
+  if (!name || !projectId) {
+    return NextResponse.json(
+      { error: 'Name and projectId are required' },
+      { status: 400 }
+    )
+  }
 
-    if (!project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
-    }
+  // Check if user has access to the project's space
+  const project = await db.project.findUnique({
+    where: { id: projectId },
+    select: { id: true }
+  })
 
-    const hasAccess = 
-      project.space.createdBy === session.user.id ||
-      project.space.members.length > 0
+  if (!project) {
+    return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+  }
 
-    if (!hasAccess) {
-      return NextResponse.json({ error: 'Access denied to project' }, { status: 403 })
-    }
+  const accessResult = await requireProjectSpaceAccess(projectId, session.user.id!)
+  if (!accessResult.success) return accessResult.response
 
     // Check if version already exists for this project
     if (version) {
@@ -154,13 +131,8 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    return NextResponse.json({ release }, { status: 201 })
-  } catch (error: any) {
-    console.error('Error creating release:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to create release' },
-      { status: 500 }
-    )
-  }
+  return NextResponse.json({ release }, { status: 201 })
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/releases')
 

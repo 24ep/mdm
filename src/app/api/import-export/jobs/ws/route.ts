@@ -14,8 +14,7 @@ export async function GET(request: NextRequest) {
   const jobId = searchParams.get('jobId')
 
   if (!jobId) {
-    return new Response('jobId parameter required', { status: 400 })
-  }
+    return new Response('jobId parameter required'}
 
   // Create SSE stream
   const stream = new ReadableStream({

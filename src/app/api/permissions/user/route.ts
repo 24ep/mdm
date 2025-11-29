@@ -1,15 +1,19 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { getUserPermissions } from '@/lib/permission-checker'
 import { query } from '@/lib/db'
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
+async function getHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } 
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\permissions\user\route.ts')= authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+
 
     const { searchParams } = new URL(request.url)
     const spaceId = searchParams.get('spaceId') || undefined
@@ -19,8 +23,7 @@ export async function GET(request: NextRequest) {
     if (userId !== session.user.id) {
       // Only admins can view other users' permissions
       if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-      }
+        return NextResponse.json({ error: 'Forbidden' }}
     }
 
     // Get user's global role
@@ -30,8 +33,7 @@ export async function GET(request: NextRequest) {
     )
 
     if (userRows.length === 0) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'User not found' }}
 
     const globalRole = userRows[0].role
 
@@ -62,8 +64,3 @@ export async function GET(request: NextRequest) {
       spaceRole: context.spaceRole,
       spaceId: context.spaceId
     })
-  } catch (error) {
-    console.error('Error getting user permissions:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}

@@ -75,7 +75,6 @@ src/app/admin/
 │   ├── storage/                     # Storage & Files
 │   │   ├── components/
 │   │   │   ├── StorageManagement.tsx
-│   │   │   ├── FileSystemManagement.tsx
 │   │   │   ├── AttachmentManager.tsx
 │   │   │   └── CacheManagement.tsx
 │   │   ├── hooks/

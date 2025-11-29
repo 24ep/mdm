@@ -1,14 +1,13 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler(request: NextRequest) {
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
+  // TODO: Add requireSpaceAccess check if spaceId is available
 
     const { searchParams } = new URL(request.url)
     const spaceId = searchParams.get('spaceId')
@@ -65,16 +64,11 @@ export async function GET(request: NextRequest) {
 
     const functions = functionsResult.rows.map(row => row.function_name)
 
-    return NextResponse.json({
-      tables,
-      functions
-    })
-  } catch (error: any) {
-    console.error('Error fetching database schema:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch database schema', details: error.message },
-      { status: 500 }
-    )
-  }
+  return NextResponse.json({
+    tables,
+    functions
+  })
 }
+
+export const GET = withErrorHandling(getHandler, 'GET /api/db/schema')
 

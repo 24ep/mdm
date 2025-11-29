@@ -1,22 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/database'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { logger } from '@/lib/logger'
 import { validateQuery, commonSchemas } from '@/lib/api-validation'
 import { handleApiError } from '@/lib/api-middleware'
 import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    const userId = session?.user?.id || request.headers.get('x-user-id')
-    
-    if (!userId) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
+  const userId = session.user.id!
 
     // Validate query parameters - use passthrough for complex filters
     const queryValidation = validateQuery(request, z.object({
@@ -37,7 +32,7 @@ export async function GET(request: NextRequest) {
     }))
     
     if (!queryValidation.success) {
-      return addSecurityHeaders(queryValidation.response)
+      return queryValidation.response
     }
     
     const { q = '', spaceId, fileType, category, tag, dateFrom, dateTo, sizeMin, sizeMax, uploadedBy, sortBy = 'uploaded_at', sortOrder = 'desc', page, limit = 20 } = queryValidation.data
@@ -45,15 +40,8 @@ export async function GET(request: NextRequest) {
     logger.apiRequest('GET', '/api/files/search', { userId, spaceId, q, page, limit })
 
     // Check if user has access to this space
-    const memberResult = await query(
-      'SELECT role FROM space_members WHERE space_id = $1 AND user_id = $2',
-      [spaceId, userId]
-    )
-
-    if (memberResult.rows.length === 0) {
-      logger.warn('Space not found or access denied for file search', { spaceId, userId })
-      return addSecurityHeaders(NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 }))
-    }
+    const accessResult = await requireSpaceAccess(spaceId, userId)
+    if (!accessResult.success) return accessResult.response
 
     // Build the search query
     let whereConditions = ['af.space_id = $1', 'af.deleted_at IS NULL']
@@ -233,7 +221,7 @@ export async function GET(request: NextRequest) {
 
     const duration = Date.now() - startTime
     logger.apiResponse('GET', '/api/files/search', 200, duration, { total, filesCount: filesResult.rows.length })
-    return addSecurityHeaders(NextResponse.json({
+    return NextResponse.json({
       files: filesResult.rows,
       pagination: {
         page,
@@ -255,9 +243,6 @@ export async function GET(request: NextRequest) {
         }
       }
     }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', '/api/files/search', 500, duration)
-    return handleApiError(error, 'File Search API GET')
-  }
 }
+
+export const GET = withErrorHandling(getHandler, 'GET /api/files/search')

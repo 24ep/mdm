@@ -5,42 +5,29 @@
 
 import { DatabaseConnection, ExportJob, ImportJob, Migration, LintResult, TableInfo } from './types'
 import { formatFileSize } from '@/lib/formatters'
+import { 
+  getConnectionStatusColor as getSharedConnectionStatusColor,
+  getJobStatusColor as getSharedJobStatusColor 
+} from '@/lib/status-colors'
+import { filterBySearch, filterByStatus, sortByVersion } from '@/lib/filter-utils'
 
-// Re-export shared utilities
+// Re-export formatFileSize for convenience
 export { formatFileSize }
 
 /**
  * Format database connection status badge color
+ * Uses shared status color utility
  */
 export function getConnectionStatusColor(status: DatabaseConnection['status']): string {
-  switch (status) {
-    case 'connected':
-      return 'bg-green-600'
-    case 'disconnected':
-      return 'bg-gray-600'
-    case 'error':
-      return 'bg-red-600'
-    default:
-      return 'bg-gray-600'
-  }
+  return getSharedConnectionStatusColor(status as 'connected' | 'disconnected' | 'error')
 }
 
 /**
  * Format export/import job status badge color
+ * Uses shared status color utility
  */
 export function getJobStatusColor(status: ExportJob['status'] | ImportJob['status']): string {
-  switch (status) {
-    case 'completed':
-      return 'bg-green-600'
-    case 'running':
-      return 'bg-blue-600'
-    case 'failed':
-      return 'bg-red-600'
-    case 'pending':
-      return 'bg-yellow-600'
-    default:
-      return 'bg-gray-600'
-  }
+  return getSharedJobStatusColor(status as 'completed' | 'running' | 'failed' | 'pending')
 }
 
 /**
@@ -68,39 +55,29 @@ export function isConnectionActive(connection: DatabaseConnection): boolean {
 
 /**
  * Filter database connections by search query
+ * Uses shared filter utility
  */
 export function filterConnections(connections: DatabaseConnection[], query: string): DatabaseConnection[] {
-  if (!query.trim()) return connections
-  
-  const lowerQuery = query.toLowerCase()
-  return connections.filter(conn =>
-    conn.name?.toLowerCase().includes(lowerQuery) ||
-    conn.database?.toLowerCase().includes(lowerQuery) ||
-    conn.host?.toLowerCase().includes(lowerQuery) ||
-    conn.type?.toLowerCase().includes(lowerQuery)
-  )
+  return filterBySearch(connections, query, ['name', 'database', 'host', 'type'])
 }
 
 /**
  * Filter export/import jobs by status
+ * Uses shared filter utility
  */
 export function filterJobsByStatus<T extends ExportJob | ImportJob>(
   jobs: T[],
   status: T['status'] | 'all'
 ): T[] {
-  if (status === 'all') return jobs
-  return jobs.filter(job => job.status === status)
+  return filterByStatus(jobs, status as any)
 }
 
 /**
  * Sort migrations by version
+ * Uses shared sort utility
  */
 export function sortMigrationsByVersion(migrations: Migration[], order: 'asc' | 'desc' = 'desc'): Migration[] {
-  return [...migrations].sort((a, b) => {
-    const aVersion = a.version || ''
-    const bVersion = b.version || ''
-    return order === 'desc' ? bVersion.localeCompare(aVersion) : aVersion.localeCompare(bVersion)
-  })
+  return sortByVersion(migrations, 'version', order)
 }
 
 /**

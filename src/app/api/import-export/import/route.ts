@@ -1,15 +1,15 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { uploadJobFile } from '@/shared/lib/jobs/storage-helper'
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
+async function postHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     const formData = await request.formData()
     const file = formData.get('file') as File
@@ -106,18 +106,17 @@ export async function POST(request: NextRequest) {
       job: importJob,
       message: 'Import job created. Processing will begin shortly.'
     }, { status: 201 })
-  } catch (error) {
-    console.error('Error creating import job:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\import-export\import\route.ts')
+async function getHandler(request: NextRequest) {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\import-export\import\route.ts')
 
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
@@ -180,8 +179,6 @@ export async function GET(request: NextRequest) {
         pages: Math.ceil(total / limit)
       }
     })
-  } catch (error) {
-    console.error('Error fetching import jobs:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+

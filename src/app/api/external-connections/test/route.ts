@@ -1,13 +1,13 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { createExternalClient } from '@/lib/external-db'
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+async function postHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const body = await request.json()
     const { 
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'api_url required for API connections' }, { status: 400 })
       }
 
-      try {
+      
         // Build headers
         const headers: Record<string, string> = {
           'Content-Type': 'application/json',
@@ -109,12 +109,6 @@ export async function POST(request: NextRequest) {
           }
           throw fetchError
         }
-      } catch (error: any) {
-        console.error('API test error:', error)
-        return NextResponse.json({ 
-          success: false,
-          error: error.message || 'Failed to connect to API endpoint' 
-        }, { status: 200 })
       }
     } else {
       // Test database connection
@@ -153,16 +147,26 @@ export async function POST(request: NextRequest) {
         await client.close()
       }
     }
-  } catch (error) {
-    console.error('Test connection error:', error)
-    return NextResponse.json({ error: 'Connection failed' }, { status: 500 })
-  }
 }
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export const POST = withErrorHandling(postHandler, 'POST /api/external-connections/test')
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function getHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     const { searchParams } = new URL(request.url)
     const spaceId = searchParams.get('space_id')
     const dbType = searchParams.get('db_type')
@@ -177,6 +181,7 @@ export async function GET(request: NextRequest) {
     if (!spaceId || !dbType || !host || !schema || !table) {
       return NextResponse.json({ error: 'space_id, db_type, host, schema, table required' }, { status: 400 })
     }
+
 
     const { rows: access } = await query('SELECT 1 FROM space_members WHERE space_id = $1 AND user_id = $2', [spaceId, session.user.id])
     if (access.length === 0) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -216,10 +221,17 @@ export async function GET(request: NextRequest) {
     } finally {
       await client.close()
     }
-  } catch (error) {
-    console.error('Metadata fetch error:', error)
-    return NextResponse.json({ error: 'Failed to fetch metadata' }, { status: 500 })
-  }
 }
+
+export const GET = withErrorHandling(getHandler, 'GET /api/external-connections/test')
+
+
+
+
+
+
+
+
+
 
 

@@ -1,10 +1,10 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { applyRateLimit } from '@/app/api/v1/middleware'
 
-export async function DELETE(
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; shareId: string }> }
 ) {
@@ -13,11 +13,9 @@ export async function DELETE(
     return rateLimitResponse
   }
 
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { id: documentId, shareId } = await params
 
@@ -57,12 +55,7 @@ export async function DELETE(
     )
 
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Error deleting share:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
 }
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/knowledge/documents/[id]/shares/[shareId]')
 

@@ -1,22 +1,21 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
 // GET - Get a specific storage connection
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Insufficient permissions' }}
 
     const { id } = await params
     const connection = await prisma.storageConnection.findUnique({
@@ -24,30 +23,26 @@ export async function GET(
     })
 
     if (!connection) {
-      return NextResponse.json({ error: 'Storage connection not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Storage connection not found' }}
 
     return NextResponse.json({ connection })
-  } catch (error) {
-    console.error('Error fetching storage connection:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
 
 // PUT - Update a storage connection
-export async function PUT(
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\storage\connections\[id]\route.ts')
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Insufficient permissions' }}
 
     const { id } = await params
     const { name, type, description, isActive, config } = await request.json()
@@ -57,8 +52,7 @@ export async function PUT(
     })
 
     if (!connection) {
-      return NextResponse.json({ error: 'Storage connection not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Storage connection not found' }}
 
     const updateData: any = {}
     if (name !== undefined) updateData.name = name
@@ -73,28 +67,25 @@ export async function PUT(
     })
 
     return NextResponse.json({ connection: updated })
-  } catch (error: any) {
-    console.error('Error updating storage connection:', error)
-    return NextResponse.json({ 
-      error: error.message || 'Internal server error' 
-    }, { status: 500 })
-  }
-}
 
 // DELETE - Delete a storage connection
-export async function DELETE(
+
+
+export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\admin\storage\connections\[id]\route.ts')
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\admin\storage\connections\[id]\route.ts')
 
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Insufficient permissions' }}
 
     const { id } = await params
     const connection = await prisma.storageConnection.findUnique({
@@ -102,19 +93,11 @@ export async function DELETE(
     })
 
     if (!connection) {
-      return NextResponse.json({ error: 'Storage connection not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Storage connection not found' }}
 
     await prisma.storageConnection.delete({
       where: { id }
     })
 
     return NextResponse.json({ success: true })
-  } catch (error: any) {
-    console.error('Error deleting storage connection:', error)
-    return NextResponse.json({ 
-      error: error.message || 'Internal server error' 
-    }, { status: 500 })
-  }
-}
 

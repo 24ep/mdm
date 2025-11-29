@@ -1,14 +1,15 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id } = await params
@@ -46,18 +47,17 @@ export async function GET(
       availableDataModels: dataModels,
       availableAssignments: assignments
     })
-  } catch (error) {
-    console.error('Error fetching dashboard datasources:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
 
-export async function POST(
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\dashboards\[id]\datasources\route.ts')
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id } = await params
@@ -65,8 +65,9 @@ export async function POST(
     const { name, source_type, source_id, config, query_config } = body
 
     if (!name || !source_type) {
-      return NextResponse.json({ error: 'Name and source_type are required' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'Name and source_type are required' }}
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashboards\[id]\datasources\route.ts')
 
     // Check if user has access to this dashboard
     const { rows: accessCheck } = await query(`
@@ -77,16 +78,14 @@ export async function POST(
     `, [id, session.user.id])
 
     if (accessCheck.length === 0) {
-      return NextResponse.json({ error: 'Dashboard not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Dashboard not found' }}
 
     const dashboard = accessCheck[0]
     const canEdit = dashboard.created_by === session.user.id || 
                    (dashboard.role && ['ADMIN', 'EDITOR'].includes(dashboard.role))
 
     if (!canEdit) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Access denied' }}
 
     // Create datasource
     const { rows } = await query(`
@@ -106,8 +105,3 @@ export async function POST(
     ])
 
     return NextResponse.json({ datasource: rows[0] }, { status: 201 })
-  } catch (error) {
-    console.error('Error creating dashboard datasource:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}

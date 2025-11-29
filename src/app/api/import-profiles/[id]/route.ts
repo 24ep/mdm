@@ -1,17 +1,17 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     const { id } = await params
 
@@ -54,25 +54,22 @@ export async function GET(
     })
 
     if (!profile) {
-      return NextResponse.json({ error: 'Import profile not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Import profile not found' }}
 
     return NextResponse.json({ profile })
-  } catch (error) {
-    console.error('Error in GET /api/import-profiles/[id]:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
 
-export async function PUT(
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\import-profiles\[id]\route.ts')
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     const { id } = await params
     const body = await request.json()
@@ -87,8 +84,7 @@ export async function PUT(
     })
 
     if (!existingProfile) {
-      return NextResponse.json({ error: 'Import profile not found or access denied' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Import profile not found or access denied' }}
 
     const { name, description, dataModelId, mapping, settings, spaceId } = body
 
@@ -121,21 +117,21 @@ export async function PUT(
     })
 
     return NextResponse.json({ profile: updatedProfile })
-  } catch (error) {
-    console.error('Error in PUT /api/import-profiles/[id]:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
 
-export async function DELETE(
+
+
+export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\import-profiles\[id]\route.ts')
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\import-profiles\[id]\route.ts')
 
     const { id } = await params
 
@@ -149,8 +145,7 @@ export async function DELETE(
     })
 
     if (!existingProfile) {
-      return NextResponse.json({ error: 'Import profile not found or access denied' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Import profile not found or access denied' }}
 
     // Soft delete
     await db.importProfile.update({
@@ -159,8 +154,3 @@ export async function DELETE(
     })
 
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Error in DELETE /api/import-profiles/[id]:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}

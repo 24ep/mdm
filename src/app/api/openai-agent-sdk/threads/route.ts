@@ -1,17 +1,14 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-
 const prisma = new PrismaClient()
 
 // GET - List threads for a chatbot
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler(request: NextRequest) {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
     const { searchParams } = new URL(request.url)
     const chatbotId = searchParams.get('chatbotId')
@@ -45,22 +42,26 @@ export async function GET(request: NextRequest) {
     })
 
     return NextResponse.json({ threads })
-  } catch (error) {
-    console.error('Error fetching threads:', error)
-    return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+  ,
       { status: 500 }
     )
   }
 }
 
 // POST - Create a new thread
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+
+
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/openai-agent-sdk/threads')
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\openai-agent-sdk\threads\route.ts')
+async function postHandler(request: NextRequest) {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\openai-agent-sdk\threads\route.ts')
 
     const body = await request.json()
     const { chatbotId, threadId, title, metadata, spaceId } = body
@@ -92,12 +93,11 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({ thread }, { status: 201 })
-  } catch (error) {
-    console.error('Error creating thread:', error)
-    return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+  ,
       { status: 500 }
     )
   }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/openai-agent-sdk/threads')
 

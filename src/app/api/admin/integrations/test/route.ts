@@ -1,14 +1,12 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { Client } from '@elastic/elasticsearch'
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function postHandler(request: NextRequest) {
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const body = await request.json()
     const { name, type, config } = body
@@ -309,12 +307,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(testResult)
-  } catch (error: any) {
-    console.error('Error testing integration:', error)
-    return NextResponse.json({ 
-      success: false,
-      error: error.message || 'Failed to test connection'
-    }, { status: 500 })
-  }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/admin/integrations/test')
 

@@ -1,22 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware';
 import { query } from '@/lib/db';
 import { NotificationFilters, CreateNotificationRequest } from '@/types/notifications';
 import { logger } from '@/lib/logger';
 import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation';
-import { handleApiError } from '@/lib/api-middleware';
-import { addSecurityHeaders } from '@/lib/security-headers';
 import { z } from 'zod';
 
 // GET /api/notifications - Get notifications for the current user
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   const startTime = Date.now();
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }));
-    }
+  const authResult = await requireAuthWithId();
+  if (!authResult.success) return authResult.response;
+  const { session } = authResult;
 
     logger.apiRequest('GET', '/api/notifications', { userId: session.user.id });
 
@@ -31,7 +26,7 @@ export async function GET(request: NextRequest) {
 
     const queryValidation = validateQuery(request, querySchema);
     if (!queryValidation.success) {
-      return addSecurityHeaders(queryValidation.response);
+      return queryValidation.response;
     }
 
     const filters: NotificationFilters = {
@@ -118,27 +113,22 @@ export async function GET(request: NextRequest) {
       total,
       unreadCount,
     });
-    return addSecurityHeaders(NextResponse.json({
+    return NextResponse.json({
       notifications,
       total,
       unreadCount,
       hasMore: (filters.offset || 0) + (filters.limit || 50) < total,
-    }));
-  } catch (error) {
-    const duration = Date.now() - startTime;
-    logger.apiResponse('GET', '/api/notifications', 500, duration);
-    return handleApiError(error, 'Notifications API GET');
-  }
+    });
 }
 
+export const GET = withErrorHandling(getHandler, 'GET /api/notifications');
+
 // POST /api/notifications - Create a new notification
-export async function POST(request: NextRequest) {
+async function postHandler(request: NextRequest) {
   const startTime = Date.now();
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }));
-    }
+  const authResult = await requireAuthWithId();
+  if (!authResult.success) return authResult.response;
+  const { session } = authResult;
 
     logger.apiRequest('POST', '/api/notifications', { userId: session.user.id });
 
@@ -156,7 +146,7 @@ export async function POST(request: NextRequest) {
 
     const bodyValidation = await validateBody(request, bodySchema);
     if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response);
+      return bodyValidation.response;
     }
 
     const {
@@ -175,10 +165,10 @@ export async function POST(request: NextRequest) {
     // For now, users can only create notifications for themselves
     if (user_id !== session.user.id && session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN') {
       logger.warn('Insufficient permissions to create notification', { targetUserId: user_id, userId: session.user.id });
-      return addSecurityHeaders(NextResponse.json(
+      return NextResponse.json(
         { error: 'Insufficient permissions' },
         { status: 403 }
-      ));
+      );
     }
 
     // Create notification using the database function
@@ -216,10 +206,7 @@ export async function POST(request: NextRequest) {
       notificationId: notificationRows[0].id,
       type,
     });
-    return addSecurityHeaders(NextResponse.json(notificationRows[0], { status: 201 }));
-  } catch (error) {
-    const duration = Date.now() - startTime;
-    logger.apiResponse('POST', '/api/notifications', 500, duration);
-    return handleApiError(error, 'Notifications API POST');
-  }
+    return NextResponse.json(notificationRows[0], { status: 201 });
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/notifications');

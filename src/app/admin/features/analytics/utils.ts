@@ -4,23 +4,15 @@
  */
 
 import { SystemMetrics, HealthStatus, LogEntry, Alert, PerformanceMetric } from './types'
+import { getHealthStatusColor as getSharedHealthStatusColor, getSeverityColor as getSharedSeverityColor } from '@/lib/status-colors'
+import { filterBySearch, filterByValue, sortByDate } from '@/lib/filter-utils'
 
 /**
  * Format health status badge color
+ * Uses shared status color utility
  */
 export function getHealthStatusColor(status: HealthStatus['status']): string {
-  switch (status) {
-    case 'healthy':
-      return 'bg-green-600'
-    case 'degraded':
-      return 'bg-yellow-600'
-    case 'down':
-      return 'bg-red-600'
-    case 'unknown':
-      return 'bg-gray-600'
-    default:
-      return 'bg-gray-600'
-  }
+  return getSharedHealthStatusColor(status as 'healthy' | 'degraded' | 'down' | 'unknown')
 }
 
 /**
@@ -44,20 +36,10 @@ export function getLogLevelColor(level: LogEntry['level']): string {
 
 /**
  * Format alert severity badge color
+ * Uses shared status color utility
  */
 export function getAlertSeverityColor(severity: Alert['severity']): string {
-  switch (severity) {
-    case 'critical':
-      return 'bg-red-600'
-    case 'high':
-      return 'bg-orange-600'
-    case 'medium':
-      return 'bg-yellow-600'
-    case 'low':
-      return 'bg-blue-600'
-    default:
-      return 'bg-gray-600'
-  }
+  return getSharedSeverityColor(severity as 'low' | 'medium' | 'high' | 'critical')
 }
 
 /**
@@ -109,44 +91,34 @@ export function formatStorageSize(bytes: number): string {
 
 /**
  * Filter log entries by search query
+ * Uses shared filter utility
  */
 export function filterLogs(logs: LogEntry[], query: string): LogEntry[] {
-  if (!query.trim()) return logs
-  
-  const lowerQuery = query.toLowerCase()
-  return logs.filter(log =>
-    log.message?.toLowerCase().includes(lowerQuery) ||
-    log.service?.toLowerCase().includes(lowerQuery) ||
-    log.level?.toLowerCase().includes(lowerQuery) ||
-    log.userId?.toLowerCase().includes(lowerQuery)
-  )
+  return filterBySearch(logs, query, ['message', 'service', 'level', 'userId'])
 }
 
 /**
  * Filter log entries by level
+ * Uses shared filter utility
  */
 export function filterLogsByLevel(logs: LogEntry[], level: LogEntry['level'] | 'all'): LogEntry[] {
-  if (level === 'all') return logs
-  return logs.filter(log => log.level === level)
+  return filterByValue(logs, 'level', level === 'all' ? 'all' : level as any)
 }
 
 /**
  * Filter log entries by service
+ * Uses shared filter utility
  */
 export function filterLogsByService(logs: LogEntry[], service: string): LogEntry[] {
-  if (!service || service === 'all') return logs
-  return logs.filter(log => log.service === service)
+  return filterByValue(logs, 'service', service === 'all' ? 'all' : service as any)
 }
 
 /**
  * Sort log entries by timestamp
+ * Uses shared sort utility
  */
 export function sortLogsByTimestamp(logs: LogEntry[], order: 'asc' | 'desc' = 'desc'): LogEntry[] {
-  return [...logs].sort((a, b) => {
-    const aTime = new Date(a.timestamp).getTime()
-    const bTime = new Date(b.timestamp).getTime()
-    return order === 'desc' ? bTime - aTime : aTime - bTime
-  })
+  return sortByDate(logs, 'timestamp', order)
 }
 
 /**

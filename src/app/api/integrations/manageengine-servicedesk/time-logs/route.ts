@@ -1,26 +1,27 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { getServiceDeskService } from '@/lib/manageengine-servicedesk-helper'
 import { checkServiceDeskRateLimit, getServiceDeskRateLimitConfig } from '@/lib/servicedesk-rate-limiter'
 import { createAuditLog } from '@/lib/audit'
 
 // Log time to ServiceDesk ticket
-export async function POST(request: NextRequest) {
-  const startTime = Date.now()
+async function postHandler(request: NextRequest) {
+    const startTime = Date.now()
   let auditLogId: string | null = null
   let space_id: string | undefined = undefined
   let session: any = null
   
-  try {
-    session = await getServerSession(authOptions)
+  
+    const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
 
     const body = await request.json()
-    const parsed = body
+    const parsed 
     space_id = parsed.space_id
     const { request_id, hours, minutes, description, billable, technician } = parsed
 
@@ -38,7 +39,6 @@ export async function POST(request: NextRequest) {
     )
     if (access.length === 0) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
 
     // Rate limiting check
     const rateLimitConfig = await getServiceDeskRateLimitConfig(space_id)
@@ -64,8 +64,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create initial audit log
-    try {
-      const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined
+    const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined
       const userAgent = request.headers.get('user-agent') || undefined
       
       const auditResult = await createAuditLog({
@@ -159,37 +158,36 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-  } catch (error) {
-    console.error('POST /integrations/manageengine-servicedesk/time-logs error', error)
-    
-    // Update audit log on exception
-    if (auditLogId) {
-      await createAuditLog({
-        action: 'SERVICEDESK_TIME_LOG_FAILED',
-        entityType: 'ServiceDeskIntegration',
-        entityId: space_id || 'unknown',
-        userId: session?.user?.id || 'unknown',
-        newValue: {
-          error: error instanceof Error ? error.message : 'Unknown error',
-          duration: Date.now() - (startTime || Date.now()),
-          status: 'failed'
-        },
+  ,
         ipAddress: request?.headers?.get('x-forwarded-for') || request?.headers?.get('x-real-ip') || undefined,
         userAgent: request?.headers?.get('user-agent') || undefined
-      }).catch(() => {})
+}).catch(() => {})
     }
 
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+    return NextResponse.json({ error: 'Internal server error' }}
 }
 
 // Get time logs from ServiceDesk ticket
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function getHandler(request: NextRequest) {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
+
+
 
     const { searchParams } = new URL(request.url)
     const space_id = searchParams.get('space_id')
@@ -209,7 +207,6 @@ export async function GET(request: NextRequest) {
     )
     if (access.length === 0) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
 
     // Get ServiceDesk service
     const service = await getServiceDeskService(space_id)
@@ -234,10 +231,8 @@ export async function GET(request: NextRequest) {
         { error: result.error || 'Failed to get time logs from ServiceDesk' },
         { status: 400 }
       )
-    }
-  } catch (error) {
-    console.error('GET /integrations/manageengine-servicedesk/time-logs error', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
 
+
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/integrations/manageengine-servicedesk')
+export const GET = withErrorHandling(getHandler, 'GET GET /api/integrations/manageengine-servicedesk')

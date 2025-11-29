@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { db } from '@/lib/db'
 import { z } from 'zod'
 import { validateBody } from '@/lib/api-validation'
@@ -22,15 +22,13 @@ const updateIntakeFormSchema = z.object({
   isActive: z.boolean().optional(),
 })
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { id } = await params
 
@@ -51,36 +49,21 @@ export async function GET(
     }
 
     // Check access
-    const spaceMember = await db.spaceMember.findFirst({
-      where: { spaceId: form.spaceId, userId: session.user.id },
-    })
-    const isSpaceOwner = await db.space.findFirst({
-      where: { id: form.spaceId, createdBy: session.user.id },
-    })
-
-    if (!spaceMember && !isSpaceOwner) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    const accessResult = await requireSpaceAccess(form.spaceId, session.user.id!)
+    if (!accessResult.success) return accessResult.response
 
     return NextResponse.json({ form })
-  } catch (error: any) {
-    console.error('Error fetching intake form:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to fetch intake form' },
-      { status: 500 }
-    )
-  }
 }
 
-export async function PUT(
+export const GET = withErrorHandling(getHandler, 'GET /api/intake-forms/[id]')
+
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { id } = await params
     const bodyValidation = await validateBody(request, updateIntakeFormSchema)
@@ -100,16 +83,8 @@ export async function PUT(
     }
 
     // Check access
-    const spaceMember = await db.spaceMember.findFirst({
-      where: { spaceId: existingForm.spaceId, userId: session.user.id },
-    })
-    const isSpaceOwner = await db.space.findFirst({
-      where: { id: existingForm.spaceId, createdBy: session.user.id },
-    })
-
-    if (!spaceMember && !isSpaceOwner) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    const accessResult = await requireSpaceAccess(existingForm.spaceId, session.user.id)
+    if (!accessResult.success) return accessResult.response
 
     const updateData: any = {}
     if (name !== undefined) updateData.name = name
@@ -129,24 +104,17 @@ export async function PUT(
     })
 
     return NextResponse.json({ success: true, form: updatedForm })
-  } catch (error: any) {
-    console.error('Error updating intake form:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to update intake form' },
-      { status: 500 }
-    )
-  }
 }
 
-export async function DELETE(
+export const PUT = withErrorHandling(putHandler, 'PUT /api/intake-forms/[id]')
+
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { id } = await params
 
@@ -160,28 +128,15 @@ export async function DELETE(
     }
 
     // Check access
-    const spaceMember = await db.spaceMember.findFirst({
-      where: { spaceId: existingForm.spaceId, userId: session.user.id },
-    })
-    const isSpaceOwner = await db.space.findFirst({
-      where: { id: existingForm.spaceId, createdBy: session.user.id },
-    })
-
-    if (!spaceMember && !isSpaceOwner) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    const accessResult = await requireSpaceAccess(existingForm.spaceId, session.user.id)
+    if (!accessResult.success) return accessResult.response
 
     await db.intakeForm.delete({
       where: { id }
     })
 
     return NextResponse.json({ success: true, message: 'Intake form deleted successfully' })
-  } catch (error: any) {
-    console.error('Error deleting intake form:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to delete intake form' },
-      { status: 500 }
-    )
-  }
 }
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/intake-forms/[id]')
 

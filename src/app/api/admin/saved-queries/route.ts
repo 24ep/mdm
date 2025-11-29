@@ -166,8 +166,7 @@ export async function POST(request: NextRequest) {
       isStarred: false
     }
 
-    return NextResponse.json(newQuery, { status: 201 })
-  } catch (error) {
+    return NextResponse.json(newQuery} catch (error) {
     console.error('Create saved query error:', error)
     return NextResponse.json(
       { error: 'Failed to create saved query' },

@@ -1,18 +1,16 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { logAPIRequest } from '@/shared/lib/security/audit-logger'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { id } = await params
 
@@ -58,24 +56,21 @@ export async function GET(
     )
 
     return NextResponse.json({ services })
-  } catch (error) {
-    console.error('Error fetching services:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
 }
 
-export async function POST(
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/infrastructure/instances/[id]/services')
+
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\infrastructure\instances\[id]\services\route.ts')
 
     const { id } = await params
     const body = await request.json()
@@ -153,12 +148,7 @@ export async function POST(
       { id: serviceId, message: 'Service created successfully' },
       { status: 201 }
     )
-  } catch (error) {
-    console.error('Error creating service:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/infrastructure/instances/[id]/services')
 

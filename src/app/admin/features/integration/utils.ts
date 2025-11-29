@@ -4,23 +4,14 @@
  */
 
 import { Integration, APIKey, Webhook, WebhookIntegration } from './types'
+import { getIntegrationStatusColor as getSharedIntegrationStatusColor } from '@/lib/status-colors'
 
 /**
  * Get integration status badge color
+ * Uses shared status color utility
  */
 export function getIntegrationStatusColor(status: Integration['status']): string {
-  switch (status) {
-    case 'active':
-      return 'bg-green-600'
-    case 'inactive':
-      return 'bg-gray-600'
-    case 'error':
-      return 'bg-red-600'
-    case 'pending':
-      return 'bg-yellow-600'
-    default:
-      return 'bg-gray-600'
-  }
+  return getSharedIntegrationStatusColor(status as 'active' | 'inactive' | 'error' | 'pending')
 }
 
 /**

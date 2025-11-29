@@ -1,14 +1,15 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { auditLogger } from '@/lib/db-audit'
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler(request: NextRequest) {
+    const authResult = await requireAdmin()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\db\audit-logs\route.ts')
 
     // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
@@ -52,12 +53,11 @@ export async function GET(request: NextRequest) {
       limit,
       offset
     })
-  } catch (error: any) {
-    console.error('Error getting audit logs:', error)
-    return NextResponse.json(
-      { error: 'Failed to get audit logs', details: error.message },
+  ,
       { status: 500 }
     )
   }
 }
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/db/audit-logs')
 

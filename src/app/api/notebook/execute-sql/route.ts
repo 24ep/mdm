@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { SQLExecutor } from '@/lib/sql-executor'
 import { createExternalClient } from '@/lib/external-db'
 import { PrismaClient } from '@prisma/client'
 import { logger } from '@/lib/logger'
 import { validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
 const prisma = new PrismaClient()
@@ -35,31 +32,28 @@ function checkRateLimit(userId: string): { allowed: boolean; remaining: number }
   return { allowed: true, remaining: RATE_LIMIT_MAX - userLimit.count }
 }
 
-export async function POST(request: NextRequest) {
+async function postHandler(request: NextRequest) {
   const startTime = Date.now()
-  let userId: string | null = null
   let connectionId: string = 'default'
 
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    userId = session.user.id
+  const userId = session.user.id!
     logger.apiRequest('POST', '/api/notebook/execute-sql', { userId })
 
     // Rate limiting
     const rateLimit = checkRateLimit(userId)
     if (!rateLimit.allowed) {
       logger.warn('Rate limit exceeded for SQL execution', { userId })
-      return addSecurityHeaders(NextResponse.json(
+      return NextResponse.json(
         { 
           error: 'Rate limit exceeded. Please wait before executing more queries.',
           rateLimit: { remaining: 0, resetTime: RATE_LIMIT_WINDOW }
         },
         { status: 429 }
-      ))
+      )
     }
 
     const bodySchema = z.object({
@@ -70,7 +64,7 @@ export async function POST(request: NextRequest) {
 
     const bodyValidation = await validateBody(request, bodySchema)
     if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
+      return bodyValidation.response
     }
 
     const { query: sqlQuery, connection, spaceId } = bodyValidation.data
@@ -80,10 +74,10 @@ export async function POST(request: NextRequest) {
     const validation = await sqlExecutor.validateQuery(sqlQuery.trim())
     if (!validation.valid) {
       logger.warn('SQL query validation failed', { userId, error: validation.error })
-      return addSecurityHeaders(NextResponse.json(
+      return NextResponse.json(
         { error: validation.error || 'Invalid SQL query' },
         { status: 400 }
-      ))
+      )
     }
 
     // Set timeout (30 seconds default, configurable)
@@ -121,10 +115,10 @@ export async function POST(request: NextRequest) {
 
       if (!connectionConfig) {
         logger.warn('External connection not found', { userId, connectionId: connection })
-        return addSecurityHeaders(NextResponse.json(
+        return NextResponse.json(
           { error: 'External connection not found or inactive' },
           { status: 404 }
-        ))
+        )
       }
 
       // Create external client with Vault credential retrieval
@@ -146,10 +140,10 @@ export async function POST(request: NextRequest) {
         if (!validation.valid) {
           await externalClient.close()
           logger.warn('SQL query validation failed for external connection', { userId, connectionId: connection, error: validation.error })
-          return addSecurityHeaders(NextResponse.json(
+          return NextResponse.json(
             { error: validation.error || 'Invalid SQL query' },
             { status: 400 }
-          ))
+          )
         }
 
         // Execute with timeout
@@ -208,38 +202,15 @@ export async function POST(request: NextRequest) {
       rowCount: result.rowCount || 0,
       connection: connectionId,
     })
-    return addSecurityHeaders(NextResponse.json({
+    return NextResponse.json({
       success: true,
       ...formattedResult,
       rateLimit: {
         remaining: rateLimit.remaining,
         resetTime: RATE_LIMIT_WINDOW
       }
-    }))
-  } catch (error: any) {
-    const executionTime = Date.now() - startTime
-    
-    // Log error
-    logger.error('SQL execution error', error, {
-      userId,
-      executionTime,
-      connection: connectionId,
     })
-
-    // Handle timeout
-    if (error.message?.includes('timeout')) {
-      logger.apiResponse('POST', '/api/notebook/execute-sql', 408, executionTime)
-      return addSecurityHeaders(NextResponse.json(
-        { 
-          error: 'Query execution timeout. The query took too long to execute.',
-          executionTime
-        },
-        { status: 408 }
-      ))
-    }
-
-    logger.apiResponse('POST', '/api/notebook/execute-sql', 500, executionTime)
-    return handleApiError(error, 'Notebook Execute SQL API')
-  }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/notebook/execute-sql')
 

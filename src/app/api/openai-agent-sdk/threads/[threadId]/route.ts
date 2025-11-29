@@ -1,20 +1,19 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-
 const prisma = new PrismaClient()
 
 // GET - Get a specific thread
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ threadId: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     const { threadId } = await params
 
@@ -27,29 +26,23 @@ export async function GET(
     })
 
     if (!thread) {
-      return NextResponse.json({ error: 'Thread not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Thread not found' }}
 
     return NextResponse.json({ thread })
-  } catch (error) {
-    console.error('Error fetching thread:', error)
-    return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
-  }
-}
 
 // PATCH - Update thread (title, metadata, etc.)
-export async function PATCH(
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\openai-agent-sdk\threads\[threadId]\route.ts')
+async function patchHandler(
   request: NextRequest,
   { params }: { params: Promise<{ threadId: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     const { threadId } = await params
     const body = await request.json()
@@ -64,8 +57,7 @@ export async function PATCH(
     })
 
     if (!thread) {
-      return NextResponse.json({ error: 'Thread not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Thread not found' }}
 
     const updated = await prisma.openAIAgentThread.update({
       where: { id: thread.id },
@@ -76,25 +68,22 @@ export async function PATCH(
     })
 
     return NextResponse.json({ thread: updated })
-  } catch (error) {
-    console.error('Error updating thread:', error)
-    return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
-  }
-}
 
 // DELETE - Soft delete a thread
-export async function DELETE(
+
+
+export const PATCH = withErrorHandling(patchHandler, 'PATCH /api/src\app\api\openai-agent-sdk\threads\[threadId]\route.ts')
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ threadId: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\openai-agent-sdk\threads\[threadId]\route.ts')
 
     const { threadId } = await params
 
@@ -107,8 +96,7 @@ export async function DELETE(
     })
 
     if (!thread) {
-      return NextResponse.json({ error: 'Thread not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Thread not found' }}
 
     await prisma.openAIAgentThread.update({
       where: { id: thread.id },
@@ -116,12 +104,4 @@ export async function DELETE(
     })
 
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Error deleting thread:', error)
-    return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
-  }
-}
 

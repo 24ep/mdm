@@ -1,6 +1,6 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { logAPIRequest } from '@/shared/lib/security/audit-logger'
 import { checkPermission } from '@/shared/lib/security/permission-checker'
@@ -9,18 +9,17 @@ import { parsePaginationParams, createPaginationResponse } from '@/shared/lib/ap
 import { parseSortParams, buildOrderByClause } from '@/shared/lib/api/sorting'
 import { parseFilterParams, buildSearchClause } from '@/shared/lib/api/filtering'
 
-export async function GET(request: NextRequest) {
-  // Apply rate limiting
+async function getHandler(request: NextRequest) {
+    // Apply rate limiting
   const rateLimitResponse = await applyRateLimit(request)
   if (rateLimitResponse) {
     return rateLimitResponse
   }
 
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
 
     const { searchParams } = new URL(request.url)
     const spaceId = searchParams.get('spaceId')
@@ -161,32 +160,27 @@ export async function GET(request: NextRequest) {
       spaceId || undefined
     )
 
-    const response = createPaginationResponse(reports, total, page, limit)
-    return NextResponse.json({
-      reports: response.data,
-      ...response,
-    })
-  } catch (error) {
-    console.error('Error fetching reports:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
+  const response = createPaginationResponse(reports, total, page, limit)
+  return NextResponse.json({
+    reports: response.data,
+    ...response,
+  })
 }
 
-export async function POST(request: NextRequest) {
-  // Apply rate limiting
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/v1/reports')
+async function postHandler(request: NextRequest) {
+    // Apply rate limiting
   const rateLimitResponse = await applyRateLimit(request)
   if (rateLimitResponse) {
     return rateLimitResponse
   }
 
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
 
     const body = await request.json()
     const { name, description, sourceType, sourceId, spaceId, url, embedUrl } = body
@@ -248,15 +242,10 @@ export async function POST(request: NextRequest) {
       spaceId
     )
 
-    return NextResponse.json(
-      { id: reportId, message: 'Report created successfully' },
-      { status: 201 }
-    )
-  } catch (error) {
-    console.error('Error creating report:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
+  return NextResponse.json(
+    { id: reportId, message: 'Report created successfully' },
+    { status: 201 }
+  )
 }
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/v1/reports')

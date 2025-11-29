@@ -1,45 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { query } from '@/lib/database'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { logger } from '@/lib/logger'
 import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    const userId = session?.user?.id || request.headers.get('x-user-id')
-    
-    if (!userId) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
+  const userId = session.user.id!
 
-    // Validate query parameters
-    const queryValidation = validateQuery(request, z.object({
-      spaceId: commonSchemas.id,
-    }))
-    
-    if (!queryValidation.success) {
-      return addSecurityHeaders(queryValidation.response)
-    }
-    
-    const { spaceId } = queryValidation.data
-    logger.apiRequest('GET', '/api/files/categories', { userId, spaceId })
+  // Validate query parameters
+  const queryValidation = validateQuery(request, z.object({
+    spaceId: commonSchemas.id,
+  }))
+  
+  if (!queryValidation.success) {
+    return queryValidation.response
+  }
+  
+  const { spaceId } = queryValidation.data
+  logger.apiRequest('GET', '/api/files/categories', { userId, spaceId })
 
-    // Check if user has access to this space
-    const memberResult = await query(
-      'SELECT role FROM space_members WHERE space_id = $1 AND user_id = $2',
-      [spaceId, userId]
-    )
-
-    if (memberResult.rows.length === 0) {
-      logger.warn('Space not found or access denied for file categories', { spaceId, userId })
-      return addSecurityHeaders(NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 }))
-    }
+  // Check if user has access to this space
+  const accessResult = await requireSpaceAccess(spaceId, userId)
+  if (!accessResult.success) return accessResult.response
 
     // Get categories
     const categoriesResult = await query(
@@ -86,54 +74,52 @@ export async function GET(request: NextRequest) {
       categoriesCount: categoriesResult.rows.length,
       tagsCount: tagsResult.rows.length
     })
-    return addSecurityHeaders(NextResponse.json({
+    return NextResponse.json({
       categories: categoriesResult.rows,
       tags: tagsResult.rows
-    }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', '/api/files/categories', 500, duration)
-    return handleApiError(error, 'File Categories API GET')
-  }
+    })
 }
 
-export async function POST(request: NextRequest) {
+export const GET = withErrorHandling(getHandler, 'GET /api/files/categories')
+
+async function postHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    const userId = session?.user?.id || request.headers.get('x-user-id')
-    
-    if (!userId) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
+  const userId = session.user.id!
 
-    // Validate request body
-    const bodyValidation = await validateBody(request, z.object({
-      type: z.enum(['category', 'tag']),
-      spaceId: commonSchemas.id,
-      name: z.string().min(1, 'Name is required'),
-      description: z.string().optional(),
-      color: z.string().optional(),
-      icon: z.string().optional(),
-    }))
-    
-    if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
-    }
-    
-    const { type, spaceId, name, description, color, icon } = bodyValidation.data
-    logger.apiRequest('POST', '/api/files/categories', { userId, spaceId, type, name })
+  // Validate request body
+  const bodyValidation = await validateBody(request, z.object({
+    type: z.enum(['category', 'tag']),
+    spaceId: commonSchemas.id,
+    name: z.string().min(1, 'Name is required'),
+    description: z.string().optional(),
+    color: z.string().optional(),
+    icon: z.string().optional(),
+  }))
+  
+  if (!bodyValidation.success) {
+    return bodyValidation.response
+  }
+  
+  const { type, spaceId, name, description, color, icon } = bodyValidation.data
+  logger.apiRequest('POST', '/api/files/categories', { userId, spaceId, type, name })
 
-    // Check if user has admin access to this space
-    const memberResult = await query(
-      'SELECT role FROM space_members WHERE space_id = $1 AND user_id = $2',
-      [spaceId, userId]
-    )
+  // Check if user has admin access to this space
+  const accessResult = await requireSpaceAccess(spaceId, userId)
+  if (!accessResult.success) return accessResult.response
 
-    if (memberResult.rows.length === 0 || !['owner', 'admin'].includes((memberResult.rows[0] as any).role)) {
-      logger.warn('Insufficient permissions for file category/tag creation', { spaceId, userId })
-      return addSecurityHeaders(NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 }))
-    }
+  // Additional check for admin role
+  const memberResult = await query(
+    'SELECT role FROM space_members WHERE space_id = $1 AND user_id = $2',
+    [spaceId, userId]
+  )
+
+  if (memberResult.rows.length === 0 || !['owner', 'admin'].includes((memberResult.rows[0] as any).role)) {
+    logger.warn('Insufficient permissions for file category/tag creation', { spaceId, userId })
+    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+  }
 
     if (type === 'category') {
       // Create category
@@ -147,9 +133,9 @@ export async function POST(request: NextRequest) {
       const duration = Date.now() - startTime
       const category = categoryResult.rows[0] as any
       logger.apiResponse('POST', '/api/files/categories', 200, duration, { type: 'category', categoryId: category.id })
-      return addSecurityHeaders(NextResponse.json({
+      return NextResponse.json({
         category
-      }))
+      })
     } else if (type === 'tag') {
       // Create tag
       const tagResult = await query(
@@ -162,16 +148,13 @@ export async function POST(request: NextRequest) {
       const duration = Date.now() - startTime
       const tag = tagResult.rows[0] as any
       logger.apiResponse('POST', '/api/files/categories', 200, duration, { type: 'tag', tagId: tag.id })
-      return addSecurityHeaders(NextResponse.json({
+      return NextResponse.json({
         tag: tagResult.rows[0]
-      }))
+      })
     } else {
       logger.warn('Invalid type for file category/tag creation', { type })
-      return addSecurityHeaders(NextResponse.json({ error: 'Invalid type' }, { status: 400 }))
+      return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
     }
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('POST', '/api/files/categories', 500, duration)
-    return handleApiError(error, 'File Categories API POST')
-  }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/files/categories')

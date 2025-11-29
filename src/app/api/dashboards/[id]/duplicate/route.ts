@@ -1,14 +1,15 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 
-export async function POST(
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id } = await params
@@ -16,8 +17,9 @@ export async function POST(
     const { name, space_ids } = body
 
     if (!name) {
-      return NextResponse.json({ error: 'Name is required' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'Name is required' }}
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashboards\[id]\duplicate\route.ts')
 
     // Check if user has access to the original dashboard
     const { rows: accessCheck } = await query(`
@@ -28,8 +30,7 @@ export async function POST(
     `, [id, session.user.id])
 
     if (accessCheck.length === 0) {
-      return NextResponse.json({ error: 'Dashboard not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Dashboard not found' }}
 
     const dashboard = accessCheck[0]
     const canAccess = dashboard.created_by === session.user.id || 
@@ -37,8 +38,7 @@ export async function POST(
                      true // Allow access for now, can be restricted later
 
     if (!canAccess) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Access denied' }}
 
     // Use the database function to duplicate the dashboard
     const { rows } = await query(
@@ -49,8 +49,7 @@ export async function POST(
     const newDashboardId = rows[0]?.new_dashboard_id
 
     if (!newDashboardId) {
-      return NextResponse.json({ error: 'Failed to duplicate dashboard' }, { status: 500 })
-    }
+      return NextResponse.json({ error: 'Failed to duplicate dashboard' }}
 
     // Update space associations if provided
     if (space_ids && Array.isArray(space_ids) && space_ids.length > 0) {
@@ -62,8 +61,7 @@ export async function POST(
       )
 
       if (spaceAccess.length !== space_ids.length) {
-        return NextResponse.json({ error: 'Access denied to one or more spaces' }, { status: 403 })
-      }
+        return NextResponse.json({ error: 'Access denied to one or more spaces' }}
 
       // Remove existing associations
       await query('DELETE FROM dashboard_spaces WHERE dashboard_id = $1', [newDashboardId])
@@ -83,8 +81,3 @@ export async function POST(
     `, [newDashboardId])
 
     return NextResponse.json({ dashboard: newDashboard[0] }, { status: 201 })
-  } catch (error) {
-    console.error('Error duplicating dashboard:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}

@@ -1,14 +1,15 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 
-export async function POST(
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id } = await params
@@ -24,16 +25,16 @@ export async function POST(
     `, [id, session.user.id])
 
     if (accessCheck.length === 0) {
-      return NextResponse.json({ error: 'Dashboard not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Dashboard not found' }}
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashboards\[id]\shares\route.ts')
 
     const dashboard = accessCheck[0]
     const canShare = dashboard.created_by === session.user.id || 
                     (dashboard.role && ['ADMIN', 'EDITOR'].includes(dashboard.role))
 
     if (!canShare) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Access denied' }}
 
     // Generate share token
     const { rows: tokenRows } = await query('SELECT public.generate_dashboard_public_link() as token')
@@ -56,8 +57,3 @@ export async function POST(
     ])
 
     return NextResponse.json({ share: rows[0] })
-  } catch (error) {
-    console.error('Error creating dashboard share:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}

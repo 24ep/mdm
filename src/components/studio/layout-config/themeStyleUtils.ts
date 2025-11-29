@@ -1,6 +1,7 @@
 'use client'
 
-import { BrandingConfig } from '@/app/admin/features/system/types'
+import { BrandingConfig } from '@/lib/theme-types'
+import { THEME_STORAGE_KEYS } from '@/lib/theme-constants'
 import { ComponentStyle } from './types'
 
 /**
@@ -28,7 +29,7 @@ export function getThemeComponentKey(componentType: string): string | null {
 export async function getThemeComponentStyle(componentType: string): Promise<ComponentStyle | undefined> {
   try {
     // First, check for user's selected theme from localStorage
-    const userSelectedThemeId = typeof window !== 'undefined' ? localStorage.getItem('theme-variant-id') : null
+    const userSelectedThemeId = typeof window !== 'undefined' ? localStorage.getItem(THEME_STORAGE_KEYS.VARIANT_ID) : null
     
     let themeToUse = null
     

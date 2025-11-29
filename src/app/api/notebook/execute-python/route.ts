@@ -1,8 +1,8 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
 import { exec } from 'child_process'
 import { promisify } from 'util'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import path from 'path'
 import fs from 'fs/promises'
 import os from 'os'
@@ -61,15 +61,12 @@ function isCodeSafe(code: string): { safe: boolean; reason?: string } {
   return { safe: true }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    // Authentication
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function postHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    const userId = session.user.id
+  const userId = session.user.id
 
     // Rate limiting
     const rateLimit = checkRateLimit(userId)
@@ -228,6 +225,7 @@ with open('${outputFile.replace(/\\/g, '/')}', 'w') as f:
       { error: 'Internal server error', details: error.message },
       { status: 500 }
     )
-  }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/notebook/execute-python')
 

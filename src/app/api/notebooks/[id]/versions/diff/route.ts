@@ -1,15 +1,15 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 
 // POST: Get diff between two versions
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function postHandler(request: NextRequest) {
+    const authResult = await requireAuth()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\notebooks\[id]\versions\diff\route.ts')
 
     const body = await request.json()
     const { notebook_id, version1_id, version2_id } = body
@@ -81,6 +81,8 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/notebooks/[id]/versions/diff')
 
 interface NotebookDiff {
   cells_added: any[]

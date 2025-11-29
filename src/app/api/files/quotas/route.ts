@@ -1,45 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { query } from '@/lib/database'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { logger } from '@/lib/logger'
 import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    const userId = session?.user?.id || request.headers.get('x-user-id')
-    
-    if (!userId) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
+  const userId = session.user.id!
 
-    // Validate query parameters
-    const queryValidation = validateQuery(request, z.object({
-      spaceId: commonSchemas.id,
-    }))
-    
-    if (!queryValidation.success) {
-      return addSecurityHeaders(queryValidation.response)
-    }
-    
-    const { spaceId } = queryValidation.data
-    logger.apiRequest('GET', '/api/files/quotas', { userId, spaceId })
+  // Validate query parameters
+  const queryValidation = validateQuery(request, z.object({
+    spaceId: commonSchemas.id,
+  }))
+  
+  if (!queryValidation.success) {
+    return queryValidation.response
+  }
+  
+  const { spaceId } = queryValidation.data
+  logger.apiRequest('GET', '/api/files/quotas', { userId, spaceId })
 
-    // Check if user has access to this space
-    const memberResult = await query(
-      'SELECT role FROM space_members WHERE space_id = $1 AND user_id = $2',
-      [spaceId, userId]
-    )
-
-    if (memberResult.rows.length === 0) {
-      logger.warn('Space not found or access denied for file quotas', { spaceId, userId })
-      return addSecurityHeaders(NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 }))
-    }
+  // Check if user has access to this space
+  const accessResult = await requireSpaceAccess(spaceId, userId)
+  if (!accessResult.success) return accessResult.response
 
     // Get quota information
     const quotaResult = await query(
@@ -106,7 +94,7 @@ export async function GET(request: NextRequest) {
 
     const duration = Date.now() - startTime
     logger.apiResponse('GET', '/api/files/quotas', 200, duration)
-    return addSecurityHeaders(NextResponse.json({
+    return NextResponse.json({
       quota: {
         ...quota,
         usage: {
@@ -124,51 +112,49 @@ export async function GET(request: NextRequest) {
           }
         }
       }
-    }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', '/api/files/quotas', 500, duration)
-    return handleApiError(error, 'File Quotas API GET')
-  }
+    })
 }
 
-export async function PUT(request: NextRequest) {
+export const GET = withErrorHandling(getHandler, 'GET /api/files/quotas')
+
+async function putHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    const userId = session?.user?.id || request.headers.get('x-user-id')
-    
-    if (!userId) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
+  const userId = session.user.id!
 
-    // Validate request body
-    const bodyValidation = await validateBody(request, z.object({
-      spaceId: commonSchemas.id,
-      maxFiles: z.number().int().nonnegative().optional(),
-      maxSize: z.number().int().nonnegative().optional(),
-      allowedFileTypes: z.array(z.string()).optional(),
-      warningThreshold: z.number().int().min(1).max(100).optional(),
-      isEnforced: z.boolean().optional(),
-    }))
-    
-    if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
-    }
-    
-    const { spaceId, maxFiles, maxSize, allowedFileTypes, warningThreshold, isEnforced } = bodyValidation.data
-    logger.apiRequest('PUT', '/api/files/quotas', { userId, spaceId })
+  // Validate request body
+  const bodyValidation = await validateBody(request, z.object({
+    spaceId: commonSchemas.id,
+    maxFiles: z.number().int().nonnegative().optional(),
+    maxSize: z.number().int().nonnegative().optional(),
+    allowedFileTypes: z.array(z.string()).optional(),
+    warningThreshold: z.number().int().min(1).max(100).optional(),
+    isEnforced: z.boolean().optional(),
+  }))
+  
+  if (!bodyValidation.success) {
+    return bodyValidation.response
+  }
+  
+  const { spaceId, maxFiles, maxSize, allowedFileTypes, warningThreshold, isEnforced } = bodyValidation.data
+  logger.apiRequest('PUT', '/api/files/quotas', { userId, spaceId })
 
-    // Check if user has admin access to this space
-    const memberResult = await query(
-      'SELECT role FROM space_members WHERE space_id = $1 AND user_id = $2',
-      [spaceId, userId]
-    )
+  // Check if user has admin access to this space
+  const accessResult = await requireSpaceAccess(spaceId, userId)
+  if (!accessResult.success) return accessResult.response
 
-    if (memberResult.rows.length === 0 || !['owner', 'admin'].includes((memberResult.rows[0] as any).role)) {
-      logger.warn('Insufficient permissions for file quota update', { spaceId, userId })
-      return addSecurityHeaders(NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 }))
-    }
+  // Additional check for admin role
+  const memberResult = await query(
+    'SELECT role FROM space_members WHERE space_id = $1 AND user_id = $2',
+    [spaceId, userId]
+  )
+
+  if (memberResult.rows.length === 0 || !['owner', 'admin'].includes((memberResult.rows[0] as any).role)) {
+    logger.warn('Insufficient permissions for file quota update', { spaceId, userId })
+    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+  }
 
     // Update quota
     const updateFields = []
@@ -222,18 +208,15 @@ export async function PUT(request: NextRequest) {
 
     if (updateResult.rows.length === 0) {
       logger.warn('File quota not found for update', { spaceId })
-      return addSecurityHeaders(NextResponse.json({ error: 'Quota not found' }, { status: 404 }))
+      return NextResponse.json({ error: 'Quota not found' }, { status: 404 })
     }
 
     const duration = Date.now() - startTime
     const quota = updateResult.rows[0] as any
     logger.apiResponse('PUT', '/api/files/quotas', 200, duration, { quotaId: quota.id })
-    return addSecurityHeaders(NextResponse.json({
+    return NextResponse.json({
       quota: updateResult.rows[0]
-    }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('PUT', '/api/files/quotas', 500, duration)
-    return handleApiError(error, 'File Quotas API PUT')
-  }
+    })
 }
+
+export const PUT = withErrorHandling(putHandler, 'PUT /api/files/quotas')

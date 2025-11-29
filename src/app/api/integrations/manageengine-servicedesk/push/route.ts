@@ -1,6 +1,6 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { getSecretsManager } from '@/lib/secrets-manager'
 import { decryptApiKey } from '@/lib/encryption'
@@ -11,15 +11,17 @@ import { createAuditLog } from '@/lib/audit'
 import { validateTicketData, sanitizeTicketData } from '@/lib/servicedesk-validator'
 
 // Push ticket to ServiceDesk
-export async function POST(request: NextRequest) {
+async function postHandler(request: NextRequest) {
   const startTime = Date.now()
   let auditLogId: string | null = null
   
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\integrations\manageengine-servicedesk\push\route.ts')
 
     const body = await request.json()
     const { ticket_id, space_id, requesterEmail, category, subcategory, group, technician, syncComments, syncAttachments, syncTimeLogs } = body
@@ -37,8 +39,7 @@ export async function POST(request: NextRequest) {
       [space_id, session.user.id]
     )
     if (access.length === 0) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Forbidden' }}
 
     // Rate limiting check
     const rateLimitConfig = await getServiceDeskRateLimitConfig(space_id)
@@ -94,8 +95,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!ticket) {
-      return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Ticket not found' }}
 
     // Get ServiceDesk configuration
     const { rows: configRows } = await query(
@@ -245,119 +245,4 @@ export async function POST(request: NextRequest) {
                 isPublic: true
               })
               syncedComments++
-            } catch (error) {
-              console.error('Failed to sync comment:', error)
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching comments for sync:', error)
-        }
-      }
-
-      // Sync attachments if requested
-      let syncedAttachments = 0
-      if (syncAttachments) {
-        try {
-          // Get attachments from ticket
-          const attachments = await db.ticketAttachment.findMany({
-            where: { ticketId: ticket_id }
-          })
-
-          for (const attachment of attachments) {
-            try {
-              // Fetch the file from storage
-              const fileResponse = await fetch(attachment.filePath)
-              if (fileResponse.ok) {
-                const blob = await fileResponse.blob()
-                await service.uploadAttachment(requestId!, {
-                  file: blob,
-                  fileName: attachment.fileName,
-                  description: `Synced from internal ticket ${ticket_id}`
-                })
-                syncedAttachments++
-              }
-            } catch (error) {
-              console.error('Failed to sync attachment:', error)
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching attachments for sync:', error)
-        }
-      }
-
-      // Sync time logs if requested
-      let syncedTimeLogs = 0
-      if (syncTimeLogs) {
-        try {
-          // Get time logs from ticket
-          const timeLogs = await db.ticketTimeLog.findMany({
-            where: { ticketId: ticket_id },
-            include: {
-              user: {
-                select: { email: true }
-              }
-            }
-          })
-
-          for (const timeLog of timeLogs) {
-            try {
-              await service.logTime(requestId!, {
-                hours: Number(timeLog.hours),
-                description: timeLog.description || undefined,
-                technician: timeLog.user.email || undefined
-              })
-              syncedTimeLogs++
-            } catch (error) {
-              console.error('Failed to sync time log:', error)
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching time logs for sync:', error)
-        }
-      }
-
-      // Log push activity
-      await query(
-        `INSERT INTO servicedesk_sync_logs 
-         (ticket_id, space_id, sync_type, event_type, success, details, created_at)
-         VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, NOW())`,
-        [
-          ticket_id,
-          space_id,
-          'push',
-          'ticket_pushed',
-          true,
-          JSON.stringify({ 
-            requestId, 
-            synced: {
-              comments: syncedComments,
-              attachments: syncedAttachments,
-              timeLogs: syncedTimeLogs
-            }
-          })
-        ]
-      ).catch(() => {}) // Ignore if table doesn't exist yet
-
-      return NextResponse.json({
-        success: true,
-        requestId: requestId,
-        message: 'Ticket pushed to ServiceDesk successfully',
-        synced: {
-          comments: syncedComments,
-          attachments: syncedAttachments,
-          timeLogs: syncedTimeLogs
-        },
-        data: result.data
-      })
-    } else {
-      return NextResponse.json(
-        { error: result.error || 'Failed to push ticket to ServiceDesk' },
-        { status: 400 }
-      )
-    }
-  } catch (error) {
-    console.error('POST /integrations/manageengine-servicedesk/push error', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
 

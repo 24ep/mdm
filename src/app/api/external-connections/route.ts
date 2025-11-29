@@ -1,44 +1,54 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { getSecretsManager } from '@/lib/secrets-manager'
 import { encryptApiKey, decryptApiKey } from '@/lib/encryption'
 import { createAuditContext } from '@/lib/audit-context-helper'
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+async function getHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    const { searchParams } = new URL(request.url)
-    const spaceId = searchParams.get('space_id')
-    if (!spaceId) return NextResponse.json({ error: 'space_id is required' }, { status: 400 })
+  const { searchParams } = new URL(request.url)
+  const spaceId = searchParams.get('space_id')
+  if (!spaceId) return NextResponse.json({ error: 'space_id is required' }, { status: 400 })
 
-    // Check access
-    const { rows: access } = await query(
-      'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',
-      [spaceId, session.user.id]
-    )
-    if (access.length === 0) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  // Check access
+  const { rows: access } = await query(
+    'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',
+    [spaceId, session.user.id]
+  )
+  if (access.length === 0) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    const { rows } = await query(
-      `SELECT * FROM public.external_connections 
-       WHERE space_id = $1::uuid AND deleted_at IS NULL
-       ORDER BY created_at DESC`,
-      [spaceId]
-    )
-    return NextResponse.json({ connections: rows })
-  } catch (error) {
-    console.error('GET /external-connections error', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+  const { rows } = await query(
+    `SELECT * FROM public.external_connections 
+     WHERE space_id = $1::uuid AND deleted_at IS NULL
+     ORDER BY created_at DESC`,
+    [spaceId]
+  )
+  return NextResponse.json({ connections: rows })
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+
+
+
+
+
+
+
+
+
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/external-connections')
+
+async function postHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const body = await request.json()
     const { 
@@ -224,16 +234,26 @@ export async function POST(request: NextRequest) {
       
       return NextResponse.json({ connection: rows[0] }, { status: 201 })
     }
-  } catch (error) {
-    console.error('POST /external-connections error', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
 }
 
-export async function PUT(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+
+
+
+
+
+
+
+
+
+
+
+export const POST = withErrorHandling(postHandler, 'POST /api/external-connections')
+
+async function putHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const body = await request.json()
     const { id, space_id, ...updates } = body
@@ -339,17 +359,17 @@ export async function PUT(request: NextRequest) {
        RETURNING *`,
       params
     )
-    return NextResponse.json({ connection: rows[0] })
-  } catch (error) {
-    console.error('PUT /external-connections error', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+  return NextResponse.json({ connection: rows[0] })
 }
 
-export async function DELETE(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+
+export const PUT = withErrorHandling(putHandler, 'PUT /api/external-connections')
+
+async function deleteHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
@@ -381,6 +401,8 @@ export async function DELETE(request: NextRequest) {
           if (connectionType === 'database') {
             // Delete database credentials from Vault
             await secretsManager.deleteSecret(`database-connections/${id}/credentials`, deleteAuditContext)
+          }
+
           } else if (connectionType === 'api') {
             // Delete API credentials from Vault
             await secretsManager.deleteSecret(`external-connections/${id}/credentials`, deleteAuditContext)
@@ -397,11 +419,9 @@ export async function DELETE(request: NextRequest) {
        WHERE id = $1::uuid`,
       [id]
     )
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('DELETE /external-connections error', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+  return NextResponse.json({ success: true })
 }
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/external-connections')
 
 

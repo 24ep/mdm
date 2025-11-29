@@ -1,6 +1,6 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { logAPIRequest } from '@/shared/lib/security/audit-logger'
 import { checkPermission } from '@/shared/lib/security/permission-checker'
@@ -9,17 +9,15 @@ import { parsePaginationParams, createPaginationResponse } from '@/shared/lib/ap
 import { parseSortParams, buildOrderByClause } from '@/shared/lib/api/sorting'
 import { parseFilterParams, buildSearchClause } from '@/shared/lib/api/filtering'
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   const rateLimitResponse = await applyRateLimit(request)
   if (rateLimitResponse) {
     return rateLimitResponse
   }
 
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { searchParams } = new URL(request.url)
     const spaceId = searchParams.get('spaceId')
@@ -175,26 +173,20 @@ export async function GET(request: NextRequest) {
       collections: response.data,
       ...response,
     })
-  } catch (error) {
-    console.error('Error fetching collections:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
 }
 
-export async function POST(request: NextRequest) {
-  const rateLimitResponse = await applyRateLimit(request)
+export const GET = withErrorHandling(getHandler, 'GET /api/knowledge/collections')
+
+async function postHandler(request: NextRequest) {
+    const rateLimitResponse = await applyRateLimit(request)
   if (rateLimitResponse) {
     return rateLimitResponse
   }
 
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
 
     const body = await request.json()
     const { name, description, icon, color, isPrivate, spaceId } = body
@@ -272,12 +264,7 @@ export async function POST(request: NextRequest) {
         updatedAt: collection.updated_at,
       },
     }, { status: 201 })
-  } catch (error) {
-    console.error('Error creating collection:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/knowledge/collections')
 

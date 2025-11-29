@@ -1,13 +1,12 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+async function postHandler(request: NextRequest) {
+    const authResult = await requireAuth()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\export\json\route.ts')
 
     const { dataModelId, filters, columns, elementId, datasourceId, query } = await request.json()
 
@@ -88,11 +87,10 @@ export async function POST(request: NextRequest) {
     })
 
     return response
-  } catch (error: any) {
-    console.error('Error exporting to JSON:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to export data to JSON' },
+  ,
       { status: 500 }
     )
   }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/export/json')

@@ -1,10 +1,10 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { applyRateLimit } from '@/app/api/v1/middleware'
 
-export async function POST(
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -13,11 +13,9 @@ export async function POST(
     return rateLimitResponse
   }
 
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { id: documentId } = await params
 
@@ -39,16 +37,11 @@ export async function POST(
     )
 
     return NextResponse.json({ starred: true })
-  } catch (error) {
-    console.error('Error starring document:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
 }
 
-export async function DELETE(
+export const POST = withErrorHandling(postHandler, 'POST /api/knowledge/documents/[id]/star')
+
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -57,30 +50,23 @@ export async function DELETE(
     return rateLimitResponse
   }
 
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    const { id: documentId } = await params
+  const { id: documentId } = await params
 
-    await query(
-      `DELETE FROM knowledge_stars WHERE document_id = $1 AND user_id = $2`,
-      [documentId, session.user.id]
-    )
+  await query(
+    `DELETE FROM knowledge_stars WHERE document_id = $1 AND user_id = $2`,
+    [documentId, session.user.id]
+  )
 
-    return NextResponse.json({ starred: false })
-  } catch (error) {
-    console.error('Error unstarring document:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
+  return NextResponse.json({ starred: false })
 }
 
-export async function GET(
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/knowledge/documents/[id]/star')
+
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -89,26 +75,19 @@ export async function GET(
     return rateLimitResponse
   }
 
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    const { id: documentId } = await params
+  const { id: documentId } = await params
 
-    const result = await query(
-      `SELECT id FROM knowledge_stars WHERE document_id = $1 AND user_id = $2`,
-      [documentId, session.user.id]
-    )
+  const result = await query(
+    `SELECT id FROM knowledge_stars WHERE document_id = $1 AND user_id = $2`,
+    [documentId, session.user.id]
+  )
 
-    return NextResponse.json({ starred: result.rows.length > 0 })
-  } catch (error) {
-    console.error('Error checking star:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
+  return NextResponse.json({ starred: result.rows.length > 0 })
 }
+
+export const GET = withErrorHandling(getHandler, 'GET /api/knowledge/documents/[id]/star')
 

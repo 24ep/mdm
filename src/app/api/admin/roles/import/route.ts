@@ -11,8 +11,7 @@ export async function POST(request: NextRequest) {
     const { role, permissions } = body
 
     if (!role || !role.name || !role.level) {
-      return NextResponse.json({ error: 'Invalid role data' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'Invalid role data' }}
 
     // Check if role already exists
     const { rows: existing } = await query(
@@ -21,8 +20,7 @@ export async function POST(request: NextRequest) {
     )
 
     if (existing.length > 0) {
-      return NextResponse.json({ error: 'Role already exists' }, { status: 409 })
-    }
+      return NextResponse.json({ error: 'Role already exists' }}
 
     // Create role
     const { rows: newRole } = await query(
@@ -60,11 +58,9 @@ export async function POST(request: NextRequest) {
         level: newRole[0].level || 'space'
       },
       permissionsAssigned: assignedCount
-    }, { status: 201 })
-  } catch (error: any) {
+    }} catch (error: any) {
     console.error('Error importing role:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+    return NextResponse.json({ error: 'Internal server error' }}
 }
 
 

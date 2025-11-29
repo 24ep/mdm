@@ -13,8 +13,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ 
           error: 'Invalid space ID format',
           details: 'Space ID must be a valid UUID'
-        }, { status: 400 })
-      }
+        }}
     }
     
     const rows = await query(
@@ -26,8 +25,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ models: rows.rows })
   } catch (e) {
     console.error('debug data-models error', e)
-    return NextResponse.json({ error: 'debug failed' }, { status: 500 })
-  }
+    return NextResponse.json({ error: 'debug failed' }}
 }
 
 

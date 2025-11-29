@@ -1,14 +1,15 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler(request: NextRequest) {
+    const authResult = await requireAuth()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\data-sync-schedules\recent-executions\route.ts')
 
     const searchParams = request.nextUrl.searchParams
     const spaceId = searchParams.get('space_id')
@@ -40,9 +41,9 @@ export async function GET(request: NextRequest) {
     )
 
     return NextResponse.json({ executions })
-  } catch (error) {
-    console.error('GET /data-sync-schedules/recent-executions error', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  , { status: 500 })
   }
 }
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/data-sync-schedules/recent-executions')
 

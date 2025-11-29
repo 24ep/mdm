@@ -62,8 +62,7 @@ export async function POST(
             }
         })
 
-        return NextResponse.json({ theme: clonedTheme }, { status: 201 })
-    } catch (error) {
+        return NextResponse.json({ theme: clonedTheme }} catch (error) {
         console.error('Error cloning theme:', error)
         return NextResponse.json(
             { error: 'Failed to clone theme' },

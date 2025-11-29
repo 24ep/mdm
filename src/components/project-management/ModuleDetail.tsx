@@ -28,7 +28,7 @@ import {
   ListTodo
 } from 'lucide-react'
 import { format } from 'date-fns'
-import { useToast } from '@/hooks/use-toast'
+import { showError, showSuccess } from '@/lib/toast-utils'
 import { TicketCard } from './TicketCard'
 
 interface Module {
@@ -119,7 +119,6 @@ const statusConfig = {
 export function ModuleDetail({ moduleId, onBack, onTicketClick }: ModuleDetailProps) {
   const [module, setModule] = useState<Module | null>(null)
   const [loading, setLoading] = useState(true)
-  const { toast } = useToast()
 
   useEffect(() => {
     loadModule()
@@ -134,11 +133,7 @@ export function ModuleDetail({ moduleId, onBack, onTicketClick }: ModuleDetailPr
       setModule(data.module)
     } catch (error) {
       console.error('Error loading module:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to load module',
-        variant: 'destructive'
-      })
+      showError('Failed to load module')
     } finally {
       setLoading(false)
     }

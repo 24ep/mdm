@@ -1,21 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { query } from '@/lib/db'
 import { createAuditLog } from '@/lib/audit'
 import { logger } from '@/lib/logger'
 import { validateBody } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     logger.apiRequest('GET', '/api/settings', { userId: session.user.id })
 
@@ -29,21 +24,16 @@ export async function GET(request: NextRequest) {
     logger.apiResponse('GET', '/api/settings', 200, duration, {
       settingCount: Object.keys(settingsObject).length
     })
-    return addSecurityHeaders(NextResponse.json(settingsObject))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', '/api/settings', 500, duration)
-    return handleApiError(error, 'Settings API GET')
-  }
+    return NextResponse.json(settingsObject)
 }
 
-export async function PUT(request: NextRequest) {
+export const GET = withErrorHandling(getHandler, 'GET /api/settings')
+
+async function putHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     logger.apiRequest('PUT', '/api/settings', { userId: session.user.id })
 
@@ -53,7 +43,7 @@ export async function PUT(request: NextRequest) {
 
     const bodyValidation = await validateBody(request, bodySchema)
     if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
+      return bodyValidation.response
     }
 
     const { settings } = bodyValidation.data
@@ -93,10 +83,7 @@ export async function PUT(request: NextRequest) {
     logger.apiResponse('PUT', '/api/settings', 200, duration, {
       updatedCount: Object.keys(updatedSettings).length
     })
-    return addSecurityHeaders(NextResponse.json(updatedSettings))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('PUT', '/api/settings', 500, duration)
-    return handleApiError(error, 'Settings API PUT')
-  }
+    return NextResponse.json(updatedSettings)
 }
+
+export const PUT = withErrorHandling(putHandler, 'PUT /api/settings')

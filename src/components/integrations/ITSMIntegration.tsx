@@ -22,7 +22,7 @@ import {
   Trash2,
   Map
 } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
+import { showError, showSuccess } from '@/lib/toast-utils'
 
 interface ITSMConfig {
   id?: string
@@ -40,7 +40,6 @@ interface ITSMIntegrationProps {
 }
 
 export function ITSMIntegration({ spaceId }: ITSMIntegrationProps) {
-  const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [testing, setTesting] = useState(false)
   const [config, setConfig] = useState<ITSMConfig | null>(null)
@@ -102,29 +101,17 @@ export function ITSMIntegration({ spaceId }: ITSMIntegrationProps) {
 
   const handleTestConnection = async () => {
     if (!formData.baseUrl) {
-      toast({
-        title: 'Validation Error',
-        description: 'Please provide baseUrl to test connection',
-        variant: 'destructive'
-      })
+      showError('Please provide baseUrl to test connection')
       return
     }
 
     if (formData.provider === 'servicenow' && (!formData.username || !formData.password)) {
-      toast({
-        title: 'Validation Error',
-        description: 'Username and password are required for ServiceNow',
-        variant: 'destructive'
-      })
+      showError('Username and password are required for ServiceNow')
       return
     }
 
     if (formData.provider === 'cherwell' && !formData.apiKey) {
-      toast({
-        title: 'Validation Error',
-        description: 'API key is required for Cherwell',
-        variant: 'destructive'
-      })
+      showError('API key is required for Cherwell')
       return
     }
 
@@ -150,23 +137,12 @@ export function ITSMIntegration({ spaceId }: ITSMIntegrationProps) {
       const result = await response.json()
 
       if (result.success) {
-        toast({
-          title: 'Connection Successful',
-          description: result.message || 'Successfully connected to ITSM',
-        })
+        showSuccess(result.message || 'Successfully connected to ITSM')
       } else {
-        toast({
-          title: 'Connection Failed',
-          description: result.error || 'Failed to connect to ITSM',
-          variant: 'destructive'
-        })
+        showError(result.error || 'Failed to connect to ITSM')
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to test connection',
-        variant: 'destructive'
-      })
+      showError('Failed to test connection')
     } finally {
       setTesting(false)
     }
@@ -174,11 +150,7 @@ export function ITSMIntegration({ spaceId }: ITSMIntegrationProps) {
 
   const handleSave = async () => {
     if (!formData.baseUrl || !formData.provider) {
-      toast({
-        title: 'Validation Error',
-        description: 'baseUrl and provider are required',
-        variant: 'destructive'
-      })
+      showError('baseUrl and provider are required')
       return
     }
 
@@ -205,24 +177,13 @@ export function ITSMIntegration({ spaceId }: ITSMIntegrationProps) {
       const result = await response.json()
 
       if (response.ok && result.success) {
-        toast({
-          title: 'Configuration Saved',
-          description: 'ITSM integration configured successfully',
-        })
+        showSuccess('ITSM integration configured successfully')
         await loadConfig()
       } else {
-        toast({
-          title: 'Configuration Failed',
-          description: result.error || 'Failed to save configuration',
-          variant: 'destructive'
-        })
+        showError(result.error || 'Failed to save configuration')
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to save configuration',
-        variant: 'destructive'
-      })
+      showError('Failed to save configuration')
     } finally {
       setLoading(false)
     }

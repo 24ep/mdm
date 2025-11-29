@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { safeParseThemeListItem, safeParseBrandingConfig, CreateThemeInputSchema, type ThemeListItem } from '@/lib/theme-types'
 
 // GET /api/themes - List all themes
 export async function GET(request: NextRequest) {
@@ -12,8 +13,8 @@ export async function GET(request: NextRequest) {
             ]
         })
 
-        // Transform to include preview colors
-        const themesWithPreview = themes.map(theme => {
+        // Transform to include preview colors with validation
+        const themesWithPreview: ThemeListItem[] = themes.map(theme => {
             // Prisma returns JSON fields as objects, but ensure we handle it correctly
             let config: any = theme.config
             if (typeof config === 'string') {
@@ -75,7 +76,7 @@ export async function GET(request: NextRequest) {
                 topMenuBackgroundColor = themeMode === 'dark' ? '#1E293B' : '#FFFFFF'
             }
             
-            return {
+            const themeListItem = {
                 id: theme.id,
                 name: theme.name,
                 description: theme.description,
@@ -91,6 +92,19 @@ export async function GET(request: NextRequest) {
                     surface: topMenuBackgroundColor
                 }
             }
+            
+            // Validate the theme list item
+            const validation = safeParseThemeListItem(themeListItem)
+            if (!validation.success) {
+                console.warn(`[GET /api/themes] Invalid theme list item for ${theme.id}:`, validation.error)
+                // Return a valid structure even if validation fails
+            }
+            
+            return themeListItem
+        }).filter((theme): theme is ThemeListItem => {
+            // Filter out invalid themes
+            const validation = safeParseThemeListItem(theme)
+            return validation.success
         })
 
         return NextResponse.json({ themes: themesWithPreview })
@@ -126,7 +140,20 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json()
-        const { name, description, config, cloneFromId } = body
+        
+        // Validate input
+        const inputValidation = CreateThemeInputSchema.safeParse(body)
+        if (!inputValidation.success) {
+            return NextResponse.json(
+                { 
+                    error: 'Invalid theme input',
+                    details: inputValidation.error.errors
+                },
+                { status: 400 }
+            )
+        }
+        
+        const { name, description, config, cloneFromId } = inputValidation.data
 
         // If cloning from another theme
         let themeConfig = config
@@ -135,8 +162,37 @@ export async function POST(request: NextRequest) {
                 where: { id: cloneFromId }
             })
             if (sourceTheme) {
-                themeConfig = sourceTheme.config
+                // Validate cloned config
+                const configValidation = safeParseBrandingConfig(sourceTheme.config)
+                if (configValidation.success) {
+                    themeConfig = configValidation.data
+                } else {
+                    return NextResponse.json(
+                        { error: 'Source theme has invalid configuration' },
+                        { status: 400 }
+                    )
+                }
+            } else {
+                return NextResponse.json(
+                    { error: 'Source theme not found' },
+                    { status: 404 }
+                )
             }
+        }
+
+        // Validate config if provided
+        if (themeConfig) {
+            const configValidation = safeParseBrandingConfig(themeConfig)
+            if (!configValidation.success) {
+                return NextResponse.json(
+                    { 
+                        error: 'Invalid theme configuration',
+                        details: configValidation.error.errors
+                    },
+                    { status: 400 }
+                )
+            }
+            themeConfig = configValidation.data
         }
 
         // Ensure we have a valid config
@@ -159,7 +215,7 @@ export async function POST(request: NextRequest) {
             }
         })
 
-        return NextResponse.json({ theme }, { status: 201 })
+        return NextResponse.json({ theme })
     } catch (error) {
         console.error('Error creating theme:', error)
         return NextResponse.json(

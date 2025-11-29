@@ -1,15 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { query } from '@/lib/db';
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
+import { NextRequest, NextResponse } from 'next/server'
+import { query } from '@/lib/db'
 
 // POST /api/notifications/cleanup - Clean up expired notifications
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+async function postHandler(request: NextRequest) {
+  const authResult = await requireAdmin()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     // Check if user has permission to cleanup notifications
     if (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN') {
@@ -27,17 +25,11 @@ export async function POST(request: NextRequest) {
     const { rows } = await query(cleanupQuery);
     const cleanedCount = parseInt(rows[0].cleaned_count);
 
-    return NextResponse.json({
-      success: true,
-      cleanedCount,
-      message: `Cleaned up ${cleanedCount} expired notifications`,
-    });
-
-  } catch (error) {
-    console.error('Error cleaning up notifications:', error);
-    return NextResponse.json(
-      { error: 'Failed to cleanup notifications' },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json({
+    success: true,
+    cleanedCount,
+    message: `Cleaned up ${cleanedCount} expired notifications`,
+  })
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/notifications/cleanup')

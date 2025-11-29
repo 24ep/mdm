@@ -1,17 +1,18 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import puppeteer from 'puppeteer'
 import { s3Client } from '@/lib/s3'
 import { PutObjectCommand } from '@aws-sdk/client-s3'
 
-export async function POST(
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id } = await params
@@ -38,8 +39,9 @@ export async function POST(
     `, [id, session.user.id])
 
     if (dashboards.length === 0) {
-      return NextResponse.json({ error: 'Dashboard not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Dashboard not found' }}
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashboards\[id]\export\pdf\route.ts')
 
     const dashboard = dashboards[0]
 
@@ -297,8 +299,3 @@ export async function POST(
       filename: filename,
       message: 'PDF generated and uploaded successfully'
     })
-  } catch (error) {
-    console.error('Error exporting dashboard to PDF:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}

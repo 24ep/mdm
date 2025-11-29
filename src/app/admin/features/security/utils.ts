@@ -4,82 +4,55 @@
  */
 
 import { AuditLog, SecurityEvent, SecurityPolicy } from './types'
+import { getResultStatusColor, getSeverityColor as getSharedSeverityColor } from '@/lib/status-colors'
+import { filterBySearch, filterByValue, sortByDate } from '@/lib/filter-utils'
 
 /**
  * Format security event severity badge color
+ * Uses shared status color utility
  */
 export function getSeverityColor(severity: 'low' | 'medium' | 'high' | 'critical'): string {
-  switch (severity) {
-    case 'critical':
-      return 'bg-red-600'
-    case 'high':
-      return 'bg-orange-600'
-    case 'medium':
-      return 'bg-yellow-600'
-    case 'low':
-      return 'bg-blue-600'
-    default:
-      return 'bg-gray-600'
-  }
+  return getSharedSeverityColor(severity)
 }
 
 /**
  * Format audit log status badge color
+ * Uses shared status color utility
  */
 export function getStatusColor(status: 'success' | 'error' | 'warning'): string {
-  switch (status) {
-    case 'success':
-      return 'bg-green-600'
-    case 'error':
-      return 'bg-red-600'
-    case 'warning':
-      return 'bg-yellow-600'
-    default:
-      return 'bg-gray-600'
-  }
+  return getResultStatusColor(status)
 }
 
 /**
  * Filter audit logs by search query
+ * Uses shared filter utility
  */
 export function filterAuditLogs(logs: AuditLog[], query: string): AuditLog[] {
-  if (!query.trim()) return logs
-  
-  const lowerQuery = query.toLowerCase()
-  return logs.filter(log =>
-    log.userName?.toLowerCase().includes(lowerQuery) ||
-    log.action?.toLowerCase().includes(lowerQuery) ||
-    log.resource?.toLowerCase().includes(lowerQuery) ||
-    log.resourceType?.toLowerCase().includes(lowerQuery) ||
-    log.ipAddress?.toLowerCase().includes(lowerQuery)
-  )
+  return filterBySearch(logs, query, ['userName', 'action', 'resource', 'resourceType', 'ipAddress'])
 }
 
 /**
  * Filter audit logs by severity
+ * Uses shared filter utility
  */
 export function filterBySeverity(logs: AuditLog[], severity: 'low' | 'medium' | 'high' | 'critical' | 'all'): AuditLog[] {
-  if (severity === 'all') return logs
-  return logs.filter(log => log.severity === severity)
+  return filterByValue(logs, 'severity', severity === 'all' ? 'all' : severity as any)
 }
 
 /**
  * Filter audit logs by status
+ * Uses shared filter utility
  */
 export function filterByStatus(logs: AuditLog[], status: 'success' | 'error' | 'warning' | 'all'): AuditLog[] {
-  if (status === 'all') return logs
-  return logs.filter(log => log.status === status)
+  return filterByValue(logs, 'status', status === 'all' ? 'all' : status as any)
 }
 
 /**
  * Sort audit logs by timestamp
+ * Uses shared sort utility
  */
 export function sortAuditLogs(logs: AuditLog[], order: 'asc' | 'desc' = 'desc'): AuditLog[] {
-  return [...logs].sort((a, b) => {
-    const aTime = new Date(a.timestamp).getTime()
-    const bTime = new Date(b.timestamp).getTime()
-    return order === 'desc' ? bTime - aTime : aTime - bTime
-  })
+  return sortByDate(logs, 'timestamp', order)
 }
 
 /**

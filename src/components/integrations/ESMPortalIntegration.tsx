@@ -21,7 +21,7 @@ import {
   Plus,
   Trash2
 } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
+import { showError, showSuccess } from '@/lib/toast-utils'
 
 interface ESMPortalConfig {
   id?: string
@@ -38,7 +38,6 @@ interface ESMPortalIntegrationProps {
 }
 
 export function ESMPortalIntegration({ spaceId }: ESMPortalIntegrationProps) {
-  const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [testing, setTesting] = useState(false)
   const [config, setConfig] = useState<ESMPortalConfig | null>(null)
@@ -89,29 +88,17 @@ export function ESMPortalIntegration({ spaceId }: ESMPortalIntegrationProps) {
 
   const handleTestConnection = async () => {
     if (!formData.baseUrl) {
-      toast({
-        title: 'Validation Error',
-        description: 'Please provide baseUrl to test connection',
-        variant: 'destructive'
-      })
+      showError('Please provide baseUrl to test connection')
       return
     }
 
     if (formData.authType === 'apikey' && !formData.apiKey) {
-      toast({
-        title: 'Validation Error',
-        description: 'API key is required for API key authentication',
-        variant: 'destructive'
-      })
+      showError('API key is required for API key authentication')
       return
     }
 
     if (formData.authType === 'basic' && (!formData.username || !formData.password)) {
-      toast({
-        title: 'Validation Error',
-        description: 'Username and password are required for basic authentication',
-        variant: 'destructive'
-      })
+      showError('Username and password are required for basic authentication')
       return
     }
 

@@ -1,17 +1,14 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-
 const prisma = new PrismaClient()
 
-export async function GET() {
-  try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler() {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
 
     const chatSessions = await prisma.chatSession.findMany({
       where: {
@@ -65,19 +62,23 @@ export async function GET() {
     }))
 
     return NextResponse.json({ sessions: formattedSessions })
-  } catch (error) {
-    console.error('Error fetching chat sessions:', error)
-    return NextResponse.json({ error: 'Failed to fetch chat sessions' }, { status: 500 })
+  , { status: 500 })
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+
+
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/admin/chat-sessions')
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\chat-sessions\route.ts')
+async function postHandler(request: NextRequest) {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\chat-sessions\route.ts')
 
     const body = await request.json()
     const { title, description, isPrivate, spaceId, modelId } = body
@@ -136,8 +137,8 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ session: formattedSession })
-  } catch (error) {
-    console.error('Error creating chat session:', error)
-    return NextResponse.json({ error: 'Failed to create chat session' }, { status: 500 })
+  , { status: 500 })
   }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/admin/chat-sessions')

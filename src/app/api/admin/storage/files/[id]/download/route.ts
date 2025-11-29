@@ -1,21 +1,24 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } 
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\storage\files\[id]\download\route.ts')= authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+
 
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Insufficient permissions' }}
 
     const { id: fileId } = await params
 
@@ -24,8 +27,7 @@ export async function GET(
     })
 
     if (!file) {
-      return NextResponse.json({ error: 'File not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'File not found' }}
 
     // TODO: Actually fetch file from storage service
     // For now, return metadata
@@ -38,11 +40,4 @@ export async function GET(
         path: file.filePath
       }
     })
-  } catch (error: any) {
-    console.error('Error downloading file:', error)
-    return NextResponse.json({ 
-      error: error.message || 'Internal server error' 
-    }, { status: 500 })
-  }
-}
 

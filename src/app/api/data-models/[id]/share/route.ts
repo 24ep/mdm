@@ -1,25 +1,28 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 
-export async function PUT(
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } 
+
+export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\data-models\[id]\share\route.ts')= authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const POST = withErrorHandling(putHandler, '
 
     const { id } = await params
     const body = await request.json()
     const { space_ids } = body
 
     if (!Array.isArray(space_ids)) {
-      return NextResponse.json({ error: 'space_ids must be an array' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'space_ids must be an array' }}
 
     // Get the data model to check permissions using Prisma
     const dataModel = await db.dataModel.findUnique({
@@ -28,14 +31,12 @@ export async function PUT(
     })
 
     if (!dataModel) {
-      return NextResponse.json({ error: 'Data model not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Data model not found' }}
 
     // Check if user has admin/owner access to the original space
     const originalSpaceId = dataModel.spaces?.[0]?.spaceId
     if (!originalSpaceId) {
-      return NextResponse.json({ error: 'Data model has no original space' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'Data model has no original space' }}
 
     const spaceMember = await db.spaceMember.findFirst({
       where: {
@@ -46,8 +47,7 @@ export async function PUT(
     })
 
     if (!spaceMember || !['admin', 'owner'].includes(spaceMember.role)) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Access denied' }}
 
     // Validate that all target spaces exist and user has access using Prisma
     if (space_ids.length > 0) {
@@ -65,8 +65,7 @@ export async function PUT(
       if (invalidSpaceIds.length > 0) {
         return NextResponse.json({ 
           error: `Access denied to spaces: ${invalidSpaceIds.join(', ')}` 
-        }, { status: 403 })
-      }
+        }}
     }
 
     // Update the data model with new space_ids using Prisma
@@ -98,8 +97,3 @@ export async function PUT(
       dataModel: updatedModel,
       message: 'Sharing updated successfully'
     })
-  } catch (error) {
-    console.error('Share data model API error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}

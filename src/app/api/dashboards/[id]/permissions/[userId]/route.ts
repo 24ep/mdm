@@ -1,14 +1,15 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 
-export async function DELETE(
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; userId: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id, userId } = await params
@@ -21,16 +22,16 @@ export async function DELETE(
     `, [id, session.user.id])
 
     if (accessCheck.length === 0) {
-      return NextResponse.json({ error: 'Dashboard not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Dashboard not found' }}
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\dashboards\[id]\permissions\[userId]\route.ts')
 
     const dashboard = accessCheck[0]
     const canManage = dashboard.created_by === session.user.id || 
                      (dashboard.role && dashboard.role === 'ADMIN')
 
     if (!canManage) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Access denied' }}
 
     // Remove permission
     await query(`
@@ -39,8 +40,3 @@ export async function DELETE(
     `, [id, userId])
 
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Error removing dashboard permission:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}

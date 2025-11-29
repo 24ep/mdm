@@ -1,23 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
+import { requireAnySpaceAccess } from '@/lib/space-access'
 import { query } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -25,7 +21,7 @@ export async function GET(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -57,7 +53,7 @@ export async function GET(
 
     if (dashboards.length === 0) {
       logger.warn('Dashboard not found', { dashboardId: id, userId: session.user.id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Dashboard not found' }, { status: 404 }))
+      return NextResponse.json({ error: 'Dashboard not found' }, { status: 404 })
     }
 
     const dashboard = dashboards[0]
@@ -98,7 +94,7 @@ export async function GET(
       datasourcesCount: datasources.length,
       filtersCount: filters.length
     })
-    return addSecurityHeaders(NextResponse.json({
+    return NextResponse.json({
       dashboard: {
         ...dashboard,
         elements,
@@ -106,24 +102,19 @@ export async function GET(
         filters,
         permissions
       }
-    }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Dashboard API GET')
-  }
+    })
 }
 
-export async function PUT(
+export const GET = withErrorHandling(getHandler, 'GET /api/dashboards/[id]')
+
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -131,7 +122,7 @@ export async function PUT(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -156,7 +147,7 @@ export async function PUT(
     }))
     
     if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
+      return bodyValidation.response
     }
     
     const {
@@ -188,7 +179,7 @@ export async function PUT(
 
     if (accessCheck.length === 0) {
       logger.warn('Dashboard not found for update', { dashboardId: id, userId: session.user.id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Dashboard not found' }, { status: 404 }))
+      return NextResponse.json({ error: 'Dashboard not found' }, { status: 404 })
     }
 
     const dashboard = accessCheck[0]
@@ -197,7 +188,7 @@ export async function PUT(
 
     if (!canEdit) {
       logger.warn('Access denied for dashboard update', { dashboardId: id, userId: session.user.id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Access denied' }, { status: 403 }))
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
     // Generate public link if visibility is being changed to PUBLIC
@@ -291,22 +282,14 @@ export async function PUT(
       
       if (rows.length === 0) {
         logger.warn('Dashboard not found after update attempt', { dashboardId: id })
-        return addSecurityHeaders(NextResponse.json({ error: 'Dashboard not found' }, { status: 404 }))
+        return NextResponse.json({ error: 'Dashboard not found' }, { status: 404 })
       }
 
       // Update space associations if provided
       if (space_ids && Array.isArray(space_ids)) {
         // Check if user has access to all spaces
-        const placeholders = space_ids.map((_, i) => `$${i + 1}`).join(',')
-        const { rows: spaceAccess } = await query(
-          `SELECT space_id, role FROM space_members WHERE space_id IN (${placeholders}) AND user_id = $${space_ids.length + 1}`,
-          [...space_ids, session.user.id]
-        )
-
-        if (spaceAccess.length !== space_ids.length) {
-          logger.warn('Access denied to one or more spaces during dashboard update', { dashboardId: id, spaceIds: space_ids, userId: session.user.id })
-          return addSecurityHeaders(NextResponse.json({ error: 'Access denied to one or more spaces' }, { status: 403 }))
-        }
+        const accessResult = await requireAnySpaceAccess(space_ids, session.user.id!)
+        if (!accessResult.success) return accessResult.response
 
         // Remove existing associations
         await query('DELETE FROM dashboard_spaces WHERE dashboard_id = $1', [id])
@@ -337,28 +320,23 @@ export async function PUT(
 
       const duration = Date.now() - startTime
       logger.apiResponse('PUT', `/api/dashboards/${id}`, 200, duration)
-      return addSecurityHeaders(NextResponse.json({ dashboard: rows[0] }))
+      return NextResponse.json({ dashboard: rows[0] })
     }
 
     logger.warn('No fields to update for dashboard', { dashboardId: id })
-    return addSecurityHeaders(NextResponse.json({ error: 'No fields to update' }, { status: 400 }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('PUT', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Dashboard API PUT')
-  }
+    return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
 }
 
-export async function DELETE(
+export const PUT = withErrorHandling(putHandler, 'PUT /api/dashboards/[id]')
+
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -366,7 +344,7 @@ export async function DELETE(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -382,7 +360,7 @@ export async function DELETE(
 
     if (accessCheck.length === 0) {
       logger.warn('Dashboard not found for deletion', { dashboardId: id, userId: session.user.id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Dashboard not found' }, { status: 404 }))
+      return NextResponse.json({ error: 'Dashboard not found' }, { status: 404 })
     }
 
     const dashboard = accessCheck[0]
@@ -391,7 +369,7 @@ export async function DELETE(
 
     if (!canDelete) {
       logger.warn('Access denied for dashboard deletion', { dashboardId: id, userId: session.user.id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Access denied' }, { status: 403 }))
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
     // Soft delete the dashboard
@@ -402,10 +380,7 @@ export async function DELETE(
 
     const duration = Date.now() - startTime
     logger.apiResponse('DELETE', `/api/dashboards/${id}`, 200, duration)
-    return addSecurityHeaders(NextResponse.json({ success: true }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('DELETE', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Dashboard API DELETE')
-  }
+    return NextResponse.json({ success: true })
 }
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/dashboards/[id]')

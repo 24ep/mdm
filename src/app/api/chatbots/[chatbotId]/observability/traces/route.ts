@@ -1,17 +1,19 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { getLangfuseClient, isLangfuseEnabled } from '@/lib/langfuse'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ chatbotId: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\chatbots\[chatbotId]\observability\traces\route.ts')
 
     const { chatbotId } = await params
 
@@ -89,17 +91,4 @@ export async function GET(
       }))
 
       return NextResponse.json({ traces: formattedTraces })
-    } catch (error) {
-      console.error('Error fetching traces from Langfuse:', error)
-      // Return empty array if Langfuse API fails
-      return NextResponse.json({ traces: [] })
-    }
-  } catch (error) {
-    console.error('Error in traces API:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
 

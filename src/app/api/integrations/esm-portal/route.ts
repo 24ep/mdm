@@ -1,37 +1,30 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { getSecretsManager } from '@/lib/secrets-manager'
 import { decryptApiKey, encryptApiKey } from '@/lib/encryption'
 import { ESMPortalService } from '@/lib/esm-portal-service'
 
 // Get ESM Portal configuration
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    const { searchParams } = new URL(request.url)
-    const spaceId = searchParams.get('space_id')
+  const { searchParams } = new URL(request.url)
+  const spaceId = searchParams.get('space_id')
 
-    if (!spaceId) {
-      return NextResponse.json(
-        { error: 'space_id is required' },
-        { status: 400 }
-      )
-    }
-
-    // Check access
-    const { rows: access } = await query(
-      'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',
-      [spaceId, session.user.id]
+  if (!spaceId) {
+    return NextResponse.json(
+      { error: 'space_id is required' },
+      { status: 400 }
     )
-    if (access.length === 0) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+  }
+
+  // Check access
+  const accessResult = await requireSpaceAccess(spaceId, session.user.id!)
+  if (!accessResult.success) return accessResult.response
 
     // Get ESM Portal configuration
     const { rows: configRows } = await query(
@@ -70,41 +63,29 @@ export async function GET(request: NextRequest) {
       },
       isConfigured: true
     })
-  } catch (error: any) {
-    console.error('Error fetching ESM Portal config:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to fetch ESM Portal configuration' },
-      { status: 500 }
-    )
-  }
 }
 
+export const GET = withErrorHandling(getHandler, 'GET /api/integrations/esm-portal')
+
 // Configure ESM Portal integration
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function postHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    const body = await request.json()
-    const { space_id, baseUrl, apiKey, username, password, authType, customHeaders, name, customEndpoints } = body
+  const body = await request.json()
+  const { space_id, baseUrl, apiKey, username, password, authType, customHeaders, name, customEndpoints } = body
 
-    if (!space_id || !baseUrl) {
-      return NextResponse.json(
-        { error: 'space_id and baseUrl are required' },
-        { status: 400 }
-      )
-    }
-
-    // Check access
-    const { rows: access } = await query(
-      'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',
-      [space_id, session.user.id]
+  if (!space_id || !baseUrl) {
+    return NextResponse.json(
+      { error: 'space_id and baseUrl are required' },
+      { status: 400 }
     )
-    if (access.length === 0) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+  }
+
+  // Check access
+  const accessResult = await requireSpaceAccess(space_id, session.user.id!)
+  if (!accessResult.success) return accessResult.response
 
     // Validate auth based on type
     if (authType === 'apikey' && !apiKey) {
@@ -228,22 +209,15 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'ESM Portal integration configured successfully'
     })
-  } catch (error: any) {
-    console.error('Error configuring ESM Portal:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to configure ESM Portal integration' },
-      { status: 500 }
-    )
-  }
 }
 
+export const POST = withErrorHandling(postHandler, 'POST /api/integrations/esm-portal')
+
 // Test connection
-export async function PUT(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function putHandler(request: NextRequest) {
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const body = await request.json()
     const { baseUrl, apiKey, username, password, authType, customHeaders } = body
@@ -268,12 +242,7 @@ export async function PUT(request: NextRequest) {
     const result = await service.testConnection()
 
     return NextResponse.json(result)
-  } catch (error: any) {
-    console.error('Error testing ESM Portal connection:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to test connection' },
-      { status: 500 }
-    )
-  }
 }
+
+export const PUT = withErrorHandling(putHandler, 'PUT /api/integrations/esm-portal')
 

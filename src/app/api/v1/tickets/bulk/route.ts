@@ -1,23 +1,22 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { logAPIRequest } from '@/shared/lib/security/audit-logger'
 import { checkPermission } from '@/shared/lib/security/permission-checker'
 import { applyRateLimit } from '../../middleware'
 
-export async function POST(request: NextRequest) {
-  // Apply rate limiting
+async function postHandler(request: NextRequest) {
+    // Apply rate limiting
   const rateLimitResponse = await applyRateLimit(request)
   if (rateLimitResponse) {
     return rateLimitResponse
   }
 
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
 
     const body = await request.json()
     const { operation, ticketIds, data } = body
@@ -172,17 +171,12 @@ export async function POST(request: NextRequest) {
       undefined
     )
 
-    return NextResponse.json({
-      success: true,
-      affected: affectedCount,
-      message: `Successfully ${operation}d ${affectedCount} ticket(s)`,
-    })
-  } catch (error) {
-    console.error('Error performing bulk operation:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
+  return NextResponse.json({
+    success: true,
+    affected: affectedCount,
+    message: `Successfully ${operation}d ${affectedCount} ticket(s)`,
+  })
 }
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/v1/tickets/bulk')
 

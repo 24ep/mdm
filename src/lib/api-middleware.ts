@@ -29,35 +29,99 @@ export interface ApiContext {
 }
 
 /**
- * Middleware to require authentication
- * Returns null if authenticated, or NextResponse with error if not
+ * Get session from request
+ * Returns session or null if not authenticated
  */
-export async function requireAuth(request: NextRequest): Promise<NextResponse | null> {
+export async function getSession() {
+  return await getServerSession(authOptions)
+}
+
+/**
+ * Require authentication - checks for session.user
+ * Returns session if authenticated, or error response if not
+ * Use this when you only need to check if user is logged in
+ */
+export async function requireAuth(): Promise<
+  | { success: true; session: NonNullable<Awaited<ReturnType<typeof getServerSession>>> }
+  | { success: false; response: NextResponse }
+> {
+  const session = await getServerSession(authOptions)
+  
+  if (!session?.user) {
+    return {
+      success: false,
+      response: addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+    }
+  }
+  
+  return { success: true, session }
+}
+
+/**
+ * Require authentication with user ID - checks for session.user.id
+ * Returns session if authenticated, or error response if not
+ * Use this when you need the user ID (most common case)
+ */
+export async function requireAuthWithId(): Promise<
+  | { success: true; session: NonNullable<Awaited<ReturnType<typeof getServerSession>>> & { user: { id: string } } }
+  | { success: false; response: NextResponse }
+> {
   const session = await getServerSession(authOptions)
   
   if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return {
+      success: false,
+      response: addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+    }
   }
   
-  return null
+  return { success: true, session: session as any }
+}
+
+/**
+ * Require admin role
+ * Returns session if user is admin, or error response if not
+ */
+export async function requireAdmin(): Promise<
+  | { success: true; session: NonNullable<Awaited<ReturnType<typeof getServerSession>>> & { user: { id: string; role: string } } }
+  | { success: false; response: NextResponse }
+> {
+  const authResult = await requireAuthWithId()
+  
+  if (!authResult.success) {
+    return authResult
+  }
+  
+  const { session } = authResult
+  const role = (session.user as any)?.role
+  
+  if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
+    return {
+      success: false,
+      response: addSecurityHeaders(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
+    }
+  }
+  
+  return { success: true, session: session as any }
 }
 
 /**
  * Wrapper to add authentication to API handlers
+ * @deprecated Use requireAuth() or requireAuthWithId() directly for better control
  */
 export function withAuth<T = {}>(handler: ApiHandler<T & ApiContext>) {
   return async (request: NextRequest, context: T) => {
-    const authError = await requireAuth(request)
-    if (authError) return authError
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
     
-    const session = await getServerSession(authOptions)
+    const { session } = authResult
     
     return handler(request, {
       ...context,
       session,
-      userId: session?.user?.id,
-      userEmail: session?.user?.email,
-      userName: session?.user?.name,
+      userId: session.user.id,
+      userEmail: session.user.email,
+      userName: session.user.name,
     } as T & ApiContext)
   }
 }

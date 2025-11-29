@@ -1,21 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, withErrorHandling } from '@/lib/api-middleware'
 import { query } from '@/lib/db'
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function postHandler(request: NextRequest) {
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const body = await request.json()
     const { name, type, config, isActive } = body
 
     if (!name || !type) {
-      return NextResponse.json({ error: 'Name and type are required' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'Name and type are required' }}
 
     // Check if integration exists
     const checkSql = `
@@ -72,21 +68,15 @@ export async function POST(request: NextRequest) {
         integration: insertResult.rows[0]
       })
     }
-  } catch (error: any) {
-    console.error('Error saving integration:', error)
-    
-    // If table doesn't exist, return success (graceful degradation)
-    if (error.message?.includes('does not exist') || error.code === '42P01') {
-      return NextResponse.json({ 
-        success: true,
-        message: 'Configuration saved (database table not yet created)'
-      })
-    }
-
+  // If table doesn't exist, return success (graceful degradation)
+  if (error.message?.includes('does not exist') || error.code === '42P01') {
     return NextResponse.json({ 
-      error: 'Failed to save integration',
-      details: error.message 
-    }, { status: 500 })
+      success: true,
+      message: 'Configuration saved (database table not yet created)'
+    })
   }
+  throw error
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/admin/integrations')
 

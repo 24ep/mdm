@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
-import { useToast } from '@/hooks/use-toast'
+import { showError, showSuccess } from '@/lib/toast-utils'
 import { Loader2 } from 'lucide-react'
 
 interface FormField {
@@ -35,7 +35,6 @@ interface IntakeFormViewerProps {
 }
 
 export function IntakeFormViewer({ formId, onSubmit, onCancel }: IntakeFormViewerProps) {
-  const { toast } = useToast()
   const [form, setForm] = useState<any>(null)
   const [formData, setFormData] = useState<Record<string, any>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -54,19 +53,11 @@ export function IntakeFormViewer({ formId, onSubmit, onCancel }: IntakeFormViewe
         const data = await response.json()
         setForm(data.form)
       } else {
-        toast({
-          title: 'Error',
-          description: 'Failed to load form',
-          variant: 'destructive',
-        })
+        showError('Failed to load form')
       }
     } catch (error) {
       console.error('Error loading form:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to load form',
-        variant: 'destructive',
-      })
+      showError('Failed to load form')
     } finally {
       setLoading(false)
     }
@@ -99,27 +90,16 @@ export function IntakeFormViewer({ formId, onSubmit, onCancel }: IntakeFormViewe
 
       const result = await response.json()
       if (response.ok) {
-        toast({
-          title: 'Success',
-          description: 'Your submission has been received',
-        })
+        showSuccess('Your submission has been received')
         onSubmit?.(result.submission)
         // Reset form
         setFormData({})
         setErrors({})
       } else {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to submit form',
-          variant: 'destructive',
-        })
+        showError(result.error || 'Failed to submit form')
       }
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'An unexpected error occurred',
-        variant: 'destructive',
-      })
+      showError(error.message || 'An unexpected error occurred')
     } finally {
       setSubmitting(false)
     }

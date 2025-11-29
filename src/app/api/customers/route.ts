@@ -1,21 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { query } from '@/lib/db'
 import { triggerCustomerNotification } from '@/lib/notification-triggers'
 import { logger } from '@/lib/logger'
 import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     // Validate query parameters - use passthrough for complex filters
     const queryValidation = validateQuery(request, z.object({
@@ -28,7 +23,7 @@ export async function GET(request: NextRequest) {
     }).passthrough())
     
     if (!queryValidation.success) {
-      return addSecurityHeaders(queryValidation.response)
+      return queryValidation.response
     }
     
     const { searchParams } = new URL(request.url)
@@ -225,7 +220,7 @@ export async function GET(request: NextRequest) {
 
     const duration = Date.now() - startTime
     logger.apiResponse('GET', '/api/customers', 200, duration, { total })
-    return addSecurityHeaders(NextResponse.json({
+    return NextResponse.json({
       customers: transformedCustomers,
       pagination: {
         page,
@@ -233,21 +228,16 @@ export async function GET(request: NextRequest) {
         total,
         pages: Math.ceil(total / limit),
       },
-    }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', '/api/customers', 500, duration)
-    return handleApiError(error, 'Customers API GET')
-  }
+    })
 }
 
-export async function POST(request: NextRequest) {
+export const GET = withErrorHandling(getHandler, 'GET /api/customers')
+
+async function postHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     // Validate request body
     const bodyValidation = await validateBody(request, z.object({
@@ -266,7 +256,7 @@ export async function POST(request: NextRequest) {
     }))
     
     if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
+      return bodyValidation.response
     }
     
     const {
@@ -292,10 +282,10 @@ export async function POST(request: NextRequest) {
       )
       if (existing.length > 0) {
         logger.warn('Customer with this email already exists', { email })
-        return addSecurityHeaders(NextResponse.json(
+        return NextResponse.json(
           { error: 'Customer with this email already exists' },
           { status: 400 }
-        ))
+        )
       }
     }
 
@@ -334,10 +324,7 @@ export async function POST(request: NextRequest) {
 
     const duration = Date.now() - startTime
     logger.apiResponse('POST', '/api/customers', 201, duration, { customerId: customer.id })
-    return addSecurityHeaders(NextResponse.json(customer, { status: 201 }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('POST', '/api/customers', 500, duration)
-    return handleApiError(error, 'Customers API POST')
-  }
+    return NextResponse.json(customer, { status: 201 })
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/customers')

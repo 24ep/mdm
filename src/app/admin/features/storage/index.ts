@@ -7,7 +7,7 @@
 export { StorageManagement } from './components/StorageManagement'
 export { CacheManagement } from './components/CacheManagement'
 export { BackupRecovery } from './components/BackupRecovery'
-export { StorageManagement as FileSystemManagement } from './components/FileSystemManagement'
+// FileSystemManagement removed - was unused duplicate of StorageManagement
 
 // Types
 export type {
@@ -24,8 +24,6 @@ export type {
 
 // Utils
 export {
-  formatFileSize,
-  getFileIcon,
   isImageFile,
   isVideoFile,
   getCacheStatusColor,
@@ -42,4 +40,8 @@ export {
   formatBackupType,
   formatScheduleFrequency,
 } from './utils'
+
+// Re-export shared utilities (import directly from @/lib instead)
+// formatFileSize: use from '@/lib/formatters'
+// getFileIcon: use from '@/lib/file-utils'
 

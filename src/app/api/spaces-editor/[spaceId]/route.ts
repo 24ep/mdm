@@ -1,18 +1,18 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { SpacesEditorConfig } from '@/lib/space-studio-manager'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ spaceId: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     const { spaceId } = await params
 
@@ -29,8 +29,7 @@ export async function GET(
     )
 
     if (accessCheck.rows.length === 0) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Access denied' }}
 
     // Get spaces editor config from system_settings
     const configKey = `spaces_editor_config_${spaceId}`
@@ -50,21 +49,21 @@ export async function GET(
     }
 
     return NextResponse.json({ config: null })
-  } catch (error) {
-    console.error('Error fetching spaces editor config:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
 
-export async function POST(
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\spaces-editor\[spaceId]\route.ts')
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ spaceId: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\spaces-editor\[spaceId]\route.ts')
 
     const { spaceId } = await params
 
@@ -81,15 +80,13 @@ export async function POST(
     )
 
     if (accessCheck.rows.length === 0 || !['OWNER', 'ADMIN'].includes(accessCheck.rows[0].role)) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Access denied' }}
 
     const body = await request.json()
     const config: SpacesEditorConfig = body
 
     if (!config || config.spaceId !== spaceId) {
-      return NextResponse.json({ error: 'Invalid config' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'Invalid config' }}
 
     // Save config to system_settings
     const configKey = `spaces_editor_config_${spaceId}`
@@ -103,9 +100,4 @@ export async function POST(
     )
 
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Error saving spaces editor config:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
 

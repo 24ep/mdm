@@ -1,22 +1,23 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { AttachmentStorageService } from '@/lib/attachment-storage'
 
-export async function POST(
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const POST = withErrorHandling(postHandler, '
 
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Insufficient permissions' }}
 
     const { id: fileId } = await params
     const { isPublic, permissionLevel = 'view', expiresIn = 3600 } = await request.json()
@@ -32,8 +33,7 @@ export async function POST(
     })
 
     if (!file) {
-      return NextResponse.json({ error: 'File not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'File not found' }}
 
     let publicUrl: string | null = null
 
@@ -81,11 +81,4 @@ export async function POST(
         publicUrl: publicUrl
       }
     })
-  } catch (error: any) {
-    console.error('Error sharing file:', error)
-    return NextResponse.json({ 
-      error: error.message || 'Internal server error' 
-    }, { status: 500 })
-  }
-}
 

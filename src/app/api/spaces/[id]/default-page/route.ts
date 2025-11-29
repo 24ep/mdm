@@ -1,24 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { query } from '@/lib/db'
 import { SpacesEditorConfig } from '@/lib/space-studio-manager'
 import { logger } from '@/lib/logger'
 import { validateParams } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -26,7 +22,7 @@ export async function GET(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id: spaceSlugOrId } = paramValidation.data
@@ -40,10 +36,13 @@ export async function GET(
 
     if (spaceResult.rows.length === 0) {
       logger.warn('Space not found for default page', { spaceSlugOrId })
-      return addSecurityHeaders(NextResponse.json({ error: 'Space not found' }, { status: 404 }))
-    }
+      return NextResponse.json({ error: 'Space not found' }}
 
     const spaceId = spaceResult.rows[0].id
+
+    // Check if user has access to this space
+    const accessResult = await requireSpaceAccess(spaceId, session.user.id!)
+    if (!accessResult.success) return accessResult.response
 
     // Get spaces editor config to find default page
     const configKey = `spaces_editor_config_${spaceId}`
@@ -97,19 +96,12 @@ export async function GET(
       path: defaultPath,
       hasPageId: !!pageId,
     })
-    return addSecurityHeaders(NextResponse.json({ 
+    return NextResponse.json({ 
       path: defaultPath,
       pageId: pageId
-    }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
-    // Return default dashboard on error
-    return addSecurityHeaders(NextResponse.json({ 
-      path: '/dashboard',
-      pageId: null
-    }))
-  }
+    })
 }
+
+export const GET = withErrorHandling(getHandler, 'GET /api/spaces/[id]/default-page')
 
 

@@ -45,7 +45,7 @@ import {
   PlayCircle
 } from 'lucide-react'
 import { ModuleDetail } from './ModuleDetail'
-import { useToast } from '@/hooks/use-toast'
+import { showError, showSuccess } from '@/lib/toast-utils'
 import { format } from 'date-fns'
 
 interface Module {
@@ -122,7 +122,6 @@ export function ModuleList({ projectId, spaceId, onModuleClick }: ModuleListProp
   const [editingModule, setEditingModule] = useState<Module | null>(null)
   const [selectedModule, setSelectedModule] = useState<Module | null>(null)
   const [users, setUsers] = useState<Array<{ id: string; name: string | null; email: string; avatar?: string | null }>>([])
-  const { toast } = useToast()
 
   const [formData, setFormData] = useState<{
     name: string
@@ -154,11 +153,7 @@ export function ModuleList({ projectId, spaceId, onModuleClick }: ModuleListProp
       setModules(data.modules || [])
     } catch (error) {
       console.error('Error loading modules:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to load modules',
-        variant: 'destructive'
-      })
+      showError('Failed to load modules')
     } finally {
       setLoading(false)
     }
@@ -192,20 +187,13 @@ export function ModuleList({ projectId, spaceId, onModuleClick }: ModuleListProp
 
       if (!response.ok) throw new Error('Failed to create module')
       
-      toast({
-        title: 'Success',
-        description: 'Module created successfully'
-      })
+      showSuccess('Module created successfully')
       
       setIsCreateDialogOpen(false)
       resetForm()
       loadModules()
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to create module',
-        variant: 'destructive'
-      })
+      showError('Failed to create module')
     }
   }
 
@@ -226,20 +214,13 @@ export function ModuleList({ projectId, spaceId, onModuleClick }: ModuleListProp
 
       if (!response.ok) throw new Error('Failed to update module')
       
-      toast({
-        title: 'Success',
-        description: 'Module updated successfully'
-      })
+      showSuccess('Module updated successfully')
       
       setEditingModule(null)
       resetForm()
       loadModules()
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to update module',
-        variant: 'destructive'
-      })
+      showError('Failed to update module')
     }
   }
 
@@ -253,18 +234,11 @@ export function ModuleList({ projectId, spaceId, onModuleClick }: ModuleListProp
 
       if (!response.ok) throw new Error('Failed to delete module')
       
-      toast({
-        title: 'Success',
-        description: 'Module deleted successfully'
-      })
+      showSuccess('Module deleted successfully')
       
       loadModules()
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to delete module',
-        variant: 'destructive'
-      })
+      showError('Failed to delete module')
     }
   }
 

@@ -1,6 +1,6 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { Client as MinioClient } from 'minio'
 
@@ -54,15 +54,13 @@ async function getMinIOClient(instanceId: string) {
   })
 }
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ instanceId: string; bucket: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { instanceId, bucket } = await params
     const client = await getMinIOClient(instanceId)
@@ -99,26 +97,19 @@ export async function GET(
       totalSize,
       objects: objectList.slice(0, 100), // Limit to first 100 objects
     })
-  } catch (error) {
-    console.error('Error getting bucket details:', error)
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Failed to get bucket details',
-      },
-      { status: 500 }
-    )
-  }
 }
 
-export async function DELETE(
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/minio/[instanceId]/buckets/[bucket]')
+
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ instanceId: string; bucket: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { instanceId, bucket } = await params
     const client = await getMinIOClient(instanceId)
@@ -142,14 +133,7 @@ export async function DELETE(
       success: true,
       message: `Bucket ${bucket} deleted successfully`,
     })
-  } catch (error) {
-    console.error('Error deleting bucket:', error)
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Failed to delete bucket',
-      },
-      { status: 500 }
-    )
-  }
 }
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/minio/[instanceId]/buckets/[bucket]')
 

@@ -1,17 +1,18 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     const { id } = await params
     const asset = await prisma.asset.findUnique({
@@ -22,8 +23,7 @@ export async function GET(
     })
 
     if (!asset) {
-      return NextResponse.json({ error: 'Asset not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Asset not found' }}
 
     return NextResponse.json(asset)
   } catch (error) {
@@ -35,15 +35,19 @@ export async function GET(
   }
 }
 
-export async function PUT(
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\assets\[id]\route.ts')
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     const { id } = await params
     const body = await request.json()
@@ -54,8 +58,7 @@ export async function PUT(
     })
 
     if (!asset) {
-      return NextResponse.json({ error: 'Asset not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Asset not found' }}
 
     if (asset.isSystem) {
       // System assets can only update certain fields
@@ -102,15 +105,21 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
+
+
+export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\admin\assets\[id]\route.ts')
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\admin\assets\[id]\route.ts')
 
     const { id } = await params
     const asset = await prisma.asset.findUnique({
@@ -118,8 +127,7 @@ export async function DELETE(
     })
 
     if (!asset) {
-      return NextResponse.json({ error: 'Asset not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Asset not found' }}
 
     if (asset.isSystem) {
       return NextResponse.json(

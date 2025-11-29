@@ -17,14 +17,12 @@ export async function GET(
     )
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Space not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Space not found' }}
 
     return NextResponse.json({ space: result.rows[0] })
   } catch (error) {
     console.error('Error fetching public space info:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+    return NextResponse.json({ error: 'Internal server error' }}
 }
 
 

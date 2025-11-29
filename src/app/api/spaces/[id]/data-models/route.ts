@@ -1,24 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { query } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { validateParams, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
   let spaceId: string | undefined
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -26,7 +22,7 @@ export async function GET(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -68,17 +64,20 @@ export async function GET(
       logger.apiResponse('GET', `/api/spaces/all/data-models`, 200, duration, {
         dataModelCount: transformedDataModels.length
       })
-      return addSecurityHeaders(NextResponse.json({ dataModels: transformedDataModels }))
+      return NextResponse.json({ dataModels: transformedDataModels })
     } else {
       // Validate that spaceId is a valid UUID format
       const uuidValidation = z.string().uuid().safeParse(spaceId)
       if (!uuidValidation.success) {
         logger.warn('Invalid space ID format', { spaceId })
-        return addSecurityHeaders(NextResponse.json({ 
+        return NextResponse.json({ 
           error: 'Invalid space ID format',
           details: 'Space ID must be a valid UUID'
-        }, { status: 400 }))
-      }
+        }}
+
+      // Check if user has access to this space
+      const accessResult = await requireSpaceAccess(spaceId, session.user.id!)
+      if (!accessResult.success) return accessResult.response
 
       // Get data models for specific space
       const listSql = `
@@ -114,17 +113,9 @@ export async function GET(
       logger.apiResponse('GET', `/api/spaces/${spaceId}/data-models`, 200, duration, {
         dataModelCount: transformedDataModels.length
       })
-      return addSecurityHeaders(NextResponse.json({ dataModels: transformedDataModels }))
+      return NextResponse.json({ dataModels: transformedDataModels })
     }
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.error('Error fetching data models', error, {
-      spaceId,
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
-    })
-    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Space Data Models API')
-  }
 }
+
+export const GET = withErrorHandling(getHandler, 'GET /api/spaces/[id]/data-models')
 
