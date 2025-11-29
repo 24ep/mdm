@@ -1,9 +1,13 @@
 import { test, expect } from '@playwright/test'
+import { login } from './helpers/auth-helper'
+
+test.setTimeout(120000)
 
 test.describe('Dashboards Feature', () => {
+  const TEST_SPACE = process.env.TEST_SPACE || 'default'
+
   test.beforeEach(async ({ page }) => {
-    await page.goto('/login')
-    // TODO: Add actual login steps
+    await login(page)
   })
 
   test('should display dashboards list', async ({ page }) => {

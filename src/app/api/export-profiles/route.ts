@@ -1,31 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { db } from '@/lib/db'
 import { query } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { validateQuery, validateBody } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    // Validate query parameters
-    const queryValidation = validateQuery(request, z.object({
-      dataModel: z.string().optional(),
-      isPublic: z.string().transform((val) => val === 'true').optional(),
-    }))
-    
-    if (!queryValidation.success) {
-      return addSecurityHeaders(queryValidation.response)
-    }
+  // Validate query parameters
+  const queryValidation = validateQuery(request, z.object({
+    dataModel: z.string().optional(),
+    isPublic: z.string().transform((val) => val === 'true').optional(),
+  }))
+  
+  if (!queryValidation.success) {
+    return queryValidation.response
+  }
     
     const { dataModel, isPublic } = queryValidation.data
     logger.apiRequest('GET', '/api/export-profiles', { userId: session.user.id, dataModel })
@@ -67,50 +62,42 @@ export async function GET(request: NextRequest) {
     const { rows } = await query(sql, params)
     const duration = Date.now() - startTime
     logger.apiResponse('GET', '/api/export-profiles', 200, duration, { count: rows.length })
-    return addSecurityHeaders(NextResponse.json({ profiles: rows }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', '/api/export-profiles', 500, duration)
-    return handleApiError(error, 'Export Profiles API GET')
-  }
+    return NextResponse.json({ profiles: rows })
 }
 
-export async function POST(request: NextRequest) {
+export const GET = withErrorHandling(getHandler, 'GET /api/export-profiles')
+
+async function postHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    // Validate request body
-    const bodyValidation = await validateBody(request, z.object({
-      name: z.string().min(1, 'Name is required'),
-      description: z.string().optional(),
-      dataModel: z.string().min(1, 'Data model is required'),
-      format: z.string().min(1, 'Format is required'),
-      columns: z.array(z.any()).optional(),
-      filters: z.any().optional(),
-      isPublic: z.boolean().optional().default(false),
-      sharing: z.any().optional(),
-    }))
-    
-    if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
-    }
-    
-    logger.apiRequest('POST', '/api/export-profiles', { userId: session.user.id, name: bodyValidation.data.name })
-
-    // ExportProfile model doesn't exist in Prisma schema
-    const duration = Date.now() - startTime
-    logger.apiResponse('POST', '/api/export-profiles', 501, duration)
-    return addSecurityHeaders(NextResponse.json(
-      { error: 'Export profile model not implemented' },
-      { status: 501 }
-    ))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('POST', '/api/export-profiles', 500, duration)
-    return handleApiError(error, 'Export Profiles API POST')
+  // Validate request body
+  const bodyValidation = await validateBody(request, z.object({
+    name: z.string().min(1, 'Name is required'),
+    description: z.string().optional(),
+    dataModel: z.string().min(1, 'Data model is required'),
+    format: z.string().min(1, 'Format is required'),
+    columns: z.array(z.any()).optional(),
+    filters: z.any().optional(),
+    isPublic: z.boolean().optional().default(false),
+    sharing: z.any().optional(),
+  }))
+  
+  if (!bodyValidation.success) {
+    return bodyValidation.response
   }
+  
+  logger.apiRequest('POST', '/api/export-profiles', { userId: session.user.id, name: bodyValidation.data.name })
+
+  // ExportProfile model doesn't exist in Prisma schema
+  const duration = Date.now() - startTime
+  logger.apiResponse('POST', '/api/export-profiles', 501, duration)
+  return NextResponse.json(
+    { error: 'Export profile model not implemented' },
+    { status: 501 }
+  )
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/export-profiles')

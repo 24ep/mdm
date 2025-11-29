@@ -21,8 +21,7 @@ export async function GET(
     `, [token])
 
     if (invitation.rows.length === 0) {
-      return NextResponse.json({ error: 'Invalid or expired invitation' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Invalid or expired invitation' }}
 
     return NextResponse.json({
       invitation: invitation.rows[0]

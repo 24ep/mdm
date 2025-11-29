@@ -322,7 +322,7 @@ export function PlatformSidebar({
       { id: 'api', name: 'API Management', icon: Key, href: '/system/api' }
     ],
     'data-management': [
-      { id: 'space-selection', name: 'Data Management', icon: FolderKanban, href: '/data-management/space-selection' }
+      { id: 'space-selection', name: 'Data Management', icon: FolderKanban, href: '/admin/space-selection' }
     ],
     infrastructure: [
       { id: 'infrastructure', name: 'Infrastructure', icon: Network, href: '/infrastructure' }

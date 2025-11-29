@@ -1,20 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { query } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
 
     // Validate query parameters
     const queryValidation = validateQuery(request, z.object({
@@ -23,7 +17,7 @@ export async function GET(request: NextRequest) {
     }))
     
     if (!queryValidation.success) {
-      return addSecurityHeaders(queryValidation.response)
+      return queryValidation.response
     }
     
     const { page, limit } = queryValidation.data
@@ -78,24 +72,19 @@ export async function GET(request: NextRequest) {
     const total = totalRows[0]?.total || 0
     const duration = Date.now() - startTime
     logger.apiResponse('GET', '/api/spaces', 200, duration, { total })
-    return addSecurityHeaders(NextResponse.json({
+    return NextResponse.json({
       spaces: spaces || [],
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
-    }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', '/api/spaces', 500, duration)
-    return handleApiError(error, 'Spaces API GET')
-  }
+    })
 }
 
-export async function POST(request: NextRequest) {
+export const GET = withErrorHandling(getHandler, 'GET /api/spaces')
+
+async function postHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     // Validate request body
     const bodyValidation = await validateBody(request, z.object({
@@ -107,7 +96,7 @@ export async function POST(request: NextRequest) {
     }))
     
     if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
+      return bodyValidation.response
     }
     
     const { name, description, slug, is_default = false, tags = [] } = bodyValidation.data
@@ -176,7 +165,7 @@ export async function POST(request: NextRequest) {
 
     const duration = Date.now() - startTime
     logger.apiResponse('POST', '/api/spaces', 201, duration, { spaceId: newSpace.id })
-    return addSecurityHeaders(NextResponse.json({
+    return NextResponse.json({
       space: {
         ...newSpace,
         tags: tagsColumnExists 
@@ -184,10 +173,7 @@ export async function POST(request: NextRequest) {
           : []
       },
       message: 'Space created successfully'
-    }, { status: 201 }))
-  } catch (error: any) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('POST', '/api/spaces', 500, duration)
-    return handleApiError(error, 'Spaces API POST')
-  }
+    }, { status: 201 })
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/spaces')

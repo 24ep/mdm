@@ -1,20 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     logger.apiRequest('GET', '/api/data-models/relationships', { userId: session.user.id })
 
@@ -87,21 +83,28 @@ export async function GET(request: NextRequest) {
       relationshipCount: relationships.length,
       spaceId,
     })
-    return addSecurityHeaders(NextResponse.json({ relationships }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', '/api/data-models/relationships', 500, duration)
-    return handleApiError(error, 'Data Models Relationships API GET')
-  }
+  return addSecurityHeaders(NextResponse.json({ relationships }))
 }
 
-export async function POST(request: NextRequest) {
+
+
+
+
+
+
+
+
+
+
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/data-models/relationships')
+
+async function postHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     logger.apiRequest('POST', '/api/data-models/relationships', { userId: session.user.id })
 
@@ -146,21 +149,18 @@ export async function POST(request: NextRequest) {
       fromModel,
       toModel,
     })
-    return addSecurityHeaders(NextResponse.json({ relationship }, { status: 201 }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('POST', '/api/data-models/relationships', 500, duration)
-    return handleApiError(error, 'Data Models Relationships API POST')
-  }
+  return addSecurityHeaders(NextResponse.json({ relationship }, { status: 201 }))
 }
 
-export async function PUT(request: NextRequest) {
+
+
+export const POST = withErrorHandling(postHandler, 'POST /api/data-models/relationships')
+
+async function putHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     logger.apiRequest('PUT', '/api/data-models/relationships', { userId: session.user.id })
 
@@ -187,21 +187,28 @@ export async function PUT(request: NextRequest) {
 
     const duration = Date.now() - startTime
     logger.apiResponse('PUT', '/api/data-models/relationships', 200, duration, { relationshipId: id })
-    return addSecurityHeaders(NextResponse.json({ relationship }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('PUT', '/api/data-models/relationships', 500, duration)
-    return handleApiError(error, 'Data Models Relationships API PUT')
-  }
+  return addSecurityHeaders(NextResponse.json({ relationship }))
 }
 
-export async function DELETE(request: NextRequest) {
+export const PUT = withErrorHandling(putHandler, 'PUT /api/data-models/relationships')
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function deleteHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     logger.apiRequest('DELETE', '/api/data-models/relationships', { userId: session.user.id })
 
@@ -220,10 +227,16 @@ export async function DELETE(request: NextRequest) {
     // In a full implementation, you might want to delete relationships from a separate table
     const duration = Date.now() - startTime
     logger.apiResponse('DELETE', '/api/data-models/relationships', 200, duration, { relationshipId })
-    return addSecurityHeaders(NextResponse.json({ message: 'Relationship deleted successfully' }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('DELETE', '/api/data-models/relationships', 500, duration)
-    return handleApiError(error, 'Data Models Relationships API DELETE')
-  }
+  return addSecurityHeaders(NextResponse.json({ message: 'Relationship deleted successfully' }))
 }
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/data-models/relationships')
+
+
+
+
+
+
+
+
+

@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Upload, X, File, AlertCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useFileDragDrop } from '@/hooks/use-file-drag-drop'
 
 interface FileUploadProps {
   spaceId: string
@@ -32,10 +33,8 @@ export function FileUpload({
 }: FileUploadProps) {
   const [uploading, setUploading] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([])
-  const [dragOver, setDragOver] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleFileSelect = async (files: FileList | null) => {
+  const handleFileSelect = async (files: FileList) => {
     if (!files || files.length === 0) return
 
     const fileArray = Array.from(files)
@@ -100,40 +99,22 @@ export function FileUpload({
     }
   }
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setDragOver(false)
-    
-    if (disabled) return
-    
-    const files = e.dataTransfer.files
-    handleFileSelect(files)
-  }
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    if (!disabled) {
-      setDragOver(true)
-    }
-  }
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault()
-    setDragOver(false)
-  }
-
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    handleFileSelect(e.target.files)
-  }
+  const {
+    dragOver,
+    fileInputRef,
+    handleDrop,
+    handleDragOver,
+    handleDragLeave,
+    handleFileInputChange,
+    openFileDialog
+  } = useFileDragDrop({
+    disabled,
+    onFilesSelected: handleFileSelect,
+    multiple
+  })
 
   const removeFile = (fileId: string) => {
     setUploadedFiles(prev => prev.filter(file => file.id !== fileId))
-  }
-
-  const openFileDialog = () => {
-    if (!disabled) {
-      fileInputRef.current?.click()
-    }
   }
 
   return (

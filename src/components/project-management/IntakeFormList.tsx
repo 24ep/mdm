@@ -20,7 +20,7 @@ import {
   XCircle,
   Loader2,
 } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
+import { showError, showSuccess } from '@/lib/toast-utils'
 import { IntakeFormBuilder } from './IntakeFormBuilder'
 import { IntakeForm } from './IntakeForm'
 import { format } from 'date-fns'
@@ -43,7 +43,6 @@ interface IntakeFormListProps {
 }
 
 export function IntakeFormList({ spaceId, onFormSelect }: IntakeFormListProps) {
-  const { toast } = useToast()
   const [forms, setForms] = useState<IntakeForm[]>([])
   const [loading, setLoading] = useState(true)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
@@ -67,11 +66,7 @@ export function IntakeFormList({ spaceId, onFormSelect }: IntakeFormListProps) {
       }
     } catch (error) {
       console.error('Error loading forms:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to load intake forms',
-        variant: 'destructive',
-      })
+      showError('Failed to load intake forms')
     } finally {
       setLoading(false)
     }
@@ -97,11 +92,7 @@ export function IntakeFormList({ spaceId, onFormSelect }: IntakeFormListProps) {
         setIsViewModalOpen(true)
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to load form',
-        variant: 'destructive',
-      })
+      showError('Failed to load form')
     }
   }
 
@@ -115,21 +106,14 @@ export function IntakeFormList({ spaceId, onFormSelect }: IntakeFormListProps) {
         method: 'DELETE',
       })
       if (response.ok) {
-        toast({
-          title: 'Success',
-          description: 'Form deleted successfully',
-        })
+        showSuccess('Form deleted successfully')
         loadForms()
       } else {
         const error = await response.json()
         throw new Error(error.error || 'Failed to delete form')
       }
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to delete form',
-        variant: 'destructive',
-      })
+      showError(error.message || 'Failed to delete form')
     }
   }
 
@@ -150,10 +134,7 @@ export function IntakeFormList({ spaceId, onFormSelect }: IntakeFormListProps) {
       })
 
       if (response.ok) {
-        toast({
-          title: 'Success',
-          description: 'Form submitted successfully',
-        })
+        showSuccess('Form submitted successfully')
         setIsViewModalOpen(false)
         loadForms()
       } else {
@@ -161,11 +142,7 @@ export function IntakeFormList({ spaceId, onFormSelect }: IntakeFormListProps) {
         throw new Error(error.error || 'Failed to submit form')
       }
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to submit form',
-        variant: 'destructive',
-      })
+      showError(error.message || 'Failed to submit form')
     }
   }
 

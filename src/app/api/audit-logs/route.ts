@@ -1,12 +1,12 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+async function getHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     let paramIndex = 1
 
     if (entityType) {
-      whereConditions.push(`entity_type = $${paramIndex}`)
+      whereConditions.push(`entity_type = ${paramIndex}`)
       queryParams.push(entityType)
       paramIndex++
     }
@@ -124,26 +124,34 @@ export async function GET(request: NextRequest) {
         totalPages: Math.ceil(total / limit)
       }
     })
-  } catch (error) {
-    console.error('Error fetching audit logs:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const body = await request.json()
-    const { action, entityType, entityId, oldValue, newValue, ipAddress, userAgent } = body
 
-    if (!action || !entityType || !entityId) {
-      return NextResponse.json(
-        { error: 'Action, entityType, and entityId are required' },
-        { status: 400 }
-      )
-    }
+
+
+
+
+
+
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/audit-logs')
+
+async function postHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
+
+  const body = await request.json()
+  const { action, entityType, entityId, oldValue, newValue, ipAddress, userAgent } = body
+
+  if (!action || !entityType || !entityId) {
+    return NextResponse.json(
+      { error: 'Action, entityType, and entityId are required' },
+      { status: 400 }
+    )
+  }
 
     const insertQuery = `
       INSERT INTO audit_logs (action, entity_type, entity_id, old_value, new_value, user_id, ip_address, user_agent)
@@ -166,8 +174,15 @@ export async function POST(request: NextRequest) {
       id: result.rows[0].id,
       created_at: result.rows[0].created_at
     })
-  } catch (error) {
-    console.error('Error creating audit log:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/audit-logs')
+
+
+
+
+
+
+
+
+

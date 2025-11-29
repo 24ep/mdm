@@ -1,15 +1,16 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { auditLogger } from '@/lib/utils/audit-logger'
 
-export async function DELETE(
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; permissionId: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id, permissionId } = await params
@@ -20,12 +21,12 @@ export async function DELETE(
     )
 
     if (ownerCheck.rows.length === 0) {
-      return NextResponse.json({ error: 'Report not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Report not found' }}
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\reports\[id]\permissions\[permissionId]\route.ts')
 
     if (ownerCheck.rows[0].created_by !== session.user.id) {
-      return NextResponse.json({ error: 'Only report owner can manage permissions' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Only report owner can manage permissions' }}
 
     const sql = `
       DELETE FROM report_permissions
@@ -36,16 +37,10 @@ export async function DELETE(
     const result = await query(sql, [permissionId, id])
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Permission not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Permission not found' }}
 
     // Log audit event
     auditLogger.permissionChanged(id, permissionId)
 
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Error deleting permission:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
 

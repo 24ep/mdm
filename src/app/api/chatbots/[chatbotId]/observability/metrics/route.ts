@@ -1,20 +1,22 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { PrismaClient } from '@prisma/client'
 import { getLangfuseClient, isLangfuseEnabled } from '@/lib/langfuse'
 
 const prisma = new PrismaClient()
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ chatbotId: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\chatbots\[chatbotId]\observability\metrics\route.ts')
 
     const { chatbotId } = await params
     const { searchParams } = new URL(request.url)
@@ -113,41 +115,4 @@ export async function GET(
         const langfuse = getLangfuseClient()
         // Fetch additional metrics from Langfuse if available
         // This would depend on Langfuse SDK API
-      } catch (error) {
-        console.warn('Failed to fetch Langfuse metrics:', error)
-      }
-    }
-
-    const metrics = {
-      totalRequests,
-      successRate,
-      averageLatency,
-      errorRate,
-      toolUsage,
-      costByModel,
-      requestsOverTime: requestsOverTimeArray,
-      ...(langfuseMetrics || {}),
-    }
-
-    return NextResponse.json({ metrics })
-  } catch (error: any) {
-    console.error('Error fetching observability metrics:', error)
-    
-    // Handle Prisma UUID validation errors
-    if (error?.code === 'P2023' || error?.message?.includes('UUID')) {
-      return NextResponse.json(
-        { error: 'Invalid chatbot ID format', details: 'Chatbot ID must be a valid UUID' },
-        { status: 400 }
-      )
-    }
-    
-    return NextResponse.json(
-      { 
-        error: 'Internal server error',
-        details: error?.message || 'Unknown error'
-      },
-      { status: 500 }
-    )
-  }
-}
 

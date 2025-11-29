@@ -1,15 +1,16 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import * as XLSX from 'xlsx'
 
-export async function POST(
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id } = await params
@@ -36,8 +37,9 @@ export async function POST(
     `, [id, session.user.id])
 
     if (dashboards.length === 0) {
-      return NextResponse.json({ error: 'Dashboard not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Dashboard not found' }}
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashboards\[id]\export\excel\route.ts')
 
     const dashboard = dashboards[0]
 
@@ -122,8 +124,3 @@ export async function POST(
         'Content-Disposition': `attachment; filename="${dashboard.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.xlsx"`
       }
     })
-  } catch (error) {
-    console.error('Error exporting dashboard to Excel:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}

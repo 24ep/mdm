@@ -1,15 +1,16 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { auditLogger } from '@/lib/utils/audit-logger'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id } = await params
@@ -40,18 +41,17 @@ export async function GET(
     }))
 
     return NextResponse.json({ permissions })
-  } catch (error) {
-    console.error('Error fetching permissions:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
 
-export async function POST(
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\reports\[id]\permissions\route.ts')
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id } = await params
@@ -59,8 +59,9 @@ export async function POST(
     const { user_id, role_id, permission } = body
 
     if (!permission || (!user_id && !role_id)) {
-      return NextResponse.json({ error: 'Permission and user_id or role_id required' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'Permission and user_id or role_id required' }}
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\reports\[id]\permissions\route.ts')
 
     // Check if user owns the report
     const ownerCheck = await query(
@@ -69,12 +70,10 @@ export async function POST(
     )
 
     if (ownerCheck.rows.length === 0) {
-      return NextResponse.json({ error: 'Report not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Report not found' }}
 
     if (ownerCheck.rows[0].created_by !== session.user.id) {
-      return NextResponse.json({ error: 'Only report owner can manage permissions' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Only report owner can manage permissions' }}
 
     const sql = `
       INSERT INTO report_permissions (report_id, user_id, role_id, permission, created_by)
@@ -96,9 +95,4 @@ export async function POST(
     auditLogger.permissionChanged(id, result.rows[0].id)
 
     return NextResponse.json({ permission: result.rows[0] }, { status: 201 })
-  } catch (error) {
-    console.error('Error creating permission:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
 

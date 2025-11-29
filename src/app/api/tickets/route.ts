@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
+import { checkAnySpaceAccess } from '@/lib/space-access'
 import { db } from '@/lib/db'
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler(request: NextRequest) {
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { searchParams } = new URL(request.url)
     const spaceIds = searchParams.get('spaceIds')?.split(',') || []
@@ -62,24 +60,10 @@ export async function GET(request: NextRequest) {
       }
     } else {
       // Check if user has access to all requested spaces
-      for (const sid of spaceFilter) {
-        const spaceAccess = await db.spaceMember.findFirst({
-          where: {
-            spaceId: sid,
-            userId: session.user.id
-          }
-        })
-
-        const isSpaceOwner = await db.space.findFirst({
-          where: {
-            id: sid,
-            createdBy: session.user.id
-          }
-        })
-
-        if (!spaceAccess && !isSpaceOwner) {
-          return NextResponse.json({ error: `Access denied to space ${sid}` }, { status: 403 })
-        }
+      const accessResult = await checkAnySpaceAccess(spaceFilter, session.user.id!)
+      if (!accessResult.success) return accessResult.response
+      if (!accessResult.hasAccess) {
+        return NextResponse.json({ error: `Access denied to one or more spaces` }, { status: 403 })
       }
       accessibleSpaceIds = spaceFilter
     }
@@ -176,27 +160,23 @@ export async function GET(request: NextRequest) {
       db.ticket.count({ where })
     ])
 
-    return NextResponse.json({
-      tickets,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
-      }
-    })
-  } catch (error) {
-    console.error('Error fetching tickets:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+  return NextResponse.json({
+    tickets,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit)
+    }
+  })
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+export const GET = withErrorHandling(getHandler, 'GET /api/tickets')
+
+async function postHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const body = await request.json()
     const {
@@ -227,25 +207,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user has access to all spaces
-    for (const sid of finalSpaceIds) {
-      const spaceAccess = await db.spaceMember.findFirst({
-        where: {
-          spaceId: sid,
-          userId: session.user.id
-        }
-      })
-
-      const isSpaceOwner = await db.space.findFirst({
-        where: {
-          id: sid,
-          createdBy: session.user.id
-        }
-      })
-
-      if (!spaceAccess && !isSpaceOwner) {
-        return NextResponse.json({ error: `Access denied to space ${sid}` }, { status: 403 })
-      }
-    }
+    const accessResult = await requireAnySpaceAccess(finalSpaceIds, session.user.id!)
+    if (!accessResult.success) return accessResult.response
 
     // Create ticket
     const ticket = await db.ticket.create({
@@ -329,9 +292,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    return NextResponse.json(ticket, { status: 201 })
-  } catch (error) {
-    console.error('Error creating ticket:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+  return NextResponse.json(ticket, { status: 201 })
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/tickets')

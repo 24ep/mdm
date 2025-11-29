@@ -1,17 +1,18 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { getAllSchedules } from '@/lib/unified-scheduler'
 
 /**
  * Get all schedules across workflows, notebooks, and data syncs
  */
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler(request: NextRequest) {
+    const authResult = await requireAuth()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\scheduler\all\route.ts')
 
     const { searchParams } = new URL(request.url)
     const spaceId = searchParams.get('space_id') || undefined
@@ -35,4 +36,6 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/scheduler/all')
 

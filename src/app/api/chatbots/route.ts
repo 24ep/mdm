@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { db } from '@/lib/db'
 import { encryptApiKey } from '@/lib/encryption'
 import { getSecretsManager } from '@/lib/secrets-manager'
@@ -96,13 +95,11 @@ function mergeVersionConfig(chatbot: any): any {
   }
 }
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler(request: NextRequest) {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
 
     const { searchParams } = new URL(request.url)
     const spaceId = searchParams.get('spaceId')
@@ -149,23 +146,23 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' }
     })
     
-    // Merge version config into each chatbot
-    const mergedChatbots = chatbots.map(mergeVersionConfig)
-    
-    return NextResponse.json({ chatbots: mergedChatbots })
-  } catch (error) {
-    console.error('Error fetching chatbots:', error)
-    return NextResponse.json({ error: 'Failed to fetch chatbots' }, { status: 500 })
-  }
+  // Merge version config into each chatbot
+  const mergedChatbots = chatbots.map(mergeVersionConfig)
+  
+  return NextResponse.json({ chatbots: mergedChatbots })
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+
+
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/chatbots')
+
+async function postHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
+  // TODO: Add requireSpaceAccess check if spaceId is available
 
     const body = await request.json()
     const {
@@ -468,16 +465,8 @@ export async function POST(request: NextRequest) {
     // Merge version config into chatbot object
     const mergedChatbot = mergeVersionConfig(chatbot)
 
-    return NextResponse.json({ chatbot: mergedChatbot }, { status: 201 })
-  } catch (error) {
-    console.error('Error creating chatbot:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    const errorDetails = error instanceof Error && 'stack' in error ? (error as any).stack : undefined
-    return NextResponse.json({ 
-      error: 'Failed to create chatbot',
-      details: errorMessage,
-      ...(process.env.NODE_ENV === 'development' && { stack: errorDetails })
-    }, { status: 500 })
-  }
+  return NextResponse.json({ chatbot: mergedChatbot }, { status: 201 })
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/chatbots')
 

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAdmin } from '@/lib/api-middleware'
 import { query } from '@/lib/db'
 import { logAPIRequest } from '@/shared/lib/security/audit-logger'
 import { rateLimitMiddleware } from '@/shared/middleware/api-rate-limit'
@@ -21,15 +20,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Only admins can register external plugins
-    if (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    const authResult = await requireAdmin()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
     const body = await request.json()
     const {
@@ -163,8 +156,7 @@ export async function POST(request: NextRequest) {
       id: pluginId,
       message: 'External plugin registered successfully',
       installedPath,
-    }, { status: 201 })
-  } catch (error) {
+    }} catch (error) {
     console.error('Error registering external plugin:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

@@ -1,14 +1,14 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { OpenMetadataClient } from '@/lib/openmetadata-client'
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler(request: NextRequest) {
+    const authResult = await requireAuth()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\data-governance\assets\route.ts')
 
     // TODO: Load config from database
     // For now, return mock data
@@ -55,4 +55,6 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/admin/data-governance/assets')
 

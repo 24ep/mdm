@@ -1,14 +1,12 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { SpaceORM } from '@/lib/orm'
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler(request: NextRequest) {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
@@ -31,21 +29,24 @@ export async function GET(request: NextRequest) {
         totalPages: Math.ceil(spaces.length / limit)
       }
     })
-  } catch (error) {
-    console.error('Error fetching spaces:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch spaces' },
+  ,
       { status: 500 }
     )
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+
+
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/spaces-orm')
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\spaces-orm\route.ts')
+async function postHandler(request: NextRequest) {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\spaces-orm\route.ts')
 
     const body = await request.json()
     const { name, description, slug, isDefault = false, tags = [] } = body
@@ -91,11 +92,10 @@ export async function POST(request: NextRequest) {
       space: newSpace,
       message: 'Space created successfully'
     }, { status: 201 })
-  } catch (error) {
-    console.error('Error creating space:', error)
-    return NextResponse.json(
-      { error: 'Failed to create space' },
+  ,
       { status: 500 }
     )
   }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/spaces-orm')

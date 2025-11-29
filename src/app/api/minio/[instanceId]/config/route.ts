@@ -1,6 +1,6 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { logAPIRequest } from '@/shared/lib/security/audit-logger'
 import { encrypt } from '@/lib/encryption'
@@ -9,15 +9,13 @@ import { encrypt } from '@/lib/encryption'
  * GET /api/minio/[instanceId]/config
  * Get MinIO configuration (without sensitive data)
  */
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ instanceId: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { instanceId } = await params
 
@@ -74,28 +72,23 @@ export async function GET(
       // Don't expose access key or secret key in GET
       hasCredentials: !!(credentials.access_key || config.access_key),
     })
-  } catch (error) {
-    console.error('Error fetching MinIO config:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
 }
 
 /**
  * PUT /api/minio/[instanceId]/config
  * Update MinIO configuration
  */
-export async function PUT(
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/minio/[instanceId]/config')
+
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ instanceId: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { instanceId } = await params
     const body = await request.json()
@@ -192,12 +185,7 @@ export async function PUT(
     return NextResponse.json({
       message: 'MinIO configuration updated successfully',
     })
-  } catch (error) {
-    console.error('Error updating MinIO config:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
 }
+
+export const PUT = withErrorHandling(putHandler, 'PUT /api/minio/[instanceId]/config')
 

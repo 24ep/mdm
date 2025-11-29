@@ -1,21 +1,25 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { PrismaClient } from '@prisma/client'
 import { OpenAI } from 'openai'
 
 const prisma = new PrismaClient()
 
 // GET - Get messages for a specific thread
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ threadId: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } 
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\openai-agent-sdk\threads\[threadId]\messages\route.ts')= authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+
 
     const { threadId } = await params
 
@@ -37,15 +41,13 @@ export async function GET(
     })
 
     if (!thread) {
-      return NextResponse.json({ error: 'Thread not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Thread not found' }}
 
     // Get API key from thread metadata or chatbot config
     const metadata = thread.metadata as any
     const apiKey = metadata?.apiKey
     if (!apiKey) {
-      return NextResponse.json({ error: 'API key not found' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'API key not found' }}
 
     // Fetch messages from OpenAI API
     const openai = new OpenAI({ apiKey })
@@ -64,15 +66,4 @@ export async function GET(
     }))
 
     return NextResponse.json({ messages })
-  } catch (error) {
-    console.error('Error fetching thread messages:', error)
-    return NextResponse.json(
-      { 
-        error: 'Internal server error', 
-        details: error instanceof Error ? error.message : 'Unknown error' 
-      },
-      { status: 500 }
-    )
-  }
-}
 

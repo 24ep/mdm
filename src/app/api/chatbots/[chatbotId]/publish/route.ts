@@ -1,20 +1,22 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-
 const prisma = new PrismaClient()
 
-export async function POST(
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ chatbotId: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const POST = withErrorHandling(postHandler, '
 
     const { chatbotId } = await params
     const body = await request.json()
@@ -54,7 +56,6 @@ export async function POST(
     })
   } catch (error) {
     console.error('Error publishing chatbot:', error)
-    return NextResponse.json({ error: 'Failed to publish chatbot' }, { status: 500 })
-  }
+    return NextResponse.json({ error: 'Failed to publish chatbot' }}
 }
 

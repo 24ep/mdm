@@ -19,8 +19,7 @@ export async function GET(
     )
 
     if (role.length === 0) {
-      return NextResponse.json({ error: 'Role not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Role not found' }}
 
     // Get permissions
     const { rows: permissions } = await query(
@@ -49,8 +48,7 @@ export async function GET(
     return NextResponse.json(exportData)
   } catch (error) {
     console.error('Error exporting role:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+    return NextResponse.json({ error: 'Internal server error' }}
 }
 
 

@@ -5,10 +5,8 @@
 
 import { Bucket, StorageFile, CacheInstance, Backup, BackupSchedule } from './types'
 import { formatFileSize } from '@/lib/formatters'
-import { getFileIcon } from '@/lib/file-utils'
-
-// Re-export shared utilities
-export { formatFileSize, getFileIcon }
+import { getConnectionStatusColor, getJobStatusColor } from '@/lib/status-colors'
+import { filterBySearch, filterByValue, sortBy } from '@/lib/filter-utils'
 
 /**
  * Check if file is an image
@@ -26,18 +24,10 @@ export function isVideoFile(file: StorageFile): boolean {
 
 /**
  * Get cache instance status color
+ * Uses shared status color utility
  */
 export function getCacheStatusColor(status: CacheInstance['status']): string {
-  switch (status) {
-    case 'connected':
-      return 'bg-green-600'
-    case 'disconnected':
-      return 'bg-gray-600'
-    case 'error':
-      return 'bg-red-600'
-    default:
-      return 'bg-gray-600'
-  }
+  return getConnectionStatusColor(status as 'connected' | 'disconnected' | 'error')
 }
 
 /**
@@ -51,68 +41,49 @@ export function calculateCacheHitRate(hits: number, misses: number): number {
 
 /**
  * Get backup status color
+ * Uses shared status color utility
  */
 export function getBackupStatusColor(status: Backup['status']): string {
-  switch (status) {
-    case 'completed':
-      return 'bg-green-600'
-    case 'running':
-      return 'bg-blue-600'
-    case 'failed':
-      return 'bg-red-600'
-    case 'scheduled':
-      return 'bg-yellow-600'
-    default:
-      return 'bg-gray-600'
-  }
+  // Map 'scheduled' to 'pending' for job status colors
+  const jobStatus = status === 'scheduled' ? 'pending' : status
+  return getJobStatusColor(jobStatus as 'completed' | 'running' | 'failed' | 'pending')
 }
 
 /**
  * Filter files by search query
+ * Uses shared filter utility
  */
 export function filterFiles(files: StorageFile[], query: string): StorageFile[] {
-  if (!query.trim()) return files
-  
-  const lowerQuery = query.toLowerCase()
-  return files.filter(file =>
-    file.name?.toLowerCase().includes(lowerQuery) ||
-    file.mimeType?.toLowerCase().includes(lowerQuery)
-  )
+  return filterBySearch(files, query, ['name', 'mimeType'])
 }
 
 /**
  * Filter files by type
+ * Uses shared filter utility
  */
 export function filterFilesByType(files: StorageFile[], type: 'file' | 'folder' | 'all'): StorageFile[] {
-  if (type === 'all') return files
-  return files.filter(file => file.type === type)
+  return filterByValue(files, 'type', type as any)
 }
 
 /**
  * Sort files by name, size, or date
+ * Uses shared sort utility
  */
 export function sortFiles(
   files: StorageFile[],
-  sortBy: 'name' | 'size' | 'date',
+  sortByField: 'name' | 'size' | 'date',
   order: 'asc' | 'desc' = 'asc'
 ): StorageFile[] {
-  return [...files].sort((a, b) => {
-    let comparison = 0
-    
-    switch (sortBy) {
-      case 'name':
-        comparison = (a.name || '').localeCompare(b.name || '')
-        break
-      case 'size':
-        comparison = a.size - b.size
-        break
-      case 'date':
-        comparison = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()
-        break
-    }
-    
-    return order === 'asc' ? comparison : -comparison
-  })
+  switch (sortByField) {
+    case 'name':
+      return sortBy(files, 'name', order)
+    case 'size':
+      return sortBy(files, 'size', order)
+    case 'date':
+      return sortBy(files, item => new Date(item.updatedAt), order)
+    default:
+      return files
+  }
 }
 
 /**

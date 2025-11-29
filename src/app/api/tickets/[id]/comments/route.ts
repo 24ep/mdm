@@ -1,23 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { validateParams, validateBody, validateQuery, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -25,7 +21,7 @@ export async function GET(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -55,24 +51,19 @@ export async function GET(
     logger.apiResponse('GET', `/api/tickets/${id}/comments`, 200, duration, {
       commentCount: comments.length
     })
-    return addSecurityHeaders(NextResponse.json({ comments }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Ticket Comments API GET')
-  }
+    return NextResponse.json({ comments })
 }
 
-export async function POST(
+export const GET = withErrorHandling(getHandler, 'GET /api/tickets/[id]/comments')
+
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -80,7 +71,7 @@ export async function POST(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -112,18 +103,14 @@ export async function POST(
 
     if (!ticket || ticket.deletedAt) {
       logger.warn('Ticket not found for comment', { ticketId: id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Ticket not found' }, { status: 404 }))
+      return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
     }
 
-    // Check access
-    const hasAccess = ticket.spaces.some((ts) => {
-      // User should have access to at least one space
-      return true // Simplified - add proper access check
-    })
-
-    if (!hasAccess) {
-      logger.warn('Access denied to add ticket comment', { ticketId: id, userId: session.user.id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Access denied' }, { status: 403 }))
+    // Check access - user must have access to at least one space associated with the ticket
+    const spaceId = ticket.spaces?.[0]?.spaceId
+    if (spaceId) {
+      const accessResult = await requireSpaceAccess(spaceId, session.user.id!)
+      if (!accessResult.success) return accessResult.response
     }
 
     const comment = await db.ticketComment.create({
@@ -149,24 +136,19 @@ export async function POST(
     logger.apiResponse('POST', `/api/tickets/${id}/comments`, 201, duration, {
       commentId: comment.id
     })
-    return addSecurityHeaders(NextResponse.json(comment, { status: 201 }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('POST', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Ticket Comments API POST')
-  }
+    return NextResponse.json(comment, { status: 201 })
 }
 
-export async function PUT(
+export const POST = withErrorHandling(postHandler, 'POST /api/tickets/[id]/comments')
+
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -174,7 +156,7 @@ export async function PUT(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -186,7 +168,7 @@ export async function PUT(
 
     const queryValidation = validateQuery(request, querySchema)
     if (!queryValidation.success) {
-      return addSecurityHeaders(queryValidation.response)
+      return queryValidation.response
     }
 
     const { commentId } = queryValidation.data
@@ -197,7 +179,7 @@ export async function PUT(
 
     const bodyValidation = await validateBody(request, bodySchema)
     if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
+      return bodyValidation.response
     }
 
     const { content } = bodyValidation.data
@@ -208,7 +190,7 @@ export async function PUT(
 
     if (!comment || comment.userId !== session.user.id) {
       logger.warn('Comment not found or unauthorized', { ticketId: id, commentId, userId: session.user.id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Comment not found or unauthorized' }, { status: 404 }))
+      return NextResponse.json({ error: 'Comment not found or unauthorized' }, { status: 404 })
     }
 
     const updated = await db.ticketComment.update({
@@ -228,24 +210,19 @@ export async function PUT(
 
     const duration = Date.now() - startTime
     logger.apiResponse('PUT', `/api/tickets/${id}/comments`, 200, duration, { commentId })
-    return addSecurityHeaders(NextResponse.json(updated))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('PUT', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Ticket Comments API PUT')
-  }
+    return NextResponse.json(updated)
 }
 
-export async function DELETE(
+export const PUT = withErrorHandling(putHandler, 'PUT /api/tickets/[id]/comments')
+
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -253,7 +230,7 @@ export async function DELETE(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -265,7 +242,7 @@ export async function DELETE(
 
     const queryValidation = validateQuery(request, querySchema)
     if (!queryValidation.success) {
-      return addSecurityHeaders(queryValidation.response)
+      return queryValidation.response
     }
 
     const { commentId } = queryValidation.data
@@ -276,7 +253,7 @@ export async function DELETE(
 
     if (!comment || (comment.userId !== session.user.id)) {
       logger.warn('Comment not found or unauthorized for deletion', { ticketId: id, commentId, userId: session.user.id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Comment not found or unauthorized' }, { status: 404 }))
+      return NextResponse.json({ error: 'Comment not found or unauthorized' }, { status: 404 })
     }
 
     // Soft delete
@@ -287,11 +264,8 @@ export async function DELETE(
 
     const duration = Date.now() - startTime
     logger.apiResponse('DELETE', `/api/tickets/${id}/comments`, 200, duration, { commentId })
-    return addSecurityHeaders(NextResponse.json({ success: true }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('DELETE', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Ticket Comments API DELETE')
-  }
+    return NextResponse.json({ success: true })
 }
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/tickets/[id]/comments')
 

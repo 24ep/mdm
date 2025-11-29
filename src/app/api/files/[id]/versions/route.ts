@@ -1,19 +1,18 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/database'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     const { id: fileId } = await params
 
@@ -27,8 +26,7 @@ export async function GET(
     )
 
     if (accessResult.rows.length === 0) {
-      return NextResponse.json({ error: 'File not found or access denied' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'File not found or access denied' }}
 
     // Get all versions of the file
     const versionsResult = await query(
@@ -56,23 +54,22 @@ export async function GET(
       versions: versionsResult.rows
     })
 
-  } catch (error) {
-    console.error('Error fetching file versions:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
 
-export async function POST(
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\files\[id]\versions\route.ts')
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\files\[id]\versions\route.ts')
 
     const { id: fileId } = await params
     const { changeLog } = await request.json()
@@ -87,8 +84,7 @@ export async function POST(
     )
 
     if (accessResult.rows.length === 0) {
-      return NextResponse.json({ error: 'File not found or access denied' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'File not found or access denied' }}
 
     const file = accessResult.rows[0] as any
 
@@ -127,9 +123,3 @@ export async function POST(
     return NextResponse.json({
       version: versionInsertResult.rows[0]
     })
-
-  } catch (error) {
-    console.error('Error creating file version:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}

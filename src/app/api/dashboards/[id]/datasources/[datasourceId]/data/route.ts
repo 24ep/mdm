@@ -1,14 +1,15 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 
-export async function POST(
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; datasourceId: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id, datasourceId } = await params
@@ -22,8 +23,9 @@ export async function POST(
     `, [datasourceId, id])
 
     if (datasources.length === 0) {
-      return NextResponse.json({ error: 'Datasource not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Datasource not found' }}
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashboards\[id]\datasources\[datasourceId]\data\route.ts')
 
     const datasource = datasources[0]
     let data: any[] = []
@@ -104,14 +106,12 @@ export async function POST(
             total = customData.length
           } catch (queryError) {
             console.error('Custom query error:', queryError)
-            return NextResponse.json({ error: 'Invalid custom query' }, { status: 400 })
-          }
+            return NextResponse.json({ error: 'Invalid custom query' }}
         }
         break
 
       default:
-        return NextResponse.json({ error: 'Unsupported datasource type' }, { status: 400 })
-    }
+        return NextResponse.json({ error: 'Unsupported datasource type' }}
 
     return NextResponse.json({
       data,
@@ -120,8 +120,3 @@ export async function POST(
       offset,
       hasMore: offset + data.length < total
     })
-  } catch (error) {
-    console.error('Error fetching datasource data:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}

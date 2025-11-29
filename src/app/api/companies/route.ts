@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { validateQuery, validateBody } from '@/lib/api-validation'
@@ -8,13 +6,10 @@ import { handleApiError } from '@/lib/api-middleware'
 import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
 
     // Validate query parameters
     const queryValidation = validateQuery(request, z.object({
@@ -24,7 +19,7 @@ export async function GET(request: NextRequest) {
     }))
     
     if (!queryValidation.success) {
-      return addSecurityHeaders(queryValidation.response)
+      return queryValidation.response
     }
     
     const { page, limit = 10, search = '' } = queryValidation.data
@@ -65,7 +60,7 @@ export async function GET(request: NextRequest) {
     
     const duration = Date.now() - startTime
     logger.apiResponse('GET', '/api/companies', 200, duration, { total })
-    return addSecurityHeaders(NextResponse.json({
+    return NextResponse.json({
       companies: companies || [],
       pagination: {
         page,
@@ -73,21 +68,16 @@ export async function GET(request: NextRequest) {
         total,
         pages: Math.ceil(total / limit),
       },
-    }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', '/api/companies', 500, duration)
-    return handleApiError(error, 'Companies API GET')
-  }
+    })
 }
 
-export async function POST(request: NextRequest) {
+export const GET = withErrorHandling(getHandler, 'GET /api/companies')
+
+async function postHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     // Validate request body
     const bodyValidation = await validateBody(request, z.object({
@@ -96,7 +86,7 @@ export async function POST(request: NextRequest) {
     }))
     
     if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
+      return bodyValidation.response
     }
     
     const { name, description } = bodyValidation.data
@@ -110,10 +100,10 @@ export async function POST(request: NextRequest) {
 
     if (existing.rows[0]) {
       logger.warn('Company with this name already exists', { name })
-      return addSecurityHeaders(NextResponse.json(
+      return NextResponse.json(
         { error: 'Company with this name already exists' },
         { status: 400 }
-      ))
+      )
     }
 
     const inserted = await query(
@@ -129,10 +119,7 @@ export async function POST(request: NextRequest) {
 
     const duration = Date.now() - startTime
     logger.apiResponse('POST', '/api/companies', 201, duration, { companyId: company.id })
-    return addSecurityHeaders(NextResponse.json(company, { status: 201 }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('POST', '/api/companies', 500, duration)
-    return handleApiError(error, 'Companies API POST')
-  }
+    return NextResponse.json(company, { status: 201 })
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/companies')

@@ -1,31 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { validateQuery } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    // Validate query parameters
-    const queryValidation = validateQuery(request, z.object({
-      page: z.string().optional().transform((val) => parseInt(val || '1')).pipe(z.number().int().positive()).optional().default(1),
-      limit: z.string().optional().transform((val) => parseInt(val || '50')).pipe(z.number().int().positive().max(100)).optional().default(50),
-      search: z.string().optional().default(''),
-    }))
-    
-    if (!queryValidation.success) {
-      return addSecurityHeaders(queryValidation.response)
-    }
+  // Validate query parameters
+  const queryValidation = validateQuery(request, z.object({
+    page: z.string().optional().transform((val) => parseInt(val || '1')).pipe(z.number().int().positive()).optional().default(1),
+    limit: z.string().optional().transform((val) => parseInt(val || '50')).pipe(z.number().int().positive().max(100)).optional().default(50),
+    search: z.string().optional().default(''),
+  }))
+  
+  if (!queryValidation.success) {
+    return queryValidation.response
+  }
     
     const { page, limit = 50, search = '' } = queryValidation.data
     logger.apiRequest('GET', '/api/events', { userId: session.user.id, page, limit, search })
@@ -51,15 +46,12 @@ export async function GET(request: NextRequest) {
 
     const duration = Date.now() - startTime
     logger.apiResponse('GET', '/api/events', 200, duration, { total })
-    return addSecurityHeaders(NextResponse.json({
+    return NextResponse.json({
       events: events || [],
       pagination: { page, limit, total: total || 0, pages: Math.ceil((total || 0) / limit) },
-    }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', '/api/events', 500, duration)
-    return handleApiError(error, 'Events API GET')
-  }
+    })
 }
+
+export const GET = withErrorHandling(getHandler, 'GET /api/events')
 
 

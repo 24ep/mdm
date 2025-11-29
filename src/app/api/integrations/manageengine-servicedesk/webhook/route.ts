@@ -24,16 +24,14 @@ export async function POST(request: NextRequest) {
         .digest('hex')
       
       if (signature !== expectedSignature) {
-        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
-      }
+        return NextResponse.json({ error: 'Invalid signature' }}
     }
 
     const payload = JSON.parse(body)
     const { event_type, request: serviceDeskRequest } = payload
 
     if (!event_type || !serviceDeskRequest?.id) {
-      return NextResponse.json({ error: 'Invalid webhook payload' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'Invalid webhook payload' }}
 
     // Create initial audit log
     try {
@@ -83,25 +81,21 @@ export async function POST(request: NextRequest) {
     const spaceId = ticket.spaces[0]?.spaceId || ticket.spaces[0]?.space?.id
 
     if (!spaceId) {
-      return NextResponse.json({ error: 'Space not found' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'Space not found' }}
 
     // Get ServiceDesk service
     const service = await getServiceDeskService(spaceId)
     if (!service) {
-      return NextResponse.json({ error: 'ServiceDesk config not found' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'ServiceDesk config not found' }}
 
     // Get full ticket details from ServiceDesk
     const ticketResult = await service.getTicket(serviceDeskRequest.id.toString())
     if (!ticketResult.success) {
-      return NextResponse.json({ error: 'Failed to get ticket from ServiceDesk' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'Failed to get ticket from ServiceDesk' }}
 
     const serviceDeskTicket = ticketResult.data?.request || ticketResult.data?.requests?.[0]
     if (!serviceDeskTicket) {
-      return NextResponse.json({ error: 'Ticket not found in ServiceDesk' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Ticket not found in ServiceDesk' }}
 
     // Map ServiceDesk status to our status
     const statusMap: Record<string, string> = {
@@ -246,7 +240,6 @@ export async function POST(request: NextRequest) {
       }).catch(() => {})
     }
 
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+    return NextResponse.json({ error: 'Internal server error' }}
 }
 

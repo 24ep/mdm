@@ -1,25 +1,24 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+async function getHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { searchParams } = new URL(request.url)
+  const spaceId = searchParams.get('space_id')
+  const redirectUri = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/reports/integrations/power-bi/oauth/callback`
 
-    const { searchParams } = new URL(request.url)
-    const spaceId = searchParams.get('space_id')
-    const redirectUri = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/reports/integrations/power-bi/oauth/callback`
+  // Power BI OAuth configuration
+  const clientId = process.env.POWER_BI_CLIENT_ID || ''
+  const tenantId = process.env.POWER_BI_TENANT_ID || ''
 
-    // Power BI OAuth configuration
-    const clientId = process.env.POWER_BI_CLIENT_ID || ''
-    const tenantId = process.env.POWER_BI_TENANT_ID || ''
-
-    if (!clientId || !tenantId) {
-      return NextResponse.json({ 
-        error: 'Power BI OAuth not configured. Please set POWER_BI_CLIENT_ID and POWER_BI_TENANT_ID environment variables.' 
-      }, { status: 400 })
-    }
+  if (!clientId || !tenantId) {
+    return NextResponse.json({ 
+      error: 'Power BI OAuth not configured. Please set POWER_BI_CLIENT_ID and POWER_BI_TENANT_ID environment variables.' 
+    }, { status: 400 })
+  }
 
     // Generate state for CSRF protection
     const state = Buffer.from(JSON.stringify({ 
@@ -37,10 +36,17 @@ export async function GET(request: NextRequest) {
       `scope=${encodeURIComponent('https://analysis.windows.net/powerbi/api/Report.Read.All offline_access')}&` +
       `state=${encodeURIComponent(state)}`
 
-    return NextResponse.json({ authUrl, state })
-  } catch (error) {
-    console.error('Error initiating Power BI OAuth:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+  return NextResponse.json({ authUrl, state })
 }
+
+export const GET = withErrorHandling(getHandler, 'GET /api/reports/integrations/power-bi/oauth')
+
+
+
+
+
+
+
+
+
 

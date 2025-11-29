@@ -27,8 +27,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ templates })
   } catch (error) {
     console.error('Error getting role templates:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+    return NextResponse.json({ error: 'Internal server error' }}
 }
 
 export async function POST(request: NextRequest) {
@@ -40,15 +39,13 @@ export async function POST(request: NextRequest) {
     const { templateName, level, customName, customDescription } = body
 
     if (!templateName || !level) {
-      return NextResponse.json({ error: 'templateName and level are required' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'templateName and level are required' }}
 
     const templates = level === 'global' ? GLOBAL_ROLES : SPACE_ROLES
     const template = templates.find(t => t.id === templateName || t.name === templateName)
 
     if (!template) {
-      return NextResponse.json({ error: 'Template not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Template not found' }}
 
     // Get permission IDs from database
     const permissionIds: string[] = []
@@ -88,14 +85,11 @@ export async function POST(request: NextRequest) {
         level: newRole[0].level || 'space'
       },
       permissionsAssigned: permissionIds.length
-    }, { status: 201 })
-  } catch (error: any) {
+    }} catch (error: any) {
     if (String(error?.message || '').includes('duplicate')) {
-      return NextResponse.json({ error: 'Role with this name already exists' }, { status: 409 })
-    }
+      return NextResponse.json({ error: 'Role with this name already exists' }}
     console.error('Error creating role from template:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+    return NextResponse.json({ error: 'Internal server error' }}
 }
 
 

@@ -1,18 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, withErrorHandling } from '@/lib/api-middleware'
 import { query } from '@/lib/db'
 import { getSecretsManager } from '@/lib/secrets-manager'
 import { decryptApiKey } from '@/lib/encryption'
 import { GitLabProjectManagementService } from '@/lib/gitlab-project-management'
 
 // List GitLab repositories/projects
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler(request: NextRequest) {
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search') || undefined
@@ -108,12 +105,7 @@ export async function GET(request: NextRequest) {
       success: true,
       repositories
     })
-  } catch (error: any) {
-    console.error('Error listing GitLab repositories:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to list GitLab repositories' },
-      { status: 500 }
-    )
-  }
 }
+
+export const GET = withErrorHandling(getHandler, 'GET /api/integrations/gitlab/repositories')
 

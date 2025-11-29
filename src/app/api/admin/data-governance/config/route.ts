@@ -1,13 +1,10 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler(request: NextRequest) {
+    const authResult = await requireAuth()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
     // TODO: Load from database or configuration store
     // For now, return empty config
@@ -23,12 +20,18 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+
+
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/admin/data-governance/config')
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\data-governance\config\route.ts')
+async function postHandler(request: NextRequest) {
+    const authResult = await requireAuth()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\data-governance\config\route.ts')
 
     const body = await request.json()
     const { config } = body
@@ -43,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate OpenMetadata connection
-    try {
+    
       const testUrl = `${config.host}/api/v1/system/version`
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -86,12 +89,11 @@ export async function POST(request: NextRequest) {
         lastSync: new Date().toISOString()
       }
     })
-  } catch (error) {
-    console.error('Error saving data governance config:', error)
-    return NextResponse.json(
-      { error: 'Failed to save configuration' },
+  ,
       { status: 500 }
     )
   }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/admin/data-governance/config')
 

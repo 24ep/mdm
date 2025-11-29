@@ -1,19 +1,19 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+async function postHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    const body = await request.json()
-    const { config_id, space_id } = body
+  const body = await request.json()
+  const { config_id, space_id } = body
 
-    if (!config_id) {
-      return NextResponse.json({ error: 'config_id is required' }, { status: 400 })
-    }
+  if (!config_id) {
+    return NextResponse.json({ error: 'config_id is required' }, { status: 400 })
+  }
 
     // Fetch config
     const configResult = await query(
@@ -33,14 +33,21 @@ export async function POST(request: NextRequest) {
     // For now, return a mock response
     const count = 0
 
-    return NextResponse.json({ 
-      success: true, 
-      count,
-      message: `Synced ${count} reports from Power BI` 
-    })
-  } catch (error) {
-    console.error('Error syncing Power BI reports:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+  return NextResponse.json({ 
+    success: true, 
+    count,
+    message: `Synced ${count} reports from Power BI` 
+  })
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/reports/integrations/power-bi/sync')
+
+
+
+
+
+
+
+
+
 

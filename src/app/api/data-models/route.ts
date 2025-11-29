@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
@@ -8,13 +6,11 @@ import { handleApiError } from '@/lib/api-middleware'
 import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     // Validate query parameters
     const queryValidation = validateQuery(request, z.object({
@@ -25,7 +21,7 @@ export async function GET(request: NextRequest) {
     }))
     
     if (!queryValidation.success) {
-      return addSecurityHeaders(queryValidation.response)
+      return queryValidation.response
     }
     
     const { page, limit, search = '', space_id } = queryValidation.data
@@ -43,7 +39,7 @@ export async function GET(request: NextRequest) {
       spaceId = defaultSpace[0]?.id || null
       if (!spaceId) {
         logger.warn('Space ID is required', { userId: session.user.id })
-        return addSecurityHeaders(NextResponse.json({ error: 'Space ID is required' }, { status: 400 }))
+        return NextResponse.json({ error: 'Space ID is required' }, { status: 400 })
       }
     }
 
@@ -90,24 +86,19 @@ export async function GET(request: NextRequest) {
     const total = totalRows[0]?.total || 0
     const duration = Date.now() - startTime
     logger.apiResponse('GET', '/api/data-models', 200, duration, { total })
-    return addSecurityHeaders(NextResponse.json({
+    return NextResponse.json({
       dataModels: dataModels || [],
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
-    }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', '/api/data-models', 500, duration)
-    return handleApiError(error, 'Data Models API GET')
-  }
+    })
 }
 
-export async function POST(request: NextRequest) {
+export const GET = withErrorHandling(getHandler, 'GET /api/data-models')
+
+async function postHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     // Validate request body
     const bodyValidation = await validateBody(request, z.object({
@@ -117,22 +108,15 @@ export async function POST(request: NextRequest) {
     }))
     
     if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
+      return bodyValidation.response
     }
     
     const { name, description, space_ids } = bodyValidation.data
     logger.apiRequest('POST', '/api/data-models', { userId: session.user.id, name, spaceIds: space_ids })
 
     // Check if user has access to all spaces
-    const placeholders = space_ids.map((_, i) => `$${i + 1}`).join(',')
-    const { rows: spaceAccess } = await query(
-      `SELECT space_id, role FROM space_members WHERE space_id IN (${placeholders}) AND user_id = $${space_ids.length + 1}`,
-      [...space_ids, session.user.id]
-    )
-
-    if (spaceAccess.length !== space_ids.length) {
-      return NextResponse.json({ error: 'Access denied to one or more spaces' }, { status: 403 })
-    }
+    const accessResult = await requireAnySpaceAccess(space_ids, session.user.id!)
+    if (!accessResult.success) return accessResult.response
 
     // Create the data model
     const insertSql = `INSERT INTO public.data_models (name, description, created_by, is_active, sort_order)
@@ -157,12 +141,9 @@ export async function POST(request: NextRequest) {
 
     const duration = Date.now() - startTime
     logger.apiResponse('POST', '/api/data-models', 201, duration, { dataModelId: dataModel.id })
-    return addSecurityHeaders(NextResponse.json({ dataModel }, { status: 201 }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('POST', '/api/data-models', 500, duration)
-    return handleApiError(error, 'Data Models API POST')
-  }
+    return NextResponse.json({ dataModel }, { status: 201 })
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/data-models')
 
 

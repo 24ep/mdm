@@ -1,22 +1,23 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { v4 as uuidv4 } from 'uuid'
 
-export async function POST(
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const POST = withErrorHandling(postHandler, '
 
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Insufficient permissions' }}
 
     const { id: bucketId } = await params
 
@@ -26,16 +27,14 @@ export async function POST(
     })
 
     if (!space) {
-      return NextResponse.json({ error: 'Bucket not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Bucket not found' }}
 
     const formData = await request.formData()
     const files = formData.getAll('files') as File[]
     const path = (formData.get('path') as string) || ''
 
     if (files.length === 0) {
-      return NextResponse.json({ error: 'No files provided' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'No files provided' }}
 
     // Get or create storage configuration for this space
     let storageConfig = await db.spaceAttachmentStorage.findFirst({
@@ -86,11 +85,4 @@ export async function POST(
       message: 'Files uploaded successfully',
       files: uploadedFiles
     })
-  } catch (error: any) {
-    console.error('Error uploading files:', error)
-    return NextResponse.json({ 
-      error: error.message || 'Internal server error' 
-    }, { status: 500 })
-  }
-}
 

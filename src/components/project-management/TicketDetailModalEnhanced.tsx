@@ -30,7 +30,7 @@ import {
 import { TicketRelationshipGraph } from './TicketRelationshipGraph'
 import { TicketRelationshipsPanel } from './TicketRelationshipsPanel'
 import { format } from 'date-fns'
-import { useToast } from '@/hooks/use-toast'
+import { showError, showSuccess, showInfo } from '@/lib/toast-utils'
 
 interface TicketDetailModalProps {
   ticket: {
@@ -83,7 +83,6 @@ export function TicketDetailModalEnhanced({
   onSave,
   onDelete,
 }: TicketDetailModalProps) {
-  const { toast } = useToast()
   const [activeTab, setActiveTab] = useState('details')
   const [comments, setComments] = useState<any[]>([])
   const [attachments, setAttachments] = useState<any[]>([])
@@ -282,21 +281,13 @@ export function TicketDetailModalEnhanced({
 
   const handlePushToGitLab = async () => {
     if (!ticket?.spaces || ticket.spaces.length === 0) {
-      toast({
-        title: 'Error',
-        description: 'Unable to determine space',
-        variant: 'destructive'
-      })
+      showError('Unable to determine space')
       return
     }
 
     const spaceId = ticket.spaces[0].spaceId || ticket.spaces[0].space?.id
     if (!spaceId) {
-      toast({
-        title: 'Error',
-        description: 'Unable to determine space',
-        variant: 'destructive'
-      })
+      showError('Unable to determine space')
       return
     }
 
@@ -321,27 +312,16 @@ export function TicketDetailModalEnhanced({
         if (result.data?.issueUrl) {
           setGitLabIssueUrl(result.data.issueUrl)
         }
-        toast({
-          title: 'Success',
-          description: result.message || `Ticket ${result.data?.issueIid ? 'updated' : 'synced'} to GitLab successfully. Issue #${result.data?.issueIid || 'N/A'}`,
-        })
+        showSuccess(result.message || `Ticket ${result.data?.issueIid ? 'updated' : 'synced'} to GitLab successfully. Issue #${result.data?.issueIid || 'N/A'}`)
         // Refresh ticket to get updated metadata
         if (onSave) {
           onSave(ticket)
         }
       } else {
-        toast({
-          title: 'Push Failed',
-          description: result.error || 'Failed to push ticket to GitLab',
-          variant: 'destructive'
-        })
+        showError(result.error || 'Failed to push ticket to GitLab')
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to push ticket to GitLab',
-        variant: 'destructive'
-      })
+      showError('Failed to push ticket to GitLab')
     } finally {
       setPushingToGitLab(false)
     }
@@ -378,21 +358,13 @@ export function TicketDetailModalEnhanced({
 
   const handlePushToServiceDesk = async () => {
     if (!ticket?.spaces || ticket.spaces.length === 0) {
-      toast({
-        title: 'Error',
-        description: 'Ticket must belong to a space',
-        variant: 'destructive'
-      })
+      showError('Ticket must belong to a space')
       return
     }
 
     const spaceId = ticket.spaces[0].spaceId || ticket.spaces[0].space?.id
     if (!spaceId) {
-      toast({
-        title: 'Error',
-        description: 'Unable to determine space',
-        variant: 'destructive'
-      })
+      showError('Unable to determine space')
       return
     }
 
@@ -418,23 +390,12 @@ export function TicketDetailModalEnhanced({
         if (result.requestId) {
           await loadServiceDeskData(result.requestId)
         }
-        toast({
-          title: 'Success',
-          description: `Ticket pushed to ServiceDesk successfully. Request ID: ${result.requestId}${result.synced ? ` (Synced: ${result.synced.comments} comments, ${result.synced.attachments} attachments, ${result.synced.timeLogs} time logs)` : ''}`,
-        })
+        showSuccess(`Ticket pushed to ServiceDesk successfully. Request ID: ${result.requestId}${result.synced ? ` (Synced: ${result.synced.comments} comments, ${result.synced.attachments} attachments, ${result.synced.timeLogs} time logs)` : ''}`)
       } else {
-        toast({
-          title: 'Push Failed',
-          description: result.error || 'Failed to push ticket to ServiceDesk',
-          variant: 'destructive'
-        })
+        showError(result.error || 'Failed to push ticket to ServiceDesk')
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to push ticket to ServiceDesk',
-        variant: 'destructive'
-      })
+      showError('Failed to push ticket to ServiceDesk')
     } finally {
       setPushingToServiceDesk(false)
     }
@@ -483,11 +444,7 @@ export function TicketDetailModalEnhanced({
 
         const resolveResult = await resolveResponse.json()
         if (!resolveResult.success) {
-          toast({
-            title: 'Conflict Resolution Failed',
-            description: resolveResult.error || 'Failed to resolve conflicts',
-            variant: 'destructive'
-          })
+          showError(resolveResult.error || 'Failed to resolve conflicts')
           setSyncingFromServiceDesk(false)
           return
         }
@@ -508,26 +465,15 @@ export function TicketDetailModalEnhanced({
 
       if (result.success) {
         await loadServiceDeskData(serviceDeskRequestId)
-        toast({
-          title: 'Success',
-          description: `Ticket synced from ServiceDesk successfully${result.updated ? ' (Updated)' : ''}`,
-        })
+        showSuccess(`Ticket synced from ServiceDesk successfully${result.updated ? ' (Updated)' : ''}`)
         if (onSave) {
           onSave(ticket)
         }
       } else {
-        toast({
-          title: 'Sync Failed',
-          description: result.error || 'Failed to sync ticket from ServiceDesk',
-          variant: 'destructive'
-        })
+        showError(result.error || 'Failed to sync ticket from ServiceDesk')
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to sync ticket from ServiceDesk',
-        variant: 'destructive'
-      })
+      showError('Failed to sync ticket from ServiceDesk')
     } finally {
       setSyncingFromServiceDesk(false)
     }
@@ -556,23 +502,12 @@ export function TicketDetailModalEnhanced({
       if (result.success) {
         setNewServiceDeskComment('')
         await loadServiceDeskData(serviceDeskRequestId)
-        toast({
-          title: 'Success',
-          description: 'Comment added to ServiceDesk successfully',
-        })
+        showSuccess('Comment added to ServiceDesk successfully')
       } else {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to add comment to ServiceDesk',
-          variant: 'destructive'
-        })
+        showError(result.error || 'Failed to add comment to ServiceDesk')
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to add comment to ServiceDesk',
-        variant: 'destructive'
-      })
+      showError('Failed to add comment to ServiceDesk')
     }
   }
 
@@ -596,23 +531,12 @@ export function TicketDetailModalEnhanced({
 
       if (result.success) {
         setNewServiceDeskResolution('')
-        toast({
-          title: 'Success',
-          description: 'Resolution set in ServiceDesk successfully',
-        })
+        showSuccess('Resolution set in ServiceDesk successfully')
       } else {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to set resolution in ServiceDesk',
-          variant: 'destructive'
-        })
+        showError(result.error || 'Failed to set resolution in ServiceDesk')
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to set resolution in ServiceDesk',
-        variant: 'destructive'
-      })
+      showError('Failed to set resolution in ServiceDesk')
     }
   }
 
@@ -639,23 +563,12 @@ export function TicketDetailModalEnhanced({
       if (result.success) {
         setNewServiceDeskTimeLog({ hours: '', minutes: '', description: '' })
         await loadServiceDeskData(serviceDeskRequestId)
-        toast({
-          title: 'Success',
-          description: 'Time logged to ServiceDesk successfully',
-        })
+        showSuccess('Time logged to ServiceDesk successfully')
       } else {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to log time to ServiceDesk',
-          variant: 'destructive'
-        })
+        showError(result.error || 'Failed to log time to ServiceDesk')
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to log time to ServiceDesk',
-        variant: 'destructive'
-      })
+      showError('Failed to log time to ServiceDesk')
     }
   }
 
@@ -680,23 +593,12 @@ export function TicketDetailModalEnhanced({
 
       if (result.success) {
         setNewServiceDeskLink({ requestId: '', linkType: 'relates_to' })
-        toast({
-          title: 'Success',
-          description: 'Tickets linked in ServiceDesk successfully',
-        })
+        showSuccess('Tickets linked in ServiceDesk successfully')
       } else {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to link tickets in ServiceDesk',
-          variant: 'destructive'
-        })
+        showError(result.error || 'Failed to link tickets in ServiceDesk')
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to link tickets in ServiceDesk',
-        variant: 'destructive'
-      })
+      showError('Failed to link tickets in ServiceDesk')
     }
   }
 
@@ -722,23 +624,12 @@ export function TicketDetailModalEnhanced({
 
       if (result.success) {
         await loadServiceDeskData(serviceDeskRequestId)
-        toast({
-          title: 'Success',
-          description: 'Attachment uploaded to ServiceDesk successfully',
-        })
+        showSuccess('Attachment uploaded to ServiceDesk successfully')
       } else {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to upload attachment to ServiceDesk',
-          variant: 'destructive'
-        })
+        showError(result.error || 'Failed to upload attachment to ServiceDesk')
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to upload attachment to ServiceDesk',
-        variant: 'destructive'
-      })
+      showError('Failed to upload attachment to ServiceDesk')
     }
   }
 
@@ -800,23 +691,12 @@ export function TicketDetailModalEnhanced({
       const result = await response.json()
 
       if (result.success) {
-        toast({
-          title: 'Success',
-          description: 'Ticket updated in ServiceDesk successfully',
-        })
+        showSuccess('Ticket updated in ServiceDesk successfully')
       } else {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to update ticket in ServiceDesk',
-          variant: 'destructive'
-        })
+        showError(result.error || 'Failed to update ticket in ServiceDesk')
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to update ticket in ServiceDesk',
-        variant: 'destructive'
-      })
+      showError('Failed to update ticket in ServiceDesk')
     } finally {
       setUpdatingServiceDesk(false)
     }
@@ -850,26 +730,15 @@ export function TicketDetailModalEnhanced({
         setServiceDeskComments([])
         setServiceDeskAttachments([])
         setServiceDeskTimeLogs([])
-        toast({
-          title: 'Success',
-          description: 'Ticket deleted from ServiceDesk successfully',
-        })
+        showSuccess('Ticket deleted from ServiceDesk successfully')
         if (onSave) {
           onSave(ticket)
         }
       } else {
-        toast({
-          title: 'Delete Failed',
-          description: result.error || 'Failed to delete ticket from ServiceDesk',
-          variant: 'destructive'
-        })
+        showError(result.error || 'Failed to delete ticket from ServiceDesk')
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to delete ticket from ServiceDesk',
-        variant: 'destructive'
-      })
+      showError('Failed to delete ticket from ServiceDesk')
     } finally {
       setDeletingServiceDesk(false)
     }
@@ -1294,17 +1163,10 @@ export function TicketDetailModalEnhanced({
                               })
                               if (response.ok) {
                                 loadAllData()
-                                toast({
-                                  title: 'Success',
-                                  description: `Subtask ${newStatus === 'DONE' ? 'completed' : 'reopened'}`,
-                                })
+                                showSuccess(`Subtask ${newStatus === 'DONE' ? 'completed' : 'reopened'}`)
                               }
                             } catch (error) {
-                              toast({
-                                title: 'Error',
-                                description: 'Failed to update subtask',
-                                variant: 'destructive'
-                              })
+                              showError('Failed to update subtask')
                             }
                           }}
                         />
@@ -1393,10 +1255,7 @@ export function TicketDetailModalEnhanced({
                 ticketId={ticket.id}
                 onAddRelationship={() => {
                   // Could open a dialog to add relationship
-                  toast({
-                    title: 'Add Relationship',
-                    description: 'Feature to add relationships coming soon',
-                  })
+                  showInfo('Feature to add relationships coming soon')
                 }}
                 onViewTicket={(ticketId) => {
                   // Could open ticket detail modal

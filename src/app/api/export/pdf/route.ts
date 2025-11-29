@@ -1,14 +1,14 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import puppeteer from 'puppeteer'
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function postHandler(request: NextRequest) {
+    const authResult = await requireAuth()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\export\pdf\route.ts')
 
     const { dataModelId, filters, columns, elementId, datasourceId, query, elementName, elementType } = await request.json()
 
@@ -179,11 +179,10 @@ export async function POST(request: NextRequest) {
       await browser.close()
       throw pdfError
     }
-  } catch (error: any) {
-    console.error('Error exporting to PDF:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to export report to PDF' },
+  ,
       { status: 500 }
     )
   }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/export/pdf')

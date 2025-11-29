@@ -1,19 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { query } from '@/lib/db'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    const { id: spaceId } = await params
+  const { id: spaceId } = await params
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '50')
@@ -21,14 +19,8 @@ export async function GET(
     const offset = (page - 1) * limit
 
     // Check if user has access to this space
-    const memberCheck = await query(`
-      SELECT role FROM space_members 
-      WHERE space_id = $1::uuid AND user_id = $2::uuid
-    `, [spaceId, session.user.id])
-
-    if (memberCheck.rows.length === 0) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
-    }
+    const accessResult = await requireSpaceAccess(spaceId, session.user.id!)
+    if (!accessResult.success) return accessResult.response
 
     // Build query conditions
     // Note: audit_logs table doesn't have space_id column, so we filter by entity_id if it matches the space
@@ -82,26 +74,23 @@ export async function GET(
         hasMore
       }
     })
-  } catch (error) {
-    console.error('Error fetching audit log:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch audit log' },
-      { status: 500 }
-    )
-  }
 }
 
-export async function POST(
+export const GET = withErrorHandling(getHandler, 'GET /api/spaces/[id]/audit-log')
+
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    const { id: spaceId } = await params
+  const { id: spaceId } = await params
+
+  // Check if user has access to this space
+  const accessResult = await requireSpaceAccess(spaceId, session.user.id!)
+  if (!accessResult.success) return accessResult.response
     const body = await request.json()
     const { action, description, metadata, ip_address, user_agent } = body
 
@@ -139,11 +128,6 @@ export async function POST(
       success: true,
       logId: result.rows[0].id
     })
-  } catch (error) {
-    console.error('Error creating audit log entry:', error)
-    return NextResponse.json(
-      { error: 'Failed to create audit log entry' },
-      { status: 500 }
-    )
-  }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/spaces/[id]/audit-log')

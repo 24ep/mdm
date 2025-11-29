@@ -1,73 +1,61 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    const { id } = await params
+  const { id } = await params
 
-    // ExportProfile model doesn't exist in Prisma schema
-    return NextResponse.json(
-      { error: 'Export profile model not implemented' },
-      { status: 501 }
-    )
-  } catch (error) {
-    console.error('Error in GET /api/export-profiles/[id]:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+  // ExportProfile model doesn't exist in Prisma schema
+  return NextResponse.json(
+    { error: 'Export profile model not implemented' },
+    { status: 501 }
+  )
 }
 
-export async function PUT(
+export const GET = withErrorHandling(getHandler, 'GET /api/export-profiles/[id]')
+
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    const { id } = await params
+  const { id } = await params
 
-    // ExportProfile model doesn't exist in Prisma schema
-    return NextResponse.json(
-      { error: 'Export profile model not implemented' },
-      { status: 501 }
-    )
-  } catch (error) {
-    console.error('Error in PUT /api/export-profiles/[id]:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+  // ExportProfile model doesn't exist in Prisma schema
+  return NextResponse.json(
+    { error: 'Export profile model not implemented' },
+    { status: 501 }
+  )
 }
 
-export async function DELETE(
+export const PUT = withErrorHandling(putHandler, 'PUT /api/export-profiles/[id]')
+
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    const { id } = await params
+  const { id } = await params
 
-    // ExportProfile model doesn't exist in Prisma schema
-    return NextResponse.json(
-      { error: 'Export profile model not implemented' },
-      { status: 501 }
-    )
-  } catch (error) {
-    console.error('Error in DELETE /api/export-profiles/[id]:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+  // ExportProfile model doesn't exist in Prisma schema
+  return NextResponse.json(
+    { error: 'Export profile model not implemented' },
+    { status: 501 }
+  )
 }
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/export-profiles/[id]')

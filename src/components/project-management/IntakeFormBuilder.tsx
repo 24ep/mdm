@@ -41,7 +41,7 @@ import {
   Link as LinkIcon,
   Upload,
 } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
+import { showError, showSuccess } from '@/lib/toast-utils'
 
 interface FormField {
   id: string
@@ -75,7 +75,6 @@ const fieldTypes = [
 ]
 
 export function IntakeFormBuilder({ formId, spaceId, onSave, onCancel }: IntakeFormBuilderProps) {
-  const { toast } = useToast()
   const [formName, setFormName] = useState('')
   const [formDescription, setFormDescription] = useState('')
   const [isActive, setIsActive] = useState(true)
@@ -104,11 +103,7 @@ export function IntakeFormBuilder({ formId, spaceId, onSave, onCancel }: IntakeF
       }
     } catch (error) {
       console.error('Error loading form:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to load form',
-        variant: 'destructive',
-      })
+      showError('Failed to load form')
     } finally {
       setLoading(false)
     }
@@ -135,20 +130,12 @@ export function IntakeFormBuilder({ formId, spaceId, onSave, onCancel }: IntakeF
     if (!editingField) return
 
     if (!editingField.name || !editingField.label) {
-      toast({
-        title: 'Error',
-        description: 'Field name and label are required',
-        variant: 'destructive',
-      })
+      showError('Field name and label are required')
       return
     }
 
     if (editingField.type === 'select' && (!editingField.options || editingField.options.length === 0)) {
-      toast({
-        title: 'Error',
-        description: 'Select fields must have at least one option',
-        variant: 'destructive',
-      })
+      showError('Select fields must have at least one option')
       return
     }
 
@@ -171,20 +158,12 @@ export function IntakeFormBuilder({ formId, spaceId, onSave, onCancel }: IntakeF
 
   const handleSave = async () => {
     if (!formName.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Form name is required',
-        variant: 'destructive',
-      })
+      showError('Form name is required')
       return
     }
 
     if (fields.length === 0) {
-      toast({
-        title: 'Error',
-        description: 'At least one field is required',
-        variant: 'destructive',
-      })
+      showError('At least one field is required')
       return
     }
 
@@ -209,21 +188,14 @@ export function IntakeFormBuilder({ formId, spaceId, onSave, onCancel }: IntakeF
 
       if (response.ok) {
         const result = await response.json()
-        toast({
-          title: 'Success',
-          description: `Form ${formId ? 'updated' : 'created'} successfully`,
-        })
+        showSuccess(`Form ${formId ? 'updated' : 'created'} successfully`)
         onSave(result.form)
       } else {
         const error = await response.json()
         throw new Error(error.error || 'Failed to save form')
       }
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to save form',
-        variant: 'destructive',
-      })
+      showError(error.message || 'Failed to save form')
     } finally {
       setLoading(false)
     }

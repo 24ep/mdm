@@ -22,8 +22,7 @@ export async function POST(
     const { rows: attrRows } = await query(attributeSql, [attrId, dataModelId])
     
     if (attrRows.length === 0) {
-      return NextResponse.json({ error: 'Attribute not found or not auto-increment' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Attribute not found or not auto-increment' }}
 
     const attribute = attrRows[0]
     
@@ -53,6 +52,5 @@ export async function POST(
     
   } catch (error) {
     console.error('Error generating next auto-increment value:', error)
-    return NextResponse.json({ error: 'Failed to generate next value' }, { status: 500 })
-  }
+    return NextResponse.json({ error: 'Failed to generate next value' }}
 }

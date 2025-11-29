@@ -1,18 +1,19 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 
 // GET: Retrieve all versions for a notebook
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     const { id } = await params
     const notebookId = decodeURIComponent(id)
@@ -77,15 +78,21 @@ export async function GET(
 }
 
 // POST: Create a new version of a notebook
-export async function POST(
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\notebooks\[id]\versions\route.ts')
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\notebooks\[id]\versions\route.ts')
 
     const { id } = await params
     const notebookId = decodeURIComponent(id)
@@ -151,8 +158,7 @@ export async function POST(
         ...insertRows[0],
         notebook_data: JSON.parse(insertRows[0].notebook_data)
       }
-    }, { status: 201 })
-  } catch (error: any) {
+    }} catch (error: any) {
     console.error('Error creating notebook version:', error)
     return NextResponse.json(
       { error: 'Failed to create notebook version', details: error.message },

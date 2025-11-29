@@ -1,14 +1,15 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 
-export async function POST(
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id } = await params
@@ -16,8 +17,9 @@ export async function POST(
     const { user_id, role } = body
 
     if (!user_id || !role) {
-      return NextResponse.json({ error: 'user_id and role are required' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'user_id and role are required' }}
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashboards\[id]\permissions\route.ts')
 
     // Check if user has permission to manage this dashboard
     const { rows: accessCheck } = await query(`
@@ -28,16 +30,14 @@ export async function POST(
     `, [id, session.user.id])
 
     if (accessCheck.length === 0) {
-      return NextResponse.json({ error: 'Dashboard not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Dashboard not found' }}
 
     const dashboard = accessCheck[0]
     const canManage = dashboard.created_by === session.user.id || 
                      (dashboard.role && dashboard.role === 'ADMIN')
 
     if (!canManage) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Access denied' }}
 
     // Check if permission already exists
     const { rows: existingPermission } = await query(`
@@ -61,8 +61,3 @@ export async function POST(
     }
 
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Error managing dashboard permission:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}

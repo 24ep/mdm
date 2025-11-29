@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, requireAuthWithId } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { db } from '@/lib/db'
 import { z } from 'zod'
 import { validateBody } from '@/lib/api-validation'
@@ -25,10 +25,9 @@ const intakeFormSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const authResult = await requireAuth()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
     const { searchParams } = new URL(request.url)
     const spaceId = searchParams.get('spaceId')
@@ -68,10 +67,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
     const bodyValidation = await validateBody(request, intakeFormSchema)
     if (!bodyValidation.success) {
@@ -80,27 +78,18 @@ export async function POST(request: NextRequest) {
 
     const { spaceId, name, description, formFields, workflow, isActive } = bodyValidation.data
 
-    // Check if user has access to the space
+    // Check if space exists
     const space = await db.space.findUnique({
       where: { id: spaceId },
-      include: {
-        members: {
-          where: { userId: session.user.id }
-        }
-      }
+      select: { id: true },
     })
 
     if (!space) {
-      return NextResponse.json({ error: 'Space not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Space not found' }}
 
-    const hasAccess =
-      space.createdBy === session.user.id ||
-      space.members.length > 0
-
-    if (!hasAccess) {
-      return NextResponse.json({ error: 'Access denied to space' }, { status: 403 })
-    }
+    // Check access
+    const accessResult = await requireSpaceAccess(spaceId, session.user.id, 'Access denied to space')
+    if (!accessResult.success) return accessResult.response
 
     const form = await db.intakeForm.create({
       data: {
@@ -118,8 +107,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    return NextResponse.json({ success: true, form }, { status: 201 })
-  } catch (error: any) {
+    return NextResponse.json({ success: true, form }} catch (error: any) {
     console.error('Error creating intake form:', error)
     return NextResponse.json(
       { error: error.message || 'Failed to create intake form' },

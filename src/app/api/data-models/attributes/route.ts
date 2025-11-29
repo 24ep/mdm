@@ -1,20 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     // Validate query parameters
     const queryValidation = validateQuery(request, z.object({
@@ -48,24 +44,31 @@ export async function GET(request: NextRequest) {
     const total = totals[0]?.total || 0
     const duration = Date.now() - startTime
     logger.apiResponse('GET', '/api/data-models/attributes', 200, duration, { total })
-    return addSecurityHeaders(NextResponse.json({
-      attributes: attributes || [],
-      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
-    }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', '/api/data-models/attributes', 500, duration)
-    return handleApiError(error, 'Data Model Attributes API GET')
-  }
+  return addSecurityHeaders(NextResponse.json({
+    attributes: attributes || [],
+    pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+  }))
 }
 
-export async function POST(request: NextRequest) {
+
+
+
+
+
+
+
+
+
+
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/data-models/attributes')
+
+async function postHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     // Validate request body
     const bodyValidation = await validateBody(request, z.object({
@@ -126,12 +129,18 @@ export async function POST(request: NextRequest) {
     ])
     const duration = Date.now() - startTime
     logger.apiResponse('POST', '/api/data-models/attributes', 201, duration, { attributeId: rows[0].id })
-    return addSecurityHeaders(NextResponse.json({ attribute: rows[0] }, { status: 201 }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('POST', '/api/data-models/attributes', 500, duration)
-    return handleApiError(error, 'Data Model Attributes API POST')
-  }
+  return addSecurityHeaders(NextResponse.json({ attribute: rows[0] }, { status: 201 }))
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/data-models/attributes')
+
+
+
+
+
+
+
+
+
 
 

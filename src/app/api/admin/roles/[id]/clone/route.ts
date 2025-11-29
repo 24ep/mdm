@@ -15,8 +15,7 @@ export async function POST(
     const { name, description } = body
 
     if (!name) {
-      return NextResponse.json({ error: 'name is required' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'name is required' }}
 
     // Get original role
     const { rows: originalRole } = await query(
@@ -25,8 +24,7 @@ export async function POST(
     )
 
     if (originalRole.length === 0) {
-      return NextResponse.json({ error: 'Role not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Role not found' }}
 
     const role = originalRole[0]
 
@@ -58,14 +56,11 @@ export async function POST(
         level: newRole[0].level || 'space'
       },
       permissionsCopied: permissions.length
-    }, { status: 201 })
-  } catch (error: any) {
+    }} catch (error: any) {
     if (String(error?.message || '').includes('duplicate')) {
-      return NextResponse.json({ error: 'Role with this name already exists' }, { status: 409 })
-    }
+      return NextResponse.json({ error: 'Role with this name already exists' }}
     console.error('Error cloning role:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+    return NextResponse.json({ error: 'Internal server error' }}
 }
 
 

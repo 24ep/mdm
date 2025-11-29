@@ -1,14 +1,14 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import { decryptApiKey } from '@/lib/encryption'
 import { getSecretsManager } from '@/lib/secrets-manager'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { createAuditContext } from '@/lib/audit-context-helper'
 
 const prisma = new PrismaClient()
 
-export async function POST(request: NextRequest) {
+export async function = body(request: NextRequest) {
   try {
     const body = await request.json()
     const { agentId, apiKey, user } = body
@@ -43,7 +43,9 @@ export async function POST(request: NextRequest) {
           if (openaiConfig.apiKey.startsWith('vault://')) {
             const secretsManager = getSecretsManager()
             // Try to get session for audit logging
-            const session = await getServerSession(authOptions).catch(() => null)
+            const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult.catch(() => null)
             const auditContext = createAuditContext(request, session?.user || null, 'ChatKit session creation')
             
             openaiApiKey = await secretsManager.getApiKey('openai', auditContext)

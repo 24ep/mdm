@@ -1,6 +1,6 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { registerAllPlugins } from '@/features/marketplace/lib/register-plugins'
 import { logAPIRequest } from '@/shared/lib/security/audit-logger'
 
@@ -8,12 +8,12 @@ import { logAPIRequest } from '@/shared/lib/security/audit-logger'
  * Register all marketplace plugins in the database
  * Only admins can run this
  */
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function postHandler(request: NextRequest) {
+    const authResult = await requireAdmin()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\marketplace\plugins\register\route.ts')
 
     // Only admins can register plugins
     if (session.user.role !== 'ADMIN') {
@@ -40,4 +40,6 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/marketplace/plugins/register')
 

@@ -1,33 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { validateQuery, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    logger.apiRequest('GET', '/api/positions', { userId: session.user.id })
+  logger.apiRequest('GET', '/api/positions', { userId: session.user.id })
 
-    const querySchema = z.object({
-      page: z.string().transform(Number).pipe(z.number().int().positive()).optional().default(1),
-      limit: z.string().transform(Number).pipe(z.number().int().positive().max(100)).optional().default(20),
-      search: z.string().optional().default(''),
-    })
+  const querySchema = z.object({
+    page: z.string().transform(Number).pipe(z.number().int().positive()).optional().default(1),
+    limit: z.string().transform(Number).pipe(z.number().int().positive().max(100)).optional().default(20),
+    search: z.string().optional().default(''),
+  })
 
-    const queryValidation = validateQuery(request, querySchema)
-    if (!queryValidation.success) {
-      return addSecurityHeaders(queryValidation.response)
-    }
+  const queryValidation = validateQuery(request, querySchema)
+  if (!queryValidation.success) {
+    return queryValidation.response
+  }
 
     const { page, limit, search } = queryValidation.data
     const skip = (page - 1) * limit
@@ -55,15 +50,12 @@ export async function GET(request: NextRequest) {
       page,
       limit,
     })
-    return addSecurityHeaders(NextResponse.json({
+    return NextResponse.json({
       positions: positions || [],
       pagination: { page, limit, total: total || 0, pages: Math.ceil((total || 0) / limit) },
-    }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', '/api/positions', 500, duration)
-    return handleApiError(error, 'Positions API')
-  }
+    })
 }
+
+export const GET = withErrorHandling(getHandler, 'GET /api/positions')
 
 

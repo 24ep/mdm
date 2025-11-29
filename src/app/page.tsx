@@ -112,7 +112,7 @@ const getRouteForTab = (tab: string): string => {
     'export': '/system/export',
     'integrations': '/system/integrations',
     'api': '/system/api',
-    'space-selection': '/data-management/space-selection',
+    'space-selection': '/admin/space-selection',
   }
   return routeMap[tab] || '/'
 }

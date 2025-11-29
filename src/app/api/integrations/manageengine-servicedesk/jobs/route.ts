@@ -1,6 +1,6 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 // Helper to extract spaceId from request
 function getSpaceId(request: NextRequest): string | null {
   const searchParams = request.nextUrl.searchParams
@@ -18,12 +18,11 @@ import { checkServiceDeskRateLimit, getServiceDeskRateLimitConfig } from '@/lib/
  * GET - List jobs for a space
  * POST - Create a new job
  */
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler(request: NextRequest) {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
 
     const spaceId = getSpaceId(request)
     if (!spaceId) {
@@ -61,12 +60,19 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+
+
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/integrations/manageengine-servicedesk/jobs')
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\integrations\manageengine-servicedesk\jobs\route.ts')
+async function postHandler(request: NextRequest) {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\integrations\manageengine-servicedesk\jobs\route.ts')
 
     const spaceId = getSpaceId(request)
     if (!spaceId) {
@@ -123,4 +129,6 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/integrations/manageengine-servicedesk/jobs')
 

@@ -1,18 +1,20 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { downloadJobFile } from '@/shared/lib/jobs/storage-helper'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ jobId: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\import-export\jobs\[jobId]\download\route.ts')
 
     const { jobId } = await params
     const { searchParams } = new URL(request.url)
@@ -26,8 +28,7 @@ export async function GET(
     )
 
     if (jobResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Job not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Job not found' }}
 
     const job = jobResult.rows[0]
 
@@ -94,12 +95,4 @@ export async function GET(
         'Content-Length': downloadResult.buffer.length.toString(),
       },
     })
-  } catch (error) {
-    console.error('Error downloading job file:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
 

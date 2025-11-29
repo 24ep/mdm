@@ -1,20 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
+import { requireAnySpaceAccess } from '@/lib/space-access'
 import { query } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     // Validate query parameters
     const queryValidation = validateQuery(request, z.object({
@@ -27,7 +23,7 @@ export async function GET(request: NextRequest) {
     }))
     
     if (!queryValidation.success) {
-      return addSecurityHeaders(queryValidation.response)
+      return queryValidation.response
     }
     
     const { page, limit = 10, search = '', space_id: spaceId, type = '', visibility = '' } = queryValidation.data
@@ -110,24 +106,19 @@ export async function GET(request: NextRequest) {
     const total = totalRows[0]?.total || 0
     const duration = Date.now() - startTime
     logger.apiResponse('GET', '/api/dashboards', 200, duration, { total })
-    return addSecurityHeaders(NextResponse.json({
+    return NextResponse.json({
       dashboards: dashboards || [],
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
-    }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', '/api/dashboards', 500, duration)
-    return handleApiError(error, 'Dashboards API GET')
-  }
+    })
 }
 
-export async function POST(request: NextRequest) {
+export const GET = withErrorHandling(getHandler, 'GET /api/dashboards')
+
+async function postHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     // Validate request body
     const bodyValidation = await validateBody(request, z.object({
@@ -147,7 +138,7 @@ export async function POST(request: NextRequest) {
     }))
     
     if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
+      return bodyValidation.response
     }
     
     const { 
@@ -168,15 +159,8 @@ export async function POST(request: NextRequest) {
     logger.apiRequest('POST', '/api/dashboards', { userId: session.user.id, name, type, visibility })
 
     // Check if user has access to all spaces
-    const placeholders = space_ids.map((_, i) => `$${i + 1}`).join(',')
-    const { rows: spaceAccess } = await query(
-      `SELECT space_id, role FROM space_members WHERE space_id IN (${placeholders}) AND user_id = $${space_ids.length + 1}`,
-      [...space_ids, session.user.id]
-    )
-
-    if (spaceAccess.length !== space_ids.length) {
-      return NextResponse.json({ error: 'Access denied to one or more spaces' }, { status: 403 })
-    }
+    const accessResult = await requireAnySpaceAccess(space_ids, session.user.id!)
+    if (!accessResult.success) return accessResult.response
 
     // Generate public link if visibility is PUBLIC
     let publicLink = null
@@ -233,10 +217,7 @@ export async function POST(request: NextRequest) {
 
     const duration = Date.now() - startTime
     logger.apiResponse('POST', '/api/dashboards', 201, duration, { dashboardId: dashboard.id })
-    return addSecurityHeaders(NextResponse.json({ dashboard }, { status: 201 }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('POST', '/api/dashboards', 500, duration)
-    return handleApiError(error, 'Dashboards API POST')
-  }
+    return NextResponse.json({ dashboard }, { status: 201 })
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/dashboards')

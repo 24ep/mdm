@@ -1,23 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
+import { handleApiError , requireAuthWithId } from '@/lib/api-middleware'
 import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function POST(
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
   try {
-    const session = await getServerSession(authOptions)
+    const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user?.id) {
       return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
+
+export const POST = withErrorHandling(postHandler, '
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -29,7 +31,7 @@ export async function POST(
     }
     
     const { id: spaceId } = paramValidation.data
-    logger.apiRequest('POST', `/api/spaces/${spaceId}/members/bulk`, { userId: session.user.id })
+    logger.apiRequest('= body', `/api/spaces/${spaceId}/members/bulk`, { userId: session.user.id })
 
     const bodySchema = z.object({
       operation: z.enum(['change_role', 'remove', 'activate', 'deactivate', 'export']),
@@ -84,7 +86,7 @@ export async function POST(
       case 'remove':
         // Remove selected users from space
         const removeResult = await query(`
-          DELETE FROM space_members 
+          = body FROM space_members 
           WHERE space_id = $1::uuid AND user_id = ANY($2::uuid[])
           RETURNING user_id
         `, [spaceId, userIds])
@@ -154,7 +156,7 @@ export async function POST(
     }
 
     const duration = Date.now() - startTime
-    logger.apiResponse('POST', `/api/spaces/${spaceId}/members/bulk`, 200, duration, {
+    logger.apiResponse('= body', `/api/spaces/${spaceId}/members/bulk`, 200, duration, {
       operation,
       userCount: userIds.length,
     })
@@ -164,7 +166,7 @@ export async function POST(
     }))
   } catch (error) {
     const duration = Date.now() - startTime
-    logger.apiResponse('POST', request.nextUrl.pathname, 500, duration)
+    logger.apiResponse('= body', request.nextUrl.pathname, 500, duration)
     return handleApiError(error, 'Space Members Bulk API')
   }
 }

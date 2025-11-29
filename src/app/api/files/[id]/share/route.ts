@@ -1,20 +1,20 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/database'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import crypto from 'crypto'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     const { id: fileId } = await params
 
@@ -28,8 +28,7 @@ export async function GET(
     )
 
     if (accessResult.rows.length === 0) {
-      return NextResponse.json({ error: 'File not found or access denied' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'File not found or access denied' }}
 
     // Get all shares for this file
     const sharesResult = await query(
@@ -55,23 +54,20 @@ export async function GET(
       shares: sharesResult.rows
     })
 
-  } catch (error) {
-    console.error('Error fetching file shares:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
 
-export async function POST(
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\files\[id]\share\route.ts')
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     const { id: fileId } = await params
     const { 
@@ -92,13 +88,11 @@ export async function POST(
     )
 
     if (accessResult.rows.length === 0) {
-      return NextResponse.json({ error: 'File not found or access denied' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'File not found or access denied' }}
 
     // Validate permission level
     if (!['view', 'download', 'edit'].includes(permissionLevel)) {
-      return NextResponse.json({ error: 'Invalid permission level' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'Invalid permission level' }}
 
     // Hash password if provided
     let passwordHash = null
@@ -127,31 +121,29 @@ export async function POST(
       share: shareResult.rows[0]
     })
 
-  } catch (error) {
-    console.error('Error creating file share:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
 
-export async function DELETE(
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\files\[id]\share\route.ts')
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\files\[id]\share\route.ts')
 
     const { id: fileId } = await params
     const { searchParams } = new URL(request.url)
     const shareId = searchParams.get('shareId')
 
     if (!shareId) {
-      return NextResponse.json({ error: 'Share ID is required' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'Share ID is required' }}
 
     // Check if user can delete this share
     const shareResult = await query(
@@ -164,16 +156,9 @@ export async function DELETE(
     )
 
     if (shareResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Share not found or access denied' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Share not found or access denied' }}
 
     // Delete the share
     await query('DELETE FROM file_shares WHERE id = $1', [shareId])
 
     return NextResponse.json({ success: true })
-
-  } catch (error) {
-    console.error('Error deleting file share:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}

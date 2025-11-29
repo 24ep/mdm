@@ -1,12 +1,9 @@
 'use client'
 
-import { SpaceSelection } from '@/app/admin/features/spaces'
+import { redirect } from 'next/navigation'
 
+// Redirect to admin space-selection - this route is deprecated
 export default function SpaceSelectionPage() {
-  return (
-    <div className="p-6">
-      <SpaceSelection />
-    </div>
-  )
+  redirect('/admin/space-selection')
 }
 

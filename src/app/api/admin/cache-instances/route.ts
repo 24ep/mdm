@@ -49,8 +49,7 @@ export async function GET() {
     return NextResponse.json({ instances: transformedInstances })
   } catch (error) {
     console.error('Error fetching cache instances:', error)
-    return NextResponse.json({ error: 'Failed to fetch cache instances' }, { status: 500 })
-  }
+    return NextResponse.json({ error: 'Failed to fetch cache instances' }}
 }
 
 export async function POST(request: NextRequest) {
@@ -60,8 +59,7 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!name || !type || !host || !port) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'Missing required fields' }}
 
     // Create the cache instance
     const instance = await prisma.cacheInstance.create({
@@ -107,9 +105,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    return NextResponse.json({ instance }, { status: 201 })
-  } catch (error) {
+    return NextResponse.json({ instance }} catch (error) {
     console.error('Error creating cache instance:', error)
-    return NextResponse.json({ error: 'Failed to create cache instance' }, { status: 500 })
-  }
+    return NextResponse.json({ error: 'Failed to create cache instance' }}
 }

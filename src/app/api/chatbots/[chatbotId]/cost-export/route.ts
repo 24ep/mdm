@@ -1,20 +1,22 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
 // GET - Export cost data as CSV or JSON
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ chatbotId: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\chatbots\[chatbotId]\cost-export\route.ts')
 
     const { chatbotId } = await params
     const { searchParams } = new URL(request.url)
@@ -109,13 +111,4 @@ export async function GET(
           metadata: record.metadata,
         })),
       })
-    }
-  } catch (error) {
-    console.error('Error exporting cost data:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
 

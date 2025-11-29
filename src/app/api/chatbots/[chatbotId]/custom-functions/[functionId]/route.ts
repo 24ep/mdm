@@ -1,20 +1,19 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-
 const prisma = new PrismaClient()
 
 // GET - Get custom function
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ chatbotId: string; functionId: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     const { chatbotId, functionId } = await params
     const func = await prisma.chatbotCustomFunction.findUnique({
@@ -22,29 +21,23 @@ export async function GET(
     })
 
     if (!func || func.chatbotId !== chatbotId) {
-      return NextResponse.json({ error: 'Function not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Function not found' }}
 
     return NextResponse.json({ function: func })
-  } catch (error) {
-    console.error('Error fetching custom function:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
 
 // PUT - Update custom function
-export async function PUT(
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\chatbots\[chatbotId]\custom-functions\[functionId]\route.ts')
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ chatbotId: string; functionId: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     const { functionId } = await params
     const body = await request.json()
@@ -65,25 +58,22 @@ export async function PUT(
     })
 
     return NextResponse.json({ function: func })
-  } catch (error) {
-    console.error('Error updating custom function:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
 
 // DELETE - Delete custom function
-export async function DELETE(
+
+
+export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\chatbots\[chatbotId]\custom-functions\[functionId]\route.ts')
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ chatbotId: string; functionId: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\chatbots\[chatbotId]\custom-functions\[functionId]\route.ts')
 
     const { functionId } = await params
     await prisma.chatbotCustomFunction.delete({
@@ -91,12 +81,4 @@ export async function DELETE(
     })
 
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Error deleting custom function:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
 

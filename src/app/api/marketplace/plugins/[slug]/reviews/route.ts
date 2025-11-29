@@ -1,6 +1,6 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { logAPIRequest } from '@/shared/lib/security/audit-logger'
 import { checkPermission } from '@/shared/lib/security/permission-checker'
@@ -33,11 +33,11 @@ export async function GET(
     return rateLimitResponse
   }
 
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     const { slug } = await params
     const serviceId = await resolveServiceId(slug)
@@ -161,14 +161,6 @@ export async function GET(
         count: parseInt(row.count),
       })),
     })
-  } catch (error) {
-    console.error('Error fetching reviews:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
 
 export async function POST(
   request: NextRequest,
@@ -180,11 +172,11 @@ export async function POST(
     return rateLimitResponse
   }
 
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     const { slug } = await params
     const serviceId = await resolveServiceId(slug)
@@ -306,13 +298,4 @@ export async function POST(
         },
         { status: 201 }
       )
-    }
-  } catch (error) {
-    console.error('Error creating/updating review:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
 

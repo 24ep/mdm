@@ -4,6 +4,7 @@
  */
 
 import { useState, useCallback } from 'react'
+import { DEFAULT_PAGINATION } from '@/lib/constants/defaults'
 
 export interface UsePaginationOptions {
   initialPage?: number
@@ -27,8 +28,8 @@ export interface UsePaginationReturn {
 
 export function usePagination(options: UsePaginationOptions = {}): UsePaginationReturn {
   const {
-    initialPage = 1,
-    initialLimit = 20,
+    initialPage = DEFAULT_PAGINATION.page,
+    initialLimit = DEFAULT_PAGINATION.limit,
     total: initialTotal = 0
   } = options
 

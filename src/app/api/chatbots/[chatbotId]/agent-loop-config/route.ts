@@ -1,21 +1,21 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { isUuid } from '@/lib/validation'
 
 const prisma = new PrismaClient()
 
 // GET - Get agent loop config
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ chatbotId: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     const { chatbotId } = await params
     
@@ -32,37 +32,22 @@ export async function GET(
     })
 
     return NextResponse.json({ config: config || null })
-  } catch (error: any) {
-    console.error('Error fetching agent loop config:', error)
-    
-    // Handle Prisma UUID validation errors
-    if (error?.code === 'P2023' || error?.message?.includes('UUID')) {
-      return NextResponse.json(
-        { error: 'Invalid chatbot ID format', details: 'Chatbot ID must be a valid UUID' },
-        { status: 400 }
-      )
-    }
-    
-    return NextResponse.json(
-      { 
-        error: 'Internal server error',
-        details: error?.message || 'Unknown error'
-      },
-      { status: 500 }
-    )
-  }
-}
 
 // POST - Create or update agent loop config
-export async function POST(
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\chatbots\[chatbotId]\agent-loop-config\route.ts')
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ chatbotId: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\chatbots\[chatbotId]\agent-loop-config\route.ts')
 
     const { chatbotId } = await params
     
@@ -99,24 +84,4 @@ export async function POST(
     })
 
     return NextResponse.json({ config })
-  } catch (error: any) {
-    console.error('Error updating agent loop config:', error)
-    
-    // Handle Prisma UUID validation errors
-    if (error?.code === 'P2023' || error?.message?.includes('UUID')) {
-      return NextResponse.json(
-        { error: 'Invalid chatbot ID format', details: 'Chatbot ID must be a valid UUID' },
-        { status: 400 }
-      )
-    }
-    
-    return NextResponse.json(
-      { 
-        error: 'Internal server error',
-        details: error?.message || 'Unknown error'
-      },
-      { status: 500 }
-    )
-  }
-}
 

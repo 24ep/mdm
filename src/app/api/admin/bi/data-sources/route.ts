@@ -50,8 +50,7 @@ export async function GET() {
     })
   } catch (error) {
     console.error('Error fetching data sources:', error)
-    return NextResponse.json({ error: 'Failed to fetch data sources' }, { status: 500 })
-  }
+    return NextResponse.json({ error: 'Failed to fetch data sources' }}
 }
 
 export async function POST(request: NextRequest) {
@@ -72,6 +71,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ dataSource })
   } catch (error) {
     console.error('Error creating data source:', error)
-    return NextResponse.json({ error: 'Failed to create data source' }, { status: 500 })
-  }
+    return NextResponse.json({ error: 'Failed to create data source' }}
 }

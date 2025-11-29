@@ -1,17 +1,18 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/database'
 import { AttachmentStorageService } from '@/lib/attachment-storage'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
+async function postHandler(request: NextRequest) {
+    const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const POST = withErrorHandling(postHandler, '
 
     const formData = await request.formData()
     const file = formData.get('file') as File
@@ -21,8 +22,7 @@ export async function POST(request: NextRequest) {
     const recordId = formData.get('recordId') as string
 
     if (!file || !spaceId || !dataModelId || !attributeId) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'Missing required fields' }}
 
     // Check if user has access to this space
     const memberResult = await query(
@@ -31,8 +31,7 @@ export async function POST(request: NextRequest) {
     )
 
     if (memberResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Space not found or access denied' }}
 
     // Get active storage connection
     const storageResult = await query(
@@ -41,8 +40,7 @@ export async function POST(request: NextRequest) {
     )
 
     if (storageResult.rows.length === 0) {
-      return NextResponse.json({ error: 'No active storage connection found' }, { status: 500 })
-    }
+      return NextResponse.json({ error: 'No active storage connection found' }}
 
     const storage = storageResult.rows[0] as unknown as { type: string; config: any }
 
@@ -65,8 +63,7 @@ export async function POST(request: NextRequest) {
     if (!uploadResult.success || !uploadResult.path) {
       return NextResponse.json({ 
         error: uploadResult.error || 'Upload failed' 
-      }, { status: 500 })
-    }
+      }}
 
     // Save file metadata to database
     const fileResult = await query(
@@ -96,9 +93,18 @@ export async function POST(request: NextRequest) {
       mime_type: fileRecord.mime_type,
       created_at: fileRecord.created_at
     })
-
-  } catch (error) {
-    console.error('Error uploading file:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
 }
+
+
+
+
+
+
+
+
+
+export const POST = withErrorHandling(postHandler, '
+export const POST = withErrorHandling(postHandler, '
+export const POST = withErrorHandling(postHandler, '
+export const POST = withErrorHandling(postHandler, '
+export const POST = withErrorHandling(postHandler, '

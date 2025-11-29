@@ -1,34 +1,35 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { dataMasking } from '@/lib/data-masking'
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler(request: NextRequest) {
+    const authResult = await requireAuth()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
     await dataMasking.initialize()
     const rules = await dataMasking.getMaskingRules()
 
     return NextResponse.json(rules)
-  } catch (error: any) {
-    console.error('Error fetching masking rules:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch masking rules', details: error.message },
+  ,
       { status: 500 }
     )
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+
+
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/data-masking/rules')
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\data-masking\rules\route.ts')
+async function postHandler(request: NextRequest) {
+    const authResult = await requireAuth()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\data-masking\rules\route.ts')
 
     const body = await request.json()
     await dataMasking.initialize()
@@ -37,12 +38,11 @@ export async function POST(request: NextRequest) {
     const rule = rules.find(r => r.id === ruleId)
 
     return NextResponse.json(rule || { id: ruleId, ...body }, { status: 201 })
-  } catch (error: any) {
-    console.error('Error creating masking rule:', error)
-    return NextResponse.json(
-      { error: 'Failed to create masking rule', details: error.message },
+  ,
       { status: 500 }
     )
   }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/data-masking/rules')
 

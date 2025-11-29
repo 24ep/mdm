@@ -1,6 +1,6 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import { query } from '@/lib/db'
@@ -9,12 +9,10 @@ import { query } from '@/lib/db'
  * Generate plugin files from form data
  * This unlocks the ability to create code-based plugins via UI
  */
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function postHandler(request: NextRequest) {
+    const authResult = await requireAdmin()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
     // Only admins can generate plugin files
     if (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN') {
@@ -54,7 +52,7 @@ export async function POST(request: NextRequest) {
     const pluginsDir = join(projectRoot, 'src', 'features', 'marketplace', 'plugins', slug)
 
     if (generateCodeFiles) {
-      try {
+      
         // Create plugin directory
         await fs.mkdir(pluginsDir, { recursive: true })
 
@@ -144,11 +142,7 @@ export async function POST(request: NextRequest) {
           results.errors.push(`Auto-registration failed: ${regError.message}`)
           // Don't fail the whole operation if registration fails
         }
-      } catch (error: any) {
-        results.errors.push(`Failed to generate files: ${error.message}`)
-        console.error('Error generating plugin files:', error)
-      }
-    }
+}
 
     return NextResponse.json({
       success: results.errors.length === 0,
@@ -206,6 +200,12 @@ function generatePluginFile(options: {
 
   return `import { PluginDefinition } from '../../types'
 
+
+
+
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/marketplace/plugins/generate-files')
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\marketplace\plugins\generate-files\route.ts')
 export const ${slug.replace(/-/g, '')}Plugin: PluginDefinition = {
   id: '${slug}',
   name: '${name}',

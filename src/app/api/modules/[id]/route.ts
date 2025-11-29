@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
+import { requireProjectSpaceAccess } from '@/lib/space-access'
 import { db } from '@/lib/db'
 import { z } from 'zod'
 import { validateBody, validateParams } from '@/lib/api-validation'
@@ -18,15 +18,13 @@ const updateModuleSchema = z.object({
 })
 
 // Get a specific module
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -92,53 +90,35 @@ export async function GET(
     }
 
     // Check access
-    const spaceMember = await db.spaceMember.findFirst({
-      where: { spaceId: module.project.spaceId, userId: session.user.id }
-    })
-    const isSpaceOwner = await db.space.findFirst({
-      where: { id: module.project.spaceId, createdBy: session.user.id }
-    })
-
-    if (!spaceMember && !isSpaceOwner) {
-      return NextResponse.json(
-        { error: 'Forbidden: Not a member or owner of the module\'s space' },
-        { status: 403 }
-      )
-    }
+    const accessResult = await requireProjectSpaceAccess(module.project.id, session.user.id!)
+    if (!accessResult.success) return accessResult.response
 
     // Calculate progress
     const total = module.tickets.length
     const completed = module.tickets.filter(t => t.status === 'DONE' || t.status === 'CANCELLED').length
     const progress = total > 0 ? Math.round((completed / total) * 100) : 0
 
-    return NextResponse.json({
-      success: true,
-      module: {
-        ...module,
-        progress,
-        totalTickets: total,
-        completedTickets: completed
-      }
-    })
-  } catch (error: any) {
-    console.error('Error fetching module:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to fetch module' },
-      { status: 500 }
-    )
-  }
+  return NextResponse.json({
+    success: true,
+    module: {
+      ...module,
+      progress,
+      totalTickets: total,
+      completedTickets: completed
+    }
+  })
 }
 
+export const GET = withErrorHandling(getHandler, 'GET /api/modules/[id]')
+
 // Update a module
-export async function PUT(
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -175,19 +155,8 @@ export async function PUT(
     }
 
     // Check access
-    const spaceMember = await db.spaceMember.findFirst({
-      where: { spaceId: existingModule.project.spaceId, userId: session.user.id }
-    })
-    const isSpaceOwner = await db.space.findFirst({
-      where: { id: existingModule.project.spaceId, createdBy: session.user.id }
-    })
-
-    if (!spaceMember && !isSpaceOwner) {
-      return NextResponse.json(
-        { error: 'Forbidden: Not a member or owner of the module\'s space' },
-        { status: 403 }
-      )
-    }
+    const accessResult = await requireProjectSpaceAccess(existingModule.project.id, session.user.id!)
+    if (!accessResult.success) return accessResult.response
 
     // Prepare update data
     const data: any = {}
@@ -236,26 +205,19 @@ export async function PUT(
       }
     })
 
-    return NextResponse.json({ success: true, module })
-  } catch (error: any) {
-    console.error('Error updating module:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to update module' },
-      { status: 500 }
-    )
-  }
+  return NextResponse.json({ success: true, module })
 }
 
+export const PUT = withErrorHandling(putHandler, 'PUT /api/modules/[id]')
+
 // Delete a module
-export async function DELETE(
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -305,13 +267,8 @@ export async function DELETE(
       data: { deletedAt: new Date() }
     })
 
-    return NextResponse.json({ success: true, message: 'Module deleted successfully' })
-  } catch (error: any) {
-    console.error('Error deleting module:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to delete module' },
-      { status: 500 }
-    )
-  }
+  return NextResponse.json({ success: true, message: 'Module deleted successfully' })
 }
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/modules/[id]')
 

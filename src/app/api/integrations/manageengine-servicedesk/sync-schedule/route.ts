@@ -1,6 +1,6 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { getSecretsManager } from '@/lib/secrets-manager'
 import { decryptApiKey } from '@/lib/encryption'
@@ -8,12 +8,11 @@ import { ManageEngineServiceDeskService } from '@/lib/manageengine-servicedesk'
 import { db } from '@/lib/db'
 
 // Get or update sync schedule configuration
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler(request: NextRequest) {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
 
     const { searchParams } = new URL(request.url)
     const space_id = searchParams.get('space_id')
@@ -57,12 +56,17 @@ export async function GET(request: NextRequest) {
 }
 
 // Create or update sync schedule
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+
+
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/integrations/manageengine-servicedesk/sync-schedule')
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\integrations\manageengine-servicedesk\sync-schedule\route.ts')
+async function postHandler(request: NextRequest) {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
 
     const body = await request.json()
     const { space_id, schedule_type, schedule_config, is_active } = body
@@ -152,6 +156,12 @@ export async function POST(request: NextRequest) {
 }
 
 // Execute scheduled sync (called by scheduler)
+
+
+
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/integrations/manageengine-servicedesk/sync-schedule')
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\integrations\manageengine-servicedesk\sync-schedule\route.ts')
 export async function PUT(request: NextRequest) {
   try {
     // Verify API key for scheduler

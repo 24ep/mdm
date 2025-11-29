@@ -1,22 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
+import { requireAnySpaceAccess } from '@/lib/space-access'
 import { query } from '@/lib/db'
 import { reportSchema } from '@/lib/validation/report-schemas'
 import { auditLogger } from '@/lib/utils/audit-logger'
 import { logger } from '@/lib/logger'
 import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     // Validate query parameters
     const queryValidation = validateQuery(request, z.object({
@@ -30,7 +26,7 @@ export async function GET(request: NextRequest) {
     }))
     
     if (!queryValidation.success) {
-      return addSecurityHeaders(queryValidation.response)
+      return queryValidation.response
     }
     
     const { source, space_id: spaceId, search = '', category_id: categoryId, status, date_from: dateFrom, date_to: dateTo } = queryValidation.data
@@ -121,25 +117,20 @@ export async function GET(request: NextRequest) {
       categoriesCount: categories.length,
       foldersCount: folders.length
     })
-    return addSecurityHeaders(NextResponse.json({
+    return NextResponse.json({
       reports: reports || [],
       categories: categories || [],
       folders: folders || []
-    }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', '/api/reports', 500, duration)
-    return handleApiError(error, 'Reports API GET')
-  }
+    })
 }
 
-export async function POST(request: NextRequest) {
+export const GET = withErrorHandling(getHandler, 'GET /api/reports')
+
+async function postHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     // Validate request body
     const bodyValidation = await validateBody(request, z.object({
@@ -157,7 +148,7 @@ export async function POST(request: NextRequest) {
     }))
     
     if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
+      return bodyValidation.response
     }
     
     const {
@@ -217,11 +208,8 @@ export async function POST(request: NextRequest) {
 
     const duration = Date.now() - startTime
     logger.apiResponse('POST', '/api/reports', 201, duration, { reportId: report.id })
-    return addSecurityHeaders(NextResponse.json({ report }, { status: 201 }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('POST', '/api/reports', 500, duration)
-    return handleApiError(error, 'Reports API POST')
-  }
+    return NextResponse.json({ report }, { status: 201 })
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/reports')
 

@@ -1,22 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/database'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { logger } from '@/lib/logger'
 import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    const userId = session?.user?.id || request.headers.get('x-user-id')
-    
-    if (!userId) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) {
+    const userId = request.headers.get('x-user-id')
+    if (!userId) return authResult.response
+    // Continue with userId from header if available
+  }
+  const userId = authResult.session?.user?.id || request.headers.get('x-user-id')
+  
+  if (!userId) {
+    return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+  }
 
     // Validate query parameters
     const queryValidation = validateQuery(request, z.object({
@@ -72,26 +74,38 @@ export async function GET(request: NextRequest) {
       count: notificationsResult.rows.length,
       unreadCount: parseInt((unreadCountResult.rows[0] as any).count)
     })
-    return addSecurityHeaders(NextResponse.json({
-      notifications: notificationsResult.rows,
-      unreadCount: parseInt((unreadCountResult.rows[0] as any).count)
-    }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', '/api/files/notifications', 500, duration)
-    return handleApiError(error, 'File Notifications API GET')
-  }
+  return addSecurityHeaders(NextResponse.json({
+    notifications: notificationsResult.rows,
+    unreadCount: parseInt((unreadCountResult.rows[0] as any).count)
+  }))
 }
 
-export async function PUT(request: NextRequest) {
+
+
+
+
+
+
+
+
+
+
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/files/notifications')
+
+async function putHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    const userId = session?.user?.id || request.headers.get('x-user-id')
-    
-    if (!userId) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) {
+    const userId = request.headers.get('x-user-id')
+    if (!userId) return authResult.response
+  }
+  const userId = authResult.session?.user?.id || request.headers.get('x-user-id')
+  
+  if (!userId) {
+    return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+  }
 
     // Validate request body
     const bodyValidation = await validateBody(request, z.object({
@@ -128,23 +142,35 @@ export async function PUT(request: NextRequest) {
 
     const duration = Date.now() - startTime
     logger.apiResponse('PUT', '/api/files/notifications', 200, duration)
-    return addSecurityHeaders(NextResponse.json({ success: true }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('PUT', '/api/files/notifications', 500, duration)
-    return handleApiError(error, 'File Notifications API PUT')
-  }
+  return addSecurityHeaders(NextResponse.json({ success: true }))
 }
 
-export async function DELETE(request: NextRequest) {
+export const PUT = withErrorHandling(putHandler, 'PUT /api/files/notifications')
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function deleteHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    const userId = session?.user?.id || request.headers.get('x-user-id')
-    
-    if (!userId) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) {
+    const userId = request.headers.get('x-user-id')
+    if (!userId) return authResult.response
+  }
+  const userId = authResult.session?.user?.id || request.headers.get('x-user-id')
+  
+  if (!userId) {
+    return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+  }
 
     // Validate request body
     const bodyValidation = await validateBody(request, z.object({
@@ -180,10 +206,16 @@ export async function DELETE(request: NextRequest) {
 
     const duration = Date.now() - startTime
     logger.apiResponse('DELETE', '/api/files/notifications', 200, duration)
-    return addSecurityHeaders(NextResponse.json({ success: true }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('DELETE', '/api/files/notifications', 500, duration)
-    return handleApiError(error, 'File Notifications API DELETE')
-  }
+  return addSecurityHeaders(NextResponse.json({ success: true }))
 }
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/files/notifications')
+
+
+
+
+
+
+
+
+

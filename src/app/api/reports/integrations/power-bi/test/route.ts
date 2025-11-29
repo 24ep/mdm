@@ -1,20 +1,20 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { checkAndRefreshToken } from '@/lib/utils/token-refresh'
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+async function postHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    const body = await request.json()
-    const { config_id } = body
+  const body = await request.json()
+  const { config_id } = body
 
-    if (!config_id) {
-      return NextResponse.json({ error: 'config_id is required' }, { status: 400 })
-    }
+  if (!config_id) {
+    return NextResponse.json({ error: 'config_id is required' }, { status: 400 })
+  }
 
     // Fetch config
     const configResult = await query(
@@ -31,14 +31,12 @@ export async function POST(request: NextRequest) {
 
     // Check and refresh token if needed
     if (config.access_type === 'API' && configData.refresh_token) {
-      try {
+      
         const refreshedConfig = await checkAndRefreshToken(config.id, 'power-bi')
         if (refreshedConfig) {
           configData = refreshedConfig
         }
-      } catch (error) {
-        console.error('Token refresh failed:', error)
-      }
+      
     }
 
     // TODO: Implement actual Power BI API connection test
@@ -54,10 +52,17 @@ export async function POST(request: NextRequest) {
       success = !!configData.public_link
     }
 
-    return NextResponse.json({ success, message: success ? 'Connection successful' : 'Connection failed - check configuration' })
-  } catch (error) {
-    console.error('Error testing Power BI connection:', error)
-    return NextResponse.json({ error: 'Internal server error', success: false }, { status: 500 })
-  }
+  return NextResponse.json({ success, message: success ? 'Connection successful' : 'Connection failed - check configuration' })
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/reports/integrations/power-bi/test')
+
+
+
+
+
+
+
+
+
 

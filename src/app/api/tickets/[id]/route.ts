@@ -1,23 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -25,7 +21,7 @@ export async function GET(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -101,62 +97,37 @@ export async function GET(
 
     if (!ticket) {
       logger.warn('Ticket not found', { ticketId: id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Ticket not found' }, { status: 404 }))
+      return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
     }
 
     // Check if user has access to any of the ticket's spaces
     if (!ticket.spaces || ticket.spaces.length === 0) {
       logger.warn('Ticket has no associated spaces', { ticketId: id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Ticket has no associated spaces' }, { status: 404 }))
+      return NextResponse.json({ error: 'Ticket has no associated spaces' }, { status: 404 })
     }
 
-    let hasAccess = false
-    for (const ticketSpace of ticket.spaces) {
-      const spaceAccess = await db.spaceMember.findFirst({
-        where: {
-          spaceId: ticketSpace.spaceId,
-          userId: session.user.id
-        }
-      })
-
-      const isSpaceOwner = await db.space.findFirst({
-        where: {
-          id: ticketSpace.spaceId,
-          createdBy: session.user.id
-        }
-      })
-
-      if (spaceAccess || isSpaceOwner) {
-        hasAccess = true
-        break
-      }
-    }
-
-    if (!hasAccess) {
-      logger.warn('Access denied to ticket', { ticketId: id, userId: session.user.id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Access denied' }, { status: 403 }))
+    // Check access to first space (tickets typically have one primary space)
+    const spaceId = ticket.spaces[0]?.spaceId
+    if (spaceId) {
+      const accessResult = await requireSpaceAccess(spaceId, session.user.id!)
+      if (!accessResult.success) return accessResult.response
     }
 
     const duration = Date.now() - startTime
     logger.apiResponse('GET', `/api/tickets/${id}`, 200, duration)
-    return addSecurityHeaders(NextResponse.json(ticket))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Tickets API GET')
-  }
+    return NextResponse.json(ticket)
 }
 
-export async function PUT(
+export const GET = withErrorHandling(getHandler, 'GET /api/tickets/[id]')
+
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -164,7 +135,7 @@ export async function PUT(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -189,7 +160,7 @@ export async function PUT(
     
     const bodyValidation = await validateBody(request, bodySchema)
     if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
+      return bodyValidation.response
     }
     
     const {
@@ -217,27 +188,14 @@ export async function PUT(
 
     if (!existingTicket || existingTicket.deletedAt) {
       logger.warn('Ticket not found for update', { ticketId: id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Ticket not found' }, { status: 404 }))
+      return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
     }
 
     // Check if user has access to this space
-    const spaceAccess = await db.spaceMember.findFirst({
-      where: {
-        spaceId: existingTicket.spaces?.[0]?.spaceId,
-        userId: session.user.id
-      }
-    })
-
-    const isSpaceOwner = await db.space.findFirst({
-      where: {
-        id: existingTicket.spaces?.[0]?.spaceId,
-        createdBy: session.user.id
-      }
-    })
-
-    if (!spaceAccess && !isSpaceOwner) {
-      logger.warn('Access denied to update ticket', { ticketId: id, userId: session.user.id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Access denied' }, { status: 403 }))
+    const spaceId = existingTicket.spaces?.[0]?.spaceId
+    if (spaceId) {
+      const accessResult = await requireSpaceAccess(spaceId, session.user.id!)
+      if (!accessResult.success) return accessResult.response
     }
 
     // Prepare update data
@@ -401,29 +359,24 @@ export async function PUT(
 
       const duration = Date.now() - startTime
       logger.apiResponse('PUT', `/api/tickets/${id}`, 200, duration)
-      return addSecurityHeaders(NextResponse.json(ticketWithAttributes))
+      return NextResponse.json(ticketWithAttributes)
     }
 
     const duration = Date.now() - startTime
     logger.apiResponse('PUT', `/api/tickets/${id}`, 200, duration)
-    return addSecurityHeaders(NextResponse.json(ticket))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('PUT', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Tickets API PUT')
-  }
+    return NextResponse.json(ticket)
 }
 
-export async function DELETE(
+export const PUT = withErrorHandling(putHandler, 'PUT /api/tickets/[id]')
+
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -431,7 +384,7 @@ export async function DELETE(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -444,27 +397,14 @@ export async function DELETE(
 
     if (!existingTicket || existingTicket.deletedAt) {
       logger.warn('Ticket not found for deletion', { ticketId: id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Ticket not found' }, { status: 404 }))
+      return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
     }
 
     // Check if user has access to this space
-    const spaceAccess = await db.spaceMember.findFirst({
-      where: {
-        spaceId: existingTicket.spaces?.[0]?.spaceId,
-        userId: session.user.id
-      }
-    })
-
-    const isSpaceOwner = await db.space.findFirst({
-      where: {
-        id: existingTicket.spaces?.[0]?.spaceId,
-        createdBy: session.user.id
-      }
-    })
-
-    if (!spaceAccess && !isSpaceOwner) {
-      logger.warn('Access denied to delete ticket', { ticketId: id, userId: session.user.id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Access denied' }, { status: 403 }))
+    const spaceId = existingTicket.spaces?.[0]?.spaceId
+    if (spaceId) {
+      const accessResult = await requireSpaceAccess(spaceId, session.user.id!)
+      if (!accessResult.success) return accessResult.response
     }
 
     // Soft delete
@@ -475,11 +415,8 @@ export async function DELETE(
 
     const duration = Date.now() - startTime
     logger.apiResponse('DELETE', `/api/tickets/${id}`, 200, duration)
-    return addSecurityHeaders(NextResponse.json({ success: true }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('DELETE', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Tickets API DELETE')
-  }
+    return NextResponse.json({ success: true })
 }
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/tickets/[id]')
 

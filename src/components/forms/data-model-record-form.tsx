@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { useFormState } from '@/hooks/common/useFormState'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,7 +13,7 @@ import { UserSelectField } from './user-select-field'
 import { UserMultiSelectField } from './user-multi-select-field'
 import { Badge } from '@/components/ui/badge'
 import { Save, X } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { showError, showSuccess } from '@/lib/toast-utils'
 
 interface DataModelRecordFormProps {
   spaceId: string
@@ -45,75 +46,65 @@ export function DataModelRecordForm({
   onCancel,
   readOnly = false
 }: DataModelRecordFormProps) {
-  const [formData, setFormData] = useState<Record<string, any>>({})
   const [loading, setLoading] = useState(false)
-  const [errors, setErrors] = useState<Record<string, string>>({})
 
   // Initialize form data
-  useEffect(() => {
+  const initialValues = useMemo(() => {
     if (record) {
-      setFormData(record)
-    } else {
-      // Initialize with empty values
-      const initialData: Record<string, any> = {}
-      dataModel.attributes.forEach(attr => {
-        if (attr.type === 'attachment') {
-          initialData[attr.code] = []
-        } else {
-          initialData[attr.code] = ''
-        }
-      })
-      setFormData(initialData)
+      return record
     }
-  }, [record, dataModel])
-
-  const handleInputChange = (attributeCode: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [attributeCode]: value
-    }))
-    
-    // Clear error for this field
-    if (errors[attributeCode]) {
-      setErrors(prev => ({
-        ...prev,
-        [attributeCode]: ''
-      }))
-    }
-  }
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {}
-    
+    // Initialize with empty values
+    const initialData: Record<string, any> = {}
     dataModel.attributes.forEach(attr => {
-      if (attr.required) {
-        const value = formData[attr.code]
-        if (!value || (Array.isArray(value) && value.length === 0)) {
-          newErrors[attr.code] = `${attr.label} is required`
-        }
+      if (attr.type === 'attachment') {
+        initialData[attr.code] = []
+      } else {
+        initialData[attr.code] = ''
       }
     })
-    
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    return initialData
+  }, [record, dataModel])
+
+  const {
+    values: formData,
+    errors,
+    setValue,
+    handleSubmit: handleFormSubmit,
+  } = useFormState({
+    initialValues,
+    validate: (values) => {
+      const validationErrors: Record<string, string | null> = {}
+      dataModel.attributes.forEach(attr => {
+        if (attr.required) {
+          const value = values[attr.code]
+          if (!value || (Array.isArray(value) && value.length === 0)) {
+            validationErrors[attr.code] = `${attr.label} is required`
+          }
+        }
+      })
+      return validationErrors
+    },
+    onSubmit: async (values) => {
+      try {
+        setLoading(true)
+        await onSave(values)
+        showSuccess('Record saved successfully')
+      } catch (error) {
+        showError('Failed to save record')
+        console.error('Error saving record:', error)
+        throw error // Re-throw to let useFormState handle it
+      } finally {
+        setLoading(false)
+      }
+    },
+  })
+
+  const handleInputChange = (attributeCode: string, value: any) => {
+    setValue(attributeCode, value)
   }
 
   const handleSave = async () => {
-    if (!validateForm()) {
-      toast.error('Please fix validation errors')
-      return
-    }
-
-    try {
-      setLoading(true)
-      await onSave(formData)
-      toast.success('Record saved successfully')
-    } catch (error) {
-      toast.error('Failed to save record')
-      console.error('Error saving record:', error)
-    } finally {
-      setLoading(false)
-    }
+    await handleFormSubmit()
   }
 
   const renderAttributeField = (attribute: any) => {

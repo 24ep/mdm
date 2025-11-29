@@ -1,6 +1,6 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { PrismaClient } from '@prisma/client'
 import { getSecretsManager } from '@/lib/secrets-manager'
 import { encryptApiKey, decryptApiKey } from '@/lib/encryption'
@@ -9,17 +9,14 @@ import { createAuditContext } from '@/lib/audit-context-helper'
 
 const prisma = new PrismaClient()
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler(request: NextRequest) {
+    const authResult = await requireAdmin()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
     // Check if user is admin
     if (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Forbidden' }}
 
     const instances = await prisma.kongInstance.findMany({
       orderBy: { createdAt: 'desc' },
@@ -35,7 +32,7 @@ export async function GET(request: NextRequest) {
 
         if (instance.adminApiKey) {
           if (useVault) {
-            try {
+            
               const auditContext = createAuditContext(request, session.user, 'Kong instance API key retrieval')
               const secret = await secretsManager.getSecret(
                 `kong-instances/${instance.id}/admin-api-key`,
@@ -78,26 +75,30 @@ export async function GET(request: NextRequest) {
     )
 
     return NextResponse.json({ instances: instancesWithDecryptedKeys })
-  } catch (error) {
-    console.error('Error fetching Kong instances:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch Kong instances' },
+  ,
       { status: 500 }
     )
   }
 }
 
-export async function POST(request: NextRequest) {
+
+
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/admin/kong-instances')
+async function postHandler(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\kong-instances\route.ts')
 
     // Check if user is admin
     if (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Forbidden' }}
 
     const body = await request.json()
     const { name, adminUrl, adminApiKey, description, metadata, isActive } = body
@@ -190,8 +191,7 @@ export async function POST(request: NextRequest) {
       // Don't fail creation if test fails
     }
 
-    return NextResponse.json({ instance }, { status: 201 })
-  } catch (error: any) {
+    return NextResponse.json({ instance }} catch (error: any) {
     console.error('Error creating Kong instance:', error)
     return NextResponse.json(
       { error: error.message || 'Failed to create Kong instance' },

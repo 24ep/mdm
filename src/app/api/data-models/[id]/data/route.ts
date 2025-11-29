@@ -1,34 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { db, query } from '@/lib/db'
 import { Prisma } from '@prisma/client'
-import { parseJsonBody, handleApiError } from '@/lib/api-middleware'
+import { parseJsonBody } from '@/lib/api-middleware'
 import { logger } from '@/lib/logger'
 import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
 import { z } from 'zod'
-import { addSecurityHeaders } from '@/lib/security-headers'
 
-export async function POST(
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const resolvedParams = await params
+  const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
       id: commonSchemas.id,
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id: dataModelId } = paramValidation.data
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     
     logger.apiRequest('POST', `/api/data-models/${dataModelId}/data`, { userId: session.user.id })
     
@@ -42,7 +39,7 @@ export async function POST(
     
     const bodyValidation = await validateBody(request, bodySchema)
     if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
+      return bodyValidation.response
     }
     
     const { customQuery, filters, limit, offset } = bodyValidation.data
@@ -70,10 +67,16 @@ export async function POST(
 
     if (!dataModel) {
       logger.warn('Data model not found', { dataModelId })
-      return addSecurityHeaders(NextResponse.json({ 
+      return NextResponse.json({ 
         error: 'Data model not found',
         details: `No data model found with ID: ${dataModelId}`
-      }, { status: 404 }))
+      }, { status: 404 })
+    }
+
+    // Check if user has access to the space
+    if (dataModel.spaceId) {
+      const accessResult = await requireSpaceAccess(dataModel.spaceId, session.user.id!)
+      if (!accessResult.success) return accessResult.response
     }
     
     logger.info('Data model found', { 
@@ -108,7 +111,7 @@ export async function POST(
         recordCount: transformedData.length,
         customQuery: true,
       })
-      return addSecurityHeaders(NextResponse.json({
+      return NextResponse.json({
         success: true,
         data: transformedData,
         metadata: {
@@ -122,7 +125,7 @@ export async function POST(
           customQuery,
           fetchedAt: new Date().toISOString()
         }
-      }))
+      })
     }
 
     // Check if we have filters - if so, use raw SQL for JSONB filtering
@@ -312,7 +315,7 @@ export async function POST(
         recordCount: transformedData.length,
         total,
       })
-      return addSecurityHeaders(NextResponse.json({
+      return NextResponse.json({
         success: true,
         data: transformedData,
         metadata: {
@@ -325,7 +328,7 @@ export async function POST(
           filters: filters || [],
           fetchedAt: new Date().toISOString()
         }
-      }))
+      })
     }
 
     // Use Prisma ORM for standard queries without filters
@@ -400,10 +403,7 @@ export async function POST(
       recordCount: transformedData.length,
       total,
     })
-    return addSecurityHeaders(NextResponse.json(response))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('POST', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'DataModelDataAPI')
-  }
+    return NextResponse.json(response)
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/data-models/[id]/data')

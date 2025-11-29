@@ -1,17 +1,20 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 
-export async function POST(
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const POST = withErrorHandling(postHandler, '
 
     const { token } = await params
 
@@ -22,15 +25,13 @@ export async function POST(
     `, [token])
 
     if (invitation.rows.length === 0) {
-      return NextResponse.json({ error: 'Invalid or expired invitation' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Invalid or expired invitation' }}
 
     const invite = invitation.rows[0]
 
     // Check if the email matches the current user
     if (invite.email !== session.user.email) {
-      return NextResponse.json({ error: 'This invitation is not for your email address' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'This invitation is not for your email address' }}
 
     // Check if user is already a member of the space
     const existingMember = await query(`
@@ -38,8 +39,7 @@ export async function POST(
     `, [invite.space_id, session.user.id])
 
     if (existingMember.rows.length > 0) {
-      return NextResponse.json({ error: 'You are already a member of this space' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'You are already a member of this space' }}
 
     // Add user to space
     await query(`

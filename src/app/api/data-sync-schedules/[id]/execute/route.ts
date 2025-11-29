@@ -1,15 +1,16 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { DataSyncExecutor } from '@/lib/data-sync-executor'
 
-export async function POST(
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id } = await params
@@ -21,8 +22,9 @@ export async function POST(
     )
 
     if (existing.length === 0) {
-      return NextResponse.json({ error: 'Sync schedule not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Sync schedule not found' }}
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\data-sync-schedules\[id]\execute\route.ts')
 
     // Check access
     const { rows: access } = await query(
@@ -42,8 +44,7 @@ export async function POST(
       return NextResponse.json({ 
         error: 'Sync is already running',
         status: 'RUNNING'
-      }, { status: 409 })
-    }
+      }}
 
     // Execute sync
     const executor = new DataSyncExecutor()
@@ -62,11 +63,4 @@ export async function POST(
       },
       error: result.error
     })
-  } catch (error: any) {
-    console.error('POST /data-sync-schedules/[id]/execute error', error)
-    return NextResponse.json({ 
-      error: error.message || 'Internal server error' 
-    }, { status: 500 })
-  }
-}
 

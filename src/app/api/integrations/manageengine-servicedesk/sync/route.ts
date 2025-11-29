@@ -1,6 +1,6 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { getServiceDeskService } from '@/lib/manageengine-servicedesk-helper'
 import { checkServiceDeskRateLimit, getServiceDeskRateLimitConfig } from '@/lib/servicedesk-rate-limiter'
@@ -8,20 +8,22 @@ import { createAuditLog } from '@/lib/audit'
 import { db } from '@/lib/db'
 
 // Sync ticket from ServiceDesk (pull updates)
-export async function POST(request: NextRequest) {
+async function postHandler(request: NextRequest) {
   const startTime = Date.now()
   let auditLogId: string | null = null
   let space_id: string | undefined = undefined
   let session: any = null
   
-  try {
-    session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+
+
 
     const body = await request.json()
-    const parsed = body
+    const parsed 
     space_id = parsed.space_id
     const { ticket_id, request_id } = parsed
 
@@ -39,7 +41,6 @@ export async function POST(request: NextRequest) {
     )
     if (access.length === 0) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
 
     // Rate limiting check
     const rateLimitConfig = await getServiceDeskRateLimitConfig(space_id)
@@ -89,8 +90,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!ticket) {
-      return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Ticket not found' }}
 
     // Get ServiceDesk configuration
     const { rows: configRows } = await query(
@@ -265,27 +265,7 @@ export async function POST(request: NextRequest) {
         'X-RateLimit-Reset': String(rateLimitResult.resetTime)
       }
     })
-  } catch (error) {
-    console.error('POST /integrations/manageengine-servicedesk/sync error', error)
-    
-    // Update audit log on error
-    if (auditLogId) {
-      await createAuditLog({
-        action: 'SERVICEDESK_TICKET_SYNC_FAILED',
-        entityType: 'ServiceDeskIntegration',
-        entityId: space_id || 'unknown',
-        userId: session?.user?.id || 'unknown',
-        newValue: {
-          error: error instanceof Error ? error.message : 'Unknown error',
-          duration: Date.now() - (startTime || Date.now()),
-          status: 'failed'
-        },
-        ipAddress: request?.headers?.get('x-forwarded-for') || request?.headers?.get('x-real-ip') || undefined,
-        userAgent: request?.headers?.get('user-agent') || undefined
-      }).catch(() => {})
-    }
 
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
 
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/integrations/manageengine-servicedesk')

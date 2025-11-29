@@ -1,23 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { query } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -25,22 +21,15 @@ export async function GET(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id: spaceId } = paramValidation.data
     logger.apiRequest('GET', `/api/spaces/${spaceId}/members`, { userId: session.user.id })
 
     // Check if user has access to this space
-    const memberCheck = await query(`
-      SELECT role FROM space_members 
-      WHERE space_id = $1::uuid AND user_id = $2::uuid
-    `, [spaceId, session.user.id])
-
-    if (memberCheck.rows.length === 0) {
-      logger.warn('Access denied to space members', { spaceId, userId: session.user.id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Access denied' }, { status: 403 }))
-    }
+    const accessResult = await requireSpaceAccess(spaceId, session.user.id!)
+    if (!accessResult.success) return accessResult.response
 
     // Get space members
     const members = await query(`
@@ -60,26 +49,21 @@ export async function GET(
     logger.apiResponse('GET', `/api/spaces/${spaceId}/members`, 200, duration, {
       memberCount: members.rows.length
     })
-    return addSecurityHeaders(NextResponse.json({
+    return NextResponse.json({
       members: members.rows
-    }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Space Members API GET')
-  }
+    })
 }
 
-export async function POST(
+export const GET = withErrorHandling(getHandler, 'GET /api/spaces/[id]/members')
+
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -87,7 +71,7 @@ export async function POST(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id: spaceId } = paramValidation.data
@@ -100,12 +84,16 @@ export async function POST(
 
     const bodyValidation = await validateBody(request, bodySchema)
     if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
+      return bodyValidation.response
     }
 
     const { user_id, role } = bodyValidation.data
 
-    // Check if current user has permission to add members
+    // Check if current user has permission to add members (must be owner or admin)
+    const accessResult = await requireSpaceAccess(spaceId, session.user.id!)
+    if (!accessResult.success) return accessResult.response
+
+    // Additional check: verify user is owner or admin
     const memberCheck = await query(`
       SELECT role FROM space_members 
       WHERE space_id = $1::uuid AND user_id = $2::uuid
@@ -113,7 +101,7 @@ export async function POST(
 
     if (memberCheck.rows.length === 0 || !['owner', 'admin'].includes(memberCheck.rows[0].role)) {
       logger.warn('Insufficient permissions to add space member', { spaceId, userId: session.user.id })
-      return addSecurityHeaders(NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 }))
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
     // Check if user exists
@@ -123,7 +111,7 @@ export async function POST(
 
     if (userCheck.rows.length === 0) {
       logger.warn('User not found for space membership', { spaceId, targetUserId: user_id })
-      return addSecurityHeaders(NextResponse.json({ error: 'User not found' }, { status: 404 }))
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     // Add user to space
@@ -140,14 +128,11 @@ export async function POST(
       memberUserId: user_id,
       role,
     })
-    return addSecurityHeaders(NextResponse.json({
+    return NextResponse.json({
       member: result.rows[0],
       user: userCheck.rows[0],
       message: 'Member added successfully'
-    }, { status: 201 }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('POST', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Space Members API POST')
-  }
+    }, { status: 201 })
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/spaces/[id]/members')

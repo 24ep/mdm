@@ -1,17 +1,13 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-
 const prisma = new PrismaClient()
 
-export async function GET() {
-  try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler() {
+    const authResult = await requireAuth()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
     const models = await prisma.aIModel.findMany({
       where: {
@@ -38,19 +34,22 @@ export async function GET() {
     }))
 
     return NextResponse.json({ models: formattedModels })
-  } catch (error) {
-    console.error('Error fetching AI models:', error)
-    return NextResponse.json({ error: 'Failed to fetch AI models' }, { status: 500 })
+  , { status: 500 })
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+
+
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/admin/ai-models')
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\ai-models\route.ts')
+async function postHandler(request: NextRequest) {
+    const authResult = await requireAuth()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\ai-models\route.ts')
 
     const body = await request.json()
     const { name, provider, type, description, maxTokens, costPerToken, capabilities } = body
@@ -83,8 +82,8 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ model: formattedModel })
-  } catch (error) {
-    console.error('Error creating AI model:', error)
-    return NextResponse.json({ error: 'Failed to create AI model' }, { status: 500 })
+  , { status: 500 })
   }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/admin/ai-models')

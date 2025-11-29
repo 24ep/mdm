@@ -1,19 +1,18 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 
 /**
  * GET /api/admin/secrets/access-logs
  * Get secret access audit logs
  */
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
+async function getHandler(request: NextRequest) {
+    const authResult = await requireAdmin()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\secrets\access-logs\route.ts')
 
     // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
@@ -114,12 +113,11 @@ export async function GET(request: NextRequest) {
         totalPages: Math.ceil(total / limit),
       },
     })
-  } catch (error: any) {
-    console.error('Error fetching secret access logs:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch secret access logs', details: error.message },
+  ,
       { status: 500 }
     )
   }
 }
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/admin/secrets/access-logs')
 

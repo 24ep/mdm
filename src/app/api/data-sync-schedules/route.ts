@@ -1,81 +1,91 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+async function getHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    const { searchParams } = new URL(request.url)
-    const spaceId = searchParams.get('space_id')
-    const dataModelId = searchParams.get('data_model_id')
+  const { searchParams } = new URL(request.url)
+  const spaceId = searchParams.get('space_id')
+  const dataModelId = searchParams.get('data_model_id')
 
-    if (!spaceId) return NextResponse.json({ error: 'space_id is required' }, { status: 400 })
+  if (!spaceId) return NextResponse.json({ error: 'space_id is required' }, { status: 400 })
 
-    // Check access
-    const { rows: access } = await query(
-      'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',
-      [spaceId, session.user.id]
-    )
-    if (access.length === 0) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  // Check access
+  const { rows: access } = await query(
+    'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',
+    [spaceId, session.user.id]
+  )
+  if (access.length === 0) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    let sqlQuery = `
-      SELECT 
-        ds.*,
-        ec.name as connection_name,
-        ec.connection_type,
-        dm.display_name as data_model_name
-      FROM public.data_sync_schedules ds
-      LEFT JOIN public.external_connections ec ON ec.id = ds.external_connection_id
-      LEFT JOIN public.data_models dm ON dm.id = ds.data_model_id
-      WHERE ds.space_id = $1::uuid AND ds.deleted_at IS NULL
-    `
-    const params: any[] = [spaceId]
+  let sqlQuery = `
+    SELECT 
+      ds.*,
+      ec.name as connection_name,
+      ec.connection_type,
+      dm.display_name as data_model_name
+    FROM public.data_sync_schedules ds
+    LEFT JOIN public.external_connections ec ON ec.id = ds.external_connection_id
+    LEFT JOIN public.data_models dm ON dm.id = ds.data_model_id
+    WHERE ds.space_id = $1::uuid AND ds.deleted_at IS NULL
+  `
+  const params: any[] = [spaceId]
 
-    if (dataModelId) {
-      sqlQuery += ' AND ds.data_model_id = $2'
-      params.push(dataModelId)
-    }
-
-    sqlQuery += ' ORDER BY ds.created_at DESC'
-
-    const { rows } = await query(sqlQuery, params)
-    return NextResponse.json({ schedules: rows })
-  } catch (error) {
-    console.error('GET /data-sync-schedules error', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  if (dataModelId) {
+    sqlQuery += ' AND ds.data_model_id = $2'
+    params.push(dataModelId)
   }
+
+  sqlQuery += ' ORDER BY ds.created_at DESC'
+
+  const { rows } = await query(sqlQuery, params)
+  return NextResponse.json({ schedules: rows })
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const body = await request.json()
-    const {
-      space_id,
-      data_model_id,
-      external_connection_id,
-      name,
-      description,
-      schedule_type = 'MANUAL',
-      schedule_config,
-      sync_strategy = 'FULL_REFRESH',
-      incremental_key,
-      incremental_timestamp_column,
-      clear_existing_data = true,
-      source_query,
-      data_mapping,
-      max_records_per_sync,
-      rate_limit_per_minute,
-      is_active = true,
-      notify_on_success = false,
-      notify_on_failure = true,
-      notification_emails = []
-    } = body
+
+
+
+
+
+
+
+
+
+
+
+export const GET = withErrorHandling(getHandler, 'GET /api/data-sync-schedules')
+
+async function postHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
+
+  const body = await request.json()
+  const {
+    space_id,
+    data_model_id,
+    external_connection_id,
+    name,
+    description,
+    schedule_type = 'MANUAL',
+    schedule_config,
+    sync_strategy = 'FULL_REFRESH',
+    incremental_key,
+    incremental_timestamp_column,
+    clear_existing_data = true,
+    source_query,
+    data_mapping,
+    max_records_per_sync,
+    rate_limit_per_minute,
+    is_active = true,
+    notify_on_success = false,
+    notify_on_failure = true,
+    notification_emails = []
+  } = body
 
     if (!space_id || !data_model_id || !external_connection_id || !name) {
       return NextResponse.json({ 
@@ -115,12 +125,19 @@ export async function POST(request: NextRequest) {
       ]
     )
 
-    return NextResponse.json({ schedule: rows[0] }, { status: 201 })
-  } catch (error) {
-    console.error('POST /data-sync-schedules error', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+  return NextResponse.json({ schedule: rows[0] }, { status: 201 })
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/data-sync-schedules')
+
+
+
+
+
+
+
+
+
 
 function calculateNextRunTime(scheduleType: string, scheduleConfig: any): Date | null {
   if (scheduleType === 'MANUAL') return null

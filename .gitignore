@@ -105,6 +105,12 @@ temp_*
 *.tmp
 *.temp
 
+# TypeScript build cache
+*.tsbuildinfo
+
+# Build output logs
+build-output.txt
+
 # Uploads directory (if it contains user uploads)
 uploads/
 

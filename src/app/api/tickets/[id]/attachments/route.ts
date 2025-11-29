@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { db } from '@/lib/db'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
@@ -8,20 +8,16 @@ import { v4 as uuidv4 } from 'uuid'
 import { createSuccessResponse, createErrorResponse } from '@/lib/api-response'
 import { logger } from '@/lib/logger'
 import { validateParams, validateQuery, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json(createErrorResponse('Unauthorized', 'UNAUTHORIZED'), { status: 401 }))
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -29,7 +25,7 @@ export async function GET(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -48,24 +44,19 @@ export async function GET(
     logger.apiResponse('GET', `/api/tickets/${id}/attachments`, 200, duration, {
       attachmentCount: attachments.length
     })
-    return addSecurityHeaders(NextResponse.json(createSuccessResponse({ attachments })))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Ticket Attachments API GET')
-  }
+    return NextResponse.json(createSuccessResponse({ attachments }))
 }
 
-export async function POST(
+export const GET = withErrorHandling(getHandler, 'GET /api/tickets/[id]/attachments')
+
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json(createErrorResponse('Unauthorized', 'UNAUTHORIZED'), { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -73,7 +64,7 @@ export async function POST(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -83,7 +74,7 @@ export async function POST(
     const file = formData.get('file') as File
 
     if (!file) {
-      return addSecurityHeaders(NextResponse.json(createErrorResponse('File is required', 'VALIDATION_ERROR'), { status: 400 }))
+      return NextResponse.json(createErrorResponse('File is required', 'VALIDATION_ERROR'), { status: 400 })
     }
 
     // Check if ticket exists
@@ -94,7 +85,14 @@ export async function POST(
 
     if (!ticket || ticket.deletedAt) {
       logger.warn('Ticket not found for attachment upload', { ticketId: id })
-      return addSecurityHeaders(NextResponse.json(createErrorResponse('Ticket not found', 'NOT_FOUND'), { status: 404 }))
+      return NextResponse.json(createErrorResponse('Ticket not found', 'NOT_FOUND'), { status: 404 })
+    }
+
+    // Check access - user must have access to at least one space associated with the ticket
+    const spaceId = ticket.spaces?.[0]?.spaceId
+    if (spaceId) {
+      const accessResult = await requireSpaceAccess(spaceId, session.user.id!)
+      if (!accessResult.success) return accessResult.response
     }
 
     // Note: Tickets use local file system storage instead of AttachmentStorageService
@@ -133,24 +131,19 @@ export async function POST(
       fileName: file.name,
       fileSize: file.size,
     })
-    return addSecurityHeaders(NextResponse.json(createSuccessResponse({ attachment }), { status: 201 }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('POST', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Ticket Attachments API POST')
-  }
+    return NextResponse.json(createSuccessResponse({ attachment }), { status: 201 })
 }
 
-export async function DELETE(
+export const POST = withErrorHandling(postHandler, 'POST /api/tickets/[id]/attachments')
+
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json(createErrorResponse('Unauthorized', 'UNAUTHORIZED'), { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -158,7 +151,7 @@ export async function DELETE(
     }))
     
     if (!paramValidation.success) {
-      return addSecurityHeaders(paramValidation.response)
+      return paramValidation.response
     }
     
     const { id } = paramValidation.data
@@ -170,7 +163,7 @@ export async function DELETE(
 
     const queryValidation = validateQuery(request, querySchema)
     if (!queryValidation.success) {
-      return addSecurityHeaders(queryValidation.response)
+      return queryValidation.response
     }
 
     const { attachmentId } = queryValidation.data
@@ -181,7 +174,7 @@ export async function DELETE(
 
     if (!attachment || attachment.ticketId !== id) {
       logger.warn('Attachment not found', { ticketId: id, attachmentId })
-      return addSecurityHeaders(NextResponse.json(createErrorResponse('Attachment not found', 'NOT_FOUND'), { status: 404 }))
+      return NextResponse.json(createErrorResponse('Attachment not found', 'NOT_FOUND'), { status: 404 })
     }
 
     // Only allow deletion by uploader or ticket owner
@@ -191,7 +184,7 @@ export async function DELETE(
 
     if (attachment.uploadedBy !== session.user.id && ticket?.createdBy !== session.user.id) {
       logger.warn('Unauthorized attachment deletion attempt', { ticketId: id, attachmentId, userId: session.user.id })
-      return addSecurityHeaders(NextResponse.json(createErrorResponse('Unauthorized', 'FORBIDDEN'), { status: 403 }))
+      return NextResponse.json(createErrorResponse('Unauthorized', 'FORBIDDEN'), { status: 403 })
     }
 
     await db.ticketAttachment.delete({
@@ -200,11 +193,8 @@ export async function DELETE(
 
     const duration = Date.now() - startTime
     logger.apiResponse('DELETE', `/api/tickets/${id}/attachments`, 200, duration, { attachmentId })
-    return addSecurityHeaders(NextResponse.json(createSuccessResponse({ deleted: true })))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('DELETE', request.nextUrl.pathname, 500, duration)
-    return handleApiError(error, 'Ticket Attachments API DELETE')
-  }
+    return NextResponse.json(createSuccessResponse({ deleted: true }))
 }
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/tickets/[id]/attachments')
 

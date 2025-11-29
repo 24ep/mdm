@@ -1,21 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
 import { query } from '@/lib/db'
 import { createAuditLog } from '@/lib/audit'
 import { logger } from '@/lib/logger'
 import { validateBody } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     logger.apiRequest('GET', '/api/admin/branding', { userId: session.user.id })
 
@@ -32,21 +27,16 @@ export async function GET(request: NextRequest) {
 
     const duration = Date.now() - startTime
     logger.apiResponse('GET', '/api/admin/branding', 200, duration)
-    return addSecurityHeaders(NextResponse.json({ branding }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', '/api/admin/branding', 500, duration)
-    return handleApiError(error, 'Branding API GET')
-  }
+    return NextResponse.json({ branding })
 }
 
-export async function PUT(request: NextRequest) {
+export const GET = withErrorHandling(getHandler, 'GET /api/admin/branding')
+
+async function putHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAdmin()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const bodySchema = z.object({
       branding: z.object({
@@ -154,7 +144,7 @@ export async function PUT(request: NextRequest) {
 
     const bodyValidation = await validateBody(request, bodySchema)
     if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
+      return bodyValidation.response
     }
 
     const { branding } = bodyValidation.data
@@ -207,11 +197,8 @@ export async function PUT(request: NextRequest) {
 
     const duration = Date.now() - startTime
     logger.apiResponse('PUT', '/api/admin/branding', 200, duration)
-    return addSecurityHeaders(NextResponse.json({ branding: savedBranding }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('PUT', '/api/admin/branding', 500, duration)
-    return handleApiError(error, 'Branding API PUT')
-  }
+    return NextResponse.json({ branding: savedBranding })
 }
+
+export const PUT = withErrorHandling(putHandler, 'PUT /api/admin/branding')
 

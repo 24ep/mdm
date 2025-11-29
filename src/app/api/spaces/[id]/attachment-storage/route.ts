@@ -1,17 +1,17 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db, query } from '@/lib/db'
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     const { id: spaceId } = await params
 
@@ -24,13 +24,11 @@ export async function GET(
     })
 
     if (!spaceMember) {
-      return NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Space not found or access denied' }}
 
     // Check if user has admin/owner role
     if (!['ADMIN', 'OWNER'].includes(spaceMember.role)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Insufficient permissions' }}
 
     // Get attachment storage configuration
     const storageConfig = await db.spaceAttachmentStorage.findFirst({
@@ -77,21 +75,20 @@ export async function GET(
       storage: storageConfig || defaultConfig 
     })
 
-  } catch (error) {
-    console.error('Error in attachment storage GET:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
 
-export async function PUT(
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\spaces\[id]\attachment-storage\route.ts')
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\spaces\[id]\attachment-storage\route.ts')
 
     const { id: spaceId } = await params
     const body = await request.json()
@@ -105,20 +102,17 @@ export async function PUT(
     })
 
     if (!spaceMember) {
-      return NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Space not found or access denied' }}
 
     // Check if user has admin/owner role
     if (!['ADMIN', 'OWNER'].includes(spaceMember.role)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Insufficient permissions' }}
 
     // Validate required fields based on provider
     const { provider, config } = body
     
     if (!provider || !config) {
-      return NextResponse.json({ error: 'Provider and config are required' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'Provider and config are required' }}
 
     // Validate provider-specific required fields
     const requiredFields = {
@@ -130,8 +124,7 @@ export async function PUT(
 
     const providerConfig = config[provider]
     if (!providerConfig) {
-      return NextResponse.json({ error: `Invalid provider: ${provider}` }, { status: 400 })
-    }
+      return NextResponse.json({ error: `Invalid provider: ${provider}` }}
 
     const missingFields = requiredFields[provider as keyof typeof requiredFields]?.filter(
       field => !providerConfig[field]
@@ -140,8 +133,7 @@ export async function PUT(
     if (missingFields && missingFields.length > 0) {
       return NextResponse.json({ 
         error: `Missing required fields for ${provider}: ${missingFields.join(', ')}` 
-      }, { status: 400 })
-    }
+      }}
 
     // Upsert the configuration using raw SQL
     // Note: SpaceAttachmentStorage model doesn't have provider/config fields in schema
@@ -155,9 +147,3 @@ export async function PUT(
     )
 
     return NextResponse.json({ success: true })
-
-  } catch (error) {
-    console.error('Error in attachment storage PUT:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}

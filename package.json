@@ -25,7 +25,10 @@
     "remove-default-light": "tsx prisma/remove-default-light.ts",
     "migrate-drawer-style": "tsx prisma/migrate-drawer-style.ts",
     "migrate-icon-button": "tsx prisma/migrate-icon-button.ts",
-    "update-badge-theme": "node scripts/update-badge-theme-config.js"
+    "update-badge-theme": "node scripts/update-badge-theme-config.js",
+    "migrate-api-routes": "node scripts/migrate-api-routes.js",
+    "migrate-api-routes:dry": "node scripts/migrate-api-routes.js --dry-run",
+    "migrate-api-routes:test": "node scripts/migrate-api-routes.js --dry-run --limit 5"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.932.0",
@@ -96,6 +99,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@tanstack/react-query-devtools": "^5.0.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
@@ -115,6 +119,7 @@
     "eslint-config-next": "^16.0.1",
     "jest": "^30.2.0",
     "jest-environment-jsdom": "^30.2.0",
+    "playwright": "^1.57.0",
     "prettier": "^3.2.5",
     "tsx": "^4.7.0"
   },

@@ -32,6 +32,5 @@ export async function GET() {
     return NextResponse.json({ tables })
   } catch (error) {
     console.error('Error fetching database tables:', error)
-    return NextResponse.json({ error: 'Failed to fetch tables' }, { status: 500 })
-  }
+    return NextResponse.json({ error: 'Failed to fetch tables' }}
 }

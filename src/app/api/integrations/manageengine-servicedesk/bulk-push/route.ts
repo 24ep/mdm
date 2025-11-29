@@ -1,6 +1,6 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { getSecretsManager } from '@/lib/secrets-manager'
 import { decryptApiKey } from '@/lib/encryption'
@@ -11,12 +11,13 @@ import { checkServiceDeskRateLimit, getServiceDeskRateLimitConfig } from '@/lib/
 import { createAuditLog } from '@/lib/audit'
 
 // Bulk push multiple tickets to ServiceDesk
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function postHandler(request: NextRequest) {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
+
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\integrations\manageengine-servicedesk\bulk-push\route.ts')
 
     const body = await request.json()
     const { ticket_ids, space_id, syncComments, syncAttachments, syncTimeLogs } = body
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest) {
       
       await Promise.allSettled(
         batch.map(async (ticket_id: string) => {
-          try {
+          
             // Get ticket
             const ticket = await db.ticket.findUnique({
               where: { id: ticket_id },
@@ -265,9 +266,9 @@ export async function POST(request: NextRequest) {
       message: `Processed ${results.total} tickets`,
       results
     })
-  } catch (error) {
-    console.error('POST /integrations/manageengine-servicedesk/bulk-push error', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  , { status: 500 })
   }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/integrations/manageengine-servicedesk/bulk-push')
 

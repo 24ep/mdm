@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { db } from '@/lib/db'
 import { z } from 'zod'
 import { validateBody } from '@/lib/api-validation'
@@ -13,50 +13,40 @@ const convertSchema = z.object({
   status: z.string().optional(),
 })
 
-export async function POST(
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    const { id } = await params
-    const bodyValidation = await validateBody(request, convertSchema)
-    if (!bodyValidation.success) {
-      return bodyValidation.response
-    }
+  const { id } = await params
+  const bodyValidation = await validateBody(request, convertSchema)
+  if (!bodyValidation.success) {
+    return bodyValidation.response
+  }
 
-    const submission = await db.intakeSubmission.findUnique({
-      where: { id },
-      include: {
-        form: {
-          include: {
-            space: {
-              select: { id: true }
-            }
+  const submission = await db.intakeSubmission.findUnique({
+    where: { id },
+    include: {
+      form: {
+        include: {
+          space: {
+            select: { id: true }
           }
         }
       }
-    })
-
-    if (!submission) {
-      return NextResponse.json({ error: 'Submission not found' }, { status: 404 })
     }
+  })
 
-    // Check access
-    const spaceMember = await db.spaceMember.findFirst({
-      where: { spaceId: submission.form.spaceId, userId: session.user.id },
-    })
-    const isSpaceOwner = await db.space.findFirst({
-      where: { id: submission.form.spaceId, createdBy: session.user.id },
-    })
+  if (!submission) {
+    return NextResponse.json({ error: 'Submission not found' }, { status: 404 })
+  }
 
-    if (!spaceMember && !isSpaceOwner) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+  // Check access
+  const accessResult = await requireSpaceAccess(submission.form.spaceId, session.user.id!)
+  if (!accessResult.success) return accessResult.response
 
     // Extract title and description from submission data
     const submissionData = submission.data as any
@@ -99,17 +89,12 @@ export async function POST(
       }
     })
 
-    return NextResponse.json({
-      success: true,
-      ticket,
-      message: 'Submission converted to ticket successfully'
-    })
-  } catch (error: any) {
-    console.error('Error converting submission:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to convert submission' },
-      { status: 500 }
-    )
-  }
+  return NextResponse.json({
+    success: true,
+    ticket,
+    message: 'Submission converted to ticket successfully'
+  })
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/intake-submissions/[id]/convert')
 

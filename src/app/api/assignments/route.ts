@@ -1,21 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuth, requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { query } from '@/lib/db'
 import { triggerAssignmentNotification } from '@/lib/notification-triggers'
 import { logger } from '@/lib/logger'
 import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuth()
+  if (!authResult.success) return authResult.response
 
     // Validate query parameters
     const queryValidation = validateQuery(request, z.object({
@@ -26,7 +20,7 @@ export async function GET(request: NextRequest) {
     }))
     
     if (!queryValidation.success) {
-      return addSecurityHeaders(queryValidation.response)
+      return queryValidation.response
     }
     
     const { page, limit = 10, status = '', assignedTo } = queryValidation.data
@@ -47,21 +41,16 @@ export async function GET(request: NextRequest) {
     const total = totals[0]?.total || 0
     const duration = Date.now() - startTime
     logger.apiResponse('GET', '/api/assignments', 200, duration, { total })
-    return addSecurityHeaders(NextResponse.json({ assignments, pagination: { page, limit, total, pages: Math.ceil(total / limit) } }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', '/api/assignments', 500, duration)
-    return handleApiError(error, 'Assignments API GET')
-  }
+    return NextResponse.json({ assignments, pagination: { page, limit, total, pages: Math.ceil(total / limit) } })
 }
 
-export async function POST(request: NextRequest) {
+export const GET = withErrorHandling(getHandler, 'GET /api/assignments')
+
+async function postHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     // Validate request body
     const bodyValidation = await validateBody(request, z.object({
@@ -76,7 +65,7 @@ export async function POST(request: NextRequest) {
     }))
     
     if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
+      return bodyValidation.response
     }
     
     const {
@@ -126,10 +115,7 @@ export async function POST(request: NextRequest) {
 
     const duration = Date.now() - startTime
     logger.apiResponse('POST', '/api/assignments', 201, duration, { assignmentId: assignment.id })
-    return addSecurityHeaders(NextResponse.json(assignment, { status: 201 }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('POST', '/api/assignments', 500, duration)
-    return handleApiError(error, 'Assignments API POST')
-  }
+    return NextResponse.json(assignment, { status: 201 })
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/assignments')

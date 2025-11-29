@@ -1,6 +1,6 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { getSecretsManager } from '@/lib/secrets-manager'
 import { decryptApiKey } from '@/lib/encryption'
@@ -8,12 +8,11 @@ import { ManageEngineServiceDeskService } from '@/lib/manageengine-servicedesk'
 import { db } from '@/lib/db'
 
 // Check for conflicts between local and ServiceDesk tickets
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function postHandler(request: NextRequest) {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
 
     const body = await request.json()
     const { ticket_id, space_id, request_id } = body
@@ -194,12 +193,19 @@ export async function POST(request: NextRequest) {
 }
 
 // Resolve conflicts
-export async function PUT(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+
+
+
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/integrations/manageengine-servicedesk/conflict-resolution')
+export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\integrations\manageengine-servicedesk\conflict-resolution\route.ts')
+async function putHandler(request: NextRequest) {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    // TODO: Add requireSpaceAccess check if spaceId is available
+
+export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\integrations\manageengine-servicedesk\conflict-resolution\route.ts')
 
     const body = await request.json()
     const { ticket_id, space_id, request_id, resolution } = body
@@ -374,4 +380,6 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+export const PUT = withErrorHandling(putHandler, 'PUT PUT /api/integrations/manageengine-servicedesk/conflict-resolution')
 

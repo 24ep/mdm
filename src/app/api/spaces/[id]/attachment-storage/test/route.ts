@@ -1,6 +1,6 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { Client as MinioClient } from 'minio'
 import { S3Client, ListBucketsCommand } from '@aws-sdk/client-s3'
@@ -8,15 +8,15 @@ import { S3Client, ListBucketsCommand } from '@aws-sdk/client-s3'
 let SftpClient: any
 let FtpClient: any
 
-export async function POST(
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     const { id: spaceId } = await params
     const body = await request.json()
@@ -30,24 +30,20 @@ export async function POST(
     })
 
     if (!spaceMember) {
-      return NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Space not found or access denied' }}
 
     // Check if user has admin/owner role
     if (!['ADMIN', 'OWNER'].includes(spaceMember.role)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Insufficient permissions' }}
 
     const { provider, config } = body
     
     if (!provider || !config) {
-      return NextResponse.json({ error: 'Provider and config are required' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'Provider and config are required' }}
 
     const providerConfig = config[provider]
     if (!providerConfig) {
-      return NextResponse.json({ error: `Invalid provider: ${provider}` }, { status: 400 })
-    }
+      return NextResponse.json({ error: `Invalid provider: ${provider}` }}
 
     // Test connection based on provider
     let testResult
@@ -67,25 +63,13 @@ export async function POST(
           testResult = await testFTPConnection(providerConfig)
           break
         default:
-          return NextResponse.json({ error: `Unsupported provider: ${provider}` }, { status: 400 })
-      }
+          return NextResponse.json({ error: `Unsupported provider: ${provider}` }}
 
       return NextResponse.json(testResult)
 
-    } catch (error) {
-      console.error(`Error testing ${provider} connection:`, error)
-      return NextResponse.json({
-        success: false,
-        error: error instanceof Error ? error.message : 'Connection test failed'
-      })
-    }
 
-  } catch (error) {
-    console.error('Error in attachment storage test:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
 
+export const POST = withErrorHandling(postHandler, '
 async function testMinIOConnection(config: any) {
   try {
     const requiredFields = ['endpoint', 'access_key', 'secret_key', 'bucket']

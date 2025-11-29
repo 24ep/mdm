@@ -1,23 +1,19 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { encryptApiKey, decryptApiKey } from '@/lib/encryption'
 import { getSecretsManager } from '@/lib/secrets-manager'
 import { createAuditContext } from '@/lib/audit-context-helper'
 import { db as prisma } from '@/lib/db'
 
-export async function GET() {
-  try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function getHandler() {
+    const authResult = await requireAdmin()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
     // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Insufficient permissions' }}
 
     const providers = await prisma.aIProviderConfig.findMany({
       orderBy: {
@@ -46,24 +42,22 @@ export async function GET() {
     }))
 
     return NextResponse.json({ providers: formattedProviders })
-  } catch (error) {
-    console.error('Error fetching AI providers:', error)
-    return NextResponse.json({ error: 'Failed to fetch AI providers' }, { status: 500 })
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+
+
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/admin/ai-providers')
+async function postHandler(request: NextRequest) {
+    const authResult = await requireAdmin()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
     // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Insufficient permissions' }}
 
     const body = await request.json()
     const { 
@@ -140,24 +134,28 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ provider: formattedProvider })
-  } catch (error) {
-    console.error('Error creating AI provider:', error)
-    return NextResponse.json({ error: 'Failed to create AI provider' }, { status: 500 })
   }
 }
 
-export async function PUT(request: NextRequest) {
+
+
+
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/admin/ai-providers')
+async function putHandler(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\admin\ai-providers\route.ts')
 
     // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Insufficient permissions' }}
 
     const body = await request.json()
     const { 
@@ -176,8 +174,7 @@ export async function PUT(request: NextRequest) {
     })
 
     if (!existingProvider) {
-      return NextResponse.json({ error: 'Provider not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Provider not found' }}
 
     const secretsManager = getSecretsManager()
     const useVault = secretsManager.getBackend() === 'vault'
@@ -271,6 +268,5 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ provider: formattedProvider })
   } catch (error) {
     console.error('Error updating AI provider:', error)
-    return NextResponse.json({ error: 'Failed to update AI provider' }, { status: 500 })
-  }
+    return NextResponse.json({ error: 'Failed to update AI provider' }}
 }

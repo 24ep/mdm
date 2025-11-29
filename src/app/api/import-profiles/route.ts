@@ -1,31 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
-import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    // Validate query parameters
-    const queryValidation = validateQuery(request, z.object({
-      dataModel: z.string().optional(),
-      isPublic: z.string().transform((val) => val === 'true').optional(),
-      importType: z.string().optional(),
-    }))
-    
-    if (!queryValidation.success) {
-      return addSecurityHeaders(queryValidation.response)
-    }
+  // Validate query parameters
+  const queryValidation = validateQuery(request, z.object({
+    dataModel: z.string().optional(),
+    isPublic: z.string().transform((val) => val === 'true').optional(),
+    importType: z.string().optional(),
+  }))
+  
+  if (!queryValidation.success) {
+    return queryValidation.response
+  }
     
     const { dataModel, isPublic, importType } = queryValidation.data
     logger.apiRequest('GET', '/api/import-profiles', { userId: session.user.id, dataModel, importType })
@@ -55,47 +50,42 @@ export async function GET(request: NextRequest) {
 
     const duration = Date.now() - startTime
     logger.apiResponse('GET', '/api/import-profiles', 200, duration, { count: profiles.length })
-    return addSecurityHeaders(NextResponse.json({ profiles }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('GET', '/api/import-profiles', 500, duration)
-    return handleApiError(error, 'Import Profiles API GET')
-  }
+    return NextResponse.json({ profiles })
 }
 
-export async function POST(request: NextRequest) {
-  const startTime = Date.now()
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
-    }
+export const GET = withErrorHandling(getHandler, 'GET /api/import-profiles')
 
-    // Validate request body
-    const bodyValidation = await validateBody(request, z.object({
-      name: z.string().min(1, 'Name is required'),
-      description: z.string().optional(),
-      dataModel: z.string().min(1, 'Data model is required'),
-      fileTypes: z.array(z.string()).min(1, 'At least one file type is required'),
-      headerRow: z.number().int().positive().optional().default(1),
-      dataStartRow: z.number().int().positive().optional().default(2),
-      chunkSize: z.number().int().positive().optional().default(1000),
-      maxItems: z.number().int().positive().optional().nullable(),
-      importType: z.enum(['insert', 'upsert', 'delete']),
-      primaryKeyAttribute: z.string().optional().nullable(),
-      dateFormat: z.string().optional().default('YYYY-MM-DD'),
-      timeFormat: z.string().optional().default('HH:mm:ss'),
-      booleanFormat: z.string().optional().default('true/false'),
-      attributeMapping: z.record(z.string(), z.any()).optional().default({}),
-      attributeOptions: z.record(z.string(), z.any()).optional().default({}),
-      isPublic: z.boolean().optional().default(false),
-      sharing: z.any().optional(),
-      spaceId: commonSchemas.id.optional().nullable(),
-    }))
-    
-    if (!bodyValidation.success) {
-      return addSecurityHeaders(bodyValidation.response)
-    }
+async function postHandler(request: NextRequest) {
+  const startTime = Date.now()
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
+
+  // Validate request body
+  const bodyValidation = await validateBody(request, z.object({
+    name: z.string().min(1, 'Name is required'),
+    description: z.string().optional(),
+    dataModel: z.string().min(1, 'Data model is required'),
+    fileTypes: z.array(z.string()).min(1, 'At least one file type is required'),
+    headerRow: z.number().int().positive().optional().default(1),
+    dataStartRow: z.number().int().positive().optional().default(2),
+    chunkSize: z.number().int().positive().optional().default(1000),
+    maxItems: z.number().int().positive().optional().nullable(),
+    importType: z.enum(['insert', 'upsert', 'delete']),
+    primaryKeyAttribute: z.string().optional().nullable(),
+    dateFormat: z.string().optional().default('YYYY-MM-DD'),
+    timeFormat: z.string().optional().default('HH:mm:ss'),
+    booleanFormat: z.string().optional().default('true/false'),
+    attributeMapping: z.record(z.string(), z.any()).optional().default({}),
+    attributeOptions: z.record(z.string(), z.any()).optional().default({}),
+    isPublic: z.boolean().optional().default(false),
+    sharing: z.any().optional(),
+    spaceId: commonSchemas.id.optional().nullable(),
+  }))
+  
+  if (!bodyValidation.success) {
+    return bodyValidation.response
+  }
     
     const { 
       name, 
@@ -150,10 +140,7 @@ export async function POST(request: NextRequest) {
 
     const duration = Date.now() - startTime
     logger.apiResponse('POST', '/api/import-profiles', 201, duration, { profileId: profile.id })
-    return addSecurityHeaders(NextResponse.json({ profile }, { status: 201 }))
-  } catch (error) {
-    const duration = Date.now() - startTime
-    logger.apiResponse('POST', '/api/import-profiles', 500, duration)
-    return handleApiError(error, 'Import Profiles API POST')
-  }
+    return NextResponse.json({ profile }, { status: 201 })
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/import-profiles')

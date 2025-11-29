@@ -14,7 +14,7 @@ export { TabBar } from './TabBar'
 export { Header } from './Header'
 export { QueryEditor } from './QueryEditor'
 export { ResizeHandle } from './ResizeHandle'
-export { ResultsTable } from './ResultsTable'
+// ResultsTable removed - use EnhancedResultsTable instead
 export { ChartControls } from './ChartControls'
 export { StatusIndicators } from './StatusIndicators'
 export { FooterHeader } from './FooterHeader'

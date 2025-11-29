@@ -1,6 +1,6 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { logAPIRequest } from '@/shared/lib/security/audit-logger'
 import { checkPermission } from '@/shared/lib/security/permission-checker'
@@ -9,15 +9,13 @@ import { SSHConnector } from '@/features/infrastructure/lib/instance-connectors/
 import { DockerDiscovery } from '@/features/infrastructure/lib/service-discovery/docker-discovery'
 import { SystemdDiscovery } from '@/features/infrastructure/lib/service-discovery/systemd-discovery'
 
-export async function POST(
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     const { id } = await params
 
@@ -124,12 +122,7 @@ export async function POST(
       count: savedServices.length,
       message: `Discovered ${savedServices.length} services`,
     })
-  } catch (error) {
-    console.error('Error discovering services:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/infrastructure/instances/[id]/discover-services')
 

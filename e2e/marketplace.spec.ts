@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test'
+import { login } from './helpers/auth-helper'
+
+test.setTimeout(120000)
 
 test.describe('Marketplace Feature', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/login')
-    // TODO: Add actual login steps
+    await login(page)
   })
 
   test('should display marketplace plugins', async ({ page }) => {

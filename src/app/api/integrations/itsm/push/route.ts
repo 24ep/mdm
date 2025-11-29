@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { query } from '@/lib/db'
 import { getSecretsManager } from '@/lib/secrets-manager'
 import { decryptApiKey } from '@/lib/encryption'
@@ -9,31 +9,24 @@ import { db } from '@/lib/db'
 import { createAuditLog } from '@/lib/audit'
 
 // Push ticket to ITSM
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+async function postHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    const body = await request.json()
-    const { ticket_id, space_id, syncComments } = body
+  const body = await request.json()
+  const { ticket_id, space_id, syncComments } = body
 
-    if (!ticket_id || !space_id) {
-      return NextResponse.json(
-        { error: 'ticket_id and space_id are required' },
-        { status: 400 }
-      )
-    }
-
-    // Check access
-    const { rows: access } = await query(
-      'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',
-      [space_id, session.user.id]
+  if (!ticket_id || !space_id) {
+    return NextResponse.json(
+      { error: 'ticket_id and space_id are required' },
+      { status: 400 }
     )
-    if (access.length === 0) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+  }
+
+  // Check access
+  const accessResult = await requireSpaceAccess(space_id, session.user.id!)
+  if (!accessResult.success) return accessResult.response
 
     // Get ticket
     const ticket = await db.ticket.findUnique({
@@ -230,12 +223,7 @@ export async function POST(request: NextRequest) {
         syncedComments
       }
     })
-  } catch (error: any) {
-    console.error('Error pushing ticket to ITSM:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to push ticket to ITSM' },
-      { status: 500 }
-    )
-  }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/integrations/itsm/push')
 

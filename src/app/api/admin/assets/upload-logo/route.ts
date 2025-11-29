@@ -1,33 +1,32 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
+async function postHandler(request: NextRequest) {
+    const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const POST = withErrorHandling(postHandler, '
 
     const formData = await request.formData()
     const file = formData.get('logo') as File
     const assetId = formData.get('assetId') as string
 
     if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'No file provided' }}
 
     if (!file.type.startsWith('image/')) {
-      return NextResponse.json({ error: 'Invalid file type' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'Invalid file type' }}
 
     // Validate file size (max ~2MB)
     if (file.size > 2 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File too large' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'File too large' }}
 
     const uploadsDir = join(process.cwd(), 'uploads', 'assets', 'logos')
     if (!existsSync(uploadsDir)) {
@@ -47,9 +46,19 @@ export async function POST(request: NextRequest) {
 
     const publicUrl = `/uploads/assets/logos/${filename}`
     return NextResponse.json({ success: true, url: publicUrl, filename })
-  } catch (error) {
-    console.error('Error uploading logo:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
 }
+
+
+
+
+
+
+
+
+
+export const POST = withErrorHandling(postHandler, '
+export const POST = withErrorHandling(postHandler, '
+export const POST = withErrorHandling(postHandler, '
+export const POST = withErrorHandling(postHandler, '
+export const POST = withErrorHandling(postHandler, '
 

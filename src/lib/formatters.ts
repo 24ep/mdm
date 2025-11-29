@@ -16,16 +16,9 @@ export function formatFileSize(bytes: number): string {
 
 /**
  * Format time ago helper
+ * @deprecated Use formatTimeAgo from '@/lib/date-formatters' instead
  */
-export function formatTimeAgo(date: Date | string): string {
-  const dateObj = typeof date === 'string' ? new Date(date) : date
-  const seconds = Math.floor((new Date().getTime() - dateObj.getTime()) / 1000)
-  if (seconds < 60) return 'just now'
-  if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`
-  if (seconds < 604800) return `${Math.floor(seconds / 86400)} days ago`
-  return dateObj.toLocaleDateString()
-}
+export { formatTimeAgo } from './date-formatters'
 
 /**
  * Format duration in milliseconds to human-readable string

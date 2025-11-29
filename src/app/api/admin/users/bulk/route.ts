@@ -1,11 +1,10 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { requirePermission } from '@/lib/api-permissions'
 
-export async function POST(request: NextRequest) {
-  try {
+async function postHandler(request: NextRequest) {
     // Check permission
     const forbidden = await requirePermission(request, 'system:manage_users')
     if (forbidden) return forbidden
@@ -14,8 +13,7 @@ export async function POST(request: NextRequest) {
     const { userIds, role, spaceId, spaceRole, operation, isActive } = body
 
     if (!Array.isArray(userIds) || userIds.length === 0) {
-      return NextResponse.json({ error: 'userIds array is required' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'userIds array is required' }}
 
     const results = {
       success: [] as string[],
@@ -27,16 +25,18 @@ export async function POST(request: NextRequest) {
       for (const userId of userIds) {
         try {
           // Prevent deleting yourself
-          const session = await getServerSession(authOptions)
+          const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
           if (session?.user?.id === userId) {
             results.failed.push({ userId, error: 'Cannot delete your own account' })
             continue
           }
           
           // Delete space memberships first
-          await query('DELETE FROM space_members WHERE user_id = $1', [userId])
+          await query('= body FROM space_members WHERE user_id = $1', [userId])
           // Delete user
-          await query('DELETE FROM users WHERE id = $1', [userId])
+          await query('= body FROM users WHERE id = $1', [userId])
           results.success.push(userId)
         } catch (error: any) {
           results.failed.push({ userId, error: error.message || 'Delete failed' })
@@ -62,8 +62,7 @@ export async function POST(request: NextRequest) {
     else if (role) {
       const allowedRoles = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'USER']
       if (!allowedRoles.includes(role)) {
-        return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
-      }
+        return NextResponse.json({ error: 'Invalid role' }}
 
       for (const userId of userIds) {
         try {
@@ -111,11 +110,21 @@ export async function POST(request: NextRequest) {
         failed: results.failed.length
       }
     })
-  } catch (error) {
-    console.error('Error in bulk user operation:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
 }
+
+
+
+
+
+
+
+
+
+export const POST = withErrorHandling(postHandler, '
+export const POST = withErrorHandling(postHandler, '
+export const POST = withErrorHandling(postHandler, '
+export const POST = withErrorHandling(postHandler, '
+export const POST = withErrorHandling(postHandler, '
 
 
 

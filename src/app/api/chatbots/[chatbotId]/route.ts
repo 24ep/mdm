@@ -1,6 +1,6 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { isUuid } from '@/lib/validation'
 import { encryptApiKey, encrypt, decrypt } from '@/lib/encryption'
@@ -132,7 +132,9 @@ export async function GET(
       )
     }
     
-    const session = await getServerSession(authOptions)
+    const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     const userId = session?.user?.id
 
     const chatbot = await db.chatbot.findFirst({
@@ -161,8 +163,7 @@ export async function GET(
     })
 
     if (!chatbot) {
-      return NextResponse.json({ error: 'Chatbot not found' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Chatbot not found' }}
     
     // Merge version config into chatbot object
     const mergedChatbot = mergeVersionConfig(chatbot)
@@ -189,18 +190,15 @@ export async function GET(
   }
 }
 
-export async function PUT(
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ chatbotId: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    const { chatbotId } = await params
+  const { chatbotId } = await params
     
     // Validate UUID format before querying
     if (!isUuid(chatbotId)) {
@@ -221,11 +219,11 @@ export async function PUT(
       }
     })
 
-    if (!existingChatbot) {
-      return NextResponse.json({ error: 'Chatbot not found or access denied' }, { status: 404 })
-    }
+  if (!existingChatbot) {
+    return NextResponse.json({ error: 'Chatbot not found or access denied' }, { status: 404 })
+  }
 
-    const {
+  const {
       name,
       website,
       description,
@@ -511,90 +509,52 @@ export async function PUT(
       await syncOpenAIApiKey(openaiAgentSdkApiKey, request, session.user)
     }
 
-    // Merge version config into chatbot object
-    const mergedChatbot = mergeVersionConfig(chatbot)
+  // Merge version config into chatbot object
+  const mergedChatbot = mergeVersionConfig(chatbot)
 
-    return NextResponse.json({ chatbot: mergedChatbot })
-  } catch (error: any) {
-    console.error('Error updating chatbot:', error)
-    
-    // Handle Prisma UUID validation errors
-    if (error?.code === 'P2023' || error?.message?.includes('UUID')) {
-      return NextResponse.json(
-        { error: 'Invalid chatbot ID format', details: 'Chatbot ID must be a valid UUID' },
-        { status: 400 }
-      )
-    }
-    
-    return NextResponse.json(
-      { 
-        error: 'Failed to update chatbot',
-        details: error?.message || 'Unknown error'
-      },
-      { status: 500 }
-    )
-  }
+  return NextResponse.json({ chatbot: mergedChatbot })
 }
 
-export async function DELETE(
+export const PUT = withErrorHandling(putHandler, 'PUT /api/chatbots/[chatbotId]')
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ chatbotId: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    const { chatbotId } = await params
+  const { chatbotId } = await params
 
-    // Validate UUID format before querying
-    if (!isUuid(chatbotId)) {
-      return NextResponse.json(
-        { error: 'Invalid chatbot ID format', details: 'Chatbot ID must be a valid UUID' },
-        { status: 400 }
-      )
-    }
-
-    // Check if chatbot exists and user has access
-    const existingChatbot = await db.chatbot.findFirst({
-      where: {
-        id: chatbotId,
-        deletedAt: null,
-        createdBy: session.user.id
-      }
-    })
-
-    if (!existingChatbot) {
-      return NextResponse.json({ error: 'Chatbot not found or access denied' }, { status: 404 })
-    }
-
-    // Soft delete
-    await db.chatbot.update({
-      where: { id: chatbotId },
-      data: { deletedAt: new Date() }
-    })
-
-    return NextResponse.json({ success: true })
-  } catch (error: any) {
-    console.error('Error deleting chatbot:', error)
-    
-    // Handle Prisma UUID validation errors
-    if (error?.code === 'P2023' || error?.message?.includes('UUID')) {
-      return NextResponse.json(
-        { error: 'Invalid chatbot ID format', details: 'Chatbot ID must be a valid UUID' },
-        { status: 400 }
-      )
-    }
-    
+  // Validate UUID format before querying
+  if (!isUuid(chatbotId)) {
     return NextResponse.json(
-      { 
-        error: 'Failed to delete chatbot',
-        details: error?.message || 'Unknown error'
-      },
-      { status: 500 }
+      { error: 'Invalid chatbot ID format', details: 'Chatbot ID must be a valid UUID' },
+      { status: 400 }
     )
   }
+
+  // Check if chatbot exists and user has access
+  const existingChatbot = await db.chatbot.findFirst({
+    where: {
+      id: chatbotId,
+      deletedAt: null,
+      createdBy: session.user.id
+    }
+  })
+
+  if (!existingChatbot) {
+    return NextResponse.json({ error: 'Chatbot not found or access denied' }, { status: 404 })
+  }
+
+  // Soft delete
+  await db.chatbot.update({
+    where: { id: chatbotId },
+    data: { deletedAt: new Date() }
+  })
+
+  return NextResponse.json({ success: true })
 }
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/chatbots/[chatbotId]')
 

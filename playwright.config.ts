@@ -52,10 +52,13 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
+  webServer: process.env.SKIP_SERVER !== 'true' ? {
     command: 'npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
-  },
+    timeout: 180000, // 3 minutes for server to start
+    stdout: 'pipe',
+    stderr: 'pipe',
+  } : undefined,
 })
 

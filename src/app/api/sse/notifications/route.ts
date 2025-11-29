@@ -1,12 +1,11 @@
-import { NextRequest } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
+import { NextRequest } from 'next/server'
 
-export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return new Response('Unauthorized', { status: 401 });
-  }
+async function getHandler(request: NextRequest) {
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return new Response('Unauthorized', { status: 401 })
+  const { session } = authResult
 
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get('user_id');
@@ -24,7 +23,7 @@ export async function GET(request: NextRequest) {
 
       // Set up database polling for new notifications
       const pollInterval = setInterval(async () => {
-        try {
+        
           // Check for new notifications for this user
           const { query } = await import('@/lib/db');
           
@@ -47,8 +46,7 @@ export async function GET(request: NextRequest) {
             controller.enqueue(new TextEncoder().encode(message));
           }
         } catch (error) {
-          console.error('Error polling notifications:', error);
-          const errorMessage = `data: ${JSON.stringify({ type: 'error', message: 'Polling error' })}\n\n`;
+          const errorMessage = `data: ${JSON.stringify({ type: 'error', message: 'Failed to check notifications' })}\n\n`;
           controller.enqueue(new TextEncoder().encode(errorMessage));
         }
       }, 2000); // Poll every 2 seconds
@@ -71,3 +69,5 @@ export async function GET(request: NextRequest) {
     },
   });
 }
+
+export const GET = withErrorHandling(getHandler, 'GET /api/sse/notifications')

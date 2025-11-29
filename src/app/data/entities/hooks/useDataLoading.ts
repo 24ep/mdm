@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { DataModel, Attribute, DataRecord, SortConfig } from '../types'
+import { DEFAULT_PAGINATION } from '@/lib/constants/defaults'
 
 interface UseDataLoadingProps {
   modelId: string | null
@@ -120,7 +121,7 @@ export function useDataLoading({
           const data = await res.json()
      
           setRecords(data.records || [])
-          setPagination(data.pagination || { page: 1, limit: 20, total: 0, pages: 0 })
+          setPagination(data.pagination || { page: DEFAULT_PAGINATION.page, limit: DEFAULT_PAGINATION.limit, total: 0, pages: 0 })
         } else {
           console.error('❌ API Error:', res.status, res.statusText)
           const errorText = await res.text()
@@ -128,7 +129,7 @@ export function useDataLoading({
           setError(`API Error: ${res.status} ${res.statusText}`)
           // Set empty state to show 0 records
           setRecords([])
-          setPagination({ page: 1, limit: 20, total: 0, pages: 0 })
+          setPagination({ page: DEFAULT_PAGINATION.page, limit: DEFAULT_PAGINATION.limit, total: 0, pages: 0 })
         }
       } catch (error) {
         console.error('Error loading records:', error)

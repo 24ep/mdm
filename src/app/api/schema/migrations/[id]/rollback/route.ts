@@ -1,29 +1,22 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { schemaMigration } from '@/lib/schema-migration'
 
-export async function POST(
+async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    const { id } = await params
-    await schemaMigration.initialize()
-    const result = await schemaMigration.rollbackMigration(id, session.user.id)
+  const { id } = await params
+  await schemaMigration.initialize()
+  const result = await schemaMigration.rollbackMigration(id, session.user.id)
 
-    return NextResponse.json(result)
-  } catch (error: any) {
-    console.error('Error rolling back migration:', error)
-    return NextResponse.json(
-      { error: 'Failed to rollback migration', details: error.message },
-      { status: 500 }
-    )
-  }
+  return NextResponse.json(result)
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/schema/migrations/[id]/rollback')
 

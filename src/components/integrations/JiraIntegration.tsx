@@ -23,7 +23,7 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
+import { showError, showSuccess, showInfo } from '@/lib/toast-utils'
 
 interface JiraConfig {
   id?: string
@@ -40,7 +40,6 @@ interface JiraIntegrationProps {
 }
 
 export function JiraIntegration({ spaceId }: JiraIntegrationProps) {
-  const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [testing, setTesting] = useState(false)
   const [config, setConfig] = useState<JiraConfig | null>(null)
@@ -81,11 +80,7 @@ export function JiraIntegration({ spaceId }: JiraIntegrationProps) {
 
   const handleTestConnection = async () => {
     if (!formData.baseUrl || !formData.email || !formData.apiToken) {
-      toast({
-        title: 'Validation Error',
-        description: 'Please provide baseUrl, email, and API token to test connection',
-        variant: 'destructive'
-      })
+      showError('Please provide baseUrl, email, and API token to test connection')
       return
     }
 
@@ -105,25 +100,14 @@ export function JiraIntegration({ spaceId }: JiraIntegrationProps) {
       const result = await response.json()
 
       if (result.success) {
-        toast({
-          title: 'Connection Successful',
-          description: result.message || 'Successfully connected to Jira',
-        })
+        showSuccess(result.message || 'Successfully connected to Jira')
         // Load projects after successful connection
         await loadProjects()
       } else {
-        toast({
-          title: 'Connection Failed',
-          description: result.error || 'Failed to connect to Jira',
-          variant: 'destructive'
-        })
+        showError(result.error || 'Failed to connect to Jira')
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to test connection',
-        variant: 'destructive'
-      })
+      showError('Failed to test connection')
     } finally {
       setTesting(false)
     }
@@ -200,11 +184,7 @@ export function JiraIntegration({ spaceId }: JiraIntegrationProps) {
 
   const handleSave = async () => {
     if (!formData.baseUrl || !formData.email || !formData.apiToken) {
-      toast({
-        title: 'Validation Error',
-        description: 'baseUrl, email, and API token are required',
-        variant: 'destructive'
-      })
+      showError('baseUrl, email, and API token are required')
       return
     }
 
@@ -226,24 +206,13 @@ export function JiraIntegration({ spaceId }: JiraIntegrationProps) {
       const result = await response.json()
 
       if (response.ok && result.success) {
-        toast({
-          title: 'Configuration Saved',
-          description: 'Jira integration configured successfully',
-        })
+        showSuccess('Jira integration configured successfully')
         await loadConfig()
       } else {
-        toast({
-          title: 'Configuration Failed',
-          description: result.error || 'Failed to save configuration',
-          variant: 'destructive'
-        })
+        showError(result.error || 'Failed to save configuration')
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to save configuration',
-        variant: 'destructive'
-      })
+      showError('Failed to save configuration')
     } finally {
       setLoading(false)
     }

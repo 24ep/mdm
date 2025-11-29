@@ -1,19 +1,18 @@
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/database'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
 
     const { id: spaceId } = await params
 
@@ -24,8 +23,7 @@ export async function GET(
     )
 
     if (memberResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Space not found or access denied' }}
 
     const userRole = (memberResult.rows[0] as any).role
 
@@ -55,23 +53,22 @@ export async function GET(
       config: storage.config
     })
 
-  } catch (error) {
-    console.error('Error fetching storage configuration:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
 
-export async function PUT(
+
+export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\spaces\[id]\attachment-storage-postgresql\route.ts')
+async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+      return NextResponse.json({ error: 'Unauthorized' }}
+
+export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\spaces\[id]\attachment-storage-postgresql\route.ts')
 
     const { id: spaceId } = await params
     const { provider, config } = await request.json()
@@ -83,18 +80,15 @@ export async function PUT(
     )
 
     if (memberResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Space not found or access denied' }, { status: 404 })
-    }
+      return NextResponse.json({ error: 'Space not found or access denied' }}
 
     const userRole = (memberResult.rows[0] as any).role
     if (!['owner', 'admin'].includes(userRole)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
+      return NextResponse.json({ error: 'Insufficient permissions' }}
 
     // Validate provider
     if (!['minio', 's3', 'sftp', 'ftp'].includes(provider)) {
-      return NextResponse.json({ error: 'Invalid storage provider' }, { status: 400 })
-    }
+      return NextResponse.json({ error: 'Invalid storage provider' }}
 
     // Deactivate existing configurations
     await query(
@@ -115,9 +109,3 @@ export async function PUT(
       config: row.config,
       is_active: row.is_active
     })
-
-  } catch (error) {
-    console.error('Error saving storage configuration:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
