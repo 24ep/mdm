@@ -1,23 +1,25 @@
-import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
-import { requireSpaceAccess } from '@/lib/space-access'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 
 async function postHandler(request: NextRequest) {
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
-
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\integrations\config\route.ts')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const body = await request.json()
     const { name, type, config } = body
 
     if (!name || !type) {
-      return NextResponse.json({ error: 'Name and type are required' }}
+      return NextResponse.json(
+        { error: 'Name and type are required' },
+        { status: 400 },
+      )
+    }
 
     // Check if integration exists
     const checkSql = `
@@ -41,12 +43,12 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\
       `
       const updateResult = await query(updateSql, [
         JSON.stringify(config || {}),
-        checkResult.rows[0].id
+        checkResult.rows[0].id,
       ])
 
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: true,
-        integration: updateResult.rows[0]
+        integration: updateResult.rows[0],
       })
     } else {
       // Create new integration
@@ -59,28 +61,36 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\
         name,
         type,
         JSON.stringify(config || {}),
-        session.user.id
+        session.user.id,
       ])
 
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: true,
-        integration: insertResult.rows[0]
+        integration: insertResult.rows[0],
       })
     }
   } catch (error: any) {
     console.error('Error saving integration config:', error)
-    
+
     // If table doesn't exist, return success (graceful degradation)
     if (error.message?.includes('does not exist') || error.code === '42P01') {
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: true,
-        message: 'Configuration saved (database table not yet created)'
+        message: 'Configuration saved (database table not yet created)',
       })
     }
 
-    return NextResponse.json({ 
-      error: 'Failed to save configuration',
-      details: error.message 
-    }}
+    return NextResponse.json(
+      {
+        error: 'Failed to save configuration',
+        details: error.message,
+      },
+      { status: 500 },
+    )
+  }
 }
 
+export const POST = withErrorHandling(
+  postHandler,
+  'POST /api/admin/integrations/config',
+)

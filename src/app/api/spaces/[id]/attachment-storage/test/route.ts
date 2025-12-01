@@ -16,7 +16,7 @@ async function postHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     const { id: spaceId } = await params
     const body = await request.json()
@@ -30,16 +30,16 @@ async function postHandler(
     })
 
     if (!spaceMember) {
-      return NextResponse.json({ error: 'Space not found or access denied' }}
+      return NextResponse.json({ error: 'Space not found or access denied'  })
 
     // Check if user has admin/owner role
     if (!['ADMIN', 'OWNER'].includes(spaceMember.role)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }}
+      return NextResponse.json({ error: 'Insufficient permissions'  })
 
     const { provider, config } = body
     
     if (!provider || !config) {
-      return NextResponse.json({ error: 'Provider and config are required' }}
+      return NextResponse.json({ error: 'Provider and config are required'  })
 
     const providerConfig = config[provider]
     if (!providerConfig) {

@@ -13,12 +13,12 @@ async function getHandler(request: NextRequest) {
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     const { searchParams } = new URL(request.url)
     const spaceId = searchParams.get('space_id')
     if (!spaceId) {
-      return NextResponse.json({ error: 'space_id is required' }}
+      return NextResponse.json({ error: 'space_id is required'  })
 
     // Check access
     const { rows: access } = await query(
@@ -26,7 +26,7 @@ async function getHandler(request: NextRequest) {
       [spaceId, session.user.id]
     )
     if (access.length === 0) {
-      return NextResponse.json({ error: 'Forbidden' }}
+      return NextResponse.json({ error: 'Forbidden'  })
 
     // Get configuration from external_connections table
     const { rows } = await query(
@@ -87,7 +87,7 @@ async function postHandler(request: NextRequest) {
       [space_id, session.user.id]
     )
     if (access.length === 0) {
-      return NextResponse.json({ error: 'Forbidden' }}
+      return NextResponse.json({ error: 'Forbidden'  })
 
     // Test connection first
     const service = new ManageEngineServiceDeskService({
@@ -246,6 +246,6 @@ export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\integrati
     return NextResponse.json(result)
   } catch (error) {
     console.error('PUT /integrations/manageengine-servicedesk error', error)
-    return NextResponse.json({ error: 'Internal server error' }}
+    return NextResponse.json({ error: 'Internal server error'  })
 }
 

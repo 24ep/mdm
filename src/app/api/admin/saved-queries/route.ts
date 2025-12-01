@@ -163,14 +163,15 @@ export async function POST(request: NextRequest) {
       tags: tags || [],
       executionCount: 0,
       lastExecuted: null,
-      isStarred: false
+      isStarred: false,
     }
 
-    return NextResponse.json(newQuery} catch (error) {
+    return NextResponse.json(newQuery)
+  } catch (error) {
     console.error('Create saved query error:', error)
     return NextResponse.json(
       { error: 'Failed to create saved query' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

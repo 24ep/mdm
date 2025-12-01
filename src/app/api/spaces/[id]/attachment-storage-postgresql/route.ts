@@ -12,7 +12,7 @@ async function getHandler(
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     const { id: spaceId } = await params
 
@@ -23,7 +23,7 @@ async function getHandler(
     )
 
     if (memberResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Space not found or access denied' }}
+      return NextResponse.json({ error: 'Space not found or access denied'  })
 
     const userRole = (memberResult.rows[0] as any).role
 
@@ -66,7 +66,7 @@ async function putHandler(
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\spaces\[id]\attachment-storage-postgresql\route.ts')
 
@@ -80,15 +80,15 @@ export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\spaces\[i
     )
 
     if (memberResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Space not found or access denied' }}
+      return NextResponse.json({ error: 'Space not found or access denied'  })
 
     const userRole = (memberResult.rows[0] as any).role
     if (!['owner', 'admin'].includes(userRole)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }}
+      return NextResponse.json({ error: 'Insufficient permissions'  })
 
     // Validate provider
     if (!['minio', 's3', 'sftp', 'ftp'].includes(provider)) {
-      return NextResponse.json({ error: 'Invalid storage provider' }}
+      return NextResponse.json({ error: 'Invalid storage provider'  })
 
     // Deactivate existing configurations
     await query(

@@ -10,7 +10,7 @@ async function postHandler(request: NextRequest) {
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\upload\favicon\route.ts')
 
@@ -18,15 +18,15 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\upload
     const file = formData.get('favicon') as File
 
     if (!file) {
-      return NextResponse.json({ error: 'No file provided' }}
+      return NextResponse.json({ error: 'No file provided'  })
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      return NextResponse.json({ error: 'Invalid file type' }}
+      return NextResponse.json({ error: 'Invalid file type'  })
 
     // Validate file size (max 1MB)
     if (file.size > 1024 * 1024) {
-      return NextResponse.json({ error: 'File too large' }}
+      return NextResponse.json({ error: 'File too large'  })
 
     // Create uploads directory if it doesn't exist
     const uploadsDir = join(process.cwd(), 'uploads', 'favicons')

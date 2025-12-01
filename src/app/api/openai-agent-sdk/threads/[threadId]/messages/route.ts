@@ -17,7 +17,7 @@ async function getHandler(
 
 export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\openai-agent-sdk\threads\[threadId]\messages\route.ts')= authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 
 
@@ -41,13 +41,13 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\openai-ag
     })
 
     if (!thread) {
-      return NextResponse.json({ error: 'Thread not found' }}
+      return NextResponse.json({ error: 'Thread not found'  })
 
     // Get API key from thread metadata or chatbot config
     const metadata = thread.metadata as any
     const apiKey = metadata?.apiKey
     if (!apiKey) {
-      return NextResponse.json({ error: 'API key not found' }}
+      return NextResponse.json({ error: 'API key not found'  })
 
     // Fetch messages from OpenAI API
     const openai = new OpenAI({ apiKey })

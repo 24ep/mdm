@@ -51,7 +51,8 @@ export async function GET() {
     return NextResponse.json({ dashboards: mockDashboards })
   } catch (error) {
     console.error('Error fetching dashboards:', error)
-    return NextResponse.json({ error: 'Failed to fetch dashboards' }}
+    return NextResponse.json({ error: 'Failed to fetch dashboards' })
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -76,5 +77,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ dashboard })
   } catch (error) {
     console.error('Error creating dashboard:', error)
-    return NextResponse.json({ error: 'Failed to create dashboard' }}
+    return NextResponse.json({ error: 'Failed to create dashboard' })
+  }
 }

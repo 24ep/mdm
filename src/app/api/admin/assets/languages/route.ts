@@ -42,6 +42,7 @@ async function getHandler(request: NextRequest) {
 export const GET = withErrorHandling(getHandler, 'GET /api/admin/assets/languages')
 
 async function postHandler(request: NextRequest) {
+  try {
     const authResult = await requireAuthWithId()
     if (!authResult.success) return authResult.response
     const { session } = authResult

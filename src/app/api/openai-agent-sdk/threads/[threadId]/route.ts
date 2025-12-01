@@ -13,7 +13,7 @@ async function getHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     const { threadId } = await params
 
@@ -26,7 +26,7 @@ async function getHandler(
     })
 
     if (!thread) {
-      return NextResponse.json({ error: 'Thread not found' }}
+      return NextResponse.json({ error: 'Thread not found'  })
 
     return NextResponse.json({ thread })
 
@@ -42,7 +42,7 @@ async function patchHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     const { threadId } = await params
     const body = await request.json()
@@ -57,7 +57,7 @@ async function patchHandler(
     })
 
     if (!thread) {
-      return NextResponse.json({ error: 'Thread not found' }}
+      return NextResponse.json({ error: 'Thread not found'  })
 
     const updated = await prisma.openAIAgentThread.update({
       where: { id: thread.id },
@@ -81,7 +81,7 @@ async function deleteHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\openai-agent-sdk\threads\[threadId]\route.ts')
 
@@ -96,7 +96,7 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
     })
 
     if (!thread) {
-      return NextResponse.json({ error: 'Thread not found' }}
+      return NextResponse.json({ error: 'Thread not found'  })
 
     await prisma.openAIAgentThread.update({
       where: { id: thread.id },

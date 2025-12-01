@@ -3,15 +3,20 @@ import { requireAuth, withErrorHandling } from '@/lib/api-middleware'
 import { query } from '@/lib/db'
 
 async function postHandler(request: NextRequest) {
-  const authResult = await requireAuth()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+  try {
+    const authResult = await requireAuth()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
     const body = await request.json()
     const { name, type, config, isActive } = body
 
     if (!name || !type) {
-      return NextResponse.json({ error: 'Name and type are required' }}
+      return NextResponse.json(
+        { error: 'Name and type are required' },
+        { status: 400 },
+      )
+    }
 
     // Check if integration exists
     const checkSql = `
@@ -41,12 +46,12 @@ async function postHandler(request: NextRequest) {
       const updateResult = await query(updateSql, [
         JSON.stringify(config || {}),
         isActive !== false, // Default to true
-        checkResult.rows[0].id
+        checkResult.rows[0].id,
       ])
 
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: true,
-        integration: updateResult.rows[0]
+        integration: updateResult.rows[0],
       })
     } else {
       // Create new integration
@@ -60,23 +65,38 @@ async function postHandler(request: NextRequest) {
         type,
         JSON.stringify(config || {}),
         isActive !== false, // Default to true
-        session.user.id
+        session.user.id,
       ])
 
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: true,
-        integration: insertResult.rows[0]
+        integration: insertResult.rows[0],
       })
     }
-  // If table doesn't exist, return success (graceful degradation)
-  if (error.message?.includes('does not exist') || error.code === '42P01') {
-    return NextResponse.json({ 
-      success: true,
-      message: 'Configuration saved (database table not yet created)'
-    })
+  } catch (error: any) {
+    console.error('Error saving integration:', error)
+
+    // If table doesn't exist, return success (graceful degradation)
+    if (error.message?.includes('does not exist') || error.code === '42P01') {
+      return NextResponse.json({
+        success: true,
+        message: 'Configuration saved (database table not yet created)',
+      })
+    }
+
+    return NextResponse.json(
+      {
+        error: 'Failed to save integration',
+        details: error.message,
+      },
+      { status: 500 },
+    )
   }
-  throw error
 }
 
-export const POST = withErrorHandling(postHandler, 'POST /api/admin/integrations')
+export const POST = withErrorHandling(
+  postHandler,
+  'POST /api/admin/integrations',
+)
+
 

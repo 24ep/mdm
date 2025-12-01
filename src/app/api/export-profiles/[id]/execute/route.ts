@@ -14,7 +14,7 @@ async function postHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const POST = withErrorHandling(postHandler, '
 
@@ -42,7 +42,7 @@ export const POST = withErrorHandling(postHandler, '
     `, [profileId])
 
     if (profileResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Export profile not found' }}
+      return NextResponse.json({ error: 'Export profile not found'  })
 
     const profile = profileResult.rows[0]
 
@@ -55,7 +55,7 @@ export const POST = withErrorHandling(postHandler, '
                      )
 
     if (!hasAccess) {
-      return NextResponse.json({ error: 'Access denied' }}
+      return NextResponse.json({ error: 'Access denied'  })
 
     // Get data model attributes to build the query
     const attributesResult = await query(`
@@ -69,7 +69,7 @@ export const POST = withErrorHandling(postHandler, '
     const selectedColumns = profile.columns || []
 
     if (selectedColumns.length === 0) {
-      return NextResponse.json({ error: 'No columns selected for export' }}
+      return NextResponse.json({ error: 'No columns selected for export'  })
 
     // Build the SQL query based on selected columns and filters
     let selectClause = selectedColumns.map((col: any) => {
@@ -112,7 +112,7 @@ export const POST = withErrorHandling(postHandler, '
     const exportData = dataResult.rows
 
     if (exportData.length === 0) {
-      return NextResponse.json({ error: 'No data found matching the criteria' }}
+      return NextResponse.json({ error: 'No data found matching the criteria'  })
 
     // Generate the file based on format
     let fileBuffer: Buffer

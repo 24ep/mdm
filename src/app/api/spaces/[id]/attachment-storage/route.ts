@@ -11,7 +11,7 @@ async function getHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     const { id: spaceId } = await params
 
@@ -24,11 +24,11 @@ async function getHandler(
     })
 
     if (!spaceMember) {
-      return NextResponse.json({ error: 'Space not found or access denied' }}
+      return NextResponse.json({ error: 'Space not found or access denied'  })
 
     // Check if user has admin/owner role
     if (!['ADMIN', 'OWNER'].includes(spaceMember.role)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }}
+      return NextResponse.json({ error: 'Insufficient permissions'  })
 
     // Get attachment storage configuration
     const storageConfig = await db.spaceAttachmentStorage.findFirst({
@@ -86,7 +86,7 @@ async function putHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\spaces\[id]\attachment-storage\route.ts')
 
@@ -102,17 +102,17 @@ export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\spaces\[i
     })
 
     if (!spaceMember) {
-      return NextResponse.json({ error: 'Space not found or access denied' }}
+      return NextResponse.json({ error: 'Space not found or access denied'  })
 
     // Check if user has admin/owner role
     if (!['ADMIN', 'OWNER'].includes(spaceMember.role)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }}
+      return NextResponse.json({ error: 'Insufficient permissions'  })
 
     // Validate required fields based on provider
     const { provider, config } = body
     
     if (!provider || !config) {
-      return NextResponse.json({ error: 'Provider and config are required' }}
+      return NextResponse.json({ error: 'Provider and config are required'  })
 
     // Validate provider-specific required fields
     const requiredFields = {

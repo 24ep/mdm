@@ -43,7 +43,7 @@ async function getHandler(
     )
 
     if (accessResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Space not found or access denied' }}
+      return NextResponse.json({ error: 'Space not found or access denied'  })
 
     // Get all versions for this space
     const versionsResult = await query(
@@ -134,7 +134,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\spaces
     )
 
     if (accessResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Space not found or access denied' }}
+      return NextResponse.json({ error: 'Space not found or access denied'  })
 
     // Get next version number
     const versionResult = await query(

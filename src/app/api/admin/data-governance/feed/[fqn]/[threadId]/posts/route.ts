@@ -11,9 +11,8 @@ async function postHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
-
-export const POST = withErrorHandling(postHandler, '
+      return NextResponse.json({ error: 'Unauthorized' })
+    }
 
     const body = await request.json()
 
@@ -38,4 +37,6 @@ export const POST = withErrorHandling(postHandler, '
     )
   }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/admin/data-governance/feed/[fqn]/[threadId]/posts')
 

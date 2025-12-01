@@ -36,7 +36,7 @@ async function getHandler(
 
     if (spaceResult.rows.length === 0) {
       logger.warn('Space not found for default page', { spaceSlugOrId })
-      return NextResponse.json({ error: 'Space not found' }}
+      return NextResponse.json({ error: 'Space not found'  })
 
     const spaceId = spaceResult.rows[0].id
 

@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       })
 
       if (!project) {
-        return NextResponse.json({ error: 'Project not found' }}
+        return NextResponse.json({ error: 'Project not found'  })
 
       // Check access
       const accessResult = await requireProjectSpaceAccess(projectId, session.user.id)
@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!project) {
-      return NextResponse.json({ error: 'Project not found' }}
+      return NextResponse.json({ error: 'Project not found'  })
 
     // Check access
     const accessResult = await requireProjectSpaceAccess(projectId, session.user.id)
@@ -246,7 +246,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    return NextResponse.json({ success: true, module }} catch (error: any) {
+    return NextResponse.json({ success: true, module  }) catch (error: any) {
     console.error('Error creating module:', error)
     return NextResponse.json(
       { error: error.message || 'Failed to create module' },

@@ -1,5 +1,4 @@
-import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
-import { requireSpaceAccess } from '@/lib/space-access'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
@@ -9,35 +8,40 @@ async function getHandler(
 ) {
   const authResult = await requireAuthWithId()
   if (!authResult.success) return authResult.response
-  const { session } 
+  const { session } = authResult
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\storage\files\[id]\download\route.ts')= authResult
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
+  if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
+    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+  }
 
+  const { id: fileId } = await params
 
-    if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }}
+  const file = await db.spaceAttachmentStorage.findUnique({
+    where: { id: fileId }
+  })
 
-    const { id: fileId } = await params
+  if (!file) {
+    return NextResponse.json({ error: 'File not found' }, { status: 404 })
+  }
 
-    const file = await db.spaceAttachmentStorage.findUnique({
-      where: { id: fileId }
-    })
+  // TODO: Integrate with actual storage backend and return a file stream or redirect.
+  return NextResponse.json({
+    file: {
+      id: file.id,
+      name: file.fileName,
+      size: file.fileSize,
+      mimeType: file.mimeType,
+      path: file.filePath
+    }
+  })
+}
 
-    if (!file) {
-      return NextResponse.json({ error: 'File not found' }}
-
-    // TODO: Actually fetch file from storage service
-    // For now, return metadata
-    return NextResponse.json({
-      file: {
-        id: file.id,
-        name: file.fileName,
-        size: file.fileSize,
-        mimeType: file.mimeType,
-        path: file.filePath
-      }
-    })
+export const GET = withErrorHandling(
+  getHandler,
+  'GET /api/admin/storage/files/[id]/download'
+)
 

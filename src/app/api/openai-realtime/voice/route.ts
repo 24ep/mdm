@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
     const { apiKey, action, audioData, sessionConfig } = body
 
     if (!apiKey) {
-      return NextResponse.json({ error: 'API key is required' }}
+      return NextResponse.json({ error: 'API key is required'  })
 
     // This is a placeholder - OpenAI Realtime API requires WebSocket connection
     // In production, you'd need to set up a WebSocket proxy server
@@ -15,8 +15,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       error: 'OpenAI Realtime API requires WebSocket proxy server. Please use browser voice provider or set up a WebSocket proxy.',
       requiresProxy: true
-    }} catch (error: any) {
+     }) catch (error: any) {
     console.error('OpenAI Realtime API error:', error)
-    return NextResponse.json({ error: error.message || 'Internal server error' }}
+    return NextResponse.json({ error: error.message || 'Internal server error'  })
 }
 

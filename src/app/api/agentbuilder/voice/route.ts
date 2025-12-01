@@ -7,10 +7,10 @@ export async function POST(request: NextRequest) {
     const engineId = formData.get('engineId') as string
 
     if (!audioFile) {
-      return NextResponse.json({ error: 'Audio file is required' }}
+      return NextResponse.json({ error: 'Audio file is required'  })
 
     if (!engineId) {
-      return NextResponse.json({ error: 'Engine ID is required' }}
+      return NextResponse.json({ error: 'Engine ID is required'  })
 
     // Convert audio file to base64 or send directly to Agent Builder API
     const audioBuffer = await audioFile.arrayBuffer()
@@ -46,9 +46,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ 
         error: 'Failed to process voice with Agent Builder',
         details: apiError.message 
-      }}
+       })
   } catch (error: any) {
     console.error('Agent Builder voice error:', error)
-    return NextResponse.json({ error: error.message || 'Internal server error' }}
+    return NextResponse.json({ error: error.message || 'Internal server error'  })
 }
 

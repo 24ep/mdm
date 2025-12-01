@@ -1,5 +1,4 @@
-import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
-import { requireSpaceAccess } from '@/lib/space-access'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import { getSecretsManager } from '@/lib/secrets-manager'
@@ -11,19 +10,19 @@ const prisma = new PrismaClient()
 
 async function postHandler(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
-
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\kong-instances\[id]\test\route.ts')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     if (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }}
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
     const { id } = await params
     const instance = await prisma.kongInstance.findUnique({
@@ -33,7 +32,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\
     if (!instance) {
       return NextResponse.json(
         { error: 'Kong instance not found' },
-        { status: 404 }
+        { status: 404 },
       )
     }
 
@@ -45,11 +44,15 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\
     if (instance.adminApiKey) {
       if (useVault) {
         try {
-          const auditContext = createAuditContext(request, session.user, 'Kong instance connection test')
+          const auditContext = createAuditContext(
+            request,
+            session.user,
+            'Kong instance connection test',
+          )
           const secret = await secretsManager.getSecret(
             `kong-instances/${instance.id}/admin-api-key`,
             undefined,
-            auditContext
+            auditContext,
           )
           apiKey = secret?.adminApiKey
         } catch (error) {
@@ -100,8 +103,14 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\
         connected: false,
         error: error.message || 'Failed to test Kong connection',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
+
+export const POST = withErrorHandling(
+  postHandler,
+  'POST /api/admin/kong-instances/[id]/test',
+)
+
 

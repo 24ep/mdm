@@ -9,8 +9,6 @@ async function getHandler(request: NextRequest) {
     const { session } = authResult
     // TODO: Add requireSpaceAccess check if spaceId is available
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\attachments\route.ts')
-
     // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
@@ -84,10 +82,6 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\att
         updatedAt: new Date(row.updated_at)
       }))
     })
-  ,
-      { status: 500 }
-    )
   }
-}
 
-export const GET = withErrorHandling(getHandler, 'GET GET /api/admin/attachments')
+export const GET = withErrorHandling(getHandler, 'GET /api/admin/attachments')

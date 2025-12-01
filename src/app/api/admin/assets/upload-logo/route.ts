@@ -6,27 +6,30 @@ import { join } from 'path'
 import { existsSync } from 'fs'
 
 async function postHandler(request: NextRequest) {
+  try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }}
-
-export const POST = withErrorHandling(postHandler, '
+      return NextResponse.json({ error: 'Unauthorized' })
+    }
 
     const formData = await request.formData()
     const file = formData.get('logo') as File
     const assetId = formData.get('assetId') as string
 
     if (!file) {
-      return NextResponse.json({ error: 'No file provided' }}
+      return NextResponse.json({ error: 'No file provided' })
+    }
 
     if (!file.type.startsWith('image/')) {
-      return NextResponse.json({ error: 'Invalid file type' }}
+      return NextResponse.json({ error: 'Invalid file type' })
+    }
 
     // Validate file size (max ~2MB)
     if (file.size > 2 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File too large' }}
+      return NextResponse.json({ error: 'File too large' })
+    }
 
     const uploadsDir = join(process.cwd(), 'uploads', 'assets', 'logos')
     if (!existsSync(uploadsDir)) {
@@ -46,19 +49,12 @@ export const POST = withErrorHandling(postHandler, '
 
     const publicUrl = `/uploads/assets/logos/${filename}`
     return NextResponse.json({ success: true, url: publicUrl, filename })
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Failed to upload logo' },
+      { status: 500 }
+    )
+  }
 }
 
-
-
-
-
-
-
-
-
-export const POST = withErrorHandling(postHandler, '
-export const POST = withErrorHandling(postHandler, '
-export const POST = withErrorHandling(postHandler, '
-export const POST = withErrorHandling(postHandler, '
-export const POST = withErrorHandling(postHandler, '
-
+export const POST = withErrorHandling(postHandler, 'POST /api/admin/assets/upload-logo')

@@ -24,7 +24,7 @@ async function getHandler(
     )
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Plugin not found' }}
+      return NextResponse.json({ error: 'Plugin not found'  })
 
     const row = result.rows[0]
     const plugin = {

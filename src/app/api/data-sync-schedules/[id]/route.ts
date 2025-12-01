@@ -28,7 +28,7 @@ async function getHandler(
     )
 
     if (rows.length === 0) {
-      return NextResponse.json({ error: 'Sync schedule not found' }}
+      return NextResponse.json({ error: 'Sync schedule not found'  })
 
     // Check access
     const { rows: access } = await query(
@@ -62,7 +62,7 @@ async function putHandler(
     )
 
     if (existing.length === 0) {
-      return NextResponse.json({ error: 'Sync schedule not found' }}
+      return NextResponse.json({ error: 'Sync schedule not found'  })
 
     // Check access
     const { rows: access } = await query(
@@ -90,7 +90,7 @@ async function putHandler(
     }
 
     if (fields.length === 0) {
-      return NextResponse.json({ error: 'No fields to update' }}
+      return NextResponse.json({ error: 'No fields to update'  })
 
     // Recalculate next_run_at if schedule changed
     if (updates.schedule_type || updates.schedule_config) {
@@ -137,7 +137,7 @@ async function deleteHandler(
     )
 
     if (existing.length === 0) {
-      return NextResponse.json({ error: 'Sync schedule not found' }}
+      return NextResponse.json({ error: 'Sync schedule not found'  })
 
 export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\data-sync-schedules\[id]\route.ts')
 

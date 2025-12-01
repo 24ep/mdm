@@ -24,7 +24,7 @@ async function getHandler(
     )
 
     if (existing.length === 0) {
-      return NextResponse.json({ error: 'Sync schedule not found' }}
+      return NextResponse.json({ error: 'Sync schedule not found'  })
 
 export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\data-sync-schedules\[id]\executions\route.ts')
 

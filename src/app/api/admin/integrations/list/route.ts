@@ -1,19 +1,17 @@
-import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
-import { requireSpaceAccess } from '@/lib/space-access'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 
 async function getHandler(request: NextRequest) {
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\integrations\list\route.ts')
-
-    // Query integrations from database
     const sql = `
       SELECT 
         id,
@@ -30,21 +28,35 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\int
     `
 
     const result = await query(sql)
-    
-    return NextResponse.json({ 
-      integrations: result.rows || [] 
+
+    return NextResponse.json({
+      integrations: result.rows || [],
     })
   } catch (error: any) {
     console.error('Error fetching integrations list:', error)
-    
+
     // If table doesn't exist, return empty array (graceful degradation)
-    if (error.message?.includes('does not exist') || error.code === '42P01' || error.meta?.code === '42P01') {
+    if (
+      error.message?.includes('does not exist') ||
+      error.code === '42P01' ||
+      error.meta?.code === '42P01'
+    ) {
       return NextResponse.json({ integrations: [] })
     }
-    
-    return NextResponse.json({ 
-      error: 'Failed to fetch integrations',
-      details: error.message 
-    }}
+
+    return NextResponse.json(
+      {
+        error: 'Failed to fetch integrations',
+        details: error.message,
+      },
+      { status: 500 },
+    )
+  }
 }
+
+export const GET = withErrorHandling(
+  getHandler,
+  'GET /api/admin/integrations/list',
+)
+
 

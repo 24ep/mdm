@@ -12,7 +12,7 @@ async function postHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const POST = withErrorHandling(postHandler, '
 
@@ -25,13 +25,13 @@ export const POST = withErrorHandling(postHandler, '
     `, [token])
 
     if (invitation.rows.length === 0) {
-      return NextResponse.json({ error: 'Invalid or expired invitation' }}
+      return NextResponse.json({ error: 'Invalid or expired invitation'  })
 
     const invite = invitation.rows[0]
 
     // Check if the email matches the current user
     if (invite.email !== session.user.email) {
-      return NextResponse.json({ error: 'This invitation is not for your email address' }}
+      return NextResponse.json({ error: 'This invitation is not for your email address'  })
 
     // Check if user is already a member of the space
     const existingMember = await query(`
@@ -39,7 +39,7 @@ export const POST = withErrorHandling(postHandler, '
     `, [invite.space_id, session.user.id])
 
     if (existingMember.rows.length > 0) {
-      return NextResponse.json({ error: 'You are already a member of this space' }}
+      return NextResponse.json({ error: 'You are already a member of this space'  })
 
     // Add user to space
     await query(`

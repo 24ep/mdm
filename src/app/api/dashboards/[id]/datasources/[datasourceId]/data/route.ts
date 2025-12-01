@@ -23,7 +23,7 @@ async function postHandler(
     `, [datasourceId, id])
 
     if (datasources.length === 0) {
-      return NextResponse.json({ error: 'Datasource not found' }}
+      return NextResponse.json({ error: 'Datasource not found'  })
 
 export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashboards\[id]\datasources\[datasourceId]\data\route.ts')
 
@@ -106,12 +106,12 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashbo
             total = customData.length
           } catch (queryError) {
             console.error('Custom query error:', queryError)
-            return NextResponse.json({ error: 'Invalid custom query' }}
+            return NextResponse.json({ error: 'Invalid custom query'  })
         }
         break
 
       default:
-        return NextResponse.json({ error: 'Unsupported datasource type' }}
+        return NextResponse.json({ error: 'Unsupported datasource type'  })
 
     return NextResponse.json({
       data,

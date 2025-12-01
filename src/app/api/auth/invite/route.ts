@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ token, expires_at: expiresAt.toISOString() })
   } catch (error) {
     console.error('Create invite error:', error)
-    return NextResponse.json({ error: 'Internal server error' }}
+    return NextResponse.json({ error: 'Internal server error'  })
 }
 
 

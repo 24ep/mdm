@@ -90,7 +90,7 @@ async function postHandler(request: NextRequest) {
     })
 
     if (!ticket) {
-      return NextResponse.json({ error: 'Ticket not found' }}
+      return NextResponse.json({ error: 'Ticket not found'  })
 
     // Get ServiceDesk configuration
     const { rows: configRows } = await query(

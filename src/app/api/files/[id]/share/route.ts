@@ -14,7 +14,7 @@ async function getHandler(
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     const { id: fileId } = await params
 
@@ -28,7 +28,7 @@ async function getHandler(
     )
 
     if (accessResult.rows.length === 0) {
-      return NextResponse.json({ error: 'File not found or access denied' }}
+      return NextResponse.json({ error: 'File not found or access denied'  })
 
     // Get all shares for this file
     const sharesResult = await query(
@@ -67,7 +67,7 @@ async function postHandler(
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     const { id: fileId } = await params
     const { 
@@ -88,11 +88,11 @@ async function postHandler(
     )
 
     if (accessResult.rows.length === 0) {
-      return NextResponse.json({ error: 'File not found or access denied' }}
+      return NextResponse.json({ error: 'File not found or access denied'  })
 
     // Validate permission level
     if (!['view', 'download', 'edit'].includes(permissionLevel)) {
-      return NextResponse.json({ error: 'Invalid permission level' }}
+      return NextResponse.json({ error: 'Invalid permission level'  })
 
     // Hash password if provided
     let passwordHash = null
@@ -134,7 +134,7 @@ async function deleteHandler(
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\files\[id]\share\route.ts')
 
@@ -143,7 +143,7 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
     const shareId = searchParams.get('shareId')
 
     if (!shareId) {
-      return NextResponse.json({ error: 'Share ID is required' }}
+      return NextResponse.json({ error: 'Share ID is required'  })
 
     // Check if user can delete this share
     const shareResult = await query(
@@ -156,7 +156,7 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
     )
 
     if (shareResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Share not found or access denied' }}
+      return NextResponse.json({ error: 'Share not found or access denied'  })
 
     // Delete the share
     await query('DELETE FROM file_shares WHERE id = $1', [shareId])

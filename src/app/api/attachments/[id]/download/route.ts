@@ -14,7 +14,7 @@ async function getHandler(
 
 export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\attachments\[id]\download\route.ts')= authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 
 
@@ -26,7 +26,7 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\attachmen
     })
 
     if (!attachment) {
-      return NextResponse.json({ error: 'Attachment not found' }}
+      return NextResponse.json({ error: 'Attachment not found'  })
 
     // Get active storage connection
     const storageConnection = await db.storageConnection.findFirst({
@@ -37,7 +37,7 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\attachmen
     })
 
     if (!storageConnection) {
-      return NextResponse.json({ error: 'No active storage connection found' }}
+      return NextResponse.json({ error: 'No active storage connection found'  })
 
     // Initialize storage service
     const storageService = new AttachmentStorageService({
@@ -53,7 +53,7 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\attachmen
     if (!downloadResult.success) {
       return NextResponse.json({ 
         error: downloadResult.error || 'Download failed' 
-      }}
+       })
 
     // Convert stream to buffer
     const chunks: Buffer[] = []

@@ -11,7 +11,7 @@ async function getHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     const { id } = await params
 
@@ -54,7 +54,7 @@ async function getHandler(
     })
 
     if (!profile) {
-      return NextResponse.json({ error: 'Import profile not found' }}
+      return NextResponse.json({ error: 'Import profile not found'  })
 
     return NextResponse.json({ profile })
 
@@ -69,7 +69,7 @@ async function putHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     const { id } = await params
     const body = await request.json()
@@ -84,7 +84,7 @@ async function putHandler(
     })
 
     if (!existingProfile) {
-      return NextResponse.json({ error: 'Import profile not found or access denied' }}
+      return NextResponse.json({ error: 'Import profile not found or access denied'  })
 
     const { name, description, dataModelId, mapping, settings, spaceId } = body
 
@@ -129,7 +129,7 @@ async function deleteHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\import-profiles\[id]\route.ts')
 
@@ -145,7 +145,7 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
     })
 
     if (!existingProfile) {
-      return NextResponse.json({ error: 'Import profile not found or access denied' }}
+      return NextResponse.json({ error: 'Import profile not found or access denied'  })
 
     // Soft delete
     await db.importProfile.update({

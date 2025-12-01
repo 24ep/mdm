@@ -1,5 +1,4 @@
-import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
-import { requireSpaceAccess } from '@/lib/space-access'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 
@@ -9,14 +8,16 @@ async function putHandler(
 ) {
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
-    // Check if user has admin privileges
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }}
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    }
 
     const { id } = await params
     const body = await request.json()
@@ -40,7 +41,8 @@ async function putHandler(
     if (role) {
       const allowedRoles = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'USER']
       if (!allowedRoles.includes(role)) {
-        return NextResponse.json({ error: 'Invalid role' }}
+        return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
+      }
       values.push(role)
       sets.push(`role = $${values.length}`)
     }
@@ -50,21 +52,27 @@ async function putHandler(
     }
 
     if (!sets.length) {
-      return NextResponse.json({ error: 'No fields to update' }}
+      return NextResponse.json(
+        { error: 'No fields to update' },
+        { status: 400 }
+      )
+    }
 
     values.push(id)
-    const sql = `UPDATE users SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $${values.length} RETURNING id, email, name, role, is_active, created_at, default_space_id`
+    const sql = `UPDATE users SET ${sets.join(
+      ', '
+    )}, updated_at = NOW() WHERE id = $${
+      values.length
+    } RETURNING id, email, name, role, is_active, created_at, default_space_id`
 
     const { rows } = await query(sql, values)
     if (!rows.length) {
-      return NextResponse.json({ error: 'User not found' }}
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
 
-    // Handle space memberships if provided
     if (spaces && Array.isArray(spaces)) {
-      // Remove existing space memberships
       await query('DELETE FROM space_members WHERE user_id = $1', [id])
 
-      // Add new space memberships
       for (const space of spaces) {
         if (space.spaceId && space.role) {
           await query(
@@ -95,25 +103,22 @@ async function putHandler(
   }
 }
 
-
-
-export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\admin\users\[id]\route.ts')
 async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\admin\users\[id]\route.ts')
-
-    // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }}
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    }
 
     const { id } = await params
     const { rows } = await query(
@@ -122,7 +127,8 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
     )
 
     if (!rows.length) {
-      return NextResponse.json({ error: 'User not found' }}
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {
@@ -133,4 +139,13 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
     )
   }
 }
+
+export const PUT = withErrorHandling(
+  putHandler,
+  'PUT /api/admin/users/[id]'
+)
+export const DELETE = withErrorHandling(
+  deleteHandler,
+  'DELETE /api/admin/users/[id]'
+)
 

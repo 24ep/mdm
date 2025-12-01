@@ -10,7 +10,7 @@ async function postHandler(request: NextRequest) {
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const POST = withErrorHandling(postHandler, '
 
@@ -22,7 +22,7 @@ export const POST = withErrorHandling(postHandler, '
     const recordId = formData.get('recordId') as string
 
     if (!file || !spaceId || !dataModelId || !attributeId) {
-      return NextResponse.json({ error: 'Missing required fields' }}
+      return NextResponse.json({ error: 'Missing required fields'  })
 
     // Check if user has access to this space
     const memberResult = await query(
@@ -31,7 +31,7 @@ export const POST = withErrorHandling(postHandler, '
     )
 
     if (memberResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Space not found or access denied' }}
+      return NextResponse.json({ error: 'Space not found or access denied'  })
 
     // Get active storage connection
     const storageResult = await query(
@@ -40,7 +40,7 @@ export const POST = withErrorHandling(postHandler, '
     )
 
     if (storageResult.rows.length === 0) {
-      return NextResponse.json({ error: 'No active storage connection found' }}
+      return NextResponse.json({ error: 'No active storage connection found'  })
 
     const storage = storageResult.rows[0] as unknown as { type: string; config: any }
 
@@ -63,7 +63,7 @@ export const POST = withErrorHandling(postHandler, '
     if (!uploadResult.success || !uploadResult.path) {
       return NextResponse.json({ 
         error: uploadResult.error || 'Upload failed' 
-      }}
+       })
 
     // Save file metadata to database
     const fileResult = await query(

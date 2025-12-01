@@ -12,7 +12,7 @@ async function getHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     const { slug } = await params
 
@@ -22,7 +22,7 @@ async function getHandler(
     )
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Plugin not found' }}
+      return NextResponse.json({ error: 'Plugin not found'  })
 
     const row = result.rows[0]
 
@@ -78,10 +78,10 @@ async function putHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     if (session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }}
+      return NextResponse.json({ error: 'Forbidden'  })
 
     const { slug } = await params
     const body = await request.json()
@@ -113,7 +113,7 @@ async function putHandler(
     }
 
     if (updates.length === 0) {
-      return NextResponse.json({ error: 'No valid fields to update' }}
+      return NextResponse.json({ error: 'No valid fields to update'  })
 
     updates.push(`updated_at = NOW()`)
     values.push(slug)
@@ -128,7 +128,7 @@ async function putHandler(
     const result = await query(updateQuery, values)
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Plugin not found' }}
+      return NextResponse.json({ error: 'Plugin not found'  })
 
     await logAPIRequest(
       session.user.id,
@@ -150,12 +150,12 @@ async function deleteHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\marketplace\plugins\[slug]\route.ts')
 
     if (session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }}
+      return NextResponse.json({ error: 'Forbidden'  })
 
     const { slug } = await params
 
@@ -168,7 +168,7 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
     )
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Plugin not found' }}
+      return NextResponse.json({ error: 'Plugin not found'  })
 
     await logAPIRequest(
       session.user.id,

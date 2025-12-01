@@ -1,13 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 
 export async function GET() {
   try {
-    // Mock system health data
     const services = [
       {
         service: 'API Server',
         status: 'healthy',
-        uptime: 86400, // 24 hours in seconds
+        uptime: 86400,
         responseTime: 45,
         lastCheck: new Date(),
         errorRate: 0.1,
@@ -45,5 +44,10 @@ export async function GET() {
     return NextResponse.json({ services })
   } catch (error) {
     console.error('Error fetching system health:', error)
-    return NextResponse.json({ error: 'Failed to fetch system health' }}
+    return NextResponse.json(
+      { error: 'Failed to fetch system health' },
+      { status: 500 }
+    )
+  }
 }
+
