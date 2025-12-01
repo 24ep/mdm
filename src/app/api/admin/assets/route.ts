@@ -5,10 +5,11 @@ import { prisma } from '@/lib/db'
 
 async function getHandler(request: NextRequest) {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized' })
+    }
 
     const { searchParams } = new URL(request.url)
     const assetTypeCode = searchParams.get('assetTypeCode')
@@ -74,10 +75,6 @@ async function getHandler(request: NextRequest) {
     }
 
     return NextResponse.json(assets)
-  ,
-      { status: 500 }
-    )
-}
 }
 
 
@@ -92,15 +89,15 @@ async function getHandler(request: NextRequest) {
 
 
 
-export const GET = withErrorHandling(getHandler, 'GET GET /api/admin/assets')
+export const GET = withErrorHandling(getHandler, 'GET /api/admin/assets')
+
 async function postHandler(request: NextRequest) {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }}
-
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\assets\route.ts')
+      return NextResponse.json({ error: 'Unauthorized' })
+    }
 
     const body = await request.json()
     const {
@@ -162,16 +159,15 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\
     })
 
     return NextResponse.json(asset)
-  ,
-        { status: 409 }
-      )
-}
+  } catch (error) {
     return NextResponse.json(
       { error: 'Failed to create asset' },
       { status: 500 }
     )
   }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST /api/admin/assets')
 
 
 

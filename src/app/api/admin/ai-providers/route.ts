@@ -43,7 +43,6 @@ async function getHandler() {
     }))
 
     return NextResponse.json({ providers: formattedProviders })
-  }
 }
 
 

@@ -180,7 +180,8 @@ async function postHandler(request: NextRequest) {
           score: lintResult.score,
           summary: lintResult.summary
         } : null
-      }}
+      })
+    }
 }
 
 export const POST = withErrorHandling(postHandler, 'POST /api/admin/execute-query')

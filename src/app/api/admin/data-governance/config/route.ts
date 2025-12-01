@@ -89,9 +89,6 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\
         lastSync: new Date().toISOString()
       }
     })
-  ,
-      { status: 500 }
-    )
   }
 }
 

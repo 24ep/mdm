@@ -34,7 +34,6 @@ async function getHandler() {
     }))
 
     return NextResponse.json({ models: formattedModels })
-  }
 }
 
 

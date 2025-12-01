@@ -205,9 +205,6 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\use
       limit,
       totalPages: Math.ceil(total / limit)
     })
-  ,
-      { status: 500 }
-    )
   }
 }
 
