@@ -1,5 +1,4 @@
-import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
-import { requireSpaceAccess } from '@/lib/space-access'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { AttachmentStorageService } from '@/lib/attachment-storage'
@@ -10,82 +9,92 @@ async function putHandler(
 ) {
   const authResult = await requireAuthWithId()
   if (!authResult.success) return authResult.response
-  const { session } 
+  const { session } = authResult
 
-export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\admin\storage\files\[id]\rename\route.ts')= authResult
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
-export const POST = withErrorHandling(putHandler, '
+  if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
+    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+  }
 
-    if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions'  })
+  const { id: fileId } = await params
+  const { newName } = await request.json()
 
-    const { id: fileId } = await params
-    const { newName } = await request.json()
+  if (!newName || !newName.trim()) {
+    return NextResponse.json({ error: 'New name is required' }, { status: 400 })
+  }
 
-    if (!newName || !newName.trim()) {
-      return NextResponse.json({ error: 'New name is required'  })
+  const existingFile = await db.spaceAttachmentStorage.findUnique({
+    where: { id: fileId },
+    select: { filePath: true, fileName: true, spaceId: true }
+  })
 
-    // Get the file to get its current path and spaceId
-    const existingFile = await db.spaceAttachmentStorage.findUnique({
-      where: { id: fileId },
-      select: { filePath: true, fileName: true, spaceId: true }
-    })
+  if (!existingFile) {
+    return NextResponse.json({ error: 'File not found' }, { status: 404 })
+  }
 
-    if (!existingFile) {
-      return NextResponse.json({ error: 'File not found'  })
+  const storageConnection = await db.storageConnection.findFirst({
+    where: {
+      isActive: true,
+      type: { in: ['minio', 's3', 'sftp', 'ftp'] }
+    }
+  })
 
-    // Get active storage connection
-    const storageConnection = await db.storageConnection.findFirst({
-      where: { 
-        isActive: true,
-        type: { in: ['minio', 's3', 'sftp', 'ftp'] }
-      }
-    })
+  if (!storageConnection) {
+    return NextResponse.json(
+      { error: 'No active storage connection found' },
+      { status: 500 }
+    )
+  }
 
-    if (!storageConnection) {
-      return NextResponse.json({ error: 'No active storage connection found'  })
+  const storageService = new AttachmentStorageService({
+    provider: storageConnection.type as 'minio' | 's3' | 'sftp' | 'ftp',
+    config: {
+      [storageConnection.type]: storageConnection.config
+    } as any
+  })
 
-    // Create storage service instance
-    const storageService = new AttachmentStorageService({
-      provider: storageConnection.type as 'minio' | 's3' | 'sftp' | 'ftp',
-      config: {
-        [storageConnection.type]: storageConnection.config
-      } as any
-    })
+  const oldFileName =
+    existingFile.filePath?.split('/').pop() || existingFile.fileName
+  const trimmedNewName = newName.trim()
 
-    // Extract the actual file name from the path (last part after /)
-    const oldFileName = existingFile.filePath?.split('/').pop() || existingFile.fileName
-    const newFileName = newName.trim()
+  const renameResult = await storageService.renameFile(oldFileName, trimmedNewName)
 
-    // Rename file in storage
-    const renameResult = await storageService.renameFile(oldFileName, newFileName)
-    
-    if (!renameResult.success) {
-      return NextResponse.json({ 
-        error: renameResult.error || 'Failed to rename file in storage' 
-       })
+  if (!renameResult.success) {
+    return NextResponse.json(
+      {
+        error: renameResult.error || 'Failed to rename file in storage'
+      },
+      { status: 500 }
+    )
+  }
 
-    // Update file path and name in database
-    const pathParts = existingFile.filePath?.split('/') || []
-    pathParts[pathParts.length - 1] = newFileName
-    const newFilePath = pathParts.join('/')
+  const pathParts = existingFile.filePath?.split('/') || []
+  pathParts[pathParts.length - 1] = trimmedNewName
+  const newFilePath = pathParts.join('/')
 
-    const updatedFile = await db.spaceAttachmentStorage.update({
-      where: { id: fileId },
-      data: { 
-        fileName: newName.trim(),
-        filePath: newFilePath
-      }
-    })
+  const updatedFile = await db.spaceAttachmentStorage.update({
+    where: { id: fileId },
+    data: {
+      fileName: trimmedNewName,
+      filePath: newFilePath
+    }
+  })
 
-    return NextResponse.json({ 
-      file: {
-        id: updatedFile.id,
-        name: updatedFile.fileName,
-        path: updatedFile.filePath,
-        createdAt: updatedFile.createdAt
-      }
-    })
+  return NextResponse.json({
+    file: {
+      id: updatedFile.id,
+      name: updatedFile.fileName,
+      path: updatedFile.filePath,
+      createdAt: updatedFile.createdAt
+    }
+  })
+}
+
+export const PUT = withErrorHandling(
+  putHandler,
+  'PUT /api/admin/storage/files/[id]/rename'
+)
 

@@ -1,60 +1,59 @@
-import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
-import { requireSpaceAccess } from '@/lib/space-access'
+import { requireAdmin, withErrorHandling } from '@/lib/api-middleware'
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 
 async function getHandler(request: NextRequest) {
-    const authResult = await requireAdmin()
-    if (!authResult.success) return authResult.response
-    const { session } = authResult
-    // TODO: Add requireSpaceAccess check if spaceId is available
+  const authResult = await requireAdmin()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\users\export\route.ts')
+  if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
+    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+  }
 
-    // Check if user has admin privileges
-    if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
+  const { searchParams } = new URL(request.url)
+  const search = searchParams.get('search') || ''
+  const role = searchParams.get('role') || ''
+  const active = searchParams.get('active') || ''
+  const spaceId = searchParams.get('spaceId') || ''
 
-    const { searchParams } = new URL(request.url)
-    const search = searchParams.get('search') || ''
-    const role = searchParams.get('role') || ''
-    const active = searchParams.get('active') || ''
-    const spaceId = searchParams.get('spaceId') || ''
+  const whereConditions: string[] = []
+  const queryParams: any[] = []
+  let paramIndex = 1
 
-    // Build the query with filters
-    let whereConditions: string[] = []
-    let queryParams: any[] = []
-    let paramIndex = 1
+  if (search) {
+    whereConditions.push(
+      `(u.name ILIKE $${paramIndex} OR u.email ILIKE $${paramIndex})`
+    )
+    queryParams.push(`%${search}%`)
+    paramIndex++
+  }
 
-    if (search) {
-      whereConditions.push(`(u.name ILIKE $${paramIndex} OR u.email ILIKE $${paramIndex})`)
-      queryParams.push(`%${search}%`)
-      paramIndex++
-    }
+  if (role) {
+    whereConditions.push(`u.role = $${paramIndex}`)
+    queryParams.push(role)
+    paramIndex++
+  }
 
-    if (role) {
-      whereConditions.push(`u.role = $${paramIndex}`)
-      queryParams.push(role)
-      paramIndex++
-    }
+  if (active !== '') {
+    whereConditions.push(`u.is_active = $${paramIndex}`)
+    queryParams.push(active === 'true')
+    paramIndex++
+  }
 
-    if (active !== '') {
-      whereConditions.push(`u.is_active = $${paramIndex}`)
-      queryParams.push(active === 'true')
-      paramIndex++
-    }
+  if (spaceId) {
+    whereConditions.push(
+      `u.id IN (SELECT user_id FROM space_members WHERE space_id = $${paramIndex}::uuid)`
+    )
+    queryParams.push(spaceId)
+    paramIndex++
+  }
 
-    if (spaceId) {
-      whereConditions.push(`u.id IN (SELECT user_id FROM space_members WHERE space_id = $${paramIndex}::uuid)`)
-      queryParams.push(spaceId)
-      paramIndex++
-    }
+  const whereClause =
+    whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : ''
 
-    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : ''
-
-    // Get all users (no pagination for export)
-    const usersResult = await query(`
+  const usersResult = await query(
+    `
       SELECT 
         u.id,
         u.name,
@@ -82,44 +81,58 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\use
       ${whereClause}
       GROUP BY u.id, u.name, u.email, u.role, u.is_active, u.created_at, u.last_login_at, u.default_space_id, s.name
       ORDER BY u.created_at DESC
-    `, queryParams)
+    `,
+    queryParams
+  )
 
-    // Convert to CSV
-    const users = usersResult.rows
-    const headers = ['ID', 'Name', 'Email', 'Role', 'Status', 'Created At', 'Last Login', 'Default Space', 'Space Memberships']
-    const csvRows = [headers.join(',')]
+  const users = usersResult.rows
+  const headers = [
+    'ID',
+    'Name',
+    'Email',
+    'Role',
+    'Status',
+    'Created At',
+    'Last Login',
+    'Default Space',
+    'Space Memberships'
+  ]
+  const csvRows = [headers.join(',')]
 
-    for (const user of users) {
-      const spaces = Array.isArray(user.spaces) ? user.spaces : []
-      const spaceMemberships = spaces.map((s: any) => `${s.spaceName} (${s.role})`).join('; ')
-      
-      const row = [
-        user.id,
-        `"${(user.name || '').replace(/"/g, '""')}"`,
-        `"${(user.email || '').replace(/"/g, '""')}"`,
-        user.role || '',
-        user.is_active ? 'Active' : 'Inactive',
-        user.created_at ? new Date(user.created_at).toISOString() : '',
-        user.last_login_at ? new Date(user.last_login_at).toISOString() : '',
-        user.default_space_name || '',
-        `"${spaceMemberships.replace(/"/g, '""')}"`
-      ]
-      csvRows.push(row.join(','))
-    }
+  for (const user of users) {
+    const spaces = Array.isArray(user.spaces) ? user.spaces : []
+    const spaceMemberships = spaces
+      .map((s: any) => `${s.spaceName} (${s.role})`)
+      .join('; ')
 
-    const csv = csvRows.join('\n')
-
-    return new NextResponse(csv, {
-      headers: {
-        'Content-Type': 'text/csv',
-        'Content-Disposition': `attachment; filename="users-export-${new Date().toISOString().split('T')[0]}.csv"`
-      }
-    })
-  ,
-      { status: 500 }
-    )
+    const row = [
+      user.id,
+      `"${String(user.name || '').replace(/"/g, '""')}"`,
+      `"${String(user.email || '').replace(/"/g, '""')}"`,
+      user.role || '',
+      user.is_active ? 'Active' : 'Inactive',
+      user.created_at ? new Date(user.created_at).toISOString() : '',
+      user.last_login_at ? new Date(user.last_login_at).toISOString() : '',
+      user.default_space_name || '',
+      `"${spaceMemberships.replace(/"/g, '""')}"`
+    ]
+    csvRows.push(row.join(','))
   }
+
+  const csv = csvRows.join('\n')
+
+  return new NextResponse(csv, {
+    headers: {
+      'Content-Type': 'text/csv',
+      'Content-Disposition': `attachment; filename="users-export-${
+        new Date().toISOString().split('T')[0]
+      }.csv"`
+    }
+  })
 }
 
-export const GET = withErrorHandling(getHandler, 'GET GET /api/admin/users/export')
+export const GET = withErrorHandling(
+  getHandler,
+  'GET /api/admin/users/export'
+)
 
