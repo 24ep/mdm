@@ -51,5 +51,9 @@ export async function GET() {
     return NextResponse.json({ logs })
   } catch (error) {
     console.error('Error fetching logs:', error)
-    return NextResponse.json({ error: 'Failed to fetch logs' }}
+    return NextResponse.json(
+      { error: 'Failed to fetch logs' },
+      { status: 500 },
+    )
+  }
 }

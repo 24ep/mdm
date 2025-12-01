@@ -14,7 +14,7 @@ async function postHandler(
   const { session } = authResult
     
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const POST = withErrorHandling(postHandler, '
 
@@ -56,6 +56,6 @@ export const POST = withErrorHandling(postHandler, '
     })
   } catch (error) {
     console.error('Error publishing chatbot:', error)
-    return NextResponse.json({ error: 'Failed to publish chatbot' }}
+    return NextResponse.json({ error: 'Failed to publish chatbot'  })
 }
 

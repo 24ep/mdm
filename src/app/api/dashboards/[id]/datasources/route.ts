@@ -65,7 +65,7 @@ async function postHandler(
     const { name, source_type, source_id, config, query_config } = body
 
     if (!name || !source_type) {
-      return NextResponse.json({ error: 'Name and source_type are required' }}
+      return NextResponse.json({ error: 'Name and source_type are required'  })
 
 export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashboards\[id]\datasources\route.ts')
 
@@ -78,14 +78,14 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashbo
     `, [id, session.user.id])
 
     if (accessCheck.length === 0) {
-      return NextResponse.json({ error: 'Dashboard not found' }}
+      return NextResponse.json({ error: 'Dashboard not found'  })
 
     const dashboard = accessCheck[0]
     const canEdit = dashboard.created_by === session.user.id || 
                    (dashboard.role && ['ADMIN', 'EDITOR'].includes(dashboard.role))
 
     if (!canEdit) {
-      return NextResponse.json({ error: 'Access denied' }}
+      return NextResponse.json({ error: 'Access denied'  })
 
     // Create datasource
     const { rows } = await query(`

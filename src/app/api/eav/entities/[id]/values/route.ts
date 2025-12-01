@@ -11,7 +11,7 @@ async function getHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     const { id } = await params
 
@@ -51,14 +51,14 @@ async function postHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     const { id } = await params
     const body = await request.json()
     const { values } = body
 
     if (!Array.isArray(values)) {
-      return NextResponse.json({ error: 'Values must be an array' }}
+      return NextResponse.json({ error: 'Values must be an array'  })
 
     // Check if entity exists
     const { rows: entity } = await query(
@@ -67,7 +67,7 @@ async function postHandler(
     )
 
     if (entity.length === 0) {
-      return NextResponse.json({ error: 'Entity not found' }}
+      return NextResponse.json({ error: 'Entity not found'  })
 
     // Insert or update values
     const results = []
@@ -124,7 +124,7 @@ async function putHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\eav\entities\[id]\values\route.ts')
 
@@ -133,7 +133,7 @@ export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\eav\entit
     const { values } = body
 
     if (!Array.isArray(values)) {
-      return NextResponse.json({ error: 'Values must be an array' }}
+      return NextResponse.json({ error: 'Values must be an array'  })
 
     // Check if entity exists
     const { rows: entity } = await query(
@@ -142,7 +142,7 @@ export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\eav\entit
     )
 
     if (entity.length === 0) {
-      return NextResponse.json({ error: 'Entity not found' }}
+      return NextResponse.json({ error: 'Entity not found'  })
 
     // Update values
     const results = []

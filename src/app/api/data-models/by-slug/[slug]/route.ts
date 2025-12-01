@@ -15,7 +15,7 @@ export async function GET(
     return NextResponse.json({ dataModel: rows[0] })
   } catch (error) {
     console.error('Error fetching data model by slug:', error)
-    return NextResponse.json({ error: 'Internal server error' }}
+    return NextResponse.json({ error: 'Internal server error'  })
 }
 
 

@@ -12,11 +12,11 @@ async function putHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }}
+      return NextResponse.json({ error: 'Insufficient permissions'  })
 
     const { id } = await params
     const body = await request.json()
@@ -40,7 +40,7 @@ async function putHandler(
     if (role) {
       const allowedRoles = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'USER']
       if (!allowedRoles.includes(role)) {
-        return NextResponse.json({ error: 'Invalid role' }}
+        return NextResponse.json({ error: 'Invalid role'  })
       values.push(role)
       sets.push(`role = $${values.length}`)
     }
@@ -50,14 +50,14 @@ async function putHandler(
     }
 
     if (!sets.length) {
-      return NextResponse.json({ error: 'No fields to update' }}
+      return NextResponse.json({ error: 'No fields to update'  })
 
     values.push(id)
     const sql = `UPDATE users SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $${values.length} RETURNING id, email, name, role, is_active, created_at, default_space_id`
 
     const { rows } = await query(sql, values)
     if (!rows.length) {
-      return NextResponse.json({ error: 'User not found' }}
+      return NextResponse.json({ error: 'User not found'  })
 
     // Handle space memberships if provided
     if (spaces && Array.isArray(spaces)) {
@@ -107,13 +107,13 @@ async function deleteHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\admin\users\[id]\route.ts')
 
     // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }}
+      return NextResponse.json({ error: 'Insufficient permissions'  })
 
     const { id } = await params
     const { rows } = await query(
@@ -122,7 +122,7 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
     )
 
     if (!rows.length) {
-      return NextResponse.json({ error: 'User not found' }}
+      return NextResponse.json({ error: 'User not found'  })
 
     return NextResponse.json({ success: true })
   } catch (error) {

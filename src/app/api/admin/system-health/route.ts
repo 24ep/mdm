@@ -45,5 +45,5 @@ export async function GET() {
     return NextResponse.json({ services })
   } catch (error) {
     console.error('Error fetching system health:', error)
-    return NextResponse.json({ error: 'Failed to fetch system health' }}
+    return NextResponse.json({ error: 'Failed to fetch system health'  })
 }

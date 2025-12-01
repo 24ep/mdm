@@ -22,7 +22,7 @@ async function postHandler(
     )
 
     if (existing.length === 0) {
-      return NextResponse.json({ error: 'Sync schedule not found' }}
+      return NextResponse.json({ error: 'Sync schedule not found'  })
 
 export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\data-sync-schedules\[id]\execute\route.ts')
 
@@ -44,7 +44,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\data-s
       return NextResponse.json({ 
         error: 'Sync is already running',
         status: 'RUNNING'
-      }}
+       })
 
     // Execute sync
     const executor = new DataSyncExecutor()

@@ -13,12 +13,12 @@ async function getHandler(
 
 export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\storage\buckets\[id]\files\route.ts')= authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 
 
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }}
+      return NextResponse.json({ error: 'Insufficient permissions'  })
 
     const { id: bucketId } = await params
     const { searchParams } = new URL(request.url)
@@ -31,7 +31,7 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\sto
     })
 
     if (!space) {
-      return NextResponse.json({ error: 'Bucket not found' }}
+      return NextResponse.json({ error: 'Bucket not found'  })
 
     // Parse the path to get current directory level
     const pathParts = path ? path.split('/').filter(p => p) : []

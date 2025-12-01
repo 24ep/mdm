@@ -1,5 +1,4 @@
-import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
-import { requireSpaceAccess } from '@/lib/space-access'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import { getSecretsManager } from '@/lib/secrets-manager'
@@ -11,17 +10,19 @@ const prisma = new PrismaClient()
 
 async function getHandler(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     if (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }}
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
     const { id } = await params
     const instance = await prisma.kongInstance.findUnique({
@@ -31,7 +32,7 @@ async function getHandler(
     if (!instance) {
       return NextResponse.json(
         { error: 'Kong instance not found' },
-        { status: 404 }
+        { status: 404 },
       )
     }
 
@@ -43,11 +44,15 @@ async function getHandler(
     if (instance.adminApiKey) {
       if (useVault) {
         try {
-          const auditContext = createAuditContext(request, session.user, 'Kong instance API key retrieval')
+          const auditContext = createAuditContext(
+            request,
+            session.user,
+            'Kong instance API key retrieval',
+          )
           const secret = await secretsManager.getSecret(
             `kong-instances/${instance.id}/admin-api-key`,
             undefined,
-            auditContext
+            auditContext,
           )
           decryptedApiKey = secret?.adminApiKey || null
         } catch (error) {
@@ -70,31 +75,36 @@ async function getHandler(
     console.error('Error fetching Kong instance:', error)
     return NextResponse.json(
       { error: 'Failed to fetch Kong instance' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
 
+export const GET = withErrorHandling(
+  getHandler,
+  'GET /api/admin/kong-instances/[id]',
+)
 
-
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\kong-instances\[id]\route.ts')
 async function putHandler(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     if (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }}
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
     const { id } = await params
     const body = await request.json()
-    const { name, adminUrl, adminApiKey, description, metadata, isActive } = body
+    const { name, adminUrl, adminApiKey, description, metadata, isActive } =
+      body
 
     const instance = await prisma.kongInstance.findUnique({
       where: { id },
@@ -103,7 +113,7 @@ async function putHandler(
     if (!instance) {
       return NextResponse.json(
         { error: 'Kong instance not found' },
-        { status: 404 }
+        { status: 404 },
       )
     }
 
@@ -114,7 +124,7 @@ async function putHandler(
       } catch {
         return NextResponse.json(
           { error: 'adminUrl must be a valid URL' },
-          { status: 400 }
+          { status: 400 },
         )
       }
     }
@@ -129,10 +139,14 @@ async function putHandler(
         // Remove API key
         if (useVault) {
           try {
-            const deleteAuditContext = createAuditContext(request, session.user, 'Kong instance API key deletion')
+            const deleteAuditContext = createAuditContext(
+              request,
+              session.user,
+              'Kong instance API key deletion',
+            )
             await secretsManager.deleteSecret(
               `kong-instances/${instance.id}/admin-api-key`,
-              deleteAuditContext
+              deleteAuditContext,
             )
           } catch (error) {
             console.warn('Failed to delete Kong API key from Vault:', error)
@@ -143,12 +157,16 @@ async function putHandler(
         // Update API key
         if (useVault) {
           try {
-            const updateAuditContext = createAuditContext(request, session.user, 'Kong instance API key update')
+            const updateAuditContext = createAuditContext(
+              request,
+              session.user,
+              'Kong instance API key update',
+            )
             await secretsManager.storeSecret(
               `kong-instances/${instance.id}/admin-api-key`,
               { adminApiKey },
               undefined,
-              updateAuditContext
+              updateAuditContext,
             )
             storedApiKey = `vault://kong-instances/${instance.id}/admin-api-key`
           } catch (error) {
@@ -187,7 +205,11 @@ async function putHandler(
                     await secretsManager.getSecret(
                       `kong-instances/${instance.id}/admin-api-key`,
                       undefined,
-                      createAuditContext(request, session.user, 'Kong instance connection test')
+                      createAuditContext(
+                        request,
+                        session.user,
+                        'Kong instance connection test',
+                      ),
                     )
                   )?.adminApiKey
                 : decryptApiKey(instance.adminApiKey)
@@ -195,7 +217,7 @@ async function putHandler(
 
         const kongClient = new KongClient(
           updatedInstance.adminUrl,
-          apiKeyToTest || undefined
+          apiKeyToTest || undefined,
         )
         const isConnected = await kongClient.testConnection()
 
@@ -216,29 +238,31 @@ async function putHandler(
     console.error('Error updating Kong instance:', error)
     return NextResponse.json(
       { error: error.message || 'Failed to update Kong instance' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
 
+export const PUT = withErrorHandling(
+  putHandler,
+  'PUT /api/admin/kong-instances/[id]',
+)
 
-
-export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\admin\kong-instances\[id]\route.ts')
 async function deleteHandler(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
-
-export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\admin\kong-instances\[id]\route.ts')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     if (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }}
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
     const { id } = await params
     const instance = await prisma.kongInstance.findUnique({
@@ -248,7 +272,7 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
     if (!instance) {
       return NextResponse.json(
         { error: 'Kong instance not found' },
-        { status: 404 }
+        { status: 404 },
       )
     }
 
@@ -258,10 +282,14 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
 
     if (useVault && instance.adminApiKey) {
       try {
-        const deleteAuditContext = createAuditContext(request, session.user, 'Kong instance deletion')
+        const deleteAuditContext = createAuditContext(
+          request,
+          session.user,
+          'Kong instance deletion',
+        )
         await secretsManager.deleteSecret(
           `kong-instances/${instance.id}/admin-api-key`,
-          deleteAuditContext
+          deleteAuditContext,
         )
       } catch (error) {
         console.warn('Failed to cleanup Vault secrets:', error)
@@ -277,8 +305,14 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
     console.error('Error deleting Kong instance:', error)
     return NextResponse.json(
       { error: 'Failed to delete Kong instance' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
+
+export const DELETE = withErrorHandling(
+  deleteHandler,
+  'DELETE /api/admin/kong-instances/[id]',
+)
+
 

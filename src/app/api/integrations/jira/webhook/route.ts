@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     const issue = payload.issue
 
     if (!issue || !issue.key) {
-      return NextResponse.json({ error: 'Invalid webhook payload' }}
+      return NextResponse.json({ error: 'Invalid webhook payload'  })
 
     // Find ticket linked to this Jira issue
     const { rows: ticketRows } = await query(

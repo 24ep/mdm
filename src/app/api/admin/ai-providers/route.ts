@@ -57,7 +57,8 @@ async function postHandler(request: NextRequest) {
 
     // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }}
+      return NextResponse.json({ error: 'Insufficient permissions' })
+    }
 
     const body = await request.json()
     const { 
@@ -135,8 +136,6 @@ async function postHandler(request: NextRequest) {
 
     return NextResponse.json({ provider: formattedProvider })
   }
-}
-
 
 
 

@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     // Combine and format the data
     const items = [
-      ...spaceAttachments.map(attachment => ({
+      ...spaceAttachments.map((attachment) => ({
         id: attachment.id,
         name: attachment.fileName,
         type: 'file' as const,
@@ -44,9 +44,9 @@ export async function GET(request: NextRequest) {
         spaceId: attachment.spaceId,
         spaceName: attachment.space.name,
         isAttachment: true,
-        attachmentId: attachment.id
+        attachmentId: attachment.id,
       })),
-      ...attachmentFiles.map(file => ({
+      ...attachmentFiles.map((file) => ({
         id: file.id,
         name: file.fileName,
         type: 'file' as const,
@@ -65,12 +65,16 @@ export async function GET(request: NextRequest) {
         spaceId: undefined,
         spaceName: undefined,
         isAttachment: true,
-        attachmentId: file.id
-      }))
+        attachmentId: file.id,
+      })),
     ]
 
     return NextResponse.json({ items })
   } catch (error) {
     console.error('Error fetching storage contents:', error)
-    return NextResponse.json({ error: 'Failed to fetch contents' }}
+    return NextResponse.json(
+      { error: 'Failed to fetch contents' },
+      { status: 500 },
+    )
+  }
 }

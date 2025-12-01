@@ -12,7 +12,7 @@ async function getHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\import-export\jobs\[jobId]\download\route.ts')
 
@@ -28,7 +28,7 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\import-ex
     )
 
     if (jobResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Job not found' }}
+      return NextResponse.json({ error: 'Job not found'  })
 
     const job = jobResult.rows[0]
 

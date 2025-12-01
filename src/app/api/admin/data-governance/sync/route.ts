@@ -1,14 +1,11 @@
-import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
-import { requireSpaceAccess } from '@/lib/space-access'
+import { requireAuth, withErrorHandling } from '@/lib/api-middleware'
 import { NextRequest, NextResponse } from 'next/server'
-import { OpenMetadataClient } from '@/lib/openmetadata-client'
+// import { OpenMetadataClient } from '@/lib/openmetadata-client'
 
 async function postHandler(request: NextRequest) {
+  try {
     const authResult = await requireAuth()
     if (!authResult.success) return authResult.response
-    const { session } = authResult
-
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\data-governance\sync\route.ts')
 
     const body = await request.json()
     const { direction = 'both' } = body // 'pull', 'push', or 'both'
@@ -25,7 +22,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\
       dashboards: 0,
       pipelines: 0,
       topics: 0,
-      mlModels: 0
+      mlModels: 0,
     }
 
     // PULL: Sync from OpenMetadata → Application
@@ -36,7 +33,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\
       // const pipelines = await client.getPipelines({ limit: 1000 })
       // const topics = await client.getTopics({ limit: 1000 })
       // const mlModels = await client.getMLModels({ limit: 1000 })
-      // 
+      //
       // For each asset:
       //   - Check if exists in local DB (by FQN)
       //   - If exists: Update if OpenMetadata version is newer
@@ -56,21 +53,23 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\
       // 3. Mark assets as synced
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       message: `Assets synchronized successfully (${direction})`,
       syncedAt: new Date().toISOString(),
       direction,
-      synced
+      synced,
     })
   } catch (error) {
     console.error('Error syncing assets:', error)
     return NextResponse.json(
       { error: 'Failed to sync assets' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
 
-export const POST = withErrorHandling(postHandler, 'POST POST /api/admin/data-governance/sync')
-
+export const POST = withErrorHandling(
+  postHandler,
+  'POST /api/admin/data-governance/sync',
+)

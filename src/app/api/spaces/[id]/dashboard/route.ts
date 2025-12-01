@@ -27,7 +27,7 @@ export async function GET(
     })
 
     if (!space) {
-      return NextResponse.json({ error: 'Space not found' }}
+      return NextResponse.json({ error: 'Space not found'  })
 
     // Mock dashboard data - in a real implementation, this would come from a dashboards table
     const dashboard = {
@@ -95,7 +95,7 @@ export async function GET(
     return NextResponse.json({ dashboard })
   } catch (error) {
     console.error('Error fetching space dashboard:', error)
-    return NextResponse.json({ error: 'Failed to fetch dashboard' }}
+    return NextResponse.json({ error: 'Failed to fetch dashboard'  })
 }
 
 export async function PUT(
@@ -117,5 +117,5 @@ export async function PUT(
     return NextResponse.json({ dashboard: updatedDashboard })
   } catch (error) {
     console.error('Error updating space dashboard:', error)
-    return NextResponse.json({ error: 'Failed to update dashboard' }}
+    return NextResponse.json({ error: 'Failed to update dashboard'  })
 }

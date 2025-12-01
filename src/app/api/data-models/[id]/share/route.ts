@@ -13,7 +13,7 @@ async function putHandler(
 
 export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\data-models\[id]\share\route.ts')= authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const POST = withErrorHandling(putHandler, '
 
@@ -22,7 +22,7 @@ export const POST = withErrorHandling(putHandler, '
     const { space_ids } = body
 
     if (!Array.isArray(space_ids)) {
-      return NextResponse.json({ error: 'space_ids must be an array' }}
+      return NextResponse.json({ error: 'space_ids must be an array'  })
 
     // Get the data model to check permissions using Prisma
     const dataModel = await db.dataModel.findUnique({
@@ -31,12 +31,12 @@ export const POST = withErrorHandling(putHandler, '
     })
 
     if (!dataModel) {
-      return NextResponse.json({ error: 'Data model not found' }}
+      return NextResponse.json({ error: 'Data model not found'  })
 
     // Check if user has admin/owner access to the original space
     const originalSpaceId = dataModel.spaces?.[0]?.spaceId
     if (!originalSpaceId) {
-      return NextResponse.json({ error: 'Data model has no original space' }}
+      return NextResponse.json({ error: 'Data model has no original space'  })
 
     const spaceMember = await db.spaceMember.findFirst({
       where: {
@@ -47,7 +47,7 @@ export const POST = withErrorHandling(putHandler, '
     })
 
     if (!spaceMember || !['admin', 'owner'].includes(spaceMember.role)) {
-      return NextResponse.json({ error: 'Access denied' }}
+      return NextResponse.json({ error: 'Access denied'  })
 
     // Validate that all target spaces exist and user has access using Prisma
     if (space_ids.length > 0) {

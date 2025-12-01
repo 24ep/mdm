@@ -13,7 +13,7 @@ async function postHandler(request: NextRequest) {
     const { userIds, role, spaceId, spaceRole, operation, isActive } = body
 
     if (!Array.isArray(userIds) || userIds.length === 0) {
-      return NextResponse.json({ error: 'userIds array is required' }}
+      return NextResponse.json({ error: 'userIds array is required'  })
 
     const results = {
       success: [] as string[],
@@ -62,7 +62,7 @@ async function postHandler(request: NextRequest) {
     else if (role) {
       const allowedRoles = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'USER']
       if (!allowedRoles.includes(role)) {
-        return NextResponse.json({ error: 'Invalid role' }}
+        return NextResponse.json({ error: 'Invalid role'  })
 
       for (const userId of userIds) {
         try {

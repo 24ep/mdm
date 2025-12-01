@@ -2,6 +2,7 @@ import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from 
 import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
 async function getHandler(request: NextRequest) {
+  try {
     const authResult = await requireAuth()
     if (!authResult.success) return authResult.response
     const { session } = authResult
@@ -24,14 +25,13 @@ async function getHandler(request: NextRequest) {
 
 
 
-export const GET = withErrorHandling(getHandler, 'GET GET /api/admin/data-governance/config')
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\data-governance\config\route.ts')
+export const GET = withErrorHandling(getHandler, 'GET /api/admin/data-governance/config')
+
 async function postHandler(request: NextRequest) {
+  try {
     const authResult = await requireAuth()
     if (!authResult.success) return authResult.response
     const { session } = authResult
-
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\data-governance\config\route.ts')
 
     const body = await request.json()
     const { config } = body
@@ -46,7 +46,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\
     }
 
     // Validate OpenMetadata connection
-    
+    try {
       const testUrl = `${config.host}/api/v1/system/version`
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -89,8 +89,14 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\
         lastSync: new Date().toISOString()
       }
     })
+  } catch (error) {
+    console.error('Error saving data governance config:', error)
+    return NextResponse.json(
+      { error: 'Failed to save configuration' },
+      { status: 500 }
+    )
   }
 }
 
-export const POST = withErrorHandling(postHandler, 'POST POST /api/admin/data-governance/config')
+export const POST = withErrorHandling(postHandler, 'POST /api/admin/data-governance/config')
 

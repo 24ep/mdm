@@ -78,7 +78,6 @@ async function postHandler(request: NextRequest) {
     }
 
     return NextResponse.json({ model: formattedModel })
-  }
 }
 
 export const POST = withErrorHandling(postHandler, 'POST /api/admin/ai-models')

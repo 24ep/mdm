@@ -9,7 +9,7 @@ async function postHandler(request: NextRequest) {
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     const formData = await request.formData()
     const file = formData.get('file') as File

@@ -69,7 +69,7 @@ async function handleGatewayRequest(
     )
 
     if (pluginResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Plugin not found' }}
+      return NextResponse.json({ error: 'Plugin not found'  })
 
     const row = pluginResult.rows[0]
     const plugin = {

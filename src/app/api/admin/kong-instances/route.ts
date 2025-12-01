@@ -1,5 +1,4 @@
-import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
-import { requireSpaceAccess } from '@/lib/space-access'
+import { requireAdmin, requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import { getSecretsManager } from '@/lib/secrets-manager'
@@ -10,19 +9,20 @@ import { createAuditContext } from '@/lib/audit-context-helper'
 const prisma = new PrismaClient()
 
 async function getHandler(request: NextRequest) {
+  try {
     const authResult = await requireAdmin()
     if (!authResult.success) return authResult.response
     const { session } = authResult
 
     // Check if user is admin
     if (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }}
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
     const instances = await prisma.kongInstance.findMany({
       orderBy: { createdAt: 'desc' },
     })
 
-    // Decrypt API keys if stored in database
     const secretsManager = getSecretsManager()
     const useVault = secretsManager.getBackend() === 'vault'
 
@@ -32,18 +32,22 @@ async function getHandler(request: NextRequest) {
 
         if (instance.adminApiKey) {
           if (useVault) {
-            
-              const auditContext = createAuditContext(request, session.user, 'Kong instance API key retrieval')
+            try {
+              const auditContext = createAuditContext(
+                request,
+                session.user,
+                'Kong instance API key retrieval',
+              )
               const secret = await secretsManager.getSecret(
                 `kong-instances/${instance.id}/admin-api-key`,
                 undefined,
-                auditContext
+                auditContext,
               )
               decryptedApiKey = secret?.adminApiKey || null
             } catch (error) {
               console.warn(
                 `Failed to get Kong API key from Vault for instance ${instance.id}:`,
-                error
+                error,
               )
             }
           } else {
@@ -52,7 +56,7 @@ async function getHandler(request: NextRequest) {
             } catch (error) {
               console.warn(
                 `Failed to decrypt Kong API key for instance ${instance.id}:`,
-                error
+                error,
               )
             }
           }
@@ -62,7 +66,7 @@ async function getHandler(request: NextRequest) {
           id: instance.id,
           name: instance.name,
           adminUrl: instance.adminUrl,
-          adminApiKey: decryptedApiKey, // Return decrypted for display (will be masked in UI)
+          adminApiKey: decryptedApiKey,
           description: instance.description,
           isActive: instance.isActive,
           status: instance.status,
@@ -71,42 +75,46 @@ async function getHandler(request: NextRequest) {
           createdAt: instance.createdAt,
           updatedAt: instance.updatedAt,
         }
-      })
+      }),
     )
 
     return NextResponse.json({ instances: instancesWithDecryptedKeys })
-  ,
-      { status: 500 }
+  } catch (error: any) {
+    console.error('Error fetching Kong instances:', error)
+    return NextResponse.json(
+      { error: error.message || 'Failed to fetch Kong instances' },
+      { status: 500 },
     )
   }
 }
 
+export const GET = withErrorHandling(
+  getHandler,
+  'GET /api/admin/kong-instances',
+)
 
-
-
-
-export const GET = withErrorHandling(getHandler, 'GET GET /api/admin/kong-instances')
 async function postHandler(request: NextRequest) {
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
-
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\kong-instances\route.ts')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     // Check if user is admin
     if (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }}
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
     const body = await request.json()
-    const { name, adminUrl, adminApiKey, description, metadata, isActive } = body
+    const { name, adminUrl, adminApiKey, description, metadata, isActive } =
+      body
 
     if (!name || !adminUrl) {
       return NextResponse.json(
         { error: 'name and adminUrl are required' },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -116,7 +124,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\
     } catch {
       return NextResponse.json(
         { error: 'adminUrl must be a valid URL' },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -129,7 +137,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\
     if (adminApiKey) {
       if (useVault) {
         // Will store after instance creation
-        storedApiKey = `vault://kong-instances/temp/admin-api-key`
+        storedApiKey = 'vault://kong-instances/temp/admin-api-key'
       } else {
         storedApiKey = encryptApiKey(adminApiKey)
       }
@@ -151,12 +159,16 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\
     // Store API key in Vault if using Vault
     if (useVault && adminApiKey) {
       try {
-        const auditContext = createAuditContext(request, session.user, 'Kong instance creation')
+        const auditContext = createAuditContext(
+          request,
+          session.user,
+          'Kong instance creation',
+        )
         await secretsManager.storeSecret(
           `kong-instances/${instance.id}/admin-api-key`,
           { adminApiKey },
           undefined,
-          auditContext
+          auditContext,
         )
         // Update with correct Vault path
         await prisma.kongInstance.update({
@@ -173,10 +185,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\
 
     // Test connection
     try {
-      const kongClient = new KongClient(
-        instance.adminUrl,
-        adminApiKey || undefined
-      )
+      const kongClient = new KongClient(instance.adminUrl, adminApiKey || undefined)
       const isConnected = await kongClient.testConnection()
 
       await prisma.kongInstance.update({
@@ -191,12 +200,19 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\
       // Don't fail creation if test fails
     }
 
-    return NextResponse.json({ instance }} catch (error: any) {
+    return NextResponse.json({ instance })
+  } catch (error: any) {
     console.error('Error creating Kong instance:', error)
     return NextResponse.json(
       { error: error.message || 'Failed to create Kong instance' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
+
+export const POST = withErrorHandling(
+  postHandler,
+  'POST /api/admin/kong-instances',
+)
+
 

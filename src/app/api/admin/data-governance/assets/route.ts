@@ -4,11 +4,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { OpenMetadataClient } from '@/lib/openmetadata-client'
 
 async function getHandler(request: NextRequest) {
+  try {
     const authResult = await requireAuth()
     if (!authResult.success) return authResult.response
     const { session } = authResult
-
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\data-governance\assets\route.ts')
 
     // TODO: Load config from database
     // For now, return mock data
@@ -56,5 +55,5 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\dat
   }
 }
 
-export const GET = withErrorHandling(getHandler, 'GET GET /api/admin/data-governance/assets')
+export const GET = withErrorHandling(getHandler, 'GET /api/admin/data-governance/assets')
 

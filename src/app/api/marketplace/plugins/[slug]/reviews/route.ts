@@ -37,7 +37,7 @@ export async function GET(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     const { slug } = await params
     const serviceId = await resolveServiceId(slug)
@@ -176,7 +176,7 @@ export async function POST(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     const { slug } = await params
     const serviceId = await resolveServiceId(slug)

@@ -73,7 +73,7 @@ async function getHandler(
         return NextResponse.json({ 
           error: 'Invalid space ID format',
           details: 'Space ID must be a valid UUID'
-        }}
+         })
 
       // Check if user has access to this space
       const accessResult = await requireSpaceAccess(spaceId, session.user.id!)

@@ -11,7 +11,7 @@ async function getHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     const { id } = await params
     const { searchParams } = new URL(request.url)
@@ -32,7 +32,7 @@ async function getHandler(
     `, [id])
 
     if (entityRows.length === 0) {
-      return NextResponse.json({ error: 'Entity not found' }}
+      return NextResponse.json({ error: 'Entity not found'  })
 
     const entity = entityRows[0]
 
@@ -71,7 +71,7 @@ async function putHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     const { id } = await params
     const body = await request.json()
@@ -89,7 +89,7 @@ async function putHandler(
     )
 
     if (existing.length === 0) {
-      return NextResponse.json({ error: 'Entity not found' }}
+      return NextResponse.json({ error: 'Entity not found'  })
 
     // Update entity
     const { rows: entityRows } = await query(`
@@ -157,7 +157,7 @@ async function deleteHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\eav\entities\[id]\route.ts')
 
@@ -174,6 +174,6 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
     `, [id])
 
     if (rows.length === 0) {
-      return NextResponse.json({ error: 'Entity not found' }}
+      return NextResponse.json({ error: 'Entity not found'  })
 
     return NextResponse.json({ success: true })

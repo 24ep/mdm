@@ -13,7 +13,7 @@ async function getHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     const { id } = await params
 
@@ -53,7 +53,7 @@ async function getHandler(
     )
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Ticket not found' }}
+      return NextResponse.json({ error: 'Ticket not found'  })
 
     const row = result.rows[0]
     const ticket = {
@@ -92,7 +92,7 @@ async function putHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     const { id } = await params
     const body = await request.json()
@@ -164,7 +164,7 @@ async function putHandler(
     }
 
     if (updates.length === 0) {
-      return NextResponse.json({ error: 'No fields to update' }}
+      return NextResponse.json({ error: 'No fields to update'  })
 
     updates.push(`updated_at = NOW()`)
     values.push(id)
@@ -179,7 +179,7 @@ async function putHandler(
     const result = await query(updateQuery, values)
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Ticket not found' }}
+      return NextResponse.json({ error: 'Ticket not found'  })
 
     // Update space association if provided
     if (spaceId !== undefined) {
@@ -233,7 +233,7 @@ async function deleteHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\v1\tickets\[id]\route.ts')
 
@@ -263,7 +263,7 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
     )
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Ticket not found' }}
+      return NextResponse.json({ error: 'Ticket not found'  })
 
     await logAPIRequest(
       session.user.id,

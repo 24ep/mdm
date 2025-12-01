@@ -75,7 +75,7 @@ async function deleteHandler(
 
 export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\data-models\attributes\[id]\route.ts') catch (error) {
     console.error('Error deleting attribute:', error)
-    return NextResponse.json({ error: 'Internal server error' }}
+    return NextResponse.json({ error: 'Internal server error'  })
 }
 
 

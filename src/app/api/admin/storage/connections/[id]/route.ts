@@ -12,10 +12,10 @@ async function getHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }}
+      return NextResponse.json({ error: 'Insufficient permissions'  })
 
     const { id } = await params
     const connection = await prisma.storageConnection.findUnique({
@@ -23,7 +23,7 @@ async function getHandler(
     })
 
     if (!connection) {
-      return NextResponse.json({ error: 'Storage connection not found' }}
+      return NextResponse.json({ error: 'Storage connection not found'  })
 
     return NextResponse.json({ connection })
 
@@ -39,10 +39,10 @@ async function putHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }}
+      return NextResponse.json({ error: 'Insufficient permissions'  })
 
     const { id } = await params
     const { name, type, description, isActive, config } = await request.json()
@@ -52,7 +52,7 @@ async function putHandler(
     })
 
     if (!connection) {
-      return NextResponse.json({ error: 'Storage connection not found' }}
+      return NextResponse.json({ error: 'Storage connection not found'  })
 
     const updateData: any = {}
     if (name !== undefined) updateData.name = name
@@ -80,12 +80,12 @@ async function deleteHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\admin\storage\connections\[id]\route.ts')
 
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }}
+      return NextResponse.json({ error: 'Insufficient permissions'  })
 
     const { id } = await params
     const connection = await prisma.storageConnection.findUnique({
@@ -93,7 +93,7 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
     })
 
     if (!connection) {
-      return NextResponse.json({ error: 'Storage connection not found' }}
+      return NextResponse.json({ error: 'Storage connection not found'  })
 
     await prisma.storageConnection.delete({
       where: { id }

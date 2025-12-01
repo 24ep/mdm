@@ -11,7 +11,7 @@ async function getHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     const { id } = await params
 
@@ -34,7 +34,7 @@ async function getHandler(
     `, [id])
 
     if (rows.length === 0) {
-      return NextResponse.json({ error: 'Entity type not found' }}
+      return NextResponse.json({ error: 'Entity type not found'  })
 
     return NextResponse.json({ entityType: rows[0] })
 
@@ -49,7 +49,7 @@ async function putHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     const { id } = await params
     const body = await request.json()
@@ -71,7 +71,7 @@ async function putHandler(
     )
 
     if (existing.length === 0) {
-      return NextResponse.json({ error: 'Entity type not found' }}
+      return NextResponse.json({ error: 'Entity type not found'  })
 
     // Check if name already exists (excluding current entity)
     if (name) {
@@ -81,7 +81,7 @@ async function putHandler(
       )
 
       if (nameCheck.length > 0) {
-        return NextResponse.json({ error: 'Entity type with this name already exists' }}
+        return NextResponse.json({ error: 'Entity type with this name already exists'  })
     }
 
     const { rows } = await query(`
@@ -122,7 +122,7 @@ async function deleteHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\eav\entity-types\[id]\route.ts')
 
@@ -137,7 +137,7 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
     if (parseInt(entityCount[0].count) > 0) {
       return NextResponse.json({ 
         error: 'Cannot delete entity type with existing entities' 
-      }}
+       })
 
     // Soft delete
     const { rows } = await query(`
@@ -150,6 +150,6 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
     `, [id])
 
     if (rows.length === 0) {
-      return NextResponse.json({ error: 'Entity type not found' }}
+      return NextResponse.json({ error: 'Entity type not found'  })
 
     return NextResponse.json({ success: true })

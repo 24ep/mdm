@@ -25,7 +25,7 @@ async function postHandler(
     `, [id, session.user.id])
 
     if (accessCheck.length === 0) {
-      return NextResponse.json({ error: 'Dashboard not found' }}
+      return NextResponse.json({ error: 'Dashboard not found'  })
 
 export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashboards\[id]\shares\route.ts')
 
@@ -34,7 +34,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashbo
                     (dashboard.role && ['ADMIN', 'EDITOR'].includes(dashboard.role))
 
     if (!canShare) {
-      return NextResponse.json({ error: 'Access denied' }}
+      return NextResponse.json({ error: 'Access denied'  })
 
     // Generate share token
     const { rows: tokenRows } = await query('SELECT public.generate_dashboard_public_link() as token')

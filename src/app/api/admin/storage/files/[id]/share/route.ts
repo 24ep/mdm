@@ -12,12 +12,12 @@ async function postHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const POST = withErrorHandling(postHandler, '
 
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }}
+      return NextResponse.json({ error: 'Insufficient permissions'  })
 
     const { id: fileId } = await params
     const { isPublic, permissionLevel = 'view', expiresIn = 3600 } = await request.json()
@@ -33,7 +33,7 @@ export const POST = withErrorHandling(postHandler, '
     })
 
     if (!file) {
-      return NextResponse.json({ error: 'File not found' }}
+      return NextResponse.json({ error: 'File not found'  })
 
     let publicUrl: string | null = null
 

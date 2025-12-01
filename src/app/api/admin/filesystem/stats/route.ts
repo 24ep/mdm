@@ -27,19 +27,23 @@ export async function GET() {
     const stats = {
       totalSpace: 1000 * 1024 * 1024 * 1024, // 1TB
       usedSpace: totalUsedSpace,
-      freeSpace: (1000 * 1024 * 1024 * 1024) - totalUsedSpace,
+      freeSpace: 1000 * 1024 * 1024 * 1024 - totalUsedSpace,
       inodes: {
         total: 1000000,
         used: spaceAttachments.length + attachmentFiles.length,
-        free: 1000000 - (spaceAttachments.length + attachmentFiles.length)
+        free: 1000000 - (spaceAttachments.length + attachmentFiles.length),
       },
       mountPoint: '/storage',
       storageType: 'ext4',
-      readOnly: false
+      readOnly: false,
     }
 
     return NextResponse.json({ stats })
   } catch (error) {
     console.error('Error fetching storage stats:', error)
-    return NextResponse.json({ error: 'Failed to fetch stats' }}
+    return NextResponse.json(
+      { error: 'Failed to fetch stats' },
+      { status: 500 },
+    )
+  }
 }

@@ -22,7 +22,7 @@ async function deleteHandler(
     `, [id, session.user.id])
 
     if (accessCheck.length === 0) {
-      return NextResponse.json({ error: 'Dashboard not found' }}
+      return NextResponse.json({ error: 'Dashboard not found'  })
 
 export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\dashboards\[id]\permissions\[userId]\route.ts')
 
@@ -31,7 +31,7 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
                      (dashboard.role && dashboard.role === 'ADMIN')
 
     if (!canManage) {
-      return NextResponse.json({ error: 'Access denied' }}
+      return NextResponse.json({ error: 'Access denied'  })
 
     // Remove permission
     await query(`

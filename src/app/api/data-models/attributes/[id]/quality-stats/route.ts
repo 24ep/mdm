@@ -32,7 +32,7 @@ async function getHandler(
 
     const { rows: attributeRows } = await query(attributeQuery, [attributeId])
     if (attributeRows.length === 0) {
-      return NextResponse.json({ error: 'Attribute not found' }}
+      return NextResponse.json({ error: 'Attribute not found'  })
 
 export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\data-models\attributes\[id]\quality-stats\route.ts')
 

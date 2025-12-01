@@ -163,7 +163,7 @@ export async function GET(
     })
 
     if (!chatbot) {
-      return NextResponse.json({ error: 'Chatbot not found' }}
+      return NextResponse.json({ error: 'Chatbot not found'  })
     
     // Merge version config into chatbot object
     const mergedChatbot = mergeVersionConfig(chatbot)

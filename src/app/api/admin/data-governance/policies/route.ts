@@ -1,12 +1,10 @@
-import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
-import { requireSpaceAccess } from '@/lib/space-access'
+import { requireAuth, withErrorHandling } from '@/lib/api-middleware'
 import { NextRequest, NextResponse } from 'next/server'
+
 async function getHandler(request: NextRequest) {
+  try {
     const authResult = await requireAuth()
     if (!authResult.success) return authResult.response
-    const { session } = authResult
-
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\data-governance\policies\route.ts')
 
     // TODO: Load policies from database or OpenMetadata
     // For now, return mock data
@@ -22,14 +20,14 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\dat
             type: 'masking',
             condition: 'tag:pii',
             action: 'mask',
-            priority: 1
-          }
+            priority: 1,
+          },
         ],
         appliesTo: ['database.service.users'],
         isActive: true,
         createdAt: new Date(),
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      },
     ]
 
     return NextResponse.json({ policies })
@@ -37,10 +35,12 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\dat
     console.error('Error loading policies:', error)
     return NextResponse.json(
       { error: 'Failed to load policies' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
 
-export const GET = withErrorHandling(getHandler, 'GET GET /api/admin/data-governance/policies')
-
+export const GET = withErrorHandling(
+  getHandler,
+  'GET /api/admin/data-governance/policies',
+)

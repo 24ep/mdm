@@ -34,40 +34,41 @@ async function postHandler(request: NextRequest) {
     return bodyValidation.response
   }
 
-    const { query: sqlQuery, spaceId, skipMasking } = bodyValidation.data
+  const { query: sqlQuery, spaceId, skipMasking } = bodyValidation.data
 
-    const trimmedQuery = sqlQuery.trim()
+  const trimmedQuery = sqlQuery.trim()
 
-    // SQL Linting - Always enforce linting, cannot be skipped
-    const lintResult = sqlLinter.lint(trimmedQuery)
-    
-    // Block execution if there are errors
-    if (!lintResult.valid) {
-      await auditLogger.log({
-        userId,
-        userName: userName || undefined,
-        userEmail: userEmail || undefined,
-        action: 'EXECUTE_QUERY',
-        resourceType: 'query',
-        sqlQuery: trimmedQuery,
-        spaceId: spaceId || undefined,
-        success: false,
-        errorMessage: 'Query blocked by linting rules',
-        executionTime: Date.now() - startTime,
-        metadata: { lintResult }
-      })
+  // SQL Linting - Always enforce linting, cannot be skipped
+  const lintResult = sqlLinter.lint(trimmedQuery)
 
-      return NextResponse.json({
-        success: false,
-        error: 'Query validation failed',
-        lintResult,
-        results: [],
-        columns: [],
-        executionTime: Date.now() - startTime,
-        status: 'error'
-      }}
+  // Block execution if there are errors
+  if (!lintResult.valid) {
+    await auditLogger.log({
+      userId,
+      userName: userName || undefined,
+      userEmail: userEmail || undefined,
+      action: 'EXECUTE_QUERY',
+      resourceType: 'query',
+      sqlQuery: trimmedQuery,
+      spaceId: spaceId || undefined,
+      success: false,
+      errorMessage: 'Query blocked by linting rules',
+      executionTime: Date.now() - startTime,
+      metadata: { lintResult },
+    })
 
-    // Get IP address and user agent
+    return NextResponse.json({
+      success: false,
+      error: 'Query validation failed',
+      lintResult,
+      results: [],
+      columns: [],
+      executionTime: Date.now() - startTime,
+      status: 'error',
+    })
+  }
+
+  // Get IP address and user agent
     const ipAddress = request.headers.get('x-forwarded-for') || 
                      request.headers.get('x-real-ip') || 
                      'unknown'

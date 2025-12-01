@@ -13,12 +13,12 @@ async function getHandler(
 
 export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\storage\files\[id]\content\route.ts')= authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 
 
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }}
+      return NextResponse.json({ error: 'Insufficient permissions'  })
 
     const { id: fileId } = await params
 
@@ -27,7 +27,7 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\sto
     })
 
     if (!file) {
-      return NextResponse.json({ error: 'File not found' }}
+      return NextResponse.json({ error: 'File not found'  })
 
     // For now, return a placeholder content
     // In production, you would fetch the actual file from storage (MinIO, S3, etc.)

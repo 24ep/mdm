@@ -1,5 +1,4 @@
-import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
-import { requireSpaceAccess } from '@/lib/space-access'
+import { requireAdmin, withErrorHandling } from '@/lib/api-middleware'
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import { getSecretsManager } from '@/lib/secrets-manager'
@@ -58,20 +57,23 @@ export async function GET() {
 }
 
 async function postHandler(request: NextRequest) {
+  try {
     const authResult = await requireAdmin()
     if (!authResult.success) return authResult.response
     const { session } = authResult
     // TODO: Add requireSpaceAccess check if spaceId is available
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\database-connections\route.ts')
-
     // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      return NextResponse.json(
+        { error: 'Insufficient permissions' },
+        { status: 403 },
+      )
     }
 
     const body = await request.json()
-    const { name, spaceId, type, host, port, database, username, password } = body
+    const { name, spaceId, type, host, port, database, username, password } =
+      body
 
     const secretsManager = getSecretsManager()
     const useVault = secretsManager.getBackend() === 'vault'
@@ -81,7 +83,11 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\
     if (useVault && password) {
       // Store password in Vault (will update with actual ID after insert)
       const connectionId = `temp-${Date.now()}`
-      const auditContext = createAuditContext(request, session.user, 'Admin database connection creation')
+      const auditContext = createAuditContext(
+        request,
+        session.user,
+        'Admin database connection creation',
+      )
       await secretsManager.storeSecret(
         `database-connections/${connectionId}/credentials`,
         {
@@ -92,7 +98,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\
           database: database,
         },
         undefined,
-        auditContext
+        auditContext,
       )
       storedPassword = `vault://${connectionId}/password`
     } else if (!useVault && password) {
@@ -110,16 +116,16 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\
         database,
         username,
         password: storedPassword,
-        isActive: true
+        isActive: true,
       },
       include: {
         space: {
           select: {
             id: true,
-            name: true
-          }
-        }
-      }
+            name: true,
+          },
+        },
+      },
     })
 
     // Update Vault path with actual connection ID if using Vault
@@ -135,20 +141,22 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\
           await secretsManager.storeDatabaseCredentials(actualId, vaultCreds)
           // Delete temp entry
           try {
-            await secretsManager.deleteSecret(`database-connections/${tempId}/credentials`)
+            await secretsManager.deleteSecret(
+              `database-connections/${tempId}/credentials`,
+            )
           } catch (error) {
             // Ignore if already deleted
           }
           // Update database with correct Vault path
           await prisma.externalConnection.update({
             where: { id: actualId },
-            data: { password: `vault://${actualId}/password` }
+            data: { password: `vault://${actualId}/password` },
           })
         }
       }
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       connection: {
         id: connection.id,
         name: connection.name,
@@ -166,13 +174,21 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\
           min: 1,
           max: 10,
           current: 1,
-          idle: 0
+          idle: 0,
         },
-        dataModels: []
-      }
+        dataModels: [],
+      },
     })
-  , { status: 500 })
+  } catch (error) {
+    console.error('Error creating database connection:', error)
+    return NextResponse.json(
+      { error: 'Failed to create database connection' },
+      { status: 500 },
+    )
   }
 }
 
-export const POST = withErrorHandling(postHandler, 'POST POST /api/admin/database-connections')
+export const POST = withErrorHandling(
+  postHandler,
+  'POST /api/admin/database-connections',
+)

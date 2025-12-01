@@ -1,20 +1,18 @@
-import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
-import { requireSpaceAccess } from '@/lib/space-access'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { NextRequest, NextResponse } from 'next/server'
-import { OpenMetadataClient } from '@/lib/openmetadata-client'
 
 async function getHandler(
   request: NextRequest,
-  { params }: { params: Promise<{ fqn: string }> }
+  { params }: { params: Promise<{ fqn: string }> },
 ) {
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\data-governance\profiling\[fqn]\route.ts')
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const { fqn: fqnParam } = await params
     const fqn = decodeURIComponent(fqnParam)
@@ -33,7 +31,7 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\dat
           nullPercentage: 0,
           uniqueCount: 10000,
           uniquePercentage: 100,
-          distinctCount: 10000
+          distinctCount: 10000,
         },
         {
           name: 'email',
@@ -42,7 +40,7 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\dat
           nullPercentage: 0,
           uniqueCount: 9950,
           uniquePercentage: 99.5,
-          distinctCount: 9950
+          distinctCount: 9950,
         },
         {
           name: 'created_at',
@@ -53,9 +51,9 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\dat
           uniquePercentage: 85,
           distinctCount: 8500,
           min: '2020-01-01',
-          max: '2024-12-31'
-        }
-      ]
+          max: '2024-12-31',
+        },
+      ],
     }
 
     return NextResponse.json({ profile })
@@ -63,8 +61,12 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\dat
     console.error('Error loading profile:', error)
     return NextResponse.json(
       { error: 'Failed to load profile' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
 
+export const GET = withErrorHandling(
+  getHandler,
+  'GET /api/admin/data-governance/profiling/[fqn]',
+)

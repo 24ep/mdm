@@ -12,12 +12,12 @@ async function postHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const POST = withErrorHandling(postHandler, '
 
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }}
+      return NextResponse.json({ error: 'Insufficient permissions'  })
 
     const { id: bucketId } = await params
 
@@ -27,14 +27,14 @@ export const POST = withErrorHandling(postHandler, '
     })
 
     if (!space) {
-      return NextResponse.json({ error: 'Bucket not found' }}
+      return NextResponse.json({ error: 'Bucket not found'  })
 
     const formData = await request.formData()
     const files = formData.getAll('files') as File[]
     const path = (formData.get('path') as string) || ''
 
     if (files.length === 0) {
-      return NextResponse.json({ error: 'No files provided' }}
+      return NextResponse.json({ error: 'No files provided'  })
 
     // Get or create storage configuration for this space
     let storageConfig = await db.spaceAttachmentStorage.findFirst({

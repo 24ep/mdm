@@ -14,12 +14,12 @@ async function deleteHandler(
 
 export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\admin\storage\buckets\[id]\route.ts')= authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const POST = withErrorHandling(deleteHandler, '
 
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }}
+      return NextResponse.json({ error: 'Insufficient permissions'  })
 
     const { id: bucketId } = await params
 
@@ -29,7 +29,7 @@ export const POST = withErrorHandling(deleteHandler, '
     })
 
     if (!space) {
-      return NextResponse.json({ error: 'Bucket not found' }}
+      return NextResponse.json({ error: 'Bucket not found'  })
 
     // Delete all attachment storage files first (cascade should handle this, but being explicit)
     await db.spaceAttachmentStorage.deleteMany({

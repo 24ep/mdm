@@ -14,18 +14,18 @@ async function putHandler(
 
 export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\admin\storage\files\[id]\rename\route.ts')= authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const POST = withErrorHandling(putHandler, '
 
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }}
+      return NextResponse.json({ error: 'Insufficient permissions'  })
 
     const { id: fileId } = await params
     const { newName } = await request.json()
 
     if (!newName || !newName.trim()) {
-      return NextResponse.json({ error: 'New name is required' }}
+      return NextResponse.json({ error: 'New name is required'  })
 
     // Get the file to get its current path and spaceId
     const existingFile = await db.spaceAttachmentStorage.findUnique({
@@ -34,7 +34,7 @@ export const POST = withErrorHandling(putHandler, '
     })
 
     if (!existingFile) {
-      return NextResponse.json({ error: 'File not found' }}
+      return NextResponse.json({ error: 'File not found'  })
 
     // Get active storage connection
     const storageConnection = await db.storageConnection.findFirst({
@@ -45,7 +45,7 @@ export const POST = withErrorHandling(putHandler, '
     })
 
     if (!storageConnection) {
-      return NextResponse.json({ error: 'No active storage connection found' }}
+      return NextResponse.json({ error: 'No active storage connection found'  })
 
     // Create storage service instance
     const storageService = new AttachmentStorageService({
@@ -65,7 +65,7 @@ export const POST = withErrorHandling(putHandler, '
     if (!renameResult.success) {
       return NextResponse.json({ 
         error: renameResult.error || 'Failed to rename file in storage' 
-      }}
+       })
 
     // Update file path and name in database
     const pathParts = existingFile.filePath?.split('/') || []

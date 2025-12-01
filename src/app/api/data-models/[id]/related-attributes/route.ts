@@ -17,5 +17,5 @@ export async function GET(
 
   } catch (error) {
     console.error('Error in related attributes API:', error)
-    return NextResponse.json({ error: 'Internal server error' }}
+    return NextResponse.json({ error: 'Internal server error'  })
 }

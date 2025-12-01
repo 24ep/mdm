@@ -10,7 +10,7 @@ async function getHandler(request: NextRequest) {
 
 export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\data-sync-schedules\stats\route.ts')= authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 
 
@@ -18,7 +18,7 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\data-sync
     const spaceId = searchParams.get('space_id')
 
     if (!spaceId) {
-      return NextResponse.json({ error: 'space_id required' }}
+      return NextResponse.json({ error: 'space_id required'  })
 
     // Get total and active schedules
     const { rows: scheduleStats } = await query(

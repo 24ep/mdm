@@ -19,7 +19,7 @@ async function postHandler(request: NextRequest) {
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\integrations\manageengine-servicedesk\push\route.ts')
 
@@ -39,7 +39,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\integr
       [space_id, session.user.id]
     )
     if (access.length === 0) {
-      return NextResponse.json({ error: 'Forbidden' }}
+      return NextResponse.json({ error: 'Forbidden'  })
 
     // Rate limiting check
     const rateLimitConfig = await getServiceDeskRateLimitConfig(space_id)
@@ -95,7 +95,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\integr
     })
 
     if (!ticket) {
-      return NextResponse.json({ error: 'Ticket not found' }}
+      return NextResponse.json({ error: 'Ticket not found'  })
 
     // Get ServiceDesk configuration
     const { rows: configRows } = await query(

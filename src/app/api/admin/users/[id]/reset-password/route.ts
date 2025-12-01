@@ -13,13 +13,13 @@ async function postHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const POST = withErrorHandling(postHandler, '
 
     // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }}
+      return NextResponse.json({ error: 'Insufficient permissions'  })
 
     const { id } = await params
     const body = await request.json()
@@ -39,7 +39,7 @@ export const POST = withErrorHandling(postHandler, '
     )
 
     if (!userCheck.rows.length) {
-      return NextResponse.json({ error: 'User not found' }}
+      return NextResponse.json({ error: 'User not found'  })
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12)

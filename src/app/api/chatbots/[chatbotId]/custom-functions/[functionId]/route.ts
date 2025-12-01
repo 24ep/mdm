@@ -13,7 +13,7 @@ async function getHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     const { chatbotId, functionId } = await params
     const func = await prisma.chatbotCustomFunction.findUnique({
@@ -21,7 +21,7 @@ async function getHandler(
     })
 
     if (!func || func.chatbotId !== chatbotId) {
-      return NextResponse.json({ error: 'Function not found' }}
+      return NextResponse.json({ error: 'Function not found'  })
 
     return NextResponse.json({ function: func })
 
@@ -37,7 +37,7 @@ async function putHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     const { functionId } = await params
     const body = await request.json()
@@ -71,7 +71,7 @@ async function deleteHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\chatbots\[chatbotId]\custom-functions\[functionId]\route.ts')
 

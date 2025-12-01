@@ -37,7 +37,7 @@ async function postHandler(
     `, [id, session.user.id])
 
     if (dashboards.length === 0) {
-      return NextResponse.json({ error: 'Dashboard not found' }}
+      return NextResponse.json({ error: 'Dashboard not found'  })
 
 export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashboards\[id]\export\excel\route.ts')
 

@@ -12,25 +12,25 @@ async function postHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const POST = withErrorHandling(postHandler, '
 
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }}
+      return NextResponse.json({ error: 'Insufficient permissions'  })
 
     const { id: bucketId } = await params
     const { name, path } = await request.json()
 
     if (!name || typeof name !== 'string' || !name.trim()) {
-      return NextResponse.json({ error: 'Folder name is required' }}
+      return NextResponse.json({ error: 'Folder name is required'  })
 
     // Validate folder name (no slashes, no special characters that could break paths)
     const sanitizedName = name.trim()
     if (sanitizedName.includes('/') || sanitizedName.includes('\\')) {
       return NextResponse.json({ 
         error: 'Folder name cannot contain slashes' 
-      }}
+       })
 
     // Verify bucket (space) exists
     const space = await db.space.findUnique({
@@ -38,7 +38,7 @@ export const POST = withErrorHandling(postHandler, '
     })
 
     if (!space) {
-      return NextResponse.json({ error: 'Bucket not found' }}
+      return NextResponse.json({ error: 'Bucket not found'  })
 
     // Construct full folder path
     const folderPath = path && path.trim() 
@@ -58,7 +58,7 @@ export const POST = withErrorHandling(postHandler, '
     if (existingFile) {
       return NextResponse.json({ 
         error: 'A folder or file with this name already exists' 
-      }}
+       })
 
     // Check if a file exists with this exact path
     const exactFile = await db.spaceAttachmentStorage.findFirst({
@@ -71,7 +71,7 @@ export const POST = withErrorHandling(postHandler, '
     if (exactFile) {
       return NextResponse.json({ 
         error: 'A file with this path already exists' 
-      }}
+       })
 
     // Create a placeholder marker file to represent the folder
     // In a real implementation, you might want a separate folders table

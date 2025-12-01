@@ -13,12 +13,12 @@ async function postHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const POST = withErrorHandling(postHandler, '
 
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }}
+      return NextResponse.json({ error: 'Insufficient permissions'  })
 
     const { id } = await params
     const connection = await prisma.storageConnection.findUnique({
@@ -26,7 +26,7 @@ export const POST = withErrorHandling(postHandler, '
     })
 
     if (!connection) {
-      return NextResponse.json({ error: 'Storage connection not found' }}
+      return NextResponse.json({ error: 'Storage connection not found'  })
 
     if (!connection.isActive) {
       return NextResponse.json({ 

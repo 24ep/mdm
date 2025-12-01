@@ -21,12 +21,12 @@ async function deleteHandler(
     )
 
     if (ownerCheck.rows.length === 0) {
-      return NextResponse.json({ error: 'Report not found' }}
+      return NextResponse.json({ error: 'Report not found'  })
 
 export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\reports\[id]\permissions\[permissionId]\route.ts')
 
     if (ownerCheck.rows[0].created_by !== session.user.id) {
-      return NextResponse.json({ error: 'Only report owner can manage permissions' }}
+      return NextResponse.json({ error: 'Only report owner can manage permissions'  })
 
     const sql = `
       DELETE FROM report_permissions
@@ -37,7 +37,7 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
     const result = await query(sql, [permissionId, id])
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Permission not found' }}
+      return NextResponse.json({ error: 'Permission not found'  })
 
     // Log audit event
     auditLogger.permissionChanged(id, permissionId)

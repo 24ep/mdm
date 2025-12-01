@@ -33,7 +33,8 @@ export async function GET(
     return NextResponse.json({ keys: transformedKeys })
   } catch (error) {
     console.error('Error fetching cache keys:', error)
-    return NextResponse.json({ error: 'Failed to fetch cache keys' }}
+    return NextResponse.json({ error: 'Failed to fetch cache keys' })
+  }
 }
 
 export async function POST(
@@ -47,7 +48,8 @@ export async function POST(
 
     // Validate required fields
     if (!key || !value) {
-      return NextResponse.json({ error: 'Missing required fields' }}
+      return NextResponse.json({ error: 'Missing required fields' })
+    }
 
     // Check if key already exists
     const existingKey = await prisma.cacheKey.findUnique({
@@ -60,7 +62,8 @@ export async function POST(
     })
 
     if (existingKey) {
-      return NextResponse.json({ error: 'Key already exists' }}
+      return NextResponse.json({ error: 'Key already exists' })
+    }
 
     // Create the cache key
     const cacheKey = await prisma.cacheKey.create({
@@ -95,7 +98,9 @@ export async function POST(
       }
     })
 
-    return NextResponse.json({ key: cacheKey }} catch (error) {
+    return NextResponse.json({ key: cacheKey })
+  } catch (error) {
     console.error('Error creating cache key:', error)
-    return NextResponse.json({ error: 'Failed to create cache key' }}
+    return NextResponse.json({ error: 'Failed to create cache key' })
+  }
 }

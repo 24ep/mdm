@@ -12,7 +12,7 @@ async function getHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
     const { spaceId } = await params
 
@@ -29,7 +29,7 @@ async function getHandler(
     )
 
     if (accessCheck.rows.length === 0) {
-      return NextResponse.json({ error: 'Access denied' }}
+      return NextResponse.json({ error: 'Access denied'  })
 
     // Get spaces editor config from system_settings
     const configKey = `spaces_editor_config_${spaceId}`
@@ -61,7 +61,7 @@ async function postHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }}
+      return NextResponse.json({ error: 'Unauthorized'  })
 
 export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\spaces-editor\[spaceId]\route.ts')
 
@@ -80,13 +80,13 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\spaces
     )
 
     if (accessCheck.rows.length === 0 || !['OWNER', 'ADMIN'].includes(accessCheck.rows[0].role)) {
-      return NextResponse.json({ error: 'Access denied' }}
+      return NextResponse.json({ error: 'Access denied'  })
 
     const body = await request.json()
     const config: SpacesEditorConfig = body
 
     if (!config || config.spaceId !== spaceId) {
-      return NextResponse.json({ error: 'Invalid config' }}
+      return NextResponse.json({ error: 'Invalid config'  })
 
     // Save config to system_settings
     const configKey = `spaces_editor_config_${spaceId}`

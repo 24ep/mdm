@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ permissions: rows })
   } catch (error) {
     console.error('List permissions error:', error)
-    return NextResponse.json({ error: 'Internal server error' }}
+    return NextResponse.json({ error: 'Internal server error'  })
 }
 
 // POST /api/permissions - create a permission (ADMIN+)
@@ -38,9 +38,9 @@ export async function POST(request: NextRequest) {
       'INSERT INTO public.permissions (name, description, resource, action) VALUES ($1, $2, $3, $4) RETURNING id, name, description, resource, action',
       [name, description || null, resource, action]
     )
-    return NextResponse.json({ permission: rows[0] }} catch (error) {
+    return NextResponse.json({ permission: rows[0]  }) catch (error) {
     console.error('Create permission error:', error)
-    return NextResponse.json({ error: 'Internal server error' }}
+    return NextResponse.json({ error: 'Internal server error'  })
 }
 
 
