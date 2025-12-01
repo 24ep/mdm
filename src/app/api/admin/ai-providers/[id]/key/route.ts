@@ -16,19 +16,17 @@ async function getHandler(
 ) {
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } 
-
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\ai-providers\[id]\key\route.ts')= authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
-
-
+      return NextResponse.json({ error: 'Unauthorized' })
+    }
 
     // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }}
+      return NextResponse.json({ error: 'Insufficient permissions' })
+    }
 
     const { id } = await params
 
@@ -43,7 +41,8 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\ai-
     })
 
     if (!provider) {
-      return NextResponse.json({ error: 'Provider not found' }}
+      return NextResponse.json({ error: 'Provider not found' })
+    }
 
     if (!provider.isConfigured || !provider.apiKey) {
       return NextResponse.json({ apiKey: null })
@@ -61,7 +60,8 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\ai-
         decryptedApiKey = await secretsManager.getApiKey(provider.provider, auditContext)
       } catch (error) {
         console.error('Error retrieving API key from Vault:', error)
-        return NextResponse.json({ error: 'Failed to retrieve API key from Vault' }}
+        return NextResponse.json({ error: 'Failed to retrieve API key from Vault' })
+      }
     } else {
       // Decrypt from database
       decryptedApiKey = decryptApiKey(provider.apiKey)
@@ -70,6 +70,9 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\ai-
     return NextResponse.json({ apiKey: decryptedApiKey })
   } catch (error) {
     console.error('Error fetching API key:', error)
-    return NextResponse.json({ error: 'Failed to fetch API key' }}
+    return NextResponse.json({ error: 'Failed to fetch API key' })
+  }
 }
+
+export const GET = withErrorHandling(getHandler, 'GET /api/admin/ai-providers/[id]/key')
 

@@ -9,14 +9,11 @@ async function putHandler(
 ) {
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } 
-
-export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\admin\assets\languages\[id]\route.ts')= authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }}
-
-export const POST = withErrorHandling(putHandler, '
+      return NextResponse.json({ error: 'Unauthorized' })
+    }
 
     const { id } = await params
     const body = await request.json()
@@ -52,3 +49,4 @@ export const POST = withErrorHandling(putHandler, '
   }
 }
 
+export const PUT = withErrorHandling(putHandler, 'PUT /api/admin/assets/languages/[id]')

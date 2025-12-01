@@ -34,7 +34,6 @@ async function getHandler() {
     }))
 
     return NextResponse.json({ models: formattedModels })
-  , { status: 500 })
   }
 }
 
@@ -42,14 +41,12 @@ async function getHandler() {
 
 
 
-export const GET = withErrorHandling(getHandler, 'GET GET /api/admin/ai-models')
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\ai-models\route.ts')
+export const GET = withErrorHandling(getHandler, 'GET /api/admin/ai-models')
+
 async function postHandler(request: NextRequest) {
     const authResult = await requireAuth()
     if (!authResult.success) return authResult.response
     const { session } = authResult
-
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\ai-models\route.ts')
 
     const body = await request.json()
     const { name, provider, type, description, maxTokens, costPerToken, capabilities } = body
@@ -82,8 +79,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\
     }
 
     return NextResponse.json({ model: formattedModel })
-  , { status: 500 })
   }
 }
 
-export const POST = withErrorHandling(postHandler, 'POST POST /api/admin/ai-models')
+export const POST = withErrorHandling(postHandler, 'POST /api/admin/ai-models')

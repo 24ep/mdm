@@ -13,7 +13,8 @@ async function getHandler() {
 
     // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }}
+      return NextResponse.json({ error: 'Insufficient permissions' })
+    }
 
     const providers = await prisma.aIProviderConfig.findMany({
       orderBy: {
@@ -145,17 +146,17 @@ export const POST = withErrorHandling(postHandler, 'POST POST /api/admin/ai-prov
 async function putHandler(request: NextRequest) {
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }}
-
-export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\admin\ai-providers\route.ts')
+      return NextResponse.json({ error: 'Unauthorized' })
+    }
 
     // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }}
+      return NextResponse.json({ error: 'Insufficient permissions' })
+    }
 
     const body = await request.json()
     const { 
@@ -174,7 +175,8 @@ export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\admin\ai-
     })
 
     if (!existingProvider) {
-      return NextResponse.json({ error: 'Provider not found' }}
+      return NextResponse.json({ error: 'Provider not found' })
+    }
 
     const secretsManager = getSecretsManager()
     const useVault = secretsManager.getBackend() === 'vault'
@@ -268,5 +270,8 @@ export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\admin\ai-
     return NextResponse.json({ provider: formattedProvider })
   } catch (error) {
     console.error('Error updating AI provider:', error)
-    return NextResponse.json({ error: 'Failed to update AI provider' }}
+    return NextResponse.json({ error: 'Failed to update AI provider' })
+  }
 }
+
+export const PUT = withErrorHandling(putHandler, 'PUT /api/admin/ai-providers')
