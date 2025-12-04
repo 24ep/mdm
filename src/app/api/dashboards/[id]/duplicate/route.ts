@@ -17,9 +17,8 @@ async function postHandler(
     const { name, space_ids } = body
 
     if (!name) {
-      return NextResponse.json({ error: 'Name is required'  })
-
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashboards\[id]\duplicate\route.ts')
+      return NextResponse.json({ error: 'Name is required' }, { status: 400 })
+    }
 
     // Check if user has access to the original dashboard
     const { rows: accessCheck } = await query(`
@@ -30,7 +29,8 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashbo
     `, [id, session.user.id])
 
     if (accessCheck.length === 0) {
-      return NextResponse.json({ error: 'Dashboard not found'  })
+      return NextResponse.json({ error: 'Dashboard not found' }, { status: 404 })
+    }
 
     const dashboard = accessCheck[0]
     const canAccess = dashboard.created_by === session.user.id || 
@@ -38,7 +38,8 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashbo
                      true // Allow access for now, can be restricted later
 
     if (!canAccess) {
-      return NextResponse.json({ error: 'Access denied'  })
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
 
     // Use the database function to duplicate the dashboard
     const { rows } = await query(
@@ -49,7 +50,8 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashbo
     const newDashboardId = rows[0]?.new_dashboard_id
 
     if (!newDashboardId) {
-      return NextResponse.json({ error: 'Failed to duplicate dashboard'  })
+      return NextResponse.json({ error: 'Failed to duplicate dashboard' }, { status: 500 })
+    }
 
     // Update space associations if provided
     if (space_ids && Array.isArray(space_ids) && space_ids.length > 0) {
@@ -61,7 +63,8 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashbo
       )
 
       if (spaceAccess.length !== space_ids.length) {
-        return NextResponse.json({ error: 'Access denied to one or more spaces'  })
+        return NextResponse.json({ error: 'Access denied to one or more spaces' }, { status: 403 })
+      }
 
       // Remove existing associations
       await query('DELETE FROM dashboard_spaces WHERE dashboard_id = $1', [newDashboardId])
@@ -81,3 +84,6 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashbo
     `, [newDashboardId])
 
     return NextResponse.json({ dashboard: newDashboard[0] }, { status: 201 })
+}
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/dashboards/[id]/duplicate/route.ts')

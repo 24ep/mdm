@@ -39,14 +39,11 @@ async function getHandler(request: NextRequest) {
 
 
 
-export const GET = withErrorHandling(getHandler, 'GET GET /api/spaces-orm')
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\spaces-orm\route.ts')
 async function postHandler(request: NextRequest) {
     const authResult = await requireAuthWithId()
     if (!authResult.success) return authResult.response
     const { session } = authResult
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\spaces-orm\route.ts')
 
     const body = await request.json()
     const { name, description, slug, isDefault = false, tags = [] } = body
@@ -99,3 +96,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\spaces
 }
 
 export const POST = withErrorHandling(postHandler, 'POST POST /api/spaces-orm')
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET GET /api/spaces-orm')
+export const POST = withErrorHandling(postHandler, 'POST POST /api/spaces-orm\route.ts')

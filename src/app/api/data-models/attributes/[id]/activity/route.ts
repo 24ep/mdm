@@ -71,7 +71,6 @@ async function getHandler(
               changes.push(`name from "${oldValue.name}" to "${newValue.name}"`)
             }
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\data-models\attributes\[id]\activity\route.ts')
             if (oldValue.display_name !== newValue.display_name) {
               changes.push(`display name from "${oldValue.display_name}" to "${newValue.display_name}"`)
             }
@@ -119,3 +118,6 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\data-mode
         hasMore: offset + limit < total
       }
     })
+}
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/data-models/attributes/[id]/activity/route.ts')

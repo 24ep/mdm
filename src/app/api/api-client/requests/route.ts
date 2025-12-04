@@ -21,7 +21,6 @@ async function getHandler(request: NextRequest) {
     return NextResponse.json({ requests })
 }
 
-export const GET = withErrorHandling(getHandler, 'GET /api/api-client/requests')
 
 async function postHandler(request: NextRequest) {
   const authResult = await requireAuthWithId()
@@ -73,5 +72,8 @@ async function postHandler(request: NextRequest) {
     return NextResponse.json({ request: apiRequest })
 }
 
-export const POST = withErrorHandling(postHandler, 'POST /api/api-client/requests')
 
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/api-client/requests')
+export const POST = withErrorHandling(postHandler, 'POST POST /api/api-client/requests')

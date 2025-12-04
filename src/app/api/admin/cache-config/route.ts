@@ -22,7 +22,7 @@ export async function GET() {
     return NextResponse.json({ config })
   } catch (error) {
     console.error('Error fetching cache config:', error)
-    return NextResponse.json({ error: 'Failed to fetch cache config' })
+    return NextResponse.json({ error: 'Failed to fetch cache config' }, { status: 500 })
   }
 }
 
@@ -53,6 +53,6 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ message: 'Cache configuration updated successfully' })
   } catch (error) {
     console.error('Error updating cache config:', error)
-    return NextResponse.json({ error: 'Failed to update cache config' })
+    return NextResponse.json({ error: 'Failed to update cache config' }, { status: 500 })
   }
 }

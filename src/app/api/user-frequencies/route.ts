@@ -38,7 +38,6 @@ async function getHandler(request: NextRequest) {
     })
 }
 
-export const GET = withErrorHandling(getHandler, 'GET /api/user-frequencies')
 
 async function postHandler(request: NextRequest) {
   const startTime = Date.now()
@@ -113,3 +112,6 @@ async function postHandler(request: NextRequest) {
 export const POST = withErrorHandling(postHandler, 'POST /api/user-frequencies')
 
 
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/user-frequencies')

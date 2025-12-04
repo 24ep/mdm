@@ -19,9 +19,8 @@ async function postHandler(request: NextRequest) {
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\integrations\manageengine-servicedesk\push\route.ts')
 
     const body = await request.json()
     const { ticket_id, space_id, requesterEmail, category, subcategory, group, technician, syncComments, syncAttachments, syncTimeLogs } = body
@@ -39,7 +38,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\integr
       [space_id, session.user.id]
     )
     if (access.length === 0) {
-      return NextResponse.json({ error: 'Forbidden'  })
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     // Rate limiting check
     const rateLimitConfig = await getServiceDeskRateLimitConfig(space_id)
@@ -95,7 +94,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\integr
     })
 
     if (!ticket) {
-      return NextResponse.json({ error: 'Ticket not found'  })
+      return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
 
     // Get ServiceDesk configuration
     const { rows: configRows } = await query(
@@ -246,3 +245,6 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\integr
               })
               syncedComments++
 
+
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/integrations\manageengine-servicedesk\push\route.ts')

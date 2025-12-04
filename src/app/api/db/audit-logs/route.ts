@@ -4,12 +4,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auditLogger } from '@/lib/db-audit'
 
 async function getHandler(request: NextRequest) {
+  try {
     const authResult = await requireAdmin()
     if (!authResult.success) return authResult.response
     const { session } = authResult
     // TODO: Add requireSpaceAccess check if spaceId is available
-
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\db\audit-logs\route.ts')
 
     // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
@@ -53,11 +52,12 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\db\audit-
       limit,
       offset
     })
-  ,
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: 'Failed to fetch audit logs', details: error.message },
       { status: 500 }
     )
   }
 }
 
 export const GET = withErrorHandling(getHandler, 'GET GET /api/db/audit-logs')
-

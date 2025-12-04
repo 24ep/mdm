@@ -10,10 +10,9 @@ async function putHandler(
 ) {
   const authResult = await requireAuthWithId()
   if (!authResult.success) return authResult.response
-  const { session } 
+  const { session } = authResult
 
-export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\data-models\attributes\[id]\route.ts')= authResult
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id } = await params
     const body = await request.json()
@@ -57,6 +56,7 @@ export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\data-mode
     })
 
     return NextResponse.json({ attribute: rows[0] })
+}
 
 async function deleteHandler(
   request: NextRequest,
@@ -71,11 +71,14 @@ async function deleteHandler(
     const { id } = await params
     await query('UPDATE public.data_model_attributes SET is_active = FALSE, deleted_at = NOW() WHERE id = $1::uuid', [id])
     return NextResponse.json({ success: true })
-  }
-
-export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\data-models\attributes\[id]\route.ts') catch (error) {
+  } catch (error) {
     console.error('Error deleting attribute:', error)
-    return NextResponse.json({ error: 'Internal server error'  })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 }
 
 
+
+
+export const PUT = withErrorHandling(putHandler, 'PUT PUT /api/data-models/attributes/[id]/route.ts')
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE DELETE /api/data-models/attributes/[id]/route.ts')

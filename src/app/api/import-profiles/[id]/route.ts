@@ -11,7 +11,7 @@ async function getHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id } = await params
 
@@ -54,13 +54,12 @@ async function getHandler(
     })
 
     if (!profile) {
-      return NextResponse.json({ error: 'Import profile not found'  })
+      return NextResponse.json({ error: 'Import profile not found' }, { status: 404 })
 
     return NextResponse.json({ profile })
 
 
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\import-profiles\[id]\route.ts')
 async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -69,7 +68,7 @@ async function putHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id } = await params
     const body = await request.json()
@@ -84,7 +83,7 @@ async function putHandler(
     })
 
     if (!existingProfile) {
-      return NextResponse.json({ error: 'Import profile not found or access denied'  })
+      return NextResponse.json({ error: 'Import profile not found or access denied' }, { status: 403 })
 
     const { name, description, dataModelId, mapping, settings, spaceId } = body
 
@@ -120,7 +119,6 @@ async function putHandler(
 
 
 
-export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\import-profiles\[id]\route.ts')
 async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -129,9 +127,8 @@ async function deleteHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\import-profiles\[id]\route.ts')
 
     const { id } = await params
 
@@ -145,7 +142,7 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
     })
 
     if (!existingProfile) {
-      return NextResponse.json({ error: 'Import profile not found or access denied'  })
+      return NextResponse.json({ error: 'Import profile not found or access denied' }, { status: 403 })
 
     // Soft delete
     await db.importProfile.update({
@@ -154,3 +151,8 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
     })
 
     return NextResponse.json({ success: true })
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/import-profiles/[id]/route.ts')
+export const PUT = withErrorHandling(putHandler, 'PUT PUT /api/import-profiles/[id]/route.ts')
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE DELETE /api/import-profiles/[id]/route.ts')

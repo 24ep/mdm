@@ -92,25 +92,17 @@ async function postHandler(request: NextRequest) {
       },
       { status: 201 }
     )
-  ,
-      { status: 500 }
-    )
-  }
 }
 
 
 
 
 
-export const POST = withErrorHandling(postHandler, 'POST POST /api/admin/users')
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\users\route.ts')
 async function getHandler(request: NextRequest) {
     const authResult = await requireAdmin()
     if (!authResult.success) return authResult.response
     const { session } = authResult
     // TODO: Add requireSpaceAccess check if spaceId is available
-
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\users\route.ts')
 
     // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
@@ -205,7 +197,7 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\admin\use
       limit,
       totalPages: Math.ceil(total / limit)
     })
-  }
 }
 
-export const GET = withErrorHandling(getHandler, 'GET GET /api/admin/users')
+export const POST = withErrorHandling(postHandler, 'POST /api/admin/users')
+export const GET = withErrorHandling(getHandler, 'GET /api/admin/users')

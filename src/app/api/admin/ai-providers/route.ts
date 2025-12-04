@@ -13,7 +13,7 @@ async function getHandler() {
 
     // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' })
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
     const providers = await prisma.aIProviderConfig.findMany({
@@ -57,7 +57,7 @@ async function postHandler(request: NextRequest) {
 
     // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' })
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
     const body = await request.json()
@@ -148,12 +148,12 @@ async function putHandler(request: NextRequest) {
     const { session } = authResult
     
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' })
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
     const body = await request.json()
@@ -173,7 +173,7 @@ async function putHandler(request: NextRequest) {
     })
 
     if (!existingProvider) {
-      return NextResponse.json({ error: 'Provider not found' })
+      return NextResponse.json({ error: 'Provider not found' }, { status: 404 })
     }
 
     const secretsManager = getSecretsManager()
@@ -268,7 +268,7 @@ async function putHandler(request: NextRequest) {
     return NextResponse.json({ provider: formattedProvider })
   } catch (error) {
     console.error('Error updating AI provider:', error)
-    return NextResponse.json({ error: 'Failed to update AI provider' })
+    return NextResponse.json({ error: 'Failed to update AI provider' }, { status: 500 })
   }
 }
 

@@ -13,7 +13,6 @@ async function postHandler(request: NextRequest) {
     if (!authResult.success) return authResult.response
     const { session } = authResult
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\marketplace\plugins\register\route.ts')
 
     // Only admins can register plugins
     if (session.user.role !== 'ADMIN') {
@@ -43,3 +42,6 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\market
 
 export const POST = withErrorHandling(postHandler, 'POST POST /api/marketplace/plugins/register')
 
+
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/marketplace\plugins\register\route.ts')

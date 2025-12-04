@@ -13,12 +13,12 @@ async function getHandler(request: NextRequest) {
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { searchParams } = new URL(request.url)
     const spaceId = searchParams.get('space_id')
     if (!spaceId) {
-      return NextResponse.json({ error: 'space_id is required'  })
+      return NextResponse.json({ error: 'space_id is required' }, { status: 400 })
 
     // Check access
     const { rows: access } = await query(
@@ -26,7 +26,7 @@ async function getHandler(request: NextRequest) {
       [spaceId, session.user.id]
     )
     if (access.length === 0) {
-      return NextResponse.json({ error: 'Forbidden'  })
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     // Get configuration from external_connections table
     const { rows } = await query(
@@ -64,7 +64,6 @@ async function getHandler(request: NextRequest) {
 // Configure ServiceDesk integration
 
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\integrations\manageengine-servicedesk\route.ts')
 async function postHandler(request: NextRequest) {
     const authResult = await requireAuthWithId()
     if (!authResult.success) return authResult.response
@@ -87,7 +86,7 @@ async function postHandler(request: NextRequest) {
       [space_id, session.user.id]
     )
     if (access.length === 0) {
-      return NextResponse.json({ error: 'Forbidden'  })
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     // Test connection first
     const service = new ManageEngineServiceDeskService({
@@ -222,7 +221,6 @@ async function putHandler(request: NextRequest) {
     const { session } = authResult
     // TODO: Add requireSpaceAccess check if spaceId is available
 
-export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\integrations\manageengine-servicedesk\route.ts')
 
     const body = await request.json()
     const { space_id, baseUrl, apiKey, technicianKey } = body
@@ -246,6 +244,10 @@ export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\integrati
     return NextResponse.json(result)
   } catch (error) {
     console.error('PUT /integrations/manageengine-servicedesk error', error)
-    return NextResponse.json({ error: 'Internal server error'  })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
 }
 
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/integrations\manageengine-servicedesk\route.ts')
+export const PUT = withErrorHandling(putHandler, 'PUT PUT /api/integrations\manageengine-servicedesk\route.ts')

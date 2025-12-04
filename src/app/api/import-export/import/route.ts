@@ -9,7 +9,7 @@ async function postHandler(request: NextRequest) {
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const formData = await request.formData()
     const file = formData.get('file') as File
@@ -109,14 +109,12 @@ async function postHandler(request: NextRequest) {
 
 
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\import-export\import\route.ts')
 async function getHandler(request: NextRequest) {
     const authResult = await requireAuthWithId()
     if (!authResult.success) return authResult.response
     const { session } = authResult
     // TODO: Add requireSpaceAccess check if spaceId is available
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\import-export\import\route.ts')
 
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
@@ -182,3 +180,7 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\import-ex
   }
 }
 
+
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/import-export\import\route.ts')
+export const GET = withErrorHandling(getHandler, 'GET GET /api/import-export\import\route.ts')

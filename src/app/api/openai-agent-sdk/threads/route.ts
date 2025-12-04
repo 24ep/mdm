@@ -54,14 +54,13 @@ async function getHandler(request: NextRequest) {
 
 
 export const GET = withErrorHandling(getHandler, 'GET GET /api/openai-agent-sdk/threads')
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\openai-agent-sdk\threads\route.ts')
+export const GET = withErrorHandling(getHandler, 'GET /api/openai-agent-sdk\threads\route.ts')
 async function postHandler(request: NextRequest) {
     const authResult = await requireAuthWithId()
     if (!authResult.success) return authResult.response
     const { session } = authResult
     // TODO: Add requireSpaceAccess check if spaceId is available
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\openai-agent-sdk\threads\route.ts')
 
     const body = await request.json()
     const { chatbotId, threadId, title, metadata, spaceId } = body
@@ -101,3 +100,6 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\openai
 
 export const POST = withErrorHandling(postHandler, 'POST POST /api/openai-agent-sdk/threads')
 
+
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/openai-agent-sdk\threads\route.ts')

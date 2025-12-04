@@ -8,7 +8,7 @@ async function getHandler(request: NextRequest) {
     if (!authResult.success) return authResult.response
     const { session } = authResult
     if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
@@ -97,7 +97,7 @@ async function postHandler(request: NextRequest) {
     if (!authResult.success) return authResult.response
     const { session } = authResult
     if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const body = await request.json()

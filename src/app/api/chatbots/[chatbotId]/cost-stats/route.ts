@@ -11,21 +11,22 @@ async function getHandler(
   const authResult = await requireAuthWithId()
   if (!authResult.success) return authResult.response
   const { session } = authResult
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\chatbots\[chatbotId]\cost-stats\route.ts')
+  const { chatbotId } = await params
+  const { searchParams } = new URL(request.url)
+  const startDate = searchParams.get('startDate')
+  const endDate = searchParams.get('endDate')
 
-    const { chatbotId } = await params
-    const { searchParams } = new URL(request.url)
-    const startDate = searchParams.get('startDate')
-    const endDate = searchParams.get('endDate')
+  const stats = await getCostStats(
+    chatbotId,
+    startDate ? new Date(startDate) : undefined,
+    endDate ? new Date(endDate) : undefined
+  )
 
-    const stats = await getCostStats(
-      chatbotId,
-      startDate ? new Date(startDate) : undefined,
-      endDate ? new Date(endDate) : undefined
-    )
+  return NextResponse.json({ stats })
+}
 
-    return NextResponse.json({ stats })
-
+export const GET = withErrorHandling(getHandler, 'GET /api/chatbots/[chatbotId]/cost-stats')

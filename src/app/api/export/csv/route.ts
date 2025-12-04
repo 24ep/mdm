@@ -2,12 +2,11 @@ import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from 
 import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
 async function postHandler(request: NextRequest) {
-    try {
+  try {
     const authResult = await requireAuth()
     if (!authResult.success) return authResult.response
     const { session } = authResult
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\export\csv\route.ts')
 
     const { dataModelId, filters, columns, elementId, datasourceId } = await request.json()
 
@@ -94,9 +93,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\export
     })
 
     return response
-}
-
-export const POST = withErrorHandling(postHandler, 'POST POST /api/export/csv') catch (error: any) {
+  } catch (error: any) {
     console.error('Error exporting to CSV:', error)
     return NextResponse.json(
       { error: error.message || 'Failed to export data to CSV' },
@@ -104,3 +101,5 @@ export const POST = withErrorHandling(postHandler, 'POST POST /api/export/csv') 
     )
   }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/export/csv/route.ts')

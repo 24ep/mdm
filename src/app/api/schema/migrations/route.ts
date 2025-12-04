@@ -22,14 +22,11 @@ async function getHandler(request: NextRequest) {
 
 
 
-export const GET = withErrorHandling(getHandler, 'GET GET /api/schema/migrations')
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\schema\migrations\route.ts')
 async function postHandler(request: NextRequest) {
     const authResult = await requireAuth()
     if (!authResult.success) return authResult.response
     const { session } = authResult
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\schema\migrations\route.ts')
 
     const body = await request.json()
     await schemaMigration.initialize()
@@ -44,5 +41,8 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\schema
   }
 }
 
-export const POST = withErrorHandling(postHandler, 'POST POST /api/schema/migrations')
 
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET GET /api/schema/migrations')
+export const POST = withErrorHandling(postHandler, 'POST POST /api/schema\migrations\route.ts')

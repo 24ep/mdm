@@ -8,7 +8,6 @@ async function postHandler(request: NextRequest) {
     if (!authResult.success) return authResult.response
     const { session } = authResult
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\sql\explain\route.ts')
 
     const { query: sqlQuery, analyze = false } = await request.json()
 
@@ -37,3 +36,6 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\sql\ex
 
 export const POST = withErrorHandling(postHandler, 'POST POST /api/sql/explain')
 
+
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/sql\explain\route.ts')

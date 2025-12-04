@@ -14,30 +14,29 @@ async function getHandler(
   const authResult = await requireAuthWithId()
   if (!authResult.success) return authResult.response
   const { session } = authResult
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
-    const { chatbotId } = await params
-    
-    // Validate UUID format before querying
-    if (!isUuid(chatbotId)) {
-      return NextResponse.json(
-        { error: 'Invalid chatbot ID format', details: 'Chatbot ID must be a valid UUID' },
-        { status: 400 }
-      )
-    }
-    
-    const connectors = await prisma.chatbotConnector.findMany({
-      where: { chatbotId },
-      orderBy: { createdAt: 'asc' },
-    })
+  const { chatbotId } = await params
 
-    return NextResponse.json({ connectors })
+  // Validate UUID format before querying
+  if (!isUuid(chatbotId)) {
+    return NextResponse.json(
+      { error: 'Invalid chatbot ID format', details: 'Chatbot ID must be a valid UUID' },
+      { status: 400 }
+    )
+  }
+
+  const connectors = await prisma.chatbotConnector.findMany({
+    where: { chatbotId },
+    orderBy: { createdAt: 'asc' },
+  })
+
+  return NextResponse.json({ connectors })
+}
 
 // POST - Create connector
-
-
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\chatbots\[chatbotId]\connectors\route.ts')
 async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ chatbotId: string }> }
@@ -45,41 +44,44 @@ async function postHandler(
   const authResult = await requireAuthWithId()
   if (!authResult.success) return authResult.response
   const { session } = authResult
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\chatbots\[chatbotId]\connectors\route.ts')
 
-    const { chatbotId } = await params
-    
-    // Validate UUID format before querying
-    if (!isUuid(chatbotId)) {
-      return NextResponse.json(
-        { error: 'Invalid chatbot ID format', details: 'Chatbot ID must be a valid UUID' },
-        { status: 400 }
-      )
-    }
-    
-    const body = await request.json()
-    const { connectorType, enabled, credentials, config, metadata } = body
+  const { chatbotId } = await params
 
-    if (!connectorType) {
-      return NextResponse.json(
-        { error: 'connectorType is required' },
-        { status: 400 }
-      )
-    }
+  // Validate UUID format before querying
+  if (!isUuid(chatbotId)) {
+    return NextResponse.json(
+      { error: 'Invalid chatbot ID format', details: 'Chatbot ID must be a valid UUID' },
+      { status: 400 }
+    )
+  }
 
-    const connector = await prisma.chatbotConnector.create({
-      data: {
-        chatbotId,
-        connectorType,
-        enabled: enabled !== undefined ? enabled : true,
-        credentials: credentials || null,
-        config: config || {},
-        metadata: metadata || {},
-      },
-    })
+  const body = await request.json()
+  const { connectorType, enabled, credentials, config, metadata } = body
 
-    return NextResponse.json({ connector })
+  if (!connectorType) {
+    return NextResponse.json(
+      { error: 'connectorType is required' },
+      { status: 400 }
+    )
+  }
 
+  const connector = await prisma.chatbotConnector.create({
+    data: {
+      chatbotId,
+      connectorType,
+      enabled: enabled !== undefined ? enabled : true,
+      credentials: credentials || null,
+      config: config || {},
+      metadata: metadata || {},
+    },
+  })
+
+  return NextResponse.json({ connector })
+}
+
+export const GET = withErrorHandling(getHandler, 'GET /api/chatbots/[chatbotId]/connectors')
+export const POST = withErrorHandling(postHandler, 'POST /api/chatbots/[chatbotId]/connectors')

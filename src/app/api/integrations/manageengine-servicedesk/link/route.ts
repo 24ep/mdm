@@ -164,7 +164,7 @@ async function postHandler(request: NextRequest) {
 }).catch(() => {})
     }
 
-    return NextResponse.json({ error: 'Internal server error'  })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
 }
 
 

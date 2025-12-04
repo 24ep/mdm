@@ -70,7 +70,6 @@ async function postHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\infrastructure\instances\[id]\services\route.ts')
 
     const { id } = await params
     const body = await request.json()
@@ -152,3 +151,6 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\infras
 
 export const POST = withErrorHandling(postHandler, 'POST /api/infrastructure/instances/[id]/services')
 
+
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/infrastructure/instances/[id]/services/route.ts')

@@ -28,7 +28,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, token, expires_at: expiresAt.toISOString() })
   } catch (error) {
     console.error('Reset password request error:', error)
-    return NextResponse.json({ error: 'Internal server error'  })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 }
 
 // PUT /api/auth/reset-password - consume reset token and set new password
@@ -41,7 +42,8 @@ export async function PUT(request: NextRequest) {
     if (!rows.length) return NextResponse.json({ error: 'Invalid token' }, { status: 400 })
     const pr = rows[0]
     if (pr.used_at || new Date(pr.expires_at) < new Date()) {
-      return NextResponse.json({ error: 'Expired token'  })
+      return NextResponse.json({ error: 'Expired token' }, { status: 500 })
+    }
 
     const bcrypt = await import('bcryptjs')
     const hashed = await bcrypt.hash(password, 12)
@@ -50,7 +52,6 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Reset password error:', error)
-    return NextResponse.json({ error: 'Internal server error'  })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 }
-
-

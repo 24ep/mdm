@@ -10,11 +10,11 @@ async function getHandler(
 ) {
   const authResult = await requireAuthWithId()
   if (!authResult.success) return authResult.response
-  const { session } 
-
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\attachments\[id]\download\route.ts')= authResult
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+  const { session } = authResult
+  
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
 
 
@@ -26,7 +26,8 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\attachmen
     })
 
     if (!attachment) {
-      return NextResponse.json({ error: 'Attachment not found'  })
+      return NextResponse.json({ error: 'Attachment not found' }, { status: 404 })
+    }
 
     // Get active storage connection
     const storageConnection = await db.storageConnection.findFirst({
@@ -37,7 +38,8 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\attachmen
     })
 
     if (!storageConnection) {
-      return NextResponse.json({ error: 'No active storage connection found'  })
+      return NextResponse.json({ error: 'No active storage connection found' }, { status: 500 })
+    }
 
     // Initialize storage service
     const storageService = new AttachmentStorageService({
@@ -53,7 +55,8 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\attachmen
     if (!downloadResult.success) {
       return NextResponse.json({ 
         error: downloadResult.error || 'Download failed' 
-       })
+      })
+    }
 
     // Convert stream to buffer
     const chunks: Buffer[] = []
@@ -74,3 +77,6 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\attachmen
         'Cache-Control': 'private, max-age=3600'
       }
     })
+}
+
+export const GET = withErrorHandling(getHandler, 'GET /api/attachments/[id]/download')

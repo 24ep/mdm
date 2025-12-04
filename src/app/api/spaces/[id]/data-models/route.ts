@@ -117,5 +117,7 @@ async function getHandler(
     }
 }
 
-export const GET = withErrorHandling(getHandler, 'GET /api/spaces/[id]/data-models')
 
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/spaces/[id]/data-models')

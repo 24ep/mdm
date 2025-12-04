@@ -12,7 +12,7 @@ async function getHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { slug } = await params
 
@@ -22,7 +22,7 @@ async function getHandler(
     )
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Plugin not found'  })
+      return NextResponse.json({ error: 'Plugin not found' }, { status: 404 })
 
     const row = result.rows[0]
 
@@ -69,7 +69,6 @@ async function getHandler(
 
 
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\marketplace\plugins\[slug]\route.ts')
 async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
@@ -78,10 +77,10 @@ async function putHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     if (session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Forbidden'  })
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { slug } = await params
     const body = await request.json()
@@ -113,7 +112,7 @@ async function putHandler(
     }
 
     if (updates.length === 0) {
-      return NextResponse.json({ error: 'No valid fields to update'  })
+      return NextResponse.json({ error: 'No valid fields to update' }, { status: 500 })
 
     updates.push(`updated_at = NOW()`)
     values.push(slug)
@@ -128,7 +127,7 @@ async function putHandler(
     const result = await query(updateQuery, values)
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Plugin not found'  })
+      return NextResponse.json({ error: 'Plugin not found' }, { status: 404 })
 
     await logAPIRequest(
       session.user.id,
@@ -141,7 +140,6 @@ async function putHandler(
 
 
 
-export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\marketplace\plugins\[slug]\route.ts')
 async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
@@ -150,12 +148,11 @@ async function deleteHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\marketplace\plugins\[slug]\route.ts')
 
     if (session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Forbidden'  })
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { slug } = await params
 
@@ -168,7 +165,7 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
     )
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Plugin not found'  })
+      return NextResponse.json({ error: 'Plugin not found' }, { status: 404 })
 
     await logAPIRequest(
       session.user.id,
@@ -179,3 +176,8 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
 
     return NextResponse.json({ message: 'Plugin deleted successfully' })
 
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/marketplace/plugins/[slug]/route.ts')
+export const PUT = withErrorHandling(putHandler, 'PUT PUT /api/marketplace/plugins/[slug]/route.ts')
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE DELETE /api/marketplace/plugins/[slug]/route.ts')

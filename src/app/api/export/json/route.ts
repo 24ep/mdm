@@ -2,11 +2,11 @@ import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from 
 import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
 async function postHandler(request: NextRequest) {
+  try {
     const authResult = await requireAuth()
     if (!authResult.success) return authResult.response
     const { session } = authResult
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\export\json\route.ts')
 
     const { dataModelId, filters, columns, elementId, datasourceId, query } = await request.json()
 
@@ -87,10 +87,13 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\export
     })
 
     return response
-  ,
+  } catch (error: any) {
+    console.error('Error exporting to JSON:', error)
+    return NextResponse.json(
+      { error: error.message || 'Failed to export data to JSON' },
       { status: 500 }
     )
   }
 }
 
-export const POST = withErrorHandling(postHandler, 'POST POST /api/export/json')
+export const POST = withErrorHandling(postHandler, 'POST POST /api/export/json/route.ts')

@@ -9,7 +9,6 @@ async function postHandler(request: NextRequest) {
     if (!authResult.success) return authResult.response
     const { session } = authResult
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\notebooks\[id]\versions\diff\route.ts')
 
     const body = await request.json()
     const { notebook_id, version1_id, version2_id } = body
@@ -204,3 +203,6 @@ function calculateNotebookDiff(notebook1: any, notebook2: any): NotebookDiff {
   return diff
 }
 
+
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/notebooks/[id]/versions/diff/route.ts')

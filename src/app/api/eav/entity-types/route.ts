@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 
 async function getHandler(request: NextRequest) {
+  try {
     const authResult = await requireAuth()
     if (!authResult.success) return authResult.response
     const { session } = authResult
@@ -56,13 +57,12 @@ async function getHandler(request: NextRequest) {
 
 
 export const GET = withErrorHandling(getHandler, 'GET GET /api/eav/entity-types')
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\eav\entity-types\route.ts')
+
 async function postHandler(request: NextRequest) {
+  try {
     const authResult = await requireAuth()
     if (!authResult.success) return authResult.response
     const { session } = authResult
-
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\eav\entity-types\route.ts')
 
     const body = await request.json()
     const { 

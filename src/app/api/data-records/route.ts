@@ -43,7 +43,8 @@ async function getHandler(request: NextRequest) {
     const model = modelRows[0]
     if (!model) {
       logger.warn('Data model not found', { dataModelId })
-      return NextResponse.json({ error: 'data_model not found'  })
+      return NextResponse.json({ error: 'data_model not found' }, { status: 404 })
+    }
     
     // Extract filters from search params
     const { searchParams } = new URL(request.url)
@@ -378,6 +379,7 @@ async function postHandler(request: NextRequest) {
     const duration = Date.now() - startTime
     logger.apiResponse('POST', '/api/data-records', 201, duration, { recordId: record.id })
     return NextResponse.json({ record: fullRows[0]  })
+}
 
 export const POST = withErrorHandling(postHandler, 'POST /api/data-records')
 

@@ -12,7 +12,7 @@ async function getHandler(
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id: fileId } = await params
 
@@ -26,7 +26,7 @@ async function getHandler(
     )
 
     if (accessResult.rows.length === 0) {
-      return NextResponse.json({ error: 'File not found or access denied'  })
+      return NextResponse.json({ error: 'File not found or access denied' }, { status: 403 })
 
     // Get all versions of the file
     const versionsResult = await query(
@@ -56,7 +56,6 @@ async function getHandler(
 
 
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\files\[id]\versions\route.ts')
 async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -67,9 +66,8 @@ async function postHandler(
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\files\[id]\versions\route.ts')
 
     const { id: fileId } = await params
     const { changeLog } = await request.json()
@@ -84,7 +82,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\files\
     )
 
     if (accessResult.rows.length === 0) {
-      return NextResponse.json({ error: 'File not found or access denied'  })
+      return NextResponse.json({ error: 'File not found or access denied' }, { status: 403 })
 
     const file = accessResult.rows[0] as any
 
@@ -123,3 +121,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\files\
     return NextResponse.json({
       version: versionInsertResult.rows[0]
     })
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/files/[id]/versions/route.ts')
+export const POST = withErrorHandling(postHandler, 'POST POST /api/files/[id]/versions/route.ts')

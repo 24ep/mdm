@@ -17,7 +17,6 @@ async function postHandler(request: NextRequest) {
     const { session } = authResult
     // TODO: Add requireSpaceAccess check if spaceId is available
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\integrations\manageengine-servicedesk\bulk-push\route.ts')
 
     const body = await request.json()
     const { ticket_ids, space_id, syncComments, syncAttachments, syncTimeLogs } = body
@@ -272,3 +271,6 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\integr
 
 export const POST = withErrorHandling(postHandler, 'POST POST /api/integrations/manageengine-servicedesk/bulk-push')
 
+
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/integrations\manageengine-servicedesk\bulk-push\route.ts')

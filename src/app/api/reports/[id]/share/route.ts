@@ -25,10 +25,10 @@ async function postHandler(
     )
 
     if (ownerCheck.rows.length === 0) {
-      return NextResponse.json({ error: 'Report not found'  })
+      return NextResponse.json({ error: 'Report not found' }, { status: 404 })
 
     if (ownerCheck.rows[0].created_by !== session.user.id) {
-      return NextResponse.json({ error: 'Only report owner can create share links'  })
+      return NextResponse.json({ error: 'Only report owner can create share links' }, { status: 500 })
 
     // Generate unique token
     const token = crypto.randomBytes(32).toString('hex')
@@ -57,7 +57,6 @@ async function postHandler(
 
 
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\reports\[id]\share\route.ts')
 async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -81,8 +80,11 @@ async function getHandler(
     return NextResponse.json({ links: result.rows || [] })
   }
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\reports\[id]\share\route.ts') catch (error) {
     console.error('Error fetching share links:', error)
-    return NextResponse.json({ error: 'Internal server error'  })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
 }
 
+
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/reports/[id]/share/route.ts')
+export const GET = withErrorHandling(getHandler, 'GET GET /api/reports/[id]/share/route.ts')

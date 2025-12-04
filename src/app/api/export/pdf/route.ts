@@ -4,11 +4,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import puppeteer from 'puppeteer'
 
 async function postHandler(request: NextRequest) {
+  try {
     const authResult = await requireAuth()
     if (!authResult.success) return authResult.response
     const { session } = authResult
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\export\pdf\route.ts')
 
     const { dataModelId, filters, columns, elementId, datasourceId, query, elementName, elementType } = await request.json()
 
@@ -179,10 +179,13 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\export
       await browser.close()
       throw pdfError
     }
-  ,
+  } catch (error: any) {
+    console.error('Error exporting to PDF:', error)
+    return NextResponse.json(
+      { error: error.message || 'Failed to export data to PDF' },
       { status: 500 }
     )
   }
 }
 
-export const POST = withErrorHandling(postHandler, 'POST POST /api/export/pdf')
+export const POST = withErrorHandling(postHandler, 'POST POST /api/export/pdf/route.ts')

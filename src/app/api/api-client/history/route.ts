@@ -22,7 +22,6 @@ async function getHandler(request: NextRequest) {
     return NextResponse.json({ history })
 }
 
-export const GET = withErrorHandling(getHandler, 'GET /api/api-client/history')
 
 async function postHandler(request: NextRequest) {
   const authResult = await requireAuthWithId()
@@ -64,5 +63,8 @@ async function postHandler(request: NextRequest) {
     return NextResponse.json({ history: historyItem })
 }
 
-export const POST = withErrorHandling(postHandler, 'POST /api/api-client/history')
 
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/api-client/history')
+export const POST = withErrorHandling(postHandler, 'POST POST /api/api-client/history')

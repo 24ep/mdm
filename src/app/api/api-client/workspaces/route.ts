@@ -21,7 +21,6 @@ async function getHandler(request: NextRequest) {
     return NextResponse.json({ workspaces })
 }
 
-export const GET = withErrorHandling(getHandler, 'GET /api/api-client/workspaces')
 
 async function postHandler(request: NextRequest) {
   const authResult = await requireAuthWithId()
@@ -44,5 +43,8 @@ async function postHandler(request: NextRequest) {
     return NextResponse.json({ workspace })
 }
 
-export const POST = withErrorHandling(postHandler, 'POST /api/api-client/workspaces')
 
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/api-client/workspaces')
+export const POST = withErrorHandling(postHandler, 'POST POST /api/api-client/workspaces')

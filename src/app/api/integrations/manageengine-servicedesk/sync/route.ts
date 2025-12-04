@@ -90,7 +90,7 @@ async function postHandler(request: NextRequest) {
     })
 
     if (!ticket) {
-      return NextResponse.json({ error: 'Ticket not found'  })
+      return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
 
     // Get ServiceDesk configuration
     const { rows: configRows } = await query(
@@ -268,4 +268,5 @@ async function postHandler(request: NextRequest) {
 
 
 
-export const POST = withErrorHandling(postHandler, 'POST POST /api/integrations/manageengine-servicedesk')
+
+export const POST = withErrorHandling(postHandler, 'POST POST POST /api/integrations/manageengine-servicedesk')

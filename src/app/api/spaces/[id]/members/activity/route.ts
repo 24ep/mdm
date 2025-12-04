@@ -121,7 +121,7 @@ async function getHandler(
 
 
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\spaces\[id]\members\activity\route.ts')
+export const GET = withErrorHandling(getHandler, 'GET /api/spaces/[id]/members/activity/route.ts')
 async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -135,7 +135,6 @@ async function postHandler(
       return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\spaces\[id]\members\activity\route.ts')
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -185,3 +184,6 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\spaces
     return handleApiError(error, 'Space Members Activity API POST')
   }
 }
+
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/spaces/[id]/members/activity/route.ts')

@@ -28,7 +28,8 @@ async function getHandler(
     )
 
     if (rows.length === 0) {
-      return NextResponse.json({ error: 'Sync schedule not found'  })
+      return NextResponse.json({ error: 'Sync schedule not found' }, { status: 404 })
+    }
 
     // Check access
     const { rows: access } = await query(
@@ -38,10 +39,8 @@ async function getHandler(
     if (access.length === 0) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     return NextResponse.json({ schedule: rows[0] })
+}
 
-
-
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\data-sync-schedules\[id]\route.ts')
 async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -62,7 +61,8 @@ async function putHandler(
     )
 
     if (existing.length === 0) {
-      return NextResponse.json({ error: 'Sync schedule not found'  })
+      return NextResponse.json({ error: 'Sync schedule not found' }, { status: 404 })
+    }
 
     // Check access
     const { rows: access } = await query(
@@ -90,7 +90,8 @@ async function putHandler(
     }
 
     if (fields.length === 0) {
-      return NextResponse.json({ error: 'No fields to update'  })
+      return NextResponse.json({ error: 'No fields to update' }, { status: 500 })
+    }
 
     // Recalculate next_run_at if schedule changed
     if (updates.schedule_type || updates.schedule_config) {
@@ -115,10 +116,8 @@ async function putHandler(
     )
 
     return NextResponse.json({ schedule: rows[0] })
+}
 
-
-
-export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\data-sync-schedules\[id]\route.ts')
 async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -137,9 +136,8 @@ async function deleteHandler(
     )
 
     if (existing.length === 0) {
-      return NextResponse.json({ error: 'Sync schedule not found'  })
-
-export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\data-sync-schedules\[id]\route.ts')
+      return NextResponse.json({ error: 'Sync schedule not found' }, { status: 404 })
+    }
 
     // Check access
     const { rows: access } = await query(
@@ -156,6 +154,7 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
     )
 
     return NextResponse.json({ success: true })
+}
 
 function calculateNextRunTime(scheduleType: string, scheduleConfig: any): Date | null {
   if (scheduleType === 'MANUAL') return null
@@ -182,3 +181,8 @@ function calculateNextRunTime(scheduleType: string, scheduleConfig: any): Date |
   return next
 }
 
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/data-sync-schedules/[id]/route.ts')
+export const PUT = withErrorHandling(putHandler, 'PUT PUT /api/data-sync-schedules/[id]/route.ts')
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE DELETE /api/data-sync-schedules/[id]/route.ts')

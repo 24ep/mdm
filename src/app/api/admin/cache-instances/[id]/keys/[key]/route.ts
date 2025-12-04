@@ -22,7 +22,7 @@ export async function DELETE(
     })
 
     if (!cacheKey) {
-      return NextResponse.json({ error: 'Cache key not found' })
+      return NextResponse.json({ error: 'Cache key not found' }, { status: 404 })
     }
 
     // Delete the cache key
@@ -57,6 +57,6 @@ export async function DELETE(
     return NextResponse.json({ message: 'Cache key deleted successfully' })
   } catch (error) {
     console.error('Error deleting cache key:', error)
-    return NextResponse.json({ error: 'Failed to delete cache key' })
+    return NextResponse.json({ error: 'Failed to delete cache key' }, { status: 500 })
   }
 }

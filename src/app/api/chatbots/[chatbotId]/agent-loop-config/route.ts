@@ -14,10 +14,11 @@ async function getHandler(
   const authResult = await requireAuthWithId()
   if (!authResult.success) return authResult.response
   const { session } = authResult
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
-    const { chatbotId } = await params
+  const { chatbotId } = await params
     
     // Validate UUID format before querying
     if (!isUuid(chatbotId)) {
@@ -32,11 +33,9 @@ async function getHandler(
     })
 
     return NextResponse.json({ config: config || null })
+}
 
 // POST - Create or update agent loop config
-
-
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\chatbots\[chatbotId]\agent-loop-config\route.ts')
 async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ chatbotId: string }> }
@@ -44,12 +43,11 @@ async function postHandler(
   const authResult = await requireAuthWithId()
   if (!authResult.success) return authResult.response
   const { session } = authResult
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\chatbots\[chatbotId]\agent-loop-config\route.ts')
-
-    const { chatbotId } = await params
+  const { chatbotId } = await params
     
     // Validate UUID format before querying
     if (!isUuid(chatbotId)) {
@@ -84,4 +82,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\chatbo
     })
 
     return NextResponse.json({ config })
+}
 
+export const GET = withErrorHandling(getHandler, 'GET /api/chatbots/[chatbotId]/agent-loop-config')
+export const POST = withErrorHandling(postHandler, 'POST /api/chatbots/[chatbotId]/agent-loop-config')

@@ -10,7 +10,6 @@ async function postHandler(request: NextRequest) {
     if (!authResult.success) return authResult.response
     const { session } = authResult
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\upload\logo\route.ts')
 
     const formData = await request.formData()
     const file = formData.get('logo') as File
@@ -53,3 +52,6 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\upload
 export const POST = withErrorHandling(postHandler, 'POST POST /api/upload/logo')
 
 
+
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/upload\logo\route.ts')

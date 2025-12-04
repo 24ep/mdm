@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { changeApproval } from '@/lib/db-change-approval'
 
 async function getHandler(request: NextRequest) {
+  try {
     const authResult = await requireAuth()
     if (!authResult.success) return authResult.response
     const { session } = authResult
@@ -26,7 +27,9 @@ async function getHandler(request: NextRequest) {
       success: true,
       changeRequests
     })
-  ,
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: 'Failed to fetch change requests', details: error.message },
       { status: 500 }
     )
   }
@@ -36,15 +39,12 @@ async function getHandler(request: NextRequest) {
 
 
 
-export const GET = withErrorHandling(getHandler, 'GET GET /api/db/change-requests')
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\db\change-requests\route.ts')
 async function postHandler(request: NextRequest) {
+  try {
     const authResult = await requireAuthWithId()
     if (!authResult.success) return authResult.response
     const { session } = authResult
     // TODO: Add requireSpaceAccess check if spaceId is available
-
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\db\change-requests\route.ts')
 
     const body = await request.json()
     const {
@@ -84,11 +84,13 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\db\cha
       success: true,
       changeRequestId
     })
-  ,
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: 'Failed to create change request', details: error.message },
       { status: 500 }
     )
   }
 }
 
+export const GET = withErrorHandling(getHandler, 'GET GET /api/db/change-requests')
 export const POST = withErrorHandling(postHandler, 'POST POST /api/db/change-requests')
-

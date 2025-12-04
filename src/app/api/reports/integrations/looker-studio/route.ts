@@ -26,7 +26,6 @@ async function getHandler(request: NextRequest) {
   return NextResponse.json({ configs: result.rows || [] })
 }
 
-export const GET = withErrorHandling(getHandler, 'GET /api/reports/integrations/looker-studio')
 
 async function postHandler(request: NextRequest) {
   const authResult = await requireAuthWithId()
@@ -130,3 +129,6 @@ async function putHandler(request: NextRequest) {
 }
 
 export const PUT = withErrorHandling(putHandler, 'PUT /api/reports/integrations/looker-studio')
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/reports/integrations/looker-studio')

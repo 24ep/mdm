@@ -12,30 +12,29 @@ async function putHandler(
   const authResult = await requireAuthWithId()
   if (!authResult.success) return authResult.response
   const { session } = authResult
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
-    const { connectorId } = await params
-    const body = await request.json()
-    const { connectorType, enabled, credentials, config, metadata } = body
+  const { connectorId } = await params
+  const body = await request.json()
+  const { connectorType, enabled, credentials, config, metadata } = body
 
-    const connector = await prisma.chatbotConnector.update({
-      where: { id: connectorId },
-      data: {
-        ...(connectorType && { connectorType }),
-        ...(enabled !== undefined && { enabled }),
-        ...(credentials !== undefined && { credentials: credentials || null }),
-        ...(config && { config }),
-        ...(metadata && { metadata }),
-      },
-    })
+  const connector = await prisma.chatbotConnector.update({
+    where: { id: connectorId },
+    data: {
+      ...(connectorType && { connectorType }),
+      ...(enabled !== undefined && { enabled }),
+      ...(credentials !== undefined && { credentials: credentials || null }),
+      ...(config && { config }),
+      ...(metadata && { metadata }),
+    },
+  })
 
-    return NextResponse.json({ connector })
+  return NextResponse.json({ connector })
+}
 
 // DELETE - Delete connector
-
-
-export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\chatbots\[chatbotId]\connectors\[connectorId]\route.ts')
 async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ chatbotId: string; connectorId: string }> }
@@ -43,15 +42,17 @@ async function deleteHandler(
   const authResult = await requireAuthWithId()
   if (!authResult.success) return authResult.response
   const { session } = authResult
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
-export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\chatbots\[chatbotId]\connectors\[connectorId]\route.ts')
+  const { connectorId } = await params
+  await prisma.chatbotConnector.delete({
+    where: { id: connectorId },
+  })
 
-    const { connectorId } = await params
-    await prisma.chatbotConnector.delete({
-      where: { id: connectorId },
-    })
+  return NextResponse.json({ success: true })
+}
 
-    return NextResponse.json({ success: true })
-
+export const PUT = withErrorHandling(putHandler, 'PUT /api/chatbots/[chatbotId]/connectors/[connectorId]')
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/chatbots/[chatbotId]/connectors/[connectorId]')

@@ -12,7 +12,7 @@ async function getHandler(
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id: spaceId } = await params
 
@@ -23,7 +23,7 @@ async function getHandler(
     )
 
     if (memberResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Space not found or access denied'  })
+      return NextResponse.json({ error: 'Space not found or access denied' }, { status: 403 })
 
     const userRole = (memberResult.rows[0] as any).role
 
@@ -55,7 +55,6 @@ async function getHandler(
 
 
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\spaces\[id]\attachment-storage-postgresql\route.ts')
 async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -66,9 +65,8 @@ async function putHandler(
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\spaces\[id]\attachment-storage-postgresql\route.ts')
 
     const { id: spaceId } = await params
     const { provider, config } = await request.json()
@@ -80,15 +78,15 @@ export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\spaces\[i
     )
 
     if (memberResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Space not found or access denied'  })
+      return NextResponse.json({ error: 'Space not found or access denied' }, { status: 403 })
 
     const userRole = (memberResult.rows[0] as any).role
     if (!['owner', 'admin'].includes(userRole)) {
-      return NextResponse.json({ error: 'Insufficient permissions'  })
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
 
     // Validate provider
     if (!['minio', 's3', 'sftp', 'ftp'].includes(provider)) {
-      return NextResponse.json({ error: 'Invalid storage provider'  })
+      return NextResponse.json({ error: 'Invalid storage provider' }, { status: 400 })
 
     // Deactivate existing configurations
     await query(
@@ -109,3 +107,7 @@ export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\spaces\[i
       config: row.config,
       is_active: row.is_active
     })
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/spaces/[id]/attachment-storage-postgresql/route.ts')
+export const PUT = withErrorHandling(putHandler, 'PUT PUT /api/spaces/[id]/attachment-storage-postgresql/route.ts')

@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
     const { apiKey, action, audioData, sessionConfig } = body
 
     if (!apiKey) {
-      return NextResponse.json({ error: 'API key is required'  })
+      return NextResponse.json({ error: 'API key is required' }, { status: 400 })
 
     // This is a placeholder - OpenAI Realtime API requires WebSocket connection
     // In production, you'd need to set up a WebSocket proxy server

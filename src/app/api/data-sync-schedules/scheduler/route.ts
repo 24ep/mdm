@@ -66,7 +66,8 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error in data sync scheduler:', error)
-    return NextResponse.json({ error: 'Internal server error'  })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 }
 
 // GET endpoint for health check
@@ -88,6 +89,7 @@ export async function GET() {
       schedules_due: parseInt(rows[0].count)
     })
   } catch (error) {
-    return NextResponse.json({ error: 'Internal server error'  })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 }
 

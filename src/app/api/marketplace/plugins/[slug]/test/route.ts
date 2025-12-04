@@ -37,7 +37,7 @@ export async function POST(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { slug } = await params
     const serviceId = await resolveServiceId(slug)

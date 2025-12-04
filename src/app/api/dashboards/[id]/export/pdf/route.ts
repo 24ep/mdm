@@ -39,9 +39,8 @@ async function postHandler(
     `, [id, session.user.id])
 
     if (dashboards.length === 0) {
-      return NextResponse.json({ error: 'Dashboard not found'  })
-
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashboards\[id]\export\pdf\route.ts')
+      return NextResponse.json({ error: 'Dashboard not found' }, { status: 404 })
+    }
 
     const dashboard = dashboards[0]
 
@@ -299,3 +298,6 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashbo
       filename: filename,
       message: 'PDF generated and uploaded successfully'
     })
+}
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/dashboards/[id]/export/pdf/route.ts')

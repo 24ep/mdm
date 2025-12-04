@@ -43,7 +43,6 @@ async function getHandler(request: NextRequest) {
 
 
 
-export const GET = withErrorHandling(getHandler, 'GET /api/external-connections')
 
 async function postHandler(request: NextRequest) {
   const authResult = await requireAuthWithId()
@@ -425,3 +424,6 @@ async function deleteHandler(request: NextRequest) {
 export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/external-connections')
 
 
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/external-connections')

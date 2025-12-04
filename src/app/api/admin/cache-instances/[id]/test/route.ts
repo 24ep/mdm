@@ -18,7 +18,7 @@ export async function POST(
     })
 
     if (!instance) {
-      return NextResponse.json({ error: 'Cache instance not found' })
+      return NextResponse.json({ error: 'Cache instance not found' }, { status: 404 })
     }
 
     // Simulate connection test (in a real implementation, you would test actual connection)
@@ -42,7 +42,7 @@ export async function POST(
     })
   } catch (error) {
     console.error('Error testing cache connection:', error)
-    return NextResponse.json({ error: 'Failed to test connection' })
+    return NextResponse.json({ error: 'Failed to test connection' }, { status: 500 })
   }
 }
 

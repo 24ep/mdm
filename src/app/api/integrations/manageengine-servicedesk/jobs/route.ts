@@ -65,14 +65,13 @@ async function getHandler(request: NextRequest) {
 
 
 export const GET = withErrorHandling(getHandler, 'GET GET /api/integrations/manageengine-servicedesk/jobs')
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\integrations\manageengine-servicedesk\jobs\route.ts')
+export const GET = withErrorHandling(getHandler, 'GET /api/integrations\manageengine-servicedesk\jobs\route.ts')
 async function postHandler(request: NextRequest) {
     const authResult = await requireAuthWithId()
     if (!authResult.success) return authResult.response
     const { session } = authResult
     // TODO: Add requireSpaceAccess check if spaceId is available
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\integrations\manageengine-servicedesk\jobs\route.ts')
 
     const spaceId = getSpaceId(request)
     if (!spaceId) {
@@ -132,3 +131,6 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\integr
 
 export const POST = withErrorHandling(postHandler, 'POST POST /api/integrations/manageengine-servicedesk/jobs')
 
+
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/integrations\manageengine-servicedesk\jobs\route.ts')

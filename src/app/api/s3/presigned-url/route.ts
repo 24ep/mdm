@@ -9,7 +9,6 @@ async function postHandler(request: NextRequest) {
     if (!authResult.success) return authResult.response
     const { session } = authResult
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\s3\presigned-url\route.ts')
 
     const { key, bucket, expiresIn = 300 } = await request.json()
 
@@ -75,3 +74,6 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\s3\pre
 }
 
 export const POST = withErrorHandling(postHandler, 'POST POST /api/s3/presigned-url')
+
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/s3\presigned-url\route.ts')

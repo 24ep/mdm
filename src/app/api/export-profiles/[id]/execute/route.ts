@@ -11,12 +11,11 @@ async function postHandler(
 ) {
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized'  })
-
-export const POST = withErrorHandling(postHandler, '
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const { id: profileId } = await params
 
@@ -42,7 +41,8 @@ export const POST = withErrorHandling(postHandler, '
     `, [profileId])
 
     if (profileResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Export profile not found'  })
+      return NextResponse.json({ error: 'Export profile not found' }, { status: 404 })
+    }
 
     const profile = profileResult.rows[0]
 
@@ -55,7 +55,8 @@ export const POST = withErrorHandling(postHandler, '
                      )
 
     if (!hasAccess) {
-      return NextResponse.json({ error: 'Access denied'  })
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
 
     // Get data model attributes to build the query
     const attributesResult = await query(`
@@ -69,7 +70,8 @@ export const POST = withErrorHandling(postHandler, '
     const selectedColumns = profile.columns || []
 
     if (selectedColumns.length === 0) {
-      return NextResponse.json({ error: 'No columns selected for export'  })
+      return NextResponse.json({ error: 'No columns selected for export' }, { status: 400 })
+    }
 
     // Build the SQL query based on selected columns and filters
     let selectClause = selectedColumns.map((col: any) => {
@@ -112,7 +114,8 @@ export const POST = withErrorHandling(postHandler, '
     const exportData = dataResult.rows
 
     if (exportData.length === 0) {
-      return NextResponse.json({ error: 'No data found matching the criteria'  })
+      return NextResponse.json({ error: 'No data found matching the criteria' }, { status: 404 })
+    }
 
     // Generate the file based on format
     let fileBuffer: Buffer
@@ -200,3 +203,4 @@ function convertToCSV(data: any[]): string {
   return csvRows.join('\n')
 }
 
+export const POST = withErrorHandling(postHandler, 'POST POST /api/export-profiles/[id]/execute/route.ts')

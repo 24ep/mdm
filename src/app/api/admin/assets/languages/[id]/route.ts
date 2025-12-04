@@ -12,7 +12,7 @@ async function putHandler(
     if (!authResult.success) return authResult.response
     const { session } = authResult
     if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { id } = await params

@@ -12,7 +12,8 @@ async function putHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const { id } = await params
     const body = await request.json()
@@ -34,7 +35,6 @@ async function putHandler(
 
 
 
-export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\data-masking\rules\[id]\route.ts')
 async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -44,9 +44,8 @@ async function deleteHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized'  })
-
-export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\data-masking\rules\[id]\route.ts')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const { id } = await params
     await dataMasking.initialize()
@@ -63,3 +62,7 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
   }
 }
 
+
+
+export const PUT = withErrorHandling(putHandler, 'PUT PUT /api/data-masking/rules/[id]/route.ts')
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE DELETE /api/data-masking/rules/[id]/route.ts')

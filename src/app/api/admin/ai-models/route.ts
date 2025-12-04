@@ -40,7 +40,6 @@ async function getHandler() {
 
 
 
-export const GET = withErrorHandling(getHandler, 'GET /api/admin/ai-models')
 
 async function postHandler(request: NextRequest) {
     const authResult = await requireAuth()
@@ -81,3 +80,6 @@ async function postHandler(request: NextRequest) {
 }
 
 export const POST = withErrorHandling(postHandler, 'POST /api/admin/ai-models')
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/admin/ai-models')

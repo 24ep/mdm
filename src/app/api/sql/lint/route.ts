@@ -36,13 +36,12 @@ async function postHandler(request: NextRequest) {
 
 
 export const POST = withErrorHandling(postHandler, 'POST POST /api/sql/lint')
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\sql\lint\route.ts')
+export const POST = withErrorHandling(postHandler, 'POST /api/sql\lint\route.ts')
 async function getHandler() {
     const authResult = await requireAuth()
     if (!authResult.success) return authResult.response
     const { session } = authResult
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\sql\lint\route.ts')
 
     const rules = sqlLinter.getAllRules()
 
@@ -63,5 +62,7 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\sql\lint\
   }
 }
 
-export const GET = withErrorHandling(getHandler, 'GET GET /api/sql/lint')
 
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/sql\lint\route.ts')

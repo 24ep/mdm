@@ -6,21 +6,20 @@ import { query } from '@/lib/db'
 async function getHandler(request: NextRequest) {
   const authResult = await requireAuthWithId()
   if (!authResult.success) return authResult.response
-  const { session } 
+  const { session } = authResult
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\data-sync-schedules\stats\route.ts')= authResult
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
-
-
-    const searchParams = request.nextUrl.searchParams
+  const searchParams = request.nextUrl.searchParams
     const spaceId = searchParams.get('space_id')
 
-    if (!spaceId) {
-      return NextResponse.json({ error: 'space_id required'  })
+  if (!spaceId) {
+    return NextResponse.json({ error: 'space_id required' }, { status: 400 })
+  }
 
-    // Get total and active schedules
+  // Get total and active schedules
     const { rows: scheduleStats } = await query(
       `SELECT 
          COUNT(*) as total,
@@ -56,5 +55,7 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\data-sync
       avg_duration_ms: parseFloat(todayStats[0]?.avg_duration || '0')
     }
 
-    return NextResponse.json({ stats })
+  return NextResponse.json({ stats })
+}
 
+export const GET = withErrorHandling(getHandler, 'GET GET /api/data-sync-schedules/stats/route.ts')

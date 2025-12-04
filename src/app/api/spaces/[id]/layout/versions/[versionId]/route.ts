@@ -87,7 +87,7 @@ async function getHandler(
 // DELETE /api/spaces/[id]/layout/versions/[versionId] - Delete a version
 
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\spaces\[id]\layout\versions\[versionId]\route.ts')
+export const GET = withErrorHandling(getHandler, 'GET /api/spaces/[id]/layout/versions/[versionId]/route.ts')
 async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; versionId: string }> }
@@ -101,7 +101,6 @@ async function deleteHandler(
       return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\spaces\[id]\layout\versions\[versionId]\route.ts')
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -163,3 +162,6 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
   }
 }
 
+
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE DELETE /api/spaces/[id]/layout/versions/[versionId]/route.ts')

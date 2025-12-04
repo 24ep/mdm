@@ -50,7 +50,7 @@ async function getHandler(request: NextRequest) {
 
 
 export const GET = withErrorHandling(getHandler, 'GET GET /api/integrations/manageengine-servicedesk/field-mappings')
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\integrations\manageengine-servicedesk\field-mappings\route.ts')
+export const GET = withErrorHandling(getHandler, 'GET /api/integrations\manageengine-servicedesk\field-mappings\route.ts')
 async function postHandler(request: NextRequest) {
     const authResult = await requireAuthWithId()
     if (!authResult.success) return authResult.response
@@ -122,14 +122,13 @@ async function postHandler(request: NextRequest) {
 
 
 export const POST = withErrorHandling(postHandler, 'POST POST /api/integrations/manageengine-servicedesk/field-mappings')
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\integrations\manageengine-servicedesk\field-mappings\route.ts')
+export const POST = withErrorHandling(postHandler, 'POST /api/integrations\manageengine-servicedesk\field-mappings\route.ts')
 async function deleteHandler(request: NextRequest) {
     const authResult = await requireAuthWithId()
     if (!authResult.success) return authResult.response
     const { session } = authResult
     // TODO: Add requireSpaceAccess check if spaceId is available
 
-export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\integrations\manageengine-servicedesk\field-mappings\route.ts')
 
     const { searchParams } = new URL(request.url)
     const mapping_id = searchParams.get('mapping_id')
@@ -169,3 +168,6 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
 
 export const DELETE = withErrorHandling(deleteHandler, 'DELETE DELETE /api/integrations/manageengine-servicedesk/field-mappings')
 
+
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE DELETE /api/integrations\manageengine-servicedesk\field-mappings\route.ts')

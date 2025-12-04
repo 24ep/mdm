@@ -13,7 +13,7 @@ async function getHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id } = await params
     const notebookId = decodeURIComponent(id)
@@ -80,7 +80,6 @@ async function getHandler(
 // POST: Create a new version of a notebook
 
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\notebooks\[id]\versions\route.ts')
 async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -90,9 +89,8 @@ async function postHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\notebooks\[id]\versions\route.ts')
 
     const { id } = await params
     const notebookId = decodeURIComponent(id)
@@ -167,3 +165,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\notebo
   }
 }
 
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/notebooks/[id]/versions/route.ts')
+export const POST = withErrorHandling(postHandler, 'POST POST /api/notebooks/[id]/versions/route.ts')

@@ -11,8 +11,6 @@ async function postHandler(request: NextRequest) {
     const { session } = authResult
     // TODO: Add requireSpaceAccess check if spaceId is available
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\attachments\upload\route.ts')
-
     const formData = await request.formData()
     const file = formData.get('file') as File
     const spaceId = formData.get('spaceId') as string
@@ -107,9 +105,6 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\attach
         path: uploadResult.path
       }
     })
-
-  , { status: 500 })
-  }
 }
 
-export const POST = withErrorHandling(postHandler, 'POST POST /api/attachments/upload')
+export const POST = withErrorHandling(postHandler, 'POST /api/attachments/upload')

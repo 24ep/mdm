@@ -11,7 +11,7 @@ async function postHandler(request: NextRequest) {
     if (!authResult.success) return authResult.response
     const { session } = authResult
     if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const formData = await request.formData()
@@ -19,16 +19,16 @@ async function postHandler(request: NextRequest) {
     const assetId = formData.get('assetId') as string
 
     if (!file) {
-      return NextResponse.json({ error: 'No file provided' })
+      return NextResponse.json({ error: 'No file provided' }, { status: 500 })
     }
 
     if (!file.type.startsWith('image/')) {
-      return NextResponse.json({ error: 'Invalid file type' })
+      return NextResponse.json({ error: 'Invalid file type' }, { status: 400 })
     }
 
     // Validate file size (max ~2MB)
     if (file.size > 2 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File too large' })
+      return NextResponse.json({ error: 'File too large' }, { status: 500 })
     }
 
     const uploadsDir = join(process.cwd(), 'uploads', 'assets', 'logos')

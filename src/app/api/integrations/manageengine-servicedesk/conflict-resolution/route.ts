@@ -198,14 +198,13 @@ async function postHandler(request: NextRequest) {
 
 
 export const POST = withErrorHandling(postHandler, 'POST POST /api/integrations/manageengine-servicedesk/conflict-resolution')
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\integrations\manageengine-servicedesk\conflict-resolution\route.ts')
+export const POST = withErrorHandling(postHandler, 'POST /api/integrations\manageengine-servicedesk\conflict-resolution\route.ts')
 async function putHandler(request: NextRequest) {
     const authResult = await requireAuthWithId()
     if (!authResult.success) return authResult.response
     const { session } = authResult
     // TODO: Add requireSpaceAccess check if spaceId is available
 
-export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\integrations\manageengine-servicedesk\conflict-resolution\route.ts')
 
     const body = await request.json()
     const { ticket_id, space_id, request_id, resolution } = body
@@ -383,3 +382,6 @@ export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\integrati
 
 export const PUT = withErrorHandling(putHandler, 'PUT PUT /api/integrations/manageengine-servicedesk/conflict-resolution')
 
+
+
+export const PUT = withErrorHandling(putHandler, 'PUT PUT /api/integrations\manageengine-servicedesk\conflict-resolution\route.ts')

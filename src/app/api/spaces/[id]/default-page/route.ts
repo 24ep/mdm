@@ -36,7 +36,7 @@ async function getHandler(
 
     if (spaceResult.rows.length === 0) {
       logger.warn('Space not found for default page', { spaceSlugOrId })
-      return NextResponse.json({ error: 'Space not found'  })
+      return NextResponse.json({ error: 'Space not found' }, { status: 404 })
 
     const spaceId = spaceResult.rows[0].id
 
@@ -102,6 +102,8 @@ async function getHandler(
     })
 }
 
-export const GET = withErrorHandling(getHandler, 'GET /api/spaces/[id]/default-page')
 
 
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/spaces/[id]/default-page')

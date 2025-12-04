@@ -44,7 +44,6 @@ async function getHandler(
 
 
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\reports\[id]\permissions\route.ts')
 async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -59,9 +58,8 @@ async function postHandler(
     const { user_id, role_id, permission } = body
 
     if (!permission || (!user_id && !role_id)) {
-      return NextResponse.json({ error: 'Permission and user_id or role_id required'  })
+      return NextResponse.json({ error: 'Permission and user_id or role_id required' }, { status: 400 })
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\reports\[id]\permissions\route.ts')
 
     // Check if user owns the report
     const ownerCheck = await query(
@@ -70,10 +68,10 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\report
     )
 
     if (ownerCheck.rows.length === 0) {
-      return NextResponse.json({ error: 'Report not found'  })
+      return NextResponse.json({ error: 'Report not found' }, { status: 404 })
 
     if (ownerCheck.rows[0].created_by !== session.user.id) {
-      return NextResponse.json({ error: 'Only report owner can manage permissions'  })
+      return NextResponse.json({ error: 'Only report owner can manage permissions' }, { status: 500 })
 
     const sql = `
       INSERT INTO report_permissions (report_id, user_id, role_id, permission, created_by)
@@ -96,3 +94,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\report
 
     return NextResponse.json({ permission: result.rows[0] }, { status: 201 })
 
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/reports/[id]/permissions/route.ts')
+export const POST = withErrorHandling(postHandler, 'POST POST /api/reports/[id]/permissions/route.ts')

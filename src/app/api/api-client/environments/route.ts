@@ -47,5 +47,7 @@ async function postHandler(request: NextRequest) {
     return NextResponse.json({ environment })
 }
 
-export const POST = withErrorHandling(postHandler, 'POST /api/api-client/environments')
 
+
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/api-client/environments')

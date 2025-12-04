@@ -24,7 +24,7 @@ async function getHandler(
     )
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Plugin not found'  })
+      return NextResponse.json({ error: 'Plugin not found' }, { status: 404 })
 
     const row = result.rows[0]
     const plugin = {
@@ -55,5 +55,7 @@ async function getHandler(
     return NextResponse.json({ plugin })
 }
 
-export const GET = withErrorHandling(getHandler, 'GET /api/plugins/[slug]')
 
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/plugins/[slug]')

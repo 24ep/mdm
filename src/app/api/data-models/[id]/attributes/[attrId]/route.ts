@@ -54,7 +54,7 @@ async function getHandler(
 
 
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\data-models\[id]\attributes\[attrId]\route.ts')
+export const GET = withErrorHandling(getHandler, 'GET /api/data-models/[id]/attributes/[attrId]/route.ts')
 async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; attrId: string }> }
@@ -203,7 +203,7 @@ async function putHandler(
 
 
 
-export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\data-models\[id]\attributes\[attrId]\route.ts')
+export const PUT = withErrorHandling(putHandler, 'PUT /api/data-models/[id]/attributes/[attrId]/route.ts')
 async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; attrId: string }> }
@@ -217,7 +217,6 @@ async function deleteHandler(
       return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\data-models\[id]\attributes\[attrId]\route.ts')
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -276,3 +275,6 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
     return handleApiError(error, 'Attribute API DELETE')
   }
 }
+
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE DELETE /api/data-models/[id]/attributes/[attrId]/route.ts')

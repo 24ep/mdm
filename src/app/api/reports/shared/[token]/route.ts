@@ -26,7 +26,7 @@ export async function GET(
     const result = await query(sql, [token])
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Link not found or expired'  })
+      return NextResponse.json({ error: 'Link not found or expired' }, { status: 404 })
 
     const shareLink = result.rows[0]
 
@@ -46,7 +46,7 @@ export async function GET(
     return NextResponse.json({ report: shareLink as Report })
   } catch (error) {
     console.error('Error fetching shared report:', error)
-    return NextResponse.json({ error: 'Internal server error'  })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
 }
 
 export async function POST(
@@ -59,7 +59,7 @@ export async function POST(
     const { password } = body
 
     if (!password) {
-      return NextResponse.json({ error: 'Password is required'  })
+      return NextResponse.json({ error: 'Password is required' }, { status: 400 })
 
     const sql = `
       SELECT 
@@ -77,14 +77,14 @@ export async function POST(
     const result = await query(sql, [token])
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Link not found or expired'  })
+      return NextResponse.json({ error: 'Link not found or expired' }, { status: 404 })
 
     const shareLink = result.rows[0]
 
     // Verify password
     const passwordHash = crypto.createHash('sha256').update(password).digest('hex')
     if (shareLink.password_hash !== passwordHash) {
-      return NextResponse.json({ error: 'Invalid password'  })
+      return NextResponse.json({ error: 'Invalid password' }, { status: 400 })
 
     // Increment view count
     await query(
@@ -95,6 +95,6 @@ export async function POST(
     return NextResponse.json({ report: shareLink as Report })
   } catch (error) {
     console.error('Error accessing shared report:', error)
-    return NextResponse.json({ error: 'Internal server error'  })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
 }
 

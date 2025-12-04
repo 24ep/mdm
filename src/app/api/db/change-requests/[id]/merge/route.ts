@@ -9,16 +9,16 @@ async function postHandler(
 ) {
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized'  })
-
-export const POST = withErrorHandling(postHandler, '
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions'  })
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    }
 
     const { id } = await params
     await changeApproval.mergeChangeRequest(id, session.user.id)
@@ -35,4 +35,6 @@ export const POST = withErrorHandling(postHandler, '
     )
   }
 }
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/db/change-requests/[id]/merge/route.ts')
 

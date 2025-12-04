@@ -20,12 +20,12 @@ async function getHandler(
     const { session } = authResult
     
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' })
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
     const { id } = await params
@@ -41,7 +41,7 @@ async function getHandler(
     })
 
     if (!provider) {
-      return NextResponse.json({ error: 'Provider not found' })
+      return NextResponse.json({ error: 'Provider not found' }, { status: 404 })
     }
 
     if (!provider.isConfigured || !provider.apiKey) {
@@ -60,7 +60,7 @@ async function getHandler(
         decryptedApiKey = await secretsManager.getApiKey(provider.provider, auditContext)
       } catch (error) {
         console.error('Error retrieving API key from Vault:', error)
-        return NextResponse.json({ error: 'Failed to retrieve API key from Vault' })
+        return NextResponse.json({ error: 'Failed to retrieve API key from Vault' }, { status: 500 })
       }
     } else {
       // Decrypt from database
@@ -70,7 +70,7 @@ async function getHandler(
     return NextResponse.json({ apiKey: decryptedApiKey })
   } catch (error) {
     console.error('Error fetching API key:', error)
-    return NextResponse.json({ error: 'Failed to fetch API key' })
+    return NextResponse.json({ error: 'Failed to fetch API key' }, { status: 500 })
   }
 }
 

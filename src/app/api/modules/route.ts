@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       })
 
       if (!project) {
-        return NextResponse.json({ error: 'Project not found'  })
+        return NextResponse.json({ error: 'Project not found' }, { status: 404 })
 
       // Check access
       const accessResult = await requireProjectSpaceAccess(projectId, session.user.id)
@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!project) {
-      return NextResponse.json({ error: 'Project not found'  })
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
 
     // Check access
     const accessResult = await requireProjectSpaceAccess(projectId, session.user.id)

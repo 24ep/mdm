@@ -8,7 +8,6 @@ async function getHandler(request: NextRequest) {
     if (!authResult.success) return authResult.response
     const { session } = authResult
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\workflows\executions\route.ts')
 
     const { searchParams } = new URL(request.url)
     const workflowId = searchParams.get('workflow_id')
@@ -88,3 +87,6 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\workflows
 }
 
 export const GET = withErrorHandling(getHandler, 'GET GET /api/workflows/executions')
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/workflows\executions\route.ts')

@@ -63,7 +63,7 @@ async function getHandler(
 
 
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\spaces\[id]\members\[userId]\permissions\route.ts')
+export const GET = withErrorHandling(getHandler, 'GET /api/spaces/[id]/members/[userId]/permissions/route.ts')
 async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; userId: string }> }
@@ -77,7 +77,6 @@ async function putHandler(
       return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\spaces\[id]\members\[userId]\permissions\route.ts')
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -153,3 +152,6 @@ export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\spaces\[i
     return handleApiError(error, 'Space Member Permissions API PUT')
   }
 }
+
+
+export const PUT = withErrorHandling(putHandler, 'PUT PUT /api/spaces/[id]/members/[userId]/permissions/route.ts')

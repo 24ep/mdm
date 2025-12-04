@@ -204,8 +204,6 @@ function generatePluginFile(options: {
 
 
 
-export const POST = withErrorHandling(postHandler, 'POST POST /api/marketplace/plugins/generate-files')
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\marketplace\plugins\generate-files\route.ts')
 export const ${slug.replace(/-/g, '')}Plugin: PluginDefinition = {
   id: '${slug}',
   name: '${name}',
@@ -439,3 +437,6 @@ async function updatePluginIndex(slug: string, name: string): Promise<boolean> {
   }
 }
 
+
+
+export const POST = withErrorHandling(postHandler, 'POST POST POST /api/marketplace/plugins/generate-files')

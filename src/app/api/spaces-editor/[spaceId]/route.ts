@@ -12,7 +12,7 @@ async function getHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { spaceId } = await params
 
@@ -29,7 +29,7 @@ async function getHandler(
     )
 
     if (accessCheck.rows.length === 0) {
-      return NextResponse.json({ error: 'Access denied'  })
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
 
     // Get spaces editor config from system_settings
     const configKey = `spaces_editor_config_${spaceId}`
@@ -52,7 +52,6 @@ async function getHandler(
 
 
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\spaces-editor\[spaceId]\route.ts')
 async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ spaceId: string }> }
@@ -61,9 +60,8 @@ async function postHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\spaces-editor\[spaceId]\route.ts')
 
     const { spaceId } = await params
 
@@ -80,13 +78,13 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\spaces
     )
 
     if (accessCheck.rows.length === 0 || !['OWNER', 'ADMIN'].includes(accessCheck.rows[0].role)) {
-      return NextResponse.json({ error: 'Access denied'  })
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
 
     const body = await request.json()
     const config: SpacesEditorConfig = body
 
     if (!config || config.spaceId !== spaceId) {
-      return NextResponse.json({ error: 'Invalid config'  })
+      return NextResponse.json({ error: 'Invalid config' }, { status: 400 })
 
     // Save config to system_settings
     const configKey = `spaces_editor_config_${spaceId}`
@@ -101,3 +99,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\spaces
 
     return NextResponse.json({ success: true })
 
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/spaces-editor/[spaceId]/route.ts')
+export const POST = withErrorHandling(postHandler, 'POST POST /api/spaces-editor/[spaceId]/route.ts')

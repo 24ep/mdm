@@ -10,10 +10,11 @@ async function getHandler(
   const authResult = await requireAuthWithId()
   if (!authResult.success) return authResult.response
   const { session } = authResult
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
-    const { id } = await params
+  const { id } = await params
 
     // Get all values for this entity
     const { rows } = await query(`
@@ -39,10 +40,8 @@ async function getHandler(
       values: rows,
       count: rows.length 
     })
+}
 
-
-
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\eav\entities\[id]\values\route.ts')
 async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -50,27 +49,30 @@ async function postHandler(
   const authResult = await requireAuthWithId()
   if (!authResult.success) return authResult.response
   const { session } = authResult
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
-    const { id } = await params
-    const body = await request.json()
-    const { values } = body
+  const { id } = await params
+  const body = await request.json()
+  const { values } = body
 
-    if (!Array.isArray(values)) {
-      return NextResponse.json({ error: 'Values must be an array'  })
+  if (!Array.isArray(values)) {
+    return NextResponse.json({ error: 'Values must be an array' }, { status: 500 })
+  }
 
-    // Check if entity exists
-    const { rows: entity } = await query(
-      'SELECT id FROM public.eav_entities WHERE id = $1 AND is_active = TRUE',
-      [id]
-    )
+  // Check if entity exists
+  const { rows: entity } = await query(
+    'SELECT id FROM public.eav_entities WHERE id = $1 AND is_active = TRUE',
+    [id]
+  )
 
-    if (entity.length === 0) {
-      return NextResponse.json({ error: 'Entity not found'  })
+  if (entity.length === 0) {
+    return NextResponse.json({ error: 'Entity not found' }, { status: 404 })
+  }
 
-    // Insert or update values
-    const results = []
+  // Insert or update values
+  const results = []
     for (const value of values) {
       if (!value.attributeId) {
         continue
@@ -112,10 +114,8 @@ async function postHandler(
       values: results,
       count: results.length 
     }, { status: 201 })
+}
 
-
-
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\eav\entities\[id]\values\route.ts')
 async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -123,29 +123,30 @@ async function putHandler(
   const authResult = await requireAuthWithId()
   if (!authResult.success) return authResult.response
   const { session } = authResult
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
-export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\eav\entities\[id]\values\route.ts')
+  const { id } = await params
+  const body = await request.json()
+  const { values } = body
 
-    const { id } = await params
-    const body = await request.json()
-    const { values } = body
+  if (!Array.isArray(values)) {
+    return NextResponse.json({ error: 'Values must be an array' }, { status: 500 })
+  }
 
-    if (!Array.isArray(values)) {
-      return NextResponse.json({ error: 'Values must be an array'  })
+  // Check if entity exists
+  const { rows: entity } = await query(
+    'SELECT id FROM public.eav_entities WHERE id = $1 AND is_active = TRUE',
+    [id]
+  )
 
-    // Check if entity exists
-    const { rows: entity } = await query(
-      'SELECT id FROM public.eav_entities WHERE id = $1 AND is_active = TRUE',
-      [id]
-    )
+  if (entity.length === 0) {
+    return NextResponse.json({ error: 'Entity not found' }, { status: 404 })
+  }
 
-    if (entity.length === 0) {
-      return NextResponse.json({ error: 'Entity not found'  })
-
-    // Update values
-    const results = []
+  // Update values
+  const results = []
     for (const value of values) {
       if (!value.attributeId) {
         continue
@@ -184,3 +185,8 @@ export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\eav\entit
       values: results,
       count: results.length 
     })
+}
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/eav/entities/[id]/values/route.ts')
+export const POST = withErrorHandling(postHandler, 'POST POST /api/eav/entities/[id]/values/route.ts')
+export const PUT = withErrorHandling(putHandler, 'PUT PUT /api/eav/entities/[id]/values/route.ts')

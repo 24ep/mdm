@@ -9,7 +9,6 @@ async function getHandler(request: NextRequest) {
     const { session } = authResult
     // TODO: Add requireSpaceAccess check if spaceId is available
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\users\search\route.ts')
 
     const { searchParams } = new URL(request.url)
     const q = searchParams.get('q') || ''
@@ -57,3 +56,6 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\users\sea
 }
 
 export const GET = withErrorHandling(getHandler, 'GET GET /api/users/search')
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/users\search\route.ts')

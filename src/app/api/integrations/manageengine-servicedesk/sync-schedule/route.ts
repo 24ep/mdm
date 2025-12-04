@@ -61,7 +61,7 @@ async function getHandler(request: NextRequest) {
 
 
 export const GET = withErrorHandling(getHandler, 'GET GET /api/integrations/manageengine-servicedesk/sync-schedule')
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\integrations\manageengine-servicedesk\sync-schedule\route.ts')
+export const GET = withErrorHandling(getHandler, 'GET /api/integrations\manageengine-servicedesk\sync-schedule\route.ts')
 async function postHandler(request: NextRequest) {
     const authResult = await requireAuthWithId()
     if (!authResult.success) return authResult.response
@@ -161,7 +161,7 @@ async function postHandler(request: NextRequest) {
 
 
 export const POST = withErrorHandling(postHandler, 'POST POST /api/integrations/manageengine-servicedesk/sync-schedule')
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\integrations\manageengine-servicedesk\sync-schedule\route.ts')
+export const POST = withErrorHandling(postHandler, 'POST /api/integrations\manageengine-servicedesk\sync-schedule\route.ts')
 export async function PUT(request: NextRequest) {
   try {
     // Verify API key for scheduler

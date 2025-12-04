@@ -33,7 +33,7 @@ export async function GET(
     return NextResponse.json({ keys: transformedKeys })
   } catch (error) {
     console.error('Error fetching cache keys:', error)
-    return NextResponse.json({ error: 'Failed to fetch cache keys' })
+    return NextResponse.json({ error: 'Failed to fetch cache keys' }, { status: 500 })
   }
 }
 
@@ -48,7 +48,7 @@ export async function POST(
 
     // Validate required fields
     if (!key || !value) {
-      return NextResponse.json({ error: 'Missing required fields' })
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
     // Check if key already exists
@@ -62,7 +62,7 @@ export async function POST(
     })
 
     if (existingKey) {
-      return NextResponse.json({ error: 'Key already exists' })
+      return NextResponse.json({ error: 'Key already exists' }, { status: 500 })
     }
 
     // Create the cache key
@@ -101,6 +101,6 @@ export async function POST(
     return NextResponse.json({ key: cacheKey })
   } catch (error) {
     console.error('Error creating cache key:', error)
-    return NextResponse.json({ error: 'Failed to create cache key' })
+    return NextResponse.json({ error: 'Failed to create cache key' }, { status: 500 })
   }
 }

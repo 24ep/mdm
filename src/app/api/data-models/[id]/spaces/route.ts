@@ -53,7 +53,7 @@ async function getHandler(
 // PUT: Update space associations for a data model
 
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\data-models\[id]\spaces\route.ts')
+export const GET = withErrorHandling(getHandler, 'GET /api/data-models/[id]/spaces/route.ts')
 async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -67,7 +67,6 @@ async function putHandler(
       return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\data-models\[id]\spaces\route.ts')
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -129,3 +128,6 @@ export const PUT = withErrorHandling(putHandler, 'PUT /api/src\app\api\data-mode
     return handleApiError(error, 'Data Model Spaces API PUT')
   }
 }
+
+
+export const PUT = withErrorHandling(putHandler, 'PUT PUT /api/data-models/[id]/spaces/route.ts')

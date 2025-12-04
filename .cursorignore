@@ -1,2 +1,16 @@
 # Cursor ignore file
 plugin-hub/
+# Add directories or file patterns to ignore during indexing (e.g. foo/ or *.csv)
+.next
+node_modules
+dist
+build
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+.env.test.local
+.env.test.production
+.env.test.development
+.env.test.production

@@ -43,7 +43,7 @@ async function getHandler(
     )
 
     if (accessResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Space not found or access denied'  })
+      return NextResponse.json({ error: 'Space not found or access denied' }, { status: 403 })
 
     // Get all versions for this space
     const versionsResult = await query(
@@ -83,7 +83,6 @@ async function getHandler(
 // POST /api/spaces/[id]/layout/versions - Create a new version
 
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\spaces\[id]\layout\versions\route.ts')
 async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -97,7 +96,6 @@ async function postHandler(
       return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\spaces\[id]\layout\versions\route.ts')
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -134,7 +132,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\spaces
     )
 
     if (accessResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Space not found or access denied'  })
+      return NextResponse.json({ error: 'Space not found or access denied' }, { status: 403 })
 
     // Get next version number
     const versionResult = await query(
@@ -173,3 +171,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\spaces
   }
 }
 
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/spaces/[id]/layout/versions/route.ts')
+export const POST = withErrorHandling(postHandler, 'POST POST /api/spaces/[id]/layout/versions/route.ts')

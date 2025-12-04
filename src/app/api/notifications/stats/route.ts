@@ -65,4 +65,6 @@ async function getHandler(request: NextRequest) {
   })
 }
 
-export const GET = withErrorHandling(getHandler, 'GET /api/notifications/stats')
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/notifications/stats')

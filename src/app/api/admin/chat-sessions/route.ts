@@ -64,7 +64,6 @@ async function getHandler() {
   return NextResponse.json({ sessions: formattedSessions })
 }
 
-export const GET = withErrorHandling(getHandler, 'GET /api/admin/chat-sessions')
 
 async function postHandler(request: NextRequest) {
   const authResult = await requireAuthWithId()
@@ -132,3 +131,6 @@ async function postHandler(request: NextRequest) {
 }
 
 export const POST = withErrorHandling(postHandler, 'POST /api/admin/chat-sessions')
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/admin/chat-sessions')

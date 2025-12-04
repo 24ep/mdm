@@ -18,4 +18,6 @@ async function getHandler(request: NextRequest) {
   return NextResponse.json({ integrations: result.rows || [] })
 }
 
-export const GET = withErrorHandling(getHandler, 'GET /api/reports/integrations')
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/reports/integrations')

@@ -24,9 +24,8 @@ async function getHandler(
     )
 
     if (existing.length === 0) {
-      return NextResponse.json({ error: 'Sync schedule not found'  })
-
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\data-sync-schedules\[id]\executions\route.ts')
+      return NextResponse.json({ error: 'Sync schedule not found' }, { status: 404 })
+    }
 
     // Check access
     const { rows: access } = await query(
@@ -57,4 +56,6 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\data-sync
       limit,
       offset
     })
+}
 
+export const GET = withErrorHandling(getHandler, 'GET GET /api/data-sync-schedules/[id]/executions/route.ts')

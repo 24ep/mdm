@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
@@ -236,7 +236,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ plugins })
 }
 
-export const GET = withErrorHandling(getHandler, 'GET /api/marketplace/plugins')
 
 async function postHandler(request: NextRequest) {
   // Apply rate limiting
@@ -349,3 +348,6 @@ async function postHandler(request: NextRequest) {
 
 export const POST = withErrorHandling(postHandler, 'POST /api/marketplace/plugins')
 
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/marketplace/plugins')

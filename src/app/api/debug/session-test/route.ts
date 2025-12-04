@@ -27,4 +27,6 @@ async function getHandler(request: NextRequest) {
   })
 }
 
-export const GET = withErrorHandling(getHandler, 'GET /api/debug/session-test')
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/debug/session-test')

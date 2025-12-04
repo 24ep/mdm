@@ -9,8 +9,6 @@ async function postHandler(request: NextRequest) {
     if (!authResult.success) return authResult.response
     const { session } = authResult
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\users\import\route.ts')
-
     // Check if user has admin privileges
     if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
@@ -138,11 +136,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\admin\
         failed: results.failed.length
       }
     })
-  ,
-      { status: 500 }
-    )
-  }
 }
 
-export const POST = withErrorHandling(postHandler, 'POST POST /api/admin/users/import')
+export const POST = withErrorHandling(postHandler, 'POST /api/admin/users/import')
 

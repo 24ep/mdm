@@ -12,7 +12,6 @@ async function getHandler(request: NextRequest) {
     const { session } = authResult
     // TODO: Add requireSpaceAccess check if spaceId is available
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\integrations\manageengine-servicedesk\list\route.ts')
 
     const { searchParams } = new URL(request.url)
     const space_id = searchParams.get('space_id')
@@ -118,3 +117,6 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\integrati
 
 export const GET = withErrorHandling(getHandler, 'GET GET /api/integrations/manageengine-servicedesk/list')
 
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/integrations\manageengine-servicedesk\list\route.ts')

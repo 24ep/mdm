@@ -9,7 +9,6 @@ async function postHandler(request: NextRequest) {
     const { session } = authResult
     // TODO: Add requireSpaceAccess check if spaceId is available
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\permissions\check-any\route.ts')
 
     const body = await request.json()
     const { permissionIds, spaceId } = body
@@ -41,3 +40,6 @@ export const POST = withErrorHandling(postHandler, 'POST POST /api/permissions/c
 
 
 
+
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/permissions\check-any\route.ts')

@@ -27,7 +27,6 @@ async function getHandler(request: NextRequest) {
     return NextResponse.json(settingsObject)
 }
 
-export const GET = withErrorHandling(getHandler, 'GET /api/settings')
 
 async function putHandler(request: NextRequest) {
   const startTime = Date.now()
@@ -87,3 +86,6 @@ async function putHandler(request: NextRequest) {
 }
 
 export const PUT = withErrorHandling(putHandler, 'PUT /api/settings')
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/settings')

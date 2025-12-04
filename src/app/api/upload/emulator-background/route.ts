@@ -10,7 +10,6 @@ async function postHandler(request: NextRequest) {
     if (!authResult.success) return authResult.response
     const { session } = authResult
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\upload\emulator-background\route.ts')
 
     const formData = await request.formData()
     const file = formData.get('image') as File
@@ -52,3 +51,6 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\upload
 
 export const POST = withErrorHandling(postHandler, 'POST POST /api/upload/emulator-background')
 
+
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/upload\emulator-background\route.ts')

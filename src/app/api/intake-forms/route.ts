@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!space) {
-      return NextResponse.json({ error: 'Space not found'  })
+      return NextResponse.json({ error: 'Space not found' }, { status: 404 })
 
     // Check access
     const accessResult = await requireSpaceAccess(spaceId, session.user.id, 'Access denied to space')

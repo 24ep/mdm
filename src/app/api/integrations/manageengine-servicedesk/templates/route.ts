@@ -50,7 +50,7 @@ async function getHandler(request: NextRequest) {
 
 
 export const GET = withErrorHandling(getHandler, 'GET GET /api/integrations/manageengine-servicedesk/templates')
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\integrations\manageengine-servicedesk\templates\route.ts')
+export const GET = withErrorHandling(getHandler, 'GET /api/integrations\manageengine-servicedesk\templates\route.ts')
 async function postHandler(request: NextRequest) {
     const authResult = await requireAuthWithId()
     if (!authResult.success) return authResult.response
@@ -113,14 +113,13 @@ async function postHandler(request: NextRequest) {
 
 
 export const POST = withErrorHandling(postHandler, 'POST POST /api/integrations/manageengine-servicedesk/templates')
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\integrations\manageengine-servicedesk\templates\route.ts')
+export const POST = withErrorHandling(postHandler, 'POST /api/integrations\manageengine-servicedesk\templates\route.ts')
 async function deleteHandler(request: NextRequest) {
     const authResult = await requireAuthWithId()
     if (!authResult.success) return authResult.response
     const { session } = authResult
     // TODO: Add requireSpaceAccess check if spaceId is available
 
-export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\integrations\manageengine-servicedesk\templates\route.ts')
 
     const { searchParams } = new URL(request.url)
     const template_id = searchParams.get('template_id')
@@ -160,3 +159,6 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
 
 export const DELETE = withErrorHandling(deleteHandler, 'DELETE DELETE /api/integrations/manageengine-servicedesk/templates')
 
+
+
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE DELETE /api/integrations\manageengine-servicedesk\templates\route.ts')

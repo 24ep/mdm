@@ -32,9 +32,8 @@ async function getHandler(
 
     const { rows: attributeRows } = await query(attributeQuery, [attributeId])
     if (attributeRows.length === 0) {
-      return NextResponse.json({ error: 'Attribute not found'  })
-
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\data-models\attributes\[id]\quality\route.ts')
+      return NextResponse.json({ error: 'Attribute not found' }, { status: 404 })
+    }
 
     const attribute = attributeRows[0]
 
@@ -86,3 +85,23 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\data-mode
     if (attribute.options) {
       try {
         attributeOptions = JSON.parse(attribute.options)
+      } catch (e) {
+        // Ignore parse errors
+      }
+    }
+
+    return NextResponse.json({
+      attribute: {
+        id: attribute.id,
+        name: attribute.name,
+        display_name: attribute.display_name,
+        type: attribute.type,
+        model_name: attribute.model_name
+      },
+      qualityStats,
+      qualityIssues,
+      attributeOptions
+    })
+}
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/data-models/attributes/[id]/quality/route.ts')

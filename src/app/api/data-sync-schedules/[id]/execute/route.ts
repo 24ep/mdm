@@ -22,9 +22,8 @@ async function postHandler(
     )
 
     if (existing.length === 0) {
-      return NextResponse.json({ error: 'Sync schedule not found'  })
-
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\data-sync-schedules\[id]\execute\route.ts')
+      return NextResponse.json({ error: 'Sync schedule not found' }, { status: 404 })
+    }
 
     // Check access
     const { rows: access } = await query(
@@ -45,6 +44,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\data-s
         error: 'Sync is already running',
         status: 'RUNNING'
        })
+    }
 
     // Execute sync
     const executor = new DataSyncExecutor()
@@ -63,4 +63,6 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\data-s
       },
       error: result.error
     })
+}
 
+export const POST = withErrorHandling(postHandler, 'POST POST /api/data-sync-schedules/[id]/execute/route.ts')

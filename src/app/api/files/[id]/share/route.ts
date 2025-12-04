@@ -14,7 +14,7 @@ async function getHandler(
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id: fileId } = await params
 
@@ -28,7 +28,7 @@ async function getHandler(
     )
 
     if (accessResult.rows.length === 0) {
-      return NextResponse.json({ error: 'File not found or access denied'  })
+      return NextResponse.json({ error: 'File not found or access denied' }, { status: 403 })
 
     // Get all shares for this file
     const sharesResult = await query(
@@ -56,7 +56,6 @@ async function getHandler(
 
 
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\files\[id]\share\route.ts')
 async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -67,7 +66,7 @@ async function postHandler(
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id: fileId } = await params
     const { 
@@ -88,11 +87,11 @@ async function postHandler(
     )
 
     if (accessResult.rows.length === 0) {
-      return NextResponse.json({ error: 'File not found or access denied'  })
+      return NextResponse.json({ error: 'File not found or access denied' }, { status: 403 })
 
     // Validate permission level
     if (!['view', 'download', 'edit'].includes(permissionLevel)) {
-      return NextResponse.json({ error: 'Invalid permission level'  })
+      return NextResponse.json({ error: 'Invalid permission level' }, { status: 400 })
 
     // Hash password if provided
     let passwordHash = null
@@ -123,7 +122,6 @@ async function postHandler(
 
 
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\files\[id]\share\route.ts')
 async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -134,16 +132,15 @@ async function deleteHandler(
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\files\[id]\share\route.ts')
 
     const { id: fileId } = await params
     const { searchParams } = new URL(request.url)
     const shareId = searchParams.get('shareId')
 
     if (!shareId) {
-      return NextResponse.json({ error: 'Share ID is required'  })
+      return NextResponse.json({ error: 'Share ID is required' }, { status: 400 })
 
     // Check if user can delete this share
     const shareResult = await query(
@@ -156,9 +153,14 @@ export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/src\app\api\
     )
 
     if (shareResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Share not found or access denied'  })
+      return NextResponse.json({ error: 'Share not found or access denied' }, { status: 403 })
 
     // Delete the share
     await query('DELETE FROM file_shares WHERE id = $1', [shareId])
 
     return NextResponse.json({ success: true })
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/files/[id]/share/route.ts')
+export const POST = withErrorHandling(postHandler, 'POST POST /api/files/[id]/share/route.ts')
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE DELETE /api/files/[id]/share/route.ts')

@@ -13,9 +13,8 @@ async function postHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\notebooks\[id]\versions\prune\route.ts')
 
     const { id } = await params
     const notebookId = decodeURIComponent(id)
@@ -76,3 +75,6 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\notebo
   }
 }
 
+
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/notebooks/[id]/versions/prune/route.ts')

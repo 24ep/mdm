@@ -59,5 +59,7 @@ async function postHandler(request: NextRequest) {
     return NextResponse.json({ collection })
 }
 
-export const POST = withErrorHandling(postHandler, 'POST /api/api-client/collections')
 
+
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/api-client/collections')

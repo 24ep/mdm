@@ -47,10 +47,8 @@ async function getHandler(
       availableDataModels: dataModels,
       availableAssignments: assignments
     })
+}
 
-
-
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\dashboards\[id]\datasources\route.ts')
 async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -65,9 +63,8 @@ async function postHandler(
     const { name, source_type, source_id, config, query_config } = body
 
     if (!name || !source_type) {
-      return NextResponse.json({ error: 'Name and source_type are required'  })
-
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashboards\[id]\datasources\route.ts')
+      return NextResponse.json({ error: 'Name and source_type are required' }, { status: 400 })
+    }
 
     // Check if user has access to this dashboard
     const { rows: accessCheck } = await query(`
@@ -78,14 +75,16 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashbo
     `, [id, session.user.id])
 
     if (accessCheck.length === 0) {
-      return NextResponse.json({ error: 'Dashboard not found'  })
+      return NextResponse.json({ error: 'Dashboard not found' }, { status: 404 })
+    }
 
     const dashboard = accessCheck[0]
     const canEdit = dashboard.created_by === session.user.id || 
                    (dashboard.role && ['ADMIN', 'EDITOR'].includes(dashboard.role))
 
     if (!canEdit) {
-      return NextResponse.json({ error: 'Access denied'  })
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
 
     // Create datasource
     const { rows } = await query(`
@@ -105,3 +104,7 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashbo
     ])
 
     return NextResponse.json({ datasource: rows[0] }, { status: 201 })
+}
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/dashboards/[id]/datasources/route.ts')
+export const POST = withErrorHandling(postHandler, 'POST POST /api/dashboards/[id]/datasources/route.ts')

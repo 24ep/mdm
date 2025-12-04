@@ -10,7 +10,6 @@ async function postHandler(request: NextRequest) {
     const { session } = authResult
     // TODO: Add requireSpaceAccess check if spaceId is available
 
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\integrations\manageengine-servicedesk\import-config\route.ts')
 
     const body = await request.json()
     const { space_id, config_data, overwrite } = body
@@ -153,3 +152,6 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\integr
 
 export const POST = withErrorHandling(postHandler, 'POST POST /api/integrations/manageengine-servicedesk/import-config')
 
+
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/integrations\manageengine-servicedesk\import-config\route.ts')

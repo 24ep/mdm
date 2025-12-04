@@ -31,7 +31,6 @@ async function getHandler(request: NextRequest) {
   return addSecurityHeaders(NextResponse.json(createSuccessResponse({ categories: result.rows || [] })))
 }
 
-export const GET = withErrorHandling(getHandler, 'GET /api/reports/categories')
 
 async function postHandler(request: NextRequest) {
   const startTime = Date.now()
@@ -165,3 +164,6 @@ async function deleteHandler(request: NextRequest) {
 }
 
 export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/reports/categories')
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/reports/categories')

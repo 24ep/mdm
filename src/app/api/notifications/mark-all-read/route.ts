@@ -24,4 +24,6 @@ async function postHandler(request: NextRequest) {
   })
 }
 
-export const POST = withErrorHandling(postHandler, 'POST /api/notifications/mark-all-read')
+
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/notifications/mark-all-read')

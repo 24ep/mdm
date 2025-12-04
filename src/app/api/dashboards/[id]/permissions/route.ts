@@ -17,9 +17,8 @@ async function postHandler(
     const { user_id, role } = body
 
     if (!user_id || !role) {
-      return NextResponse.json({ error: 'user_id and role are required'  })
-
-export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashboards\[id]\permissions\route.ts')
+      return NextResponse.json({ error: 'user_id and role are required' }, { status: 400 })
+    }
 
     // Check if user has permission to manage this dashboard
     const { rows: accessCheck } = await query(`
@@ -30,14 +29,16 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashbo
     `, [id, session.user.id])
 
     if (accessCheck.length === 0) {
-      return NextResponse.json({ error: 'Dashboard not found'  })
+      return NextResponse.json({ error: 'Dashboard not found' }, { status: 404 })
+    }
 
     const dashboard = accessCheck[0]
     const canManage = dashboard.created_by === session.user.id || 
                      (dashboard.role && dashboard.role === 'ADMIN')
 
     if (!canManage) {
-      return NextResponse.json({ error: 'Access denied'  })
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
 
     // Check if permission already exists
     const { rows: existingPermission } = await query(`
@@ -61,3 +62,6 @@ export const POST = withErrorHandling(postHandler, 'POST /api/src\app\api\dashbo
     }
 
     return NextResponse.json({ success: true })
+}
+
+export const POST = withErrorHandling(postHandler, 'POST POST /api/dashboards/[id]/permissions/route.ts')

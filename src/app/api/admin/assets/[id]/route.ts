@@ -12,7 +12,7 @@ async function getHandler(
     if (!authResult.success) return authResult.response
     const { session } = authResult
     if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { id } = await params
@@ -24,7 +24,7 @@ async function getHandler(
     })
 
     if (!asset) {
-      return NextResponse.json({ error: 'Asset not found' })
+      return NextResponse.json({ error: 'Asset not found' }, { status: 404 })
     }
 
     return NextResponse.json(asset)
@@ -48,7 +48,7 @@ async function putHandler(
     if (!authResult.success) return authResult.response
     const { session } = authResult
     if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { id } = await params
@@ -60,7 +60,7 @@ async function putHandler(
     })
 
     if (!asset) {
-      return NextResponse.json({ error: 'Asset not found' })
+      return NextResponse.json({ error: 'Asset not found' }, { status: 404 })
     }
 
     if (asset.isSystem) {
@@ -119,7 +119,7 @@ async function deleteHandler(
     if (!authResult.success) return authResult.response
     const { session } = authResult
     if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { id } = await params
@@ -128,7 +128,7 @@ async function deleteHandler(
     })
 
     if (!asset) {
-      return NextResponse.json({ error: 'Asset not found' })
+      return NextResponse.json({ error: 'Asset not found' }, { status: 404 })
     }
 
     if (asset.isSystem) {

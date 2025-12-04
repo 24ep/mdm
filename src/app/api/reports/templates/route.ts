@@ -21,7 +21,6 @@ async function getHandler(request: NextRequest) {
   return NextResponse.json({ templates: result.rows || [] })
 }
 
-export const GET = withErrorHandling(getHandler, 'GET /api/reports/templates')
 
 async function postHandler(request: NextRequest) {
   const authResult = await requireAuthWithId()
@@ -60,3 +59,6 @@ async function postHandler(request: NextRequest) {
 }
 
 export const POST = withErrorHandling(postHandler, 'POST /api/reports/templates')
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/reports/templates')

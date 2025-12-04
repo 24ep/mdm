@@ -9,9 +9,8 @@ async function getHandler(request: NextRequest) {
   if (!authResult.success) return authResult.response
   const { session } 
 
-export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\permissions\user\route.ts')= authResult
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized'  })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
 
 
@@ -23,7 +22,7 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\permissio
     if (userId !== session.user.id) {
       // Only admins can view other users' permissions
       if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-        return NextResponse.json({ error: 'Forbidden'  })
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     // Get user's global role
@@ -33,7 +32,7 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\permissio
     )
 
     if (userRows.length === 0) {
-      return NextResponse.json({ error: 'User not found'  })
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
     const globalRole = userRows[0].role
 
@@ -64,3 +63,6 @@ export const GET = withErrorHandling(getHandler, 'GET /api/src\app\api\permissio
       spaceRole: context.spaceRole,
       spaceId: context.spaceId
     })
+
+
+export const GET = withErrorHandling(getHandler, 'GET GET /api/permissions\user\route.ts')

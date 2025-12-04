@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
-// import { executeWorkflow } from '@/lib/workflow-executor' // Function doesn't exist
 import { DataSyncExecutor } from '@/lib/data-sync-executor'
 
 /**
@@ -57,11 +56,11 @@ export async function POST(request: NextRequest) {
       for (const workflow of scheduledWorkflows) {
         try {
           const shouldRun = await checkWorkflowSchedule(workflow)
-          
+
           if (shouldRun) {
             console.log(`[Automation Scheduler] Executing workflow: ${workflow.name}`)
             const result = await executeWorkflow(workflow.id)
-            
+
             results.workflows.push({
               type: 'workflow',
               id: workflow.id,
@@ -115,9 +114,9 @@ export async function POST(request: NextRequest) {
       for (const sync of dueSyncs) {
         try {
           console.log(`[Automation Scheduler] Executing data sync: ${sync.name}`)
-          
+
           const result = await syncExecutor.executeSync(sync.id)
-          
+
           results.dataSyncs.push({
             type: 'data_sync',
             id: sync.id,
@@ -168,10 +167,11 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('[Automation Scheduler] Fatal error:', error)
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error'
-     })
+    })
+  }
 }
 
 /**
@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
  */
 async function checkWorkflowSchedule(workflow: any): Promise<boolean> {
   const { schedule_type, schedule_config } = workflow
-  
+
   switch (schedule_type) {
     case 'ONCE':
       const { rows: executions } = await query(
@@ -188,7 +188,7 @@ async function checkWorkflowSchedule(workflow: any): Promise<boolean> {
         [workflow.id]
       )
       return parseInt(executions[0].count) === 0
-    
+
     case 'DAILY':
       const today = new Date().toISOString().split('T')[0]
       const { rows: dailyExecutions } = await query(
@@ -199,7 +199,7 @@ async function checkWorkflowSchedule(workflow: any): Promise<boolean> {
         [workflow.id, today]
       )
       return parseInt(dailyExecutions[0].count) === 0
-    
+
     case 'WEEKLY':
       const { rows: weeklyExecutions } = await query(
         `SELECT COUNT(*) as count FROM public.workflow_executions 
@@ -209,7 +209,7 @@ async function checkWorkflowSchedule(workflow: any): Promise<boolean> {
         [workflow.id]
       )
       return parseInt(weeklyExecutions[0].count) === 0
-    
+
     case 'MONTHLY':
       const { rows: monthlyExecutions } = await query(
         `SELECT COUNT(*) as count FROM public.workflow_executions 
@@ -219,12 +219,12 @@ async function checkWorkflowSchedule(workflow: any): Promise<boolean> {
         [workflow.id]
       )
       return parseInt(monthlyExecutions[0].count) === 0
-    
+
     case 'CUSTOM_CRON':
       // For custom cron, you'd use a cron parser library
       console.log('Custom cron evaluation not implemented yet')
       return false
-    
+
     default:
       return false
   }
@@ -298,9 +298,9 @@ export async function GET() {
       timestamp: new Date().toISOString()
     })
   } catch (error) {
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error'
-     })
+    })
+  }
 }
-

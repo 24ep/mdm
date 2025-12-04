@@ -135,7 +135,6 @@ async function getHandler(request: NextRequest) {
         'Content-Disposition': `attachment; filename="audit-logs-${new Date().toISOString().split('T')[0]}.csv"`
       }
     })
-  }
 }
 
 
@@ -146,4 +145,4 @@ async function getHandler(request: NextRequest) {
 
 
 
-export const GET = withErrorHandling(getHandler, 'GET GET /api/audit-logs/export')
+export const GET = withErrorHandling(getHandler, 'GET /api/audit-logs/export')
