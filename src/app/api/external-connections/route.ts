@@ -400,8 +400,6 @@ async function deleteHandler(request: NextRequest) {
           if (connectionType === 'database') {
             // Delete database credentials from Vault
             await secretsManager.deleteSecret(`database-connections/${id}/credentials`, deleteAuditContext)
-          }
-
           } else if (connectionType === 'api') {
             // Delete API credentials from Vault
             await secretsManager.deleteSecret(`external-connections/${id}/credentials`, deleteAuditContext)
@@ -418,7 +416,11 @@ async function deleteHandler(request: NextRequest) {
        WHERE id = $1::uuid`,
       [id]
     )
-  return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
+    console.error('Error deleting connection:', error)
+    return NextResponse.json({ error: error.message || 'Failed to delete connection' }, { status: 500 })
+  }
 }
 
 export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/external-connections')

@@ -110,7 +110,9 @@ async function postHandler(request: NextRequest) {
           throw fetchError
         }
       }
-    } else {
+    }
+    
+    if (connectionType === 'database') {
       // Test database connection
       if (!db_type || !host) {
         return NextResponse.json({ error: 'db_type, host required for database connections' }, { status: 400 })

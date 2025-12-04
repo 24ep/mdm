@@ -242,7 +242,11 @@ async function getHandler(request: NextRequest) {
           max: filters.max_size
         }
       }
-    }))
+    })
+  } catch (error: any) {
+    console.error('Error searching files:', error)
+    return NextResponse.json({ error: error.message || 'Failed to search files' }, { status: 500 })
+  }
 }
 
 export const GET = withErrorHandling(getHandler, 'GET /api/files/search')

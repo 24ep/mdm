@@ -121,7 +121,11 @@ async function postHandler(
     return NextResponse.json({
       version: versionInsertResult.rows[0]
     })
-
+  } catch (error: any) {
+    console.error('Error creating file version:', error)
+    return NextResponse.json({ error: error.message || 'Failed to create file version' }, { status: 500 })
+  }
+}
 
 export const GET = withErrorHandling(getHandler, 'GET GET /api/files/[id]/versions/route.ts')
 export const POST = withErrorHandling(postHandler, 'POST POST /api/files/[id]/versions/route.ts')

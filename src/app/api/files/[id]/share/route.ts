@@ -119,8 +119,11 @@ async function postHandler(
     return NextResponse.json({
       share: shareResult.rows[0]
     })
-
-
+  } catch (error: any) {
+    console.error('Error creating file share:', error)
+    return NextResponse.json({ error: error.message || 'Failed to create file share' }, { status: 500 })
+  }
+}
 
 async function deleteHandler(
   request: NextRequest,
