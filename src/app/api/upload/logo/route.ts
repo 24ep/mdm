@@ -6,10 +6,10 @@ import { join } from 'path'
 import { existsSync } from 'fs'
 
 async function postHandler(request: NextRequest) {
+  try {
     const authResult = await requireAuth()
     if (!authResult.success) return authResult.response
     const { session } = authResult
-
 
     const formData = await request.formData()
     const file = formData.get('logo') as File
@@ -43,15 +43,10 @@ async function postHandler(request: NextRequest) {
 
     const publicUrl = `/uploads/logos/${filename}`
     return NextResponse.json({ success: true, url: publicUrl, filename })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error uploading logo:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
-export const POST = withErrorHandling(postHandler, 'POST POST /api/upload/logo')
-
-
-
-
-export const POST = withErrorHandling(postHandler, 'POST POST /api/upload\logo\route.ts')
+export const POST = withErrorHandling(postHandler, 'POST /api/upload/logo')

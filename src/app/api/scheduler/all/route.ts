@@ -7,11 +7,10 @@ import { getAllSchedules } from '@/lib/unified-scheduler'
  * Get all schedules across workflows, notebooks, and data syncs
  */
 async function getHandler(request: NextRequest) {
+  try {
     const authResult = await requireAuth()
     if (!authResult.success) return authResult.response
     const { session } = authResult
-    // TODO: Add requireSpaceAccess check if spaceId is available
-
 
     const { searchParams } = new URL(request.url)
     const spaceId = searchParams.get('space_id') || undefined
@@ -30,13 +29,10 @@ async function getHandler(request: NextRequest) {
   } catch (error: any) {
     console.error('Error fetching all schedules:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch schedules' },
+      { error: 'Failed to fetch schedules', details: error.message },
       { status: 500 }
     )
   }
 }
 
-
-
-
-export const GET = withErrorHandling(getHandler, 'GET GET /api/scheduler\all\route.ts')
+export const GET = withErrorHandling(getHandler, 'GET /api/scheduler/all')

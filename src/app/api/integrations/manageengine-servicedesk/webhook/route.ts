@@ -8,7 +8,6 @@ import crypto from 'crypto'
 // Webhook endpoint to receive updates from ServiceDesk
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
-  let auditLogId: string | null = null
   
   try {
     const body = await request.text()
@@ -25,6 +24,7 @@ export async function POST(request: NextRequest) {
       
       if (signature !== expectedSignature) {
         return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
+      }
     }
 
     const payload = JSON.parse(body)
@@ -32,24 +32,6 @@ export async function POST(request: NextRequest) {
 
     if (!event_type || !serviceDeskRequest?.id) {
       return NextResponse.json({ error: 'Invalid webhook payload' }, { status: 400 })
-
-    // Create initial audit log
-    try {
-      const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined
-      const userAgent = request.headers.get('user-agent') || undefined
-      
-      const auditResult = await createAuditLog({
-        action: 'SERVICEDESK_WEBHOOK_RECEIVED',
-        entityType: 'ServiceDeskIntegration',
-        entityId: 'webhook',
-        userId: 'system', // Webhook doesn't have user context
-        newValue: { eventType: event_type, requestId: serviceDeskRequest.id },
-        ipAddress,
-        userAgent
-      })
-      auditLogId = auditResult?.id || null
-    } catch (auditError) {
-      console.warn('Failed to create initial audit log:', auditError)
     }
 
     // Find local ticket by ServiceDesk request ID
@@ -70,7 +52,6 @@ export async function POST(request: NextRequest) {
     })
 
     if (tickets.length === 0) {
-      // Ticket not found locally, might be a new ticket from ServiceDesk
       return NextResponse.json({ 
         success: true, 
         message: 'Ticket not found locally, skipping sync' 
@@ -82,20 +63,24 @@ export async function POST(request: NextRequest) {
 
     if (!spaceId) {
       return NextResponse.json({ error: 'Space not found' }, { status: 404 })
+    }
 
     // Get ServiceDesk service
     const service = await getServiceDeskService(spaceId)
     if (!service) {
       return NextResponse.json({ error: 'ServiceDesk config not found' }, { status: 404 })
+    }
 
     // Get full ticket details from ServiceDesk
     const ticketResult = await service.getTicket(serviceDeskRequest.id.toString())
     if (!ticketResult.success) {
       return NextResponse.json({ error: 'Failed to get ticket from ServiceDesk' }, { status: 500 })
+    }
 
     const serviceDeskTicket = ticketResult.data?.request || ticketResult.data?.requests?.[0]
     if (!serviceDeskTicket) {
       return NextResponse.json({ error: 'Ticket not found in ServiceDesk' }, { status: 404 })
+    }
 
     // Map ServiceDesk status to our status
     const statusMap: Record<string, string> = {
@@ -164,56 +149,6 @@ export async function POST(request: NextRequest) {
       ]
     ).catch(() => {}) // Ignore if table doesn't exist yet
 
-    // Send notification to ticket assignees (via API endpoint)
-    if (event_type === 'request.updated' || event_type === 'request.status_changed') {
-      try {
-        const assignees = await db.ticketAssignee.findMany({
-          where: { ticketId: ticket.id },
-          include: { user: true }
-        })
-
-        // Create notifications via API
-        for (const assignee of assignees) {
-          await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/notifications`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              user_id: assignee.userId,
-              type: 'INFO',
-              title: 'ServiceDesk Ticket Updated',
-              message: `Ticket "${ticket.title}" was updated in ServiceDesk`,
-              priority: 'MEDIUM',
-              data: { ticket_id: ticket.id, request_id: serviceDeskRequest.id },
-              action_url: `/projects?ticket=${ticket.id}`,
-              action_label: 'View Ticket'
-            })
-          }).catch(() => {}) // Ignore notification errors
-        }
-      } catch (error) {
-        console.error('Failed to send notifications:', error)
-      }
-    }
-
-    // Update audit log on success
-    if (auditLogId) {
-      await createAuditLog({
-        action: 'SERVICEDESK_WEBHOOK_PROCESSED',
-        entityType: 'ServiceDeskIntegration',
-        entityId: spaceId || 'unknown',
-        userId: 'system',
-        newValue: {
-          eventType: event_type,
-          requestId: serviceDeskRequest.id,
-          ticketId: ticket.id,
-          updated: Object.keys(updateData).length > 0,
-          duration: Date.now() - startTime,
-          status: 'success'
-        },
-        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
-        userAgent: request.headers.get('user-agent') || undefined
-      }).catch(() => {})
-    }
-
     return NextResponse.json({
       success: true,
       message: 'Webhook processed successfully',
@@ -222,24 +157,6 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('POST /integrations/manageengine-servicedesk/webhook error', error)
-    
-    // Update audit log on error
-    if (auditLogId) {
-      await createAuditLog({
-        action: 'SERVICEDESK_WEBHOOK_PROCESS_FAILED',
-        entityType: 'ServiceDeskIntegration',
-        entityId: 'webhook',
-        userId: 'system',
-        newValue: {
-          error: error instanceof Error ? error.message : 'Unknown error',
-          duration: Date.now() - (startTime || Date.now()),
-          status: 'failed'
-        },
-        ipAddress: request?.headers?.get('x-forwarded-for') || request?.headers?.get('x-real-ip') || undefined,
-        userAgent: request?.headers?.get('user-agent') || undefined
-      }).catch(() => {})
-    }
-
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 }
-

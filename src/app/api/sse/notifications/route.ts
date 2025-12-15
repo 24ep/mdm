@@ -23,7 +23,7 @@ async function getHandler(request: NextRequest) {
 
       // Set up database polling for new notifications
       const pollInterval = setInterval(async () => {
-        
+        try {
           // Check for new notifications for this user
           const { query } = await import('@/lib/db');
           
@@ -70,4 +70,5 @@ async function getHandler(request: NextRequest) {
   });
 }
 
-export const GET = withErrorHandling(getHandler, 'GET /api/sse/notifications')
+// Export directly since SSE handler returns streaming Response
+export const GET = getHandler

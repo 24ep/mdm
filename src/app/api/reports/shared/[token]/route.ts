@@ -27,6 +27,7 @@ export async function GET(
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Link not found or expired' }, { status: 404 })
+    }
 
     const shareLink = result.rows[0]
 
@@ -35,7 +36,8 @@ export async function GET(
       return NextResponse.json({ 
         error: 'Password required',
         requiresPassword: true 
-       })
+      }, { status: 401 })
+    }
 
     // Increment view count
     await query(
@@ -47,6 +49,7 @@ export async function GET(
   } catch (error) {
     console.error('Error fetching shared report:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 }
 
 export async function POST(
@@ -60,6 +63,7 @@ export async function POST(
 
     if (!password) {
       return NextResponse.json({ error: 'Password is required' }, { status: 400 })
+    }
 
     const sql = `
       SELECT 
@@ -78,6 +82,7 @@ export async function POST(
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Link not found or expired' }, { status: 404 })
+    }
 
     const shareLink = result.rows[0]
 
@@ -85,6 +90,7 @@ export async function POST(
     const passwordHash = crypto.createHash('sha256').update(password).digest('hex')
     if (shareLink.password_hash !== passwordHash) {
       return NextResponse.json({ error: 'Invalid password' }, { status: 400 })
+    }
 
     // Increment view count
     await query(
@@ -96,5 +102,5 @@ export async function POST(
   } catch (error) {
     console.error('Error accessing shared report:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 }
-

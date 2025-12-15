@@ -5,6 +5,7 @@ import { UpdateNotificationRequest } from '@/types/notifications';
 import { logger } from '@/lib/logger';
 import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation';
 import { z } from 'zod';
+import { addSecurityHeaders } from '@/lib/security-headers'
 
 // GET /api/notifications/[id] - Get a specific notification
 async function getHandler(

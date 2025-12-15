@@ -5,11 +5,10 @@ import { checkPermission, getUserRoleContext } from '@/lib/permission-checker'
 import { query } from '@/lib/db'
 
 async function getHandler(request: NextRequest) {
+  try {
     const authResult = await requireAuth()
     if (!authResult.success) return authResult.response
     const { session } = authResult
-    // TODO: Add requireSpaceAccess check if spaceId is available
-
 
     const { searchParams } = new URL(request.url)
     const permissionId = searchParams.get('permissionId')
@@ -64,12 +63,10 @@ async function getHandler(request: NextRequest) {
       source: result.source,
       role: result.role
     })
-  , { status: 500 })
+  } catch (error) {
+    console.error('Error checking permission:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
-export const GET = withErrorHandling(getHandler, 'GET GET /api/permissions/check')
-
-
-
-export const GET = withErrorHandling(getHandler, 'GET GET /api/permissions\check\route.ts')
+export const GET = withErrorHandling(getHandler, 'GET /api/permissions/check')

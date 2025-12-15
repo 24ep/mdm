@@ -9,11 +9,13 @@ async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ threadId: string }> }
 ) {
-  const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+  try {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const { threadId } = await params
 
@@ -27,21 +29,30 @@ async function getHandler(
 
     if (!thread) {
       return NextResponse.json({ error: 'Thread not found' }, { status: 404 })
+    }
 
     return NextResponse.json({ thread })
+  } catch (error: any) {
+    console.error('Error fetching thread:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch thread', details: error.message },
+      { status: 500 }
+    )
+  }
+}
 
 // PATCH - Update thread (title, metadata, etc.)
-
-
 async function patchHandler(
   request: NextRequest,
   { params }: { params: Promise<{ threadId: string }> }
 ) {
-  const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+  try {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const { threadId } = await params
     const body = await request.json()
@@ -57,6 +68,7 @@ async function patchHandler(
 
     if (!thread) {
       return NextResponse.json({ error: 'Thread not found' }, { status: 404 })
+    }
 
     const updated = await prisma.openAIAgentThread.update({
       where: { id: thread.id },
@@ -67,20 +79,27 @@ async function patchHandler(
     })
 
     return NextResponse.json({ thread: updated })
+  } catch (error: any) {
+    console.error('Error updating thread:', error)
+    return NextResponse.json(
+      { error: 'Failed to update thread', details: error.message },
+      { status: 500 }
+    )
+  }
+}
 
 // DELETE - Soft delete a thread
-
-
 async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ threadId: string }> }
 ) {
-  const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+  try {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+    }
 
     const { threadId } = await params
 
@@ -94,6 +113,7 @@ async function deleteHandler(
 
     if (!thread) {
       return NextResponse.json({ error: 'Thread not found' }, { status: 404 })
+    }
 
     await prisma.openAIAgentThread.update({
       where: { id: thread.id },
@@ -101,9 +121,15 @@ async function deleteHandler(
     })
 
     return NextResponse.json({ success: true })
+  } catch (error: any) {
+    console.error('Error deleting thread:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete thread', details: error.message },
+      { status: 500 }
+    )
+  }
+}
 
-
-
-export const GET = withErrorHandling(getHandler, 'GET GET /api/openai-agent-sdk/threads/[threadId]/route.ts')
-export const PATCH = withErrorHandling(patchHandler, 'PATCH PATCH /api/openai-agent-sdk/threads/[threadId]/route.ts')
-export const DELETE = withErrorHandling(deleteHandler, 'DELETE DELETE /api/openai-agent-sdk/threads/[threadId]/route.ts')
+export const GET = withErrorHandling(getHandler, 'GET /api/openai-agent-sdk/threads/[threadId]')
+export const PATCH = withErrorHandling(patchHandler, 'PATCH /api/openai-agent-sdk/threads/[threadId]')
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/openai-agent-sdk/threads/[threadId]')

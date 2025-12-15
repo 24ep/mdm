@@ -4,10 +4,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { queryPlanAnalyzer } from '@/lib/query-plan'
 
 async function postHandler(request: NextRequest) {
+  try {
     const authResult = await requireAuth()
     if (!authResult.success) return authResult.response
     const { session } = authResult
-
 
     const { query: sqlQuery, analyze = false } = await request.json()
 
@@ -28,14 +28,13 @@ async function postHandler(request: NextRequest) {
       analysis,
       summary
     })
-  ,
+  } catch (error: any) {
+    console.error('Error explaining query:', error)
+    return NextResponse.json(
+      { error: 'Failed to explain query', details: error.message },
       { status: 500 }
     )
   }
 }
 
-export const POST = withErrorHandling(postHandler, 'POST POST /api/sql/explain')
-
-
-
-export const POST = withErrorHandling(postHandler, 'POST POST /api/sql\explain\route.ts')
+export const POST = withErrorHandling(postHandler, 'POST /api/sql/explain')

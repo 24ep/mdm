@@ -4,10 +4,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 
 async function getHandler(request: NextRequest) {
+  try {
     const authResult = await requireAuth()
     if (!authResult.success) return authResult.response
     const { session } = authResult
-
 
     const { searchParams } = new URL(request.url)
     const workflowId = searchParams.get('workflow_id')
@@ -81,12 +81,13 @@ async function getHandler(request: NextRequest) {
         pages: Math.ceil(total / limit)
       }
     })
-
-  , { status: 500 })
+  } catch (error: any) {
+    console.error('Error fetching workflow executions:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch executions', details: error.message },
+      { status: 500 }
+    )
   }
 }
 
-export const GET = withErrorHandling(getHandler, 'GET GET /api/workflows/executions')
-
-
-export const GET = withErrorHandling(getHandler, 'GET GET /api/workflows\executions\route.ts')
+export const GET = withErrorHandling(getHandler, 'GET /api/workflows/executions')

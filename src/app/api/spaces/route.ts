@@ -9,6 +9,7 @@ async function getHandler(request: NextRequest) {
   const startTime = Date.now()
   const authResult = await requireAuth()
   if (!authResult.success) return authResult.response
+  const { session } = authResult
 
     // Validate query parameters
     const queryValidation = validateQuery(request, z.object({

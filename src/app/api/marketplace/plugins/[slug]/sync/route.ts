@@ -36,108 +36,111 @@ export async function POST(
   const authResult = await requireAuthWithId()
   if (!authResult.success) return authResult.response
   const { session } = authResult
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
-    const { slug } = await params
-    const serviceId = await resolveServiceId(slug)
-    
-    if (!serviceId) {
+  const { slug } = await params
+  const serviceId = await resolveServiceId(slug)
+  
+  if (!serviceId) {
+    return NextResponse.json(
+      { error: 'Plugin not found' },
+      { status: 404 }
+    )
+  }
+
+  const body = await request.json()
+  const { installationId, spaceId } = body
+
+  if (!installationId) {
+    return NextResponse.json(
+      { error: 'installationId is required' },
+      { status: 400 }
+    )
+  }
+
+  // Get installation
+  const installationResult = await query(
+    `SELECT 
+      si.id,
+      si.service_id,
+      si.space_id,
+      si.config,
+      si.status,
+      sr.slug,
+      sr.api_base_url,
+      sr.api_auth_type
+    FROM service_installations si
+    JOIN service_registry sr ON sr.id = si.service_id
+    WHERE si.id = $1 
+      AND si.installed_by = $2
+      AND si.deleted_at IS NULL`,
+    [installationId, session.user.id]
+  )
+
+  if (installationResult.rows.length === 0) {
+    return NextResponse.json(
+      { error: 'Installation not found' },
+      { status: 404 }
+    )
+  }
+
+  const installation = installationResult.rows[0]
+  const config = typeof installation.config === 'string' 
+    ? JSON.parse(installation.config) 
+    : installation.config
+
+  // Get credentials
+  const credentials = await retrieveCredentials(`installation:${installationId}`)
+
+  // Sync data based on service type
+  let syncResult: { count: number; items: any[] } = { count: 0, items: [] }
+
+  switch (installation.slug) {
+    case 'power-bi':
+      syncResult = await syncPowerBIReports(config, credentials, installation, spaceId)
+      break
+
+    case 'grafana':
+      syncResult = await syncGrafanaDashboards(config, credentials, installation, spaceId)
+      break
+
+    case 'looker-studio':
+      syncResult = await syncLookerStudioReports(config, credentials, installation, spaceId)
+      break
+
+    default:
       return NextResponse.json(
-        { error: 'Plugin not found' },
-        { status: 404 }
-      )
-    }
-
-    const body = await request.json()
-    const { installationId, spaceId } = body
-
-    if (!installationId) {
-      return NextResponse.json(
-        { error: 'installationId is required' },
+        { error: 'Unsupported service type' },
         { status: 400 }
       )
-    }
+  }
 
-    // Get installation
-    const installationResult = await query(
-      `SELECT 
-        si.id,
-        si.service_id,
-        si.space_id,
-        si.config,
-        si.status,
-        sr.slug,
-        sr.api_base_url,
-        sr.api_auth_type
-      FROM service_installations si
-      JOIN service_registry sr ON sr.id = si.service_id
-      WHERE si.id = $1 
-        AND si.installed_by = $2
-        AND si.deleted_at IS NULL`,
-      [installationId, session.user.id]
-    )
+  // Update installation last sync time
+  await query(
+    `UPDATE service_installations
+     SET updated_at = NOW()
+     WHERE id = $1`,
+    [installationId]
+  )
 
-    if (installationResult.rows.length === 0) {
-      return NextResponse.json(
-        { error: 'Installation not found' },
-        { status: 404 }
-      )
-    }
+  await logAPIRequest(
+    session.user.id,
+    'POST',
+    `/api/marketplace/plugins/${slug}/sync`,
+    200,
+    spaceId || undefined
+  )
 
-    const installation = installationResult.rows[0]
-    const config = typeof installation.config === 'string' 
-      ? JSON.parse(installation.config) 
-      : installation.config
-
-    // Get credentials
-    const credentials = await retrieveCredentials(`installation:${installationId}`)
-
-    // Sync data based on service type
-    let syncResult: { count: number; items: any[] } = { count: 0, items: [] }
-
-    switch (installation.slug) {
-      case 'power-bi':
-        syncResult = await syncPowerBIReports(config, credentials, installation, spaceId)
-        break
-
-      case 'grafana':
-        syncResult = await syncGrafanaDashboards(config, credentials, installation, spaceId)
-        break
-
-      case 'looker-studio':
-        syncResult = await syncLookerStudioReports(config, credentials, installation, spaceId)
-        break
-
-      default:
-        return NextResponse.json(
-          { error: 'Unsupported service type' },
-          { status: 400 }
-        )
-    }
-
-    // Update installation last sync time
-    await query(
-      `UPDATE service_installations
-       SET updated_at = NOW()
-       WHERE id = $1`,
-      [installationId]
-    )
-
-    await logAPIRequest(
-      session.user.id,
-      'POST',
-      `/api/marketplace/plugins/${slug}/sync`,
-      200,
-      spaceId || undefined
-    )
-
-    return NextResponse.json({
-      success: true,
-      count: syncResult.count,
-      items: syncResult.items,
-      message: `Synced ${syncResult.count} items`,
-    })
+  return NextResponse.json({
+    success: true,
+    count: syncResult.count,
+    items: syncResult.items,
+    message: `Synced ${syncResult.count} items`,
+  })
+}
 
 async function syncPowerBIReports(
   config: any,
@@ -529,4 +532,3 @@ async function refreshLookerStudioToken(refreshToken: string): Promise<string> {
   const tokens = await tokenResponse.json()
   return tokens.access_token
 }
-

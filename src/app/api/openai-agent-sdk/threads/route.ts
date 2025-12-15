@@ -6,6 +6,7 @@ const prisma = new PrismaClient()
 
 // GET - List threads for a chatbot
 async function getHandler(request: NextRequest) {
+  try {
     const authResult = await requireAuthWithId()
     if (!authResult.success) return authResult.response
     const { session } = authResult
@@ -42,25 +43,21 @@ async function getHandler(request: NextRequest) {
     })
 
     return NextResponse.json({ threads })
-  ,
+  } catch (error: any) {
+    console.error('Error fetching threads:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch threads', details: error.message },
       { status: 500 }
     )
   }
 }
 
 // POST - Create a new thread
-
-
-
-
-export const GET = withErrorHandling(getHandler, 'GET GET /api/openai-agent-sdk/threads')
-export const GET = withErrorHandling(getHandler, 'GET /api/openai-agent-sdk\threads\route.ts')
 async function postHandler(request: NextRequest) {
+  try {
     const authResult = await requireAuthWithId()
     if (!authResult.success) return authResult.response
     const { session } = authResult
-    // TODO: Add requireSpaceAccess check if spaceId is available
-
 
     const body = await request.json()
     const { chatbotId, threadId, title, metadata, spaceId } = body
@@ -92,14 +89,14 @@ async function postHandler(request: NextRequest) {
     })
 
     return NextResponse.json({ thread }, { status: 201 })
-  ,
+  } catch (error: any) {
+    console.error('Error creating thread:', error)
+    return NextResponse.json(
+      { error: 'Failed to create thread', details: error.message },
       { status: 500 }
     )
   }
 }
 
-export const POST = withErrorHandling(postHandler, 'POST POST /api/openai-agent-sdk/threads')
-
-
-
-export const POST = withErrorHandling(postHandler, 'POST POST /api/openai-agent-sdk\threads\route.ts')
+export const GET = withErrorHandling(getHandler, 'GET /api/openai-agent-sdk/threads')
+export const POST = withErrorHandling(postHandler, 'POST /api/openai-agent-sdk/threads')

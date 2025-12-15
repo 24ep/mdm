@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
+import { handleApiError, requireAuth, requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
+import { requireAnySpaceAccess } from '@/lib/space-access'
 
 async function getHandler(request: NextRequest) {
   const startTime = Date.now()

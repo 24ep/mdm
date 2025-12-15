@@ -156,7 +156,8 @@ export async function POST(request: NextRequest) {
       id: pluginId,
       message: 'External plugin registered successfully',
       installedPath,
-    }} catch (error) {
+    })
+  } catch (error) {
     console.error('Error registering external plugin:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
@@ -225,4 +226,3 @@ async function resolvePluginPath(
 
   throw new Error(`Plugin path not found: ${sourcePath || projectFolder}`)
 }
-

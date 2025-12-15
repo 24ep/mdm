@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
 
     if (!issue || !issue.key) {
       return NextResponse.json({ error: 'Invalid webhook payload' }, { status: 400 })
+    }
 
     // Find ticket linked to this Jira issue
     const { rows: ticketRows } = await query(
@@ -90,4 +91,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-

@@ -79,7 +79,7 @@ export async function PUT(
             return NextResponse.json(
                 { 
                     error: 'Invalid theme input',
-                    details: inputValidation.error.errors
+                    details: inputValidation.error.issues
                 },
                 { status: 400 }
             )
@@ -109,7 +109,7 @@ export async function PUT(
                 return NextResponse.json(
                     { 
                         error: 'Invalid theme configuration',
-                        details: configValidation.error.errors
+                        details: configValidation.error.issues
                     },
                     { status: 400 }
                 )
@@ -123,13 +123,13 @@ export async function PUT(
         })
 
         // If the theme is active and config was updated, sync to system_settings
-        if (theme.isActive && config !== undefined) {
+        if (theme.isActive && inputValidation.data.config !== undefined) {
             await prisma.$executeRawUnsafe(
                 `INSERT INTO system_settings (id, key, value, created_at, updated_at)
                  VALUES (gen_random_uuid(), $1, $2::jsonb, NOW(), NOW())
                  ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
                 'branding_config',
-                JSON.stringify(config)
+                JSON.stringify(inputValidation.data.config)
             )
         }
 

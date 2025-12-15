@@ -12,9 +12,10 @@ async function getHandler(
 ) {
   const startTime = Date.now()
   let spaceId: string | undefined
-  const authResult = await requireAuth()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+  try {
+    const authResult = await requireAuth()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -73,7 +74,8 @@ async function getHandler(
         return NextResponse.json({ 
           error: 'Invalid space ID format',
           details: 'Space ID must be a valid UUID'
-         })
+        }, { status: 400 })
+      }
 
       // Check if user has access to this space
       const accessResult = await requireSpaceAccess(spaceId, session.user.id!)
@@ -115,9 +117,14 @@ async function getHandler(
       })
       return NextResponse.json({ dataModels: transformedDataModels })
     }
+  } catch (error: any) {
+    const duration = Date.now() - startTime
+    logger.error('Error fetching data models', error, { spaceId })
+    return NextResponse.json(
+      { error: 'Failed to fetch data models', details: error.message },
+      { status: 500 }
+    )
+  }
 }
 
-
-
-
-export const GET = withErrorHandling(getHandler, 'GET GET /api/spaces/[id]/data-models')
+export const GET = withErrorHandling(getHandler, 'GET /api/spaces/[id]/data-models')

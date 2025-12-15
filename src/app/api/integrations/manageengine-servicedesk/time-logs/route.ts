@@ -8,232 +8,151 @@ import { createAuditLog } from '@/lib/audit'
 
 // Log time to ServiceDesk ticket
 async function postHandler(request: NextRequest) {
-    const startTime = Date.now()
-  let auditLogId: string | null = null
-  let space_id: string | undefined = undefined
-  let session: any = null
+  const startTime = Date.now()
   
-  
-    const authResult = await requireAuthWithId()
+  const authResult = await requireAuthWithId()
   if (!authResult.success) return authResult.response
   const { session } = authResult
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
-    const body = await request.json()
-    const parsed 
-    space_id = parsed.space_id
-    const { request_id, hours, minutes, description, billable, technician } = parsed
+  const body = await request.json()
+  const { space_id, request_id, hours, minutes, description, billable, technician } = body
 
-    if (!space_id || !request_id || hours === undefined) {
-      return NextResponse.json(
-        { error: 'space_id, request_id, and hours are required' },
-        { status: 400 }
-      )
-    }
-
-    // Check access
-    const { rows: access } = await query(
-      'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',
-      [space_id, session.user.id]
+  if (!space_id || !request_id || hours === undefined) {
+    return NextResponse.json(
+      { error: 'space_id, request_id, and hours are required' },
+      { status: 400 }
     )
-    if (access.length === 0) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
-    // Rate limiting check
-    const rateLimitConfig = await getServiceDeskRateLimitConfig(space_id)
-    const rateLimitResult = await checkServiceDeskRateLimit(space_id, session.user.id, rateLimitConfig)
-    
-    if (!rateLimitResult.allowed) {
-      return NextResponse.json(
-        { 
-          error: 'Rate limit exceeded',
-          message: rateLimitResult.reason,
-          resetTime: rateLimitResult.resetTime
-        },
-        { 
-          status: 429,
-          headers: {
-            'Retry-After': String(rateLimitResult.resetTime || 60),
-            'X-RateLimit-Limit': String(rateLimitConfig?.maxRequestsPerMinute || 60),
-            'X-RateLimit-Remaining': String(rateLimitResult.remaining || 0),
-            'X-RateLimit-Reset': String(rateLimitResult.resetTime || Date.now() + 60000)
-          }
-        }
-      )
-    }
+  // Check access
+  const { rows: access } = await query(
+    'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',
+    [space_id, session.user.id]
+  )
+  if (access.length === 0) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
-    // Create initial audit log
-    const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined
-      const userAgent = request.headers.get('user-agent') || undefined
-      
-      const auditResult = await createAuditLog({
-        action: 'SERVICEDESK_TIME_LOG_ATTEMPTED',
-        entityType: 'ServiceDeskIntegration',
-        entityId: space_id,
-        userId: session.user.id,
-        newValue: { requestId: request_id, hours, minutes },
-        ipAddress,
-        userAgent
-      })
-      auditLogId = auditResult?.id || null
-    } catch (auditError) {
-      console.warn('Failed to create initial audit log:', auditError)
-    }
-
-    // Get ServiceDesk service
-    const service = await getServiceDeskService(space_id)
-    if (!service) {
-      return NextResponse.json(
-        { error: 'ServiceDesk integration not configured for this space' },
-        { status: 400 }
-      )
-    }
-
-    // Log time to ServiceDesk
-    const result = await service.logTime(request_id, {
-      hours: Number(hours),
-      minutes: minutes ? Number(minutes) : undefined,
-      description: description || undefined,
-      billable: billable || false,
-      technician: technician || session.user.email || undefined
-    })
-
-    if (result.success) {
-      // Update audit log on success
-      if (auditLogId) {
-        await createAuditLog({
-          action: 'SERVICEDESK_TIME_LOGGED',
-          entityType: 'ServiceDeskIntegration',
-          entityId: space_id,
-          userId: session.user.id,
-          newValue: {
-            requestId: request_id,
-            hours,
-            minutes,
-            duration: Date.now() - startTime,
-            status: 'success'
-          },
-          ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
-          userAgent: request.headers.get('user-agent') || undefined
-        }).catch(() => {})
-      }
-
-      return NextResponse.json({
-        success: true,
-        message: 'Time logged to ServiceDesk successfully',
-        data: result?.data || null,
-        rateLimit: {
-          remaining: rateLimitResult.remaining,
-          resetTime: rateLimitResult.resetTime
-        }
-      }, {
+  // Rate limiting check
+  const rateLimitConfig = await getServiceDeskRateLimitConfig(space_id)
+  const rateLimitResult = await checkServiceDeskRateLimit(space_id, session.user.id, rateLimitConfig)
+  
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { 
+        error: 'Rate limit exceeded',
+        message: rateLimitResult.reason,
+        resetTime: rateLimitResult.resetTime
+      },
+      { 
+        status: 429,
         headers: {
+          'Retry-After': String(rateLimitResult.resetTime || 60),
           'X-RateLimit-Limit': String(rateLimitConfig?.maxRequestsPerMinute || 60),
-          'X-RateLimit-Remaining': String(rateLimitResult.remaining),
-          'X-RateLimit-Reset': String(rateLimitResult.resetTime)
+          'X-RateLimit-Remaining': String(rateLimitResult.remaining || 0),
+          'X-RateLimit-Reset': String(rateLimitResult.resetTime || Date.now() + 60000)
         }
-      })
-    } else {
-      // Update audit log on error
-      if (auditLogId) {
-        await createAuditLog({
-          action: 'SERVICEDESK_TIME_LOG_FAILED',
-          entityType: 'ServiceDeskIntegration',
-          entityId: space_id,
-          userId: session.user.id,
-          newValue: {
-            requestId: request_id,
-            error: result.error || 'Unknown error',
-            duration: Date.now() - startTime,
-            status: 'failed'
-          },
-          ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
-          userAgent: request.headers.get('user-agent') || undefined
-        }).catch(() => {})
       }
+    )
+  }
 
-      return NextResponse.json(
-        { error: result.error || 'Failed to log time to ServiceDesk' },
-        { status: 400 }
-      )
-    }
-  ,
-        ipAddress: request?.headers?.get('x-forwarded-for') || request?.headers?.get('x-real-ip') || undefined,
-        userAgent: request?.headers?.get('user-agent') || undefined
-}).catch(() => {})
-    }
+  // Get ServiceDesk service
+  const service = await getServiceDeskService(space_id)
+  if (!service) {
+    return NextResponse.json(
+      { error: 'ServiceDesk integration not configured for this space' },
+      { status: 400 }
+    )
+  }
 
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  // Log time to ServiceDesk
+  const result = await service.logTime(request_id, {
+    hours: Number(hours),
+    minutes: minutes ? Number(minutes) : undefined,
+    description: description || undefined,
+    billable: billable || false,
+    technician: technician || session.user.email || undefined
+  })
+
+  if (result.success) {
+    return NextResponse.json({
+      success: true,
+      message: 'Time logged to ServiceDesk successfully',
+      data: result?.data || null,
+      rateLimit: {
+        remaining: rateLimitResult.remaining,
+        resetTime: rateLimitResult.resetTime
+      }
+    }, {
+      headers: {
+        'X-RateLimit-Limit': String(rateLimitConfig?.maxRequestsPerMinute || 60),
+        'X-RateLimit-Remaining': String(rateLimitResult.remaining),
+        'X-RateLimit-Reset': String(rateLimitResult.resetTime)
+      }
+    })
+  } else {
+    return NextResponse.json(
+      { error: result.error || 'Failed to log time to ServiceDesk' },
+      { status: 400 }
+    )
+  }
 }
 
 // Get time logs from ServiceDesk ticket
-
-
-
-
-
-
-
-
-
-
-
-
-
 async function getHandler(request: NextRequest) {
-    const authResult = await requireAuthWithId()
-    if (!authResult.success) return authResult.response
-    const { session } = authResult
-    // TODO: Add requireSpaceAccess check if spaceId is available
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
+  const { searchParams } = new URL(request.url)
+  const space_id = searchParams.get('space_id')
+  const request_id = searchParams.get('request_id')
 
-
-    const { searchParams } = new URL(request.url)
-    const space_id = searchParams.get('space_id')
-    const request_id = searchParams.get('request_id')
-
-    if (!space_id || !request_id) {
-      return NextResponse.json(
-        { error: 'space_id and request_id are required' },
-        { status: 400 }
-      )
-    }
-
-    // Check access
-    const { rows: access } = await query(
-      'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',
-      [space_id, session.user.id]
+  if (!space_id || !request_id) {
+    return NextResponse.json(
+      { error: 'space_id and request_id are required' },
+      { status: 400 }
     )
-    if (access.length === 0) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
-    // Get ServiceDesk service
-    const service = await getServiceDeskService(space_id)
-    if (!service) {
-      return NextResponse.json(
-        { error: 'ServiceDesk integration not configured for this space' },
-        { status: 400 }
-      )
-    }
+  // Check access
+  const { rows: access } = await query(
+    'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',
+    [space_id, session.user.id]
+  )
+  if (access.length === 0) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
-    // Get time logs from ServiceDesk
-    const result = await service.getTimeLogs(request_id)
+  // Get ServiceDesk service
+  const service = await getServiceDeskService(space_id)
+  if (!service) {
+    return NextResponse.json(
+      { error: 'ServiceDesk integration not configured for this space' },
+      { status: 400 }
+    )
+  }
 
-    if (result.success) {
-      return NextResponse.json({
-        success: true,
-        timeLogs: result.data?.worklogs || result.data?.requests?.[0]?.worklogs || [],
-        data: result.data
-      })
-    } else {
-      return NextResponse.json(
-        { error: result.error || 'Failed to get time logs from ServiceDesk' },
-        { status: 400 }
-      )
+  // Get time logs from ServiceDesk
+  const result = await service.getTimeLogs(request_id)
 
+  if (result.success) {
+    return NextResponse.json({
+      success: true,
+      timeLogs: result.data?.worklogs || result.data?.requests?.[0]?.worklogs || [],
+      data: result.data
+    })
+  } else {
+    return NextResponse.json(
+      { error: result.error || 'Failed to get time logs from ServiceDesk' },
+      { status: 400 }
+    )
+  }
+}
 
-
-
-export const POST = withErrorHandling(postHandler, 'POST POST POST /api/integrations/manageengine-servicedesk')
-export const GET = withErrorHandling(getHandler, 'GET GET GET /api/integrations/manageengine-servicedesk')
+export const POST = withErrorHandling(postHandler, 'POST /api/integrations/manageengine-servicedesk/time-logs')
+export const GET = withErrorHandling(getHandler, 'GET /api/integrations/manageengine-servicedesk/time-logs')

@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/database'
 import { logger } from '@/lib/logger'
 import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError , requireAuthWithId } from '@/lib/api-middleware'
+import { handleApiError, requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
-// 
+// POST /api/spaces/[id]/layout/versions/[versionId]/restore - Restore a layout version
 async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; versionId: string }> }
@@ -14,13 +14,11 @@ async function postHandler(
   const startTime = Date.now()
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user?.id) {
       return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
-
-export const POST = withErrorHandling(postHandler, '
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -34,7 +32,7 @@ export const POST = withErrorHandling(postHandler, '
     
     const { id: spaceId, versionId } = paramValidation.data
     const userId = session.user.id
-    logger.apiRequest('= body', `/api/spaces/${spaceId}/layout/versions/${versionId}/restore`, { userId })
+    logger.apiRequest('POST', `/api/spaces/${spaceId}/layout/versions/${versionId}/restore`, { userId })
 
     const bodySchema = z.object({
       createNewVersion: z.boolean().optional().default(true),
@@ -112,7 +110,7 @@ export const POST = withErrorHandling(postHandler, '
       )
 
       const duration = Date.now() - startTime
-      logger.apiResponse('= body', `/api/spaces/${spaceId}/layout/versions/${versionId}/restore`, 200, duration, {
+      logger.apiResponse('POST', `/api/spaces/${spaceId}/layout/versions/${versionId}/restore`, 200, duration, {
         newVersionNumber: nextVersion,
         createNewVersion: true,
       })
@@ -133,7 +131,7 @@ export const POST = withErrorHandling(postHandler, '
       )
 
       const duration = Date.now() - startTime
-      logger.apiResponse('= body', `/api/spaces/${spaceId}/layout/versions/${versionId}/restore`, 200, duration, {
+      logger.apiResponse('POST', `/api/spaces/${spaceId}/layout/versions/${versionId}/restore`, 200, duration, {
         createNewVersion: false,
       })
       return addSecurityHeaders(NextResponse.json({
@@ -141,10 +139,11 @@ export const POST = withErrorHandling(postHandler, '
         restored: true
       }))
     }
-  } catch (error) {
+  } catch (error: any) {
     const duration = Date.now() - startTime
-    logger.apiResponse('= body', request.nextUrl.pathname, 500, duration)
+    logger.apiResponse('POST', request.nextUrl.pathname, 500, duration)
     return handleApiError(error, 'Layout Version Restore API')
   }
 }
 
+export const POST = withErrorHandling(postHandler, 'POST /api/spaces/[id]/layout/versions/[versionId]/restore')

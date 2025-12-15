@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import toast from 'react-hot-toast'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -128,23 +129,12 @@ export function ESMPortalIntegration({ spaceId }: ESMPortalIntegrationProps) {
       const result = await response.json()
 
       if (result.success) {
-        toast({
-          title: 'Connection Successful',
-          description: result.message || 'Successfully connected to ESM Portal',
-        })
+        toast.success(result.message || 'Successfully connected to ESM Portal')
       } else {
-        toast({
-          title: 'Connection Failed',
-          description: result.error || 'Failed to connect to ESM Portal',
-          variant: 'destructive'
-        })
+        toast.error(result.error || 'Failed to connect to ESM Portal')
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to test connection',
-        variant: 'destructive'
-      })
+      toast.error('Failed to test connection')
     } finally {
       setTesting(false)
     }
@@ -152,29 +142,17 @@ export function ESMPortalIntegration({ spaceId }: ESMPortalIntegrationProps) {
 
   const handleSave = async () => {
     if (!formData.baseUrl) {
-      toast({
-        title: 'Validation Error',
-        description: 'baseUrl is required',
-        variant: 'destructive'
-      })
+      toast.error('baseUrl is required')
       return
     }
 
     if (formData.authType === 'apikey' && !formData.apiKey) {
-      toast({
-        title: 'Validation Error',
-        description: 'API key is required for API key authentication',
-        variant: 'destructive'
-      })
+      toast.error('API key is required for API key authentication')
       return
     }
 
     if (formData.authType === 'basic' && (!formData.username || !formData.password)) {
-      toast({
-        title: 'Validation Error',
-        description: 'Username and password are required for basic authentication',
-        variant: 'destructive'
-      })
+      toast.error('Username and password are required for basic authentication')
       return
     }
 
@@ -205,24 +183,13 @@ export function ESMPortalIntegration({ spaceId }: ESMPortalIntegrationProps) {
       const result = await response.json()
 
       if (response.ok && result.success) {
-        toast({
-          title: 'Configuration Saved',
-          description: 'ESM Portal integration configured successfully',
-        })
+        toast.success('ESM Portal integration configured successfully')
         await loadConfig()
       } else {
-        toast({
-          title: 'Configuration Failed',
-          description: result.error || 'Failed to save configuration',
-          variant: 'destructive'
-        })
+        toast.error(result.error || 'Failed to save configuration')
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to save configuration',
-        variant: 'destructive'
-      })
+      toast.error('Failed to save configuration')
     } finally {
       setLoading(false)
     }

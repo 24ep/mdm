@@ -253,4 +253,5 @@ async function postHandler(request: NextRequest) {
 
 
 
-export const POST = withErrorHandling(postHandler, 'POST /api/openai-agent-sdk/chat-messages')
+// Export directly since handler returns streaming Response which isn't compatible with withErrorHandling
+export const POST = postHandler

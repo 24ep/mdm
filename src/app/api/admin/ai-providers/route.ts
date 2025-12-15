@@ -1,20 +1,15 @@
-import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
-import { requireSpaceAccess } from '@/lib/space-access'
+import { requireAdmin } from '@/lib/api-middleware'
 import { NextRequest, NextResponse } from 'next/server'
-import { encryptApiKey, decryptApiKey } from '@/lib/encryption'
+import { encryptApiKey } from '@/lib/encryption'
 import { getSecretsManager } from '@/lib/secrets-manager'
 import { createAuditContext } from '@/lib/audit-context-helper'
 import { db as prisma } from '@/lib/db'
 
-async function getHandler() {
+export async function GET(request: NextRequest) {
+  try {
     const authResult = await requireAdmin()
     if (!authResult.success) return authResult.response
     const { session } = authResult
-
-    // Check if user has admin privileges
-    if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
 
     const providers = await prisma.aIProviderConfig.findMany({
       orderBy: {
@@ -43,22 +38,20 @@ async function getHandler() {
     }))
 
     return NextResponse.json({ providers: formattedProviders })
+  } catch (error: any) {
+    console.error('Error fetching AI providers:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch AI providers', details: error.message },
+      { status: 500 }
+    )
+  }
 }
 
-
-
-
-
-export const GET = withErrorHandling(getHandler, 'GET GET /api/admin/ai-providers')
-async function postHandler(request: NextRequest) {
+export async function POST(request: NextRequest) {
+  try {
     const authResult = await requireAdmin()
     if (!authResult.success) return authResult.response
     const { session } = authResult
-
-    // Check if user has admin privileges
-    if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
 
     const body = await request.json()
     const { 
@@ -135,26 +128,20 @@ async function postHandler(request: NextRequest) {
     }
 
     return NextResponse.json({ provider: formattedProvider })
+  } catch (error: any) {
+    console.error('Error creating AI provider:', error)
+    return NextResponse.json(
+      { error: 'Failed to create AI provider', details: error.message },
+      { status: 500 }
+    )
   }
+}
 
-
-
-
-export const POST = withErrorHandling(postHandler, 'POST POST /api/admin/ai-providers')
-async function putHandler(request: NextRequest) {
+export async function PUT(request: NextRequest) {
   try {
-    const authResult = await requireAuthWithId()
+    const authResult = await requireAdmin()
     if (!authResult.success) return authResult.response
     const { session } = authResult
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user has admin privileges
-    if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
 
     const body = await request.json()
     const { 
@@ -226,18 +213,6 @@ async function putHandler(request: NextRequest) {
       updateData.apiKey = encryptedApiKey
       updateData.isConfigured = !!apiKey
       updateData.status = apiKey ? 'active' : 'inactive'
-      
-      // 2-way sync: If OpenAI provider key is updated, sync to chatbots that use global key
-      if (existingProvider.provider === 'openai' && apiKey) {
-        try {
-          // Find chatbots using OpenAI Agent SDK that might be using global key
-          // Note: We don't force update chatbot-specific keys, but the global key is available
-          // The Chat UI will show the global key is available and user can choose to use it
-        } catch (syncError) {
-          // Don't fail the main request if sync fails
-          console.warn('Note: Global API key updated. Chatbots can now use this key via "Use Global API Key" button.', syncError)
-        }
-      }
     }
 
     const providerConfig = await prisma.aIProviderConfig.update({
@@ -266,10 +241,11 @@ async function putHandler(request: NextRequest) {
     }
 
     return NextResponse.json({ provider: formattedProvider })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating AI provider:', error)
-    return NextResponse.json({ error: 'Failed to update AI provider' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Failed to update AI provider', details: error.message },
+      { status: 500 }
+    )
   }
 }
-
-export const PUT = withErrorHandling(putHandler, 'PUT /api/admin/ai-providers')

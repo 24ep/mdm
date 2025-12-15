@@ -20,7 +20,7 @@ async function getHandler(request: NextRequest) {
   return NextResponse.json({
     session: session ? {
       user: session.user,
-      expires: session.expires
+      expires: (session as any).expires
     } : null,
     hasSession: !!session,
     userRole: session?.user?.role || 'No role',

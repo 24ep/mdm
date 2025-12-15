@@ -10,10 +10,12 @@ async function getHandler(
 ) {
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const { id } = await params
     const notebookId = decodeURIComponent(id)
@@ -89,19 +91,18 @@ async function getHandler(
 }
 
 // POST: Create a new schedule
-
-
 async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+    }
 
     const { id } = await params
     const notebookId = decodeURIComponent(id)
@@ -169,7 +170,8 @@ async function postHandler(
     return NextResponse.json({
       success: true,
       schedule: rows[0]
-    }} catch (error: any) {
+    })
+  } catch (error: any) {
     console.error('Error creating notebook schedule:', error)
     return NextResponse.json(
       { error: 'Failed to create schedule', details: error.message },
@@ -178,7 +180,5 @@ async function postHandler(
   }
 }
 
-
-
-export const GET = withErrorHandling(getHandler, 'GET GET /api/notebooks/[id]/schedules/route.ts')
-export const POST = withErrorHandling(postHandler, 'POST POST /api/notebooks/[id]/schedules/route.ts')
+export const GET = withErrorHandling(getHandler, 'GET /api/notebooks/[id]/schedules')
+export const POST = withErrorHandling(postHandler, 'POST /api/notebooks/[id]/schedules')

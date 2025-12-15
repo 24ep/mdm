@@ -150,7 +150,3 @@ async function postHandler(
 }
 
 export const POST = withErrorHandling(postHandler, 'POST /api/infrastructure/instances/[id]/services')
-
-
-
-export const POST = withErrorHandling(postHandler, 'POST POST /api/infrastructure/instances/[id]/services/route.ts')

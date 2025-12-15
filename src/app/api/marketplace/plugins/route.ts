@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth, withErrorHandling, requireAuthWithId} from '@/lib/api-middleware'
+import { requireAuth, withErrorHandling, requireAuthWithId, requireAdmin } from '@/lib/api-middleware'
 import { query } from '@/lib/db'
 import { logAPIRequest } from '@/shared/lib/security/audit-logger'
 import { checkPermission } from '@/shared/lib/security/permission-checker'
 import { rateLimitMiddleware } from '@/shared/middleware/api-rate-limit'
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   // Apply rate limiting
   const rateLimitResponse = await rateLimitMiddleware(request, {
     windowMs: 60000,
@@ -17,10 +17,12 @@ export async function GET(request: NextRequest) {
 
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
@@ -234,8 +236,14 @@ export async function GET(request: NextRequest) {
     )
 
     return NextResponse.json({ plugins })
+  } catch (error) {
+    console.error('Error fetching plugins:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch plugins' },
+      { status: 500 }
+    )
+  }
 }
-
 
 async function postHandler(request: NextRequest) {
   // Apply rate limiting
@@ -247,9 +255,10 @@ async function postHandler(request: NextRequest) {
     return rateLimitResponse
   }
 
-  const authResult = await requireAdmin()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+  try {
+    const authResult = await requireAdmin()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
     const body = await request.json()
     const {
@@ -344,10 +353,14 @@ async function postHandler(request: NextRequest) {
       { id: pluginId, message: 'Plugin registered successfully' },
       { status: 201 }
     )
+  } catch (error) {
+    console.error('Error creating plugin:', error)
+    return NextResponse.json(
+      { error: 'Failed to create plugin' },
+      { status: 500 }
+    )
+  }
 }
 
+export const GET = withErrorHandling(getHandler, 'GET /api/marketplace/plugins')
 export const POST = withErrorHandling(postHandler, 'POST /api/marketplace/plugins')
-
-
-
-export const GET = withErrorHandling(getHandler, 'GET GET /api/marketplace/plugins')

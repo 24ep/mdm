@@ -7,11 +7,13 @@ async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+  try {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const { id: spaceId } = await params
 
@@ -25,10 +27,12 @@ async function getHandler(
 
     if (!spaceMember) {
       return NextResponse.json({ error: 'Space not found or access denied' }, { status: 403 })
+    }
 
     // Check if user has admin/owner role
     if (!['ADMIN', 'OWNER'].includes(spaceMember.role)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    }
 
     // Get attachment storage configuration
     const storageConfig = await db.spaceAttachmentStorage.findFirst({
@@ -74,19 +78,26 @@ async function getHandler(
     return NextResponse.json({ 
       storage: storageConfig || defaultConfig 
     })
-
-
+  } catch (error: any) {
+    console.error('Error fetching attachment storage:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch storage config', details: error.message },
+      { status: 500 }
+    )
+  }
+}
 
 async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+  try {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+    }
 
     const { id: spaceId } = await params
     const body = await request.json()
@@ -101,16 +112,19 @@ async function putHandler(
 
     if (!spaceMember) {
       return NextResponse.json({ error: 'Space not found or access denied' }, { status: 403 })
+    }
 
     // Check if user has admin/owner role
     if (!['ADMIN', 'OWNER'].includes(spaceMember.role)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    }
 
     // Validate required fields based on provider
     const { provider, config } = body
     
     if (!provider || !config) {
       return NextResponse.json({ error: 'Provider and config are required' }, { status: 400 })
+    }
 
     // Validate provider-specific required fields
     const requiredFields = {
@@ -122,7 +136,8 @@ async function putHandler(
 
     const providerConfig = config[provider]
     if (!providerConfig) {
-      return NextResponse.json({ error: `Invalid provider: ${provider}` }}
+      return NextResponse.json({ error: `Invalid provider: ${provider}` }, { status: 400 })
+    }
 
     const missingFields = requiredFields[provider as keyof typeof requiredFields]?.filter(
       field => !providerConfig[field]
@@ -131,7 +146,8 @@ async function putHandler(
     if (missingFields && missingFields.length > 0) {
       return NextResponse.json({ 
         error: `Missing required fields for ${provider}: ${missingFields.join(', ')}` 
-      }}
+      }, { status: 400 })
+    }
 
     // Upsert the configuration using raw SQL
     // Note: SpaceAttachmentStorage model doesn't have provider/config fields in schema
@@ -145,7 +161,14 @@ async function putHandler(
     )
 
     return NextResponse.json({ success: true })
+  } catch (error: any) {
+    console.error('Error updating attachment storage:', error)
+    return NextResponse.json(
+      { error: 'Failed to update storage config', details: error.message },
+      { status: 500 }
+    )
+  }
+}
 
-
-export const GET = withErrorHandling(getHandler, 'GET GET /api/spaces/[id]/attachment-storage/route.ts')
-export const PUT = withErrorHandling(putHandler, 'PUT PUT /api/spaces/[id]/attachment-storage/route.ts')
+export const GET = withErrorHandling(getHandler, 'GET /api/spaces/[id]/attachment-storage')
+export const PUT = withErrorHandling(putHandler, 'PUT /api/spaces/[id]/attachment-storage')

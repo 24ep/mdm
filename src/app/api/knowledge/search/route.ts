@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth, withErrorHandling } from '@/lib/api-middleware'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { query } from '@/lib/db'
 import { logAPIRequest } from '@/shared/lib/security/audit-logger'
 import { applyRateLimit } from '@/app/api/v1/middleware'
@@ -11,7 +11,7 @@ async function getHandler(request: NextRequest) {
     return rateLimitResponse
   }
 
-  const authResult = await requireAuth()
+  const authResult = await requireAuthWithId()
   if (!authResult.success) return authResult.response
   const { session } = authResult
 

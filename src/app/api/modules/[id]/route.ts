@@ -144,6 +144,7 @@ async function putHandler(
       include: {
         project: {
           select: {
+            id: true,
             spaceId: true
           }
         }

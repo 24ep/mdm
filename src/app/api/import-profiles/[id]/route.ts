@@ -10,55 +10,57 @@ async function getHandler(
   const authResult = await requireAuthWithId()
   if (!authResult.success) return authResult.response
   const { session } = authResult
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
-    const { id } = await params
+  const { id } = await params
 
-    const profile = await db.importProfile.findFirst({
-      where: {
-        id,
-        deletedAt: null,
-        OR: [
-          { createdBy: session.user.id },
-          { space: { members: { some: { userId: session.user.id } } } }
-        ]
+  const profile = await db.importProfile.findFirst({
+    where: {
+      id,
+      deletedAt: null,
+      OR: [
+        { createdBy: session.user.id },
+        { space: { members: { some: { userId: session.user.id } } } }
+      ]
+    },
+    include: {
+      creator: {
+        select: {
+          id: true,
+          name: true,
+          email: true
+        }
       },
-      include: {
-        creator: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        },
-        space: {
-          select: {
-            id: true,
-            name: true,
-            slug: true
-          }
-        },
-        jobs: {
-          take: 10,
-          orderBy: { createdAt: 'desc' },
-          select: {
-            id: true,
-            fileName: true,
-            status: true,
-            progress: true,
-            createdAt: true
-          }
+      space: {
+        select: {
+          id: true,
+          name: true,
+          slug: true
+        }
+      },
+      jobs: {
+        take: 10,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          fileName: true,
+          status: true,
+          progress: true,
+          createdAt: true
         }
       }
-    })
+    }
+  })
 
-    if (!profile) {
-      return NextResponse.json({ error: 'Import profile not found' }, { status: 404 })
+  if (!profile) {
+    return NextResponse.json({ error: 'Import profile not found' }, { status: 404 })
+  }
 
-    return NextResponse.json({ profile })
-
-
+  return NextResponse.json({ profile })
+}
 
 async function putHandler(
   request: NextRequest,
@@ -67,57 +69,59 @@ async function putHandler(
   const authResult = await requireAuthWithId()
   if (!authResult.success) return authResult.response
   const { session } = authResult
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
-    const { id } = await params
-    const body = await request.json()
+  const { id } = await params
+  const body = await request.json()
 
-    // Check if profile exists and user has access
-    const existingProfile = await db.importProfile.findFirst({
-      where: {
-        id,
-        deletedAt: null,
-        createdBy: session.user.id
-      }
-    })
+  // Check if profile exists and user has access
+  const existingProfile = await db.importProfile.findFirst({
+    where: {
+      id,
+      deletedAt: null,
+      createdBy: session.user.id
+    }
+  })
 
-    if (!existingProfile) {
-      return NextResponse.json({ error: 'Import profile not found or access denied' }, { status: 403 })
+  if (!existingProfile) {
+    return NextResponse.json({ error: 'Import profile not found or access denied' }, { status: 403 })
+  }
 
-    const { name, description, dataModelId, mapping, settings, spaceId } = body
+  const { name, description, dataModelId, mapping, settings, spaceId } = body
 
-    const updatedProfile = await db.importProfile.update({
-      where: { id },
-      data: {
-        ...(name && { name }),
-        ...(description !== undefined && { description }),
-        ...(dataModelId && { dataModelId }),
-        ...(mapping && { mapping }),
-        ...(settings && { settings }),
-        ...(spaceId !== undefined && { spaceId })
+  const updatedProfile = await db.importProfile.update({
+    where: { id },
+    data: {
+      ...(name && { name }),
+      ...(description !== undefined && { description }),
+      ...(dataModelId && { dataModelId }),
+      ...(mapping && { mapping }),
+      ...(settings && { settings }),
+      ...(spaceId !== undefined && { spaceId })
+    },
+    include: {
+      creator: {
+        select: {
+          id: true,
+          name: true,
+          email: true
+        }
       },
-      include: {
-        creator: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        },
-        space: {
-          select: {
-            id: true,
-            name: true,
-            slug: true
-          }
+      space: {
+        select: {
+          id: true,
+          name: true,
+          slug: true
         }
       }
-    })
+    }
+  })
 
-    return NextResponse.json({ profile: updatedProfile })
-
-
+  return NextResponse.json({ profile: updatedProfile })
+}
 
 async function deleteHandler(
   request: NextRequest,
@@ -126,33 +130,35 @@ async function deleteHandler(
   const authResult = await requireAuthWithId()
   if (!authResult.success) return authResult.response
   const { session } = authResult
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
+  const { id } = await params
 
-    const { id } = await params
+  // Check if profile exists and user has access
+  const existingProfile = await db.importProfile.findFirst({
+    where: {
+      id,
+      deletedAt: null,
+      createdBy: session.user.id
+    }
+  })
 
-    // Check if profile exists and user has access
-    const existingProfile = await db.importProfile.findFirst({
-      where: {
-        id,
-        deletedAt: null,
-        createdBy: session.user.id
-      }
-    })
+  if (!existingProfile) {
+    return NextResponse.json({ error: 'Import profile not found or access denied' }, { status: 403 })
+  }
 
-    if (!existingProfile) {
-      return NextResponse.json({ error: 'Import profile not found or access denied' }, { status: 403 })
+  // Soft delete
+  await db.importProfile.update({
+    where: { id },
+    data: { deletedAt: new Date() }
+  })
 
-    // Soft delete
-    await db.importProfile.update({
-      where: { id },
-      data: { deletedAt: new Date() }
-    })
+  return NextResponse.json({ success: true })
+}
 
-    return NextResponse.json({ success: true })
-
-
-export const GET = withErrorHandling(getHandler, 'GET GET /api/import-profiles/[id]/route.ts')
-export const PUT = withErrorHandling(putHandler, 'PUT PUT /api/import-profiles/[id]/route.ts')
-export const DELETE = withErrorHandling(deleteHandler, 'DELETE DELETE /api/import-profiles/[id]/route.ts')
+export const GET = withErrorHandling(getHandler, 'GET /api/import-profiles/[id]')
+export const PUT = withErrorHandling(putHandler, 'PUT /api/import-profiles/[id]')
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/import-profiles/[id]')

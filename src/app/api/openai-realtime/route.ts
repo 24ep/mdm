@@ -1,6 +1,5 @@
-import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
-import { requireSpaceAccess } from '@/lib/space-access'
-import { NextRequest } from 'next/server'
+import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
+import { NextRequest, NextResponse } from 'next/server'
 /**
  * OpenAI Realtime API WebSocket Endpoint
  * 
@@ -15,10 +14,7 @@ import { NextRequest } from 'next/server'
 async function getHandler(request: NextRequest) {
   const authResult = await requireAuthWithId()
   if (!authResult.success) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   const searchParams = request.nextUrl.searchParams
@@ -26,19 +22,14 @@ async function getHandler(request: NextRequest) {
   const apiKey = searchParams.get('apiKey')
 
   if (!chatbotId || !apiKey) {
-    return new Response(JSON.stringify({ 
-      error: 'Missing chatbotId or apiKey' 
-    }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return NextResponse.json({ error: 'Missing chatbotId or apiKey' }, { status: 400 })
   }
 
   // Return WebSocket proxy server URL
   // In production, this should point to your WebSocket proxy server
   const wsProxyUrl = process.env.WS_PROXY_URL || 'ws://localhost:3002/api/openai-realtime'
   
-  return new Response(JSON.stringify({
+  return NextResponse.json({
     success: true,
     wsUrl: wsProxyUrl,
     message: 'Connect to the WebSocket proxy server at the provided URL',
@@ -47,9 +38,6 @@ async function getHandler(request: NextRequest) {
       step2: 'Send authentication message: { type: "auth", apiKey: "...", sessionConfig: {...} }',
       step3: 'Start sending audio data',
     },
-  }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
   })
 }
 

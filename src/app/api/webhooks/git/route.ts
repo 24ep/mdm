@@ -11,6 +11,7 @@ export async function POST(request: NextRequest) {
     // Verify webhook signature
     if (!verifyWebhookSignature(body, signature)) {
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
+    }
 
     const payload = JSON.parse(body)
     const { repository, commits, ref } = payload
@@ -28,6 +29,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error processing Git webhook:', error)
     return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 })
+  }
 }
 
 function verifyWebhookSignature(body: string, signature: string | null): boolean {

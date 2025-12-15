@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client'
 import { getSecretsManager } from '@/lib/secrets-manager'
 import { encryptApiKey } from '@/lib/encryption'
 import { createAuditContext } from '@/lib/audit-context-helper'
+import { requireSpaceAccess } from '@/lib/space-access'
 
 const prisma = new PrismaClient()
 

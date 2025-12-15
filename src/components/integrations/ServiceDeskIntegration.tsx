@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import toast from 'react-hot-toast'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -105,11 +106,7 @@ export function ServiceDeskIntegration({ spaceId }: ServiceDeskIntegrationProps)
 
   const handleTestConnection = async () => {
     if (!formData.baseUrl || !formData.apiKey) {
-      toast({
-        title: 'Validation Error',
-        description: 'Please provide baseUrl and apiKey to test connection',
-        variant: 'destructive'
-      })
+      toast.error('Please provide baseUrl and apiKey to test connection')
       return
     }
 
@@ -129,23 +126,12 @@ export function ServiceDeskIntegration({ spaceId }: ServiceDeskIntegrationProps)
       const result = await response.json()
 
       if (result.success) {
-        toast({
-          title: 'Connection Successful',
-          description: 'Successfully connected to ManageEngine ServiceDesk',
-        })
+        toast.success('Successfully connected to ManageEngine ServiceDesk')
       } else {
-        toast({
-          title: 'Connection Failed',
-          description: result.error || 'Failed to connect to ServiceDesk',
-          variant: 'destructive'
-        })
+        toast.error(result.error || 'Failed to connect to ServiceDesk')
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to test connection',
-        variant: 'destructive'
-      })
+      toast.error('Failed to test connection')
     } finally {
       setTesting(false)
     }
@@ -153,11 +139,7 @@ export function ServiceDeskIntegration({ spaceId }: ServiceDeskIntegrationProps)
 
   const handleSave = async () => {
     if (!formData.baseUrl || !formData.apiKey) {
-      toast({
-        title: 'Validation Error',
-        description: 'baseUrl and apiKey are required',
-        variant: 'destructive'
-      })
+      toast.error('baseUrl and apiKey are required')
       return
     }
 
@@ -178,24 +160,13 @@ export function ServiceDeskIntegration({ spaceId }: ServiceDeskIntegrationProps)
       const result = await response.json()
 
       if (response.ok && result.success) {
-        toast({
-          title: 'Configuration Saved',
-          description: 'ServiceDesk integration configured successfully',
-        })
+        toast.success('ServiceDesk integration configured successfully')
         await loadConfig()
       } else {
-        toast({
-          title: 'Configuration Failed',
-          description: result.error || 'Failed to save configuration',
-          variant: 'destructive'
-        })
+        toast.error(result.error || 'Failed to save configuration')
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to save configuration',
-        variant: 'destructive'
-      })
+      toast.error('Failed to save configuration')
     } finally {
       setLoading(false)
     }
@@ -232,24 +203,13 @@ export function ServiceDeskIntegration({ spaceId }: ServiceDeskIntegrationProps)
 
       const result = await response.json()
       if (result.success) {
-        toast({
-          title: 'Success',
-          description: 'Sync schedule saved successfully',
-        })
+        toast.success('Sync schedule saved successfully')
         await loadSyncSchedule()
       } else {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to save sync schedule',
-          variant: 'destructive'
-        })
+        toast.error(result.error || 'Failed to save sync schedule')
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to save sync schedule',
-        variant: 'destructive'
-      })
+      toast.error('Failed to save sync schedule')
     }
   }
 
@@ -267,11 +227,7 @@ export function ServiceDeskIntegration({ spaceId }: ServiceDeskIntegrationProps)
 
   const saveFieldMapping = async () => {
     if (!newMapping.name) {
-      toast({
-        title: 'Error',
-        description: 'Mapping name is required',
-        variant: 'destructive'
-      })
+      toast.error('Mapping name is required')
       return
     }
 
@@ -288,25 +244,14 @@ export function ServiceDeskIntegration({ spaceId }: ServiceDeskIntegrationProps)
 
       const result = await response.json()
       if (result.success) {
-        toast({
-          title: 'Success',
-          description: 'Field mapping saved successfully',
-        })
+        toast.success('Field mapping saved successfully')
         setNewMapping({ name: '', mappings: {} })
         await loadFieldMappings()
       } else {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to save field mapping',
-          variant: 'destructive'
-        })
+        toast.error(result.error || 'Failed to save field mapping')
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to save field mapping',
-        variant: 'destructive'
-      })
+      toast.error('Failed to save field mapping')
     }
   }
 
@@ -324,11 +269,7 @@ export function ServiceDeskIntegration({ spaceId }: ServiceDeskIntegrationProps)
 
   const saveTemplate = async () => {
     if (!newTemplate.name) {
-      toast({
-        title: 'Error',
-        description: 'Template name is required',
-        variant: 'destructive'
-      })
+      toast.error('Template name is required')
       return
     }
 
@@ -346,25 +287,14 @@ export function ServiceDeskIntegration({ spaceId }: ServiceDeskIntegrationProps)
 
       const result = await response.json()
       if (result.success) {
-        toast({
-          title: 'Success',
-          description: 'Template saved successfully',
-        })
+        toast.success('Template saved successfully')
         setNewTemplate({ name: '', description: '', config: {} })
         await loadTemplates()
       } else {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to save template',
-          variant: 'destructive'
-        })
+        toast.error(result.error || 'Failed to save template')
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to save template',
-        variant: 'destructive'
-      })
+      toast.error('Failed to save template')
     }
   }
 
@@ -380,24 +310,13 @@ export function ServiceDeskIntegration({ spaceId }: ServiceDeskIntegrationProps)
 
       const result = await response.json()
       if (result.success) {
-        toast({
-          title: 'Success',
-          description: 'Field mapping deleted successfully',
-        })
+        toast.success('Field mapping deleted successfully')
         await loadFieldMappings()
       } else {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to delete field mapping',
-          variant: 'destructive'
-        })
+        toast.error(result.error || 'Failed to delete field mapping')
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to delete field mapping',
-        variant: 'destructive'
-      })
+      toast.error('Failed to delete field mapping')
     }
   }
 
@@ -413,24 +332,13 @@ export function ServiceDeskIntegration({ spaceId }: ServiceDeskIntegrationProps)
 
       const result = await response.json()
       if (result.success) {
-        toast({
-          title: 'Success',
-          description: 'Template deleted successfully',
-        })
+        toast.success('Template deleted successfully')
         await loadTemplates()
       } else {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to delete template',
-          variant: 'destructive'
-        })
+        toast.error(result.error || 'Failed to delete template')
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to delete template',
-        variant: 'destructive'
-      })
+      toast.error('Failed to delete template')
     }
   }
 
@@ -460,17 +368,10 @@ export function ServiceDeskIntegration({ spaceId }: ServiceDeskIntegrationProps)
         a.click()
         window.URL.revokeObjectURL(url)
         document.body.removeChild(a)
-        toast({
-          title: 'Success',
-          description: 'Configuration exported successfully',
-        })
+        toast.success('Configuration exported successfully')
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to export configuration',
-        variant: 'destructive'
-      })
+      toast.error('Failed to export configuration')
     }
   }
 
@@ -494,26 +395,15 @@ export function ServiceDeskIntegration({ spaceId }: ServiceDeskIntegrationProps)
 
       const result = await response.json()
       if (result.success) {
-        toast({
-          title: 'Success',
-          description: 'Configuration imported successfully',
-        })
+        toast.success('Configuration imported successfully')
         await loadSyncSchedule()
         await loadFieldMappings()
         await loadTemplates()
       } else {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to import configuration',
-          variant: 'destructive'
-        })
+        toast.error(result.error || 'Failed to import configuration')
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to import configuration',
-        variant: 'destructive'
-      })
+      toast.error('Failed to import configuration')
     }
   }
 

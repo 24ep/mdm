@@ -54,7 +54,8 @@ export async function GET(request: NextRequest) {
     if (configRows.length === 0) {
       healthStatus.error = 'ServiceDesk integration not configured'
       healthStatus.details!.connection = false
-      return NextResponse.json(healthStatus}
+      return NextResponse.json(healthStatus)
+    }
 
     const config = configRows[0]
     healthStatus.details!.connection = true
@@ -62,7 +63,8 @@ export async function GET(request: NextRequest) {
     if (!config.is_active) {
       healthStatus.status = 'degraded'
       healthStatus.error = 'ServiceDesk integration is inactive'
-      return NextResponse.json(healthStatus}
+      return NextResponse.json(healthStatus)
+    }
 
     // Get service instance
     const service = await getServiceDeskService(spaceId)
@@ -70,7 +72,8 @@ export async function GET(request: NextRequest) {
     if (!service) {
       healthStatus.error = 'ServiceDesk integration not configured or API key invalid'
       healthStatus.details!.apiKey = false
-      return NextResponse.json(healthStatus}
+      return NextResponse.json(healthStatus)
+    }
 
     healthStatus.details!.apiKey = true
 
@@ -139,6 +142,6 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     healthStatus.error = error instanceof Error ? error.message : 'Unknown error'
     healthStatus.status = 'down'
-    return NextResponse.json(healthStatus}
+    return NextResponse.json(healthStatus)
+  }
 }
-

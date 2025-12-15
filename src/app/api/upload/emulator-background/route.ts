@@ -6,10 +6,10 @@ import { join } from 'path'
 import { existsSync } from 'fs'
 
 async function postHandler(request: NextRequest) {
+  try {
     const authResult = await requireAuth()
     if (!authResult.success) return authResult.response
     const { session } = authResult
-
 
     const formData = await request.formData()
     const file = formData.get('image') as File
@@ -43,14 +43,10 @@ async function postHandler(request: NextRequest) {
 
     const publicUrl = `/uploads/emulator-backgrounds/${filename}`
     return NextResponse.json({ success: true, url: publicUrl, filename })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error uploading emulator background image:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
-export const POST = withErrorHandling(postHandler, 'POST POST /api/upload/emulator-background')
-
-
-
-export const POST = withErrorHandling(postHandler, 'POST POST /api/upload\emulator-background\route.ts')
+export const POST = withErrorHandling(postHandler, 'POST /api/upload/emulator-background')

@@ -86,6 +86,7 @@ export async function POST(request: NextRequest) {
 
     if (!space) {
       return NextResponse.json({ error: 'Space not found' }, { status: 404 })
+    }
 
     // Check access
     const accessResult = await requireSpaceAccess(spaceId, session.user.id, 'Access denied to space')
@@ -107,7 +108,8 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    return NextResponse.json({ success: true, form  }) catch (error: any) {
+    return NextResponse.json({ success: true, form })
+  } catch (error: any) {
     console.error('Error creating intake form:', error)
     return NextResponse.json(
       { error: error.message || 'Failed to create intake form' },
@@ -115,4 +117,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-

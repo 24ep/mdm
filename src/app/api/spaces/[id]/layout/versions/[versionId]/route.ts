@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/database'
 import { logger } from '@/lib/logger'
 import { validateParams, commonSchemas } from '@/lib/api-validation'
-import { handleApiError, requireAuthWithId} from '@/lib/api-middleware'
+import { handleApiError, requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 

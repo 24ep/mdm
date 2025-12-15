@@ -4,6 +4,7 @@ import { db } from '@/lib/db'
 import { encryptApiKey } from '@/lib/encryption'
 import { getSecretsManager } from '@/lib/secrets-manager'
 import { createAuditContext } from '@/lib/audit-context-helper'
+import { requireSpaceAccess } from '@/lib/space-access'
 
 const prisma = db
 
