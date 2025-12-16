@@ -5,9 +5,24 @@ echo "=== Docker Entrypoint: Starting initialization ==="
 
 # Wait for database to be ready
 echo "Waiting for database to be ready..."
+
+# Extract database host and port from DATABASE_URL
+# DATABASE_URL format: postgres://user:pass@host:port/dbname
+if [ -n "$DATABASE_URL" ]; then
+  DB_HOST=$(echo "$DATABASE_URL" | sed -E 's|.*@([^:]+):([0-9]+)/.*|\1|')
+  DB_PORT=$(echo "$DATABASE_URL" | sed -E 's|.*@([^:]+):([0-9]+)/.*|\2|')
+  DB_USER=$(echo "$DATABASE_URL" | sed -E 's|.*://([^:]+):.*|\1|')
+else
+  DB_HOST="postgres-db"
+  DB_PORT="5432"
+  DB_USER="postgres"
+fi
+
+echo "Connecting to database at $DB_HOST:$DB_PORT..."
+
 MAX_WAIT=120
 WAITED=0
-until pg_isready -h postgres-db -U postgres -p 5432 > /dev/null 2>&1; do
+until pg_isready -h "$DB_HOST" -U "$DB_USER" -p "$DB_PORT" > /dev/null 2>&1; do
   if [ $WAITED -ge $MAX_WAIT ]; then
     echo "⚠️  Database did not become ready within $MAX_WAIT seconds. Continuing anyway..."
     break
@@ -16,7 +31,7 @@ until pg_isready -h postgres-db -U postgres -p 5432 > /dev/null 2>&1; do
   sleep 2
   WAITED=$((WAITED + 2))
 done
-if pg_isready -h postgres-db -U postgres -p 5432 > /dev/null 2>&1; then
+if pg_isready -h "$DB_HOST" -U "$DB_USER" -p "$DB_PORT" > /dev/null 2>&1; then
   echo "✓ Database is ready"
 else
   echo "⚠️  Warning: Database health check failed, but continuing..."
