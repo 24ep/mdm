@@ -15,6 +15,7 @@ import { Preview } from './layout-config/Preview'
 import { PermissionsDialog } from './layout-config/PermissionsDialog'
 import { LayoutVersionControlDialog } from './layout-config/LayoutVersionControlDialog'
 import { DataModelExplorer } from './layout-config/DataModelExplorer'
+import { MobileExportDialog } from './mobile-export-dialog'
 // Sidebar visibility utilities removed - pages now use secondary platform sidebar
 import { useUndoRedo } from '@/hooks/useUndoRedo'
 
@@ -64,6 +65,7 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
   const [clipboardWidget, setClipboardWidget] = useState<PlacedWidget | null>(null)
   const [clipboardWidgets, setClipboardWidgets] = useState<PlacedWidget[]>([]) // For multi-copy
   const [versionsDialogOpen, setVersionsDialogOpen] = useState(false)
+  const [mobileExportDialogOpen, setMobileExportDialogOpen] = useState(false)
   const [showDataModelPanel, setShowDataModelPanel] = useState(true)
   const canvasRef = useRef<HTMLDivElement>(null)
   
@@ -976,6 +978,7 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
         showDataModelPanel={showDataModelPanel}
         onToggleDataModelPanel={() => setShowDataModelPanel(!showDataModelPanel)}
         spaceId={spaceId}
+        onExportMobile={() => setMobileExportDialogOpen(true)}
           />
           
       {/* Version Control Dialog */}
@@ -1208,6 +1211,31 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
         setPermissionsUserIds={setPermissionsUserIds}
         setSelectedPageForPermissions={setSelectedPageForPermissions}
         setPages={setPages}
+      />
+
+      {/* Mobile Export Dialog */}
+      <MobileExportDialog
+        open={mobileExportDialogOpen}
+        onOpenChange={setMobileExportDialogOpen}
+        spaceId={spaceId}
+        config={{
+          id: `config_${spaceId}`,
+          spaceId,
+          pages: pages.map(page => ({
+            ...page,
+            components: page.id === selectedPageId ? placedWidgets : page.components,
+          })),
+          layoutConfig: componentConfigs,
+          sidebarConfig: {
+            items: [],
+            background: '#ffffff',
+            textColor: '#374151',
+            fontSize: '14px',
+          },
+          version: '1.0.0',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }}
       />
     </div>
   )
