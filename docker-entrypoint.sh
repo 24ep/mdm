@@ -51,15 +51,20 @@ node scripts/run-migration.js || {
   echo "⚠️  Custom migration script failed (may already be applied)"
 }
 
-# Seed initial data (only if tsx is available, otherwise skip)
-echo ""
-echo "=== Seeding initial data ==="
-if command -v npx > /dev/null 2>&1 && npx tsx --version > /dev/null 2>&1; then
-  npx tsx prisma/seed-assets.ts || {
-    echo "⚠️  Seeding failed (may already be seeded)"
-  }
+# Seed initial data (Controlled by ENABLE_SEEDING env var)
+if [ "$ENABLE_SEEDING" = "true" ]; then
+  echo ""
+  echo "=== Seeding initial data ==="
+  if command -v npx > /dev/null 2>&1 && npx tsx --version > /dev/null 2>&1; then
+    npx tsx prisma/seed-assets.ts || {
+      echo "⚠️  Seeding failed (may already be seeded)"
+    }
+  else
+    echo "⚠️  tsx not available, skipping seed (may already be seeded)"
+  fi
 else
-  echo "⚠️  tsx not available, skipping seed (may already be seeded)"
+  echo ""
+  echo "=== Seeding skipped (ENABLE_SEEDING not set to true) ==="
 fi
 
 echo ""

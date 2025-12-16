@@ -37,15 +37,21 @@ async function loadPluginFromHub(slug: string): Promise<PluginDefinition | null>
 
   try {
     await fs.access(pluginFile)
-    
-    delete require.cache[require.resolve(pluginFile)]
-    const pluginModule = require(pluginFile)
-    
-    const plugin = pluginModule.default || 
-                   pluginModule[Object.keys(pluginModule).find((k: string) => k.endsWith('Plugin'))] ||
-                   Object.values(pluginModule).find((v: any) => v && typeof v === 'object' && v.slug)
 
-    return plugin || null
+    // Dynamic loading disabled
+    // // Use eval('require') to bypass Webpack static analysis
+    // const dynamicRequire = eval('require');
+    // // @ts-ignore
+    // delete dynamicRequire.cache[dynamicRequire.resolve(pluginFile)]
+    // const pluginModule = dynamicRequire(pluginFile)
+
+    // const plugin = pluginModule.default ||
+    //   pluginModule[Object.keys(pluginModule).find((k: string) => k.endsWith('Plugin'))] ||
+    //   Object.values(pluginModule).find((v: any) => v && typeof v === 'object' && v.slug)
+
+    // return plugin || null
+    console.warn('Plugin loading disabled during build fix');
+    return null;
   } catch {
     return null
   }

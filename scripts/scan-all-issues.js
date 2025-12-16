@@ -43,9 +43,9 @@ function scanTypeScript() {
       encoding: 'utf-8',
       stdio: 'pipe'
     });
-    
+
     if (output && output.includes('error TS')) {
-      const errorLines = output.split('\n').filter(line => line.includes('error TS'));
+      const errorLines = output.split(/\r?\n/).filter(line => line.includes('error TS'));
       errorLines.forEach(line => {
         const match = line.match(/^(.+?)\((\d+),(\d+)\):\s+error\s+(TS\d+):\s+(.+)$/);
         if (match) {
@@ -68,38 +68,38 @@ function scanTypeScript() {
 function scanImports() {
   console.log(colorize('🔍 Scanning for import issues...', 'blue'));
   const srcDir = path.join(process.cwd(), 'src');
-  
+
   if (!fs.existsSync(srcDir)) return;
-  
+
   function scanFile(filePath) {
     try {
       const content = fs.readFileSync(filePath, 'utf-8');
       const relativePath = path.relative(process.cwd(), filePath);
-      
+
       // Check for import statements
-      const importLines = content.split('\n').map((line, idx) => ({
+      const importLines = content.split(/\r?\n/).map((line, idx) => ({
         line: line.trim(),
         number: idx + 1
       })).filter(l => l.line.startsWith('import'));
-      
+
       importLines.forEach(({ line, number }) => {
         // Check for relative imports that might be broken
         const relativeMatch = line.match(/from\s+['"](\.\.?\/[^'"]+)['"]/);
         if (relativeMatch) {
           const importPath = relativeMatch[1];
           const resolvedPath = path.resolve(path.dirname(filePath), importPath);
-          
+
           // Check if file exists
           const possibleExtensions = ['', '.ts', '.tsx', '.js', '.jsx', '/index.ts', '/index.tsx'];
           let found = false;
-          
+
           for (const ext of possibleExtensions) {
             if (fs.existsSync(resolvedPath + ext)) {
               found = true;
               break;
             }
           }
-          
+
           if (!found && !importPath.includes('node_modules')) {
             issues.imports.push({
               file: relativePath,
@@ -109,7 +109,7 @@ function scanImports() {
             });
           }
         }
-        
+
         // Check for @/ imports (should be configured in tsconfig)
         if (line.includes("from '@/") || line.includes('from "@/')) {
           // These should be fine if tsconfig is set up correctly
@@ -119,13 +119,13 @@ function scanImports() {
       // Skip files that can't be read
     }
   }
-  
+
   function scanDirectory(dir) {
     const files = fs.readdirSync(dir);
     files.forEach(file => {
       const filePath = path.join(dir, file);
       const stat = fs.statSync(filePath);
-      
+
       if (stat.isDirectory()) {
         if (file !== 'node_modules' && file !== '.next' && !file.startsWith('.')) {
           scanDirectory(filePath);
@@ -135,7 +135,7 @@ function scanImports() {
       }
     });
   }
-  
+
   scanDirectory(srcDir);
 }
 
@@ -143,31 +143,44 @@ function scanImports() {
 function scanJSX() {
   console.log(colorize('⚛️  Scanning for JSX issues...', 'blue'));
   const srcDir = path.join(process.cwd(), 'src');
-  
+
   if (!fs.existsSync(srcDir)) return;
-  
+
   function scanFile(filePath) {
     try {
       const content = fs.readFileSync(filePath, 'utf-8');
       const relativePath = path.relative(process.cwd(), filePath);
-      
+
       if (!filePath.endsWith('.tsx') && !filePath.endsWith('.jsx')) return;
-      
-      const lines = content.split('\n');
-      
+
+      const lines = content.split(/\r?\n/);
+
       // Check for unclosed JSX tags
       let openTags = [];
       lines.forEach((line, idx) => {
         // Match opening tags
-        const openTagMatches = line.matchAll(/<([A-Z][a-zA-Z0-9]*)\s[^>]*>/g);
+        const openTagMatches = line.matchAll(/<([A-Z][a-zA-Z0-9]*)\s*([^>]*)>/g);
         for (const match of openTagMatches) {
           const tagName = match[1];
-          // Skip self-closing tags
-          if (!line.includes(`</${tagName}>`) && !line.endsWith('/>')) {
-            openTags.push({ tag: tagName, line: idx + 1 });
+          const attributes = match[2];
+          const index = match.index;
+
+          // Check if it's a generic (preceded by word char, e.g. useRef<T>)
+          if (index > 0) {
+            const charBefore = line[index - 1];
+            if (/[a-zA-Z0-9_]/.test(charBefore)) {
+              continue; // It's likely a generic
+            }
           }
+
+          // Skip self-closing tags (either empty or with attributes ending in /)
+          if (line.includes(`</${tagName}>`) || line.includes('/>') || attributes.trim().endsWith('/')) {
+            continue;
+          }
+
+          openTags.push({ tag: tagName, line: idx + 1 });
         }
-        
+
         // Match closing tags
         const closeTagMatches = line.matchAll(/<\/([A-Z][a-zA-Z0-9]*)>/g);
         for (const match of closeTagMatches) {
@@ -178,30 +191,41 @@ function scanJSX() {
           }
         }
       });
-      
+
       // Check for duplicate attributes
       lines.forEach((line, idx) => {
-        // Check for duplicate className
+        // Check for duplicate className - only if we suspect it's on the same tag
+        // Simple heuristic: if className count > tag count, likely duplicate
         const classNameMatches = line.match(/className=/g);
+        const tagMatches = line.match(/<[A-Z][a-zA-Z0-9]*/g) || [];
+        const simpleTagMatches = line.match(/<[a-z]+/g) || []; // match div, span etc
+        const totalTags = tagMatches.length + simpleTagMatches.length;
+
         if (classNameMatches && classNameMatches.length > 1) {
-          issues.jsx.push({
-            file: relativePath,
-            line: idx + 1,
-            message: 'Duplicate className attribute'
-          });
+          if (totalTags <= 1 || classNameMatches.length > totalTags) {
+            // Only report if we have more classNames than tags, or if there is only 1 tag (or 0 detected)
+            // This is still a heuristic but better than before
+            issues.jsx.push({
+              file: relativePath,
+              line: idx + 1,
+              message: 'Duplicate className attribute (potential)'
+            });
+          }
         }
-        
+
         // Check for duplicate style
         const styleMatches = line.match(/style=/g);
         if (styleMatches && styleMatches.length > 1) {
-          issues.jsx.push({
-            file: relativePath,
-            line: idx + 1,
-            message: 'Duplicate style attribute'
-          });
+          if (totalTags <= 1 || styleMatches.length > totalTags) {
+            issues.jsx.push({
+              file: relativePath,
+              line: idx + 1,
+              message: 'Duplicate style attribute (potential)'
+            });
+          }
         }
       });
-      
+
       if (openTags.length > 0) {
         openTags.forEach(({ tag, line: lineNum }) => {
           issues.jsx.push({
@@ -215,13 +239,13 @@ function scanJSX() {
       // Skip files that can't be read
     }
   }
-  
+
   function scanDirectory(dir) {
     const files = fs.readdirSync(dir);
     files.forEach(file => {
       const filePath = path.join(dir, file);
       const stat = fs.statSync(filePath);
-      
+
       if (stat.isDirectory()) {
         if (file !== 'node_modules' && file !== '.next' && !file.startsWith('.')) {
           scanDirectory(filePath);
@@ -231,7 +255,7 @@ function scanJSX() {
       }
     });
   }
-  
+
   scanDirectory(srcDir);
 }
 
@@ -239,15 +263,15 @@ function scanJSX() {
 function scanSyntax() {
   console.log(colorize('🔤 Scanning for syntax issues...', 'blue'));
   const srcDir = path.join(process.cwd(), 'src');
-  
+
   if (!fs.existsSync(srcDir)) return;
-  
+
   function scanFile(filePath) {
     try {
       const content = fs.readFileSync(filePath, 'utf-8');
       const relativePath = path.relative(process.cwd(), filePath);
-      const lines = content.split('\n');
-      
+      const lines = content.split(/\r?\n/);
+
       lines.forEach((line, idx) => {
         // Check for unbalanced brackets
         const openBraces = (line.match(/{/g) || []).length;
@@ -256,12 +280,12 @@ function scanSyntax() {
         const closeParens = (line.match(/\)/g) || []).length;
         const openBrackets = (line.match(/\[/g) || []).length;
         const closeBrackets = (line.match(/\]/g) || []).length;
-        
+
         // Skip if it's a string or comment
         if (line.includes('//') || line.includes('/*') || line.match(/['"`]/)) {
           return;
         }
-        
+
         if (Math.abs(openBraces - closeBraces) > 2) {
           issues.syntax.push({
             file: relativePath,
@@ -274,13 +298,13 @@ function scanSyntax() {
       // Skip files that can't be read
     }
   }
-  
+
   function scanDirectory(dir) {
     const files = fs.readdirSync(dir);
     files.forEach(file => {
       const filePath = path.join(dir, file);
       const stat = fs.statSync(filePath);
-      
+
       if (stat.isDirectory()) {
         if (file !== 'node_modules' && file !== '.next' && !file.startsWith('.')) {
           scanDirectory(filePath);
@@ -290,7 +314,7 @@ function scanSyntax() {
       }
     });
   }
-  
+
   scanDirectory(srcDir);
 }
 
@@ -298,18 +322,18 @@ function scanSyntax() {
 function scanExports() {
   console.log(colorize('📤 Scanning for export issues...', 'blue'));
   const srcDir = path.join(process.cwd(), 'src');
-  
+
   if (!fs.existsSync(srcDir)) return;
-  
+
   function scanFile(filePath) {
     try {
       const content = fs.readFileSync(filePath, 'utf-8');
       const relativePath = path.relative(process.cwd(), filePath);
-      
+
       // Check for files that export but might have issues
       const hasExport = content.includes('export ');
       const hasDefaultExport = content.includes('export default');
-      
+
       // Check for index files that should re-export
       if (filePath.endsWith('index.ts') || filePath.endsWith('index.tsx')) {
         if (!hasExport && !hasDefaultExport) {
@@ -323,13 +347,13 @@ function scanExports() {
       // Skip files that can't be read
     }
   }
-  
+
   function scanDirectory(dir) {
     const files = fs.readdirSync(dir);
     files.forEach(file => {
       const filePath = path.join(dir, file);
       const stat = fs.statSync(filePath);
-      
+
       if (stat.isDirectory()) {
         if (file !== 'node_modules' && file !== '.next' && !file.startsWith('.')) {
           scanDirectory(filePath);
@@ -339,7 +363,7 @@ function scanExports() {
       }
     });
   }
-  
+
   scanDirectory(srcDir);
 }
 
@@ -347,22 +371,22 @@ function scanExports() {
 function main() {
   console.log(colorize('\n🔍 Comprehensive Issue Scanner\n', 'cyan'));
   console.log(colorize('='.repeat(60), 'blue'));
-  
+
   const startTime = Date.now();
-  
+
   // Run all scans
   scanTypeScript();
   scanImports();
   scanJSX();
   scanSyntax();
   scanExports();
-  
+
   // Display results
   console.log(colorize('\n' + '='.repeat(60), 'blue'));
   console.log(colorize('\n📊 Scan Results:\n', 'bold'));
-  
+
   let totalIssues = 0;
-  
+
   // TypeScript errors
   if (issues.typescript.length > 0) {
     totalIssues += issues.typescript.length;
@@ -376,7 +400,7 @@ function main() {
   } else {
     console.log(colorize('✅ TypeScript Errors: 0', 'green'));
   }
-  
+
   // Import issues
   if (issues.imports.length > 0) {
     totalIssues += issues.imports.length;
@@ -390,7 +414,7 @@ function main() {
   } else {
     console.log(colorize('\n✅ Import Issues: 0', 'green'));
   }
-  
+
   // JSX issues
   if (issues.jsx.length > 0) {
     totalIssues += issues.jsx.length;
@@ -404,7 +428,7 @@ function main() {
   } else {
     console.log(colorize('\n✅ JSX Issues: 0', 'green'));
   }
-  
+
   // Syntax issues
   if (issues.syntax.length > 0) {
     totalIssues += issues.syntax.length;
@@ -418,7 +442,7 @@ function main() {
   } else {
     console.log(colorize('\n✅ Syntax Issues: 0', 'green'));
   }
-  
+
   // Export issues
   if (issues.exports.length > 0) {
     totalIssues += issues.exports.length;
@@ -432,13 +456,13 @@ function main() {
   } else {
     console.log(colorize('\n✅ Export Issues: 0', 'green'));
   }
-  
+
   const duration = ((Date.now() - startTime) / 1000).toFixed(2);
   console.log(colorize('\n' + '='.repeat(60), 'blue'));
   console.log(colorize(`\n⏱️  Scan completed in ${duration}s`, 'cyan'));
   console.log(colorize(`📈 Total issues found: ${totalIssues}`, totalIssues > 0 ? 'red' : 'green'));
   console.log(colorize('='.repeat(60) + '\n', 'blue'));
-  
+
   process.exit(totalIssues > 0 ? 1 : 0);
 }
 

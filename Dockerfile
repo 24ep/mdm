@@ -6,17 +6,8 @@ WORKDIR /app
 FROM base AS deps
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma
-RUN --mount=type=cache,target=/root/.npm \
-    --mount=type=cache,target=/app/node_modules/.cache \
-    if [ -f package-lock.json ]; then \
-    sed -i.bak '/@next\/swc-win32/d' package-lock.json 2>/dev/null || true; \
-    fi && \
-    npm config set maxsockets 1 && \
-    npm config set fetch-retries 2 && \
-    npm config set fetch-retry-mintimeout 20000 && \
-    npm config set fetch-retry-maxtimeout 120000 && \
-    (npm ci --prefer-offline --no-audit --legacy-peer-deps 2>/dev/null || \
-    npm install --no-audit --legacy-peer-deps)
+RUN npm ci --prefer-offline --no-audit --legacy-peer-deps 2>/dev/null || \
+    npm install --no-audit --legacy-peer-deps
 
 # Build application
 FROM base AS builder
@@ -61,7 +52,7 @@ ENV PORT=8301
 ENV HOSTNAME="0.0.0.0"
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 
-RUN apk add --no-cache postgresql-client && \
+RUN apk add --no-cache postgresql-client dos2unix && \
     addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
@@ -75,7 +66,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 
-RUN mkdir -p .next && chown nextjs:nodejs .next && chmod +x /docker-entrypoint.sh
+RUN dos2unix /docker-entrypoint.sh && mkdir -p .next && chown nextjs:nodejs .next && chmod +x /docker-entrypoint.sh
 
 USER nextjs
 EXPOSE 8301

@@ -1,5 +1,5 @@
 # Plugin Hub Dockerfile
-FROM node:18-alpine AS base
+FROM node:20-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -8,13 +8,12 @@ WORKDIR /app
 
 # Copy package files
 COPY package.json package-lock.json* ./
-RUN --mount=type=cache,target=/root/.npm \
-    if [ -f package-lock.json ]; then \
-      npm ci --prefer-offline --no-audit --legacy-peer-deps 2>/dev/null || \
-      npm install --no-audit --legacy-peer-deps; \
-    else \
-      npm install --no-audit --legacy-peer-deps; \
-    fi
+RUN if [ -f package-lock.json ]; then \
+  npm ci --prefer-offline --no-audit --legacy-peer-deps 2>/dev/null || \
+  npm install --no-audit --legacy-peer-deps; \
+  else \
+  npm install --no-audit --legacy-peer-deps; \
+  fi
 
 # Rebuild the source code only when needed
 FROM base AS builder

@@ -34,8 +34,8 @@ async function getSigNozConfig(): Promise<SigNozConfig | null> {
       LIMIT 1
     `
 
-    const result = await query(sql)
-    
+    const result = await query(sql, [], 30000, { skipTracing: true })
+
     if (result.rows.length === 0) {
       cachedConfig = null
       return null
@@ -47,14 +47,14 @@ async function getSigNozConfig(): Promise<SigNozConfig | null> {
     return config
   } catch (error: any) {
     // If table doesn't exist (42P01) or query fails, return null (graceful degradation)
-    const isTableMissing = error?.code === '42P01' || 
-                         error?.meta?.code === '42P01' ||
-                         (typeof error?.message === 'string' && error.message.includes('does not exist'))
-    
+    const isTableMissing = error?.code === '42P01' ||
+      error?.meta?.code === '42P01' ||
+      (typeof error?.message === 'string' && error.message.includes('does not exist'))
+
     if (!isTableMissing) {
       console.error('Error fetching SigNoz config:', error)
     }
-    
+
     cachedConfig = null
     return null
   }

@@ -27,7 +27,7 @@ function colorize(text, color) {
 // Parse TypeScript error output
 function parseTypeScriptErrors(output) {
   const errors = [];
-  const lines = output.split('\n');
+  const lines = output.split(/\r?\n/);
   
   let currentError = null;
   
@@ -161,7 +161,7 @@ function scanCommonIssues() {
           }
           
           // 4. Unused imports (basic check)
-          const importLines = content.split('\n').filter(line => line.trim().startsWith('import'));
+          const importLines = content.split(/\r?\n/).filter(line => line.trim().startsWith('import'));
           const usedImports = new Set();
           
           importLines.forEach(importLine => {

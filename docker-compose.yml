@@ -44,6 +44,12 @@ services:
       - vault
       - redis
       - plugin-hub
+    deploy:
+      resources:
+        limits:
+          memory: 6G
+        reservations:
+          memory: 2G
     networks:
       - mdm-network
 
