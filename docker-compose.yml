@@ -35,7 +35,7 @@ services:
       - REDIS_URL=${REDIS_URL:-redis://redis:6379}
       - PLUGIN_HUB_URL=${PLUGIN_HUB_URL:-http://plugin-hub:3001}
       - USE_PLUGIN_HUB=${USE_PLUGIN_HUB:-false}
-    # volumes:
+      # volumes:
       # - ./uploads:/app/uploads
     depends_on:
       - postgres-db
@@ -49,12 +49,13 @@ services:
 
   # Plugin Hub Service
   plugin-hub:
+    image: mdm-plugin-hub:latest
     build:
       context: ./plugin-hub
       dockerfile: Dockerfile
       args:
         - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8302}
-    container_name: mdm-plugin-hub
+    # container_name: mdm-plugin-hub
     ports:
       - "8308:3001"
     environment:
@@ -65,11 +66,11 @@ services:
     volumes:
       # Mount plugins directory for persistence
       - ./plugin-hub/plugins:/app/plugins
-    restart: unless-stopped
+    # restart: unless-stopped
     networks:
       - mdm-network
     healthcheck:
-      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3001/api/plugins || curl -f http://localhost:3001/api/plugins || exit 1"]
+      test: [ "CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3001/api/plugins || curl -f http://localhost:3001/api/plugins || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -87,7 +88,7 @@ services:
     volumes:
       - postgres_db:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -162,7 +163,7 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 3s
       retries: 3
@@ -176,7 +177,7 @@ volumes:
   vault_logs:
   redis_data:
 
+
 networks:
   mdm-network:
     driver: bridge
-
