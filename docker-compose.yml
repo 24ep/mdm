@@ -38,18 +38,12 @@ services:
     # volumes:
       # - ./uploads:/app/uploads
     depends_on:
-      postgres-db:
-        condition: service_healthy
-      postgrest-api:
-        condition: service_started
-      minio:
-        condition: service_started
-      vault:
-        condition: service_started
-      redis:
-        condition: service_healthy
-      plugin-hub:
-        condition: service_started
+      - postgres-db
+      - postgrest-api
+      - minio
+      - vault
+      - redis
+      - plugin-hub
     networks:
       - mdm-network
 
