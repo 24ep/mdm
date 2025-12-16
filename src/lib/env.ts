@@ -93,7 +93,8 @@ function validateEnv() {
 
 // Validate on module load (only in production or when explicitly enabled)
 let validatedEnv: z.infer<typeof envSchema>
-if (process.env.VALIDATE_ENV !== 'false') {
+// Skip validation during Docker builds (DOCKER_BUILD=true)
+if (process.env.VALIDATE_ENV !== 'false' && process.env.DOCKER_BUILD !== 'true') {
   try {
     validatedEnv = validateEnv()
     // Use console.log here to avoid circular dependency with logger
