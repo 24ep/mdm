@@ -11,9 +11,10 @@ async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
-  const authResult = await requireAuth()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+  try {
+    const authResult = await requireAuth()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
     const { slug } = await params
 
@@ -25,6 +26,7 @@ async function getHandler(
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Plugin not found' }, { status: 404 })
+    }
 
     const row = result.rows[0]
     const plugin = {
@@ -53,9 +55,13 @@ async function getHandler(
     }
 
     return NextResponse.json({ plugin })
+  } catch (error: any) {
+    console.error('Error fetching plugin:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch plugin', details: error.message },
+      { status: 500 }
+    )
+  }
 }
 
-
-
-
-export const GET = withErrorHandling(getHandler, 'GET GET /api/plugins/[slug]')
+export const GET = withErrorHandling(getHandler, 'GET /api/plugins/[slug]')

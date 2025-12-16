@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { queryPerformanceTracker } from '@/lib/query-performance'
 import { logger } from '@/lib/logger'
 import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError } from '@/lib/api-middleware'
+import { handleApiError, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
 import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 

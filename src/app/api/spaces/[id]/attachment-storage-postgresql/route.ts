@@ -2,17 +2,20 @@ import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from 
 import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/database'
+
 async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+  try {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const { id: spaceId } = await params
 
@@ -24,6 +27,7 @@ async function getHandler(
 
     if (memberResult.rows.length === 0) {
       return NextResponse.json({ error: 'Space not found or access denied' }, { status: 403 })
+    }
 
     const userRole = (memberResult.rows[0] as any).role
 
@@ -52,21 +56,28 @@ async function getHandler(
       provider: storage.provider,
       config: storage.config
     })
-
-
+  } catch (error: any) {
+    console.error('Error fetching attachment storage:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch storage config', details: error.message },
+      { status: 500 }
+    )
+  }
+}
 
 async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+  try {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     const userId = session?.user?.id || request.headers.get('x-user-id')
     
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+    }
 
     const { id: spaceId } = await params
     const { provider, config } = await request.json()
@@ -79,14 +90,17 @@ async function putHandler(
 
     if (memberResult.rows.length === 0) {
       return NextResponse.json({ error: 'Space not found or access denied' }, { status: 403 })
+    }
 
     const userRole = (memberResult.rows[0] as any).role
     if (!['owner', 'admin'].includes(userRole)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    }
 
     // Validate provider
     if (!['minio', 's3', 'sftp', 'ftp'].includes(provider)) {
       return NextResponse.json({ error: 'Invalid storage provider' }, { status: 400 })
+    }
 
     // Deactivate existing configurations
     await query(
@@ -107,7 +121,14 @@ async function putHandler(
       config: row.config,
       is_active: row.is_active
     })
+  } catch (error: any) {
+    console.error('Error updating attachment storage:', error)
+    return NextResponse.json(
+      { error: 'Failed to update storage config', details: error.message },
+      { status: 500 }
+    )
+  }
+}
 
-
-export const GET = withErrorHandling(getHandler, 'GET GET /api/spaces/[id]/attachment-storage-postgresql/route.ts')
-export const PUT = withErrorHandling(putHandler, 'PUT PUT /api/spaces/[id]/attachment-storage-postgresql/route.ts')
+export const GET = withErrorHandling(getHandler, 'GET /api/spaces/[id]/attachment-storage-postgresql')
+export const PUT = withErrorHandling(putHandler, 'PUT /api/spaces/[id]/attachment-storage-postgresql')

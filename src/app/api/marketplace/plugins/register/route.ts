@@ -9,10 +9,10 @@ import { logAPIRequest } from '@/shared/lib/security/audit-logger'
  * Only admins can run this
  */
 async function postHandler(request: NextRequest) {
+  try {
     const authResult = await requireAdmin()
     if (!authResult.success) return authResult.response
     const { session } = authResult
-
 
     // Only admins can register plugins
     if (session.user.role !== 'ADMIN') {
@@ -40,8 +40,4 @@ async function postHandler(request: NextRequest) {
   }
 }
 
-export const POST = withErrorHandling(postHandler, 'POST POST /api/marketplace/plugins/register')
-
-
-
-export const POST = withErrorHandling(postHandler, 'POST POST /api/marketplace\plugins\register\route.ts')
+export const POST = withErrorHandling(postHandler, 'POST /api/marketplace/plugins/register')

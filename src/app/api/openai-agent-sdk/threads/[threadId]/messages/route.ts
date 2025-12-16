@@ -11,14 +11,14 @@ async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ threadId: string }> }
 ) {
-  const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } 
+  try {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-
+    }
 
     const { threadId } = await params
 
@@ -41,12 +41,14 @@ async function getHandler(
 
     if (!thread) {
       return NextResponse.json({ error: 'Thread not found' }, { status: 404 })
+    }
 
     // Get API key from thread metadata or chatbot config
     const metadata = thread.metadata as any
     const apiKey = metadata?.apiKey
     if (!apiKey) {
       return NextResponse.json({ error: 'API key not found' }, { status: 404 })
+    }
 
     // Fetch messages from OpenAI API
     const openai = new OpenAI({ apiKey })
@@ -61,11 +63,17 @@ async function getHandler(
       role: msg.role,
       content: msg.content,
       created_at: msg.created_at,
-      traceId: msg.metadata?.traceId,
+      traceId: (msg.metadata as any)?.traceId,
     }))
 
     return NextResponse.json({ messages })
+  } catch (error: any) {
+    console.error('Error fetching messages:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch messages', details: error.message },
+      { status: 500 }
+    )
+  }
+}
 
-
-
-export const GET = withErrorHandling(getHandler, 'GET GET /api/openai-agent-sdk/threads/[threadId]/messages/route.ts')
+export const GET = withErrorHandling(getHandler, 'GET /api/openai-agent-sdk/threads/[threadId]/messages')

@@ -1564,10 +1564,7 @@ export function TicketDetailModalEnhanced({
                                   )
                                   if (response.ok) {
                                     const data = await response.json()
-                                    toast({
-                                      title: 'Search Results',
-                                      description: `Found ${data.total || 0} ticket(s)`,
-                                    })
+                                    showInfo(`Found ${data.total || 0} ticket(s)`)
                                     // In a full implementation, show results in a dialog
                                   }
                                 } catch (error) {

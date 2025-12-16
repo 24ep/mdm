@@ -10,10 +10,11 @@ async function getHandler(
 ) {
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const { id: idParam, versionId } = await params
     const notebookId = decodeURIComponent(idParam)
@@ -67,19 +68,17 @@ async function getHandler(
 }
 
 // POST: Restore a specific version (make it current)
-
-
 async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; versionId: string }> }
 ) {
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+    }
 
     const { id: idParam, versionId } = await params
     const notebookId = decodeURIComponent(idParam)
@@ -131,7 +130,5 @@ async function postHandler(
   }
 }
 
-
-
-export const GET = withErrorHandling(getHandler, 'GET GET /api/notebooks/[id]/versions/[versionId]/route.ts')
-export const POST = withErrorHandling(postHandler, 'POST POST /api/notebooks/[id]/versions/[versionId]/route.ts')
+export const GET = withErrorHandling(getHandler, 'GET /api/notebooks/[id]/versions/[versionId]')
+export const POST = withErrorHandling(postHandler, 'POST /api/notebooks/[id]/versions/[versionId]')

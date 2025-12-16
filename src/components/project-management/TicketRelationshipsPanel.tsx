@@ -104,11 +104,7 @@ export function TicketRelationshipsPanel({
       }
     } catch (error) {
       console.error('Failed to load relationships:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to load relationships',
-        variant: 'destructive'
-      })
+      showError('Failed to load relationships')
     } finally {
       setLoading(false)
     }

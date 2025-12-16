@@ -36,118 +36,121 @@ export async function POST(
   const authResult = await requireAuthWithId()
   if (!authResult.success) return authResult.response
   const { session } = authResult
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
-    const { slug } = await params
-    const serviceId = await resolveServiceId(slug)
-    
-    if (!serviceId) {
+  const { slug } = await params
+  const serviceId = await resolveServiceId(slug)
+  
+  if (!serviceId) {
+    return NextResponse.json(
+      { error: 'Plugin not found' },
+      { status: 404 }
+    )
+  }
+
+  const body = await request.json()
+  const { installationId, spaceId } = body
+
+  if (!installationId) {
+    return NextResponse.json(
+      { error: 'installationId is required' },
+      { status: 400 }
+    )
+  }
+
+  // Get installation
+  const installationResult = await query(
+    `SELECT 
+      si.id,
+      si.service_id,
+      si.space_id,
+      si.config,
+      si.status,
+      sr.slug,
+      sr.api_base_url,
+      sr.api_auth_type
+    FROM service_installations si
+    JOIN service_registry sr ON sr.id = si.service_id
+    WHERE si.id = $1 
+      AND si.installed_by = $2
+      AND si.deleted_at IS NULL`,
+    [installationId, session.user.id]
+  )
+
+  if (installationResult.rows.length === 0) {
+    return NextResponse.json(
+      { error: 'Installation not found' },
+      { status: 404 }
+    )
+  }
+
+  const installation = installationResult.rows[0]
+  const config = typeof installation.config === 'string' 
+    ? JSON.parse(installation.config) 
+    : installation.config
+
+  // Get credentials
+  const credentials = await retrieveCredentials(`installation:${installationId}`)
+
+  // Test connection based on service type
+  let success = false
+  let message = ''
+  let details: any = {}
+
+  switch (installation.slug) {
+    case 'power-bi':
+      success = await testPowerBIConnection(config, credentials, installation.api_auth_type)
+      message = success 
+        ? 'Power BI connection successful' 
+        : 'Power BI connection failed - check configuration'
+      break
+
+    case 'grafana':
+      success = await testGrafanaConnection(config, credentials)
+      message = success 
+        ? 'Grafana connection successful' 
+        : 'Grafana connection failed - check configuration'
+      break
+
+    case 'looker-studio':
+      success = await testLookerStudioConnection(config, credentials)
+      message = success 
+        ? 'Looker Studio connection successful' 
+        : 'Looker Studio connection failed - check configuration'
+      break
+
+    default:
       return NextResponse.json(
-        { error: 'Plugin not found' },
-        { status: 404 }
-      )
-    }
-
-    const body = await request.json()
-    const { installationId, spaceId } = body
-
-    if (!installationId) {
-      return NextResponse.json(
-        { error: 'installationId is required' },
+        { error: 'Unsupported service type' },
         { status: 400 }
       )
-    }
+  }
 
-    // Get installation
-    const installationResult = await query(
-      `SELECT 
-        si.id,
-        si.service_id,
-        si.space_id,
-        si.config,
-        si.status,
-        sr.slug,
-        sr.api_base_url,
-        sr.api_auth_type
-      FROM service_installations si
-      JOIN service_registry sr ON sr.id = si.service_id
-      WHERE si.id = $1 
-        AND si.installed_by = $2
-        AND si.deleted_at IS NULL`,
-      [installationId, session.user.id]
-    )
+  // Update installation health status
+  await query(
+    `UPDATE service_installations
+     SET health_status = $1, last_health_check = NOW(), updated_at = NOW()
+     WHERE id = $2`,
+    [success ? 'healthy' : 'unhealthy', installationId]
+  )
 
-    if (installationResult.rows.length === 0) {
-      return NextResponse.json(
-        { error: 'Installation not found' },
-        { status: 404 }
-      )
-    }
+  await logAPIRequest(
+    session.user.id,
+    'POST',
+    `/api/marketplace/plugins/${slug}/test`,
+    success ? 200 : 400,
+    spaceId || undefined
+  )
 
-    const installation = installationResult.rows[0]
-    const config = typeof installation.config === 'string' 
-      ? JSON.parse(installation.config) 
-      : installation.config
-
-    // Get credentials
-    const credentials = await retrieveCredentials(`installation:${installationId}`)
-
-    // Test connection based on service type
-    let success = false
-    let message = ''
-    let details: any = {}
-
-    switch (installation.slug) {
-      case 'power-bi':
-        success = await testPowerBIConnection(config, credentials, installation.api_auth_type)
-        message = success 
-          ? 'Power BI connection successful' 
-          : 'Power BI connection failed - check configuration'
-        break
-
-      case 'grafana':
-        success = await testGrafanaConnection(config, credentials)
-        message = success 
-          ? 'Grafana connection successful' 
-          : 'Grafana connection failed - check configuration'
-        break
-
-      case 'looker-studio':
-        success = await testLookerStudioConnection(config, credentials)
-        message = success 
-          ? 'Looker Studio connection successful' 
-          : 'Looker Studio connection failed - check configuration'
-        break
-
-      default:
-        return NextResponse.json(
-          { error: 'Unsupported service type' },
-          { status: 400 }
-        )
-    }
-
-    // Update installation health status
-    await query(
-      `UPDATE service_installations
-       SET health_status = $1, last_health_check = NOW(), updated_at = NOW()
-       WHERE id = $2`,
-      [success ? 'healthy' : 'unhealthy', installationId]
-    )
-
-    await logAPIRequest(
-      session.user.id,
-      'POST',
-      `/api/marketplace/plugins/${slug}/test`,
-      success ? 200 : 400,
-      spaceId || undefined
-    )
-
-    return NextResponse.json({
-      success,
-      message,
-      details,
-    })
+  return NextResponse.json({
+    success,
+    message,
+    details,
+  })
+}
 
 async function testPowerBIConnection(
   config: any,
@@ -235,4 +238,3 @@ async function testLookerStudioConnection(
     return false
   }
 }
-

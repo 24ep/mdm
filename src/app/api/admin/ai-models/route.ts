@@ -4,7 +4,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
-async function getHandler() {
+export async function GET(request: NextRequest) {
+  try {
     const authResult = await requireAuth()
     if (!authResult.success) return authResult.response
     const { session } = authResult
@@ -34,14 +35,17 @@ async function getHandler() {
     }))
 
     return NextResponse.json({ models: formattedModels })
+  } catch (error: any) {
+    console.error('Error fetching AI models:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch AI models', details: error.message },
+      { status: 500 }
+    )
+  }
 }
 
-
-
-
-
-
-async function postHandler(request: NextRequest) {
+export async function POST(request: NextRequest) {
+  try {
     const authResult = await requireAuth()
     if (!authResult.success) return authResult.response
     const { session } = authResult
@@ -77,9 +81,11 @@ async function postHandler(request: NextRequest) {
     }
 
     return NextResponse.json({ model: formattedModel })
+  } catch (error: any) {
+    console.error('Error creating AI model:', error)
+    return NextResponse.json(
+      { error: 'Failed to create AI model', details: error.message },
+      { status: 500 }
+    )
+  }
 }
-
-export const POST = withErrorHandling(postHandler, 'POST /api/admin/ai-models')
-
-
-export const GET = withErrorHandling(getHandler, 'GET GET /api/admin/ai-models')

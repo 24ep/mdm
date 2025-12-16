@@ -4,11 +4,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getUserPermissions, getUserRoleContext } from '@/lib/permission-checker'
 
 async function postHandler(request: NextRequest) {
+  try {
     const authResult = await requireAuth()
     if (!authResult.success) return authResult.response
     const { session } = authResult
-    // TODO: Add requireSpaceAccess check if spaceId is available
-
 
     const body = await request.json()
     const { permissionIds, spaceId } = body
@@ -29,17 +28,13 @@ async function postHandler(request: NextRequest) {
       hasPermission: hasAll,
       source: hasAll ? 'combined' : 'none'
     })
-  , { status: 500 })
+  } catch (error: any) {
+    console.error('Error checking permissions:', error)
+    return NextResponse.json(
+      { error: 'Failed to check permissions', details: error.message },
+      { status: 500 }
+    )
   }
 }
 
-export const POST = withErrorHandling(postHandler, 'POST POST /api/permissions/check-all')
-
-
-
-
-
-
-
-
-export const POST = withErrorHandling(postHandler, 'POST POST /api/permissions\check-all\route.ts')
+export const POST = withErrorHandling(postHandler, 'POST /api/permissions/check-all')

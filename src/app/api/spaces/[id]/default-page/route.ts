@@ -12,9 +12,10 @@ async function getHandler(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  const authResult = await requireAuth()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+  try {
+    const authResult = await requireAuth()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -37,6 +38,7 @@ async function getHandler(
     if (spaceResult.rows.length === 0) {
       logger.warn('Space not found for default page', { spaceSlugOrId })
       return NextResponse.json({ error: 'Space not found' }, { status: 404 })
+    }
 
     const spaceId = spaceResult.rows[0].id
 
@@ -100,10 +102,14 @@ async function getHandler(
       path: defaultPath,
       pageId: pageId
     })
+  } catch (error: any) {
+    const duration = Date.now() - startTime
+    logger.error('Error fetching default page', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch default page', details: error.message },
+      { status: 500 }
+    )
+  }
 }
 
-
-
-
-
-export const GET = withErrorHandling(getHandler, 'GET GET /api/spaces/[id]/default-page')
+export const GET = withErrorHandling(getHandler, 'GET /api/spaces/[id]/default-page')

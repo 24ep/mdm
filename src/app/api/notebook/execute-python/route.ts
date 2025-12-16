@@ -62,11 +62,12 @@ function isCodeSafe(code: string): { safe: boolean; reason?: string } {
 }
 
 async function postHandler(request: NextRequest) {
-  const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+  try {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
-  const userId = session.user.id
+    const userId = session.user.id
 
     // Rate limiting
     const rateLimit = checkRateLimit(userId)
@@ -225,7 +226,7 @@ with open('${outputFile.replace(/\\/g, '/')}', 'w') as f:
       { error: 'Internal server error', details: error.message },
       { status: 500 }
     )
+  }
 }
 
 export const POST = withErrorHandling(postHandler, 'POST /api/notebook/execute-python')
-

@@ -9,11 +9,13 @@ async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+  try {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const { id } = await params
 
@@ -54,6 +56,7 @@ async function getHandler(
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
+    }
 
     const row = result.rows[0]
     const ticket = {
@@ -80,18 +83,26 @@ async function getHandler(
     )
 
     return NextResponse.json({ ticket })
-
-
+  } catch (error: any) {
+    console.error('Error fetching ticket:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch ticket', details: error.message },
+      { status: 500 }
+    )
+  }
+}
 
 async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+  try {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const { id } = await params
     const body = await request.json()
@@ -163,7 +174,8 @@ async function putHandler(
     }
 
     if (updates.length === 0) {
-      return NextResponse.json({ error: 'No fields to update' }, { status: 500 })
+      return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
+    }
 
     updates.push(`updated_at = NOW()`)
     values.push(id)
@@ -179,6 +191,7 @@ async function putHandler(
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
+    }
 
     // Update space association if provided
     if (spaceId !== undefined) {
@@ -220,19 +233,26 @@ async function putHandler(
     )
 
     return NextResponse.json({ message: 'Ticket updated successfully' })
-
-
+  } catch (error: any) {
+    console.error('Error updating ticket:', error)
+    return NextResponse.json(
+      { error: 'Failed to update ticket', details: error.message },
+      { status: 500 }
+    )
+  }
+}
 
 async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+  try {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+    }
 
     const { id } = await params
 
@@ -261,6 +281,7 @@ async function deleteHandler(
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
+    }
 
     await logAPIRequest(
       session.user.id,
@@ -270,9 +291,15 @@ async function deleteHandler(
     )
 
     return NextResponse.json({ message: 'Ticket deleted successfully' })
+  } catch (error: any) {
+    console.error('Error deleting ticket:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete ticket', details: error.message },
+      { status: 500 }
+    )
+  }
+}
 
-
-
-export const GET = withErrorHandling(getHandler, 'GET GET /api/v1/tickets/[id]/route.ts')
-export const PUT = withErrorHandling(putHandler, 'PUT PUT /api/v1/tickets/[id]/route.ts')
-export const DELETE = withErrorHandling(deleteHandler, 'DELETE DELETE /api/v1/tickets/[id]/route.ts')
+export const GET = withErrorHandling(getHandler, 'GET /api/v1/tickets/[id]')
+export const PUT = withErrorHandling(putHandler, 'PUT /api/v1/tickets/[id]')
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/v1/tickets/[id]')

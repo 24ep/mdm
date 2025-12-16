@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
-import { checkAnySpaceAccess } from '@/lib/space-access'
+import { checkAnySpaceAccess, requireAnySpaceAccess } from '@/lib/space-access'
 import { db } from '@/lib/db'
 
 async function getHandler(request: NextRequest) {
@@ -59,10 +59,9 @@ async function getHandler(request: NextRequest) {
         })
       }
     } else {
-      // Check if user has access to all requested spaces
-      const accessResult = await checkAnySpaceAccess(spaceFilter, session.user.id!)
-      if (!accessResult.success) return accessResult.response
-      if (!accessResult.hasAccess) {
+      // Check if user has access to any of the requested spaces
+      const hasAccess = await checkAnySpaceAccess(spaceFilter, session.user.id!)
+      if (!hasAccess) {
         return NextResponse.json({ error: `Access denied to one or more spaces` }, { status: 403 })
       }
       accessibleSpaceIds = spaceFilter

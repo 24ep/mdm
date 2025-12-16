@@ -1,5 +1,4 @@
-import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
-import { requireSpaceAccess } from '@/lib/space-access'
+import { requireAdmin } from '@/lib/api-middleware'
 import { NextRequest, NextResponse } from 'next/server'
 import { decryptApiKey } from '@/lib/encryption'
 import { getSecretsManager } from '@/lib/secrets-manager'
@@ -10,23 +9,14 @@ import { db as prisma } from '@/lib/db'
  * GET /api/admin/ai-providers/[id]/key
  * Get decrypted API key for a provider (for 2-way sync with Chat UI)
  */
-async function getHandler(
+export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const authResult = await requireAuthWithId()
+    const authResult = await requireAdmin()
     if (!authResult.success) return authResult.response
     const { session } = authResult
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user has admin privileges
-    if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
 
     const { id } = await params
 
@@ -73,6 +63,3 @@ async function getHandler(
     return NextResponse.json({ error: 'Failed to fetch API key' }, { status: 500 })
   }
 }
-
-export const GET = withErrorHandling(getHandler, 'GET /api/admin/ai-providers/[id]/key')
-

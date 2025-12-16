@@ -9,12 +9,16 @@ import { z } from 'zod'
 async function getHandler(request: NextRequest) {
   const startTime = Date.now()
   const authResult = await requireAuthWithId()
-  if (!authResult.success) {
-    const userId = request.headers.get('x-user-id')
+  
+  let userId: string | null = null
+  
+  if (authResult.success) {
+    userId = authResult.session.user.id
+  } else {
+    // Fall back to x-user-id header if auth fails
+    userId = request.headers.get('x-user-id')
     if (!userId) return authResult.response
-    // Continue with userId from header if available
   }
-  const userId = authResult.session?.user?.id || request.headers.get('x-user-id')
   
   if (!userId) {
     return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
@@ -97,11 +101,15 @@ export const GET = withErrorHandling(getHandler, 'GET /api/files/notifications')
 async function putHandler(request: NextRequest) {
   const startTime = Date.now()
   const authResult = await requireAuthWithId()
-  if (!authResult.success) {
-    const userId = request.headers.get('x-user-id')
+  
+  let userId: string | null = null
+  
+  if (authResult.success) {
+    userId = authResult.session.user.id
+  } else {
+    userId = request.headers.get('x-user-id')
     if (!userId) return authResult.response
   }
-  const userId = authResult.session?.user?.id || request.headers.get('x-user-id')
   
   if (!userId) {
     return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
@@ -162,11 +170,15 @@ export const PUT = withErrorHandling(putHandler, 'PUT /api/files/notifications')
 async function deleteHandler(request: NextRequest) {
   const startTime = Date.now()
   const authResult = await requireAuthWithId()
-  if (!authResult.success) {
-    const userId = request.headers.get('x-user-id')
+  
+  let userId: string | null = null
+  
+  if (authResult.success) {
+    userId = authResult.session.user.id
+  } else {
+    userId = request.headers.get('x-user-id')
     if (!userId) return authResult.response
   }
-  const userId = authResult.session?.user?.id || request.headers.get('x-user-id')
   
   if (!userId) {
     return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))

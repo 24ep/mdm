@@ -3,86 +3,6 @@ import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 
-// POST: Get diff between two versions
-async function postHandler(request: NextRequest) {
-    const authResult = await requireAuth()
-    if (!authResult.success) return authResult.response
-    const { session } = authResult
-
-
-    const body = await request.json()
-    const { notebook_id, version1_id, version2_id } = body
-
-    if (!notebook_id || !version1_id || !version2_id) {
-      return NextResponse.json(
-        { error: 'notebook_id, version1_id, and version2_id are required' },
-        { status: 400 }
-      )
-    }
-
-    // Fetch both versions
-    const { rows: versions } = await query(
-      `SELECT id, version_number, notebook_data, created_at
-       FROM public.notebook_versions
-       WHERE notebook_id = $1::uuid AND (id = $2::uuid OR id = $3::uuid)
-       ORDER BY version_number ASC`,
-      [notebook_id, version1_id, version2_id]
-    )
-
-    if (versions.length !== 2) {
-      return NextResponse.json(
-        { error: 'One or both versions not found' },
-        { status: 404 }
-      )
-    }
-
-    const version1 = versions.find((v) => v.id === version1_id)
-    const version2 = versions.find((v) => v.id === version2_id)
-
-    if (!version1 || !version2) {
-      return NextResponse.json(
-        { error: 'Versions not found' },
-        { status: 404 }
-      )
-    }
-
-    const data1 = typeof version1.notebook_data === 'string'
-      ? JSON.parse(version1.notebook_data)
-      : version1.notebook_data
-    const data2 = typeof version2.notebook_data === 'string'
-      ? JSON.parse(version2.notebook_data)
-      : version2.notebook_data
-
-    // Calculate diff
-    const diff = calculateNotebookDiff(data1, data2)
-
-    return NextResponse.json({
-      success: true,
-      diff: {
-        version1: {
-          id: version1.id,
-          version_number: version1.version_number,
-          created_at: version1.created_at
-        },
-        version2: {
-          id: version2.id,
-          version_number: version2.version_number,
-          created_at: version2.created_at
-        },
-        changes: diff
-      }
-    })
-  } catch (error: any) {
-    console.error('Error calculating diff:', error)
-    return NextResponse.json(
-      { error: 'Failed to calculate diff', details: error.message },
-      { status: 500 }
-    )
-  }
-}
-
-export const POST = withErrorHandling(postHandler, 'POST POST /api/notebooks/[id]/versions/diff')
-
 interface NotebookDiff {
   cells_added: any[]
   cells_modified: Array<{
@@ -203,6 +123,82 @@ function calculateNotebookDiff(notebook1: any, notebook2: any): NotebookDiff {
   return diff
 }
 
+// POST: Get diff between two versions
+async function postHandler(request: NextRequest) {
+  try {
+    const authResult = await requireAuth()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
+    const body = await request.json()
+    const { notebook_id, version1_id, version2_id } = body
 
-export const POST = withErrorHandling(postHandler, 'POST POST /api/notebooks/[id]/versions/diff/route.ts')
+    if (!notebook_id || !version1_id || !version2_id) {
+      return NextResponse.json(
+        { error: 'notebook_id, version1_id, and version2_id are required' },
+        { status: 400 }
+      )
+    }
+
+    // Fetch both versions
+    const { rows: versions } = await query(
+      `SELECT id, version_number, notebook_data, created_at
+       FROM public.notebook_versions
+       WHERE notebook_id = $1::uuid AND (id = $2::uuid OR id = $3::uuid)
+       ORDER BY version_number ASC`,
+      [notebook_id, version1_id, version2_id]
+    )
+
+    if (versions.length !== 2) {
+      return NextResponse.json(
+        { error: 'One or both versions not found' },
+        { status: 404 }
+      )
+    }
+
+    const version1 = versions.find((v) => v.id === version1_id)
+    const version2 = versions.find((v) => v.id === version2_id)
+
+    if (!version1 || !version2) {
+      return NextResponse.json(
+        { error: 'Versions not found' },
+        { status: 404 }
+      )
+    }
+
+    const data1 = typeof version1.notebook_data === 'string'
+      ? JSON.parse(version1.notebook_data)
+      : version1.notebook_data
+    const data2 = typeof version2.notebook_data === 'string'
+      ? JSON.parse(version2.notebook_data)
+      : version2.notebook_data
+
+    // Calculate diff
+    const diff = calculateNotebookDiff(data1, data2)
+
+    return NextResponse.json({
+      success: true,
+      diff: {
+        version1: {
+          id: version1.id,
+          version_number: version1.version_number,
+          created_at: version1.created_at
+        },
+        version2: {
+          id: version2.id,
+          version_number: version2.version_number,
+          created_at: version2.created_at
+        },
+        changes: diff
+      }
+    })
+  } catch (error: any) {
+    console.error('Error calculating diff:', error)
+    return NextResponse.json(
+      { error: 'Failed to calculate diff', details: error.message },
+      { status: 500 }
+    )
+  }
+}
+
+export const POST = withErrorHandling(postHandler, 'POST /api/notebooks/[id]/versions/diff')

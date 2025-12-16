@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/database'
 import { logger } from '@/lib/logger'
 import { validateParams, validateBody, commonSchemas } from '@/lib/api-validation'
-import { handleApiError, requireAuthWithId} from '@/lib/api-middleware'
+import { handleApiError, requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
@@ -14,8 +14,8 @@ async function getHandler(
   const startTime = Date.now()
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user?.id) {
       return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
@@ -44,6 +44,7 @@ async function getHandler(
 
     if (accessResult.rows.length === 0) {
       return NextResponse.json({ error: 'Space not found or access denied' }, { status: 403 })
+    }
 
     // Get all versions for this space
     const versionsResult = await query(
@@ -73,7 +74,7 @@ async function getHandler(
       versions: versionsResult.rows,
       count: versionsResult.rows.length
     }))
-  } catch (error) {
+  } catch (error: any) {
     const duration = Date.now() - startTime
     logger.apiResponse('GET', request.nextUrl.pathname, 500, duration)
     return handleApiError(error, 'Layout Versions API GET')
@@ -81,8 +82,6 @@ async function getHandler(
 }
 
 // POST /api/spaces/[id]/layout/versions - Create a new version
-
-
 async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -90,12 +89,11 @@ async function postHandler(
   const startTime = Date.now()
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user?.id) {
       return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
-
 
     const resolvedParams = await params
     const paramValidation = validateParams(resolvedParams, z.object({
@@ -133,6 +131,7 @@ async function postHandler(
 
     if (accessResult.rows.length === 0) {
       return NextResponse.json({ error: 'Space not found or access denied' }, { status: 403 })
+    }
 
     // Get next version number
     const versionResult = await query(
@@ -164,14 +163,12 @@ async function postHandler(
       version: insertResult.rows[0],
       success: true
     }))
-  } catch (error) {
+  } catch (error: any) {
     const duration = Date.now() - startTime
     logger.apiResponse('POST', request.nextUrl.pathname, 500, duration)
     return handleApiError(error, 'Layout Versions API POST')
   }
 }
 
-
-
-export const GET = withErrorHandling(getHandler, 'GET GET /api/spaces/[id]/layout/versions/route.ts')
-export const POST = withErrorHandling(postHandler, 'POST POST /api/spaces/[id]/layout/versions/route.ts')
+export const GET = withErrorHandling(getHandler, 'GET /api/spaces/[id]/layout/versions')
+export const POST = withErrorHandling(postHandler, 'POST /api/spaces/[id]/layout/versions')

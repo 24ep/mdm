@@ -61,6 +61,11 @@ async function postHandler(
             { order: 'asc' },
             { createdAt: 'asc' }
           ]
+        },
+        spaces: {
+          select: {
+            spaceId: true
+          }
         }
       }
     })
@@ -73,9 +78,10 @@ async function postHandler(
       }, { status: 404 })
     }
 
-    // Check if user has access to the space
-    if (dataModel.spaceId) {
-      const accessResult = await requireSpaceAccess(dataModel.spaceId, session.user.id!)
+    // Check if user has access to any of the spaces the data model belongs to
+    if (dataModel.spaces && dataModel.spaces.length > 0) {
+      const spaceId = dataModel.spaces[0].spaceId
+      const accessResult = await requireSpaceAccess(spaceId, session.user.id!)
       if (!accessResult.success) return accessResult.response
     }
     

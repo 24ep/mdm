@@ -13,7 +13,7 @@ export interface UseFileDragDropOptions {
 
 export interface UseFileDragDropReturn {
   dragOver: boolean
-  fileInputRef: React.RefObject<HTMLInputElement>
+  fileInputRef: React.RefObject<HTMLInputElement | null>
   handleDrop: (e: React.DragEvent) => void
   handleDragOver: (e: React.DragEvent) => void
   handleDragLeave: (e: React.DragEvent) => void

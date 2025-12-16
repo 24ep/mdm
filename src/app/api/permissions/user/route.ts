@@ -5,14 +5,14 @@ import { getUserPermissions } from '@/lib/permission-checker'
 import { query } from '@/lib/db'
 
 async function getHandler(request: NextRequest) {
-  const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } 
+  try {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-
+    }
 
     const { searchParams } = new URL(request.url)
     const spaceId = searchParams.get('spaceId') || undefined
@@ -23,6 +23,7 @@ async function getHandler(request: NextRequest) {
       // Only admins can view other users' permissions
       if (!['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
     }
 
     // Get user's global role
@@ -33,6 +34,7 @@ async function getHandler(request: NextRequest) {
 
     if (userRows.length === 0) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
 
     const globalRole = userRows[0].role
 
@@ -63,6 +65,13 @@ async function getHandler(request: NextRequest) {
       spaceRole: context.spaceRole,
       spaceId: context.spaceId
     })
+  } catch (error: any) {
+    console.error('Error fetching user permissions:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch permissions', details: error.message },
+      { status: 500 }
+    )
+  }
+}
 
-
-export const GET = withErrorHandling(getHandler, 'GET GET /api/permissions\user\route.ts')
+export const GET = withErrorHandling(getHandler, 'GET /api/permissions/user')

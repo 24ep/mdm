@@ -8,7 +8,7 @@ import { z } from 'zod'
 
 async function getHandler(request: NextRequest) {
   const startTime = Date.now()
-  const authResult = await requireAuth()
+  const authResult = await requireAdmin()
   if (!authResult.success) return authResult.response
   const { session } = authResult
 

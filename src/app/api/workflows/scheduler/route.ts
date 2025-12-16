@@ -65,10 +65,10 @@ export async function POST(request: NextRequest) {
       executed_count: results.length,
       results
     })
-
   } catch (error) {
     console.error('Error in workflow scheduler:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 }
 
 async function checkSchedule(workflow: any): Promise<boolean> {

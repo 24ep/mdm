@@ -10,6 +10,7 @@ import { query } from '@/lib/db'
  * This unlocks the ability to create code-based plugins via UI
  */
 async function postHandler(request: NextRequest) {
+  try {
     const authResult = await requireAdmin()
     if (!authResult.success) return authResult.response
     const { session } = authResult
@@ -52,97 +53,96 @@ async function postHandler(request: NextRequest) {
     const pluginsDir = join(projectRoot, 'src', 'features', 'marketplace', 'plugins', slug)
 
     if (generateCodeFiles) {
-      
-        // Create plugin directory
-        await fs.mkdir(pluginsDir, { recursive: true })
+      // Create plugin directory
+      await fs.mkdir(pluginsDir, { recursive: true })
 
-        const pluginFilePath = join(pluginsDir, 'plugin.ts')
+      const pluginFilePath = join(pluginsDir, 'plugin.ts')
+      
+      // Check if plugin.ts already exists
+      let pluginFileExists = false
+      try {
+        await fs.access(pluginFilePath)
+        pluginFileExists = true
+        results.created.push(`Plugin file already exists: ${pluginFilePath} (skipped generation)`)
+      } catch {
+        // File doesn't exist, we'll create it
+        pluginFileExists = false
+      }
+
+      // Only generate if file doesn't exist
+      if (!pluginFileExists) {
+        // Generate plugin.ts file
+        const pluginContent = generatePluginFile({
+          slug,
+          name,
+          description,
+          version,
+          provider,
+          providerUrl,
+          category,
+          apiBaseUrl,
+          apiAuthType,
+          generateUIComponent,
+        })
+
+        await fs.writeFile(pluginFilePath, pluginContent, 'utf-8')
+        results.created.push(`Created: ${pluginFilePath}`)
+      }
+
+      // Generate UI component if requested
+      if (generateUIComponent) {
+        const componentsDir = join(pluginsDir, 'components')
+        await fs.mkdir(componentsDir, { recursive: true })
+
+        const componentName = slug
+          .split('-')
+          .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join('')
+
+        const componentFilePath = join(componentsDir, `${componentName}UI.tsx`)
         
-        // Check if plugin.ts already exists
-        let pluginFileExists = false
+        // Check if component already exists
+        let componentExists = false
         try {
-          await fs.access(pluginFilePath)
-          pluginFileExists = true
-          results.created.push(`Plugin file already exists: ${pluginFilePath} (skipped generation)`)
+          await fs.access(componentFilePath)
+          componentExists = true
+          results.created.push(`UI component already exists: ${componentFilePath} (skipped generation)`)
         } catch {
-          // File doesn't exist, we'll create it
-          pluginFileExists = false
+          // Component doesn't exist, we'll create it
+          componentExists = false
         }
 
-        // Only generate if file doesn't exist
-        if (!pluginFileExists) {
-          // Generate plugin.ts file
-          const pluginContent = generatePluginFile({
-            slug,
-            name,
-            description,
-            version,
-            provider,
-            providerUrl,
-            category,
-            apiBaseUrl,
-            apiAuthType,
-            generateUIComponent,
+        // Only generate if component doesn't exist
+        if (!componentExists) {
+          const componentContent = generateUIComponentFile({
+            componentName,
+            pluginName: name,
+            uiComponentType: uiComponentType || 'basic',
           })
 
-          await fs.writeFile(pluginFilePath, pluginContent, 'utf-8')
-          results.created.push(`Created: ${pluginFilePath}`)
+          await fs.writeFile(componentFilePath, componentContent, 'utf-8')
+          results.created.push(`Created: ${componentFilePath}`)
         }
+      }
 
-        // Generate UI component if requested
-        if (generateUIComponent) {
-          const componentsDir = join(pluginsDir, 'components')
-          await fs.mkdir(componentsDir, { recursive: true })
+      // Update index.ts to include the plugin (only if not already there)
+      const indexUpdated = await updatePluginIndex(slug, name)
+      if (indexUpdated) {
+        results.created.push('Updated src/features/marketplace/plugins/index.ts')
+      } else {
+        results.created.push('Plugin already in src/features/marketplace/plugins/index.ts')
+      }
 
-          const componentName = slug
-            .split('-')
-            .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join('')
-
-          const componentFilePath = join(componentsDir, `${componentName}UI.tsx`)
-          
-          // Check if component already exists
-          let componentExists = false
-          try {
-            await fs.access(componentFilePath)
-            componentExists = true
-            results.created.push(`UI component already exists: ${componentFilePath} (skipped generation)`)
-          } catch {
-            // Component doesn't exist, we'll create it
-            componentExists = false
-          }
-
-          // Only generate if component doesn't exist
-          if (!componentExists) {
-            const componentContent = generateUIComponentFile({
-              componentName,
-              pluginName: name,
-              uiComponentType: uiComponentType || 'basic',
-            })
-
-            await fs.writeFile(componentFilePath, componentContent, 'utf-8')
-            results.created.push(`Created: ${componentFilePath}`)
-          }
-        }
-
-        // Update index.ts to include the plugin (only if not already there)
-        const indexUpdated = await updatePluginIndex(slug, name)
-        if (indexUpdated) {
-          results.created.push('Updated src/features/marketplace/plugins/index.ts')
-        } else {
-          results.created.push('Plugin already in src/features/marketplace/plugins/index.ts')
-        }
-
-        // Automatically register the plugin in the database
-        // This works whether files were generated or already existed
-        try {
-          await registerPluginFromCode(slug)
-          results.created.push('Plugin automatically registered in database')
-        } catch (regError: any) {
-          results.errors.push(`Auto-registration failed: ${regError.message}`)
-          // Don't fail the whole operation if registration fails
-        }
-}
+      // Automatically register the plugin in the database
+      // This works whether files were generated or already existed
+      try {
+        await registerPluginFromCode(slug)
+        results.created.push('Plugin automatically registered in database')
+      } catch (regError: any) {
+        results.errors.push(`Auto-registration failed: ${regError.message}`)
+        // Don't fail the whole operation if registration fails
+      }
+    }
 
     return NextResponse.json({
       success: results.errors.length === 0,
@@ -199,10 +199,6 @@ function generatePluginFile(options: {
   },`
 
   return `import { PluginDefinition } from '../../types'
-
-
-
-
 
 export const ${slug.replace(/-/g, '')}Plugin: PluginDefinition = {
   id: '${slug}',
@@ -437,6 +433,4 @@ async function updatePluginIndex(slug: string, name: string): Promise<boolean> {
   }
 }
 
-
-
-export const POST = withErrorHandling(postHandler, 'POST POST POST /api/marketplace/plugins/generate-files')
+export const POST = withErrorHandling(postHandler, 'POST /api/marketplace/plugins/generate-files')

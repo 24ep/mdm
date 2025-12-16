@@ -5,10 +5,10 @@ import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
 async function postHandler(request: NextRequest) {
+  try {
     const authResult = await requireAuth()
     if (!authResult.success) return authResult.response
     const { session } = authResult
-
 
     const { key, bucket, expiresIn = 300 } = await request.json()
 
@@ -64,16 +64,13 @@ async function postHandler(request: NextRequest) {
       url: presignedUrl,
       expiresIn,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error generating presigned URL:', error)
     return NextResponse.json(
-      { error: 'Failed to generate presigned URL' },
+      { error: 'Failed to generate presigned URL', details: error.message },
       { status: 500 }
     )
   }
 }
 
-export const POST = withErrorHandling(postHandler, 'POST POST /api/s3/presigned-url')
-
-
-export const POST = withErrorHandling(postHandler, 'POST POST /api/s3\presigned-url\route.ts')
+export const POST = withErrorHandling(postHandler, 'POST /api/s3/presigned-url')

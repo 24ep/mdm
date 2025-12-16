@@ -16,12 +16,19 @@ interface AssistantHandlerOptions {
   conversationHistory?: any[]
   model?: string
   instructions?: string
+  reasoningEffort?: string
+  store?: boolean
+  vectorStoreId?: string
+  enableWebSearch?: boolean
+  enableCodeInterpreter?: boolean
+  enableComputerUse?: boolean
+  enableImageGeneration?: boolean
   requestStream?: boolean
   existingThreadId?: string
   chatbotId?: string
   spaceId?: string
   session?: any
-  threadMessages: any[]
+  threadMessages?: any[]
 }
 
 export async function handleAssistantRequest(options: AssistantHandlerOptions) {
@@ -113,7 +120,7 @@ export async function handleAssistantRequest(options: AssistantHandlerOptions) {
 
     if (threadId && chatbotId && session?.user?.id) {
       try {
-        const firstUserMessage = threadMessages.find((m: any) => m.role === 'user')
+        const firstUserMessage = threadMessages?.find((m: any) => m.role === 'user')
         const title = firstUserMessage?.content?.substring(0, 50) || 'New Conversation'
         
         await prisma.openAIAgentThread.create({
@@ -128,7 +135,7 @@ export async function handleAssistantRequest(options: AssistantHandlerOptions) {
               model,
               assistantId: agentId,
             },
-            messageCount: threadMessages.length,
+            messageCount: threadMessages?.length || 0,
             lastMessageAt: new Date(),
           },
         })

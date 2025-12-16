@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
             const themeListItem = {
                 id: theme.id,
                 name: theme.name,
-                description: theme.description,
+                description: theme.description ?? undefined,
                 themeMode: themeMode,
                 tags: theme.tags || [],
                 isActive: theme.isActive,
@@ -101,11 +101,11 @@ export async function GET(request: NextRequest) {
             }
             
             return themeListItem
-        }).filter((theme): theme is ThemeListItem => {
+        }).filter((theme) => {
             // Filter out invalid themes
             const validation = safeParseThemeListItem(theme)
             return validation.success
-        })
+        }) as ThemeListItem[]
 
         return NextResponse.json({ themes: themesWithPreview })
     } catch (error: any) {
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(
                 { 
                     error: 'Invalid theme input',
-                    details: inputValidation.error.errors
+                    details: inputValidation.error.issues
                 },
                 { status: 400 }
             )
@@ -187,7 +187,7 @@ export async function POST(request: NextRequest) {
                 return NextResponse.json(
                     { 
                         error: 'Invalid theme configuration',
-                        details: configValidation.error.errors
+                        details: configValidation.error.issues
                     },
                     { status: 400 }
                 )

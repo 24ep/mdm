@@ -1,27 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireAdmin } from '@/lib/api-middleware'
 import { query } from '@/lib/db'
 import { logAPIRequest } from '@/shared/lib/security/audit-logger'
 import { checkPermission } from '@/shared/lib/security/permission-checker'
 
-async function getHandler(request: NextRequest) {
-  const authResult = await requireAdmin()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+export async function GET(request: NextRequest) {
+  try {
+    const authResult = await requireAdmin()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
-  // Check permission (additional check if needed)
-  const permission = await checkPermission({
-    resource: 'analytics',
-    action: 'read',
-    spaceId: null,
-  })
+    // Check permission (additional check if needed)
+    const permission = await checkPermission({
+      resource: 'analytics',
+      action: 'read',
+      spaceId: null,
+    })
 
-  if (!permission.allowed) {
-    return NextResponse.json(
-      { error: 'Forbidden', reason: permission.reason },
-      { status: 403 }
-    )
-  }
+    if (!permission.allowed) {
+      return NextResponse.json(
+        { error: 'Forbidden', reason: permission.reason },
+        { status: 403 }
+      )
+    }
 
     const { searchParams } = new URL(request.url)
     const range = searchParams.get('range') || '7d'
@@ -180,6 +181,11 @@ async function getHandler(request: NextRequest) {
         avgDuration: parseFloat(row.avg_duration || '0'),
       })),
     })
+  } catch (error: any) {
+    console.error('Error fetching analytics:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch analytics', details: error.message },
+      { status: 500 }
+    )
+  }
 }
-
-export const GET = withErrorHandling(getHandler, 'GET /api/admin/analytics')

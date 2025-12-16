@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(
                 { 
                     error: 'Invalid theme configuration',
-                    details: configValidation.error.errors
+                    details: configValidation.error.issues
                 },
                 { status: 400 }
             )

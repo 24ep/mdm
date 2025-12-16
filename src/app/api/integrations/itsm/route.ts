@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
+import { requireAuthWithId, withErrorHandling, requireAuth } from '@/lib/api-middleware'
 import { requireSpaceAccess } from '@/lib/space-access'
 import { query } from '@/lib/db'
 import { getSecretsManager } from '@/lib/secrets-manager'

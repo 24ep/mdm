@@ -61,9 +61,10 @@ async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ instanceId: string }> }
 ) {
-  const authResult = await requireAuth()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+  try {
+    const authResult = await requireAuth()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
     const { instanceId } = await params
     const config = await getMinIOConfig(instanceId)
@@ -93,7 +94,7 @@ async function getHandler(
       },
       { status: 500 }
     )
+  }
 }
 
 export const GET = withErrorHandling(getHandler, 'GET /api/minio/[instanceId]/connection')
-

@@ -6,26 +6,30 @@ import { join } from 'path'
 import { existsSync } from 'fs'
 
 async function postHandler(request: NextRequest) {
-  const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+  try {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+    }
 
     const formData = await request.formData()
     const file = formData.get('favicon') as File
 
     if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 500 })
+      return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+    }
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
       return NextResponse.json({ error: 'Invalid file type' }, { status: 400 })
+    }
 
     // Validate file size (max 1MB)
     if (file.size > 1024 * 1024) {
-      return NextResponse.json({ error: 'File too large' }, { status: 500 })
+      return NextResponse.json({ error: 'File too large' }, { status: 400 })
+    }
 
     // Create uploads directory if it doesn't exist
     const uploadsDir = join(process.cwd(), 'uploads', 'favicons')
@@ -52,6 +56,10 @@ async function postHandler(request: NextRequest) {
       url: publicUrl,
       filename 
     })
+  } catch (error: any) {
+    console.error('Error uploading favicon:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
 
-
-export const POST = withErrorHandling(postHandler, 'POST POST /api/upload\favicon\route.ts')
+export const POST = withErrorHandling(postHandler, 'POST /api/upload/favicon')

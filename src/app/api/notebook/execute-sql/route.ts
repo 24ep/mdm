@@ -34,41 +34,40 @@ function checkRateLimit(userId: string): { allowed: boolean; remaining: number }
 
 async function postHandler(request: NextRequest) {
   const startTime = Date.now()
-  let connectionId: string = 'default'
 
   const authResult = await requireAuthWithId()
   if (!authResult.success) return authResult.response
   const { session } = authResult
 
   const userId = session.user.id!
-    logger.apiRequest('POST', '/api/notebook/execute-sql', { userId })
+  logger.apiRequest('POST', '/api/notebook/execute-sql', { userId })
 
-    // Rate limiting
-    const rateLimit = checkRateLimit(userId)
-    if (!rateLimit.allowed) {
-      logger.warn('Rate limit exceeded for SQL execution', { userId })
-      return NextResponse.json(
-        { 
-          error: 'Rate limit exceeded. Please wait before executing more queries.',
-          rateLimit: { remaining: 0, resetTime: RATE_LIMIT_WINDOW }
-        },
-        { status: 429 }
-      )
-    }
+  // Rate limiting
+  const rateLimit = checkRateLimit(userId)
+  if (!rateLimit.allowed) {
+    logger.warn('Rate limit exceeded for SQL execution', { userId })
+    return NextResponse.json(
+      { 
+        error: 'Rate limit exceeded. Please wait before executing more queries.',
+        rateLimit: { remaining: 0, resetTime: RATE_LIMIT_WINDOW }
+      },
+      { status: 429 }
+    )
+  }
 
-    const bodySchema = z.object({
-      query: z.string().min(1),
-      connection: z.string().uuid().optional().nullable(),
-      spaceId: z.string().uuid().optional().nullable(),
-    })
+  const bodySchema = z.object({
+    query: z.string().min(1),
+    connection: z.string().uuid().optional().nullable(),
+    spaceId: z.string().uuid().optional().nullable(),
+  })
 
-    const bodyValidation = await validateBody(request, bodySchema)
-    if (!bodyValidation.success) {
-      return bodyValidation.response
-    }
+  const bodyValidation = await validateBody(request, bodySchema)
+  if (!bodyValidation.success) {
+    return bodyValidation.response
+  }
 
-    const { query: sqlQuery, connection, spaceId } = bodyValidation.data
-    const connectionId = connection || 'default'
+  const { query: sqlQuery, connection, spaceId } = bodyValidation.data
+  const connectionId = connection || 'default'
 
     // Validate query
     const validation = await sqlExecutor.validateQuery(sqlQuery.trim())

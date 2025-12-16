@@ -12,11 +12,13 @@ async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+  try {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const { id: spaceId } = await params
     const body = await request.json()
@@ -31,45 +33,56 @@ async function postHandler(
 
     if (!spaceMember) {
       return NextResponse.json({ error: 'Space not found or access denied' }, { status: 403 })
+    }
 
     // Check if user has admin/owner role
     if (!['ADMIN', 'OWNER'].includes(spaceMember.role)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+    }
 
     const { provider, config } = body
     
     if (!provider || !config) {
       return NextResponse.json({ error: 'Provider and config are required' }, { status: 400 })
+    }
 
     const providerConfig = config[provider]
     if (!providerConfig) {
-      return NextResponse.json({ error: `Invalid provider: ${provider}` }}
+      return NextResponse.json({ error: `Invalid provider: ${provider}` }, { status: 400 })
+    }
 
     // Test connection based on provider
     let testResult
     
-    try {
-      switch (provider) {
-        case 'minio':
-          testResult = await testMinIOConnection(providerConfig)
-          break
-        case 's3':
-          testResult = await testS3Connection(providerConfig)
-          break
-        case 'sftp':
-          testResult = await testSFTPConnection(providerConfig)
-          break
-        case 'ftp':
-          testResult = await testFTPConnection(providerConfig)
-          break
-        default:
-          return NextResponse.json({ error: `Unsupported provider: ${provider}` }}
+    switch (provider) {
+      case 'minio':
+        testResult = await testMinIOConnection(providerConfig)
+        break
+      case 's3':
+        testResult = await testS3Connection(providerConfig)
+        break
+      case 'sftp':
+        testResult = await testSFTPConnection(providerConfig)
+        break
+      case 'ftp':
+        testResult = await testFTPConnection(providerConfig)
+        break
+      default:
+        return NextResponse.json({ error: `Unsupported provider: ${provider}` }, { status: 400 })
+    }
 
-      return NextResponse.json(testResult)
+    return NextResponse.json(testResult)
+  } catch (error: any) {
+    console.error('Error testing storage connection:', error)
+    return NextResponse.json(
+      { error: 'Failed to test connection', details: error.message },
+      { status: 500 }
+    )
+  }
+}
 
+export const POST = withErrorHandling(postHandler, 'POST /api/spaces/[id]/attachment-storage/test')
 
-
-export const POST = withErrorHandling(postHandler, '
 async function testMinIOConnection(config: any) {
   try {
     const requiredFields = ['endpoint', 'access_key', 'secret_key', 'bucket']
@@ -179,9 +192,15 @@ async function testSFTPConnection(config: any) {
 
     // Dynamic import for optional dependency
     if (!SftpClient) {
-      // @ts-ignore - ssh2-sftp-client doesn't have type definitions
-      const sftpModule = await import('ssh2-sftp-client')
-      SftpClient = sftpModule.Client
+      try {
+        const sftpModule = await import('ssh2-sftp-client')
+        SftpClient = sftpModule.default
+      } catch {
+        return {
+          success: false,
+          error: 'SFTP client not available. Please install ssh2-sftp-client package.'
+        }
+      }
     }
 
     const sftp = new SftpClient()
@@ -200,11 +219,11 @@ async function testSFTPConnection(config: any) {
       const uploadPath = config.path || '/uploads'
       try {
         await sftp.list(uploadPath)
-      } catch (listError) {
+      } catch {
         // If directory doesn't exist, try to create it
         try {
           await sftp.mkdir(uploadPath, true)
-        } catch (mkdirError) {
+        } catch {
           return {
             success: false,
             error: `Cannot access or create upload directory: ${uploadPath}`
@@ -242,9 +261,15 @@ async function testFTPConnection(config: any) {
 
     // Dynamic import for optional dependency
     if (!FtpClient) {
-      // @ts-ignore - ftp doesn't have type definitions
-      const ftpModule = await import('ftp')
-      FtpClient = ftpModule.Client
+      try {
+        const ftpModule = await import('ftp')
+        FtpClient = ftpModule.default
+      } catch {
+        return {
+          success: false,
+          error: 'FTP client not available. Please install ftp package.'
+        }
+      }
     }
 
     return new Promise((resolve) => {

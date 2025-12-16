@@ -10,10 +10,12 @@ async function getHandler(
 ) {
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const { id: idParam, scheduleId } = await params
     const notebookId = decodeURIComponent(idParam)
@@ -45,18 +47,18 @@ async function getHandler(
 }
 
 // PUT: Update a schedule
-
-
 async function putHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; scheduleId: string }> }
 ) {
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const { id: idParam, scheduleId } = await params
     const notebookId = decodeURIComponent(idParam)
@@ -154,18 +156,18 @@ async function putHandler(
 }
 
 // DELETE: Delete a schedule
-
-
 async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; scheduleId: string }> }
 ) {
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const { id: idParam, scheduleId } = await params
     const notebookId = decodeURIComponent(idParam)
@@ -198,19 +200,18 @@ async function deleteHandler(
 }
 
 // POST: Execute schedule immediately (run now)
-
-
 async function postHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; scheduleId: string }> }
 ) {
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+    
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+    }
 
     const { id: idParam, scheduleId } = await params
     const notebookId = decodeURIComponent(idParam)
@@ -246,9 +247,7 @@ async function postHandler(
   }
 }
 
-
-
-export const GET = withErrorHandling(getHandler, 'GET GET /api/notebooks/[id]/schedules/[scheduleId]/route.ts')
-export const PUT = withErrorHandling(putHandler, 'PUT PUT /api/notebooks/[id]/schedules/[scheduleId]/route.ts')
-export const DELETE = withErrorHandling(deleteHandler, 'DELETE DELETE /api/notebooks/[id]/schedules/[scheduleId]/route.ts')
-export const POST = withErrorHandling(postHandler, 'POST POST /api/notebooks/[id]/schedules/[scheduleId]/route.ts')
+export const GET = withErrorHandling(getHandler, 'GET /api/notebooks/[id]/schedules/[scheduleId]')
+export const PUT = withErrorHandling(putHandler, 'PUT /api/notebooks/[id]/schedules/[scheduleId]')
+export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/notebooks/[id]/schedules/[scheduleId]')
+export const POST = withErrorHandling(postHandler, 'POST /api/notebooks/[id]/schedules/[scheduleId]')

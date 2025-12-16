@@ -5,6 +5,7 @@ import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { validateParams, validateBody, validateQuery, commonSchemas } from '@/lib/api-validation'
 import { z } from 'zod'
+import { addSecurityHeaders } from '@/lib/security-headers'
 
 async function getHandler(
   request: NextRequest,

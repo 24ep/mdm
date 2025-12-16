@@ -4,9 +4,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getLangfuseClient, isLangfuseEnabled } from '@/lib/langfuse'
 
 async function postHandler(request: NextRequest) {
-  const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+  try {
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
+
     const body = await request.json()
     const { 
       agentId, 
@@ -18,9 +20,7 @@ async function postHandler(request: NextRequest) {
       chatbotId,
       threadId,
       traceId, // Optional: Langfuse trace ID if available
-    }
-
-export const POST = withErrorHandling(postHandler, '
+    } = body
 
     if (!agentId || !apiKey || !messageId) {
       return NextResponse.json(
@@ -140,4 +140,28 @@ export const POST = withErrorHandling(postHandler, '
             message: 'Feedback recorded locally (API endpoint not available)',
             note: 'Feedback has been logged but not sent to OpenAI API'
           })
+        }
+      } catch (error) {
+        console.error('Error sending feedback:', error)
+        return NextResponse.json(
+          { error: 'Failed to send feedback' },
+          { status: 500 }
+        )
+      }
+    }
 
+    // For assistants
+    return NextResponse.json({
+      success: true,
+      message: 'Feedback recorded for assistant'
+    })
+  } catch (error: any) {
+    console.error('Error processing feedback:', error)
+    return NextResponse.json(
+      { error: 'Failed to process feedback', details: error.message },
+      { status: 500 }
+    )
+  }
+}
+
+export const POST = withErrorHandling(postHandler, 'POST /api/openai-agent-sdk/feedback')

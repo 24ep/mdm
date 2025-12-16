@@ -15,7 +15,7 @@ import { withTracing } from './tracing-middleware'
  */
 export type ApiHandler<T = any> = (
   request: NextRequest,
-  context: T & { session: any }
+  context: T & { session?: any }
 ) => Promise<NextResponse> | NextResponse
 
 /**
@@ -42,7 +42,7 @@ export async function getSession() {
  * Use this when you only need to check if user is logged in
  */
 export async function requireAuth(): Promise<
-  | { success: true; session: NonNullable<Awaited<ReturnType<typeof getServerSession>>> }
+  | { success: true; session: NonNullable<Awaited<ReturnType<typeof getServerSession>>> & { user: { id: string; role?: string; email?: string; name?: string } } }
   | { success: false; response: NextResponse }
 > {
   const session = await getServerSession(authOptions)
@@ -54,7 +54,7 @@ export async function requireAuth(): Promise<
     }
   }
   
-  return { success: true, session }
+  return { success: true, session: session as any }
 }
 
 /**
@@ -63,7 +63,7 @@ export async function requireAuth(): Promise<
  * Use this when you need the user ID (most common case)
  */
 export async function requireAuthWithId(): Promise<
-  | { success: true; session: NonNullable<Awaited<ReturnType<typeof getServerSession>>> & { user: { id: string } } }
+  | { success: true; session: NonNullable<Awaited<ReturnType<typeof getServerSession>>> & { user: { id: string; role?: string; email?: string; name?: string } } }
   | { success: false; response: NextResponse }
 > {
   const session = await getServerSession(authOptions)
@@ -83,7 +83,7 @@ export async function requireAuthWithId(): Promise<
  * Returns session if user is admin, or error response if not
  */
 export async function requireAdmin(): Promise<
-  | { success: true; session: NonNullable<Awaited<ReturnType<typeof getServerSession>>> & { user: { id: string; role: string } } }
+  | { success: true; session: NonNullable<Awaited<ReturnType<typeof getServerSession>>> & { user: { id: string; role: string; name?: string; email?: string } } }
   | { success: false; response: NextResponse }
 > {
   const authResult = await requireAuthWithId()
@@ -110,11 +110,12 @@ export async function requireAdmin(): Promise<
  * @deprecated Use requireAuth() or requireAuthWithId() directly for better control
  */
 export function withAuth<T = {}>(handler: ApiHandler<T & ApiContext>) {
-  return async (request: NextRequest, context: T) => {
+  return async (request: NextRequest, ...args: any[]) => {
     const authResult = await requireAuthWithId()
     if (!authResult.success) return authResult.response
     
     const { session } = authResult
+    const context = (args[0] || {}) as T
     
     return handler(request, {
       ...context,
@@ -156,16 +157,41 @@ export function handleApiError(
 
 /**
  * Wrapper to add error handling to API handlers
+ * Works for both routes with and without params
  */
-export function withErrorHandling<T = {}>(
-  handler: ApiHandler<T>,
+// Overload for routes without params
+export function withErrorHandling(
+  handler: (request: NextRequest) => Promise<NextResponse> | NextResponse,
+  context?: string
+): (request: NextRequest) => Promise<NextResponse>;
+// Overload for routes with params
+export function withErrorHandling<T extends { params: Promise<any> }>(
+  handler: (request: NextRequest, context: T) => Promise<NextResponse> | NextResponse,
+  context?: string
+): (request: NextRequest, context: T) => Promise<NextResponse>;
+// Implementation
+export function withErrorHandling<T extends { params: Promise<any> } | undefined>(
+  handler: ((request: NextRequest) => Promise<NextResponse> | NextResponse) | ((request: NextRequest, context: T) => Promise<NextResponse> | NextResponse),
   context?: string
 ) {
-  return async (request: NextRequest, contextData: T) => {
-    try {
-      return await handler(request, contextData as T & { session: any })
-    } catch (error) {
-      return handleApiError(error, context)
+  // Check if handler expects 1 or 2 parameters based on function length
+  if (handler.length === 1) {
+    // Handler only takes request
+    return async (request: NextRequest) => {
+      try {
+        return await (handler as (request: NextRequest) => Promise<NextResponse>)(request)
+      } catch (error) {
+        return handleApiError(error, context)
+      }
+    }
+  } else {
+    // Handler takes request and context
+    return async (request: NextRequest, contextData: T) => {
+      try {
+        return await (handler as (request: NextRequest, context: T) => Promise<NextResponse>)(request, contextData)
+      } catch (error) {
+        return handleApiError(error, context)
+      }
     }
   }
 }

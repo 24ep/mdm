@@ -31,7 +31,7 @@ async function getHandler(request: NextRequest) {
     success: true,
     session: {
       user: session.user,
-      expires: session.expires
+      expires: (session as any).expires
     },
     userRole: userRole,
     dbUsers: result.rows,

@@ -48,9 +48,10 @@ async function handleGatewayRequest(
   params: { slug: string; path: string[] },
   method: string
 ) {
-  const authResult = await requireAuth()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+  try {
+    const authResult = await requireAuth()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
     const { slug, path } = params
     const installationId = request.nextUrl.searchParams.get('installationId')
@@ -70,6 +71,7 @@ async function handleGatewayRequest(
 
     if (pluginResult.rows.length === 0) {
       return NextResponse.json({ error: 'Plugin not found' }, { status: 404 })
+    }
 
     const row = pluginResult.rows[0]
     const plugin = {
@@ -121,5 +123,11 @@ async function handleGatewayRequest(
       status: response.status,
       headers: responseHeaders,
     })
+  } catch (error: any) {
+    console.error('Error in plugin gateway:', error)
+    return NextResponse.json(
+      { error: 'Gateway error', details: error.message },
+      { status: 500 }
+    )
+  }
 }
-
