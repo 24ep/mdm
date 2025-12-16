@@ -45,7 +45,7 @@ services:
       - redis
       - plugin-hub
     networks:
-      - mdm-network
+      - mdm-overlay-network
 
   # Plugin Hub Service
   plugin-hub:
@@ -68,7 +68,7 @@ services:
       - ./plugin-hub/plugins:/app/plugins
     # restart: unless-stopped
     networks:
-      - mdm-network
+      - mdm-overlay-network
     healthcheck:
       test: [ "CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3001/api/plugins || curl -f http://localhost:3001/api/plugins || exit 1" ]
       interval: 30s
@@ -93,7 +93,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - mdm-network
+      - mdm-overlay-network
 
   # Database initialization is now handled by docker-entrypoint.sh in the app container
   # This runs automatically when the app starts for the first time
@@ -116,7 +116,7 @@ services:
     ports:
       - "8302:3000"
     networks:
-      - mdm-network
+      - mdm-overlay-network
 
   # MinIO (S3 compatible)
   minio:
@@ -131,7 +131,7 @@ services:
     volumes:
       - minio_data:/data
     networks:
-      - mdm-network
+      - mdm-overlay-network
 
   # HashiCorp Vault
   vault:
@@ -152,7 +152,7 @@ services:
     # command: vault server -config=/vault/config/vault.hcl
     # and mount a config file
     networks:
-      - mdm-network
+      - mdm-overlay-network
 
   # Redis (for rate limiting and caching in agent SDK)
   redis:
@@ -168,7 +168,7 @@ services:
       timeout: 3s
       retries: 3
     networks:
-      - mdm-network
+      - mdm-overlay-network
 
 volumes:
   postgres_db:
@@ -179,5 +179,5 @@ volumes:
 
 
 networks:
-  mdm-network:
+  mdm-overlay-network:
     driver: overlay
