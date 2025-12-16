@@ -22,22 +22,32 @@ export function getThemeComponentKey(componentType: string): string | null {
   return mapping[componentType] || null
 }
 
+// UUID validation regex
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function isValidUUID(id: string): boolean {
+  return UUID_REGEX.test(id)
+}
+
 /**
  * Gets component style from user's selected theme or active theme config
  * Returns a ComponentStyle object compatible with widget properties
  */
 export async function getThemeComponentStyle(componentType: string): Promise<ComponentStyle | undefined> {
   try {
-    // First, check for user's selected theme from localStorage
-    const userSelectedThemeId = typeof window !== 'undefined' ? localStorage.getItem(THEME_STORAGE_KEYS.VARIANT_ID) : null
+    // Check for stored database theme ID (must be a valid UUID)
+    const storedDbThemeId = typeof window !== 'undefined' 
+      ? localStorage.getItem(THEME_STORAGE_KEYS.DATABASE_THEME_ID) 
+      : null
     
     let themeToUse = null
     
-    if (userSelectedThemeId) {
-      // Fetch user's selected theme
-      const userThemeResponse = await fetch(`/api/themes/${userSelectedThemeId}`)
+    // Only try to fetch if we have a valid UUID
+    if (storedDbThemeId && isValidUUID(storedDbThemeId)) {
+      const userThemeResponse = await fetch(`/api/themes/${storedDbThemeId}`)
       if (userThemeResponse.ok) {
-        themeToUse = await userThemeResponse.json()
+        const data = await userThemeResponse.json()
+        themeToUse = data.theme
       }
     }
     
@@ -47,7 +57,16 @@ export async function getThemeComponentStyle(componentType: string): Promise<Com
       if (!response.ok) return undefined
       
       const data = await response.json()
-      themeToUse = data.themes?.find((t: any) => t.isActive)
+      const activeTheme = data.themes?.find((t: any) => t.isActive)
+      
+      // Fetch full theme details
+      if (activeTheme?.id && isValidUUID(activeTheme.id)) {
+        const themeResponse = await fetch(`/api/themes/${activeTheme.id}`)
+        if (themeResponse.ok) {
+          const themeData = await themeResponse.json()
+          themeToUse = themeData.theme
+        }
+      }
     }
     
     if (!themeToUse || !themeToUse.config) return undefined
