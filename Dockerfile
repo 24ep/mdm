@@ -41,6 +41,8 @@ ENV NEXT_PUBLIC_WS_PROXY_PORT=${NEXT_PUBLIC_WS_PROXY_PORT}
 ENV NODE_ENV=production
 ENV DOCKER_BUILD=true
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXTAUTH_SECRET="dummy_secret_at_least_32_characters_long_for_build"
+ENV LANGFUSE_HOST="http://dummy-langfuse-host.com"
 # Reduce build resource usage
 ENV CI=true
 
