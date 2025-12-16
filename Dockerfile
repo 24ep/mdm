@@ -9,14 +9,14 @@ COPY prisma ./prisma
 RUN --mount=type=cache,target=/root/.npm \
     --mount=type=cache,target=/app/node_modules/.cache \
     if [ -f package-lock.json ]; then \
-      sed -i.bak '/@next\/swc-win32/d' package-lock.json 2>/dev/null || true; \
+    sed -i.bak '/@next\/swc-win32/d' package-lock.json 2>/dev/null || true; \
     fi && \
     npm config set maxsockets 1 && \
     npm config set fetch-retries 2 && \
     npm config set fetch-retry-mintimeout 20000 && \
     npm config set fetch-retry-maxtimeout 120000 && \
     (npm ci --prefer-offline --no-audit --legacy-peer-deps 2>/dev/null || \
-     npm install --no-audit --legacy-peer-deps)
+    npm install --no-audit --legacy-peer-deps)
 
 # Build application
 FROM base AS builder
@@ -33,7 +33,7 @@ COPY sql ./sql
 ARG NEXT_PUBLIC_API_URL=http://localhost:8302
 ARG NEXT_PUBLIC_WS_PROXY_URL=ws://localhost:3002/api/openai-realtime
 ARG NEXT_PUBLIC_WS_PROXY_PORT=3002
-ARG BUILD_MEMORY_LIMIT=1536
+ARG BUILD_MEMORY_LIMIT=4096
 
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NEXT_PUBLIC_WS_PROXY_URL=${NEXT_PUBLIC_WS_PROXY_URL}
