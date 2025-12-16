@@ -45,7 +45,7 @@ services:
       - redis
       - plugin-hub
     networks:
-      - mdm-overlay-network
+      - mdm-network
 
   # Plugin Hub Service
   plugin-hub:
@@ -55,7 +55,7 @@ services:
       dockerfile: Dockerfile
       args:
         - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8302}
-    # container_name: mdm-plugin-hub
+    container_name: mdm-plugin-hub
     ports:
       - "8308:3001"
     environment:
@@ -66,9 +66,9 @@ services:
     volumes:
       # Mount plugins directory for persistence
       - ./plugin-hub/plugins:/app/plugins
-    # restart: unless-stopped
+    restart: unless-stopped
     networks:
-      - mdm-overlay-network
+      - mdm-network
     healthcheck:
       test: [ "CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3001/api/plugins || curl -f http://localhost:3001/api/plugins || exit 1" ]
       interval: 30s
@@ -93,7 +93,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - mdm-overlay-network
+      - mdm-network
 
   # Database initialization is now handled by docker-entrypoint.sh in the app container
   # This runs automatically when the app starts for the first time
@@ -116,7 +116,7 @@ services:
     ports:
       - "8302:3000"
     networks:
-      - mdm-overlay-network
+      - mdm-network
 
   # MinIO (S3 compatible)
   minio:
@@ -131,7 +131,7 @@ services:
     volumes:
       - minio_data:/data
     networks:
-      - mdm-overlay-network
+      - mdm-network
 
   # HashiCorp Vault
   vault:
@@ -152,7 +152,7 @@ services:
     # command: vault server -config=/vault/config/vault.hcl
     # and mount a config file
     networks:
-      - mdm-overlay-network
+      - mdm-network
 
   # Redis (for rate limiting and caching in agent SDK)
   redis:
@@ -168,7 +168,7 @@ services:
       timeout: 3s
       retries: 3
     networks:
-      - mdm-overlay-network
+      - mdm-network
 
 volumes:
   postgres_db:
@@ -179,5 +179,5 @@ volumes:
 
 
 networks:
-  mdm-overlay-network:
-    driver: overlay
+  mdm-network:
+    driver: bridge
