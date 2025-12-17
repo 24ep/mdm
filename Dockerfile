@@ -6,8 +6,9 @@ WORKDIR /app
 FROM base AS deps
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma
-RUN npm ci --prefer-offline --no-audit --legacy-peer-deps 2>/dev/null || \
-    npm install --no-audit --legacy-peer-deps
+ENV NODE_ENV=development
+RUN npm ci --prefer-offline --no-audit --legacy-peer-deps --include=dev 2>/dev/null || \
+    npm install --no-audit --legacy-peer-deps --include=dev
 
 # Build application
 FROM base AS builder
