@@ -38,12 +38,18 @@ services:
       # volumes:
       # - ./uploads:/app/uploads
     depends_on:
-      - postgres-db
-      - postgrest-api
-      - minio
-      - vault
-      - redis
-      - plugin-hub
+      postgres-db:
+        condition: service_healthy
+      postgrest-api:
+        condition: service_started
+      minio:
+        condition: service_started
+      vault:
+        condition: service_started
+      redis:
+        condition: service_healthy
+      plugin-hub:
+        condition: service_started
     deploy:
       resources:
         limits:
@@ -166,11 +172,11 @@ services:
     image: redis:7-alpine
     ports:
       - "8307:6379"
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --requirepass "redispassword"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: [ "CMD", "redis-cli", "-a", "redispassword", "ping" ]
       interval: 10s
       timeout: 3s
       retries: 3

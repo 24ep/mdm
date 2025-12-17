@@ -22,7 +22,7 @@ echo "Connecting to database at $DB_HOST:$DB_PORT..."
 
 MAX_WAIT=120
 WAITED=0
-until pg_isready -h "$DB_HOST" -U "$DB_USER" -p "$DB_PORT" > /dev/null 2>&1; do
+until pg_isready -h "$DB_HOST" -U "$DB_USER" -p "$DB_PORT"; do
   if [ $WAITED -ge $MAX_WAIT ]; then
     echo "⚠️  Database did not become ready within $MAX_WAIT seconds. Continuing anyway..."
     break

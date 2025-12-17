@@ -41,6 +41,7 @@ ENV CI=true
 ENV npm_config_maxsockets=2
 # Limit webpack parallelism
 ENV WEBPACK_PARALLELISM=2
+RUN npm install -g cross-env
 
 RUN --mount=type=cache,target=/app/.next/cache \
     --mount=type=cache,target=/app/node_modules/.cache \
