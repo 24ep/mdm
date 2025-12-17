@@ -17,8 +17,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
     // TypeScript will show all errors, build will continue to collect all errors
   },
-    // TypeScript will show all errors, build will continue to collect all errors
-  },
+
   // Disable output file tracing for local builds to avoid Windows permission issues
   // Disable output file tracing for local builds to avoid Windows permission issues
   output: process.env.NODE_ENV === 'production' && process.env.DOCKER_BUILD ? 'standalone' : undefined,
