@@ -17,6 +17,10 @@ const nextConfig = {
     ignoreBuildErrors: true,
     // TypeScript will show all errors, build will continue to collect all errors
   },
+  eslint: {
+    // Disable linting during build to save memory and start faster
+    ignoreDuringBuilds: true,
+  },
   // Disable output file tracing for local builds to avoid Windows permission issues
   output: process.env.NODE_ENV === 'production' && process.env.DOCKER_BUILD ? 'standalone' : undefined,
   // Add empty turbopack config to silence Next.js 16 warning (we use webpack)
@@ -38,10 +42,15 @@ const nextConfig = {
       '@tiptap/starter-kit',
       'recharts',
       '@xyflow/react',
+      '@aws-sdk/client-s3',
+      'openai',
     ],
   },
+
+  // Disable source maps to save memory and space used during build
+  productionBrowserSourceMaps: false,
   
-  // Reduce server components bundle size
+  // Reduce server components bundle size by keeping heavy libraries out of the bundle
   serverExternalPackages: [
     'ssh2-sftp-client',
     'ftp',
@@ -51,6 +60,12 @@ const nextConfig = {
     'xlsx',
     'mysql2',
     '@elastic/elasticsearch',
+    // Add heavy SDKs to externals to reduce bundle memory usage
+    '@aws-sdk/client-s3',
+    '@aws-sdk/s3-request-presigner',
+    'openai',
+    'langfuse',
+    'minio',
   ],
   
   webpack: (config, { isServer, webpack }) => {
