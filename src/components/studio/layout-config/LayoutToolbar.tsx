@@ -6,7 +6,7 @@ import { WidgetSelectionDrawer } from './WidgetSelectionDrawer'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { Monitor, Smartphone, Tablet, Save, Box, Grid3x3, Move, Eye, EyeOff, History, Database, MoreVertical, ChevronRight } from 'lucide-react'
+import { Monitor, Smartphone, Tablet, Save, Box, Grid3x3, Move, Eye, EyeOff, History, Database, MoreVertical, ChevronRight, Download } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ComponentConfig } from './types'
 import { LayoutTitle } from './LayoutTitle'
@@ -35,6 +35,7 @@ interface LayoutToolbarProps {
   showDataModelPanel?: boolean
   onToggleDataModelPanel?: () => void
   spaceId?: string
+  onExportMobile?: () => void
 }
 
 export function LayoutToolbar({
@@ -59,6 +60,7 @@ export function LayoutToolbar({
   showDataModelPanel,
   onToggleDataModelPanel,
   spaceId,
+  onExportMobile,
 }: LayoutToolbarProps) {
   const [widgetDrawerOpen, setWidgetDrawerOpen] = useState(false)
   const [configPopoverOpen, setConfigPopoverOpen] = useState(false)
@@ -285,6 +287,28 @@ export function LayoutToolbar({
                         <div className="flex items-center gap-2">
                           <History className="h-3.5 w-3.5 text-muted-foreground" />
                           <span className="text-xs text-foreground">See versions</span>
+                        </div>
+                        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Export for Mobile Button */}
+                {onExportMobile && (
+                  <>
+                    <div className="border-t border-border/50 my-2" />
+                    <div
+                      className="w-full cursor-pointer rounded px-1.5 py-1 hover:bg-muted/50 transition-colors"
+                      onClick={() => {
+                        setConfigPopoverOpen(false)
+                        onExportMobile()
+                      }}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <Download className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-xs text-foreground">Export for Mobile</span>
                         </div>
                         <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
                       </div>

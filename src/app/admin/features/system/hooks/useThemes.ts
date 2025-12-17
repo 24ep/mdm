@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { ThemeListItem, Theme } from '../types-theme';
 import { initializeBranding } from '@/lib/branding';
+import { THEME_STORAGE_KEYS } from '@/lib/theme-constants';
 
 export function useThemes() {
     const [themes, setThemes] = useState<ThemeListItem[]>([]);
@@ -97,6 +98,13 @@ export function useThemes() {
                 const err = await response.json();
                 throw new Error(err.error || 'Failed to activate theme');
             }
+            
+            // Save the database theme ID to localStorage for persistence
+            if (typeof window !== 'undefined') {
+                localStorage.setItem(THEME_STORAGE_KEYS.DATABASE_THEME_ID, id);
+                localStorage.setItem(THEME_STORAGE_KEYS.LAST_APPLIED, Date.now().toString());
+            }
+            
             toast.success('Theme activated successfully');
             await fetchThemes();
             // Apply new branding immediately - reload page to ensure all components pick up the change

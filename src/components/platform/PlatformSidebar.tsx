@@ -244,6 +244,12 @@ export function PlatformSidebar({
       description: 'Ticket and project management'
     },
     {
+      id: 'ontology',
+      name: 'Data Ontology',
+      icon: Network,
+      description: 'Data relationships and lineage'
+    },
+    {
       id: 'audit',
       name: 'Audit Logs',
       icon: History,
