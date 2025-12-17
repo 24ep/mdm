@@ -17,10 +17,9 @@ const nextConfig = {
     ignoreBuildErrors: true,
     // TypeScript will show all errors, build will continue to collect all errors
   },
-  eslint: {
-    // Disable linting during build to save memory and start faster
-    ignoreDuringBuilds: true,
+    // TypeScript will show all errors, build will continue to collect all errors
   },
+  // Disable output file tracing for local builds to avoid Windows permission issues
   // Disable output file tracing for local builds to avoid Windows permission issues
   output: process.env.NODE_ENV === 'production' && process.env.DOCKER_BUILD ? 'standalone' : undefined,
   // Add empty turbopack config to silence Next.js 16 warning (we use webpack)
@@ -42,8 +41,6 @@ const nextConfig = {
       '@tiptap/starter-kit',
       'recharts',
       '@xyflow/react',
-      '@aws-sdk/client-s3',
-      'openai',
     ],
   },
 
