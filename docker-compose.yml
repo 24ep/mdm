@@ -90,6 +90,8 @@ services:
   # PostgreSQL Database
   postgres-db:
     image: postgres:15
+    # Force listening on all interfaces
+    command: postgres -c 'listen_addresses=*'
     ports:
       - "8303:5432"
     environment:
@@ -99,7 +101,8 @@ services:
     volumes:
       - postgres_db:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}" ]
+      # Check TCP connection to localhost (-h localhost) explicitly
+      test: [ "CMD-SHELL", "pg_isready -h localhost -U ${POSTGRES_USER:-postgres}" ]
       interval: 5s
       timeout: 5s
       retries: 5

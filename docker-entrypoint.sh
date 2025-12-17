@@ -19,6 +19,9 @@ else
 fi
 
 echo "Connecting to database at $DB_HOST:$DB_PORT..."
+echo "Resolving $DB_HOST..."
+getent hosts "$DB_HOST" || echo "Failed to resolve $DB_HOST"
+ping -c 1 "$DB_HOST" || echo "Failed to ping $DB_HOST"
 
 MAX_WAIT=120
 WAITED=0
