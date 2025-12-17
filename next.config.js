@@ -21,6 +21,38 @@ const nextConfig = {
   output: process.env.NODE_ENV === 'production' && process.env.DOCKER_BUILD ? 'standalone' : undefined,
   // Add empty turbopack config to silence Next.js 16 warning (we use webpack)
   turbopack: {},
+  
+  // ========== BUILD OPTIMIZATION FOR LOWER RAM/CPU USAGE ==========
+  // Experimental features for better build performance
+  experimental: {
+    // Reduce memory usage by limiting concurrent workers
+    webpackBuildWorker: true,
+    // Enable parallel routes for better route optimization
+    parallelServerBuildTraces: false,
+    // Optimize package imports to reduce bundle size
+    optimizePackageImports: [
+      'lucide-react',
+      'react-icons',
+      'date-fns',
+      '@tiptap/react',
+      '@tiptap/starter-kit',
+      'recharts',
+      '@xyflow/react',
+    ],
+  },
+  
+  // Reduce server components bundle size
+  serverExternalPackages: [
+    'ssh2-sftp-client',
+    'ftp',
+    'ssh2',
+    '@prisma/client',
+    'puppeteer',
+    'xlsx',
+    'mysql2',
+    '@elastic/elasticsearch',
+  ],
+  
   webpack: (config, { isServer, webpack }) => {
     // Exclude plugin-hub directory from build analysis (it's a separate service)
     config.watchOptions = {
@@ -59,6 +91,61 @@ const nextConfig = {
     config.optimization = config.optimization || {}
     config.optimization.removeAvailableModules = false
     config.optimization.removeEmptyChunks = false
+    
+    // ========== CHUNKING CONFIGURATION FOR LOWER RAM/CPU USAGE ==========
+    // Split large bundles into smaller chunks to reduce memory during build
+    if (!isServer) {
+      config.optimization.splitChunks = {
+        chunks: 'all',
+        // Reduce max chunk size to lower memory usage
+        maxSize: 200 * 1024, // 200KB per chunk
+        minSize: 20 * 1024,  // 20KB minimum
+        maxAsyncRequests: 30,
+        maxInitialRequests: 30,
+        cacheGroups: {
+          // Separate large vendor libraries into their own chunks
+          framework: {
+            test: /[\\/]node_modules[\\/](react|react-dom|next)[\\/]/,
+            name: 'framework',
+            priority: 40,
+            chunks: 'all',
+            enforce: true,
+          },
+          // UI libraries chunk
+          ui: {
+            test: /[\\/]node_modules[\\/](lucide-react|react-icons|@tiptap|recharts|@xyflow)[\\/]/,
+            name: 'ui-libs',
+            priority: 30,
+            chunks: 'all',
+          },
+          // Utilities chunk
+          utils: {
+            test: /[\\/]node_modules[\\/](date-fns|clsx|class-variance-authority|tailwind-merge|zod)[\\/]/,
+            name: 'utils',
+            priority: 20,
+            chunks: 'all',
+          },
+          // Other vendor libraries
+          vendors: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            priority: 10,
+            chunks: 'all',
+            reuseExistingChunk: true,
+          },
+          // Common components shared across pages
+          commons: {
+            name: 'commons',
+            minChunks: 2,
+            priority: 5,
+            reuseExistingChunk: true,
+          },
+        },
+      }
+    }
+    
+    // Reduce parallelism to lower RAM usage during build
+    config.parallelism = 2 // Default is 100, reducing to 2 significantly lowers memory
     
     // Custom error handling to collect all errors
     const originalEmit = config.plugins?.find(p => p.constructor.name === 'ForkTsCheckerWebpackPlugin')

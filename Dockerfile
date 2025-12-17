@@ -24,7 +24,7 @@ COPY sql ./sql
 ARG NEXT_PUBLIC_API_URL=http://localhost:8302
 ARG NEXT_PUBLIC_WS_PROXY_URL=ws://localhost:3002/api/openai-realtime
 ARG NEXT_PUBLIC_WS_PROXY_PORT=3002
-ARG BUILD_MEMORY_LIMIT=4096
+ARG BUILD_MEMORY_LIMIT=3072
 
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NEXT_PUBLIC_WS_PROXY_URL=${NEXT_PUBLIC_WS_PROXY_URL}
@@ -36,10 +36,14 @@ ENV NEXTAUTH_SECRET="dummy_secret_at_least_32_characters_long_for_build"
 ENV LANGFUSE_HOST="http://dummy-langfuse-host.com"
 # Reduce build resource usage
 ENV CI=true
+# Limit npm concurrency to reduce memory spikes
+ENV npm_config_maxsockets=2
+# Limit webpack parallelism
+ENV WEBPACK_PARALLELISM=2
 
 RUN --mount=type=cache,target=/app/.next/cache \
     --mount=type=cache,target=/app/node_modules/.cache \
-    NODE_OPTIONS="--max-old-space-size=${BUILD_MEMORY_LIMIT} --max-semi-space-size=128" \
+    NODE_OPTIONS="--max-old-space-size=${BUILD_MEMORY_LIMIT} --max-semi-space-size=64" \
     npm run build
 
 # Production image
@@ -50,7 +54,8 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=8301
 ENV HOSTNAME="0.0.0.0"
-ENV NODE_OPTIONS="--max-old-space-size=4096"
+# Reduced from 4096 - chunking allows lower memory usage
+ENV NODE_OPTIONS="--max-old-space-size=2048"
 
 RUN apk add --no-cache postgresql-client dos2unix && \
     addgroup --system --gid 1001 nodejs && \
