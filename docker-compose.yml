@@ -57,8 +57,7 @@ services:
           memory: 4G
         reservations:
           memory: 1G
-    networks:
-      - mdm-network
+
 
   # Plugin Hub Service
   plugin-hub:
@@ -80,8 +79,7 @@ services:
       # Mount plugins directory for persistence
       - ./plugin-hub/plugins:/app/plugins
     restart: unless-stopped
-    networks:
-      - mdm-network
+
     healthcheck:
       test: [ "CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3001/api/plugins || curl -f http://localhost:3001/api/plugins || exit 1" ]
       interval: 30s
@@ -105,8 +103,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    networks:
-      - mdm-network
+
 
   # Database initialization is now handled by docker-entrypoint.sh in the app container
   # This runs automatically when the app starts for the first time
@@ -128,8 +125,7 @@ services:
       PGRST_DB_MAX_ROWS: 1000
     ports:
       - "8302:3000"
-    networks:
-      - mdm-network
+
 
   # MinIO (S3 compatible)
   minio:
@@ -143,8 +139,7 @@ services:
       - "8305:9001"
     volumes:
       - minio_data:/data
-    networks:
-      - mdm-network
+
 
   # HashiCorp Vault
   vault:
@@ -164,8 +159,7 @@ services:
     # For production, use:
     # command: vault server -config=/vault/config/vault.hcl
     # and mount a config file
-    networks:
-      - mdm-network
+
 
   # Redis (for rate limiting and caching in agent SDK)
   redis:
@@ -180,8 +174,7 @@ services:
       interval: 10s
       timeout: 3s
       retries: 3
-    networks:
-      - mdm-network
+
 
 volumes:
   postgres_db:
@@ -191,6 +184,4 @@ volumes:
   redis_data:
 
 
-networks:
-  mdm-network:
-    driver: bridge
+
