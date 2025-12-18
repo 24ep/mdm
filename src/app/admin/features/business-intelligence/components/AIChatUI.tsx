@@ -257,6 +257,7 @@ export function AIChatUI() {
         voiceProvider: formData.voiceProvider || null,
         voiceUIStyle: formData.voiceUIStyle || null,
         deploymentType: formData.deploymentType || 'popover',
+        customEmbedDomain: formData.customEmbedDomain || null,
         popoverPosition: (formData as any).popoverPosition || 'left',
         widgetPopoverMargin: (formData as any).widgetPopoverMargin || '10px',
         widgetBackgroundBlur: (formData as any).widgetBackgroundBlur !== undefined ? (formData as any).widgetBackgroundBlur : null,

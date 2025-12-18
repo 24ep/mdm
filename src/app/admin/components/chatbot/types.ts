@@ -325,6 +325,7 @@ export interface Chatbot {
   chatbotEnabled?: boolean // Enable/disable chatbot widget (default: true)
   // Deployment
   deploymentType: 'popover' | 'fullpage' | 'popup-center'
+  customEmbedDomain?: string // Custom domain for embedding (e.g., https://chat.yourdomain.com)
   embedCode?: string
   // Widget styling (for popover)
   widgetAvatarStyle: 'circle' | 'square' | 'circle-with-label'
