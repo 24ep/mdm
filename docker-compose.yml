@@ -31,7 +31,7 @@ services:
       - VAULT_ADDR=${VAULT_ADDR:-http://vault:8200}
       - VAULT_TOKEN=${VAULT_ROOT_TOKEN:-dev-root-token}
       - VAULT_SECRET_MOUNT=${VAULT_SECRET_MOUNT:-secret}
-      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - REDIS_URL=${REDIS_URL:-redis://:redispassword@redis:6379}
       - PLUGIN_HUB_URL=${PLUGIN_HUB_URL:-http://plugin-hub:3001}
       - USE_PLUGIN_HUB=${USE_PLUGIN_HUB:-false}
       # volumes:
@@ -49,6 +49,9 @@ services:
         condition: service_healthy
       plugin-hub:
         condition: service_started
+    restart: unless-stopped
+    networks:
+      - mdm-network
     deploy:
       resources:
         limits:
@@ -78,6 +81,8 @@ services:
       # Mount plugins directory for persistence
       - ./plugin-hub/plugins:/app/plugins
     restart: unless-stopped
+    networks:
+      - mdm-network
 
     healthcheck:
       test: [ "CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3001/api/plugins || curl -f http://localhost:3001/api/plugins || exit 1" ]
@@ -100,12 +105,16 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
     volumes:
       - postgres_db:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - mdm-network
     healthcheck:
       # Check TCP connection to localhost (-h localhost) explicitly
       test: [ "CMD-SHELL", "pg_isready -h localhost -U ${POSTGRES_USER:-postgres}" ]
       interval: 5s
       timeout: 5s
       retries: 5
+      start_period: 30s
 
 
   # Database initialization is now handled by docker-entrypoint.sh in the app container
@@ -129,6 +138,9 @@ services:
       PGRST_DB_MAX_ROWS: 1000
     ports:
       - "8302:3000"
+    restart: unless-stopped
+    networks:
+      - mdm-network
 
 
   # MinIO (S3 compatible)
@@ -144,6 +156,9 @@ services:
       - "8305:9001"
     volumes:
       - minio_data:/data
+    restart: unless-stopped
+    networks:
+      - mdm-network
 
 
   # HashiCorp Vault
@@ -161,6 +176,9 @@ services:
     volumes:
       - vault_data:/vault/data
       - vault_logs:/vault/logs
+    restart: unless-stopped
+    networks:
+      - mdm-network
     command: vault server -dev -dev-listen-address="0.0.0.0:8200"
     # For production, use:
     # command: vault server -config=/vault/config/vault.hcl
@@ -176,11 +194,15 @@ services:
     command: redis-server --appendonly yes --requirepass "redispassword"
     volumes:
       - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - mdm-network
     healthcheck:
       test: [ "CMD", "redis-cli", "-a", "redispassword", "ping" ]
       interval: 10s
       timeout: 3s
       retries: 3
+      start_period: 10s
 
 
 volumes:
@@ -190,5 +212,7 @@ volumes:
   vault_logs:
   redis_data:
 
-
-
+networks:
+  mdm-network:
+    driver: bridge
+    name: mdm-network
