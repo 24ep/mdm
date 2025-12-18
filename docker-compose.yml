@@ -1,6 +1,8 @@
 services:
   app:
     container_name: mdm-app
+    env_file:
+      - .env.docker
     # Standalone Docker: build locally and tag image
     image: mdm-app:latest
     build:
@@ -19,7 +21,11 @@ services:
       - "8301:8301"
     environment:
       - NODE_ENV=production
+      - PORT=8301
       - DATABASE_URL=${DATABASE_URL:-postgres://postgres:postgres@postgres-db:5432/postgres}
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:8301}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-change_me_to_a_secure_random_string_at_least_32_chars}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff}
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8302}
       - NEXT_PUBLIC_WS_PROXY_URL=${NEXT_PUBLIC_WS_PROXY_URL:-ws://10.0.10.57:3002/api/openai-realtime}
       - NEXT_PUBLIC_WS_PROXY_PORT=${NEXT_PUBLIC_WS_PROXY_PORT:-3002}
@@ -70,6 +76,8 @@ services:
       args:
         - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8302}
     container_name: mdm-plugin-hub
+    env_file:
+      - .env.docker
     ports:
       - "8308:3001"
     environment:

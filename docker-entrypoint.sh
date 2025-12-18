@@ -42,6 +42,12 @@ fi
 
 # Run Prisma migrations
 echo ""
+echo "=== Syncing Prisma schema with database ==="
+npx prisma db push --accept-data-loss || {
+  echo "⚠️  Prisma db push failed (may already be synced)"
+}
+
+echo ""
 echo "=== Running Prisma migrations ==="
 npx prisma migrate deploy || {
   echo "⚠️  Prisma migrations failed (may already be applied)"
