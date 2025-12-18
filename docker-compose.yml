@@ -1,10 +1,7 @@
 services:
   app:
     container_name: mdm-app
-    env_file:
-      - .env.docker
-    # Standalone Docker: build locally and tag image
-    image: mdm-app:latest
+    # Build from local Dockerfile
     build:
       context: .
       dockerfile: Dockerfile
@@ -69,15 +66,13 @@ services:
 
   # Plugin Hub Service
   plugin-hub:
-    image: mdm-plugin-hub:latest
+    container_name: mdm-plugin-hub
+    # Build from local Dockerfile
     build:
       context: ./plugin-hub
       dockerfile: Dockerfile
       args:
         - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8302}
-    container_name: mdm-plugin-hub
-    env_file:
-      - .env.docker
     ports:
       - "8308:3001"
     environment:
@@ -199,14 +194,14 @@ services:
     image: redis:7-alpine
     ports:
       - "8307:6379"
-    command: redis-server --appendonly yes --requirepass "redispassword"
+    command: redis-server --appendonly yes --requirepass "${REDIS_PASSWORD:-redispassword}"
     volumes:
       - redis_data:/data
     restart: unless-stopped
     networks:
       - mdm-network
     healthcheck:
-      test: [ "CMD", "redis-cli", "-a", "redispassword", "ping" ]
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redispassword}", "ping" ]
       interval: 10s
       timeout: 3s
       retries: 3
