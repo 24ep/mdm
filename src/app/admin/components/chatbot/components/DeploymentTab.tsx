@@ -98,7 +98,7 @@ export function DeploymentTab({
               <Label>Banner Position</Label>
               <Select
                 value={formData.pwaBannerPosition || 'bottom'}
-                onValueChange={(v: 'top' | 'bottom') => setFormData({ ...formData, pwaBannerPosition: v })}
+                onValueChange={(v) => setFormData({ ...formData, pwaBannerPosition: v as 'top' | 'bottom' })}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -210,6 +210,157 @@ export function DeploymentTab({
                   <SelectItem value="minimal-ui">Minimal UI (with back button)</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* PWA Banner Styling Section */}
+            <div className="border-t pt-4 mt-4">
+              <Label className="text-sm font-medium text-muted-foreground">Banner Styling</Label>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Banner Background</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="color"
+                    className="w-12 h-10 p-1 cursor-pointer"
+                    value={formData.pwaBannerBgColor || formData.primaryColor || '#3b82f6'}
+                    onChange={(e) => setFormData({ ...formData, pwaBannerBgColor: e.target.value })}
+                  />
+                  <Input
+                    placeholder={formData.primaryColor || '#3b82f6'}
+                    value={formData.pwaBannerBgColor || ''}
+                    onChange={(e) => setFormData({ ...formData, pwaBannerBgColor: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Text Color</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="color"
+                    className="w-12 h-10 p-1 cursor-pointer"
+                    value={formData.pwaBannerFontColor || '#ffffff'}
+                    onChange={(e) => setFormData({ ...formData, pwaBannerFontColor: e.target.value })}
+                  />
+                  <Input
+                    placeholder="#ffffff"
+                    value={formData.pwaBannerFontColor || ''}
+                    onChange={(e) => setFormData({ ...formData, pwaBannerFontColor: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Font Family</Label>
+                <Input
+                  placeholder="Inter, sans-serif"
+                  value={formData.pwaBannerFontFamily || ''}
+                  onChange={(e) => setFormData({ ...formData, pwaBannerFontFamily: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Font Size</Label>
+                <Input
+                  placeholder="13px"
+                  value={formData.pwaBannerFontSize || ''}
+                  onChange={(e) => setFormData({ ...formData, pwaBannerFontSize: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Border Radius</Label>
+                <Input
+                  placeholder="8px"
+                  value={formData.pwaBannerBorderRadius || ''}
+                  onChange={(e) => setFormData({ ...formData, pwaBannerBorderRadius: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Padding</Label>
+                <Input
+                  placeholder="10px 12px"
+                  value={formData.pwaBannerPadding || ''}
+                  onChange={(e) => setFormData({ ...formData, pwaBannerPadding: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Shadow</Label>
+              <Input
+                placeholder="0 -2px 10px rgba(0,0,0,0.1)"
+                value={formData.pwaBannerShadow || ''}
+                onChange={(e) => setFormData({ ...formData, pwaBannerShadow: e.target.value })}
+              />
+            </div>
+
+            {/* Install Button Styling */}
+            <div className="border-t pt-4 mt-4">
+              <Label className="text-sm font-medium text-muted-foreground">Install Button Styling</Label>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Button Background</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="color"
+                    className="w-12 h-10 p-1 cursor-pointer"
+                    value={formData.pwaBannerButtonBgColor || '#ffffff'}
+                    onChange={(e) => setFormData({ ...formData, pwaBannerButtonBgColor: e.target.value })}
+                  />
+                  <Input
+                    placeholder="#ffffff"
+                    value={formData.pwaBannerButtonBgColor || ''}
+                    onChange={(e) => setFormData({ ...formData, pwaBannerButtonBgColor: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Button Text Color</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="color"
+                    className="w-12 h-10 p-1 cursor-pointer"
+                    value={formData.pwaBannerButtonTextColor || formData.primaryColor || '#3b82f6'}
+                    onChange={(e) => setFormData({ ...formData, pwaBannerButtonTextColor: e.target.value })}
+                  />
+                  <Input
+                    placeholder={formData.primaryColor || '#3b82f6'}
+                    value={formData.pwaBannerButtonTextColor || ''}
+                    onChange={(e) => setFormData({ ...formData, pwaBannerButtonTextColor: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Button Border Radius</Label>
+                <Input
+                  placeholder="4px"
+                  value={formData.pwaBannerButtonBorderRadius || ''}
+                  onChange={(e) => setFormData({ ...formData, pwaBannerButtonBorderRadius: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Button Font Size</Label>
+                <Input
+                  placeholder="12px"
+                  value={formData.pwaBannerButtonFontSize || ''}
+                  onChange={(e) => setFormData({ ...formData, pwaBannerButtonFontSize: e.target.value })}
+                />
+              </div>
             </div>
           </>
         )}

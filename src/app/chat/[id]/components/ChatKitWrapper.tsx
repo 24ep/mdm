@@ -42,10 +42,16 @@ export function ChatKitWrapper({
     const validTheme: any = {}
     
     if (chatkitOptions.theme) {
-      // Validate colorScheme
-      if (chatkitOptions.theme.colorScheme && 
-          (chatkitOptions.theme.colorScheme === 'light' || chatkitOptions.theme.colorScheme === 'dark')) {
-        validTheme.colorScheme = chatkitOptions.theme.colorScheme
+      // Validate colorScheme - handle 'system' by detecting browser preference
+      const colorScheme = chatkitOptions.theme.colorScheme as 'light' | 'dark' | 'system' | undefined
+      if (colorScheme) {
+        if (colorScheme === 'system') {
+          // Detect system preference for light/dark mode
+          const prefersDark = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+          validTheme.colorScheme = prefersDark ? 'dark' : 'light'
+        } else if (colorScheme === 'light' || colorScheme === 'dark') {
+          validTheme.colorScheme = colorScheme
+        }
       }
       
       // Validate density

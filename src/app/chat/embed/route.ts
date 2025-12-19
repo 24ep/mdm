@@ -394,7 +394,20 @@ export async function GET(request: NextRequest) {
     var pwaConfig = {
       enabled: chatbot.pwaEnabled || false,
       bannerText: chatbot.pwaBannerText || 'Install app for quick access',
-      position: chatbot.pwaBannerPosition || 'bottom'
+      position: chatbot.pwaBannerPosition || 'bottom',
+      // Banner styling
+      bgColor: chatbot.pwaBannerBgColor || chatbot.primaryColor || '#3b82f6',
+      fontColor: chatbot.pwaBannerFontColor || '#ffffff',
+      fontFamily: chatbot.pwaBannerFontFamily || chatbot.fontFamily || 'Inter, sans-serif',
+      fontSize: chatbot.pwaBannerFontSize || '13px',
+      borderRadius: chatbot.pwaBannerBorderRadius || '8px',
+      shadow: chatbot.pwaBannerShadow || '0 -2px 10px rgba(0,0,0,0.1)',
+      padding: chatbot.pwaBannerPadding || '10px 12px',
+      // Button styling
+      buttonBgColor: chatbot.pwaBannerButtonBgColor || '#ffffff',
+      buttonTextColor: chatbot.pwaBannerButtonTextColor || chatbot.primaryColor || '#3b82f6',
+      buttonBorderRadius: chatbot.pwaBannerButtonBorderRadius || '4px',
+      buttonFontSize: chatbot.pwaBannerButtonFontSize || '12px'
     };
     
     if (pwaConfig.enabled) {
@@ -413,9 +426,9 @@ export async function GET(request: NextRequest) {
         pwaBanner.id = 'pwa-banner-' + chatbotId;
         
         var bannerPosition = pwaConfig.position === 'top' ? 'top: 0;' : 'bottom: 0;';
-        var bannerBorderRadius = pwaConfig.position === 'top' ? '0' : '8px 8px 0 0';
+        var bannerBorderRadius = pwaConfig.position === 'top' ? '0 0 ' + pwaConfig.borderRadius + ' ' + pwaConfig.borderRadius : pwaConfig.borderRadius + ' ' + pwaConfig.borderRadius + ' 0 0';
         
-        pwaBanner.style.cssText = 'position: absolute; left: 0; right: 0; ' + bannerPosition + ' background: linear-gradient(135deg, ' + (chatbot.primaryColor || '#3b82f6') + ' 0%, ' + (chatbot.primaryColor || '#3b82f6') + 'dd 100%); color: white; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; z-index: 10; border-radius: ' + bannerBorderRadius + '; box-shadow: 0 -2px 10px rgba(0,0,0,0.1);';
+        pwaBanner.style.cssText = 'position: absolute; left: 0; right: 0; ' + bannerPosition + ' background: linear-gradient(135deg, ' + pwaConfig.bgColor + ' 0%, ' + pwaConfig.bgColor + 'dd 100%); color: ' + pwaConfig.fontColor + '; padding: ' + pwaConfig.padding + '; display: flex; align-items: center; justify-content: space-between; gap: 8px; z-index: 10; border-radius: ' + bannerBorderRadius + '; box-shadow: ' + pwaConfig.shadow + '; font-family: ' + pwaConfig.fontFamily + ';';
         
         // Banner content
         var bannerContent = document.createElement('div');
@@ -430,7 +443,7 @@ export async function GET(request: NextRequest) {
         // Text
         var bannerText = document.createElement('span');
         bannerText.textContent = pwaConfig.bannerText;
-        bannerText.style.cssText = 'font-size: 13px; font-weight: 500;';
+        bannerText.style.cssText = 'font-size: ' + pwaConfig.fontSize + '; font-weight: 500; color: ' + pwaConfig.fontColor + ';';
         bannerContent.appendChild(bannerText);
         
         // Buttons container
@@ -441,7 +454,7 @@ export async function GET(request: NextRequest) {
         var installBtn = document.createElement('button');
         installBtn.textContent = 'Install';
         installBtn.setAttribute('type', 'button');
-        installBtn.style.cssText = 'background: white; color: ' + (chatbot.primaryColor || '#3b82f6') + '; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: opacity 0.2s;';
+        installBtn.style.cssText = 'background: ' + pwaConfig.buttonBgColor + '; color: ' + pwaConfig.buttonTextColor + '; border: none; padding: 6px 12px; border-radius: ' + pwaConfig.buttonBorderRadius + '; font-size: ' + pwaConfig.buttonFontSize + '; font-weight: 600; cursor: pointer; transition: opacity 0.2s; font-family: ' + pwaConfig.fontFamily + ';';
         installBtn.onmouseover = function() { this.style.opacity = '0.9'; };
         installBtn.onmouseout = function() { this.style.opacity = '1'; };
         installBtn.onclick = function(e) {
@@ -457,7 +470,7 @@ export async function GET(request: NextRequest) {
         closeBtn.innerHTML = '✕';
         closeBtn.setAttribute('type', 'button');
         closeBtn.setAttribute('aria-label', 'Dismiss install banner');
-        closeBtn.style.cssText = 'background: transparent; color: white; border: none; padding: 4px 6px; font-size: 14px; cursor: pointer; opacity: 0.7; transition: opacity 0.2s;';
+        closeBtn.style.cssText = 'background: transparent; color: ' + pwaConfig.fontColor + '; border: none; padding: 4px 6px; font-size: 14px; cursor: pointer; opacity: 0.7; transition: opacity 0.2s;';
         closeBtn.onmouseover = function() { this.style.opacity = '1'; };
         closeBtn.onmouseout = function() { this.style.opacity = '0.7'; };
         closeBtn.onclick = function(e) {

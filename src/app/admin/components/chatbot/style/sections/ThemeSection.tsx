@@ -29,7 +29,7 @@ export function ThemeSection({ formData, setFormData, chatkitOptions }: SectionP
                       ...chatkitOptions,
                       theme: {
                         ...chatkitOptions?.theme,
-                        colorScheme: v as 'light' | 'dark'
+                        colorScheme: v as 'light' | 'dark' | 'system'
                       }
                     }
                   } as any)}
@@ -40,8 +40,12 @@ export function ThemeSection({ formData, setFormData, chatkitOptions }: SectionP
                   <SelectContent>
                     <SelectItem value="light">Light</SelectItem>
                     <SelectItem value="dark">Dark</SelectItem>
+                    <SelectItem value="system">System (Auto)</SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">
+                  "System" auto-detects user's browser/device preference
+                </p>
               </div>
 
               <div className="space-y-2">

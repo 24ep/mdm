@@ -39,7 +39,7 @@ export interface ChatKitTypography {
 }
 
 export interface ChatKitTheme {
-  colorScheme?: 'light' | 'dark'
+  colorScheme?: 'light' | 'dark' | 'system' // 'system' = auto-detect browser preference
   color?: ChatKitColor
   radius?: 'pill' | 'round' | 'soft' | 'sharp'
   density?: 'compact' | 'normal' | 'spacious'
@@ -506,6 +506,19 @@ export interface Chatbot {
   pwaBackgroundColor?: string // Splash screen background color (default: #ffffff)
   pwaIconUrl?: string // App icon URL (should be 512x512, will be resized)
   pwaDisplayMode?: 'standalone' | 'fullscreen' | 'minimal-ui' // PWA display mode (default: standalone)
+  // PWA Banner Styling
+  pwaBannerBgColor?: string // Banner background color (default: primaryColor gradient)
+  pwaBannerFontColor?: string // Banner text color (default: #ffffff)
+  pwaBannerFontFamily?: string // Banner font family (default: inherit from chatbot)
+  pwaBannerFontSize?: string // Banner text font size (default: 13px)
+  pwaBannerBorderRadius?: string // Banner border radius (default: 8px)
+  pwaBannerShadow?: string // Banner box shadow (default: 0 -2px 10px rgba(0,0,0,0.1))
+  pwaBannerPadding?: string // Banner padding (default: 10px 12px)
+  // PWA Banner Button Styling
+  pwaBannerButtonBgColor?: string // Install button background (default: #ffffff)
+  pwaBannerButtonTextColor?: string // Install button text color (default: primaryColor)
+  pwaBannerButtonBorderRadius?: string // Install button border radius (default: 4px)
+  pwaBannerButtonFontSize?: string // Install button font size (default: 12px)
   isPublished: boolean
   createdAt: Date
   updatedAt: Date
