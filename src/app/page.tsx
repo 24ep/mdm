@@ -55,7 +55,7 @@ import { SecurityFeatures } from './admin/features/security'
 import { PerformanceMonitoring } from './admin/features/analytics'
 import { DataExportImport } from './admin/features/data'
 import { IntegrationHub } from './admin/features/integration'
-import { SystemHealthDashboard, LogManagement } from './admin/features/analytics'
+import { LogManagement } from './admin/features/analytics'
 import { DatabaseManagement } from './admin/features/data'
 import { CacheManagement, StorageManagement } from './admin/features/storage'
 import { MergedBIReports } from './admin/features/business-intelligence'
@@ -93,7 +93,6 @@ const getRouteForTab = (tab: string): string => {
     'data': '/system/data',
     'attachments': '/system/attachments',
     'kernels': '/system/kernels',
-    'health': '/system/health',
     'logs': '/system/logs',
     'audit': '/system/audit',
     'database': '/system/database',
@@ -558,7 +557,6 @@ export default function HomePage() {
         {activeTab === 'performance' && <PerformanceMonitoring />}
         {activeTab === 'data' && <DataModelManagement />}
         {activeTab === 'export' && <DataExportImport />}
-        {activeTab === 'health' && <SystemHealthDashboard />}
         {activeTab === 'logs' && <LogManagement />}
         {activeTab === 'database' && <DatabaseManagement />}
         {activeTab === 'change-requests' && <ChangeRequests />}

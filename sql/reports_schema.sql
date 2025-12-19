@@ -121,12 +121,12 @@ CREATE INDEX IF NOT EXISTS idx_report_integrations_config ON public.report_integ
 
 -- Add updated_at trigger function if it doesn't exist
 CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER AS '
 BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+' language 'plpgsql';
 
 -- Add triggers for updated_at
 CREATE TRIGGER update_report_categories_updated_at BEFORE UPDATE ON public.report_categories

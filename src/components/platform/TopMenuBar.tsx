@@ -52,7 +52,6 @@ const getFeatureName = (activeTab: string): string => {
     'data': 'Data Models',
     'attachments': 'Attachments',
     'kernels': 'Kernel Management',
-    'health': 'System Health',
     'logs': 'Logs',
     'audit': 'Audit Logs',
     'database': 'Database',

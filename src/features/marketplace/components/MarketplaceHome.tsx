@@ -168,12 +168,7 @@ export function MarketplaceHome({
   }
 
   const handleInstall = async (plugin: PluginDefinition) => {
-    const effectiveSpace = effectiveSpaceId || currentSpace?.id
-    if (!effectiveSpace) {
-      alert('Please select a space to install the plugin')
-      return
-    }
-
+    // Space is now optional - plugins can be installed globally
     setSelectedPlugin(plugin)
     setShowInstallWizard(true)
   }
@@ -183,10 +178,7 @@ export function MarketplaceHome({
     config: Record<string, any>,
     credentials?: Record<string, any>
   ) => {
-    const effectiveSpace = effectiveSpaceId || currentSpace?.id
-    if (!effectiveSpace) {
-      return
-    }
+    const effectiveSpace = effectiveSpaceId || currentSpace?.id || null
 
     const installation = await install(plugin.id, effectiveSpace, config)
     setShowInstallWizard(false)

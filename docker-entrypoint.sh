@@ -89,9 +89,15 @@ node scripts/seed-plugins.js || {
 # Seed themes
 echo ""
 echo "=== Seeding themes ==="
-npx tsx prisma/seed-themes.ts 2>/dev/null || \
-node --loader ts-node/esm prisma/seed-themes.ts 2>/dev/null || {
+node scripts/seed-themes.js || {
   echo "⚠️  Theme seeding failed (may already be seeded)"
+}
+
+# Seed global roles
+echo ""
+echo "=== Seeding global roles ==="
+node scripts/seed-global-roles.js || {
+  echo "⚠️  Global role seeding failed (may already be seeded)"
 }
 
 echo ""

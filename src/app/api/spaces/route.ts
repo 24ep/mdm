@@ -123,7 +123,7 @@ async function postHandler(request: NextRequest) {
     if (tagsColumnExists) {
       insertSql = `
         INSERT INTO spaces (name, description, slug, is_default, created_by, tags)
-        VALUES ($1, $2, $3, $4, $5, $6::jsonb)
+        VALUES ($1, $2, $3, $4, $5::uuid, $6::jsonb)
         RETURNING id, name, description, slug, is_default, is_active, icon, logo_url, 
                   created_at, updated_at,
                   COALESCE(tags, '[]'::jsonb) as tags
@@ -139,7 +139,7 @@ async function postHandler(request: NextRequest) {
     } else {
       insertSql = `
         INSERT INTO spaces (name, description, slug, is_default, created_by)
-        VALUES ($1, $2, $3, $4, $5)
+        VALUES ($1, $2, $3, $4, $5::uuid)
         RETURNING id, name, description, slug, is_default, is_active, icon, logo_url, 
                   created_at, updated_at
       `

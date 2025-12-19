@@ -53,7 +53,7 @@ const getGroupForTab = (tab: string): string | null => {
   const groupedTabs: Record<string, string[]> = {
     overview: ['overview', 'analytics', 'knowledge-base', 'projects'],
     tools: ['bigquery', 'notebook', 'ai-analyst', 'ai-chat-ui', 'marketplace', 'bi', 'reports', 'storage', 'data-governance'],
-    system: ['users', 'roles', 'permission-tester', 'space-layouts', 'space-settings', 'assets', 'data', 'attachments', 'kernels', 'health', 'logs', 'audit', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache', 'backup', 'security', 'performance', 'settings', 'page-templates', 'notifications', 'themes', 'export', 'integrations', 'api'],
+    system: ['users', 'roles', 'permission-tester', 'space-layouts', 'space-settings', 'assets', 'data', 'attachments', 'kernels', 'logs', 'audit', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache', 'backup', 'security', 'performance', 'settings', 'page-templates', 'notifications', 'themes', 'export', 'integrations', 'api'],
     'data-management': ['space-selection']
   }
   
@@ -89,7 +89,7 @@ const generateBreadcrumbs = (activeTab: string): BreadcrumbItem[] => {
   const groupSections: Record<string, string[]> = {
     management: ['users', 'roles', 'permission-tester', 'space-layouts', 'space-settings', 'assets', 'data', 'attachments'],
     kernels: ['kernels'],
-    system: ['health', 'logs', 'audit', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache', 'backup'],
+    system: ['logs', 'audit', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache', 'backup'],
     security: ['security', 'performance'],
     integrations: ['settings', 'page-templates', 'notifications', 'themes', 'export', 'integrations', 'api']
   }
@@ -117,8 +117,6 @@ const generateBreadcrumbs = (activeTab: string): BreadcrumbItem[] => {
     'assets': 'Asset Management',
     'data': 'Data Models',
     'attachments': 'Attachments',
-    'kernels': 'Kernel Management',
-    'health': 'System Health',
     'logs': 'Logs',
     'audit': 'Audit Logs',
     'database': 'Database',

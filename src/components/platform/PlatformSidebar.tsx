@@ -178,12 +178,6 @@ export function PlatformSidebar({
       description: 'Third-party integrations'
     },
     {
-      id: 'health',
-      name: 'System Health',
-      icon: Heart,
-      description: 'System health monitoring'
-    },
-    {
       id: 'logs',
       name: 'Logs',
       icon: FileTextIcon,
@@ -310,7 +304,6 @@ export function PlatformSidebar({
       { id: 'assets', name: 'Asset Management', icon: Database, href: '/system/assets' },
       { id: 'data', name: 'Data Models', icon: Database, href: '/system/data' },
       { id: 'kernels', name: 'Kernel Management', icon: Server, href: '/system/kernels' },
-      { id: 'health', name: 'System Health', icon: Heart, href: '/system/health' },
       { id: 'logs', name: 'Logs', icon: FileTextIcon, href: '/system/logs' },
       { id: 'audit', name: 'Audit Logs', icon: History, href: '/system/audit' },
       { id: 'database', name: 'Database', icon: DatabaseIcon, href: '/system/database' },
@@ -348,7 +341,7 @@ export function PlatformSidebar({
   const groupSections: Record<string, string[]> = {
     management: ['users', 'roles', 'space-layouts', 'assets', 'data'],
     kernels: ['kernels'],
-    system: ['health', 'logs', 'audit', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache', 'backup'],
+    system: ['logs', 'audit', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache', 'backup'],
     security: ['security', 'performance'],
     integrations: ['settings', 'themes', 'integrations', 'api']
   }

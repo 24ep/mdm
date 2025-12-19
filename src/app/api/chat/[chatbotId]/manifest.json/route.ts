@@ -46,7 +46,7 @@ export async function GET(
       orientation: 'portrait-primary',
       theme_color: chatbot?.pwaThemeColor || chatbot?.primaryColor || defaultThemeColor,
       background_color: chatbot?.pwaBackgroundColor || defaultBackgroundColor,
-      icons: generateIcons(chatbot?.pwaIconUrl || chatbot?.logo),
+      icons: generateIcons(chatbot?.pwaIconUrl || chatbot?.logo, chatbot?.pwaIconSize),
       categories: ['utilities', 'productivity'],
       lang: 'en',
       dir: 'ltr',
@@ -83,7 +83,7 @@ export async function GET(
  * Generate PWA icons array from a source icon URL
  * Returns multiple sizes for different device requirements
  */
-function generateIcons(iconUrl: string | null | undefined) {
+function generateIcons(iconUrl: string | null | undefined, customSize?: number) {
   if (!iconUrl) {
     // Return default placeholder icons
     return [
@@ -102,62 +102,26 @@ function generateIcons(iconUrl: string | null | undefined) {
     ]
   }
 
-  // Use the provided icon URL for all sizes
-  // The browser will scale as needed
-  return [
-    {
+  // Standard sizes
+  const sizes = [48, 72, 96, 128, 144, 192, 256, 384, 512]
+  
+  // Create base icons list
+  const icons = sizes.map(size => ({
+    src: iconUrl,
+    sizes: `${size}x${size}`,
+    type: 'image/png',
+    purpose: size >= 192 ? 'any maskable' : 'any',
+  }))
+
+  // Add custom size if provided and not already in the list
+  if (customSize && customSize > 0 && !sizes.includes(customSize)) {
+    icons.push({
       src: iconUrl,
-      sizes: '48x48',
-      type: 'image/png',
-      purpose: 'any',
-    },
-    {
-      src: iconUrl,
-      sizes: '72x72',
-      type: 'image/png',
-      purpose: 'any',
-    },
-    {
-      src: iconUrl,
-      sizes: '96x96',
-      type: 'image/png',
-      purpose: 'any',
-    },
-    {
-      src: iconUrl,
-      sizes: '128x128',
-      type: 'image/png',
-      purpose: 'any',
-    },
-    {
-      src: iconUrl,
-      sizes: '144x144',
-      type: 'image/png',
-      purpose: 'any',
-    },
-    {
-      src: iconUrl,
-      sizes: '192x192',
+      sizes: `${customSize}x${customSize}`,
       type: 'image/png',
       purpose: 'any maskable',
-    },
-    {
-      src: iconUrl,
-      sizes: '256x256',
-      type: 'image/png',
-      purpose: 'any',
-    },
-    {
-      src: iconUrl,
-      sizes: '384x384',
-      type: 'image/png',
-      purpose: 'any',
-    },
-    {
-      src: iconUrl,
-      sizes: '512x512',
-      type: 'image/png',
-      purpose: 'any maskable',
-    },
-  ]
+    })
+  }
+
+  return icons
 }

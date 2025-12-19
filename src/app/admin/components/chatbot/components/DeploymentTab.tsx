@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Copy, Globe, Info, Smartphone } from 'lucide-react'
+import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 import { Chatbot } from '../types'
 import toast from 'react-hot-toast'
 
@@ -149,51 +150,89 @@ export function DeploymentTab({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Theme Color</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="color"
-                    className="w-12 h-10 p-1 cursor-pointer"
-                    value={formData.pwaThemeColor || formData.primaryColor || '#3b82f6'}
-                    onChange={(e) => setFormData({ ...formData, pwaThemeColor: e.target.value })}
-                  />
-                  <Input
-                    placeholder="#3b82f6"
-                    value={formData.pwaThemeColor || ''}
-                    onChange={(e) => setFormData({ ...formData, pwaThemeColor: e.target.value })}
-                  />
-                </div>
+                <ColorInput 
+                  value={formData.pwaThemeColor || formData.primaryColor || '#3b82f6'}
+                  onChange={(color) => setFormData({ ...formData, pwaThemeColor: color })}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="#3b82f6"
+                  inputClassName="h-10 text-xs pl-9 w-full"
+                />
                 <p className="text-xs text-muted-foreground">Status bar color</p>
               </div>
 
               <div className="space-y-2">
                 <Label>Background Color</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="color"
-                    className="w-12 h-10 p-1 cursor-pointer"
-                    value={formData.pwaBackgroundColor || '#ffffff'}
-                    onChange={(e) => setFormData({ ...formData, pwaBackgroundColor: e.target.value })}
-                  />
-                  <Input
-                    placeholder="#ffffff"
-                    value={formData.pwaBackgroundColor || ''}
-                    onChange={(e) => setFormData({ ...formData, pwaBackgroundColor: e.target.value })}
-                  />
-                </div>
+                <ColorInput 
+                  value={formData.pwaBackgroundColor || '#ffffff'}
+                  onChange={(color) => setFormData({ ...formData, pwaBackgroundColor: color })}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="#ffffff"
+                  inputClassName="h-10 text-xs pl-9 w-full"
+                />
                 <p className="text-xs text-muted-foreground">Splash screen background</p>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>App Icon URL</Label>
-              <Input
-                type="url"
-                placeholder={formData.logo || 'https://example.com/icon-512.png'}
-                value={formData.pwaIconUrl || ''}
-                onChange={(e) => setFormData({ ...formData, pwaIconUrl: e.target.value })}
-              />
-              <p className="text-xs text-muted-foreground">512x512 PNG recommended. Uses chatbot logo if empty.</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>App Icon</Label>
+                <div className="flex flex-col gap-2">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      const reader = new FileReader()
+                      reader.onload = (ev) => {
+                        setFormData({ ...formData, pwaIconUrl: ev.target?.result as string })
+                      }
+                      reader.readAsDataURL(file)
+                    }}
+                  />
+                  <Input
+                    type="text"
+                    placeholder="Or paste URL..."
+                    value={formData.pwaIconUrl || ''}
+                    onChange={(e) => setFormData({ ...formData, pwaIconUrl: e.target.value })}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">512x512 PNG recommended. Uses chatbot logo if empty.</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Icon Size (px)</Label>
+                <Input
+                  type="number"
+                  placeholder="512"
+                  value={formData.pwaIconSize || 512}
+                  onChange={(e) => setFormData({ ...formData, pwaIconSize: parseInt(e.target.value) || 512 })}
+                />
+                <p className="text-xs text-muted-foreground">Size in pixels (default: 512)</p>
+              </div>
             </div>
+
+            {formData.pwaIconUrl && (
+              <div className="mt-2">
+                <Label className="text-xs text-muted-foreground mb-1 block">Preview</Label>
+                <div className="border rounded-lg p-2 inline-block bg-muted/50">
+                  <img 
+                    src={formData.pwaIconUrl} 
+                    alt="App Icon" 
+                    className="object-contain"
+                    style={{ 
+                      width: '128px', // Fixed preview size
+                      height: '128px'
+                    }} 
+                  />
+                  <p className="text-xs text-center mt-1 text-muted-foreground">
+                    Actual size: {formData.pwaIconSize || 512}px
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label>Display Mode</Label>
@@ -220,36 +259,26 @@ export function DeploymentTab({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Banner Background</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="color"
-                    className="w-12 h-10 p-1 cursor-pointer"
-                    value={formData.pwaBannerBgColor || formData.primaryColor || '#3b82f6'}
-                    onChange={(e) => setFormData({ ...formData, pwaBannerBgColor: e.target.value })}
-                  />
-                  <Input
-                    placeholder={formData.primaryColor || '#3b82f6'}
-                    value={formData.pwaBannerBgColor || ''}
-                    onChange={(e) => setFormData({ ...formData, pwaBannerBgColor: e.target.value })}
-                  />
-                </div>
+                <ColorInput 
+                  value={formData.pwaBannerBgColor || formData.primaryColor || '#3b82f6'}
+                  onChange={(color) => setFormData({ ...formData, pwaBannerBgColor: color })}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder={formData.primaryColor || '#3b82f6'}
+                  inputClassName="h-10 text-xs pl-9 w-full"
+                />
               </div>
 
               <div className="space-y-2">
                 <Label>Text Color</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="color"
-                    className="w-12 h-10 p-1 cursor-pointer"
-                    value={formData.pwaBannerFontColor || '#ffffff'}
-                    onChange={(e) => setFormData({ ...formData, pwaBannerFontColor: e.target.value })}
-                  />
-                  <Input
-                    placeholder="#ffffff"
-                    value={formData.pwaBannerFontColor || ''}
-                    onChange={(e) => setFormData({ ...formData, pwaBannerFontColor: e.target.value })}
-                  />
-                </div>
+                <ColorInput 
+                  value={formData.pwaBannerFontColor || '#ffffff'}
+                  onChange={(color) => setFormData({ ...formData, pwaBannerFontColor: color })}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="#ffffff"
+                  inputClassName="h-10 text-xs pl-9 w-full"
+                />
               </div>
             </div>
 
@@ -310,36 +339,26 @@ export function DeploymentTab({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Button Background</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="color"
-                    className="w-12 h-10 p-1 cursor-pointer"
-                    value={formData.pwaBannerButtonBgColor || '#ffffff'}
-                    onChange={(e) => setFormData({ ...formData, pwaBannerButtonBgColor: e.target.value })}
-                  />
-                  <Input
-                    placeholder="#ffffff"
-                    value={formData.pwaBannerButtonBgColor || ''}
-                    onChange={(e) => setFormData({ ...formData, pwaBannerButtonBgColor: e.target.value })}
-                  />
-                </div>
+                <ColorInput 
+                  value={formData.pwaBannerButtonBgColor || '#ffffff'}
+                  onChange={(color) => setFormData({ ...formData, pwaBannerButtonBgColor: color })}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="#ffffff"
+                  inputClassName="h-10 text-xs pl-9 w-full"
+                />
               </div>
 
               <div className="space-y-2">
                 <Label>Button Text Color</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="color"
-                    className="w-12 h-10 p-1 cursor-pointer"
-                    value={formData.pwaBannerButtonTextColor || formData.primaryColor || '#3b82f6'}
-                    onChange={(e) => setFormData({ ...formData, pwaBannerButtonTextColor: e.target.value })}
-                  />
-                  <Input
-                    placeholder={formData.primaryColor || '#3b82f6'}
-                    value={formData.pwaBannerButtonTextColor || ''}
-                    onChange={(e) => setFormData({ ...formData, pwaBannerButtonTextColor: e.target.value })}
-                  />
-                </div>
+                <ColorInput 
+                  value={formData.pwaBannerButtonTextColor || formData.primaryColor || '#3b82f6'}
+                  onChange={(color) => setFormData({ ...formData, pwaBannerButtonTextColor: color })}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder={formData.primaryColor || '#3b82f6'}
+                  inputClassName="h-10 text-xs pl-9 w-full"
+                />
               </div>
             </div>
 

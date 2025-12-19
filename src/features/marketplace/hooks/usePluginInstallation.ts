@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { PluginInstallation } from '../types'
 
 export interface UsePluginInstallationResult {
-  install: (serviceId: string, spaceId: string, config?: Record<string, any>) => Promise<PluginInstallation | null>
+  install: (serviceId: string, spaceId: string | null, config?: Record<string, any>) => Promise<PluginInstallation | null>
   uninstall: (installationId: string) => Promise<boolean>
   update: (installationId: string, config: Record<string, any>) => Promise<PluginInstallation | null>
   loading: boolean
@@ -20,7 +20,7 @@ export function usePluginInstallation(): UsePluginInstallationResult {
 
   const install = async (
     serviceId: string,
-    spaceId: string,
+    spaceId: string | null,
     config?: Record<string, any>
   ): Promise<PluginInstallation | null> => {
     try {
@@ -32,7 +32,7 @@ export function usePluginInstallation(): UsePluginInstallationResult {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           serviceId,
-          spaceId,
+          ...(spaceId && { spaceId }),
           config: config || {},
         }),
       })

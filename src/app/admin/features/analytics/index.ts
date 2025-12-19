@@ -5,7 +5,6 @@
 
 // Components
 export { AnalyticsDashboard } from './components/AnalyticsDashboard'
-export { SystemHealthDashboard } from './components/SystemHealthDashboard'
 export { PerformanceMonitoring } from './components/PerformanceMonitoring'
 export { LogManagement } from './components/LogManagement'
 export { UsageTrackingDashboard } from './components/UsageTrackingDashboard'

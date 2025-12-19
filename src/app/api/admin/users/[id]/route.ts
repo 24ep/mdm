@@ -38,6 +38,15 @@ async function putHandler(
       values.push(isActive)
       sets.push(`is_active = $${values.length}`)
     }
+    if (typeof body.requiresPasswordChange === 'boolean') {
+      values.push(body.requiresPasswordChange)
+      sets.push(`requires_password_change = $${values.length}`)
+    }
+    if (body.lockoutUntil === null || typeof body.lockoutUntil === 'string') {
+        const val = body.lockoutUntil ? new Date(body.lockoutUntil) : null
+        values.push(val)
+        sets.push(`lockout_until = $${values.length}`)
+    }
     if (role) {
       const allowedRoles = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'USER']
       if (!allowedRoles.includes(role)) {
@@ -63,7 +72,7 @@ async function putHandler(
       ', '
     )}, updated_at = NOW() WHERE id = $${
       values.length
-    } RETURNING id, email, name, role, is_active, created_at, default_space_id`
+    } RETURNING id, email, name, role, is_active, requires_password_change, lockout_until, created_at, default_space_id`
 
     const { rows } = await query(sql, values)
     if (!rows.length) {

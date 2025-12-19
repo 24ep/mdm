@@ -235,7 +235,7 @@ providers.push(
       }
       try {
         const { rows } = await query(
-          'SELECT id, email, name, password, role FROM public.users WHERE email = $1 LIMIT 1',
+          'SELECT id, email, name, password, role, is_active, requires_password_change, lockout_until FROM public.users WHERE email = $1 LIMIT 1',
           [credentials.email],
           30000,
           { skipTracing: true }
@@ -244,15 +244,53 @@ providers.push(
           return null
         }
         const user = rows[0]
+        
+        // Check if user exists and has a password
         if (!user || !user.password) {
           return null
         }
+
+        // 1. Check if account is locked out
+        if (user.lockout_until && new Date(user.lockout_until) > new Date()) {
+          throw new Error("Account is temporarily locked. Please try again later.")
+        }
+
+        // 2. Check if account is active
+        if (user.is_active === false) {
+           throw new Error("Account is disabled. Please contact your administrator.")
+        }
+
         const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
+        
         if (!isPasswordValid) {
+          // TODO: Increment failed login attempts here if we want to implement lockout
           return null
         }
-        return { id: user.id, email: user.email, name: user.name, role: user.role }
+
+        // 3. Check if password change is required
+        if (user.requires_password_change) {
+          // We can't easily force a redirect here in NextAuth credentials flow without a custom error or callback handling
+          // For now, we allow login but the UI should handle this state if we pass it in the session
+          // Or we can throw an error to block login until reset (if we have a forgotten password flow)
+          // Let's pass it in the user object to the session
+        }
+
+        return { 
+          id: user.id, 
+          email: user.email, 
+          name: user.name, 
+          role: user.role,
+          requiresPasswordChange: user.requires_password_change
+        }
       } catch (error: any) {
+        // Log the actual error
+        console.error('Auth Error:', error.message)
+        
+        // Throw known errors so they can be displayed
+        if (error.message.includes("Account is")) {
+            throw error
+        }
+
         // Silently return null if database query fails
         // This prevents authentication from crashing if DB isn't ready
         if (process.env.NODE_ENV === 'development') {

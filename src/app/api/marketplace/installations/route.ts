@@ -110,18 +110,18 @@ async function postHandler(request: NextRequest) {
     const body = await request.json()
     const { serviceId, spaceId, config, credentials } = body
 
-    if (!serviceId || !spaceId) {
+    if (!serviceId) {
       return NextResponse.json(
-        { error: 'serviceId and spaceId are required' },
+        { error: 'serviceId is required' },
         { status: 400 }
       )
     }
 
-    // Check permission
+    // Check permission (spaceId is optional for global installations)
     const permission = await checkPermission({
       resource: 'marketplace',
       action: 'install',
-      spaceId,
+      spaceId: spaceId || null,
     })
 
     if (!permission.allowed) {
@@ -131,16 +131,19 @@ async function postHandler(request: NextRequest) {
       )
     }
 
-    // Check if already installed
-    const existing = await query(
-      `SELECT id FROM service_installations 
-       WHERE service_id = CAST($1 AS uuid) AND space_id = CAST($2 AS uuid) AND deleted_at IS NULL`,
-      [serviceId, spaceId]
-    )
+    // Check if already installed (globally if no spaceId, or in specific space)
+    const existingQuery = spaceId
+      ? `SELECT id FROM service_installations 
+         WHERE service_id = CAST($1 AS uuid) AND space_id = CAST($2 AS uuid) AND deleted_at IS NULL`
+      : `SELECT id FROM service_installations 
+         WHERE service_id = CAST($1 AS uuid) AND space_id IS NULL AND deleted_at IS NULL`
+    
+    const existingParams = spaceId ? [serviceId, spaceId] : [serviceId]
+    const existing = await query(existingQuery, existingParams)
 
     if (existing.rows.length > 0) {
       return NextResponse.json(
-        { error: 'Plugin already installed in this space' },
+        { error: spaceId ? 'Plugin already installed in this space' : 'Plugin already installed globally' },
         { status: 409 }
       )
     }
@@ -153,20 +156,34 @@ async function postHandler(request: NextRequest) {
     }
 
     // Create installation
-    const result = await query(
-      `INSERT INTO service_installations (
-        id, service_id, space_id, installed_by, config, credentials, status, installed_at, updated_at
-      ) VALUES (
-        gen_random_uuid(), CAST($1 AS uuid), CAST($2 AS uuid), CAST($3 AS uuid), $4::jsonb, $5::jsonb, 'active', NOW(), NOW()
-      ) RETURNING id`,
-      [
-        serviceId,
-        spaceId,
-        session.user.id,
-        config ? JSON.stringify(config) : '{}',
-        credentialsStored ? JSON.stringify({ stored: true }) : '{}',
-      ]
-    )
+    const insertQuery = spaceId
+      ? `INSERT INTO service_installations (
+          id, service_id, space_id, installed_by, config, credentials, status, installed_at, updated_at
+        ) VALUES (
+          gen_random_uuid(), CAST($1 AS uuid), CAST($2 AS uuid), CAST($3 AS uuid), $4::jsonb, $5::jsonb, 'active', NOW(), NOW()
+        ) RETURNING id`
+      : `INSERT INTO service_installations (
+          id, service_id, space_id, installed_by, config, credentials, status, installed_at, updated_at
+        ) VALUES (
+          gen_random_uuid(), CAST($1 AS uuid), NULL, CAST($2 AS uuid), $3::jsonb, $4::jsonb, 'active', NOW(), NOW()
+        ) RETURNING id`
+    
+    const insertParams = spaceId
+      ? [
+          serviceId,
+          spaceId,
+          session.user.id,
+          config ? JSON.stringify(config) : '{}',
+          credentialsStored ? JSON.stringify({ stored: true }) : '{}',
+        ]
+      : [
+          serviceId,
+          session.user.id,
+          config ? JSON.stringify(config) : '{}',
+          credentialsStored ? JSON.stringify({ stored: true }) : '{}',
+        ]
+    
+    const result = await query(insertQuery, insertParams)
 
     const installationId = result.rows[0].id
 

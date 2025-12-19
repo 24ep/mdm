@@ -15,8 +15,8 @@ async function getHandler(request: NextRequest) {
     const sql = `
       SELECT 
         id,
-        name,
         type,
+        type as name,
         status,
         config,
         is_enabled as "isEnabled",
@@ -24,7 +24,7 @@ async function getHandler(request: NextRequest) {
         updated_at as "updatedAt"
       FROM platform_integrations
       WHERE deleted_at IS NULL
-      ORDER BY name ASC
+      ORDER BY type ASC
     `
 
     const result = await query(sql)
@@ -35,11 +35,13 @@ async function getHandler(request: NextRequest) {
   } catch (error: any) {
     console.error('Error fetching integrations list:', error)
 
-    // If table doesn't exist, return empty array (graceful degradation)
+    // If table doesn't exist or column doesn't exist, return empty array (graceful degradation)
     if (
       error.message?.includes('does not exist') ||
       error.code === '42P01' ||
-      error.meta?.code === '42P01'
+      error.meta?.code === '42P01' ||
+      error.code === '42703' ||
+      error.meta?.code === '42703'
     ) {
       return NextResponse.json({ integrations: [] })
     }

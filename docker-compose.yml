@@ -15,15 +15,15 @@ services:
     #       cpus: '2'
     #       memory: 4G
     ports:
-      - "8301:8301"
+      - "8029:8029"
     environment:
       - NODE_ENV=production
-      - PORT=8301
+      - PORT=8029
       - DATABASE_URL=${DATABASE_URL:-postgres://postgres:postgres@postgres-db:5432/postgres}
-      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:8301}
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:8029}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-change_me_to_a_secure_random_string_at_least_32_chars}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY:-00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff}
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8302}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8129}
       - NEXT_PUBLIC_WS_PROXY_URL=${NEXT_PUBLIC_WS_PROXY_URL:-ws://10.0.10.57:3002/api/openai-realtime}
       - NEXT_PUBLIC_WS_PROXY_PORT=${NEXT_PUBLIC_WS_PROXY_PORT:-3002}
       - MINIO_ENDPOINT=${MINIO_ENDPOINT:-minio}
@@ -72,17 +72,17 @@ services:
       context: ./plugin-hub
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8302}
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8129}
     ports:
-      - "8308:3001"
+      - "8629:3001"
     environment:
       - NODE_ENV=production
       - PORT=3001
       - PLUGIN_HUB_DIR=./plugins
-      - MAIN_APP_URL=${MAIN_APP_URL:-http://app:8301}
+      - MAIN_APP_URL=${MAIN_APP_URL:-http://app:8029}
     volumes:
       # Mount plugins directory for persistence
-      - ./plugin-hub/plugins:/app/plugins
+      - /var/dockers/8029/plugin-hub:/app/plugins
     restart: unless-stopped
     networks:
       - mdm-network
@@ -101,13 +101,13 @@ services:
     # Force listening on all interfaces
     command: postgres -c 'listen_addresses=*'
     ports:
-      - "8303:5432"
+      - "8229:5432"
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-postgres}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
     volumes:
-      - postgres_db:/var/lib/postgresql/data
+      - /var/dockers/8029/postgres:/var/lib/postgresql/data
     restart: unless-stopped
     networks:
       - mdm-network
@@ -136,11 +136,11 @@ services:
       # JWT secret for production (generate with: openssl rand -base64 32)
       # For development, JWT is optional - can use API key authentication via middleware
       PGRST_JWT_SECRET: ${PGRST_JWT_SECRET:-}
-      PGRST_OPENAPI_SERVER_PROXY_URI: ${NEXT_PUBLIC_API_URL:-http://localhost:8302}
+      PGRST_OPENAPI_SERVER_PROXY_URI: ${NEXT_PUBLIC_API_URL:-http://localhost:8129}
       # Max rows per request (safety limit)
       PGRST_DB_MAX_ROWS: 1000
     ports:
-      - "8302:3000"
+      - "8129:3000"
     restart: unless-stopped
     networks:
       - mdm-network
@@ -155,10 +155,10 @@ services:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
     ports:
-      - "8304:9000"
-      - "8305:9001"
+      - "8329:9000"
+      - "8429:9001"
     volumes:
-      - minio_data:/data
+      - /var/dockers/8029/minio:/data
     restart: unless-stopped
     networks:
       - mdm-network
@@ -169,7 +169,7 @@ services:
     container_name: mdm-vault
     image: hashicorp/vault:latest
     ports:
-      - "8306:8200"
+      - "8529:8200"
     environment:
       VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_ROOT_TOKEN:-dev-root-token}
       VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
@@ -177,8 +177,8 @@ services:
     cap_add:
       - IPC_LOCK
     volumes:
-      - vault_data:/vault/data
-      - vault_logs:/vault/logs
+      - /var/dockers/8029/vault/data:/vault/data
+      - /var/dockers/8029/vault/logs:/vault/logs
     restart: unless-stopped
     networks:
       - mdm-network
@@ -193,10 +193,10 @@ services:
     container_name: mdm-redis
     image: redis:7-alpine
     ports:
-      - "8307:6379"
+      - "8729:6379"
     command: redis-server --appendonly yes --requirepass "${REDIS_PASSWORD:-redispassword}"
     volumes:
-      - redis_data:/data
+      - /var/dockers/8029/redis:/data
     restart: unless-stopped
     networks:
       - mdm-network
@@ -207,13 +207,6 @@ services:
       retries: 3
       start_period: 10s
 
-
-volumes:
-  postgres_db:
-  minio_data:
-  vault_data:
-  vault_logs:
-  redis_data:
 
 networks:
   mdm-network:

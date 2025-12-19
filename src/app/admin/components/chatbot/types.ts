@@ -505,6 +505,7 @@ export interface Chatbot {
   pwaThemeColor?: string // Theme/status bar color (default: primaryColor)
   pwaBackgroundColor?: string // Splash screen background color (default: #ffffff)
   pwaIconUrl?: string // App icon URL (should be 512x512, will be resized)
+  pwaIconSize?: number // Icon size in pixels (default: 512)
   pwaDisplayMode?: 'standalone' | 'fullscreen' | 'minimal-ui' // PWA display mode (default: standalone)
   // PWA Banner Styling
   pwaBannerBgColor?: string // Banner background color (default: primaryColor gradient)

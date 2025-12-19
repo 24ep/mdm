@@ -97,11 +97,16 @@ async function postHandler(request: NextRequest) {
       lastSync: new Date().toISOString()
     }
     
+    // Generate UUID for new records
+    // We try to update first, if it fails (not found), we insert with new ID
+    // Actually, ON CONFLICT handles it, but we need an ID for the INSERT part
+    const { v4: uuidv4 } = require('uuid')
+    
     await query(
-      `INSERT INTO system_settings (key, value, updated_at)
-       VALUES ($1, $2, NOW())
+      `INSERT INTO system_settings (id, key, value, updated_at)
+       VALUES ($1, $2, $3, NOW())
        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
-      [CONFIG_KEY, JSON.stringify(configWithTimestamp)]
+      [uuidv4(), CONFIG_KEY, JSON.stringify(configWithTimestamp)]
     )
 
     return NextResponse.json({ 

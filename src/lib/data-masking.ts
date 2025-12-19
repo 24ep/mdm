@@ -47,10 +47,11 @@ class DataMasking {
     if (this.initialized) return
 
     try {
-      // Create masking_rules table
+      // Try to create masking_rules table using gen_random_uuid() (PostgreSQL 13+)
+      // Falls back gracefully if uuid-ossp extension is not available
       await query(`
         CREATE TABLE IF NOT EXISTS public.masking_rules (
-          id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+          id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
           name TEXT NOT NULL,
           description TEXT,
           table_name TEXT,
@@ -74,8 +75,16 @@ class DataMasking {
 
       this.initialized = true
       console.log('✅ Data masking system initialized')
-    } catch (error) {
-      console.error('❌ Failed to initialize data masking:', error)
+    } catch (error: any) {
+      // Mark as initialized anyway to prevent retry loops
+      this.initialized = true
+      
+      // Log but don't throw - graceful degradation
+      if (error.code === '42P01' || error.message?.includes('does not exist')) {
+        console.log('ℹ️ Data masking table does not exist - feature disabled')
+      } else {
+        console.error('❌ Failed to initialize data masking:', error.message || error)
+      }
     }
   }
 

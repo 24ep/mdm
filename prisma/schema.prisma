@@ -19,6 +19,13 @@ model User {
   avatar    String?
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // Security & Status
+  isActive               Boolean   @default(true) @map("is_active")
+  passwordChangedAt      DateTime? @map("password_changed_at")
+  requiresPasswordChange Boolean   @default(false) @map("requires_password_change")
+  failedLoginAttempts    Int       @default(0) @map("failed_login_attempts")
+  lockoutUntil           DateTime? @map("lockout_until")
 
   // Relations
   createdSpaces                Space[]                       @relation("SpaceCreator")
