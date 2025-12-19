@@ -15,7 +15,9 @@ async function checkUserEmailExists(email: string): Promise<boolean> {
   try {
     const { rows } = await query(
       'SELECT id FROM public.users WHERE email = $1 LIMIT 1',
-      [email]
+      [email],
+      30000,
+      { skipTracing: true }
     )
     return rows && Array.isArray(rows) && rows.length > 0
   } catch (error: any) {
@@ -32,7 +34,9 @@ async function getOrCreateSSOUser(email: string, name: string, provider: string)
   try {
     const { rows: existingUsers } = await query(
       'SELECT id, email, name, role FROM public.users WHERE email = $1 LIMIT 1',
-      [email]
+      [email],
+      30000,
+      { skipTracing: true }
     )
     if (existingUsers && Array.isArray(existingUsers) && existingUsers.length > 0) {
       return {
@@ -62,7 +66,10 @@ async function getSSOConfig() {
 
   try {
     const { rows } = await query(
-      "SELECT key, value FROM system_settings WHERE key LIKE 'sso_%'"
+      "SELECT key, value FROM system_settings WHERE key LIKE 'sso_%'",
+      [],
+      30000,
+      { skipTracing: true }
     )
     const config: any = {
       googleEnabled: false,
@@ -159,7 +166,10 @@ async function getSessionTimeoutSeconds(): Promise<number> {
   try {
     // First, try to get sessionPolicy (structured format from SecurityFeatures)
     const { rows: policyRows } = await query(
-      "SELECT value FROM system_settings WHERE key = 'sessionPolicy' LIMIT 1"
+      "SELECT value FROM system_settings WHERE key = 'sessionPolicy' LIMIT 1",
+      [],
+      30000,
+      { skipTracing: true }
     )
     let found = false
     if (policyRows && Array.isArray(policyRows) && policyRows[0]?.value) {
@@ -182,7 +192,10 @@ async function getSessionTimeoutSeconds(): Promise<number> {
     if (!found) {
       // Fall back to flat sessionTimeout format (from SystemSettings)
       const { rows } = await query(
-        "SELECT value FROM system_settings WHERE key = 'sessionTimeout' LIMIT 1"
+        "SELECT value FROM system_settings WHERE key = 'sessionTimeout' LIMIT 1",
+        [],
+        30000,
+        { skipTracing: true }
       )
       if (rows && Array.isArray(rows) && rows[0]?.value) {
         const hours = Number(rows[0].value)
@@ -223,7 +236,9 @@ providers.push(
       try {
         const { rows } = await query(
           'SELECT id, email, name, password, role FROM public.users WHERE email = $1 LIMIT 1',
-          [credentials.email]
+          [credentials.email],
+          30000,
+          { skipTracing: true }
         )
         if (!rows || !Array.isArray(rows) || rows.length === 0) {
           return null

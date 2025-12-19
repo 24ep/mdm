@@ -31,27 +31,37 @@ const TAG_LENGTH = 16 // 16 bytes for GCM tag
 const KEY_LENGTH = 32 // 32 bytes for AES-256
 const ITERATIONS = 100000 // PBKDF2 iterations
 
+// Cache the derived key to avoid expensive PBKDF2 re-computation
+let cachedKey: Buffer | null = null
+
 /**
  * Get encryption key from environment variable
  * Falls back to a default key if not set (WARNING: Not secure for production)
  */
 function getEncryptionKey(): Buffer {
+  if (cachedKey) {
+    return cachedKey
+  }
+
   const crypto = getCrypto()
   const envKey = process.env.ENCRYPTION_KEY
   
   if (!envKey) {
     console.warn('⚠️  ENCRYPTION_KEY not set. Using default key (NOT SECURE FOR PRODUCTION)')
     // Default key - MUST be changed in production
-    return crypto.pbkdf2Sync('default-key-change-in-production', 'salt', 1000, KEY_LENGTH, 'sha256')
+    cachedKey = crypto.pbkdf2Sync('default-key-change-in-production', 'salt', 1000, KEY_LENGTH, 'sha256')
+    return cachedKey
   }
   
   // If key is provided as hex string, convert it
   if (envKey.length === 64) {
-    return Buffer.from(envKey, 'hex')
+    cachedKey = Buffer.from(envKey, 'hex')
+    return cachedKey
   }
   
   // Otherwise derive key from the environment variable
-  return crypto.pbkdf2Sync(envKey, 'encryption-salt', ITERATIONS, KEY_LENGTH, 'sha256')
+  cachedKey = crypto.pbkdf2Sync(envKey, 'encryption-salt', ITERATIONS, KEY_LENGTH, 'sha256')
+  return cachedKey
 }
 
 /**

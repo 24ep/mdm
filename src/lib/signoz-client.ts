@@ -1,4 +1,5 @@
-import { query } from './db'
+// Removed static import to avoid circular dependency
+// import { query } from './db'
 
 interface SigNozConfig {
   url?: string
@@ -17,6 +18,9 @@ const CONFIG_CACHE_TTL = 5 * 60 * 1000 // 5 minutes
  */
 async function getSigNozConfig(): Promise<SigNozConfig | null> {
   try {
+    // Dynamic import to avoid circular dependency with db -> tracing -> signoz -> db
+    const { query } = await import('./db')
+    
     // Check cache first
     const now = Date.now()
     if (cachedConfig && (now - configCacheTime) < CONFIG_CACHE_TTL) {

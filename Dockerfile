@@ -59,7 +59,7 @@ ENV HOSTNAME="0.0.0.0"
 # Reduced from 4096 - chunking allows lower memory usage
 ENV NODE_OPTIONS="--max-old-space-size=2048"
 
-RUN apk add --no-cache postgresql-client dos2unix && \
+RUN apk add --no-cache postgresql-client dos2unix openssl && \
     addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
