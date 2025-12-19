@@ -16,27 +16,21 @@ async function executeSqlFile(filePath, fileName) {
   
   const sql = fs.readFileSync(filePath, 'utf8');
   
-  // Remove comments and split by semicolons
-  const cleanSql = sql
-    .split('\n')
-    .filter(line => !line.trim().startsWith('--'))
-    .join('\n');
-  
-  // Split into individual statements
-  const statements = cleanSql
-    .split(';')
-    .map(s => s.trim())
-    .filter(s => s.length > 0);
-  
-  // Execute each statement separately
-  for (const statement of statements) {
-    if (statement.trim()) {
-      console.log(`Executing: ${statement.substring(0, 50)}...`);
-      await prisma.$executeRawUnsafe(statement + ';');
-    }
+  if (!sql.trim()) {
+    console.log(`⚠️  ${fileName} is empty`);
+    return;
   }
-  
-  console.log(`✅ ${fileName} completed!`);
+
+  try {
+    console.log(`Executing ${fileName}...`);
+    await prisma.$executeRawUnsafe(sql);
+    console.log(`✅ ${fileName} completed!`);
+  } catch (error) {
+    // If multiple statements fail, we might want to try splitting as fallback? 
+    // But for $$ blocks we must not split. 
+    // Let's rely on Postgres handling multiple statements.
+    throw error;
+  }
 }
 
 async function runMigration() {
