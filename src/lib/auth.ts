@@ -6,6 +6,11 @@ import bcrypt from "bcryptjs"
 import crypto from "crypto"
 import { query } from "@/lib/db"
 
+// Simple in-memory cache
+const CACHE_TTL_MS = 10 * 60 * 1000 // 10 minutes
+let ssoConfigCache: { data: any, timestamp: number } | null = null
+let sessionTimeoutCache: { data: number, timestamp: number } | null = null
+
 async function checkUserEmailExists(email: string): Promise<boolean> {
   try {
     const { rows } = await query(
@@ -49,6 +54,12 @@ async function getOrCreateSSOUser(email: string, name: string, provider: string)
 }
 
 async function getSSOConfig() {
+  // Check cache first
+  const now = Date.now()
+  if (ssoConfigCache && (now - ssoConfigCache.timestamp < CACHE_TTL_MS)) {
+    return ssoConfigCache.data
+  }
+
   try {
     const { rows } = await query(
       "SELECT key, value FROM system_settings WHERE key LIKE 'sso_%'"
@@ -112,6 +123,9 @@ async function getSSOConfig() {
         }
       }
     }
+
+    // Update cache
+    ssoConfigCache = { data: config, timestamp: now }
     return config
   } catch (error: any) {
     // Silently fall back to environment variables if database query fails
@@ -134,11 +148,20 @@ async function getSSOConfig() {
 // Read session timeout (in hours) from system settings or ENV fallback
 // Supports both sessionPolicy.timeout (structured) and sessionTimeout (flat) formats
 async function getSessionTimeoutSeconds(): Promise<number> {
+  // Check cache
+  const now = Date.now()
+  if (sessionTimeoutCache && (now - sessionTimeoutCache.timestamp < CACHE_TTL_MS)) {
+    return sessionTimeoutCache.data
+  }
+
+  let timeout: number = 24 * 3600 // Default
+
   try {
     // First, try to get sessionPolicy (structured format from SecurityFeatures)
     const { rows: policyRows } = await query(
       "SELECT value FROM system_settings WHERE key = 'sessionPolicy' LIMIT 1"
     )
+    let found = false
     if (policyRows && Array.isArray(policyRows) && policyRows[0]?.value) {
       try {
         const policy = typeof policyRows[0].value === 'string' 
@@ -146,20 +169,27 @@ async function getSessionTimeoutSeconds(): Promise<number> {
           : policyRows[0].value
         if (policy?.timeout) {
           const hours = Number(policy.timeout)
-          if (!Number.isNaN(hours) && hours > 0) return hours * 3600
+          if (!Number.isNaN(hours) && hours > 0) {
+            timeout = hours * 3600
+            found = true
+          }
         }
       } catch {
         // If JSON parse fails, continue to flat format
       }
     }
     
-    // Fall back to flat sessionTimeout format (from SystemSettings)
-    const { rows } = await query(
-      "SELECT value FROM system_settings WHERE key = 'sessionTimeout' LIMIT 1"
-    )
-    if (rows && Array.isArray(rows) && rows[0]?.value) {
-      const hours = Number(rows[0].value)
-      if (!Number.isNaN(hours) && hours > 0) return hours * 3600
+    if (!found) {
+      // Fall back to flat sessionTimeout format (from SystemSettings)
+      const { rows } = await query(
+        "SELECT value FROM system_settings WHERE key = 'sessionTimeout' LIMIT 1"
+      )
+      if (rows && Array.isArray(rows) && rows[0]?.value) {
+        const hours = Number(rows[0].value)
+        if (!Number.isNaN(hours) && hours > 0) {
+          timeout = hours * 3600
+        }
+      }
     }
   } catch (err: any) {
     // Silently fall back to env/default if database query fails
@@ -167,9 +197,13 @@ async function getSessionTimeoutSeconds(): Promise<number> {
     if (process.env.NODE_ENV === 'development') {
       console.warn('Could not load session timeout from database, using default:', err?.message)
     }
+    const envHours = Number(process.env.SESSION_TIMEOUT_HOURS || 24)
+    timeout = (Number.isNaN(envHours) || envHours <= 0 ? 24 : envHours) * 3600
   }
-  const envHours = Number(process.env.SESSION_TIMEOUT_HOURS || 24)
-  return (Number.isNaN(envHours) || envHours <= 0 ? 24 : envHours) * 3600
+
+  // Update Cache
+  sessionTimeoutCache = { data: timeout, timestamp: now }
+  return timeout
 }
 
 const providers: any[] = []
@@ -275,11 +309,18 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, account, profile }) {
       if (account?.provider === 'google' || account?.provider === 'azure-ad') {
         if (!user.email) return false
+        
+        // Optimally, fetch SSO Config first
         const ssoConfig = await getSSOConfig()
+        
         if (account.provider === 'google' && !ssoConfig.googleEnabled) return false
         if (account.provider === 'azure-ad' && !ssoConfig.azureEnabled) return false
+        
+        // Then check user existence
         const userExists = await checkUserEmailExists(user.email)
         if (!userExists) return false
+        
+        // Finally get/create SSO user
         const ssoUser = await getOrCreateSSOUser(user.email, user.name || profile?.name || '', account.provider)
         if (ssoUser) { (user as any).id = ssoUser.id; (user as any).role = ssoUser.role }
         return true
