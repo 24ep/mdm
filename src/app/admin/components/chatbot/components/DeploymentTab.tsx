@@ -5,7 +5,8 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Copy, Globe, Info } from 'lucide-react'
+import { Switch } from '@/components/ui/switch'
+import { Copy, Globe, Info, Smartphone } from 'lucide-react'
 import { Chatbot } from '../types'
 import toast from 'react-hot-toast'
 
@@ -59,6 +60,159 @@ export function DeploymentTab({
             (e.g., when using a CDN, reverse proxy, or dedicated chat subdomain).
           </p>
         </div>
+      </div>
+
+      {/* PWA Configuration */}
+      <div className="space-y-4 border rounded-lg p-4">
+        <div className="flex items-center gap-2">
+          <Smartphone className="h-4 w-4 text-muted-foreground" />
+          <Label className="text-base font-medium">PWA Install Banner</Label>
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="pwa-enabled">Enable PWA Install Banner</Label>
+            <p className="text-xs text-muted-foreground">
+              Show an install prompt inside the chat widget for users to install the chat as a standalone app
+            </p>
+          </div>
+          <Switch
+            id="pwa-enabled"
+            checked={formData.pwaEnabled || false}
+            onCheckedChange={(checked) => setFormData({ ...formData, pwaEnabled: checked })}
+          />
+        </div>
+
+        {formData.pwaEnabled && (
+          <>
+            <div className="space-y-2">
+              <Label>Banner Text</Label>
+              <Input
+                placeholder="Install app for quick access"
+                value={formData.pwaBannerText || ''}
+                onChange={(e) => setFormData({ ...formData, pwaBannerText: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Banner Position</Label>
+              <Select
+                value={formData.pwaBannerPosition || 'bottom'}
+                onValueChange={(v: 'top' | 'bottom') => setFormData({ ...formData, pwaBannerPosition: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bottom">Above Input (Floating)</SelectItem>
+                  <SelectItem value="top">Top of Chat Window</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* PWA Metadata Section */}
+            <div className="border-t pt-4 mt-4">
+              <Label className="text-sm font-medium text-muted-foreground">App Metadata (for installed PWA)</Label>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>App Name</Label>
+                <Input
+                  placeholder={formData.name || 'Chat Assistant'}
+                  value={formData.pwaAppName || ''}
+                  onChange={(e) => setFormData({ ...formData, pwaAppName: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">Name shown in app drawer</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Short Name</Label>
+                <Input
+                  placeholder={formData.name?.split(' ')[0] || 'Chat'}
+                  value={formData.pwaShortName || ''}
+                  onChange={(e) => setFormData({ ...formData, pwaShortName: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">Name on home screen</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>App Description</Label>
+              <Input
+                placeholder={formData.description || 'AI Chat Assistant'}
+                value={formData.pwaDescription || ''}
+                onChange={(e) => setFormData({ ...formData, pwaDescription: e.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Theme Color</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="color"
+                    className="w-12 h-10 p-1 cursor-pointer"
+                    value={formData.pwaThemeColor || formData.primaryColor || '#3b82f6'}
+                    onChange={(e) => setFormData({ ...formData, pwaThemeColor: e.target.value })}
+                  />
+                  <Input
+                    placeholder="#3b82f6"
+                    value={formData.pwaThemeColor || ''}
+                    onChange={(e) => setFormData({ ...formData, pwaThemeColor: e.target.value })}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">Status bar color</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Background Color</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="color"
+                    className="w-12 h-10 p-1 cursor-pointer"
+                    value={formData.pwaBackgroundColor || '#ffffff'}
+                    onChange={(e) => setFormData({ ...formData, pwaBackgroundColor: e.target.value })}
+                  />
+                  <Input
+                    placeholder="#ffffff"
+                    value={formData.pwaBackgroundColor || ''}
+                    onChange={(e) => setFormData({ ...formData, pwaBackgroundColor: e.target.value })}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">Splash screen background</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>App Icon URL</Label>
+              <Input
+                type="url"
+                placeholder={formData.logo || 'https://example.com/icon-512.png'}
+                value={formData.pwaIconUrl || ''}
+                onChange={(e) => setFormData({ ...formData, pwaIconUrl: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">512x512 PNG recommended. Uses chatbot logo if empty.</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Display Mode</Label>
+              <Select
+                value={formData.pwaDisplayMode || 'standalone'}
+                onValueChange={(v) => setFormData({ ...formData, pwaDisplayMode: v as 'standalone' | 'fullscreen' | 'minimal-ui' })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="standalone">Standalone (App-like)</SelectItem>
+                  <SelectItem value="fullscreen">Fullscreen</SelectItem>
+                  <SelectItem value="minimal-ui">Minimal UI (with back button)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="space-y-2">

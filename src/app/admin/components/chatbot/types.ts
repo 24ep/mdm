@@ -494,6 +494,18 @@ export interface Chatbot {
   userAvatarIconColor?: string
   userAvatarBackgroundColor?: string
   userAvatarImageUrl?: string
+  // PWA Configuration
+  pwaEnabled?: boolean // Enable/disable PWA install banner in embedded chat
+  pwaBannerText?: string // Custom banner text (default: "Install app for quick access")
+  pwaBannerPosition?: 'top' | 'bottom' // Banner position relative to input (default: 'bottom' = above input)
+  // PWA Metadata
+  pwaAppName?: string // App name for PWA manifest (default: chatbot name)
+  pwaShortName?: string // Short name for home screen (default: first word of name)
+  pwaDescription?: string // App description (default: chatbot description)
+  pwaThemeColor?: string // Theme/status bar color (default: primaryColor)
+  pwaBackgroundColor?: string // Splash screen background color (default: #ffffff)
+  pwaIconUrl?: string // App icon URL (should be 512x512, will be resized)
+  pwaDisplayMode?: 'standalone' | 'fullscreen' | 'minimal-ui' // PWA display mode (default: standalone)
   isPublished: boolean
   createdAt: Date
   updatedAt: Date

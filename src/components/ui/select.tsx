@@ -184,7 +184,7 @@ const SelectContent = React.forwardRef<
       )}
       style={{
         position: "fixed",
-        zIndex: Z_INDEX.popover + 200, // Higher than popover (1200) to appear above it
+        zIndex: Z_INDEX.dialogDropdown, // Use dialogDropdown level to appear above dialogs/modals
         top: `${positionState.top}px`,
         left: `${positionState.left}px`,
         width: position === "popper" ? `${positionState.width}px` : "auto",

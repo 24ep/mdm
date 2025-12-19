@@ -1,15 +1,33 @@
 import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
 import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
+import { query } from '@/lib/db'
+
+const CONFIG_KEY = 'data_governance_config'
+
 async function getHandler(request: NextRequest) {
   try {
     const authResult = await requireAuth()
     if (!authResult.success) return authResult.response
     const { session } = authResult
 
-    // TODO: Load from database or configuration store
-    // For now, return empty config
-    const config = null
+    // Load from system_settings table
+    const result = await query(
+      `SELECT value FROM system_settings WHERE key = $1`,
+      [CONFIG_KEY]
+    )
+
+    let config = null
+    if (result.rows.length > 0 && result.rows[0].value) {
+      try {
+        config = typeof result.rows[0].value === 'string' 
+          ? JSON.parse(result.rows[0].value) 
+          : result.rows[0].value
+      } catch (parseError) {
+        console.error('Error parsing data governance config:', parseError)
+        config = null
+      }
+    }
 
     return NextResponse.json({ config })
   } catch (error) {
@@ -20,10 +38,6 @@ async function getHandler(request: NextRequest) {
     )
   }
 }
-
-
-
-
 
 export const GET = withErrorHandling(getHandler, 'GET /api/admin/data-governance/config')
 
@@ -36,8 +50,6 @@ async function postHandler(request: NextRequest) {
     const body = await request.json()
     const { config } = body
 
-    // TODO: Save to database or configuration store
-    // For now, just validate the config
     if (!config.host) {
       return NextResponse.json(
         { error: 'OpenMetadata host is required' },
@@ -79,15 +91,22 @@ async function postHandler(request: NextRequest) {
       )
     }
 
-    // TODO: Save config to database
-    // await saveDataGovernanceConfig(config)
+    // Save config to system_settings table
+    const configWithTimestamp = {
+      ...config,
+      lastSync: new Date().toISOString()
+    }
+    
+    await query(
+      `INSERT INTO system_settings (key, value, updated_at)
+       VALUES ($1, $2, NOW())
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+      [CONFIG_KEY, JSON.stringify(configWithTimestamp)]
+    )
 
     return NextResponse.json({ 
       success: true,
-      config: {
-        ...config,
-        lastSync: new Date().toISOString()
-      }
+      config: configWithTimestamp
     })
   } catch (error) {
     console.error('Error saving data governance config:', error)
@@ -99,4 +118,5 @@ async function postHandler(request: NextRequest) {
 }
 
 export const POST = withErrorHandling(postHandler, 'POST /api/admin/data-governance/config')
+
 

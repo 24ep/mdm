@@ -37,6 +37,7 @@ export const Z_INDEX = {
   drawer: 2100,
   modal: 2200,
   dialog: 2300,
+  dialogDropdown: 2400, // Dropdowns/selects inside dialogs - must be above dialog
   
   // Very High layer (3000-3999)
   notification: 3000,

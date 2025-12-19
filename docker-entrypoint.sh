@@ -79,6 +79,21 @@ npx prisma db seed || {
   }
 }
 
+# Seed marketplace plugins
+echo ""
+echo "=== Seeding marketplace plugins ==="
+node scripts/seed-plugins.js || {
+  echo "⚠️  Plugin seeding failed (may already be seeded)"
+}
+
+# Seed themes
+echo ""
+echo "=== Seeding themes ==="
+npx tsx prisma/seed-themes.ts 2>/dev/null || \
+node --loader ts-node/esm prisma/seed-themes.ts 2>/dev/null || {
+  echo "⚠️  Theme seeding failed (may already be seeded)"
+}
+
 echo ""
 echo "=== Initialization complete. Starting server... ==="
 

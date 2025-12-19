@@ -389,8 +389,100 @@ export async function GET(request: NextRequest) {
     iframe.style.cssText = 'width: 100%; flex: 1; border: none; border-radius: 0 0 ' + chatWindowBorderRadius + ' ' + chatWindowBorderRadius + ';';
     iframe.style.border = 'none';
     
+    // PWA Install Banner
+    var pwaBanner = null;
+    var pwaConfig = {
+      enabled: chatbot.pwaEnabled || false,
+      bannerText: chatbot.pwaBannerText || 'Install app for quick access',
+      position: chatbot.pwaBannerPosition || 'bottom'
+    };
+    
+    if (pwaConfig.enabled) {
+      // Check if banner was dismissed
+      var pwaDismissedKey = 'pwa_dismissed_' + chatbotId;
+      var pwaDismissed = false;
+      try {
+        pwaDismissed = localStorage.getItem(pwaDismissedKey) === 'true';
+      } catch (e) {}
+      
+      // Check if already installed (basic check)
+      var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+      
+      if (!pwaDismissed && !isStandalone) {
+        pwaBanner = document.createElement('div');
+        pwaBanner.id = 'pwa-banner-' + chatbotId;
+        
+        var bannerPosition = pwaConfig.position === 'top' ? 'top: 0;' : 'bottom: 0;';
+        var bannerBorderRadius = pwaConfig.position === 'top' ? '0' : '8px 8px 0 0';
+        
+        pwaBanner.style.cssText = 'position: absolute; left: 0; right: 0; ' + bannerPosition + ' background: linear-gradient(135deg, ' + (chatbot.primaryColor || '#3b82f6') + ' 0%, ' + (chatbot.primaryColor || '#3b82f6') + 'dd 100%); color: white; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; z-index: 10; border-radius: ' + bannerBorderRadius + '; box-shadow: 0 -2px 10px rgba(0,0,0,0.1);';
+        
+        // Banner content
+        var bannerContent = document.createElement('div');
+        bannerContent.style.cssText = 'display: flex; align-items: center; gap: 8px; flex: 1;';
+        
+        // Mobile icon
+        var mobileIcon = document.createElement('span');
+        mobileIcon.innerHTML = '📱';
+        mobileIcon.style.cssText = 'font-size: 18px;';
+        bannerContent.appendChild(mobileIcon);
+        
+        // Text
+        var bannerText = document.createElement('span');
+        bannerText.textContent = pwaConfig.bannerText;
+        bannerText.style.cssText = 'font-size: 13px; font-weight: 500;';
+        bannerContent.appendChild(bannerText);
+        
+        // Buttons container
+        var bannerButtons = document.createElement('div');
+        bannerButtons.style.cssText = 'display: flex; align-items: center; gap: 6px;';
+        
+        // Install button
+        var installBtn = document.createElement('button');
+        installBtn.textContent = 'Install';
+        installBtn.setAttribute('type', 'button');
+        installBtn.style.cssText = 'background: white; color: ' + (chatbot.primaryColor || '#3b82f6') + '; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: opacity 0.2s;';
+        installBtn.onmouseover = function() { this.style.opacity = '0.9'; };
+        installBtn.onmouseout = function() { this.style.opacity = '1'; };
+        installBtn.onclick = function(e) {
+          e.stopPropagation();
+          // Open standalone chat URL in new window for PWA installation
+          var pwaUrl = window.location.origin + '/chat/' + chatbotId + '?pwa=1';
+          window.open(pwaUrl, '_blank', 'noopener,noreferrer');
+        };
+        bannerButtons.appendChild(installBtn);
+        
+        // Close button
+        var closeBtn = document.createElement('button');
+        closeBtn.innerHTML = '✕';
+        closeBtn.setAttribute('type', 'button');
+        closeBtn.setAttribute('aria-label', 'Dismiss install banner');
+        closeBtn.style.cssText = 'background: transparent; color: white; border: none; padding: 4px 6px; font-size: 14px; cursor: pointer; opacity: 0.7; transition: opacity 0.2s;';
+        closeBtn.onmouseover = function() { this.style.opacity = '1'; };
+        closeBtn.onmouseout = function() { this.style.opacity = '0.7'; };
+        closeBtn.onclick = function(e) {
+          e.stopPropagation();
+          pwaBanner.style.display = 'none';
+          try {
+            localStorage.setItem(pwaDismissedKey, 'true');
+          } catch (err) {}
+        };
+        bannerButtons.appendChild(closeBtn);
+        
+        pwaBanner.appendChild(bannerContent);
+        pwaBanner.appendChild(bannerButtons);
+      }
+    }
+    
     chatWindow.appendChild(header);
     chatWindow.appendChild(iframe);
+    if (pwaBanner) {
+      chatWindow.appendChild(pwaBanner);
+      // Adjust iframe to not overlap with banner if at bottom
+      if (pwaConfig.position === 'bottom') {
+        chatWindow.style.position = 'relative';
+      }
+    }
     
     // Create overlay element
     var overlay = null;

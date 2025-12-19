@@ -217,7 +217,7 @@ async function postHandler(request: NextRequest) {
       `INSERT INTO knowledge_collections (
         id, name, description, icon, color, is_private, space_id, created_by, created_at, updated_at
       ) VALUES (
-        gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, NOW(), NOW()
+        gen_random_uuid(), $1, $2, $3, $4, $5, $6::uuid, $7::uuid, NOW(), NOW()
       ) RETURNING id, name, description, icon, color, is_private, space_id, created_by, created_at, updated_at`,
       [
         name.trim(),
