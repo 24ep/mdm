@@ -52,13 +52,13 @@ export function ThemeLibrary({
     const filteredThemes = useMemo(() => {
         return themes.filter(theme => {
             // Search filter
-            const matchesSearch = 
+            const matchesSearch =
                 theme.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 theme.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 theme.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
 
             // Tag filter
-            const matchesTags = selectedTags.length === 0 || 
+            const matchesTags = selectedTags.length === 0 ||
                 selectedTags.every(tag => theme.tags?.includes(tag))
 
             return matchesSearch && matchesTags
@@ -66,8 +66,8 @@ export function ThemeLibrary({
     }, [themes, searchQuery, selectedTags])
 
     const toggleTag = (tag: string) => {
-        setSelectedTags(prev => 
-            prev.includes(tag) 
+        setSelectedTags(prev =>
+            prev.includes(tag)
                 ? prev.filter(t => t !== tag)
                 : [...prev, tag]
         )
@@ -118,8 +118,8 @@ export function ThemeLibrary({
                                         key={tag}
                                         variant={isSelected ? "default" : "outline"}
                                         className={cn(
-                                            "cursor-pointer text-xs px-2 py-0.5 transition-colors",
-                                            isSelected && "bg-primary text-primary-foreground"
+                                            "cursor-pointer text-xs px-2 py-0.5 transition-colors rounded-full",
+                                            isSelected && "bg-secondary text-secondary-foreground"
                                         )}
                                         onClick={() => toggleTag(tag)}
                                     >

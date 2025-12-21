@@ -11,18 +11,20 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Loader, Search, Package, Download, RefreshCw, Plus } from 'lucide-react'
+import { Loader, Search, Package, Download, RefreshCw, Plus, FileText, Upload } from 'lucide-react'
 import { PluginDefinition, PluginCategory } from '../types'
 import { showSuccess, showError } from '@/lib/toast-utils'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { AddPluginDialog } from './AddPluginDialog'
+import { UploadTemplateDialog } from '@/components/reports/UploadTemplateDialog'
 import { useSpace } from '@/contexts/space-context'
 
 export function PluginHub() {
@@ -32,6 +34,7 @@ export function PluginHub() {
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [addPluginOpen, setAddPluginOpen] = useState(false)
+  const [uploadTemplateOpen, setUploadTemplateOpen] = useState(false)
   const { currentSpace } = useSpace()
 
   const categories: Array<{ value: PluginCategory | 'all'; label: string }> = [
@@ -47,6 +50,7 @@ export function PluginHub() {
     { value: 'analytics', label: 'Analytics' },
     { value: 'security', label: 'Security' },
     { value: 'development-tools', label: 'Development Tools' },
+    { value: 'report-templates', label: 'Report Templates' },
     { value: 'other', label: 'Other' },
   ]
 
@@ -58,7 +62,7 @@ export function PluginHub() {
       if (statusFilter !== 'all') params.append('status', statusFilter)
 
       const response = await fetch(`/api/marketplace/plugins?${params.toString()}`)
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch plugins')
       }
@@ -131,26 +135,49 @@ export function PluginHub() {
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
-          <Dialog open={addPluginOpen} onOpenChange={setAddPluginOpen}>
-            <DialogTrigger asChild>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Plugin
+                Add New
               </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <AddPluginDialog
-                open={addPluginOpen}
-                onOpenChange={setAddPluginOpen}
-                onSuccess={() => {
-                  setAddPluginOpen(false)
-                  fetchPlugins()
-                }}
-              />
-            </DialogContent>
-          </Dialog>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setAddPluginOpen(true)}>
+                <Package className="h-4 w-4 mr-2" />
+                Add Plugin
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setUploadTemplateOpen(true)}>
+                <FileText className="h-4 w-4 mr-2" />
+                Upload Template
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
+
+      {/* Add Plugin Dialog */}
+      <Dialog open={addPluginOpen} onOpenChange={setAddPluginOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <AddPluginDialog
+            open={addPluginOpen}
+            onOpenChange={setAddPluginOpen}
+            onSuccess={() => {
+              setAddPluginOpen(false)
+              fetchPlugins()
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Upload Template Dialog */}
+      <UploadTemplateDialog
+        open={uploadTemplateOpen}
+        onOpenChange={setUploadTemplateOpen}
+        onSuccess={() => {
+          fetchPlugins()
+        }}
+      />
 
       {/* Filters */}
       <div className="flex gap-4">

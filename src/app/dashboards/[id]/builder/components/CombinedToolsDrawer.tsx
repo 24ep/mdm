@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'
+import { CentralizedDrawer } from '@/components/ui/centralized-drawer'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -100,19 +100,20 @@ export function CombinedToolsDrawer({
   const presetThemes: Theme[] = useMemo(() => ([
     ...themePresets,
   ]), [themePresets])
-  const [themeSource, setThemeSource] = useState<'custom'|'preset'>('custom')
+  const [themeSource, setThemeSource] = useState<'custom' | 'preset'>('custom')
   const [selectedPresetId, setSelectedPresetId] = useState<string>(presetThemes[0]?.id || '')
   const fileInputRef = React.useRef<HTMLInputElement | null>(null)
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-w-5xl mx-auto">
-        <DrawerHeader>
-          <DrawerTitle>Tools</DrawerTitle>
-        </DrawerHeader>
-        <div className="px-4 pb-4">
-          <div className="w-full">
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+    <CentralizedDrawer
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Tools"
+      width="w-full md:w-[720px]"
+    >
+      <div className="px-4 pb-4">
+        <div className="w-full">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
             <TabsList className="grid w-full grid-cols-4 mb-4">
               <TabsTrigger value="share">Share</TabsTrigger>
               <TabsTrigger value="versions">Versions</TabsTrigger>
@@ -125,7 +126,7 @@ export function CombinedToolsDrawer({
               <div>
                 <Label className="text-sm font-medium">Visibility</Label>
                 <div className="flex gap-2 mt-2">
-                  {(['PRIVATE','RESTRICTED','PUBLIC'] as Visibility[]).map(v => (
+                  {(['PRIVATE', 'RESTRICTED', 'PUBLIC'] as Visibility[]).map(v => (
                     <Button key={v} variant={share.visibility === v ? 'default' : 'outline'} size="sm" onClick={() => setShare({ ...share, visibility: v })}>
                       {v}
                     </Button>
@@ -224,7 +225,7 @@ export function CombinedToolsDrawer({
                   try {
                     const theme = JSON.parse(text)
                     onThemeImport && onThemeImport(theme)
-                  } catch {}
+                  } catch { }
                 }} />
                 <Button variant="outline" onClick={() => fileInputRef.current?.click()}>Import JSON</Button>
               </div>
@@ -259,7 +260,7 @@ export function CombinedToolsDrawer({
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Page Navigation Placement</Label>
                 <div className="flex flex-wrap gap-2">
-                  {(['top','left','right','button','icon'] as const).map(p => (
+                  {(['top', 'left', 'right', 'button', 'icon'] as const).map(p => (
                     <Button key={p} variant={pageNavPlacement === p ? 'default' : 'outline'} size="sm" onClick={() => onSavePageNavPlacement && onSavePageNavPlacement(p)}>
                       {p.charAt(0).toUpperCase() + p.slice(1)}
                     </Button>
@@ -271,10 +272,9 @@ export function CombinedToolsDrawer({
               </div>
             </TabsContent>
           </Tabs>
-          </div>
         </div>
-      </DrawerContent>
-    </Drawer>
+      </div>
+    </CentralizedDrawer>
   )
 }
 

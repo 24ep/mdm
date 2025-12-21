@@ -20,10 +20,11 @@ import {
 } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Search, Download, Star, ExternalLink, Loader, AlertCircle, RefreshCw, Plus, BarChart3, Activity, Database, HardDrive, Globe, Settings, Workflow, TrendingUp, Shield, Code, Package } from 'lucide-react'
+import { Search, Download, Star, ExternalLink, Loader, AlertCircle, RefreshCw, Plus, BarChart3, Activity, Database, HardDrive, Globe, Settings, Workflow, TrendingUp, Shield, Code, Package, FileText, Upload } from 'lucide-react'
 import { useSpace } from '@/contexts/space-context'
 import { PluginCard } from './PluginCard'
 import { InstallationWizard } from './InstallationWizard'
+
 // Add Plugin functionality moved to Plugin Hub
 
 export interface MarketplaceHomeProps {
@@ -59,9 +60,7 @@ export function MarketplaceHome({
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedPlugin, setSelectedPlugin] = useState<PluginDefinition | null>(null)
   const [showInstallWizard, setShowInstallWizard] = useState(false)
-  const [registering, setRegistering] = useState(false)
-  const [registerError, setRegisterError] = useState<string | null>(null)
-  const [registerSuccess, setRegisterSuccess] = useState(false)
+
   // Add Plugin functionality moved to Plugin Hub
 
   const isAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'SUPER_ADMIN'
@@ -73,12 +72,13 @@ export function MarketplaceHome({
     : spaceId
 
   const { plugins, loading, error, refetch } = useMarketplacePlugins({
-    category: selectedCategory === 'all' ? undefined : selectedCategory,
+    // Fetch all plugins to allow client-side category filtering without hiding other badges
+    category: undefined,
     spaceId: effectiveSpaceId,
   })
 
   const { install, uninstall, loading: installing } = usePluginInstallation()
-  
+
   // Fetch installations to check which plugins are installed
   const [installations, setInstallations] = useState<Map<string, string>>(new Map()) // Map<serviceId, installationId>
   const [loadingInstallations, setLoadingInstallations] = useState(false)
@@ -115,45 +115,40 @@ export function MarketplaceHome({
     fetchInstallations()
   }, [effectiveSpaceId, currentSpace?.id])
 
-  const handleRegisterPlugins = async () => {
-    setRegistering(true)
-    setRegisterError(null)
-    setRegisterSuccess(false)
-    try {
-      const response = await fetch('/api/marketplace/plugins/register', {
-        method: 'POST',
-      })
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to register plugins' }))
-        throw new Error(errorData.error || 'Failed to register plugins')
-      }
-      setRegisterSuccess(true)
-      // Refetch plugins after registration
-      await refetch()
-      setTimeout(() => setRegisterSuccess(false), 3000)
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to register plugins'
-      setRegisterError(errorMessage)
-      console.error('Error registering plugins:', err)
-    } finally {
-      setRegistering(false)
-    }
-  }
+
 
   const filteredPlugins = plugins.filter((plugin) => {
+    // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
-      return (
-        plugin.name?.toLowerCase().includes(query) ||
-        plugin.description?.toLowerCase().includes(query) ||
-        plugin.provider?.toLowerCase().includes(query)
-      )
+      if (!plugin.name?.toLowerCase().includes(query) &&
+        !plugin.description?.toLowerCase().includes(query) &&
+        !plugin.provider?.toLowerCase().includes(query)) {
+        return false
+      }
     }
+
+    // Filter by category (client-side)
+    if (selectedCategory !== 'all' && plugin.category !== selectedCategory) {
+      return false
+    }
+
     return true
   })
 
-  // Group plugins by category
-  const pluginsByCategory = filteredPlugins.reduce((acc, plugin) => {
+  // Group plugins by category (from ALL available plugins, not just filtered ones)
+  // This ensures badges show correct counts even when filtered
+  const pluginsByCategory = plugins.reduce((acc, plugin) => {
+    const category = plugin.category || 'other'
+    if (!acc[category]) {
+      acc[category] = []
+    }
+    acc[category].push(plugin)
+    return acc
+  }, {} as Record<string, PluginDefinition[]>)
+
+  // Separate grouping for DISPLAY (only shows filtered plugins)
+  const displayPluginsByCategory = filteredPlugins.reduce((acc, plugin) => {
     const category = plugin.category || 'other'
     if (!acc[category]) {
       acc[category] = []
@@ -183,7 +178,7 @@ export function MarketplaceHome({
     const installation = await install(plugin.id, effectiveSpace, config)
     setShowInstallWizard(false)
     setSelectedPlugin(null)
-    
+
     // Refresh installations to get the latest status
     await fetchInstallations()
     refetch()
@@ -242,27 +237,10 @@ export function MarketplaceHome({
           <div className="flex gap-2">
             <Button
               variant="outline"
-              onClick={() => window.location.href = '/marketplace?tab=hub'}
+              onClick={() => refetch()}
             >
-              <Plus className="mr-2 h-4 w-4" />
-              Manage Plugins
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleRegisterPlugins}
-              disabled={registering}
-            >
-              {registering ? (
-                <>
-                  <Loader className="mr-2 h-4 w-4 animate-spin" />
-                  Registering...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Register Plugins
-                </>
-              )}
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Fetch Updates
             </Button>
           </div>
         )}
@@ -274,87 +252,64 @@ export function MarketplaceHome({
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             {error}
-            {error.includes('does not exist') && isAdmin && (
-              <div className="mt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRegisterPlugins}
-                  disabled={registering}
-                >
-                  {registering ? 'Registering...' : 'Register Plugins'}
-                </Button>
-              </div>
-            )}
+
           </AlertDescription>
         </Alert>
       )}
 
-      {registerError && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{registerError}</AlertDescription>
-        </Alert>
-      )}
 
-      {registerSuccess && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>Plugins registered successfully! They should appear below.</AlertDescription>
-        </Alert>
-      )}
 
       {/* Categories Section */}
       <div className="flex flex-wrap gap-2">
-          {categories.map((cat) => {
-            const Icon = cat.icon
-            // Count plugins in this category
-            const categoryCount = cat.value === 'all' 
-              ? plugins.length 
-              : plugins.filter(p => p.category === cat.value).length
-            
-            // Don't show categories with no plugins (except "All Categories")
-            if (cat.value !== 'all' && categoryCount === 0) {
-              return null
-            }
-            
-            const isSelected = selectedCategory === cat.value
-            return (
-              <Badge
-                key={cat.value}
-                variant={isSelected ? 'default' : 'outline'}
-                className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-full cursor-pointer hover:opacity-80 transition-opacity"
-                onClick={(e) => {
+        {categories.map((cat) => {
+          const Icon = cat.icon
+          // Count plugins in this category
+          const categoryCount = cat.value === 'all'
+            ? plugins.length
+            : plugins.filter(p => p.category === cat.value).length
+
+          // Don't show categories with no plugins (except "All Categories")
+          if (cat.value !== 'all' && categoryCount === 0) {
+            return null
+          }
+
+          const isSelected = selectedCategory === cat.value
+          return (
+            <Badge
+              key={cat.value}
+              variant={isSelected ? 'default' : 'outline'}
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-full cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={(e) => {
+                e.preventDefault()
+                setSelectedCategory(cat.value as PluginCategory | 'all')
+              }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault()
                   setSelectedCategory(cat.value as PluginCategory | 'all')
-                }}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault()
-                    setSelectedCategory(cat.value as PluginCategory | 'all')
-                  }
-                }}
-              >
-                <Icon className="h-4 w-4" />
-                {cat.label}
-                {categoryCount > 0 && (
-                  <Badge 
-                    variant={isSelected ? 'secondary' : 'default'} 
-                    className="ml-2 h-5 rounded-full flex items-center justify-center text-xs font-semibold"
-                    style={{
-                      minWidth: categoryCount < 10 ? '20px' : '24px',
-                      width: categoryCount < 10 ? '20px' : 'auto',
-                      padding: categoryCount < 10 ? '0' : '0 6px'
-                    }}
-                  >
-                    {categoryCount}
-                  </Badge>
-                )}
-              </Badge>
-            )
-          })}
+                }
+              }}
+            >
+              <Icon className="h-4 w-4" />
+              {cat.label}
+              {categoryCount > 0 && (
+                <Badge
+                  variant={isSelected ? 'secondary' : 'default'}
+                  className="ml-2 h-5 rounded-full flex items-center justify-center text-xs font-semibold"
+                  style={{
+                    minWidth: categoryCount < 10 ? '20px' : '24px',
+                    width: categoryCount < 10 ? '20px' : 'auto',
+                    padding: categoryCount < 10 ? '0' : '0 6px'
+                  }}
+                >
+                  {categoryCount}
+                </Badge>
+              )}
+            </Badge>
+          )
+        })}
       </div>
 
       {/* Filters Section */}
@@ -392,36 +347,15 @@ export function MarketplaceHome({
             <div className="text-muted-foreground">
               <p className="text-lg font-medium mb-2">No plugins found.</p>
               <p className="text-sm">
-                {error 
+                {error
                   ? 'There was an error loading plugins. Please check the error message above.'
                   : 'No approved plugins are available in the marketplace.'}
               </p>
-              {isAdmin && !error && (
-                <div className="mt-4">
-                  <p className="text-sm mb-2">As an admin, you can register plugins to make them available.</p>
-                  <Button
-                    variant="outline"
-                    onClick={handleRegisterPlugins}
-                    disabled={registering}
-                  >
-                    {registering ? (
-                      <>
-                        <Loader className="mr-2 h-4 w-4 animate-spin" />
-                        Registering...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="mr-2 h-4 w-4" />
-                        Register Plugins
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
+
             </div>
           </div>
         ) : (
-          Object.entries(pluginsByCategory).map(([category, categoryPlugins]) => {
+          Object.entries(displayPluginsByCategory).map(([category, categoryPlugins]) => {
             const categoryInfo = getCategoryInfo(category)
             const Icon = categoryInfo.icon
             return (
@@ -467,6 +401,8 @@ export function MarketplaceHome({
 
       {/* Add Plugin functionality moved to Plugin Hub */}
       {/* Use the marketplace to add new plugins */}
+
+
     </div>
   )
 }

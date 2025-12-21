@@ -4,27 +4,27 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { 
-  Shield, 
-  Database, 
-  BarChart3, 
-  Settings, 
-  Users, 
-  FileText, 
-  Cloud, 
-  Table, 
-  Database as DatabaseIcon, 
-  Code, 
-  Server, 
-  Key, 
-  Monitor, 
-  Paperclip, 
-  Bell, 
-  Palette, 
-  Activity, 
-  Heart, 
-  FileText as FileTextIcon, 
-  Zap, 
+import {
+  Shield,
+  Database,
+  BarChart3,
+  Settings,
+  Users,
+  FileText,
+  Cloud,
+  Table,
+  Database as DatabaseIcon,
+  Code,
+  Server,
+  Key,
+  Monitor,
+  Paperclip,
+  Bell,
+  Palette,
+  Activity,
+  Heart,
+  FileText as FileTextIcon,
+  Zap,
   HardDrive,
   Building,
   Building2,
@@ -76,10 +76,10 @@ interface PlatformSidebarProps {
   onAddVm?: () => void
 }
 
-export function PlatformSidebar({ 
-  activeTab, 
-  onTabChange, 
-  selectedSpace, 
+export function PlatformSidebar({
+  activeTab,
+  onTabChange,
+  selectedSpace,
   onSpaceChange,
   collapsed = false,
   selectedGroup,
@@ -123,12 +123,7 @@ export function PlatformSidebar({
       icon: Building,
       description: 'Manage spaces and workspaces'
     },
-    {
-      id: 'data',
-      name: 'Data Models',
-      icon: Database,
-      description: 'Data model management'
-    },
+
     {
       id: 'bigquery',
       name: 'SQL Query',
@@ -185,9 +180,9 @@ export function PlatformSidebar({
     },
     {
       id: 'database',
-      name: 'Database',
+      name: 'Database Data Models',
       icon: DatabaseIcon,
-      description: 'Database management'
+      description: 'Database and data model management'
     },
     {
       id: 'change-requests',
@@ -267,12 +262,7 @@ export function PlatformSidebar({
       icon: Palette,
       description: 'Theme and branding customization'
     },
-    {
-      id: 'roles',
-      name: 'Role Management',
-      icon: Users,
-      description: 'Role and permission management'
-    },
+
     {
       id: 'assets',
       name: 'Asset Management',
@@ -298,15 +288,14 @@ export function PlatformSidebar({
       { id: 'data-governance', name: 'Data Governance', icon: Shield, href: '/tools/data-governance' },
     ],
     system: [
-      { id: 'users', name: 'User Management', icon: Users, href: '/system/users' },
-      { id: 'roles', name: 'Role Management', icon: Users, href: '/system/roles' },
+      { id: 'users', name: 'Users & Roles', icon: Users, href: '/system/users' },
       { id: 'space-layouts', name: 'Space Layouts', icon: Layout, href: '/system/space-layouts' },
       { id: 'assets', name: 'Asset Management', icon: Database, href: '/system/assets' },
-      { id: 'data', name: 'Data Models', icon: Database, href: '/system/data' },
+
       { id: 'kernels', name: 'Kernel Management', icon: Server, href: '/system/kernels' },
       { id: 'logs', name: 'Logs', icon: FileTextIcon, href: '/system/logs' },
       { id: 'audit', name: 'Audit Logs', icon: History, href: '/system/audit' },
-      { id: 'database', name: 'Database', icon: DatabaseIcon, href: '/system/database' },
+      { id: 'database', name: 'Database Data Models', icon: DatabaseIcon, href: '/system/database' },
       { id: 'change-requests', name: 'Change Requests', icon: GitBranch, href: '/system/change-requests' },
       { id: 'sql-linting', name: 'SQL Linting', icon: CheckCircle2, href: '/system/sql-linting' },
       { id: 'schema-migrations', name: 'Schema Migrations', icon: FileCode, href: '/system/schema-migrations' },
@@ -336,10 +325,10 @@ export function PlatformSidebar({
     system: { name: 'System', icon: Settings },
     'data-management': { name: 'Data Management', icon: FolderKanban }
   }
-  
+
   // Define group sections for secondary sidebar separators
   const groupSections: Record<string, string[]> = {
-    management: ['users', 'roles', 'space-layouts', 'assets', 'data'],
+    management: ['users', 'space-layouts', 'assets'],
     kernels: ['kernels'],
     system: ['logs', 'audit', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache', 'backup'],
     security: ['security', 'performance'],
@@ -371,7 +360,7 @@ export function PlatformSidebar({
       handleTabClick(tabs[0].id, (tabs[0] as any).href)
       return
     }
-    
+
     // Infrastructure shows VM list in secondary sidebar
     if (groupName === 'infrastructure') {
       if (onGroupSelect) {
@@ -383,7 +372,7 @@ export function PlatformSidebar({
       }
       return
     }
-    
+
     if (onGroupSelect) {
       onGroupSelect(groupName)
     }
@@ -399,7 +388,7 @@ export function PlatformSidebar({
       return tabs
     }
     const lowerQuery = query.toLowerCase()
-    return tabs.filter(tab => 
+    return tabs.filter(tab =>
       tab.name.toLowerCase().includes(lowerQuery) ||
       tab.id.toLowerCase().includes(lowerQuery) ||
       (tab.description && tab.description.toLowerCase().includes(lowerQuery))
@@ -408,20 +397,20 @@ export function PlatformSidebar({
 
 
 
-  const sidebarBg = mode === 'primary' 
+  const sidebarBg = mode === 'primary'
     ? 'var(--brand-platform-sidebar-bg, hsl(var(--background)))'
     : 'var(--brand-secondary-sidebar-bg, hsl(var(--muted)))'
-  
+
   const sidebarText = mode === 'primary'
     ? 'var(--brand-platform-sidebar-text, hsl(var(--foreground)))'
     : 'var(--brand-secondary-sidebar-text, hsl(var(--muted-foreground)))'
 
   return (
-    <div 
+    <div
       className={`h-full flex flex-col w-full`}
       data-sidebar={mode}
       data-component="platform-sidebar"
-      style={{ 
+      style={{
         position: 'relative',
         zIndex: Z_INDEX.sidebar,
         pointerEvents: 'auto',
@@ -429,14 +418,14 @@ export function PlatformSidebar({
         color: sidebarText
       }}
     >
- 
+
 
       {/* GCP-style Navigation */}
-      <ScrollArea 
+      <ScrollArea
         className="flex-1 overflow-auto"
         style={{ pointerEvents: 'auto' }}
       >
-        <div 
+        <div
           className={mode === 'secondary' ? 'min-h-full py-2 px-2' : 'py-2 px-2'}
           style={{ pointerEvents: 'auto' }}
         >
@@ -449,43 +438,43 @@ export function PlatformSidebar({
                   const Icon = group.icon
                   const isDataManagement = groupId === 'data-management'
                   const isInfrastructure = groupId === 'infrastructure'
-                  
+
                   return (
                     <div key={groupId}>
                       {isDataManagement && index > 0 && (
                         <div className="border-t border-border my-1 mx-2" />
                       )}
-                    <Button
-                      variant="ghost"
-                      className={cn(
+                      <Button
+                        variant="ghost"
+                        className={cn(
                           "platform-sidebar-menu-button w-full justify-center h-10 transition-colors duration-150 cursor-pointer",
                           (selectedGroup === groupId || (groupId === 'data-management' && (activeTab === 'space-selection' || selectedGroup === 'data-management')) || (groupId === 'infrastructure' && activeTab === 'infrastructure'))
-                           ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm" 
-                          : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
-                      )}
-                      onClick={() => handleGroupClick(groupId)}
-                      onMouseEnter={() => {
-                        const tabs = groupedTabs[groupId as keyof typeof groupedTabs]
-                        // Only show secondary sidebar if group has tabs and is not data-management
-                        if (tabs && tabs.length > 0 && groupId !== 'data-management') {
-                          onGroupHover?.(groupId)
-                        }
-                      }}
-                      onMouseLeave={() => {
-                        // Only clear hover if not currently selected
-                        if (selectedGroup !== groupId) {
-                          onGroupLeave?.()
-                        }
-                      }}
-                      title={group.name}
-                      style={{ 
-                        pointerEvents: 'auto', 
-                        position: 'relative', 
-                        zIndex: Z_INDEX.sidebar + 1
-                      }}
-                    >
+                            ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm"
+                            : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
+                        )}
+                        onClick={() => handleGroupClick(groupId)}
+                        onMouseEnter={() => {
+                          const tabs = groupedTabs[groupId as keyof typeof groupedTabs]
+                          // Only show secondary sidebar if group has tabs and is not data-management
+                          if (tabs && tabs.length > 0 && groupId !== 'data-management') {
+                            onGroupHover?.(groupId)
+                          }
+                        }}
+                        onMouseLeave={() => {
+                          // Only clear hover if not currently selected
+                          if (selectedGroup !== groupId) {
+                            onGroupLeave?.()
+                          }
+                        }}
+                        title={group.name}
+                        style={{
+                          pointerEvents: 'auto',
+                          position: 'relative',
+                          zIndex: Z_INDEX.sidebar + 1
+                        }}
+                      >
                         <Icon className="h-5 w-5" />
-                    </Button>
+                      </Button>
                     </div>
                   )
                 })}
@@ -499,46 +488,46 @@ export function PlatformSidebar({
                   const isDataManagement = groupId === 'data-management'
                   const isInfrastructure = groupId === 'infrastructure'
                   const isLastGroup = index === Object.entries(groupMetadata).length - 1
-                  
+
                   return (
                     <div key={groupId}>
                       {isDataManagement && (
                         <div className="border-t border-border my-2 mx-4" />
                       )}
-                    <Button
-                      variant="ghost"
-                      className={cn(
-                        "platform-sidebar-menu-button w-full justify-start text-sm font-medium h-10 px-4 transition-colors duration-150 cursor-pointer",
+                      <Button
+                        variant="ghost"
+                        className={cn(
+                          "platform-sidebar-menu-button w-full justify-start text-sm font-medium h-10 px-4 transition-colors duration-150 cursor-pointer",
                           (selectedGroup === groupId || (groupId === 'data-management' && activeTab === 'space-selection') || (groupId === 'infrastructure' && activeTab === 'infrastructure'))
-                          ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm" 
-                          : "text-foreground !hover:bg-muted !hover:text-foreground rounded-none"
-                      )}
-                      onClick={() => handleGroupClick(groupId)}
-                      onMouseEnter={() => {
-                        const tabs = groupedTabs[groupId as keyof typeof groupedTabs]
-                        // Only show secondary sidebar if group has tabs and is not data-management
-                        if (tabs && tabs.length > 0 && groupId !== 'data-management') {
-                          onGroupHover?.(groupId)
-                        }
-                      }}
-                      onMouseLeave={() => {
-                        // Only clear hover if not currently selected
-                        if (selectedGroup !== groupId) {
-                          onGroupLeave?.()
-                        }
-                      }}
-                      style={{ 
-                        pointerEvents: 'auto', 
-                        position: 'relative', 
-                        zIndex: Z_INDEX.sidebar + 1
-                      }}
-                    >
-                      <Icon className="h-4 w-4 mr-3" />
-                      <span className="flex-1 text-left">{group.name}</span>
-                        {!isDataManagement && !isInfrastructure && (
-                      <ChevronRight className="h-4 w-4 ml-2 text-muted-foreground" />
+                            ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm"
+                            : "text-foreground !hover:bg-muted !hover:text-foreground rounded-none"
                         )}
-                    </Button>
+                        onClick={() => handleGroupClick(groupId)}
+                        onMouseEnter={() => {
+                          const tabs = groupedTabs[groupId as keyof typeof groupedTabs]
+                          // Only show secondary sidebar if group has tabs and is not data-management
+                          if (tabs && tabs.length > 0 && groupId !== 'data-management') {
+                            onGroupHover?.(groupId)
+                          }
+                        }}
+                        onMouseLeave={() => {
+                          // Only clear hover if not currently selected
+                          if (selectedGroup !== groupId) {
+                            onGroupLeave?.()
+                          }
+                        }}
+                        style={{
+                          pointerEvents: 'auto',
+                          position: 'relative',
+                          zIndex: Z_INDEX.sidebar + 1
+                        }}
+                      >
+                        <Icon className="h-4 w-4 mr-3" />
+                        <span className="flex-1 text-left">{group.name}</span>
+                        {!isDataManagement && !isInfrastructure && (
+                          <ChevronRight className="h-4 w-4 ml-2 text-muted-foreground" />
+                        )}
+                      </Button>
                     </div>
                   )
                 })}
@@ -556,9 +545,9 @@ export function PlatformSidebar({
                       variant="ghost"
                       className="platform-sidebar-menu-button w-full justify-start text-sm font-medium h-9 px-4 rounded-none text-muted-foreground !hover:bg-muted cursor-pointer"
                       onClick={onToggleCollapse}
-                      style={{ 
-                        pointerEvents: 'auto', 
-                        position: 'relative', 
+                      style={{
+                        pointerEvents: 'auto',
+                        position: 'relative',
                         zIndex: 101
                       }}
                       title="Collapse secondary sidebar"
@@ -590,9 +579,9 @@ export function PlatformSidebar({
                       variant="ghost"
                       className="platform-sidebar-menu-button w-full justify-start text-sm font-medium h-9 px-4 rounded-none text-muted-foreground !hover:bg-muted cursor-pointer"
                       onClick={onToggleCollapse}
-                      style={{ 
-                        pointerEvents: 'auto', 
-                        position: 'relative', 
+                      style={{
+                        pointerEvents: 'auto',
+                        position: 'relative',
                         zIndex: 101
                       }}
                       title="Collapse secondary sidebar"
@@ -603,8 +592,8 @@ export function PlatformSidebar({
                     </Button>
                   </div>
                 )}
-                
-           
+
+
 
                 {/* Submenu items with separators between sections (for system group) */}
                 {selectedGroup === 'system' ? (
@@ -622,14 +611,14 @@ export function PlatformSidebar({
                             variant="ghost"
                             className={cn(
                               "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
-                              activeTab === tab.id 
-                                ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm" 
+                              activeTab === tab.id
+                                ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm"
                                 : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
                             )}
                             onClick={() => handleTabClick(tab.id, (tab as any).href)}
-                            style={{ 
-                              pointerEvents: 'auto', 
-                              position: 'relative', 
+                            style={{
+                              pointerEvents: 'auto',
+                              position: 'relative',
                               zIndex: Z_INDEX.sidebar + 1
                             }}
                           >
@@ -638,10 +627,10 @@ export function PlatformSidebar({
                           </Button>
                         ))}
                     </div>
-                    
+
                     {/* Separator */}
                     <div className="border-t border-border my-2 mx-0" />
-                    
+
                     {/* Kernels Section */}
                     <div className="py-2">
                       <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
@@ -651,31 +640,31 @@ export function PlatformSidebar({
                         groupedTabs.system.filter(tab => groupSections.kernels.includes(tab.id)),
                         searchValue
                       ).map(tab => (
-                          <Button
-                            key={tab.id}
-                            variant="ghost"
-                            className={cn(
-                              "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
-                              activeTab === tab.id 
-                                ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm" 
-                                : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
-                            )}
-                            onClick={() => handleTabClick(tab.id, (tab as any).href)}
-                            style={{ 
-                              pointerEvents: 'auto', 
-                              position: 'relative', 
-                              zIndex: Z_INDEX.sidebar + 1
-                            }}
-                          >
-                            <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" />
-                            <span className="truncate text-left">{tab.name}</span>
-                          </Button>
-                        ))}
+                        <Button
+                          key={tab.id}
+                          variant="ghost"
+                          className={cn(
+                            "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
+                            activeTab === tab.id
+                              ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm"
+                              : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
+                          )}
+                          onClick={() => handleTabClick(tab.id, (tab as any).href)}
+                          style={{
+                            pointerEvents: 'auto',
+                            position: 'relative',
+                            zIndex: Z_INDEX.sidebar + 1
+                          }}
+                        >
+                          <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" />
+                          <span className="truncate text-left">{tab.name}</span>
+                        </Button>
+                      ))}
                     </div>
-                    
+
                     {/* Separator */}
                     <div className="border-t border-border my-2 mx-0" />
-                    
+
                     {/* System Section */}
                     <div className="py-2">
                       <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
@@ -685,31 +674,31 @@ export function PlatformSidebar({
                         groupedTabs.system.filter(tab => groupSections.system.includes(tab.id)),
                         searchValue
                       ).map(tab => (
-                          <Button
-                            key={tab.id}
-                            variant="ghost"
-                            className={cn(
-                              "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
-                              activeTab === tab.id 
-                                ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm" 
-                                : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
-                            )}
-                            onClick={() => handleTabClick(tab.id, (tab as any).href)}
-                            style={{ 
-                              pointerEvents: 'auto', 
-                              position: 'relative', 
-                              zIndex: Z_INDEX.sidebar + 1
-                            }}
-                          >
-                            <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" />
-                            <span className="truncate text-left">{tab.name}</span>
-                          </Button>
-                        ))}
+                        <Button
+                          key={tab.id}
+                          variant="ghost"
+                          className={cn(
+                            "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
+                            activeTab === tab.id
+                              ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm"
+                              : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
+                          )}
+                          onClick={() => handleTabClick(tab.id, (tab as any).href)}
+                          style={{
+                            pointerEvents: 'auto',
+                            position: 'relative',
+                            zIndex: Z_INDEX.sidebar + 1
+                          }}
+                        >
+                          <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" />
+                          <span className="truncate text-left">{tab.name}</span>
+                        </Button>
+                      ))}
                     </div>
-                    
+
                     {/* Separator */}
                     <div className="border-t border-border my-2 mx-0" />
-                    
+
                     {/* Security Section */}
                     <div className="py-2">
                       <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
@@ -719,31 +708,31 @@ export function PlatformSidebar({
                         groupedTabs.system.filter(tab => groupSections.security.includes(tab.id)),
                         searchValue
                       ).map(tab => (
-                          <Button
-                            key={tab.id}
-                            variant="ghost"
-                            className={cn(
-                              "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
-                              activeTab === tab.id 
-                                ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-md" 
-                                : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
-                            )}
-                            onClick={() => handleTabClick(tab.id, (tab as any).href)}
-                            style={{ 
-                              pointerEvents: 'auto', 
-                              position: 'relative', 
-                              zIndex: Z_INDEX.sidebar + 1
-                            }}
-                          >
-                            <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" />
-                            <span className="truncate text-left">{tab.name}</span>
-                          </Button>
-                        ))}
+                        <Button
+                          key={tab.id}
+                          variant="ghost"
+                          className={cn(
+                            "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
+                            activeTab === tab.id
+                              ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-md"
+                              : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
+                          )}
+                          onClick={() => handleTabClick(tab.id, (tab as any).href)}
+                          style={{
+                            pointerEvents: 'auto',
+                            position: 'relative',
+                            zIndex: Z_INDEX.sidebar + 1
+                          }}
+                        >
+                          <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" />
+                          <span className="truncate text-left">{tab.name}</span>
+                        </Button>
+                      ))}
                     </div>
-                    
+
                     {/* Separator */}
                     <div className="border-t border-border my-2 mx-4" />
-                    
+
                     {/* Integrations Section */}
                     <div className="px-4 py-2">
                       <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
@@ -753,26 +742,26 @@ export function PlatformSidebar({
                         groupedTabs.system.filter(tab => groupSections.integrations.includes(tab.id)),
                         searchValue
                       ).map(tab => (
-                  <Button
-                    key={tab.id}
-                    variant="ghost"
-                    className={cn(
-                      "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
-                      activeTab === tab.id 
-                        ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm" 
-                        : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
-                    )}
-                    onClick={() => handleTabClick(tab.id, (tab as any).href)}
-                    style={{ 
-                      pointerEvents: 'auto', 
-                      position: 'relative', 
-                      zIndex: 101
-                    }}
-                  >
-                    <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" />
-                    <span className="truncate text-left">{tab.name}</span>
-                  </Button>
-                ))}
+                        <Button
+                          key={tab.id}
+                          variant="ghost"
+                          className={cn(
+                            "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
+                            activeTab === tab.id
+                              ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm"
+                              : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
+                          )}
+                          onClick={() => handleTabClick(tab.id, (tab as any).href)}
+                          style={{
+                            pointerEvents: 'auto',
+                            position: 'relative',
+                            zIndex: 101
+                          }}
+                        >
+                          <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" />
+                          <span className="truncate text-left">{tab.name}</span>
+                        </Button>
+                      ))}
                     </div>
                   </>
                 ) : selectedGroup === 'tools' ? (
@@ -787,27 +776,27 @@ export function PlatformSidebar({
                           groupedTabs.tools.filter(tab => ids.includes(tab.id)),
                           searchValue
                         ).map(tab => (
-                            <Button
-                              key={tab.id}
-                              variant="ghost"
-                              className={cn(
-                                "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
-                                activeTab === tab.id 
-                                  ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm" 
-                                  : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
-                              )}
-                              onClick={() => handleTabClick(tab.id, (tab as any).href)}
-                              style={{ 
-                                pointerEvents: 'auto', 
-                                position: 'relative', 
-                                zIndex: Z_INDEX.sidebar + 1,
-                                ...(activeTab === tab.id ? { backgroundColor: 'hsl(var(--muted))' } : {})
-                              }}
-                            >
-                              <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" />
-                              <span className="truncate text-left">{tab.name}</span>
-                            </Button>
-                          ))}
+                          <Button
+                            key={tab.id}
+                            variant="ghost"
+                            className={cn(
+                              "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
+                              activeTab === tab.id
+                                ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm"
+                                : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
+                            )}
+                            onClick={() => handleTabClick(tab.id, (tab as any).href)}
+                            style={{
+                              pointerEvents: 'auto',
+                              position: 'relative',
+                              zIndex: Z_INDEX.sidebar + 1,
+                              ...(activeTab === tab.id ? { backgroundColor: 'hsl(var(--muted))' } : {})
+                            }}
+                          >
+                            <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" />
+                            <span className="truncate text-left">{tab.name}</span>
+                          </Button>
+                        ))}
                         {sectionIndex < Object.entries(toolSections).length - 1 && (
                           <div className="border-t border-border my-2 mx-0" />
                         )}
@@ -825,14 +814,14 @@ export function PlatformSidebar({
                       variant="ghost"
                       className={cn(
                         "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
-                        activeTab === tab.id 
-                          ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-md" 
+                        activeTab === tab.id
+                          ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-md"
                           : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
                       )}
                       onClick={() => handleTabClick(tab.id, (tab as any).href)}
-                      style={{ 
-                        pointerEvents: 'auto', 
-                        position: 'relative', 
+                      style={{
+                        pointerEvents: 'auto',
+                        position: 'relative',
                         zIndex: Z_INDEX.sidebar + 1,
                         ...(activeTab === tab.id ? { backgroundColor: 'hsl(var(--muted))' } : {})
                       }}
@@ -855,7 +844,7 @@ export function PlatformSidebar({
 
       {/* GCP-style Footer */}
       {mode === 'primary' && onToggleCollapse && (
-        <div 
+        <div
           className={`px-4 py-3 border-t border-border bg-background ${collapsed ? 'px-2' : ''}`}
           style={{ pointerEvents: 'auto' }}
         >

@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+
 import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 import * as Icons from 'lucide-react'
 import { useEffect } from 'react'
@@ -21,9 +21,9 @@ interface RegularFooterSectionProps {
 export function RegularFooterSection({ formData, setFormData }: RegularFooterSectionProps) {
   // Migrate sendButtonPaddingX/Y to individual sides if needed
   useEffect(() => {
-    if ((formData.sendButtonPaddingX || formData.sendButtonPaddingY) && 
-        !formData.sendButtonPaddingTop && !formData.sendButtonPaddingRight && 
-        !formData.sendButtonPaddingBottom && !formData.sendButtonPaddingLeft) {
+    if ((formData.sendButtonPaddingX || formData.sendButtonPaddingY) &&
+      !formData.sendButtonPaddingTop && !formData.sendButtonPaddingRight &&
+      !formData.sendButtonPaddingBottom && !formData.sendButtonPaddingLeft) {
       const y = formData.sendButtonPaddingY || '8px'
       const x = formData.sendButtonPaddingX || '8px'
       setFormData((prev) => ({
@@ -39,9 +39,9 @@ export function RegularFooterSection({ formData, setFormData }: RegularFooterSec
 
   // Migrate sendButtonRounded to border radius if needed
   useEffect(() => {
-    if (formData.sendButtonRounded && !formData.sendButtonBorderRadius && 
-        !formData.sendButtonBorderRadiusTopLeft && !formData.sendButtonBorderRadiusTopRight &&
-        !formData.sendButtonBorderRadiusBottomRight && !formData.sendButtonBorderRadiusBottomLeft) {
+    if (formData.sendButtonRounded && !formData.sendButtonBorderRadius &&
+      !formData.sendButtonBorderRadiusTopLeft && !formData.sendButtonBorderRadiusTopRight &&
+      !formData.sendButtonBorderRadiusBottomRight && !formData.sendButtonBorderRadiusBottomLeft) {
       setFormData((prev) => ({
         ...prev,
         sendButtonBorderRadius: '9999px', // Fully rounded
@@ -51,11 +51,11 @@ export function RegularFooterSection({ formData, setFormData }: RegularFooterSec
   }, []) // Only run once on mount
 
   return (
-    <AccordionItem value="footer" className="border-b px-4">
-      <AccordionTrigger className="text-lg font-semibold hover:no-underline">
-        Footer/Input Area
-      </AccordionTrigger>
-      <AccordionContent className="pt-4 pb-6">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-medium">Footer/Input Area</h3>
+      </div>
+      <div className="pt-2">
         <SectionGroup title="Background & Padding" isFirst>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -217,7 +217,7 @@ export function RegularFooterSection({ formData, setFormData }: RegularFooterSec
               />
             </div>
           </div>
-          
+
           <div className="grid grid-cols-3 gap-4 mb-4">
             <div className="space-y-2">
               <Label>Send Button Width</Label>
@@ -263,7 +263,7 @@ export function RegularFooterSection({ formData, setFormData }: RegularFooterSec
               label="Send Button Border Radius"
               baseKey="sendButtonBorderRadius"
               defaultValue={
-                formData.sendButtonRounded 
+                formData.sendButtonRounded
                   ? '9999px' // Fully rounded
                   : formData.sendButtonBorderRadius || '8px'
               }
@@ -296,7 +296,7 @@ export function RegularFooterSection({ formData, setFormData }: RegularFooterSec
               </div>
             </div>
           </div>
-          
+
           <div className="border-t pt-4 mt-4">
             <MultiSideInput
               formData={formData}
@@ -329,8 +329,8 @@ export function RegularFooterSection({ formData, setFormData }: RegularFooterSec
             </p>
           </div>
         </SectionGroup>
-      </AccordionContent>
-    </AccordionItem>
+      </div>
+    </div>
   )
 }
 

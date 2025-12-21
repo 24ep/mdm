@@ -15,20 +15,16 @@
     "scan:ts": "node scripts/scan-typescript-errors.js",
     "scan:ts:check": "node scripts/scan-typescript-errors.js && echo TypeScript check passed",
     "scan:all": "node scripts/scan-all-issues.js",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
-    "test:e2e:debug": "playwright test --debug",
     "update-themes": "tsx prisma/update-themes.ts",
     "remove-default-light": "tsx prisma/remove-default-light.ts",
     "migrate-drawer-style": "tsx prisma/migrate-drawer-style.ts",
     "migrate-icon-button": "tsx prisma/migrate-icon-button.ts",
     "update-badge-theme": "node scripts/update-badge-theme-config.js",
+    "seed:themes": "tsx src/scripts/seed-themes.ts",
     "migrate-api-routes": "node scripts/migrate-api-routes.js",
     "migrate-api-routes:dry": "node scripts/migrate-api-routes.js --dry-run",
-    "migrate-api-routes:test": "node scripts/migrate-api-routes.js --dry-run --limit 5"
+    "migrate-api-routes:test": "node scripts/migrate-api-routes.js --dry-run --limit 5",
+    "seed": "npx prisma db push --force-reset --accept-data-loss && node -r dotenv/config scripts/run-migration.js && tsx scripts/create-admin-user.ts && tsx prisma/seed-assets.ts && node -r dotenv/config scripts/seed-plugins.js && node -r dotenv/config scripts/seed-themes.js && node -r dotenv/config scripts/seed-global-roles.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.932.0",

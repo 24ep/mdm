@@ -1,0 +1,69 @@
+{
+    "name": "Shadcn Default",
+    "description": "Standard shadcn/ui default theme with clean, minimal styling",
+    "themeMode": "light",
+    "tags": [
+        "shadcn",
+        "default",
+        "minimal"
+    ],
+    "config": {
+        "applicationName": "Platform",
+        "applicationLogo": "",
+        "applicationLogoType": "icon",
+        "applicationLogoIcon": "Box",
+        "applicationLogoIconColor": "#3B82F6",
+        "applicationLogoBackgroundColor": "#EFF6FF",
+        "primaryColor": "#3B82F6",
+        "secondaryColor": "#F1F5F9",
+        "warningColor": "#F59E0B",
+        "dangerColor": "#EF4444",
+        "uiBackgroundColor": "#FFFFFF",
+        "uiBorderColor": "#E2E8F0",
+        "bodyBackgroundColor": "#FFFFFF",
+        "bodyTextColor": "#0F172A",
+        "topMenuBackgroundColor": "#FFFFFF",
+        "topMenuTextColor": "#0F172A",
+        "platformSidebarBackgroundColor": "#FFFFFF",
+        "platformSidebarTextColor": "#0F172A",
+        "secondarySidebarBackgroundColor": "#F8FAFC",
+        "secondarySidebarTextColor": "#0F172A",
+        "loginBackground": {
+            "type": "color",
+            "color": "#FFFFFF"
+        },
+        "globalStyling": {
+            "fontFamily": "Inter",
+            "fontFamilyMono": "SF Mono, Monaco, Inconsolata, monospace",
+            "borderRadius": "0.5rem",
+            "borderColor": "#E2E8F0",
+            "borderWidth": "1px",
+            "buttonBorderRadius": "0.375rem",
+            "buttonBorderWidth": "1px",
+            "inputBorderRadius": "0.375rem",
+            "inputBorderWidth": "1px",
+            "selectBorderRadius": "0.375rem",
+            "selectBorderWidth": "1px",
+            "textareaBorderRadius": "0.375rem",
+            "textareaBorderWidth": "1px",
+            "baseFontSize": "0.875rem",
+            "inputHeight": "2.5rem",
+            "inputPadding": "0.75rem",
+            "inputFontSize": "0.875rem",
+            "buttonHeight": "2.5rem",
+            "buttonPadding": "1rem",
+            "buttonFontSize": "0.875rem",
+            "transitionDuration": "150ms",
+            "transitionTiming": "cubic-bezier(0.4, 0, 0.2, 1)"
+        },
+        "drawerStyle": {
+            "type": "normal"
+        },
+        "drawerOverlay": {
+            "color": "#000000",
+            "opacity": 50,
+            "blur": 0
+        },
+        "componentStyling": {}
+    }
+}

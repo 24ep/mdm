@@ -12,9 +12,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { 
-  BarChart3, 
-  FileText, 
+import {
+  BarChart3,
+  FileText,
   Download,
   Settings,
   Plus,
@@ -32,6 +32,7 @@ import { ReportsTreeView } from '@/components/reports/ReportsTreeView'
 import { AdvancedFilters } from '@/components/reports/AdvancedFilters'
 import { ReportTemplatesDialog } from '@/components/reports/ReportTemplatesDialog'
 import { IntegrationSelectionModal } from '@/components/reports/IntegrationSelectionModal'
+import { EmbedReportDialog } from '@/components/reports/EmbedReportDialog'
 import { exportReportsToExcel } from '@/lib/utils/export-utils'
 
 export type ReportSource = 'BUILT_IN' | 'BUILT_IN_VISUALIZE' | 'CUSTOM_EMBED_LINK' | 'POWER_BI' | 'GRAFANA' | 'LOOKER_STUDIO'
@@ -72,7 +73,7 @@ export interface ReportFolder {
 export function MergedBIReports() {
   const router = useRouter()
   const { currentSpace } = useSpace()
-  
+
   // Reports State
   const [reports, setReports] = useState<Report[]>([])
   const [categories, setCategories] = useState<ReportCategory[]>([])
@@ -90,6 +91,7 @@ export function MergedBIReports() {
   })
   const [showTemplates, setShowTemplates] = useState(false)
   const [showIntegrationModal, setShowIntegrationModal] = useState(false)
+  const [showEmbedModal, setShowEmbedModal] = useState(false)
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
   const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set())
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
@@ -132,7 +134,7 @@ export function MergedBIReports() {
 
       const data = await response.json()
       let filteredReports = data.reports || []
-      
+
       // Apply favorites filter
       if (filters.showFavorites) {
         const stored = localStorage.getItem('report_favorites')
@@ -197,7 +199,7 @@ export function MergedBIReports() {
                 <LayoutDashboard className="h-4 w-4 mr-2" />
                 Create new building dashboard/report
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push('/reports/embed')}>
+              <DropdownMenuItem onClick={() => setShowEmbedModal(true)}>
                 <LinkIcon className="h-4 w-4 mr-2" />
                 Embed custom report
               </DropdownMenuItem>
@@ -377,6 +379,17 @@ export function MergedBIReports() {
         spaceId={currentSpace?.id}
         onSuccess={() => {
           setShowIntegrationModal(false)
+          loadReports()
+        }}
+      />
+
+      {/* Embed Report Modal */}
+      <EmbedReportDialog
+        open={showEmbedModal}
+        onOpenChange={setShowEmbedModal}
+        spaceId={currentSpace?.id}
+        onSuccess={() => {
+          setShowEmbedModal(false)
           loadReports()
         }}
       />

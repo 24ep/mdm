@@ -115,9 +115,9 @@ export const BrandingConfigSchema = z.object({
   secondarySidebarTextColor: z.string(),
   bodyTextColor: z.string().optional(),
 
-  // Login background
+  // Login background - use catch to handle invalid/missing values from database
   loginBackground: z.object({
-    type: z.enum(['color', 'gradient', 'image']),
+    type: z.enum(['color', 'gradient', 'image']).catch('color'),
     color: z.string().optional(),
     gradient: z
       .object({
@@ -127,7 +127,7 @@ export const BrandingConfigSchema = z.object({
       })
       .optional(),
     image: z.string().optional(),
-  }),
+  }).catch({ type: 'color', color: '#ffffff' }),
 
   googleFontsApiKey: z.string().optional(),
 
@@ -152,6 +152,15 @@ export const BrandingConfigSchema = z.object({
     shadowMd: z.string().optional(),
     shadowLg: z.string().optional(),
     shadowXl: z.string().optional(),
+
+    // Sizing
+    baseFontSize: z.string().default('0.875rem'),
+    inputHeight: z.string().default('2.25rem'),
+    inputPadding: z.string().default('0.625rem'),
+    inputFontSize: z.string().default('0.875rem'),
+    buttonHeight: z.string().default('2.25rem'),
+    buttonPadding: z.string().default('1rem'),
+    buttonFontSize: z.string().default('0.875rem'),
   }),
 
   // Drawer overlay
@@ -163,17 +172,17 @@ export const BrandingConfigSchema = z.object({
     })
     .optional(),
 
-  // Drawer style
+  // Drawer style - use catch to handle invalid/missing values from database
   drawerStyle: z
     .object({
-      type: z.enum(['normal', 'modern', 'floating']),
+      type: z.enum(['normal', 'modern', 'floating']).catch('normal'),
       margin: z.string().optional(),
       borderRadius: z.string().optional(),
       width: z.string().optional(),
       backgroundBlur: z.number().optional(),
       backgroundOpacity: z.number().min(0).max(100).optional(),
     })
-    .optional(),
+    .catch({ type: 'normal' }),
 
   // Component styling
   componentStyling: ComponentStylingSchema,

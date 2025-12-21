@@ -1,5 +1,6 @@
 'use client'
 
+import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Save } from 'lucide-react'
@@ -13,6 +14,7 @@ import {
   Layout,
   Rocket,
   TrendingUp,
+  Smartphone,
 } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PreviewDialog } from '../../../components/PreviewDialog'
@@ -38,7 +40,7 @@ export function AIChatUI() {
   const [showPreviewDialog, setShowPreviewDialog] = useState(false)
   const [showVersionDialog, setShowVersionDialog] = useState(false)
   const [selectedChatbot, setSelectedChatbot] = useState<Chatbot | null>(null)
-  const [activeTab, setActiveTab] = useState<'engine' | 'style' | 'config' | 'deployment' | 'performance'>('engine')
+  const [activeTab, setActiveTab] = useState<'engine' | 'style' | 'config' | 'deployment' | 'performance' | 'pwa'>('engine')
   const [isLoading, setIsLoading] = useState(false)
   const [showNameDialog, setShowNameDialog] = useState(false)
   const [previewMode, setPreviewMode] = useState<'popover' | 'fullpage' | 'popup-center'>('popover')
@@ -109,13 +111,13 @@ export function AIChatUI() {
             _savedToDatabase: c._savedToDatabase !== undefined ? c._savedToDatabase : false // Ensure flag exists
           }
         })
-        
+
         // Save migrated chatbots back to localStorage if migration occurred
         if (needsMigration) {
           localStorage.setItem('ai-chatbots', JSON.stringify(migrated))
           console.log('Migrated chatbot IDs from old format to UUIDs')
         }
-        
+
         setChatbots(migrated)
       } else {
         const response = await fetch('/api/chatbots')
@@ -147,8 +149,8 @@ export function AIChatUI() {
 
   const startCreateWithName = (name: string) => {
     const base = createDefaultChatbot(name)
-    // Mark as localStorage-only draft
-    ;(base as any)._savedToDatabase = false
+      // Mark as localStorage-only draft
+      ; (base as any)._savedToDatabase = false
 
     try {
       const saved = localStorage.getItem('ai-chatbots')
@@ -156,7 +158,7 @@ export function AIChatUI() {
       const updated = [...existing, base]
       localStorage.setItem('ai-chatbots', JSON.stringify(updated))
       setChatbots(updated)
-    } catch {}
+    } catch { }
 
     setSelectedChatbot(base)
     setFormData({ ...DEFAULT_CHATBOT_CONFIG, name: name })
@@ -330,9 +332,9 @@ export function AIChatUI() {
               savedChatbot = data.chatbot
               // Mark as saved to database
               if (savedChatbot) {
-                ;(savedChatbot as any)._savedToDatabase = true
+                ; (savedChatbot as any)._savedToDatabase = true
                 toast.success('Chatbot created in database successfully')
-                
+
                 // Update localStorage with the database version and flag
                 const saved = localStorage.getItem('ai-chatbots')
                 const existing: Chatbot[] = saved ? JSON.parse(saved) : []
@@ -377,19 +379,19 @@ export function AIChatUI() {
                 versions: [...selectedChatbot.versions, newVersion],
                 _savedToDatabase: false // Mark as localStorage-only draft
               } as Chatbot
-              
+
               // Save to localStorage as draft
               try {
-              const saved = localStorage.getItem('ai-chatbots')
-              const existing: Chatbot[] = saved ? JSON.parse(saved) : []
-              const index = existing.findIndex(c => c.id === selectedChatbot.id)
-              if (index >= 0) {
-                existing[index] = savedChatbot
-              } else {
-                existing.push(savedChatbot)
-              }
-              localStorage.setItem('ai-chatbots', JSON.stringify(existing))
-              setChatbots(existing)
+                const saved = localStorage.getItem('ai-chatbots')
+                const existing: Chatbot[] = saved ? JSON.parse(saved) : []
+                const index = existing.findIndex(c => c.id === selectedChatbot.id)
+                if (index >= 0) {
+                  existing[index] = savedChatbot
+                } else {
+                  existing.push(savedChatbot)
+                }
+                localStorage.setItem('ai-chatbots', JSON.stringify(existing))
+                setChatbots(existing)
                 setSelectedChatbot(savedChatbot)
                 toast.success(`Saved as draft (localStorage)`, { duration: 3000 })
                 console.log('Chatbot saved to localStorage successfully')
@@ -415,9 +417,9 @@ export function AIChatUI() {
               savedChatbot = data.chatbot
               // Mark as saved to database
               if (savedChatbot) {
-                ;(savedChatbot as any)._savedToDatabase = true
+                ; (savedChatbot as any)._savedToDatabase = true
                 toast.success('Chatbot saved to database successfully')
-                
+
                 // Update localStorage with the database version and flag
                 const saved = localStorage.getItem('ai-chatbots')
                 const existing: Chatbot[] = saved ? JSON.parse(saved) : []
@@ -450,19 +452,19 @@ export function AIChatUI() {
               versions: [...selectedChatbot.versions, newVersion],
               _savedToDatabase: false // Mark as localStorage-only draft
             } as Chatbot
-            
+
             // Save to localStorage as draft
             try {
-            const saved = localStorage.getItem('ai-chatbots')
-            const existing: Chatbot[] = saved ? JSON.parse(saved) : []
-            const index = existing.findIndex(c => c.id === selectedChatbot.id)
-            if (index >= 0) {
-              existing[index] = savedChatbot
-            } else {
-              existing.push(savedChatbot)
-            }
-            localStorage.setItem('ai-chatbots', JSON.stringify(existing))
-            setChatbots(existing)
+              const saved = localStorage.getItem('ai-chatbots')
+              const existing: Chatbot[] = saved ? JSON.parse(saved) : []
+              const index = existing.findIndex(c => c.id === selectedChatbot.id)
+              if (index >= 0) {
+                existing[index] = savedChatbot
+              } else {
+                existing.push(savedChatbot)
+              }
+              localStorage.setItem('ai-chatbots', JSON.stringify(existing))
+              setChatbots(existing)
               setSelectedChatbot(savedChatbot)
               toast.success(`Saved as draft (localStorage)`, { duration: 3000 })
               console.log('Chatbot saved to localStorage successfully')
@@ -486,9 +488,9 @@ export function AIChatUI() {
             savedChatbot = data.chatbot
             // Mark as saved to database
             if (savedChatbot) {
-              ;(savedChatbot as any)._savedToDatabase = true
+              ; (savedChatbot as any)._savedToDatabase = true
               toast.success('Chatbot created in database successfully')
-              
+
               // Update localStorage with the database version and flag
               const saved = localStorage.getItem('ai-chatbots')
               const existing: Chatbot[] = saved ? JSON.parse(saved) : []
@@ -513,9 +515,9 @@ export function AIChatUI() {
           console.warn('Database create failed, saving to localStorage:', dbError)
           const newChatbot = createDefaultChatbot(formData.name || 'Untitled Chatbot')
           Object.assign(newChatbot, formData)
-          ;(newChatbot as any)._savedToDatabase = false // Mark as localStorage-only draft
+            ; (newChatbot as any)._savedToDatabase = false // Mark as localStorage-only draft
           savedChatbot = newChatbot as Chatbot
-          
+
           // Save to localStorage as draft
           const saved = localStorage.getItem('ai-chatbots')
           const existing: Chatbot[] = saved ? JSON.parse(saved) : []
@@ -567,10 +569,10 @@ export function AIChatUI() {
         }
         return c
       })
-      
+
       localStorage.setItem('ai-chatbots', JSON.stringify(updatedChatbots))
       setChatbots(updatedChatbots)
-      
+
       toast.success('Chatbot published successfully')
     } catch (error) {
       console.error('Error publishing chatbot:', error)
@@ -645,23 +647,23 @@ export function AIChatUI() {
         )
         if (!matchesSearch) return false
       }
-      
+
       // Status filter
       if (statusFilter !== 'all') {
         if (statusFilter === 'published' && !chatbot.isPublished) return false
         if (statusFilter === 'draft' && chatbot.isPublished) return false
       }
-      
+
       // Deployment filter
       if (deploymentFilter !== 'all') {
         if (chatbot.deploymentType !== deploymentFilter) return false
       }
-      
+
       return true
     })
     .sort((a, b) => {
       let comparison = 0
-      
+
       switch (sortBy) {
         case 'name':
           comparison = a.name.localeCompare(b.name)
@@ -684,14 +686,14 @@ export function AIChatUI() {
           comparison = (a.isPublished ? 1 : 0) - (b.isPublished ? 1 : 0)
           break
       }
-      
+
       return sortOrder === 'asc' ? comparison : -comparison
     })
 
   return (
-    <div className="space-y-2 p-6 md:p-8 lg:p-10">
-      <div className="flex items-center justify-between">
-        {!(showCreateDialog || showEditDialog) && (
+    <div className={cn("space-y-2", (showCreateDialog || showEditDialog) ? "" : "p-6 md:p-8 lg:p-10")}>
+      {!(showCreateDialog || showEditDialog) && (
+        <div className="flex items-center justify-between">
           <>
             <div className="flex items-center gap-1 border rounded-md p-1">
               <Button
@@ -744,7 +746,7 @@ export function AIChatUI() {
               >
                 Import
               </Button>
-              <Button 
+              <Button
                 onClick={handleCreate}
                 className="border"
               >
@@ -753,8 +755,8 @@ export function AIChatUI() {
               </Button>
             </div>
           </>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* List Page: hidden when editing/creating */}
       {!(showCreateDialog || showEditDialog) && (
@@ -781,7 +783,7 @@ export function AIChatUI() {
                   onSortOrderChange={setSortOrder}
                 />
               </div>
-              
+
               <ChatbotList
                 chatbots={filteredAndSortedChatbots}
                 viewMode={viewMode}
@@ -806,43 +808,46 @@ export function AIChatUI() {
 
       {/* Create/Edit Inline Page Section */}
       {(showCreateDialog || showEditDialog) && (
-        <div className="space-y-4">
-          {/* Header */}
-          <div className="border-b pb-4">
-            <ChatbotHeader formData={formData} setFormData={setFormData} />
-          </div>
-          
-          {/* Selection Tab */}
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-            <div className="-mt-2">
-              <TabsList className="w-full flex justify-start gap-2">
-                <TabsTrigger value="engine">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Engine
-                </TabsTrigger>
-                <TabsTrigger value="style">
-                  <Palette className="h-4 w-4 mr-2" />
-                  Style
-                </TabsTrigger>
-                <TabsTrigger value="config">
-                  <Layout className="h-4 w-4 mr-2" />
-                  Config
-                </TabsTrigger>
-                <TabsTrigger value="deployment">
-                  <Rocket className="h-4 w-4 mr-2" />
-                  Deployment
-                </TabsTrigger>
-                <TabsTrigger value="performance">
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Performance
-                </TabsTrigger>
-              </TabsList>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+          <div className="space-y-4 flex flex-col h-full p-6">
+            {/* Header */}
+            <div className="border-b pb-4">
+              <ChatbotHeader formData={formData} setFormData={setFormData} />
             </div>
-          </Tabs>
-          
-          {/* Split Layout: Selected Tab Content | Emulator */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="min-h-[800px]">
+
+            {/* Selection Tab */}
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+              <div className="-mt-2">
+                <TabsList className="w-full flex justify-start gap-2">
+                  <TabsTrigger value="engine">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Engine
+                  </TabsTrigger>
+                  <TabsTrigger value="style">
+                    <Palette className="h-4 w-4 mr-2" />
+                    Style
+                  </TabsTrigger>
+                  <TabsTrigger value="config">
+                    <Layout className="h-4 w-4 mr-2" />
+                    Config
+                  </TabsTrigger>
+                  <TabsTrigger value="deployment">
+                    <Rocket className="h-4 w-4 mr-2" />
+                    Deployment
+                  </TabsTrigger>
+                  <TabsTrigger value="performance">
+                    <TrendingUp className="h-4 w-4 mr-2" />
+                    Performance
+                  </TabsTrigger>
+                  <TabsTrigger value="pwa">
+                    <Smartphone className="h-4 w-4 mr-2" />
+                    PWA
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+            </Tabs>
+
+            <div className="min-h-[800px] flex-1">
               <ChatbotEditor
                 formData={formData}
                 setFormData={setFormData}
@@ -853,42 +858,45 @@ export function AIChatUI() {
                 hideTabsList={true}
               />
             </div>
-            <ChatbotEmulator
-              selectedChatbot={selectedChatbot}
-              previewMode={previewMode}
-              onPreviewModeChange={setPreviewMode}
-              formData={formData}
-            />
-          </div>
-          
-          {/* Action buttons at bottom */}
-          <div className="flex items-center justify-between pt-4 border-t">
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setShowCreateDialog(false)
-                setShowEditDialog(false)
-                setSelectedChatbot(null)
-              }}
-            >
-              ← Back to list
-            </Button>
-            <div className="flex items-center gap-2">
+
+            {/* Action buttons at bottom */}
+            <div className="flex items-center justify-between pt-4 border-t mt-auto">
               <Button
-                variant="outline"
+                variant="ghost"
                 onClick={() => {
                   setShowCreateDialog(false)
                   setShowEditDialog(false)
                   setSelectedChatbot(null)
                 }}
               >
-                Cancel
+                ← Back to list
               </Button>
-              <Button onClick={handleSave}>
-                <Save className="h-4 w-4 mr-2" />
-                Save
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowCreateDialog(false)
+                    setShowEditDialog(false)
+                    setSelectedChatbot(null)
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleSave}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save
+                </Button>
+              </div>
             </div>
+          </div>
+
+          <div className="h-full">
+            <ChatbotEmulator
+              selectedChatbot={selectedChatbot}
+              previewMode={previewMode}
+              onPreviewModeChange={setPreviewMode}
+              formData={formData}
+            />
           </div>
         </div>
       )}

@@ -35,7 +35,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const applyTheme = useCallback((themeConfig: ThemeConfig) => {
     try {
       const root = document.documentElement
-      
+
       // Ensure the dark class is added/removed based on theme mode
       // This is critical for Tailwind's dark mode to work
       if (themeConfig.mode === 'dark') {
@@ -43,7 +43,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       } else {
         root.classList.remove('dark')
       }
-      
+
       // Apply CSS variables
       root.style.setProperty('--background', themeConfig.colors.background)
       root.style.setProperty('--foreground', themeConfig.colors.foreground)
@@ -64,7 +64,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--border', themeConfig.colors.border)
       root.style.setProperty('--input', themeConfig.colors.input)
       root.style.setProperty('--ring', themeConfig.colors.ring)
-      
+
       setError(null)
     } catch (err) {
       console.error('[ThemeContext] Error applying theme:', err)

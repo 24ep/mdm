@@ -63,6 +63,8 @@ export interface TicketFilters {
   priority?: string
   assigneeId?: string
   spaceId?: string | null
+  projectId?: string | null
+  cycleId?: string | null
   search?: string
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
@@ -75,5 +77,7 @@ export interface TicketsListProps {
   viewMode?: 'list' | 'kanban' | 'table' | 'timesheet'
   showFilters?: boolean
   showSpaceSelector?: boolean
+  projectId?: string
+  cycleId?: string
 }
 

@@ -4,67 +4,70 @@ import { useEffect, useRef } from "react"
 import { cn } from "@/lib/utils"
 
 export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {}
+  extends React.InputHTMLAttributes<HTMLInputElement> { }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, style, ...props }, ref) => {
     const inputRef = useRef<HTMLInputElement | null>(null)
-    
+
     // Function to apply theme-aware styles
     const applyThemeStyles = React.useCallback((node: HTMLInputElement) => {
       if (!node) return
-      
+
       // Skip if inside a space (data-space attribute)
       if (node.closest('[data-space]')) return
-      
+
       // Get theme-aware colors from CSS variables
       const root = document.documentElement
       const borderHsl = root.style.getPropertyValue('--border') || getComputedStyle(root).getPropertyValue('--border')
-      const inputHsl = root.style.getPropertyValue('--input') || getComputedStyle(root).getPropertyValue('--input')
+      const mutedHsl = root.style.getPropertyValue('--muted') || getComputedStyle(root).getPropertyValue('--muted')
       const foregroundHsl = root.style.getPropertyValue('--foreground') || getComputedStyle(root).getPropertyValue('--foreground')
-      
-      // Apply background
-      if (inputHsl) {
-        node.style.setProperty('background-color', `hsl(${inputHsl})`, 'important')
+
+      // Apply background - use --muted (same as globals.css)
+      if (mutedHsl) {
+        node.style.setProperty('background-color', `hsl(${mutedHsl})`, 'important')
       } else {
         // Fallback for light theme
-        node.style.setProperty('background-color', 'rgba(0, 0, 0, 0.04)', 'important')
+        node.style.setProperty('background-color', 'hsl(210 40% 96%)', 'important')
       }
       node.style.setProperty('background-image', 'none', 'important')
-      
+
       // Apply text color
       if (foregroundHsl) {
         node.style.setProperty('color', `hsl(${foregroundHsl})`, 'important')
       } else {
         node.style.setProperty('color', 'rgb(15, 23, 42)', 'important')
       }
-      
-      // Border color: use theme-aware border color from CSS variable
-      // Don't set border-color directly - let CSS variable handle it via globals.css
-      // This ensures it updates when theme changes
+
+      // Apply border (using --border)
+      if (borderHsl) {
+        node.style.setProperty('border', `1px solid hsl(${borderHsl})`, 'important')
+      } else {
+        node.style.setProperty('border', '1px solid hsl(214.3 31.8% 91.4%)', 'important')
+      }
     }, [])
-    
+
     // Update styles when theme changes
     useEffect(() => {
       if (inputRef.current) {
         applyThemeStyles(inputRef.current)
-        
+
         // Watch for theme changes by observing the document element
         const observer = new MutationObserver(() => {
           if (inputRef.current) {
             applyThemeStyles(inputRef.current)
           }
         })
-        
+
         observer.observe(document.documentElement, {
           attributes: true,
           attributeFilter: ['class', 'style'],
         })
-        
+
         return () => observer.disconnect()
       }
     }, [applyThemeStyles])
-    
+
     const handleRef = React.useCallback((node: HTMLInputElement | null) => {
       // Handle forwarded ref
       if (typeof ref === 'function') {
@@ -72,14 +75,14 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       } else if (ref) {
         ref.current = node
       }
-      
+
       inputRef.current = node
-      
+
       if (node) {
         applyThemeStyles(node)
       }
     }, [ref, applyThemeStyles])
-    
+
     return (
       <input
         type={type}

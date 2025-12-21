@@ -3,7 +3,7 @@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+
 import { X } from 'lucide-react'
 import type { Chatbot } from '../../types'
 
@@ -15,11 +15,11 @@ interface RegularHeaderSectionProps {
 
 export function RegularHeaderSection({ formData, setFormData, chatkitOptions }: RegularHeaderSectionProps) {
   return (
-    <AccordionItem value="header" className="border-b px-4">
-      <AccordionTrigger className="text-lg font-semibold hover:no-underline">
-        Header
-      </AccordionTrigger>
-      <AccordionContent className="pt-4 pb-6">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-medium">Header</h3>
+      </div>
+      <div className="pt-2">
         <div className="space-y-4">
           <div className="space-y-4">
             <h4 className="text-md font-semibold">Header Styling</h4>
@@ -37,15 +37,15 @@ export function RegularHeaderSection({ formData, setFormData, chatkitOptions }: 
               <div className="space-y-2">
                 <Label>Header Title</Label>
                 <Input
-                  value={chatkitOptions?.header?.title 
-                    ? (typeof chatkitOptions.header.title === 'string' 
-                        ? chatkitOptions.header.title 
-                        : (chatkitOptions.header.title as any)?.text || formData.headerTitle || '')
+                  value={chatkitOptions?.header?.title
+                    ? (typeof chatkitOptions.header.title === 'string'
+                      ? chatkitOptions.header.title
+                      : (chatkitOptions.header.title as any)?.text || formData.headerTitle || '')
                     : formData.headerTitle || ''}
                   onChange={(e) => {
                     const titleValue = e.target.value
-                    setFormData({ 
-                      ...formData, 
+                    setFormData({
+                      ...formData,
                       headerTitle: titleValue,
                       chatkitOptions: {
                         ...chatkitOptions,
@@ -65,15 +65,15 @@ export function RegularHeaderSection({ formData, setFormData, chatkitOptions }: 
               <div className="space-y-2">
                 <Label>Header Description</Label>
                 <Input
-                  value={chatkitOptions?.header?.description 
-                    ? (typeof chatkitOptions.header.description === 'string' 
-                        ? chatkitOptions.header.description 
-                        : (chatkitOptions.header.description as any)?.text || formData.headerDescription || '')
+                  value={chatkitOptions?.header?.description
+                    ? (typeof chatkitOptions.header.description === 'string'
+                      ? chatkitOptions.header.description
+                      : (chatkitOptions.header.description as any)?.text || formData.headerDescription || '')
                     : formData.headerDescription || ''}
                   onChange={(e) => {
                     const descValue = e.target.value
-                    setFormData({ 
-                      ...formData, 
+                    setFormData({
+                      ...formData,
                       headerDescription: descValue,
                       chatkitOptions: {
                         ...chatkitOptions,
@@ -105,8 +105,8 @@ export function RegularHeaderSection({ formData, setFormData, chatkitOptions }: 
                   value={formData.headerLogo || chatkitOptions?.header?.logo || ''}
                   onChange={(e) => {
                     const logoValue = e.target.value
-                    setFormData({ 
-                      ...formData, 
+                    setFormData({
+                      ...formData,
                       headerLogo: logoValue,
                       chatkitOptions: {
                         ...chatkitOptions,
@@ -262,7 +262,7 @@ export function RegularHeaderSection({ formData, setFormData, chatkitOptions }: 
             </div>
           </div>
         </div>
-      </AccordionContent>
-    </AccordionItem>
+      </div>
+    </div>
   )
 }

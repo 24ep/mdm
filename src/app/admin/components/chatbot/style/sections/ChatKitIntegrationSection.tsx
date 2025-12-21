@@ -3,7 +3,7 @@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+
 import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 import type { Chatbot } from '../../types'
 import { SectionGroup } from '../components/SectionGroup'
@@ -19,13 +19,15 @@ export function ChatKitIntegrationSection({ formData, setFormData }: ChatKitInte
   const isOpenAIAgentSDK = engineType === 'openai-agent-sdk'
   const isEnabled = formData.useChatKitInRegularStyle === true
   const chatbotEnabled = (formData as any).chatbotEnabled !== false // Default to true
-  
+
   return (
-    <AccordionItem value="chatkit-integration" className="border-b px-4">
-      <AccordionTrigger className="text-lg font-semibold hover:no-underline">
-        {isOpenAIAgentSDK ? 'Chatbot Settings' : 'ChatKit Integration'}
-      </AccordionTrigger>
-      <AccordionContent className="pt-4 pb-6">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-medium">
+          {isOpenAIAgentSDK ? 'Chatbot Settings' : 'ChatKit Integration'}
+        </h3>
+      </div>
+      <div className="pt-2">
         {isOpenAIAgentSDK && (
           <SectionGroup title="Enable Chatbot" isFirst>
             <div className="space-y-4">
@@ -36,36 +38,36 @@ export function ChatKitIntegrationSection({ formData, setFormData }: ChatKitInte
                     Turn the chatbot widget on or off. When disabled, the chatbot will not be displayed.
                   </p>
                 </div>
-                <Switch 
-                  checked={chatbotEnabled} 
-                  onCheckedChange={(checked) => setFormData({ ...formData, chatbotEnabled: checked } as any)} 
+                <Switch
+                  checked={chatbotEnabled}
+                  onCheckedChange={(checked) => setFormData({ ...formData, chatbotEnabled: checked } as any)}
                 />
               </div>
             </div>
           </SectionGroup>
         )}
-        
+
         <SectionGroup title={isChatKitEngine ? "Use Regular Style UI" : "Enable ChatKit in Regular Style"} isFirst={!isOpenAIAgentSDK}>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <Label>{isChatKitEngine ? "Use Regular Style Instead of ChatKit UI" : "Use ChatKit in Regular Style"}</Label>
                 <p className="text-xs text-muted-foreground">
-                  {isChatKitEngine 
+                  {isChatKitEngine
                     ? "When enabled, use regular style UI instead of ChatKit UI (only header config from ChatKit will be used)"
                     : "Enable ChatKit for regular style engines (only header config from ChatKit will be used)"
                   }
                 </p>
               </div>
-              <Switch 
-                checked={isEnabled} 
-                onCheckedChange={(checked) => setFormData({ ...formData, useChatKitInRegularStyle: checked })} 
+              <Switch
+                checked={isEnabled}
+                onCheckedChange={(checked) => setFormData({ ...formData, useChatKitInRegularStyle: checked })}
               />
             </div>
             {isEnabled && (
               <div className="rounded-md bg-muted p-3">
                 <p className="text-xs text-muted-foreground">
-                  <strong>Note:</strong> {isChatKitEngine 
+                  <strong>Note:</strong> {isChatKitEngine
                     ? "Regular style UI will be used, but only the header configuration from ChatKit options will be applied. All other ChatKit configurations (theme, composer, start screen, etc.) will be ignored."
                     : "ChatKit will be used but only the header configuration from ChatKit options will be applied. All other ChatKit configurations (theme, composer, start screen, etc.) will be ignored."
                   }
@@ -115,9 +117,9 @@ export function ChatKitIntegrationSection({ formData, setFormData }: ChatKitInte
                       />
                       {formData.headerLogo && (
                         <div className="mt-2">
-                          <img 
-                            src={formData.headerLogo} 
-                            alt="Header logo" 
+                          <img
+                            src={formData.headerLogo}
+                            alt="Header logo"
                             className="h-12 w-12 object-contain border rounded"
                             onError={(e) => {
                               (e.target as HTMLImageElement).style.display = 'none'
@@ -184,8 +186,8 @@ export function ChatKitIntegrationSection({ formData, setFormData }: ChatKitInte
             </SectionGroup>
           </>
         )}
-      </AccordionContent>
-    </AccordionItem>
+      </div>
+    </div>
   )
 }
 

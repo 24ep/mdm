@@ -180,6 +180,15 @@ export interface BrandingConfig {
     shadowMd?: string
     shadowLg?: string
     shadowXl?: string
+
+    // Sizing
+    baseFontSize?: string
+    inputHeight?: string
+    inputPadding?: string
+    inputFontSize?: string
+    buttonHeight?: string
+    buttonPadding?: string
+    buttonFontSize?: string
   }
 
   // Drawer overlay settings

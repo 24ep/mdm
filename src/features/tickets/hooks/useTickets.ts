@@ -24,7 +24,7 @@ export interface UseTicketsResult {
 export function useTickets(options: UseTicketsOptions = {}): UseTicketsResult {
   const { spaceId, filters = {}, autoFetch = true } = options
   const spaceFilter = useSpaceFilter({ spaceId, allowAll: true })
-  
+
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -33,7 +33,7 @@ export function useTickets(options: UseTicketsOptions = {}): UseTicketsResult {
     try {
       setLoading(true)
       setError(null)
-      
+
       const params = new URLSearchParams({
         page: '1',
         limit: '50',
@@ -59,6 +59,12 @@ export function useTickets(options: UseTicketsOptions = {}): UseTicketsResult {
       if (filters.assigneeId) {
         params.append('assigneeId', filters.assigneeId)
       }
+      if (filters.projectId) {
+        params.append('projectId', filters.projectId)
+      }
+      if (filters.cycleId) {
+        params.append('cycleId', filters.cycleId)
+      }
 
       // Add sorting if provided
       if (filters.sortBy) {
@@ -67,7 +73,7 @@ export function useTickets(options: UseTicketsOptions = {}): UseTicketsResult {
       }
 
       const response = await fetch(`/api/v1/tickets?${params.toString()}`)
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch tickets')
       }
@@ -87,7 +93,7 @@ export function useTickets(options: UseTicketsOptions = {}): UseTicketsResult {
     if (autoFetch) {
       fetchTickets()
     }
-  }, [spaceFilter.spaceId, filters.status, filters.priority, filters.assigneeId, autoFetch])
+  }, [spaceFilter.spaceId, filters.status, filters.priority, filters.assigneeId, filters.projectId, filters.cycleId, autoFetch])
 
   return {
     tickets,

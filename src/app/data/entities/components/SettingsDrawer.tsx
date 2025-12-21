@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger, DrawerClose } from '@/components/ui/drawer'
+import { CentralizedDrawer } from '@/components/ui/centralized-drawer'
+import { DrawerTrigger } from '@/components/ui/drawer'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Label } from '@/components/ui/label'
@@ -68,20 +69,23 @@ export function SettingsDrawer({ open, onOpenChange, renderTrigger, ctx, attribu
     setGroupingRows,
     addComboColumn,
   } = ctx || {} as any
-  
+
   // Use direct props if ctx is not provided
   const attributes = useCtx ? ctxAttributes : (directAttributes || [])
   const hiddenColumns = useCtx ? ctxHiddenColumns : (directHiddenColumns || {})
-  const setColumnOrder = useCtx ? ctxSetColumnOrder : (onColumnOrderChange || (() => {}))
+  const setColumnOrder = useCtx ? ctxSetColumnOrder : (onColumnOrderChange || (() => { }))
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
+    <CentralizedDrawer
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Table Settings"
+      width="w-[720px]"
+    >
       {renderTrigger && <DrawerTrigger asChild>{renderTrigger()}</DrawerTrigger>}
-      <DrawerContent widthClassName="w-[720px]">
-        <DrawerHeader>
-          <DrawerTitle>Table Settings</DrawerTitle>
-        </DrawerHeader>
-        <div className="p-4">
+
+      <div className="flex-1 overflow-auto flex flex-col">
+        <div className="p-4 flex-1">
           <Tabs defaultValue="table">
             <TabsList className="mb-4">
               <TabsTrigger value="table">Table Setting</TabsTrigger>
@@ -93,9 +97,9 @@ export function SettingsDrawer({ open, onOpenChange, renderTrigger, ctx, attribu
               <div>
                 <h4 className="font-medium mb-2">Density</h4>
                 <div className="flex items-center gap-2">
-                  <Button variant={tableDensity==='compact'?'default':'outline'} onClick={() => setTableDensity('compact')}>Compact</Button>
-                  <Button variant={tableDensity==='comfortable'?'default':'outline'} onClick={() => setTableDensity('comfortable')}>Comfortable</Button>
-                  <Button variant={tableDensity==='spacious'?'default':'outline'} onClick={() => setTableDensity('spacious')}>Spacious</Button>
+                  <Button variant={tableDensity === 'compact' ? 'default' : 'outline'} onClick={() => setTableDensity('compact')}>Compact</Button>
+                  <Button variant={tableDensity === 'comfortable' ? 'default' : 'outline'} onClick={() => setTableDensity('comfortable')}>Comfortable</Button>
+                  <Button variant={tableDensity === 'spacious' ? 'default' : 'outline'} onClick={() => setTableDensity('spacious')}>Spacious</Button>
                 </div>
               </div>
             </TabsContent>
@@ -166,11 +170,11 @@ export function SettingsDrawer({ open, onOpenChange, renderTrigger, ctx, attribu
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-2 items-end">
                                 <div className="space-y-1">
                                   <Label>Column Name</Label>
-                                  <Input value={cc.name} onChange={(e) => setComboColumns((prev: any[]) => prev.map((c: any) => c.id===cc.id? { ...c, name: e.target.value }: c))} />
+                                  <Input value={cc.name} onChange={(e) => setComboColumns((prev: any[]) => prev.map((c: any) => c.id === cc.id ? { ...c, name: e.target.value } : c))} />
                                 </div>
                                 <div className="space-y-1">
                                   <Label>Type</Label>
-                                  <Select value={cc.type} onValueChange={(v: any) => setComboColumns((prev: any[]) => prev.map((c: any) => c.id===cc.id? { ...c, type: v }: c))}>
+                                  <Select value={cc.type} onValueChange={(v: any) => setComboColumns((prev: any[]) => prev.map((c: any) => c.id === cc.id ? { ...c, type: v } : c))}>
                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
                                       <SelectItem value="left-right">Left-Right</SelectItem>
@@ -180,7 +184,7 @@ export function SettingsDrawer({ open, onOpenChange, renderTrigger, ctx, attribu
                                 </div>
                                 <div className="space-y-1">
                                   <Label>Separator</Label>
-                                  <Input value={cc.separator} onChange={(e) => setComboColumns((prev: any[]) => prev.map((c: any) => c.id===cc.id? { ...c, separator: e.target.value }: c))} />
+                                  <Input value={cc.separator} onChange={(e) => setComboColumns((prev: any[]) => prev.map((c: any) => c.id === cc.id ? { ...c, separator: e.target.value } : c))} />
                                 </div>
                               </div>
 
@@ -188,7 +192,7 @@ export function SettingsDrawer({ open, onOpenChange, renderTrigger, ctx, attribu
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 items-end">
                                   <div className="space-y-1">
                                     <Label>Left Attribute</Label>
-                                    <Select value={cc.rows[0]} onValueChange={(v) => setComboColumns((prev: any[]) => prev.map((c: any) => c.id===cc.id? { ...c, rows: [v, c.rows[1] || v] }: c))}>
+                                    <Select value={cc.rows[0]} onValueChange={(v) => setComboColumns((prev: any[]) => prev.map((c: any) => c.id === cc.id ? { ...c, rows: [v, c.rows[1] || v] } : c))}>
                                       <SelectTrigger><SelectValue /></SelectTrigger>
                                       <SelectContent>
                                         {attributes.map((a: any) => (<SelectItem key={a.id} value={a.id}>{a.display_name}</SelectItem>))}
@@ -198,7 +202,7 @@ export function SettingsDrawer({ open, onOpenChange, renderTrigger, ctx, attribu
                                   </div>
                                   <div className="space-y-1">
                                     <Label>Right Attribute</Label>
-                                    <Select value={cc.rows[1]} onValueChange={(v) => setComboColumns((prev: any[]) => prev.map((c: any) => c.id===cc.id? { ...c, rows: [c.rows[0] || v, v] }: c))}>
+                                    <Select value={cc.rows[1]} onValueChange={(v) => setComboColumns((prev: any[]) => prev.map((c: any) => c.id === cc.id ? { ...c, rows: [c.rows[0] || v, v] } : c))}>
                                       <SelectTrigger><SelectValue /></SelectTrigger>
                                       <SelectContent>
                                         {attributes.map((a: any) => (<SelectItem key={a.id} value={a.id}>{a.display_name}</SelectItem>))}
@@ -211,19 +215,19 @@ export function SettingsDrawer({ open, onOpenChange, renderTrigger, ctx, attribu
                                 <div className="space-y-2">
                                   <div className="flex items-center justify-between">
                                     <Label className="font-medium">Grouping Rows</Label>
-                                    <Button size="sm" variant="outline" onClick={() => setComboColumns((prev: any[]) => prev.map((c: any) => c.id===cc.id? { ...c, rows: [...c.rows, ''] }: c))}>Add Row</Button>
+                                    <Button size="sm" variant="outline" onClick={() => setComboColumns((prev: any[]) => prev.map((c: any) => c.id === cc.id ? { ...c, rows: [...c.rows, ''] } : c))}>Add Row</Button>
                                   </div>
                                   <div className="space-y-2">
                                     {cc.rows.map((val: string, idx: number) => (
                                       <div key={idx} className="flex items-center gap-2">
-                                        <Select value={val} onValueChange={(v) => setComboColumns((prev: any[]) => prev.map((c: any) => c.id===cc.id? { ...c, rows: c.rows.map((x: string,i: number)=> i===idx? v : x) }: c))}>
-                                          <SelectTrigger className="w-64"><SelectValue placeholder={`Row ${idx+1} attribute`} /></SelectTrigger>
+                                        <Select value={val} onValueChange={(v) => setComboColumns((prev: any[]) => prev.map((c: any) => c.id === cc.id ? { ...c, rows: c.rows.map((x: string, i: number) => i === idx ? v : x) } : c))}>
+                                          <SelectTrigger className="w-64"><SelectValue placeholder={`Row ${idx + 1} attribute`} /></SelectTrigger>
                                           <SelectContent>
                                             {attributes.map((a: any) => (<SelectItem key={a.id} value={a.id}>{a.display_name}</SelectItem>))}
                                             {comboColumns.filter((c: any) => c.id !== cc.id).map((combo: any) => (<SelectItem key={combo.id} value={combo.id}>{combo.name} (Combo)</SelectItem>))}
                                           </SelectContent>
                                         </Select>
-                                        <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setComboColumns((prev: any[]) => prev.map((c: any) => c.id===cc.id? { ...c, rows: c.rows.filter((_: any,i: number)=> i!==idx) }: c))}>✕</Button>
+                                        <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setComboColumns((prev: any[]) => prev.map((c: any) => c.id === cc.id ? { ...c, rows: c.rows.filter((_: any, i: number) => i !== idx) } : c))}>✕</Button>
                                       </div>
                                     ))}
                                   </div>
@@ -309,14 +313,14 @@ export function SettingsDrawer({ open, onOpenChange, renderTrigger, ctx, attribu
                             <div className="space-y-2">
                               {groupingRows.map((val: string, idx: number) => (
                                 <div key={idx} className="flex items-center gap-2">
-                                  <Select value={val} onValueChange={(v) => setGroupingRows((prev: string[]) => prev.map((x,i)=> i===idx? v : x))}>
-                                    <SelectTrigger className="w-64"><SelectValue placeholder={`Row ${idx+1} attribute`} /></SelectTrigger>
+                                  <Select value={val} onValueChange={(v) => setGroupingRows((prev: string[]) => prev.map((x, i) => i === idx ? v : x))}>
+                                    <SelectTrigger className="w-64"><SelectValue placeholder={`Row ${idx + 1} attribute`} /></SelectTrigger>
                                     <SelectContent>
                                       {attributes.map((a: any) => (<SelectItem key={a.id} value={a.id}>{a.display_name}</SelectItem>))}
                                       {comboColumns.map((cc: any) => (<SelectItem key={cc.id} value={cc.id}>{cc.name} (Combo)</SelectItem>))}
                                     </SelectContent>
                                   </Select>
-                                  <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setGroupingRows((prev: string[]) => prev.filter((_,i)=>i!==idx))}>✕</Button>
+                                  <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setGroupingRows((prev: string[]) => prev.filter((_, i) => i !== idx))}>✕</Button>
                                 </div>
                               ))}
                             </div>
@@ -415,13 +419,8 @@ export function SettingsDrawer({ open, onOpenChange, renderTrigger, ctx, attribu
             </TabsContent>
           </Tabs>
         </div>
-        <div className="flex justify-end gap-2 p-4 border-t">
-          <DrawerClose asChild>
-            <Button variant="outline">Close</Button>
-          </DrawerClose>
-        </div>
-      </DrawerContent>
-    </Drawer>
+      </div>
+    </CentralizedDrawer>
   )
 }
 

@@ -11,7 +11,7 @@ interface ChatbotHeaderProps {
 
 export function ChatbotHeader({ formData, setFormData }: ChatbotHeaderProps) {
   const avatarType = (formData.avatarType || 'icon') as 'icon' | 'image'
-  
+
   return (
     <div className="flex items-start gap-4 py-2">
       {/* Avatar/Icon preview */}
@@ -37,12 +37,9 @@ export function ChatbotHeader({ formData, setFormData }: ChatbotHeaderProps) {
       )}
 
       <div className="flex-1 min-w-0">
-        <Input
-          value={formData.name || ''}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          placeholder="Agent name"
-          className="text-2xl font-bold h-auto py-0 border-none shadow-none focus-visible:ring-0 px-0 bg-background"
-        />
+        <h1 className="text-2xl font-bold text-foreground truncate" title={formData.name || 'Agent name'}>
+          {formData.name || 'Agent name'}
+        </h1>
         {formData.description ? (
           <p className="text-sm text-muted-foreground mt-1 truncate">{formData.description}</p>
         ) : (

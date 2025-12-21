@@ -16,11 +16,11 @@ interface ChatbotEmulatorProps {
   formData: Partial<Chatbot>
 }
 
-export function ChatbotEmulator({ 
-  selectedChatbot, 
-  previewMode, 
+export function ChatbotEmulator({
+  selectedChatbot,
+  previewMode,
   onPreviewModeChange,
-  formData 
+  formData
 }: ChatbotEmulatorProps) {
   const emulatorRef = useRef<HTMLIFrameElement | null>(null)
   const [configDrawerOpen, setConfigDrawerOpen] = useState(false)
@@ -34,7 +34,7 @@ export function ChatbotEmulator({
   // Send preview mode and emulator config to iframe when it loads or when preview mode changes
   useEffect(() => {
     if (!selectedChatbot?.id || !emulatorRef.current) return
-    
+
     const sendMessages = () => {
       try {
         setTimeout(() => {
@@ -48,11 +48,11 @@ export function ChatbotEmulator({
             '*'
           )
         }, 100)
-      } catch {}
+      } catch { }
     }
-    
+
     sendMessages()
-    
+
     const iframe = emulatorRef.current
     const handleLoad = () => {
       setTimeout(() => {
@@ -66,12 +66,12 @@ export function ChatbotEmulator({
             },
             '*'
           )
-        } catch {}
+        } catch { }
       }, 200)
     }
-    
+
     iframe.addEventListener('load', handleLoad)
-    
+
     return () => {
       iframe.removeEventListener('load', handleLoad)
     }
@@ -157,6 +157,40 @@ export function ChatbotEmulator({
       </div>
       {selectedChatbot?.id ? (
         <div className="relative w-full h-[760px] overflow-hidden">
+          {(formData as any).pwaInstallBannerEnabled && (
+            <div
+              className="absolute top-0 left-0 right-0 z-[50] p-3 flex items-center justify-between shadow-sm"
+              style={{
+                backgroundColor: (formData as any).pwaInstallBannerBackgroundColor || '#ffffff',
+                color: (formData as any).pwaInstallBannerTextColor || '#000000'
+              }}
+            >
+              <div className="flex items-center gap-2">
+                {/* We could render the icon here if accessible, or just a generic placeholder if complex */}
+                <div className="w-8 h-8 rounded-lg bg-gray-200 flex items-center justify-center overflow-hidden">
+                  {(formData as any).pwaInstallBannerIcon ? (
+                    <img src={(formData as any).pwaInstallBannerIcon} alt="App Icon" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-xs font-bold">App</span>
+                  )}
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold leading-tight">{(formData as any).pwaInstallBannerText || 'Install our App'}</span>
+                  <span className="text-xs opacity-80">Add to home screen</span>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                className="h-7 text-xs px-3"
+                style={{
+                  backgroundColor: (formData as any).pwaInstallBannerButtonColor || '#000000',
+                  color: (formData as any).pwaInstallBannerButtonTextColor || '#ffffff'
+                }}
+              >
+                {(formData as any).pwaInstallBannerButtonText || 'Install'}
+              </Button>
+            </div>
+          )}
           <iframe
             ref={emulatorRef}
             src={`/chat/${selectedChatbot.id}`}
@@ -170,7 +204,7 @@ export function ChatbotEmulator({
           Save the chatbot first to enable the live emulator preview here.
         </div>
       )}
-      
+
       <EmulatorConfigDrawer
         open={configDrawerOpen}
         onOpenChange={setConfigDrawerOpen}

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@/components/ui/drawer'
+import { CentralizedDrawer } from '@/components/ui/centralized-drawer'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -125,7 +125,7 @@ export function GlobalStyleDrawer({
     setIsSavingLoginConfig(true)
     try {
       const config = await SpacesEditorManager.getSpacesEditorConfig(spaceId) || await SpacesEditorManager.createDefaultConfig(spaceId)
-      
+
       const finalLoginConfig = loginPageConfig || {
         backgroundType: 'gradient' as const,
         backgroundColor: '#1e40af',
@@ -147,7 +147,7 @@ export function GlobalStyleDrawer({
         description: 'Access this workspace',
         showLogo: false
       }
-      
+
       const updatedConfig = {
         ...config,
         loginPageConfig: finalLoginConfig,
@@ -166,7 +166,7 @@ export function GlobalStyleDrawer({
   }
 
   const availablePages = (pages || []).filter(p => p.isActive && !p.hidden)
-  
+
   const currentLoginConfig = loginPageConfig || {
     backgroundType: 'gradient' as const,
     backgroundColor: '#1e40af',
@@ -196,7 +196,7 @@ export function GlobalStyleDrawer({
   // Filter settings based on search query
   const searchLower = searchQuery.toLowerCase()
   const matchesSearch = (text: string) => text.toLowerCase().includes(searchLower)
-  
+
   const showLogo = !searchQuery || matchesSearch('logo') || matchesSearch('application')
   const showFavicon = !searchQuery || matchesSearch('favicon')
   const showPrimaryColor = !searchQuery || matchesSearch('primary') || matchesSearch('color')
@@ -209,48 +209,38 @@ export function GlobalStyleDrawer({
   const showLoginPage = !searchQuery || matchesSearch('login') || matchesSearch('auth') || matchesSearch('sign') || matchesSearch('page')
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent 
-        className="flex flex-col h-full" 
-        style={{ 
-          backgroundColor: 'hsl(var(--background))',
-          zIndex: Z_INDEX.drawer + 100,
-          height: '100vh'
-        }}
-      >
-        <DrawerHeader className="relative flex-shrink-0 border-b bg-background flex items-center justify-between" style={{ backgroundColor: 'hsl(var(--background))' }}>
-          <DrawerTitle>Global Config</DrawerTitle>
-          <DrawerClose asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted">
-              <X className="h-4 w-4" />
-            </Button>
-          </DrawerClose>
-        </DrawerHeader>
-        <div className="flex-1 overflow-y-auto px-4 pb-4" style={{ backgroundColor: 'hsl(var(--background))' }}>
-          {/* Search Bar */}
-          <div className="sticky top-0 z-10 bg-background py-3 mb-4 border-b" style={{ backgroundColor: 'hsl(var(--background))' }}>
-            <div className="relative">
-              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Search settings..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8"
-              />
-            </div>
+    <CentralizedDrawer
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Global Config"
+      zIndex={Z_INDEX.drawer + 100}
+      width="w-full md:w-[720px]"
+    >
+      <div className="flex-1 overflow-y-auto px-4 pb-4" style={{ backgroundColor: 'hsl(var(--background))' }}>
+        {/* Search Bar */}
+        <div className="sticky top-0 z-10 bg-background py-3 mb-4 border-b" style={{ backgroundColor: 'hsl(var(--background))' }}>
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search settings..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8"
+            />
           </div>
-          <div className="space-y-6">
-            {/* Application Logo */}
-            {showLogo && (
+        </div>
+        <div className="space-y-6">
+          {/* Application Logo */}
+          {showLogo && (
             <div>
               <Label className={isMobileViewport ? "text-sm" : "text-xs"} htmlFor="logo-upload-drawer">Application Logo</Label>
               <div className="flex items-center gap-2 mt-1">
                 {globalStyle?.logoUrl ? (
                   <>
-                    <img 
-                      src={globalStyle.logoUrl} 
-                      alt="Logo" 
+                    <img
+                      src={globalStyle.logoUrl}
+                      alt="Logo"
                       className={`${isMobileViewport ? 'h-12 w-12' : 'h-10 w-10'} object-contain rounded border border-border`}
                     />
                     <Button
@@ -285,17 +275,17 @@ export function GlobalStyleDrawer({
                       onChange={async (e) => {
                         const file = e.target.files?.[0]
                         if (!file) return
-                        
+
                         if (!file.type.startsWith('image/')) {
                           toast.error('Please select a valid image file')
                           return
                         }
-                        
+
                         if (file.size > 2 * 1024 * 1024) {
                           toast.error('File size must be less than 2MB')
                           return
                         }
-                        
+
                         try {
                           const reader = new FileReader()
                           reader.onload = (e) => {
@@ -303,15 +293,15 @@ export function GlobalStyleDrawer({
                             handleGlobalStyleUpdate({ logoUrl: result })
                           }
                           reader.readAsDataURL(file)
-                          
+
                           const formData = new FormData()
                           formData.append('logo', file)
-                          
+
                           const response = await fetch('/api/upload/logo', {
                             method: 'POST',
                             body: formData,
                           })
-                          
+
                           if (response.ok) {
                             const { url } = await response.json()
                             handleGlobalStyleUpdate({ logoUrl: url })
@@ -332,18 +322,18 @@ export function GlobalStyleDrawer({
                 PNG, JPG, SVG up to 2MB
               </p>
             </div>
-            )}
+          )}
 
-            {/* Favicon */}
-            {showFavicon && (
+          {/* Favicon */}
+          {showFavicon && (
             <div>
               <Label className={isMobileViewport ? "text-sm" : "text-xs"} htmlFor="favicon-upload-drawer">Favicon</Label>
               <div className="flex items-center gap-2 mt-1">
                 {globalStyle?.faviconUrl ? (
                   <>
-                    <img 
-                      src={globalStyle.faviconUrl} 
-                      alt="Favicon" 
+                    <img
+                      src={globalStyle.faviconUrl}
+                      alt="Favicon"
                       className={`${isMobileViewport ? 'h-8 w-8' : 'h-6 w-6'} object-contain rounded border border-border`}
                     />
                     <Button
@@ -378,18 +368,18 @@ export function GlobalStyleDrawer({
                       onChange={async (e) => {
                         const file = e.target.files?.[0]
                         if (!file) return
-                        
+
                         const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/svg+xml', 'image/x-icon', 'image/vnd.microsoft.icon', '.ico']
                         if (!allowedTypes.includes(file.type) && !file.name.endsWith('.ico')) {
                           toast.error('Please select a valid favicon file (PNG, ICO, SVG)')
                           return
                         }
-                        
+
                         if (file.size > 1024 * 1024) {
                           toast.error('File size must be less than 1MB')
                           return
                         }
-                        
+
                         try {
                           const reader = new FileReader()
                           reader.onload = (e) => {
@@ -397,15 +387,15 @@ export function GlobalStyleDrawer({
                             handleGlobalStyleUpdate({ faviconUrl: result })
                           }
                           reader.readAsDataURL(file)
-                          
+
                           const formData = new FormData()
                           formData.append('favicon', file)
-                          
+
                           const response = await fetch('/api/upload/favicon', {
                             method: 'POST',
                             body: formData,
                           })
-                          
+
                           if (response.ok) {
                             const { url } = await response.json()
                             handleGlobalStyleUpdate({ faviconUrl: url })
@@ -426,10 +416,10 @@ export function GlobalStyleDrawer({
                 ICO, PNG, SVG up to 1MB
               </p>
             </div>
-            )}
+          )}
 
-            {/* Primary Color */}
-            {showPrimaryColor && (
+          {/* Primary Color */}
+          {showPrimaryColor && (
             <div className="flex items-center justify-between">
               <Label className={isMobileViewport ? "text-sm" : "text-xs"}>Primary Color</Label>
               <ColorInput
@@ -441,10 +431,10 @@ export function GlobalStyleDrawer({
                 inputClassName={isMobileViewport ? "h-10 pl-7" : "h-8 text-xs pl-7"}
               />
             </div>
-            )}
+          )}
 
-            {/* Theme */}
-            {showTheme && (
+          {/* Theme */}
+          {showTheme && (
             <div className="flex items-center justify-between">
               <Label className={isMobileViewport ? "text-sm" : "text-xs"}>Theme</Label>
               <Select value={globalStyle?.theme || 'light'} onValueChange={(value) => handleGlobalStyleUpdate({ theme: value as 'light' | 'dark' | 'auto' })}>
@@ -458,10 +448,10 @@ export function GlobalStyleDrawer({
                 </SelectContent>
               </Select>
             </div>
-            )}
-            
-            {/* Background Color */}
-            {showBackgroundColor && (
+          )}
+
+          {/* Background Color */}
+          {showBackgroundColor && (
             <div className="flex items-center justify-between">
               <Label className={isMobileViewport ? "text-sm" : "text-xs"}>Background Color</Label>
               <ColorInput
@@ -473,10 +463,10 @@ export function GlobalStyleDrawer({
                 inputClassName={isMobileViewport ? "h-10 pl-7" : "h-8 text-xs pl-7"}
               />
             </div>
-            )}
-            
-            {/* Font Family */}
-            {showFontFamily && (
+          )}
+
+          {/* Font Family */}
+          {showFontFamily && (
             <div className="flex items-center justify-between">
               <Label className={isMobileViewport ? "text-sm" : "text-xs"}>Font Family</Label>
               <Select value={globalStyle?.fontFamily || 'system'} onValueChange={(value) => handleGlobalStyleUpdate({ fontFamily: value })}>
@@ -492,23 +482,23 @@ export function GlobalStyleDrawer({
                 </SelectContent>
               </Select>
             </div>
-            )}
-            
-            {/* Font Size */}
-            {showFontSize && (
+          )}
+
+          {/* Font Size */}
+          {showFontSize && (
             <div className="flex items-center justify-between">
               <Label className={isMobileViewport ? "text-sm" : "text-xs"}>Font Size (base)</Label>
-              <Input 
-                type="number" 
+              <Input
+                type="number"
                 className={`${isMobileViewport ? "h-10" : "h-8"} w-32`}
-                value={globalStyle?.fontSize || 14} 
-                onChange={(e) => handleGlobalStyleUpdate({ fontSize: parseInt(e.target.value) || 14 })} 
+                value={globalStyle?.fontSize || 14}
+                onChange={(e) => handleGlobalStyleUpdate({ fontSize: parseInt(e.target.value) || 14 })}
               />
             </div>
-            )}
-            
-            {/* Border Radius */}
-            {showBorderRadius && (
+          )}
+
+          {/* Border Radius */}
+          {showBorderRadius && (
             <div className="flex items-center justify-between">
               <Label className={isMobileViewport ? "text-sm" : "text-xs"}>Border Radius</Label>
               <Select value={globalStyle?.borderRadius || 'medium'} onValueChange={(value) => handleGlobalStyleUpdate({ borderRadius: value })}>
@@ -523,10 +513,10 @@ export function GlobalStyleDrawer({
                 </SelectContent>
               </Select>
             </div>
-            )}
+          )}
 
-            {/* Component Styles */}
-            {showComponentStyles && (
+          {/* Component Styles */}
+          {showComponentStyles && (
             <div className="border-t pt-4">
               <GlobalComponentStyles
                 globalStyle={globalStyle}
@@ -534,10 +524,10 @@ export function GlobalStyleDrawer({
                 isMobileViewport={isMobileViewport}
               />
             </div>
-            )}
+          )}
 
-            {/* Login Page Configuration */}
-            {showLoginPage && (
+          {/* Login Page Configuration */}
+          {showLoginPage && (
             <>
               <SeparatorComponent className="my-4" />
               <div className="space-y-3">
@@ -545,7 +535,7 @@ export function GlobalStyleDrawer({
                   <LogIn className="h-4 w-4" />
                   <h3 className={`${isMobileViewport ? 'text-base' : 'text-sm'} font-semibold`}>Login Page Configuration</h3>
                 </div>
-                
+
                 {/* Title */}
                 <div className="flex items-center justify-between">
                   <Label className={isMobileViewport ? "text-sm" : "text-xs"}>Login Title</Label>
@@ -794,11 +784,10 @@ export function GlobalStyleDrawer({
                 </Button>
               </div>
             </>
-            )}
-          </div>
+          )}
         </div>
-      </DrawerContent>
-    </Drawer>
+      </div>
+    </CentralizedDrawer>
   )
 }
 

@@ -3,12 +3,13 @@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import { Maximize2, Palette, Square, Sun, Move, Layers } from 'lucide-react'
+
 import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 import type { Chatbot } from '../../types'
 import { extractNumericValue, ensurePx } from '../styleUtils'
 import { MultiSideInput } from '../components/MultiSideInput'
-import { SectionGroup } from '../components/SectionGroup'
+import { AccordionSectionWrapper, AccordionSectionGroup } from '../components/AccordionSectionGroup'
 
 interface ChatWindowSectionProps {
   formData: Partial<Chatbot>
@@ -17,12 +18,12 @@ interface ChatWindowSectionProps {
 
 export function ChatWindowSection({ formData, setFormData }: ChatWindowSectionProps) {
   return (
-    <AccordionItem value="chat-window" className="border-b px-4">
-      <AccordionTrigger className="text-lg font-semibold hover:no-underline">
-        Chat Window
-      </AccordionTrigger>
-      <AccordionContent className="pt-4 pb-6">
-        <SectionGroup title="Size" isFirst>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-medium">Chat Window</h3>
+      </div>
+      <AccordionSectionWrapper defaultValue="size">
+        <AccordionSectionGroup id="size" title="Size" icon={Maximize2} defaultOpen>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Width</Label>
@@ -51,9 +52,9 @@ export function ChatWindowSection({ formData, setFormData }: ChatWindowSectionPr
               </div>
             </div>
           </div>
-        </SectionGroup>
+        </AccordionSectionGroup>
 
-        <SectionGroup title="Background & Colors">
+        <AccordionSectionGroup id="background" title="Background & Colors" icon={Palette}>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Background</Label>
@@ -124,9 +125,9 @@ export function ChatWindowSection({ formData, setFormData }: ChatWindowSectionPr
               <p className="text-xs text-muted-foreground">Background transparency (0-100%)</p>
             </div>
           </div>
-        </SectionGroup>
+        </AccordionSectionGroup>
 
-        <SectionGroup title="Borders">
+        <AccordionSectionGroup id="borders" title="Borders" icon={Square}>
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Border Color</Label>
@@ -156,9 +157,9 @@ export function ChatWindowSection({ formData, setFormData }: ChatWindowSectionPr
               type="corners"
             />
           </div>
-        </SectionGroup>
+        </AccordionSectionGroup>
 
-        <SectionGroup title="Shadow">
+        <AccordionSectionGroup id="shadow" title="Shadow" icon={Sun}>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Shadow Color</Label>
@@ -185,9 +186,9 @@ export function ChatWindowSection({ formData, setFormData }: ChatWindowSectionPr
               </div>
             </div>
           </div>
-        </SectionGroup>
+        </AccordionSectionGroup>
 
-        <SectionGroup title="Padding">
+        <AccordionSectionGroup id="padding" title="Padding" icon={Move}>
           <div className="grid grid-cols-1 gap-4">
             <MultiSideInput
               formData={formData}
@@ -198,9 +199,9 @@ export function ChatWindowSection({ formData, setFormData }: ChatWindowSectionPr
               type="sides"
             />
           </div>
-        </SectionGroup>
+        </AccordionSectionGroup>
 
-        <SectionGroup title="Overlay (When Chat is Open)">
+        <AccordionSectionGroup id="overlay" title="Overlay (When Chat is Open)" icon={Layers}>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
@@ -214,7 +215,7 @@ export function ChatWindowSection({ formData, setFormData }: ChatWindowSectionPr
                 onCheckedChange={(checked) => setFormData({ ...formData, overlayEnabled: checked } as any)}
               />
             </div>
-            
+
             {(formData as any).overlayEnabled && (
               <div className="grid grid-cols-2 gap-4 pt-2">
                 <div className="space-y-2">
@@ -263,9 +264,8 @@ export function ChatWindowSection({ formData, setFormData }: ChatWindowSectionPr
               </div>
             )}
           </div>
-        </SectionGroup>
-      </AccordionContent>
-    </AccordionItem>
+        </AccordionSectionGroup>
+      </AccordionSectionWrapper>
+    </div>
   )
 }
-

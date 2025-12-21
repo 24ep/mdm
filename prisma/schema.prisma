@@ -45,6 +45,7 @@ model User {
   createdMilestones            Milestone[]                   @relation("MilestoneCreator")
   createdReleases              Release[]                     @relation("ReleaseCreator")
   createdModules               Module[]                      @relation("ModuleCreator")
+  createdCycles                Cycle[]                       @relation("CycleCreator")
   leadModules                  Module[]                      @relation("ModuleLead")
   intakeSubmissions            IntakeSubmission[]            @relation("IntakeSubmissionUser")
   importProfiles               ImportProfile[]               @relation("ImportProfileCreator")
@@ -535,6 +536,8 @@ model Role {
   id          String  @id @default(uuid()) @db.Uuid
   name        String  @unique
   description String?
+  level       String  @default("space") // 'global' or 'space'
+  isSystem    Boolean @default(false) @map("is_system")
 
   // Relations
   permissions RolePermission[] @relation("RolePermissions")
@@ -882,6 +885,7 @@ model Project {
   releases   Release[]   @relation("ProjectReleases")
   modules    Module[]    @relation("ProjectModules")
   tickets    Ticket[]    @relation("ProjectTickets")
+  cycles     Cycle[]     @relation("ProjectCycles")
 
   @@map("projects")
 }
@@ -963,6 +967,29 @@ model Module {
   @@map("modules")
 }
 
+model Cycle {
+  id          String    @id @default(uuid()) @db.Uuid
+  projectId   String    @map("project_id") @db.Uuid
+  name        String
+  description String?
+  status      String    @default("DRAFT") // DRAFT, UPCOMING, ACTIVE, COMPLETED, CANCELLED
+  startDate   DateTime? @map("start_date")
+  endDate     DateTime? @map("end_date")
+  completedAt DateTime? @map("completed_at")
+  createdBy   String    @map("created_by") @db.Uuid
+  metadata    Json?     @default("{}") // Additional metadata
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  project Project @relation("ProjectCycles", fields: [projectId], references: [id], onDelete: Cascade)
+  creator User    @relation("CycleCreator", fields: [createdBy], references: [id])
+  tickets Ticket[] @relation("CycleTickets")
+
+  @@map("cycles")
+}
+
 // Project Management - Tickets
 model Ticket {
   id          String    @id @default(uuid()) @db.Uuid
@@ -981,6 +1008,8 @@ model Ticket {
   milestoneId String?   @map("milestone_id") @db.Uuid // Link to milestone
   releaseId   String?   @map("release_id") @db.Uuid // Link to release
   moduleId    String?   @map("module_id") @db.Uuid // Link to module
+  cycleId     String?   @map("cycle_id") @db.Uuid
+  type        String    @default("ISSUE") // ISSUE, BUG, FEATURE, TASK
   position    Int       @default(0) // For ordering
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
@@ -994,6 +1023,7 @@ model Ticket {
   milestone    Milestone?         @relation("MilestoneTickets", fields: [milestoneId], references: [id], onDelete: SetNull)
   release      Release?           @relation("ReleaseTickets", fields: [releaseId], references: [id], onDelete: SetNull)
   module       Module?            @relation("ModuleTickets", fields: [moduleId], references: [id], onDelete: SetNull)
+  cycle        Cycle?             @relation("CycleTickets", fields: [cycleId], references: [id], onDelete: SetNull)
   attributes   TicketAttribute[]  @relation("TicketAttributes")
   tags         TicketTag[]        @relation("TicketTags")
   comments     TicketComment[]    @relation("TicketComments")

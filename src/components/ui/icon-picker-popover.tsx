@@ -15,9 +15,10 @@ export interface IconPickerPopoverProps {
   label?: string
   animated?: boolean
   animation?: 'none' | 'bounce' | 'pulse' | 'spin' | 'wiggle' | 'float' | 'scale' | 'rotate' | 'shake' | 'glow'
+  zIndex?: number
 }
 
-export default function IconPickerPopover({ value, onChange, animated = false, animation = 'scale' }: IconPickerPopoverProps) {
+export default function IconPickerPopover({ value, onChange, animated = false, animation = 'scale', zIndex }: IconPickerPopoverProps) {
   const [open, setOpen] = useState(false)
   const anchorRef = useRef<HTMLButtonElement | null>(null)
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null)
@@ -44,10 +45,10 @@ export default function IconPickerPopover({ value, onChange, animated = false, a
         <div className="h-10 w-10 rounded-full flex items-center justify-center bg-gray-100 text-gray-700">
           {CurrentIcon ? (
             animated ? (
-              <AnimatedIcon 
-                icon={value!} 
-                size={20} 
-                animation={animation} 
+              <AnimatedIcon
+                icon={value!}
+                size={20}
+                animation={animation}
                 trigger="hover"
                 className="text-current"
               />
@@ -72,7 +73,7 @@ export default function IconPickerPopover({ value, onChange, animated = false, a
           <div
             className="fixed bg-white border rounded-md shadow-xl"
             style={{
-              zIndex: Z_INDEX.popover,
+              zIndex: zIndex || Z_INDEX.popover,
               top: anchorRect.bottom + window.scrollY + 8,
               left: Math.min(
                 anchorRect.left + window.scrollX,

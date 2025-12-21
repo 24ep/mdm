@@ -9,14 +9,14 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
-import { 
-  Database, 
-  Type, 
-  Key, 
-  Link, 
-  Settings, 
-  Plus, 
-  Trash2, 
+import {
+  Database,
+  Type,
+  Key,
+  Link,
+  Settings,
+  Plus,
+  Trash2,
   Edit,
   Move,
   Save,
@@ -57,6 +57,7 @@ interface Relationship {
 
 interface ERDDiagramProps {
   models: DataModel[]
+  relationships?: Relationship[]
   onUpdateModel: (model: DataModel) => void
   onUpdateAttribute: (modelId: string, attribute: Attribute) => void
   onDeleteAttribute: (modelId: string, attributeId: string) => void
@@ -74,6 +75,7 @@ interface DraggedItem {
 
 export default function ERDDiagram({
   models,
+  relationships: initialRelationships = [],
   onUpdateModel,
   onUpdateAttribute,
   onDeleteAttribute,
@@ -81,7 +83,7 @@ export default function ERDDiagram({
   onUpdateRelationship,
   onDeleteRelationship
 }: ERDDiagramProps) {
-  const [relationships, setRelationships] = useState<Relationship[]>([])
+  const [relationships, setRelationships] = useState<Relationship[]>(initialRelationships)
   const [selectedModel, setSelectedModel] = useState<DataModel | null>(null)
   const [selectedAttribute, setSelectedAttribute] = useState<Attribute | null>(null)
   const [selectedRelationship, setSelectedRelationship] = useState<Relationship | null>(null)
@@ -92,9 +94,16 @@ export default function ERDDiagram({
   const [relationshipStart, setRelationshipStart] = useState<{ modelId: string; attributeId: string } | null>(null)
   const [canvasOffset, setCanvasOffset] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
-  
+
   const canvasRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
+
+  // Sync relationships when prop changes
+  useEffect(() => {
+    if (initialRelationships && initialRelationships.length > 0) {
+      setRelationships(initialRelationships)
+    }
+  }, [initialRelationships])
 
   // Initialize default positions for models
   useEffect(() => {
@@ -182,7 +191,7 @@ export default function ERDDiagram({
   const renderRelationshipLine = (relationship: Relationship) => {
     const fromModel = models.find(m => m.id === relationship.fromModel)
     const toModel = models.find(m => m.id === relationship.toModel)
-    
+
     if (!fromModel?.position || !toModel?.position) return null
 
     const fromX = fromModel.position.x + 200 // Model width
@@ -459,7 +468,7 @@ function AttributeForm({ model, attribute, onSave, onCancel }: AttributeFormProp
           placeholder="e.g., customer_id"
         />
       </div>
-      
+
       <div>
         <Label htmlFor="display_name">Display Name</Label>
         <Input

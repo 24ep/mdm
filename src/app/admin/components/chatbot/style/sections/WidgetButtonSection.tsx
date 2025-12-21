@@ -4,12 +4,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import { Eye, Palette, Square, Sun, Tag, Settings } from 'lucide-react'
+
 import { ColorInput } from '@/components/studio/layout-config/ColorInput'
-import * as Icons from 'lucide-react'
 import type { Chatbot } from '../../types'
 import { extractNumericValue, ensurePx } from '../styleUtils'
-import { SectionGroup } from '../components/SectionGroup'
+import { AccordionSectionWrapper, AccordionSectionGroup } from '../components/AccordionSectionGroup'
 import { MultiSideInput } from '../components/MultiSideInput'
 
 interface WidgetButtonSectionProps {
@@ -19,12 +19,12 @@ interface WidgetButtonSectionProps {
 
 export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSectionProps) {
   return (
-    <AccordionItem value="widget" className="border-b px-4">
-      <AccordionTrigger className="text-lg font-semibold hover:no-underline">
-        Widget Button
-      </AccordionTrigger>
-      <AccordionContent className="pt-4 pb-6">
-        <SectionGroup title="Appearance" isFirst>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-medium">Widget Button</h3>
+      </div>
+      <AccordionSectionWrapper defaultValue="appearance">
+        <AccordionSectionGroup id="appearance" title="Appearance" icon={Eye} defaultOpen>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Avatar Style</Label>
@@ -94,9 +94,9 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
               <p className="text-xs text-muted-foreground">Spacing between widget button and popover window</p>
             </div>
           </div>
-        </SectionGroup>
+        </AccordionSectionGroup>
 
-        <SectionGroup title="Size & Colors">
+        <AccordionSectionGroup id="size-colors" title="Size & Colors" icon={Palette}>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Widget Size</Label>
@@ -160,9 +160,9 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
               <p className="text-xs text-muted-foreground">Background transparency (0-100%)</p>
             </div>
           </div>
-        </SectionGroup>
+        </AccordionSectionGroup>
 
-        <SectionGroup title="Borders">
+        <AccordionSectionGroup id="borders" title="Borders" icon={Square}>
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Widget Border Color</Label>
@@ -192,9 +192,9 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
               type="corners"
             />
           </div>
-        </SectionGroup>
+        </AccordionSectionGroup>
 
-        <SectionGroup title="Shadow">
+        <AccordionSectionGroup id="shadow" title="Shadow" icon={Sun}>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Widget Shadow Color</Label>
@@ -267,10 +267,10 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
               <p className="text-xs text-muted-foreground">Shadow spread radius (positive values expand, negative values contract)</p>
             </div>
           </div>
-        </SectionGroup>
+        </AccordionSectionGroup>
 
         {formData.widgetAvatarStyle === 'circle-with-label' && (
-          <SectionGroup title="Label">
+          <AccordionSectionGroup id="label" title="Label" icon={Tag}>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Widget Label Text</Label>
@@ -292,10 +292,10 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                 />
               </div>
             </div>
-          </SectionGroup>
+          </AccordionSectionGroup>
         )}
 
-        <SectionGroup title="Widget Behavior">
+        <AccordionSectionGroup id="behavior" title="Widget Behavior" icon={Settings}>
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div className="space-y-2">
               <Label>Entrance Animation</Label>
@@ -404,10 +404,8 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
               </div>
             </div>
           )}
-
-        </SectionGroup>
-      </AccordionContent>
-    </AccordionItem>
+        </AccordionSectionGroup>
+      </AccordionSectionWrapper>
+    </div>
   )
 }
-

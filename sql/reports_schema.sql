@@ -1,6 +1,14 @@
 -- Reports and Dashboards Module Database Schema
 -- This schema supports reports from multiple sources: Built-in, Power BI, Grafana, Looker Studio
 
+-- Cleanup existing tables
+DROP TABLE IF EXISTS public.report_integrations CASCADE;
+DROP TABLE IF EXISTS public.report_permissions CASCADE;
+DROP TABLE IF EXISTS public.report_spaces CASCADE;
+DROP TABLE IF EXISTS public.reports CASCADE;
+DROP TABLE IF EXISTS public.report_folders CASCADE;
+DROP TABLE IF EXISTS public.report_categories CASCADE;
+
 -- Report Categories (for organizing reports)
 CREATE TABLE IF NOT EXISTS public.report_categories (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -121,12 +129,12 @@ CREATE INDEX IF NOT EXISTS idx_report_integrations_config ON public.report_integ
 
 -- Add updated_at trigger function if it doesn't exist
 CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS '
+RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
-' language 'plpgsql';
+$$ language 'plpgsql';
 
 -- Add triggers for updated_at
 CREATE TRIGGER update_report_categories_updated_at BEFORE UPDATE ON public.report_categories

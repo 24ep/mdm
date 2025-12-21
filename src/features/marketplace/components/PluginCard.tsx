@@ -4,7 +4,7 @@ import { PluginDefinition } from '../types'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Star, Download, ExternalLink, CheckCircle2, Trash2 } from 'lucide-react'
+import { Star, Download, ExternalLink, CheckCircle2, Trash2, Info } from 'lucide-react'
 
 export interface PluginCardProps {
   plugin: PluginDefinition
@@ -60,6 +60,17 @@ export function PluginCard({ plugin, onInstall, onUninstall, installing = false,
                 <ExternalLink className="h-4 w-4" />
               </Button>
             )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation()
+                window.open(`http://localhost:3001/plugins/${plugin.slug}`, '_blank')
+              }}
+              title="View Details"
+            >
+              <Info className="h-4 w-4" />
+            </Button>
             {installed ? (
               onUninstall ? (
                 <Button

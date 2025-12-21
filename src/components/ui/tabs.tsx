@@ -67,7 +67,7 @@ const TabsTrigger = React.forwardRef<
 >(({ className, value, children, ...props }, ref) => {
   const context = React.useContext(TabsContext)
   const isActive = context?.value === value
-  
+
   // Check if parent is a vertical tablist
   const [isVertical, setIsVertical] = React.useState(false)
   React.useEffect(() => {
@@ -92,7 +92,7 @@ const TabsTrigger = React.forwardRef<
       data-component={isVertical ? "vertical-tab-trigger" : undefined}
       className={cn(
         "inline-flex items-center justify-start whitespace-nowrap px-3 py-2.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-        isActive && "text-foreground font-semibold bg-muted/30 relative after:content-[''] after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[3px] after:bg-primary",
+        isActive && "text-foreground font-semibold relative after:content-[''] after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[2px] after:bg-primary",
         !isActive && "text-muted-foreground hover:text-foreground",
         className
       )}

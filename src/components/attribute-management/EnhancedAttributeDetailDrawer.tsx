@@ -9,15 +9,15 @@ import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@/components/ui/drawer'
+import { CentralizedDrawer } from '@/components/ui/centralized-drawer'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { ColorInput } from '@/components/studio/layout-config/ColorInput'
-import { 
-  Database, 
-  Type, 
-  Activity, 
+import {
+  Database,
+  Type,
+  Activity,
   Settings,
   GripVertical,
   Plus,
@@ -97,7 +97,7 @@ export function EnhancedAttributeDetailDrawer({
       })))
       loadAttributeActivity()
       loadQualityStats()
-      
+
       // Load increment configuration
       if ((attribute as any).increment_config) {
         try {
@@ -112,7 +112,7 @@ export function EnhancedAttributeDetailDrawer({
 
   const loadAttributeActivity = async () => {
     if (!attribute) return
-    
+
     setLoadingActivity(true)
     try {
       const response = await fetch(`/api/data-models/attributes/${attribute.id}/activity`)
@@ -129,7 +129,7 @@ export function EnhancedAttributeDetailDrawer({
 
   const loadQualityStats = async () => {
     if (!attribute) return
-    
+
     setLoadingQuality(true)
     try {
       const response = await fetch(`/api/data-models/attributes/${attribute.id}/quality-stats`)
@@ -155,7 +155,7 @@ export function EnhancedAttributeDetailDrawer({
     try {
       const updatedOptions = [...options, { ...newOption, order: options.length }]
       setOptions(updatedOptions)
-      
+
       // Update the attribute with new options
       if (!attribute) return
       const response = await fetch(`/api/data-models/attributes/${attribute.id}`, {
@@ -194,7 +194,7 @@ export function EnhancedAttributeDetailDrawer({
       const updatedOptions = [...options]
       updatedOptions[index] = { ...editingOptionData, order: options[index]?.order ?? index }
       setOptions(updatedOptions)
-      
+
       if (!attribute) return
       const response = await fetch(`/api/data-models/attributes/${attribute.id}`, {
         method: 'PUT',
@@ -222,7 +222,7 @@ export function EnhancedAttributeDetailDrawer({
     try {
       const updatedOptions = options.filter((_, i) => i !== index)
       setOptions(updatedOptions)
-      
+
       if (!attribute) return
       const response = await fetch(`/api/data-models/attributes/${attribute.id}`, {
         method: 'PUT',
@@ -245,7 +245,7 @@ export function EnhancedAttributeDetailDrawer({
   const handleFormChange = (field: string, value: any) => {
     const newForm = { ...editForm, [field]: value }
     setEditForm(newForm)
-    
+
     // Auto-save after a short delay
     if (attribute) {
       const updatedAttribute = {
@@ -274,7 +274,7 @@ export function EnhancedAttributeDetailDrawer({
       ...newOption,
       order: options.length
     }
-    
+
     setOptions(prev => [...prev, option])
     setNewOption({ value: '', label: '', color: '#3B82F6' })
   }
@@ -292,7 +292,7 @@ export function EnhancedAttributeDetailDrawer({
       ...item,
       order: index
     }))
-    
+
     setOptions(reorderedOptions)
   }
 
@@ -305,31 +305,17 @@ export function EnhancedAttributeDetailDrawer({
   if (!attribute) return null
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="h-screen w-[720px] flex flex-col">
-        <DrawerHeader className="border-b border-border sticky top-0 bg-background z-10">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Type className="h-5 w-5" />
-              <DrawerTitle className="text-xl">
-                {attribute.display_name}
-              </DrawerTitle>
-              <Badge variant="outline">{attribute.type}</Badge>
-            </div>
-            <div className="flex items-center gap-2">
-              <DrawerClose asChild>
-                <Button variant="outline" size="sm">
-                  Close
-                </Button>
-              </DrawerClose>
-            </div>
-          </div>
-        </DrawerHeader>
-
-        <div className="flex-1 overflow-hidden">
-          <div className="h-full flex flex-col">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className={`grid w-full ${isSelectType ? 'grid-cols-4' : 'grid-cols-3'}`}>
+    <CentralizedDrawer
+      open={open}
+      onOpenChange={onOpenChange}
+      title={attribute.display_name}
+      icon={Type}
+      badge={<Badge variant="outline">{attribute.type}</Badge>}
+    >
+      <div className="flex-1 overflow-hidden flex flex-col">
+        <div className="h-full flex flex-col">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className={`grid w-full ${isSelectType ? 'grid-cols-4' : 'grid-cols-3'}`}>
               <TabsTrigger value="details" className="flex items-center gap-2">
                 <Database className="h-4 w-4" />
                 Details
@@ -606,8 +592,8 @@ export function EnhancedAttributeDetailDrawer({
                             Once you delete an attribute, there is no going back. This will remove the attribute from all data records.
                           </p>
                         </div>
-                        <Button 
-                          variant="destructive" 
+                        <Button
+                          variant="destructive"
                           onClick={() => onDelete(attribute.id)}
                           className="ml-4"
                         >
@@ -664,7 +650,7 @@ export function EnhancedAttributeDetailDrawer({
                                 inputClassName="h-8 text-xs pl-7"
                               />
                             </div>
-                            
+
                             {/* Attribute Code */}
                             <div className="flex-1 min-w-0">
                               <Input
@@ -675,7 +661,7 @@ export function EnhancedAttributeDetailDrawer({
                                 disabled={!permissions.canEdit}
                               />
                             </div>
-                            
+
                             {/* Attribute Label */}
                             <div className="flex-1 min-w-0">
                               <Input
@@ -686,7 +672,7 @@ export function EnhancedAttributeDetailDrawer({
                                 disabled={!permissions.canEdit}
                               />
                             </div>
-                            
+
                             {/* Remove Button */}
                             {permissions.canEdit && (
                               <Button
@@ -717,7 +703,7 @@ export function EnhancedAttributeDetailDrawer({
                                   inputClassName="h-8 text-xs pl-7"
                                 />
                               </div>
-                              
+
                               {/* Attribute Code */}
                               <div className="flex-1 min-w-0">
                                 <Input
@@ -727,7 +713,7 @@ export function EnhancedAttributeDetailDrawer({
                                   className="h-8"
                                 />
                               </div>
-                              
+
                               {/* Attribute Label */}
                               <div className="flex-1 min-w-0">
                                 <Input
@@ -737,7 +723,7 @@ export function EnhancedAttributeDetailDrawer({
                                   className="h-8"
                                 />
                               </div>
-                              
+
                               {/* Add Button */}
                               <Button
                                 onClick={handleAddOption}
@@ -816,10 +802,9 @@ export function EnhancedAttributeDetailDrawer({
                               {qualityStats.qualityIssues.map((issue: any, index: number) => (
                                 <div key={index} className="flex items-center justify-between p-2 border border-border rounded text-sm">
                                   <div className="flex items-center gap-2">
-                                    <div className={`w-2 h-2 rounded-full ${
-                                      issue.severity === 'error' ? 'bg-red-500' : 
+                                    <div className={`w-2 h-2 rounded-full ${issue.severity === 'error' ? 'bg-red-500' :
                                       issue.severity === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
-                                    }`} />
+                                      }`} />
                                     <span className="text-gray-700">{issue.message}</span>
                                   </div>
                                   <span className="text-gray-500">{issue.count}</span>
@@ -913,10 +898,9 @@ export function EnhancedAttributeDetailDrawer({
                 </Card>
               </div>
             </TabsContent>
-            </Tabs>
-          </div>
+          </Tabs>
         </div>
-      </DrawerContent>
-    </Drawer>
+      </div>
+    </CentralizedDrawer>
   )
 }

@@ -1,12 +1,15 @@
 'use client'
 
-import { RoleManagement } from '@/app/admin/features/users'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function RolesPage() {
-  return (
-    <div className="p-6">
-      <RoleManagement />
-    </div>
-  )
-}
+  const router = useRouter()
 
+  useEffect(() => {
+    // Redirect to the unified Users & Roles page
+    router.replace('/system/users')
+  }, [router])
+
+  return null
+}

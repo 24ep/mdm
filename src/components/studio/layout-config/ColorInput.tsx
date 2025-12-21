@@ -76,7 +76,7 @@ export function ColorInput({
     const classes = inputClassName.split(' ').filter(cls => !cls.match(/^pl-/))
     return classes.join(' ') || DEFAULT_INPUT_CLASS_NAME
   }, [inputClassName])
-  
+
   const finalInputClassName = cleanInputClassName
   const buttonRef = useRef<HTMLButtonElement>(null)
 
@@ -104,9 +104,11 @@ export function ColorInput({
       // Use getBoundingClientRect for more accurate measurement
       const inputRect = input.getBoundingClientRect()
       const inputHeight = inputRect.height || input.offsetHeight
-      
+
       if (inputHeight > 0) {
-        const height = `${inputHeight}px`
+        // Reduce size by 8px to make it smaller than input
+        const swatchSize = Math.max(16, inputHeight - 8)
+        const height = `${swatchSize}px`
         button.style.setProperty('height', height, 'important')
         button.style.setProperty('min-height', height, 'important')
         button.style.setProperty('max-height', height, 'important')
@@ -114,10 +116,10 @@ export function ColorInput({
         button.style.setProperty('width', height, 'important')
         button.style.setProperty('min-width', height, 'important')
         button.style.setProperty('max-width', height, 'important')
-        
+
         // Update input padding to account for new button size
         // Button is absolutely positioned at left-1 (4px), so padding = left offset + button width + gap
-        const newPadding = BUTTON_LEFT_OFFSET + inputHeight + BUTTON_TEXT_GAP
+        const newPadding = BUTTON_LEFT_OFFSET + swatchSize + BUTTON_TEXT_GAP
         input.style.setProperty('padding-left', `${newPadding}px`, 'important')
       }
     }
@@ -128,7 +130,7 @@ export function ColorInput({
 
     rafId = requestAnimationFrame(() => {
       updateSwatchHeight()
-      
+
       // Also watch for resize changes
       resizeObserver = new ResizeObserver(() => {
         updateSwatchHeight()
@@ -233,7 +235,7 @@ export function ColorInput({
             aria-label="Open color picker"
           />
         </ColorPickerPopover>
-        
+
         <Input
           ref={inputRefCallback}
           type="text"
@@ -242,7 +244,7 @@ export function ColorInput({
           className={finalInputClassName}
           placeholder={placeholder}
           disabled={disabled}
-          style={{ 
+          style={{
             pointerEvents: 'auto'
           }}
           onPointerDown={(e) => {

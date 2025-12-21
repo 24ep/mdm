@@ -3,43 +3,43 @@
 
 @layer base {
   :root {
-    /* macOS Light Theme - Soft, clean, premium */
-    --background: 240 5% 96%;
-    /* #f2f2f7 - macOS window background */
-    --foreground: 240 4% 16%;
-    /* #27272a - Soft black */
+    /* Standard Light Theme - Clean default shadcn/ui style */
+    --background: 0 0% 100%;
+    /* Pure white background */
+    --foreground: 222.2 84% 4.9%;
+    /* Dark text */
 
     --card: 0 0% 100%;
     /* Pure white cards */
-    --card-foreground: 240 4% 16%;
+    --card-foreground: 222.2 84% 4.9%;
 
     --popover: 0 0% 100%;
-    /* Pure white - #ffffff */
-    --popover-foreground: 240 4% 16%;
+    /* Pure white */
+    --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 211 100% 50%;
-    /* #007AFF - macOS Blue */
-    --primary-foreground: 0 0% 100%;
+    --primary: 221.2 83.2% 53.3%;
+    /* Standard blue */
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 240 5% 96%;
-    /* Match background for subtle contrast */
-    --secondary-foreground: 240 4% 16%;
+    --secondary: 210 40% 96%;
+    /* Light grey */
+    --secondary-foreground: 222.2 84% 4.9%;
 
-    --muted: 240 5% 96%;
-    --muted-foreground: 240 4% 46%;
-    /* #71717a */
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Grey text */
 
-    --accent: 211 100% 50%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
 
-    --destructive: 0 84% 60%;
-    /* Soft red */
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 84.2% 60.2%;
+    /* Red */
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 240 6% 90%;
+    --border: 214.3 31.8% 91.4%;
     /* Subtle border */
-    --input: 240 6% 90%;
-    --ring: 211 100% 50%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
 
     --radius: 0.75rem;
     /* 12px - Smooth corners */
@@ -136,40 +136,40 @@
   }
 
   .dark {
-    /* macOS Dark Theme - Deep, rich, elegant */
-    --background: 0 0% 0%;
-    /* #000000 - OLED friendly */
-    --foreground: 0 0% 98%;
+    /* Standard Dark Theme - Clean default shadcn/ui style */
+    --background: 222.2 84% 4.9%;
+    /* Dark background */
+    --foreground: 210 40% 98%;
 
-    --card: 240 4% 11%;
-    /* #1c1c1e - macOS dark card */
-    --card-foreground: 0 0% 98%;
+    --card: 222.2 84% 4.9%;
+    /* Dark card */
+    --card-foreground: 210 40% 98%;
 
-    --popover: 240 4% 11%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 211 100% 50%;
-    /* #0A84FF - macOS Dark Mode Blue */
-    --primary-foreground: 0 0% 100%;
+    --primary: 217.2 91.2% 59.8%;
+    /* Blue primary */
+    --primary-foreground: 222.2 47.4% 11.2%;
 
-    --secondary: 240 4% 16%;
-    /* #2c2c2e */
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 217.2 32.6% 17.5%;
+    /* Dark grey */
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 240 4% 16%;
-    --muted-foreground: 240 5% 65%;
-    /* #a1a1aa */
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    /* Light grey text */
 
-    --accent: 211 100% 50%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 240 4% 24%;
-    /* #3a3a3c */
-    --input: 240 4% 24%;
-    --ring: 211 100% 50%;
+    --border: 217.2 32.6% 17.5%;
+    /* Dark border */
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
 
     /* Z-index values remain the same in dark mode */
   }
@@ -188,12 +188,13 @@
     font-family: 'Inter', sans-serif;
   }
 
-  /* Input styling - light grey background for light theme, no border */
+  /* Input styling - light grey background for light theme */
   input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]),
   textarea,
   select {
-    background-color: hsl(var(--border)) !important;
-    border: none !important;
+    background-color: hsl(var(--muted)) !important;
+    color: hsl(var(--foreground)) !important;
+    border: 1px solid hsl(var(--border)) !important;
   }
 }
 

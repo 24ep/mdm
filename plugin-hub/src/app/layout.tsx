@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { MarketingHeader } from './components/MarketingHeader'
+import { MarketingFooter } from './components/MarketingFooter'
 
 export const metadata: Metadata = {
   title: 'MDM Plugin Hub',
@@ -13,7 +15,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', paddingTop: '73px' }}>
+        <MarketingHeader />
+        <div style={{ flex: 1 }}>
+          {children}
+        </div>
+        <MarketingFooter />
+      </body>
     </html>
   )
 }

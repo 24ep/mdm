@@ -26,14 +26,15 @@ export async function GET(request: NextRequest) {
 
     const level = queryValidation.data.level // 'global' or 'space' or null for all
 
-    // Note: level and is_system columns don't exist in the database schema
-    // They are set as defaults in the response mapping below
-    let queryStr = 'SELECT id, name, description FROM public.roles'
+    let queryStr = 'SELECT id, name, description, level, is_system FROM public.roles'
     const params: any[] = []
-    
-    // Level filtering removed since column doesn't exist in DB
-    // Filtering can be done client-side if needed
-    
+
+    // Filter by level if specified
+    if (level) {
+      queryStr += ' WHERE level = $1'
+      params.push(level)
+    }
+
     queryStr += ' ORDER BY name ASC'
 
     const { rows: roles } = await query(queryStr, params)
@@ -50,18 +51,15 @@ export async function GET(request: NextRequest) {
       roleIdToPerms[rp.role_id].push({ id: rp.permission_id, name: rp.name, resource: rp.resource, action: rp.action })
     }
 
-    let result = roles.map(r => ({ 
-      ...r, 
+    const result = roles.map(r => ({
+      id: r.id,
+      name: r.name,
+      description: r.description,
+      level: r.level || 'space',
+      isSystem: r.is_system || false,
       permissions: roleIdToPerms[r.id] || [],
-      isSystem: false, // Default since column doesn't exist in DB
-      level: 'space' as 'global' | 'space' // Default since column doesn't exist in DB
     }))
-    
-    // Client-side filtering by level if requested
-    if (level) {
-      result = result.filter(r => r.level === level)
-    }
-    
+
     const duration = Date.now() - startTime
     logger.apiResponse('GET', '/api/roles', 200, duration, {
       roleCount: result.length
@@ -94,23 +92,23 @@ export async function POST(request: NextRequest) {
     }
 
     const { name, description, level } = bodyValidation.data
-    
-    // Note: level and is_system columns don't exist in the database schema
-    // They are set as defaults in the response below
+
     const roleLevel = level === 'global' ? 'global' : 'space'
     const { rows } = await query(
-      'INSERT INTO public.roles (name, description) VALUES ($1, $2) RETURNING id, name, description',
-      [name, description || null]
+      'INSERT INTO public.roles (name, description, level, is_system) VALUES ($1, $2, $3, $4) RETURNING id, name, description, level, is_system',
+      [name, description || null, roleLevel, false]
     )
     const duration = Date.now() - startTime
     logger.apiResponse('POST', '/api/roles', 201, duration, {
       roleId: rows[0].id
     })
-    return addSecurityHeaders(NextResponse.json({ 
+    return addSecurityHeaders(NextResponse.json({
       role: {
-        ...rows[0],
-        isSystem: false,
-        level: roleLevel
+        id: rows[0].id,
+        name: rows[0].name,
+        description: rows[0].description,
+        level: rows[0].level,
+        isSystem: rows[0].is_system,
       }
     }, { status: 201 }))
   } catch (error: any) {

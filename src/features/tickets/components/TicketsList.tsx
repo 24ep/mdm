@@ -31,6 +31,8 @@ export function TicketsList({
   viewMode = 'kanban',
   showFilters = true,
   showSpaceSelector = false,
+  projectId,
+  cycleId,
 }: TicketsListProps) {
   const { currentSpace } = useSpace()
   const [selectedSpaceId, setSelectedSpaceId] = useState<string>(
@@ -58,14 +60,14 @@ export function TicketsList({
   // Use tickets with time logs when in timesheet view, regular tickets otherwise
   const ticketsWithTimeLogsResult = useTicketsWithTimeLogs({
     spaceId: effectiveSpaceId,
-    filters,
+    filters: { ...filters, projectId, cycleId }, // Pass project/cycle context
     includeTimeLogs: view === 'timesheet',
     autoFetch: view === 'timesheet',
   })
-  
+
   const regularTicketsResult = useTickets({
     spaceId: effectiveSpaceId,
-    filters,
+    filters: { ...filters, projectId, cycleId }, // Pass project/cycle context
     autoFetch: view !== 'timesheet',
   })
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Database, File, Settings, RefreshCw, Loader, Plus, Save, CheckCircle2, XCircle, Eye, EyeOff } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Database, File, Settings, RefreshCw, Loader, Plus, Save, CheckCircle2, XCircle, Eye, EyeOff, Clock, Timer } from 'lucide-react'
 import { useMinIO } from '../hooks/useMinIO'
 import { showSuccess, showError } from '@/lib/toast-utils'
 
@@ -25,10 +26,12 @@ interface MinIOConfig {
   region: string
 }
 
+type SyncInterval = 'disabled' | '5' | '15' | '30' | '60'
+
 export function MinIOManagement({ instanceId }: MinIOManagementProps) {
   const { buckets, loading, error, refetch } = useMinIO(instanceId)
   const [selectedBucket, setSelectedBucket] = useState<string | null>(null)
-  
+
   // Configuration state
   const [config, setConfig] = useState<MinIOConfig>({
     endpoint: 'localhost',
@@ -44,338 +47,16 @@ export function MinIOManagement({ instanceId }: MinIOManagementProps) {
   const [connectionMessage, setConnectionMessage] = useState('')
   const [showSecretKey, setShowSecretKey] = useState(false)
 
-  return (
-    <div className="space-y-6">
-      <div className="w-full">
-        <Tabs defaultValue="buckets">
-        <TabsList>
-          <TabsTrigger value="buckets">
-            <Database className="h-4 w-4 mr-2" />
-            Buckets
-          </TabsTrigger>
-          <TabsTrigger value="objects" disabled={!selectedBucket}>
-            <File className="h-4 w-4 mr-2" />
-            Objects
-          </TabsTrigger>
-          <TabsTrigger value="settings">
-            <Settings className="h-4 w-4 mr-2" />
-            Settings
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="buckets" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold">MinIO Buckets</h3>
-              <p className="text-sm text-muted-foreground">
-                Manage your object storage buckets
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => refetch()}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Create Bucket
-              </Button>
-            </div>
-          </div>
-
-          {loading ? (
-            <div className="flex items-center justify-center h-32">
-              <Loader className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : error ? (
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-center text-destructive">
-                  {error}
-                </div>
-              </CardContent>
-            </Card>
-          ) : buckets.length === 0 ? (
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-center py-8 text-muted-foreground">
-                  No buckets found. Create your first bucket to get started.
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {buckets.map((bucket: any) => (
-                <Card 
-                  key={bucket.name}
-                  className={selectedBucket === bucket.name ? 'ring-2 ring-primary' : ''}
-                >
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      <Database className="h-5 w-5 text-muted-foreground" />
-                      <CardTitle className="text-lg">{bucket.name}</CardTitle>
-                    </div>
-                    <CardDescription>
-                      Created: {bucket.creationDate 
-                        ? new Date(bucket.creationDate).toLocaleDateString()
-                        : 'Unknown'}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {bucket.size && (
-                        <div className="text-sm text-muted-foreground">
-                          Size: {bucket.size}
-                        </div>
-                      )}
-                      {bucket.objectCount !== undefined && (
-                        <div className="text-sm text-muted-foreground">
-                          Objects: {bucket.objectCount}
-                        </div>
-                      )}
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full"
-                        onClick={() => setSelectedBucket(bucket.name)}
-                      >
-                        <File className="h-4 w-4 mr-2" />
-                        View Objects
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="objects" className="space-y-4">
-          {selectedBucket ? (
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold">Objects in {selectedBucket}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Browse and manage objects in this bucket
-                  </p>
-                </div>
-                <Button size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Upload Object
-                </Button>
-              </div>
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="text-center py-8 text-muted-foreground">
-                    Object browser will be implemented here
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-center py-8 text-muted-foreground">
-                  Please select a bucket to view objects
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        <TabsContent value="settings" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Connection Settings</CardTitle>
-              <CardDescription>
-                Configure MinIO connection details for this instance
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {/* Instance ID */}
-                <div>
-                  <Label>Instance ID</Label>
-                  <div className="mt-1 text-sm text-muted-foreground font-mono">{instanceId}</div>
-                </div>
-
-                {/* Endpoint */}
-                <div className="space-y-2">
-                  <Label htmlFor="endpoint">
-                    Endpoint <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="endpoint"
-                    value={config.endpoint}
-                    onChange={(e) => setConfig({ ...config, endpoint: e.target.value })}
-                    placeholder="localhost or minio.example.com"
-                  />
-                </div>
-
-                {/* Port */}
-                <div className="space-y-2">
-                  <Label htmlFor="port">
-                    Port <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="port"
-                    type="number"
-                    value={config.port}
-                    onChange={(e) => setConfig({ ...config, port: parseInt(e.target.value) || 9000 })}
-                    placeholder="9000"
-                  />
-                </div>
-
-                {/* Access Key */}
-                <div className="space-y-2">
-                  <Label htmlFor="accessKey">
-                    Access Key <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="accessKey"
-                    value={config.accessKey}
-                    onChange={(e) => setConfig({ ...config, accessKey: e.target.value })}
-                    placeholder="minioadmin"
-                  />
-                </div>
-
-                {/* Secret Key */}
-                <div className="space-y-2">
-                  <Label htmlFor="secretKey">
-                    Secret Key <span className="text-destructive">*</span>
-                  </Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="secretKey"
-                      type={showSecretKey ? 'text' : 'password'}
-                      value={config.secretKey}
-                      onChange={(e) => setConfig({ ...config, secretKey: e.target.value })}
-                      placeholder="minioadmin"
-                      className="flex-1"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setShowSecretKey(!showSecretKey)}
-                    >
-                      {showSecretKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Use SSL */}
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="useSSL">Use SSL</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Enable HTTPS connection
-                    </p>
-                  </div>
-                  <Switch
-                    id="useSSL"
-                    checked={config.useSSL}
-                    onCheckedChange={(checked) => setConfig({ ...config, useSSL: checked })}
-                  />
-                </div>
-
-                {/* Region */}
-                <div className="space-y-2">
-                  <Label htmlFor="region">Region</Label>
-                  <Input
-                    id="region"
-                    value={config.region}
-                    onChange={(e) => setConfig({ ...config, region: e.target.value })}
-                    placeholder="us-east-1"
-                  />
-                </div>
-
-                {/* Connection Status */}
-                {connectionStatus !== 'unknown' && (
-                  <div className={`flex items-center gap-2 p-3 rounded-lg ${
-                    connectionStatus === 'success' 
-                      ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
-                      : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
-                  }`}>
-                    {connectionStatus === 'success' ? (
-                      <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-                    ) : (
-                      <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
-                    )}
-                    <div className="flex-1">
-                      <p className={`text-sm font-medium ${
-                        connectionStatus === 'success' 
-                          ? 'text-green-800 dark:text-green-200'
-                          : 'text-red-800 dark:text-red-200'
-                      }`}>
-                        {connectionStatus === 'success' ? 'Connection Successful' : 'Connection Failed'}
-                      </p>
-                      {connectionMessage && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {connectionMessage}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex gap-2 pt-4 border-t">
-                  <Button
-                    variant="outline"
-                    onClick={loadConfiguration}
-                    disabled={configLoading || configSaving}
-                  >
-                    {configLoading ? (
-                      <>
-                        <Loader className="h-4 w-4 mr-2 animate-spin" />
-                        Loading...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        Load Current Config
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={testConnection}
-                    disabled={configLoading || configSaving}
-                  >
-                    Test Connection
-                  </Button>
-                  <Button
-                    onClick={saveConfiguration}
-                    disabled={configLoading || configSaving}
-                    className="ml-auto"
-                  >
-                    {configSaving ? (
-                      <>
-                        <Loader className="h-4 w-4 mr-2 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4 mr-2" />
-                        Save Configuration
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-      </div>
-    </div>
-  )
+  // Sync state
+  const [syncInterval, setSyncInterval] = useState<SyncInterval>('disabled')
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null)
+  const [isSyncing, setIsSyncing] = useState(false)
+  const syncIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   // Load current configuration
-  async function loadConfiguration() {
+  const loadConfiguration = useCallback(async (showToast = true) => {
     setConfigLoading(true)
+    setIsSyncing(true)
     setConnectionStatus('unknown')
     try {
       const response = await fetch(`/api/minio/${instanceId}/config`)
@@ -389,31 +70,41 @@ export function MinIOManagement({ instanceId }: MinIOManagementProps) {
           useSSL: data.useSSL || false,
           region: data.region || 'us-east-1',
         })
+        setLastSyncTime(new Date())
         if (data.hasCredentials) {
           setConnectionMessage('Configuration loaded (credentials hidden for security)')
+          setConnectionStatus('success')
         } else {
           setConnectionMessage('Configuration loaded - credentials need to be set')
         }
+        if (showToast) {
+          showSuccess('Configuration fetched successfully')
+        }
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Failed to load configuration' }))
-        showError(errorData.error || 'Failed to load configuration')
+        if (showToast) {
+          showError(errorData.error || 'Failed to load configuration')
+        }
       }
     } catch (error) {
       console.error('Error loading configuration:', error)
-      showError('Failed to load configuration')
+      if (showToast) {
+        showError('Failed to load configuration')
+      }
     } finally {
       setConfigLoading(false)
+      setIsSyncing(false)
     }
-  }
+  }, [instanceId])
 
   // Test connection
-  async function testConnection() {
+  const testConnection = useCallback(async () => {
     setConfigLoading(true)
     setConnectionStatus('unknown')
     try {
       const response = await fetch(`/api/minio/${instanceId}/connection`)
       const data = await response.json()
-      
+
       if (data.success) {
         setConnectionStatus('success')
         setConnectionMessage(data.message || `Connected to ${data.endpoint}`)
@@ -430,10 +121,10 @@ export function MinIOManagement({ instanceId }: MinIOManagementProps) {
     } finally {
       setConfigLoading(false)
     }
-  }
+  }, [instanceId])
 
   // Save configuration
-  async function saveConfiguration() {
+  const saveConfiguration = useCallback(async () => {
     if (!config.endpoint || !config.accessKey || !config.secretKey) {
       showError('Please fill in all required fields (Endpoint, Access Key, Secret Key)')
       return
@@ -476,6 +167,424 @@ export function MinIOManagement({ instanceId }: MinIOManagementProps) {
     } finally {
       setConfigSaving(false)
     }
+  }, [config, instanceId, testConnection])
+
+  // Auto-fetch config on mount
+  useEffect(() => {
+    loadConfiguration(false) // Don't show toast on initial load
+  }, [loadConfiguration])
+
+  // Setup scheduled sync
+  useEffect(() => {
+    // Clear existing interval
+    if (syncIntervalRef.current) {
+      clearInterval(syncIntervalRef.current)
+      syncIntervalRef.current = null
+    }
+
+    // Setup new interval if not disabled
+    if (syncInterval !== 'disabled') {
+      const intervalMs = parseInt(syncInterval) * 60 * 1000 // Convert minutes to ms
+      syncIntervalRef.current = setInterval(() => {
+        loadConfiguration(false) // Silent refresh
+      }, intervalMs)
+    }
+
+    return () => {
+      if (syncIntervalRef.current) {
+        clearInterval(syncIntervalRef.current)
+      }
+    }
+  }, [syncInterval, loadConfiguration])
+
+  const getSyncIntervalLabel = (interval: SyncInterval) => {
+    switch (interval) {
+      case 'disabled': return 'Disabled'
+      case '5': return 'Every 5 minutes'
+      case '15': return 'Every 15 minutes'
+      case '30': return 'Every 30 minutes'
+      case '60': return 'Every hour'
+      default: return 'Disabled'
+    }
   }
+
+  return (
+    <div className="space-y-6">
+      <div className="w-full">
+        <Tabs defaultValue="buckets">
+          <TabsList>
+            <TabsTrigger value="buckets">
+              <Database className="h-4 w-4 mr-2" />
+              Buckets
+            </TabsTrigger>
+            <TabsTrigger value="objects" disabled={!selectedBucket}>
+              <File className="h-4 w-4 mr-2" />
+              Objects
+            </TabsTrigger>
+            <TabsTrigger value="settings">
+              <Settings className="h-4 w-4 mr-2" />
+              Settings
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="buckets" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold">MinIO Buckets</h3>
+                <p className="text-sm text-muted-foreground">
+                  Manage your object storage buckets
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => refetch()}>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh
+                </Button>
+                <Button size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Bucket
+                </Button>
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="flex items-center justify-center h-32">
+                <Loader className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : error ? (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center text-destructive">
+                    {error}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : buckets.length === 0 ? (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center py-8 text-muted-foreground">
+                    No buckets found. Create your first bucket to get started.
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {buckets.map((bucket: any) => (
+                  <Card
+                    key={bucket.name}
+                    className={selectedBucket === bucket.name ? 'ring-2 ring-primary' : ''}
+                  >
+                    <CardHeader>
+                      <div className="flex items-center gap-2">
+                        <Database className="h-5 w-5 text-muted-foreground" />
+                        <CardTitle className="text-lg">{bucket.name}</CardTitle>
+                      </div>
+                      <CardDescription>
+                        Created: {bucket.creationDate
+                          ? new Date(bucket.creationDate).toLocaleDateString()
+                          : 'Unknown'}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {bucket.size && (
+                          <div className="text-sm text-muted-foreground">
+                            Size: {bucket.size}
+                          </div>
+                        )}
+                        {bucket.objectCount !== undefined && (
+                          <div className="text-sm text-muted-foreground">
+                            Objects: {bucket.objectCount}
+                          </div>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => setSelectedBucket(bucket.name)}
+                        >
+                          <File className="h-4 w-4 mr-2" />
+                          View Objects
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="objects" className="space-y-4">
+            {selectedBucket ? (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold">Objects in {selectedBucket}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Browse and manage objects in this bucket
+                    </p>
+                  </div>
+                  <Button size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Upload Object
+                  </Button>
+                </div>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-center py-8 text-muted-foreground">
+                      Object browser will be implemented here
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center py-8 text-muted-foreground">
+                    Please select a bucket to view objects
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Connection Settings</CardTitle>
+                    <CardDescription>
+                      Configure MinIO connection details for this instance
+                    </CardDescription>
+                  </div>
+                  {/* Sync Status Indicator */}
+                  <div className="flex items-center gap-2">
+                    {isSyncing && (
+                      <Badge variant="secondary" className="gap-1">
+                        <RefreshCw className="h-3 w-3 animate-spin" />
+                        Syncing...
+                      </Badge>
+                    )}
+                    {lastSyncTime && !isSyncing && (
+                      <Badge variant="outline" className="gap-1 text-xs">
+                        <Clock className="h-3 w-3" />
+                        Last sync: {lastSyncTime.toLocaleTimeString()}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* Instance ID */}
+                  <div>
+                    <Label>Instance ID</Label>
+                    <div className="mt-1 text-sm text-muted-foreground font-mono">{instanceId}</div>
+                  </div>
+
+                  {/* Scheduled Sync */}
+                  <div className="p-4 border rounded-lg bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <Timer className="h-4 w-4 text-muted-foreground" />
+                          <Label>Auto-Sync Schedule</Label>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Automatically fetch configuration updates at regular intervals
+                        </p>
+                      </div>
+                      <Select value={syncInterval} onValueChange={(v) => setSyncInterval(v as SyncInterval)}>
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Select interval" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="disabled">Disabled</SelectItem>
+                          <SelectItem value="5">Every 5 minutes</SelectItem>
+                          <SelectItem value="15">Every 15 minutes</SelectItem>
+                          <SelectItem value="30">Every 30 minutes</SelectItem>
+                          <SelectItem value="60">Every hour</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {syncInterval !== 'disabled' && (
+                      <div className="mt-2 text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Auto-sync enabled: {getSyncIntervalLabel(syncInterval)}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Endpoint */}
+                  <div className="space-y-2">
+                    <Label htmlFor="endpoint">
+                      Endpoint <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="endpoint"
+                      value={config.endpoint}
+                      onChange={(e) => setConfig({ ...config, endpoint: e.target.value })}
+                      placeholder="localhost or minio.example.com"
+                    />
+                  </div>
+
+                  {/* Port */}
+                  <div className="space-y-2">
+                    <Label htmlFor="port">
+                      Port <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="port"
+                      type="number"
+                      value={config.port}
+                      onChange={(e) => setConfig({ ...config, port: parseInt(e.target.value) || 9000 })}
+                      placeholder="9000"
+                    />
+                  </div>
+
+                  {/* Access Key */}
+                  <div className="space-y-2">
+                    <Label htmlFor="accessKey">
+                      Access Key <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="accessKey"
+                      value={config.accessKey}
+                      onChange={(e) => setConfig({ ...config, accessKey: e.target.value })}
+                      placeholder="minioadmin"
+                    />
+                  </div>
+
+                  {/* Secret Key */}
+                  <div className="space-y-2">
+                    <Label htmlFor="secretKey">
+                      Secret Key <span className="text-destructive">*</span>
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="secretKey"
+                        type={showSecretKey ? 'text' : 'password'}
+                        value={config.secretKey}
+                        onChange={(e) => setConfig({ ...config, secretKey: e.target.value })}
+                        placeholder="minioadmin"
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setShowSecretKey(!showSecretKey)}
+                      >
+                        {showSecretKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Use SSL */}
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="useSSL">Use SSL</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Enable HTTPS connection
+                      </p>
+                    </div>
+                    <Switch
+                      id="useSSL"
+                      checked={config.useSSL}
+                      onCheckedChange={(checked) => setConfig({ ...config, useSSL: checked })}
+                    />
+                  </div>
+
+                  {/* Region */}
+                  <div className="space-y-2">
+                    <Label htmlFor="region">Region</Label>
+                    <Input
+                      id="region"
+                      value={config.region}
+                      onChange={(e) => setConfig({ ...config, region: e.target.value })}
+                      placeholder="us-east-1"
+                    />
+                  </div>
+
+                  {/* Connection Status */}
+                  {connectionStatus !== 'unknown' && (
+                    <div className={`flex items-center gap-2 p-3 rounded-lg ${connectionStatus === 'success'
+                        ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+                        : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+                      }`}>
+                      {connectionStatus === 'success' ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                      ) : (
+                        <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                      )}
+                      <div className="flex-1">
+                        <p className={`text-sm font-medium ${connectionStatus === 'success'
+                            ? 'text-green-800 dark:text-green-200'
+                            : 'text-red-800 dark:text-red-200'
+                          }`}>
+                          {connectionStatus === 'success' ? 'Connection Successful' : 'Connection Failed'}
+                        </p>
+                        {connectionMessage && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {connectionMessage}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 pt-4 border-t">
+                    <Button
+                      variant="outline"
+                      onClick={() => loadConfiguration(true)}
+                      disabled={configLoading || configSaving}
+                    >
+                      {configLoading ? (
+                        <>
+                          <Loader className="h-4 w-4 mr-2 animate-spin" />
+                          Fetching...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Fetch Config
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={testConnection}
+                      disabled={configLoading || configSaving}
+                    >
+                      Test Connection
+                    </Button>
+                    <Button
+                      onClick={saveConfiguration}
+                      disabled={configLoading || configSaving}
+                      className="ml-auto"
+                    >
+                      {configSaving ? (
+                        <>
+                          <Loader className="h-4 w-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Configuration
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  )
 }
 

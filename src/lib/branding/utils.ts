@@ -69,7 +69,7 @@ export function rgbaToHsl(color: string): string {
     const g = parseInt(match[2]) / 255
     const b = parseInt(match[3]) / 255
     const alpha = match[4] ? parseFloat(match[4]) : 1
-    
+
     // If alpha is less than 1, we need to blend with white/black background
     // to get the effective color. For very transparent colors, this is important.
     // For now, we'll convert the RGB values directly, but note that alpha is lost.
@@ -108,5 +108,93 @@ export function hasAlphaChannel(color: string): boolean {
     return alpha < 1
   }
   return false
+}
+
+/**
+ * Clear all branding styles injected by the branding system
+ * This removes injected style elements and resets CSS custom properties
+ * so that the default styles from globals.css take effect
+ */
+export function clearBrandingStyles(): void {
+  const root = document.documentElement
+
+  // Remove all injected style elements
+  const styleIds = [
+    'branding-global-styling',
+    'branding-animations',
+    'branding-component-styling',
+    'branding-secondary-sidebar-vars',
+    'branding-drawer-overlay',
+    'branding-google-font',
+  ]
+
+  styleIds.forEach(id => {
+    const el = document.getElementById(id)
+    if (el) {
+      el.remove()
+    }
+  })
+
+  // List of CSS variables set by branding that should be cleared
+  const brandingVars = [
+    '--brand-primary',
+    '--brand-secondary',
+    '--brand-warning',
+    '--brand-danger',
+    '--brand-ui-bg',
+    '--brand-ui-border',
+    '--brand-top-menu-bg',
+    '--brand-platform-sidebar-bg',
+    '--brand-secondary-sidebar-bg',
+    '--brand-top-menu-text',
+    '--brand-platform-sidebar-text',
+    '--brand-secondary-sidebar-text',
+    '--brand-body-bg',
+    '--brand-body-text',
+    '--brand-border-radius',
+    '--brand-border-color',
+    '--brand-border-width',
+    '--brand-button-border-radius',
+    '--brand-button-border-width',
+    '--brand-input-border-radius',
+    '--brand-input-border-width',
+    '--brand-select-border-radius',
+    '--brand-select-border-width',
+    '--brand-textarea-border-radius',
+    '--brand-textarea-border-width',
+    '--brand-base-font-size',
+    '--brand-input-height',
+    '--brand-input-padding',
+    '--brand-input-font-size',
+    '--brand-button-height',
+    '--brand-button-padding',
+    '--brand-button-font-size',
+    '--brand-font-family',
+    '--brand-font-family-mono',
+    '--brand-transition-duration',
+    '--brand-transition-timing',
+    '--brand-shadow-sm',
+    '--brand-shadow-md',
+    '--brand-shadow-lg',
+    '--brand-shadow-xl',
+    '--space-settings-menu-active-bg',
+    '--space-settings-menu-active-text',
+    '--space-settings-menu-normal-bg',
+    '--space-settings-menu-normal-text',
+    '--space-settings-menu-hover-bg',
+    '--space-settings-menu-hover-text',
+  ]
+
+  // Remove custom CSS variables from root
+  brandingVars.forEach(varName => {
+    root.style.removeProperty(varName)
+  })
+
+  // Reset body styles that were set directly
+  document.body.style.backgroundColor = ''
+  document.body.style.color = ''
+  document.body.style.fontFamily = ''
+
+  console.log('[Branding] Cleared all branding styles')
 }
 

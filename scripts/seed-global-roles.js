@@ -53,6 +53,8 @@ async function seedGlobalRoles() {
         data: {
           name: role.name,
           description: role.description,
+          level: 'global',
+          isSystem: true,
         }
       });
 

@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer'
+import { Button } from '@/components/ui/button'
+import { CentralizedDrawer } from '@/components/ui/centralized-drawer'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Button } from '@/components/ui/button'
 import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 import { Upload, X, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -102,110 +102,109 @@ export function EmulatorConfigDrawer({
   }
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent widthClassName="w-[500px]">
-        <DrawerHeader>
-          <DrawerTitle>Emulator Configuration</DrawerTitle>
-          <DrawerDescription>
-            Configure the emulator appearance and settings
-          </DrawerDescription>
-        </DrawerHeader>
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          {/* Background Settings */}
-          <div className="space-y-4">
-            <h4 className="text-sm font-semibold">Background Settings</h4>
-            
-            <div className="space-y-2">
-              <Label>Background Color</Label>
-              <ColorInput
-                value={localConfig.backgroundColor || '#ffffff'}
-                onChange={(color) => handleChange('backgroundColor', color)}
-                allowImageVideo={false}
-                className="relative"
-                placeholder="#ffffff"
-                inputClassName="h-10 text-xs pl-7 w-full"
-              />
-            </div>
+    <CentralizedDrawer
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Emulator Configuration"
+      description="Configure the emulator appearance and settings"
+      width="w-[720px]"
+      floating={true}
+    >
+      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        {/* Background Settings */}
+        <div className="space-y-4">
+          <h4 className="text-sm font-semibold">Background Settings</h4>
 
-            <div className="space-y-2">
-              <Label>Background Image</Label>
-              {localConfig.backgroundImage ? (
-                <div className="relative">
-                  <div className="relative w-full h-32 rounded-md overflow-hidden border">
-                    <img
-                      src={localConfig.backgroundImage}
-                      alt="Background"
-                      className="w-full h-full object-cover"
-                    />
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-2 right-2 h-6 w-6 p-0"
-                      onClick={removeBackgroundImage}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="border-2 border-dashed rounded-md p-4">
-                  <label className={`cursor-pointer flex flex-col items-center gap-2 ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
-                    {isUploading ? (
-                      <>
-                        <Loader2 className="h-6 w-6 text-muted-foreground animate-spin" />
-                        <span className="text-sm text-muted-foreground">Uploading...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="h-6 w-6 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">Click to upload or paste URL</span>
-                      </>
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleImageUpload}
-                      disabled={isUploading}
-                    />
-                  </label>
-                </div>
-              )}
-              <Input
-                value={localConfig.backgroundImage || ''}
-                onChange={(e) => handleChange('backgroundImage', e.target.value)}
-                placeholder="Or enter image URL"
-                className="mt-2"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label>Background Color</Label>
+            <ColorInput
+              value={localConfig.backgroundColor || '#ffffff'}
+              onChange={(color) => handleChange('backgroundColor', color)}
+              allowImageVideo={false}
+              className="relative"
+              placeholder="#ffffff"
+              inputClassName="h-10 text-xs pl-7 w-full"
+            />
           </div>
 
-          {/* Text Settings */}
-          <div className="space-y-4 border-t pt-4">
-            <h4 className="text-sm font-semibold">Text Settings</h4>
-            
-            <div className="space-y-2">
-              <Label>Title / Text</Label>
-              <Input
-                value={localConfig.text || ''}
-                onChange={(e) => handleChange('text', e.target.value)}
-                placeholder="Enter title or text"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea
-                value={localConfig.description || ''}
-                onChange={(e) => handleChange('description', e.target.value)}
-                placeholder="Enter description"
-                rows={4}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label>Background Image</Label>
+            {localConfig.backgroundImage ? (
+              <div className="relative">
+                <div className="relative w-full h-32 rounded-md overflow-hidden border">
+                  <img
+                    src={localConfig.backgroundImage}
+                    alt="Background"
+                    className="w-full h-full object-cover"
+                  />
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-2 right-2 h-6 w-6 p-0"
+                    onClick={removeBackgroundImage}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed rounded-md p-4">
+                <label className={`cursor-pointer flex flex-col items-center gap-2 ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="h-6 w-6 text-muted-foreground animate-spin" />
+                      <span className="text-sm text-muted-foreground">Uploading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-6 w-6 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Click to upload or paste URL</span>
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageUpload}
+                    disabled={isUploading}
+                  />
+                </label>
+              </div>
+            )}
+            <Input
+              value={localConfig.backgroundImage || ''}
+              onChange={(e) => handleChange('backgroundImage', e.target.value)}
+              placeholder="Or enter image URL"
+              className="mt-2"
+            />
           </div>
         </div>
-      </DrawerContent>
-    </Drawer>
+
+        {/* Text Settings */}
+        <div className="space-y-4 border-t pt-4">
+          <h4 className="text-sm font-semibold">Text Settings</h4>
+
+          <div className="space-y-2">
+            <Label>Title / Text</Label>
+            <Input
+              value={localConfig.text || ''}
+              onChange={(e) => handleChange('text', e.target.value)}
+              placeholder="Enter title or text"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Description</Label>
+            <Textarea
+              value={localConfig.description || ''}
+              onChange={(e) => handleChange('description', e.target.value)}
+              placeholder="Enter description"
+              rows={4}
+            />
+          </div>
+        </div>
+      </div>
+    </CentralizedDrawer >
   )
 }
 

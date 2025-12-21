@@ -3,7 +3,7 @@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+
 import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 import type { Chatbot } from '../../types'
 import { SectionGroup } from '../components/SectionGroup'
@@ -15,11 +15,11 @@ interface StartScreenPromptsSectionProps {
 
 export function StartScreenPromptsSection({ formData, setFormData }: StartScreenPromptsSectionProps) {
   return (
-    <AccordionItem value="startScreenPrompts" className="border-b px-4">
-      <AccordionTrigger className="text-lg font-semibold hover:no-underline">
-        Start Screen Prompts
-      </AccordionTrigger>
-      <AccordionContent className="pt-4 pb-6">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-medium">Start Screen Prompts</h3>
+      </div>
+      <div className="pt-2">
         <SectionGroup title="Layout" isFirst>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -37,7 +37,7 @@ export function StartScreenPromptsSection({ formData, setFormData }: StartScreen
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
               <Label>Position</Label>
               <Select
@@ -55,7 +55,7 @@ export function StartScreenPromptsSection({ formData, setFormData }: StartScreen
               </Select>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4 mt-4">
             <div className="space-y-2">
               <Label>Icon Display</Label>
@@ -89,7 +89,7 @@ export function StartScreenPromptsSection({ formData, setFormData }: StartScreen
                 inputClassName="h-7 text-xs pl-7 w-full"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label>Font Color</Label>
               <ColorInput
@@ -115,7 +115,7 @@ export function StartScreenPromptsSection({ formData, setFormData }: StartScreen
                 placeholder="Inter"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label>Font Size</Label>
               <Input
@@ -154,7 +154,7 @@ export function StartScreenPromptsSection({ formData, setFormData }: StartScreen
                 inputClassName="h-7 text-xs pl-7 w-full"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label>Border Width</Label>
               <Input
@@ -164,7 +164,7 @@ export function StartScreenPromptsSection({ formData, setFormData }: StartScreen
                 placeholder="1px"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label>Border Radius</Label>
               <Input
@@ -176,8 +176,8 @@ export function StartScreenPromptsSection({ formData, setFormData }: StartScreen
             </div>
           </div>
         </SectionGroup>
-      </AccordionContent>
-    </AccordionItem>
+      </div>
+    </div>
   )
 }
 

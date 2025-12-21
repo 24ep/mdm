@@ -1,6 +1,8 @@
 -- Platform Integrations Table
 -- This table stores platform-level integration configurations (not report-specific)
 
+DROP TABLE IF EXISTS public.platform_integrations CASCADE;
+
 CREATE TABLE IF NOT EXISTS public.platform_integrations (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     name VARCHAR(255) NOT NULL,

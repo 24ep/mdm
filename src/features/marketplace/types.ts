@@ -28,7 +28,7 @@ export interface PluginDefinition {
   reviewCount?: number
   verified?: boolean
   securityAudit?: Record<string, any>
-  
+
   // External plugin support
   source?: PluginSource
   sourcePath?: string  // Path to plugin folder (relative or absolute)
@@ -39,7 +39,7 @@ export interface PluginDefinition {
   installedPath?: string   // Where plugin is installed locally
 }
 
-export type PluginCategory = 
+export type PluginCategory =
   | 'business-intelligence'      // BI tools (Power BI, Looker Studio, etc.)
   | 'monitoring-observability'   // Monitoring tools (Grafana, Prometheus, etc.)
   | 'service-management'         // Infrastructure service management
@@ -51,6 +51,7 @@ export type PluginCategory =
   | 'analytics'                  // Analytics platforms
   | 'security'                   // Security tools
   | 'development-tools'          // Developer tools
+  | 'report-templates'           // Report templates
   | 'other'                      // Other plugins
 
 export type PluginStatus = 'pending' | 'approved' | 'rejected' | 'deprecated'

@@ -11,7 +11,7 @@ interface ChatLayoutProps {
  */
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id: chatbotId } = await params
-  
+
   // Default metadata values
   const defaultMetadata: Metadata = {
     title: 'Chat Assistant',
@@ -30,7 +30,17 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   try {
     // Fetch chatbot configuration for PWA metadata
     // Use internal API since this runs on the server
-    const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000'
+    let baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+
+    // Vercel URL doesn't include protocol
+    if (process.env.VERCEL_URL) {
+      baseUrl = `https://${process.env.VERCEL_URL}`
+    }
+
+    // Ensure protocol
+    if (!baseUrl.startsWith('http')) {
+      baseUrl = `http://${baseUrl}`
+    }
     const response = await fetch(`${baseUrl}/api/chatbots/${chatbotId}`, {
       next: { revalidate: 300 }, // Cache for 5 minutes
     })

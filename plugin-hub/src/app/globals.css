@@ -1,20 +1,161 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Default Light Theme (Matches Main App) */
+  --background: 240 5% 96%;
+  --foreground: 240 4% 16%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 240 4% 16%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 4% 16%;
+
+  --primary: 211 100% 50%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 240 5% 96%;
+  --secondary-foreground: 240 4% 16%;
+
+  --muted: 240 5% 96%;
+  --muted-foreground: 240 4% 46%;
+
+  --accent: 211 100% 50%;
+  --accent-foreground: 0 0% 100%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 240 6% 90%;
+  --input: 240 6% 90%;
+  --ring: 211 100% 50%;
+
+  --radius: 0.75rem;
+  /* 12px */
+
+  /* Gradients */
+  --primary-gradient: linear-gradient(135deg, #2a2a2a 0%, #000000 100%);
+  --primary-gradient-hover: linear-gradient(135deg, #3a3a3c 0%, #1c1c1e 100%);
+
+  /* Animation durations */
+  --transition-fast: 0.15s ease;
+  --transition-medium: 0.25s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 4% 11%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 4% 11%;
+    --popover-foreground: 0 0% 98%;
+
+    /* In dark mode, primary actions should contrast, so we use a lighter gradient or keep the blue?
+       User asked for "primary color is dark gradient".
+       Usually this implies a "Black" theme where buttons are black (in light mode) or White (in dark mode).
+       But specifically "dark gradient" suggests they want the button to be dark.
+       If the background is dark, a dark button is invisible.
+       I will assume they mean the *accent* is a dark gradient, OR they are in light mode mostly?
+       Let's stick to the user's specific words: "dark gradient".
+       I will set the gradient to be dark. If it's dark mode, I might need to inverse it or add a white border.
+       For now, let's define the gradient.
+    */
+    --primary: 0 0% 98%;
+    /* White text for contrast on dark buttons */
+    --primary-foreground: 0 0% 0%;
+
+    --primary-gradient: linear-gradient(135deg, #ffffff 0%, #a1a1aa 100%);
+    /* Inverted for dark mode visibility? */
+    /* Wait, "dark gradient" usually refers to the visual style of the button being "dark".
+       If I am in dark mode, a "dark gradient" button (black) on black background is bad.
+       Maybe they want the "Premium Dark" aesthetic where the primary color is just... dark?
+       Let's try to interpret "primary color is dark gradient" as "Use a dark, premium gradient for the primary buttons".
+       I will use a White/Grey gradient for Dark Mode to ensure contrast, and Black/Grey for Light Mode.
+       BUT, if the user explicitly said "dark gradient", maybe they want it dark even in dark mode (with a glow/border)?
+       Let's assume "dark gradient" means the "Midnight/Black" aesthetic.
+    */
+
+    --secondary: 240 4% 16%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 5% 65%;
+
+    --accent: 211 100% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 4% 24%;
+    --input: 240 4% 24%;
+  }
+}
+
 * {
   box-sizing: border-box;
   padding: 0;
   margin: 0;
+  border-color: hsl(var(--border));
 }
 
 html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
+    'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
 }
 
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.5);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+/* Focus states */
+*:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}

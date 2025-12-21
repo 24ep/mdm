@@ -12,9 +12,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerClose } from '@/components/ui/drawer'
-import { 
-  Link, 
+import { CentralizedDrawer } from '@/components/ui/centralized-drawer'
+import { DrawerClose } from '@/components/ui/drawer'
+import {
+  Link,
   Settings,
   CheckCircle,
   XCircle,
@@ -110,8 +111,8 @@ export function IntegrationHub() {
       if (response.ok) {
         const data = await response.json()
         const merged = INTEGRATIONS.map(integration => {
-          const saved = data.integrations?.find((i: any) => 
-            i.name?.toLowerCase() === integration.name.toLowerCase() || 
+          const saved = data.integrations?.find((i: any) =>
+            i.name?.toLowerCase() === integration.name.toLowerCase() ||
             i.type?.toLowerCase() === integration.type.toLowerCase()
           )
           return {
@@ -355,15 +356,15 @@ export function IntegrationHub() {
 
   const handleDeleteConnection = async (connectionId: string) => {
     if (!confirm('Are you sure you want to delete this connection?')) return
-    
+
     if (!selectedIntegrationForConnections) return
-    
+
     try {
       setIsLoadingConnections(true)
       const response = await fetch(`/api/admin/integrations/${selectedIntegrationForConnections.id}/connections/${connectionId}`, {
         method: 'DELETE'
       })
-      
+
       if (response.ok) {
         toast.success('Connection deleted successfully')
         await loadConnections(selectedIntegrationForConnections.id)
@@ -387,9 +388,9 @@ export function IntegrationHub() {
       const url = editingConnection
         ? `/api/admin/integrations/${selectedIntegrationForConnections.id}/connections/${editingConnection.id}`
         : `/api/admin/integrations/${selectedIntegrationForConnections.id}/connections`
-      
+
       const method = editingConnection ? 'PATCH' : 'POST'
-      
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -503,8 +504,8 @@ export function IntegrationHub() {
         <div className="w-56 flex-shrink-0 border-r border-border pr-4">
           <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
             <TabsList orientation="vertical" className="flex flex-col h-auto w-full bg-transparent p-0 space-y-1">
-              <TabsTrigger 
-                value="all" 
+              <TabsTrigger
+                value="all"
                 className="w-full justify-start px-3 py-2 rounded-md hover:bg-accent transition-colors [&.text-foreground]:bg-accent [&.text-foreground]:border-r-2 [&.text-foreground]:border-r-primary [&.text-foreground]:border-b-0"
               >
                 <Link className="h-4 w-4 mr-2" />
@@ -513,9 +514,9 @@ export function IntegrationHub() {
               {Object.entries(integrationCategories).map(([key, category]) => {
                 const Icon = category.icon
                 return (
-                  <TabsTrigger 
+                  <TabsTrigger
                     key={key}
-                    value={key} 
+                    value={key}
                     className="w-full justify-start px-3 py-2 rounded-md hover:bg-accent transition-colors [&.text-foreground]:bg-accent [&.text-foreground]:border-r-2 [&.text-foreground]:border-r-primary [&.text-foreground]:border-b-0"
                   >
                     <Icon className="h-4 w-4 mr-2" />
@@ -540,7 +541,7 @@ export function IntegrationHub() {
               if (category) {
                 categoryName = category.name
                 categoryIcon = category.icon
-                filteredIntegrations = platformIntegrations.filter(integration => 
+                filteredIntegrations = platformIntegrations.filter(integration =>
                   category.types.includes(integration.type.toLowerCase())
                 )
               }
@@ -576,8 +577,8 @@ export function IntegrationHub() {
                             <div className="flex items-center justify-between">
                               <Badge className={
                                 provider.status === 'active' ? 'bg-green-100 text-green-800' :
-                                provider.status === 'error' ? 'bg-red-100 text-red-800' :
-                                'bg-muted text-foreground'
+                                  provider.status === 'error' ? 'bg-red-100 text-red-800' :
+                                    'bg-muted text-foreground'
                               }>
                                 {provider.status}
                               </Badge>
@@ -640,70 +641,70 @@ export function IntegrationHub() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredIntegrations.length > 0 ? (
                     filteredIntegrations.map(integration => {
-                  const IntegrationIcon = integration.icon
-                  return (
-                    <Card 
-                      key={integration.id} 
-                      className="hover:shadow-lg transition-shadow cursor-pointer"
-                      onClick={() => handleOpenConnectionsDrawer(integration)}
-                    >
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg flex items-center gap-2">
-                            <IntegrationIcon className="h-5 w-5" />
-                            {integration.name}
-                          </CardTitle>
-                          {integration.status === 'active' && <CheckCircle className="h-4 w-4 text-green-500" />}
-                          {integration.status === 'inactive' && <XCircle className="h-4 w-4 text-gray-500" />}
-                          {integration.status === 'error' && <AlertTriangle className="h-4 w-4 text-red-500" />}
-                        </div>
-                        <CardDescription>
-                          {integration.description}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <Badge className={
-                            integration.status === 'active' ? 'bg-green-100 text-green-800' :
-                            integration.status === 'error' ? 'bg-red-100 text-red-800' :
-                            'bg-gray-100 text-gray-800'
-                          }>
-                            {integration.status}
-                          </Badge>
-                          <Badge variant={integration.isConfigured ? 'default' : 'secondary'}>
-                            {integration.isConfigured ? 'Configured' : 'Not Configured'}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="flex-1"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handlePlatformConfigure(integration)
-                            }}
-                          >
-                            <Settings className="h-3 w-3 mr-1" />
-                            Configure
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="flex-1"
-                            disabled={!integration.isConfigured}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              testIntegration(integration.id)
-                            }}
-                          >
-                            <Zap className="h-3 w-3 mr-1" />
-                            Test
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )
+                      const IntegrationIcon = integration.icon
+                      return (
+                        <Card
+                          key={integration.id}
+                          className="hover:shadow-lg transition-shadow cursor-pointer"
+                          onClick={() => handleOpenConnectionsDrawer(integration)}
+                        >
+                          <CardHeader>
+                            <div className="flex items-center justify-between">
+                              <CardTitle className="text-lg flex items-center gap-2">
+                                <IntegrationIcon className="h-5 w-5" />
+                                {integration.name}
+                              </CardTitle>
+                              {integration.status === 'active' && <CheckCircle className="h-4 w-4 text-green-500" />}
+                              {integration.status === 'inactive' && <XCircle className="h-4 w-4 text-gray-500" />}
+                              {integration.status === 'error' && <AlertTriangle className="h-4 w-4 text-red-500" />}
+                            </div>
+                            <CardDescription>
+                              {integration.description}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <Badge className={
+                                integration.status === 'active' ? 'bg-green-100 text-green-800' :
+                                  integration.status === 'error' ? 'bg-red-100 text-red-800' :
+                                    'bg-gray-100 text-gray-800'
+                              }>
+                                {integration.status}
+                              </Badge>
+                              <Badge variant={integration.isConfigured ? 'default' : 'secondary'}>
+                                {integration.isConfigured ? 'Configured' : 'Not Configured'}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handlePlatformConfigure(integration)
+                                }}
+                              >
+                                <Settings className="h-3 w-3 mr-1" />
+                                Configure
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1"
+                                disabled={!integration.isConfigured}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  testIntegration(integration.id)
+                                }}
+                              >
+                                <Zap className="h-3 w-3 mr-1" />
+                                Test
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )
                     })
                   ) : (
                     <Card className="col-span-full">
@@ -799,8 +800,8 @@ export function IntegrationHub() {
               <Button variant="outline" onClick={() => setShowPlatformConfigDialog(false)}>
                 Cancel
               </Button>
-              <Button 
-                onClick={handleSavePlatformConfig} 
+              <Button
+                onClick={handleSavePlatformConfig}
                 disabled={isLoading}
               >
                 {isLoading ? 'Saving...' : 'Save Configuration'}
@@ -864,8 +865,8 @@ export function IntegrationHub() {
               <Button variant="outline" onClick={() => setShowAIConfigDialog(false)}>
                 Cancel
               </Button>
-              <Button 
-                onClick={handleSaveAIConfig} 
+              <Button
+                onClick={handleSaveAIConfig}
                 disabled={!aiConfigForm.apiKey || isLoading}
               >
                 {isLoading ? 'Saving...' : 'Save Configuration'}
@@ -876,117 +877,108 @@ export function IntegrationHub() {
       )}
 
       {/* Connections Drawer */}
-      <Drawer open={showConnectionsDrawer} onOpenChange={setShowConnectionsDrawer}>
-        <DrawerContent widthClassName="w-[600px]" className="bg-white">
-          <DrawerHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {selectedIntegrationForConnections && (
-                  <>
-                    {React.createElement(selectedIntegrationForConnections.icon, { className: "h-5 w-5" })}
-                    <DrawerTitle>{selectedIntegrationForConnections.name} Connections</DrawerTitle>
-                  </>
-                )}
-              </div>
-              <DrawerClose asChild>
-                <Button variant="ghost" size="sm">
-                  Close
-                </Button>
-              </DrawerClose>
-            </div>
-            <DrawerDescription>
-              Manage service/asset connections for this integration
-            </DrawerDescription>
-          </DrawerHeader>
-          
-          <div className="flex flex-col h-[calc(100vh-120px)]">
-            <div className="p-4 border-b flex-shrink-0">
-              <Button onClick={handleAddConnection} size="sm" className="w-full">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Connection
-              </Button>
-            </div>
-            
-            <ScrollArea className="flex-1 p-4">
-              {isLoadingConnections ? (
-                <div className="flex items-center justify-center py-8">
-                  <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : connections.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <List className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No connections configured</p>
-                  <p className="text-sm mt-2">Click "Add Connection" to create one</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {connections.map((connection) => (
-                    <Card key={connection.id} className="hover:shadow-md transition-shadow">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-base">{connection.name || `Connection ${connection.id}`}</CardTitle>
-                          <div className="flex items-center gap-2">
-                            {connection.status === 'active' && <CheckCircle className="h-4 w-4 text-green-500" />}
-                            {connection.status === 'inactive' && <XCircle className="h-4 w-4 text-gray-500" />}
-                            {connection.status === 'error' && <AlertTriangle className="h-4 w-4 text-red-500" />}
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            {connection.config && Object.keys(connection.config).length > 0 && (
-                              <div className="text-sm text-muted-foreground space-y-1">
-                                {Object.entries(connection.config).slice(0, 2).map(([key, value]: [string, any]) => (
-                                  <div key={key} className="truncate">
-                                    <span className="font-medium">{key}:</span> {typeof value === 'string' && value.length > 30 ? value.substring(0, 30) + '...' : String(value)}
-                                  </div>
-                                ))}
-                                {Object.keys(connection.config).length > 2 && (
-                                  <div className="text-xs text-muted-foreground">
-                                    +{Object.keys(connection.config).length - 2} more fields
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 ml-4">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleTestConnection(connection)}
-                              disabled={isLoadingConnections}
-                              title="Test Connection"
-                            >
-                              <Zap className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditConnection(connection)}
-                              title="Edit Connection"
-                            >
-                              <Edit className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeleteConnection(connection.id)}
-                              title="Delete Connection"
-                            >
-                              <Trash2 className="h-3 w-3 text-red-500" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </ScrollArea>
+      <CentralizedDrawer
+        open={showConnectionsDrawer}
+        onOpenChange={setShowConnectionsDrawer}
+        title={selectedIntegrationForConnections ? `${selectedIntegrationForConnections.name} Connections` : 'Connections'}
+        description="Manage service/asset connections for this integration"
+        icon={selectedIntegrationForConnections?.icon}
+        headerActions={
+          <DrawerClose asChild>
+            <Button variant="ghost" size="sm">
+              Close
+            </Button>
+          </DrawerClose>
+        }
+      >
+
+        <div className="flex flex-col h-full overflow-hidden">
+          <div className="p-4 border-b flex-shrink-0">
+            <Button onClick={handleAddConnection} size="sm" className="w-full">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Connection
+            </Button>
           </div>
-        </DrawerContent>
-      </Drawer>
+
+          <ScrollArea className="flex-1 p-4">
+            {isLoadingConnections ? (
+              <div className="flex items-center justify-center py-8">
+                <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : connections.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <List className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No connections configured</p>
+                <p className="text-sm mt-2">Click "Add Connection" to create one</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {connections.map((connection) => (
+                  <Card key={connection.id} className="hover:shadow-md transition-shadow">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-base">{connection.name || `Connection ${connection.id}`}</CardTitle>
+                        <div className="flex items-center gap-2">
+                          {connection.status === 'active' && <CheckCircle className="h-4 w-4 text-green-500" />}
+                          {connection.status === 'inactive' && <XCircle className="h-4 w-4 text-gray-500" />}
+                          {connection.status === 'error' && <AlertTriangle className="h-4 w-4 text-red-500" />}
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          {connection.config && Object.keys(connection.config).length > 0 && (
+                            <div className="text-sm text-muted-foreground space-y-1">
+                              {Object.entries(connection.config).slice(0, 2).map(([key, value]: [string, any]) => (
+                                <div key={key} className="truncate">
+                                  <span className="font-medium">{key}:</span> {typeof value === 'string' && value.length > 30 ? value.substring(0, 30) + '...' : String(value)}
+                                </div>
+                              ))}
+                              {Object.keys(connection.config).length > 2 && (
+                                <div className="text-xs text-muted-foreground">
+                                  +{Object.keys(connection.config).length - 2} more fields
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 ml-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleTestConnection(connection)}
+                            disabled={isLoadingConnections}
+                            title="Test Connection"
+                          >
+                            <Zap className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditConnection(connection)}
+                            title="Edit Connection"
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteConnection(connection.id)}
+                            title="Delete Connection"
+                          >
+                            <Trash2 className="h-3 w-3 text-red-500" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </div>
+      </CentralizedDrawer>
 
       {/* Add/Edit Connection Dialog */}
       {selectedIntegrationForConnections && (
@@ -1091,8 +1083,8 @@ export function IntegrationHub() {
               }}>
                 Cancel
               </Button>
-              <Button 
-                onClick={handleSaveConnection} 
+              <Button
+                onClick={handleSaveConnection}
                 disabled={isLoadingConnections}
               >
                 {isLoadingConnections ? 'Saving...' : (editingConnection ? 'Update' : 'Add')} Connection

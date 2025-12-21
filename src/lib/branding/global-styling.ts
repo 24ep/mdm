@@ -32,16 +32,16 @@ export function applyGlobalStyling(branding: BrandingConfig) {
   // Handle both with and without spaces: rgba(0,0,0,0.1) or rgba(0, 0, 0, 0.1)
   // Also handle empty strings and undefined values
   const borderColor = (styling.borderColor && styling.borderColor.trim() && styling.borderColor.trim().length > 0)
-    ? styling.borderColor.trim() 
+    ? styling.borderColor.trim()
     : (branding.uiBorderColor && branding.uiBorderColor.trim() && branding.uiBorderColor.trim().length > 0)
       ? branding.uiBorderColor.trim()
       : 'rgba(0, 0, 0, 0.1)'
-  
+
   // Debug logging to help diagnose issues
   if (!styling.borderColor || !styling.borderColor.trim()) {
     console.warn('[Branding] Global styling borderColor is missing or empty, using fallback:', borderColor)
   }
-  
+
   root.style.setProperty('--brand-border-color', borderColor)
   root.style.setProperty('--brand-border-width', styling.borderWidth)
   root.style.setProperty('--brand-button-border-radius', styling.buttonBorderRadius)
@@ -52,6 +52,15 @@ export function applyGlobalStyling(branding: BrandingConfig) {
   root.style.setProperty('--brand-select-border-width', styling.selectBorderWidth)
   root.style.setProperty('--brand-textarea-border-radius', styling.textareaBorderRadius || null)
   root.style.setProperty('--brand-textarea-border-width', styling.textareaBorderWidth || null)
+
+  // Apply sizing variables
+  root.style.setProperty('--brand-base-font-size', styling.baseFontSize || '0.875rem')
+  root.style.setProperty('--brand-input-height', styling.inputHeight || '2.5rem')
+  root.style.setProperty('--brand-input-padding', styling.inputPadding || '0.75rem')
+  root.style.setProperty('--brand-input-font-size', styling.inputFontSize || '0.875rem')
+  root.style.setProperty('--brand-button-height', styling.buttonHeight || '2.5rem')
+  root.style.setProperty('--brand-button-padding', styling.buttonPadding || '1rem')
+  root.style.setProperty('--brand-button-font-size', styling.buttonFontSize || '0.875rem')
 
   // Apply font families
   if (styling.fontFamily && styling.fontFamily.trim()) {
@@ -125,6 +134,10 @@ export function applyGlobalStyling(branding: BrandingConfig) {
       border-width: var(--brand-button-border-width, ${styling.buttonBorderWidth}) !important;
       border-color: var(--brand-border-color, ${borderColor}) !important;
       border-style: solid !important;
+      height: var(--brand-button-height, ${styling.buttonHeight || '2.5rem'}) !important;
+      padding-left: var(--brand-button-padding, ${styling.buttonPadding || '1rem'}) !important;
+      padding-right: var(--brand-button-padding, ${styling.buttonPadding || '1rem'}) !important;
+      font-size: var(--brand-button-font-size, ${styling.buttonFontSize || '0.875rem'}) !important;
     }
     
     /* Explicitly exclude buttons inside platform sidebar, top menu bar, and navigation elements */
@@ -162,6 +175,10 @@ export function applyGlobalStyling(branding: BrandingConfig) {
       border-width: revert !important;
       border-color: revert !important;
       border-style: revert !important;
+      height: revert !important;
+      padding-left: revert !important;
+      padding-right: revert !important;
+      font-size: revert !important;
     }
     
     body:not([data-space]) input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]),
@@ -176,6 +193,10 @@ export function applyGlobalStyling(branding: BrandingConfig) {
       border-width: var(--brand-input-border-width, ${styling.inputBorderWidth}) !important;
       border-color: var(--brand-border-color, ${borderColor}) !important;
       border-style: solid !important;
+      height: var(--brand-input-height, ${styling.inputHeight || '2.5rem'}) !important;
+      padding-left: var(--brand-input-padding, ${styling.inputPadding || '0.75rem'}) !important;
+      padding-right: var(--brand-input-padding, ${styling.inputPadding || '0.75rem'}) !important;
+      font-size: var(--brand-input-font-size, ${styling.inputFontSize || '0.875rem'}) !important;
     }
     
     body:not([data-space]) select,
@@ -184,6 +205,10 @@ export function applyGlobalStyling(branding: BrandingConfig) {
       border-width: var(--brand-select-border-width, ${styling.selectBorderWidth}) !important;
       border-color: var(--brand-border-color, ${borderColor}) !important;
       border-style: solid !important;
+      height: var(--brand-input-height, ${styling.inputHeight || '2.5rem'}) !important; /* Selects match input height */
+      /* Note: Select padding often handled by browser or component, but we can try */
+      padding-left: var(--brand-input-padding, ${styling.inputPadding || '0.75rem'}) !important;
+      font-size: var(--brand-input-font-size, ${styling.inputFontSize || '0.875rem'}) !important;
     }
     
     body:not([data-space]) textarea {
@@ -315,6 +340,7 @@ export function applyGlobalStyling(branding: BrandingConfig) {
     /* Global text color for body and main content areas (excluding space modules) */
     body:not([data-space]) {
       color: var(--brand-body-text, inherit);
+      font-size: var(--brand-base-font-size, ${styling.baseFontSize || '0.875rem'});
     }
     
     /* Apply text color to common text elements (but allow component-specific overrides) */

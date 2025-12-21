@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useTheme } from 'next-themes'
-import { applyBrandingColors, applyGlobalStyling, applyComponentStyling } from '@/lib/branding'
+import { applyBrandingColors, applyGlobalStyling, applyComponentStyling, clearBrandingStyles } from '@/lib/branding'
 import { THEME_STORAGE_KEYS, THEME_DEFAULTS, THEME_ERROR_MESSAGES } from '@/lib/theme-constants'
 import { safeParseBrandingConfig, type BrandingConfig } from '@/lib/theme-types'
 
@@ -92,7 +92,7 @@ export function BrandingInitializer() {
 
   useEffect(() => {
     if (!mounted || typeof window === 'undefined') return
-    
+
     // Skip theme config application if page is in an iframe (emulator mode)
     // This ensures chatbot style settings from ai-chat-ui are used instead of theme config
     const isInIframe = window.self !== window.top
@@ -102,16 +102,16 @@ export function BrandingInitializer() {
 
     // Prevent concurrent fetches
     if (fetchingRef.current) return
-    
+
     const loadAndApplyTheme = async () => {
       fetchingRef.current = true
-      
+
       try {
         setError(null)
-        
+
         // Check for stored database theme ID (UUID format)
         const storedDbThemeId = localStorage.getItem(THEME_STORAGE_KEYS.DATABASE_THEME_ID)
-        
+
         // Try to fetch user's stored theme first (only if valid UUID)
         if (storedDbThemeId && isValidUUID(storedDbThemeId)) {
           // Prevent re-applying the same theme
@@ -125,7 +125,7 @@ export function BrandingInitializer() {
             if (response.ok) {
               const data = await response.json()
               const themeData = data.theme
-              
+
               if (themeData?.config) {
                 const configResult = safeParseBrandingConfig(themeData.config)
                 if (configResult.success) {
@@ -147,7 +147,7 @@ export function BrandingInitializer() {
           if (response.ok) {
             const data = await response.json()
             const activeTheme = data.themes?.find((t: any) => t.isActive)
-            
+
             if (activeTheme?.id && isValidUUID(activeTheme.id)) {
               // Prevent re-applying the same theme
               if (appliedRef.current === activeTheme.id) {
@@ -159,7 +159,7 @@ export function BrandingInitializer() {
               const themeResponse = await fetch(`/api/themes/${activeTheme.id}`)
               if (themeResponse.ok) {
                 const themeData = (await themeResponse.json()).theme
-                
+
                 if (themeData?.config) {
                   const configResult = safeParseBrandingConfig(themeData.config)
                   if (configResult.success) {
@@ -176,8 +176,10 @@ export function BrandingInitializer() {
           console.warn('[BrandingInitializer] Failed to fetch active theme:', fetchError)
         }
 
-        // No valid theme found - use default mode without branding
-        console.log('[BrandingInitializer] No active theme found in database, using defaults')
+        // No valid theme found - clear all branding and use defaults from globals.css
+        console.log('[BrandingInitializer] No active theme found in database, clearing branding and using defaults')
+        clearBrandingStyles()
+        localStorage.removeItem(THEME_STORAGE_KEYS.DATABASE_THEME_ID)
         if (theme !== THEME_DEFAULTS.MODE) {
           setTheme(THEME_DEFAULTS.MODE)
         }
@@ -187,11 +189,13 @@ export function BrandingInitializer() {
           document.documentElement.classList.add('dark')
         }
         appliedRef.current = null
-        
+
       } catch (error) {
         console.error('[BrandingInitializer] Error loading theme:', error)
         setError(THEME_ERROR_MESSAGES.FAILED_TO_LOAD)
-        // On error, apply default mode
+        // On error, clear branding and apply default mode
+        clearBrandingStyles()
+        localStorage.removeItem(THEME_STORAGE_KEYS.DATABASE_THEME_ID)
         if (theme !== THEME_DEFAULTS.MODE) {
           setTheme(THEME_DEFAULTS.MODE)
         }

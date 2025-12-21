@@ -6,7 +6,6 @@ import { useState, useEffect } from 'react'
 
 const pathToTabMap: Record<string, string> = {
   '/system/users': 'users',
-  '/system/roles': 'roles',
   '/system/permission-tester': 'permission-tester',
   '/system/space-layouts': 'space-layouts',
   '/system/space-settings': 'space-settings',

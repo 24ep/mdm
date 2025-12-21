@@ -48,20 +48,12 @@ export function ThemeCard({
     return (
         <div
             className={cn(
-                'group relative p-4 rounded-lg border-2 transition-all cursor-pointer hover:shadow-md',
+                'group relative p-4 rounded-lg border-2 transition-all cursor-pointer hover:shadow-md flex flex-col h-full',
                 isSelected
-                    ? 'border-primary bg-primary/5 shadow-sm'
+                    ? 'border-primary bg-card shadow-sm'
                     : 'border-border bg-card hover:border-primary/50'
             )}
-            role="button"
-            tabIndex={0}
             onClick={handleCardClick}
-            onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault()
-                    onSelect()
-                }
-            }}
         >
             {/* Active Badge */}
             {theme.isActive && (
@@ -122,8 +114,8 @@ export function ThemeCard({
                             {theme.tags.map(tag => (
                                 <Badge
                                     key={tag}
-                                    variant="secondary"
-                                    className="text-xs px-1.5 py-0 pointer-events-none"
+                                    variant="outline"
+                                    className="text-xs px-2 py-0 pointer-events-none rounded-full"
                                 >
                                     {tag}
                                 </Badge>
@@ -139,15 +131,15 @@ export function ThemeCard({
             </div>
 
             {/* Actions */}
-            <div 
-                className="flex items-center gap-2 relative z-10 action-area" 
+            <div
+                className="flex items-center gap-2 relative z-10 action-area mt-auto pt-3"
                 onClick={(e) => {
                     e.stopPropagation()
                     e.preventDefault()
                 }}
             >
                 <Button
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
                     onClick={(e) => {
                         e.stopPropagation()
@@ -163,10 +155,10 @@ export function ThemeCard({
 
                 {theme.isActive ? (
                     <Button
-                        variant="default"
+                        variant="secondary"
                         size="sm"
                         disabled
-                        className="flex-1 pointer-events-none"
+                        className="flex-1 opacity-50"
                         type="button"
                     >
                         <CheckCircle2 className="h-3 w-3 mr-1" />
@@ -174,7 +166,7 @@ export function ThemeCard({
                     </Button>
                 ) : (
                     <Button
-                        variant="default"
+                        variant="secondary"
                         size="sm"
                         onClick={(e) => {
                             e.stopPropagation()
@@ -190,8 +182,8 @@ export function ThemeCard({
 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button 
-                            variant="ghost" 
+                        <Button
+                            variant="ghost"
                             size="sm"
                             onClick={(e) => {
                                 e.stopPropagation()

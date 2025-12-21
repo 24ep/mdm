@@ -74,14 +74,17 @@ const getMenuItems = (
 
 
   // Always show Automation/Workflows menu
-  items.push({ title: 'Automation', icon: Workflow, children: [
-    { title: 'Workflows', href: `/${spaceId}/workflows`, icon: Workflow },
-  ] })
+  items.push({
+    title: 'Automation', icon: Workflow, children: [
+      { title: 'Workflows', href: `/${spaceId}/workflows`, icon: Workflow },
+    ]
+  })
 
   const otherChildren: MenuItem[] = []
   if (flags?.bulk_activity !== false) {
     otherChildren.push({ title: 'Bulk Activity', href: `/${spaceId}/import-export`, icon: Download })
   }
+  otherChildren.push({ title: 'Users & Roles', href: `/user-roles`, icon: Users })
   otherChildren.push({ title: 'System Settings', href: `/settings`, icon: Settings })
   items.push({ title: 'Others', icon: Settings, children: otherChildren })
 
@@ -143,7 +146,7 @@ export function Sidebar({ className }: SidebarProps) {
   useEffect(() => {
     async function load() {
       if (!currentSpace?.id) return
-      
+
       setLoadingModels(true)
       setModelsError(null)
       try {
@@ -172,7 +175,7 @@ export function Sidebar({ className }: SidebarProps) {
     return (
       <div className={cn('flex h-full flex-col border-r border-border w-64', className)}>
         <div className="p-6">
-              <h1 className="text-xl font-bold">{currentSpace?.name || 'Customer Data'}</h1>
+          <h1 className="text-xl font-bold">{currentSpace?.name || 'Customer Data'}</h1>
         </div>
         <div className="flex-1 px-4">
           <div className="text-sm text-muted-foreground">Loading...</div>
@@ -185,18 +188,18 @@ export function Sidebar({ className }: SidebarProps) {
   const menuItems = (customMenu && customMenu.length > 0)
     ? customMenu as any
     : getMenuItems(
-        currentSpace?.slug || currentSpace?.id || null,
-        currentSpace?.features || {
-          assignments: (currentSpace as any)?.enable_assignments,
-          bulk_activity: (currentSpace as any)?.enable_bulk_activity,
-          workflows: (currentSpace as any)?.enable_workflows,
-          dashboard: (currentSpace as any)?.enable_dashboard,
-          projects: (currentSpace as any)?.enable_projects !== false, // Default to true
-        }
-      )
+      currentSpace?.slug || currentSpace?.id || null,
+      currentSpace?.features || {
+        assignments: (currentSpace as any)?.enable_assignments,
+        bulk_activity: (currentSpace as any)?.enable_bulk_activity,
+        workflows: (currentSpace as any)?.enable_workflows,
+        dashboard: (currentSpace as any)?.enable_dashboard,
+        projects: (currentSpace as any)?.enable_projects !== false, // Default to true
+      }
+    )
 
   return (
-    <div 
+    <div
       className={cn('flex h-full flex-col border-r border-border', getWidth(), className)}
       style={{
         ...getBackgroundStyle(),
@@ -212,7 +215,7 @@ export function Sidebar({ className }: SidebarProps) {
               <Button
                 variant="ghost"
                 className="w-full justify-between text-lg font-bold pr-2 pl-0"
-                style={{ 
+                style={{
                   color: settings.fontColor
                 }}
               >
@@ -264,21 +267,21 @@ export function Sidebar({ className }: SidebarProps) {
             </DropdownMenuContent>
           </DropdownMenu>
         )}
-        <div 
+        <div
           className="mt-3 border-t border-border"
           style={{ borderColor: settings.fontColor, opacity: 0.3 }}
         />
       </div>
-      
+
       <nav className="flex-1 space-y-2 px-4">
         {!currentSpace && (
-                  <div className="px-2 text-xs" style={{ color: settings.fontColor, opacity: 0.7 }}>
+          <div className="px-2 text-xs" style={{ color: settings.fontColor, opacity: 0.7 }}>
             Select a space to view content
           </div>
         )}
         {menuItems.map((item: any, index: number) => (
           <div key={item.title}>
-            <div 
+            <div
               className="px-2 text-xs font-medium uppercase tracking-wide mb-1"
               style={{ color: settings.fontColor, opacity: 0.7 }}
             >
@@ -286,14 +289,14 @@ export function Sidebar({ className }: SidebarProps) {
             </div>
             {item.children && (
               <div className="ml-2 space-y-1">
-                 {item.children.map((child: any) => (
+                {item.children.map((child: any) => (
                   child.title === 'System Settings' ? (
                     <Button
                       key={child.href}
                       variant="ghost"
                       className="w-full justify-start text-sm"
                       onClick={() => setShowSettingsModal(true)}
-                      style={{ 
+                      style={{
                         color: settings.fontColor,
                         backgroundColor: 'transparent'
                       }}
@@ -306,7 +309,7 @@ export function Sidebar({ className }: SidebarProps) {
                       <Button
                         variant={isActive(child.href!) ? "secondary" : "ghost"}
                         className="w-full justify-start text-sm"
-                        style={{ 
+                        style={{
                           color: settings.fontColor,
                           backgroundColor: isActive(child.href!) ? 'rgba(255, 255, 255, 0.1)' : 'transparent'
                         }}
@@ -321,7 +324,7 @@ export function Sidebar({ className }: SidebarProps) {
             )}
             {index === 0 && currentSpace && (
               <div>
-                <div 
+                <div
                   className="px-2 text-xs font-medium uppercase tracking-wide mb-1 mt-3"
                   style={{ color: settings.fontColor, opacity: 0.7 }}
                 >
@@ -334,34 +337,34 @@ export function Sidebar({ className }: SidebarProps) {
                   {modelsError && (
                     <div className="px-2 text-xs text-red-500">{modelsError}</div>
                   )}
-            {(!loadingModels && !modelsError) && (dynamicModels || []).map((m) => {
+                  {(!loadingModels && !modelsError) && (dynamicModels || []).map((m) => {
                     const slug = (m as any).slug || m.id
                     const href = `/${(currentSpace?.slug || currentSpace?.id)}/data/entities/${encodeURIComponent(slug)}`
-              const AnyIcons = LucideIcons as unknown as Record<string, React.ComponentType<{ className?: string }>>
-              const IconComp = (m.icon && AnyIcons[m.icon]) || null
+                    const AnyIcons = LucideIcons as unknown as Record<string, React.ComponentType<{ className?: string }>>
+                    const IconComp = (m.icon && AnyIcons[m.icon]) || null
                     return (
                       <Link key={m.id} href={href}>
                         <Button
                           variant={isActive(href) ? "secondary" : "ghost"}
                           className="w-full justify-start text-sm"
-                          style={{ 
+                          style={{
                             color: settings.fontColor,
                             backgroundColor: isActive(href) ? 'rgba(255, 255, 255, 0.1)' : 'transparent'
                           }}
                         >
-                    {IconComp ? (
-                      <AnimatedIcon 
-                        icon={m.icon} 
-                        size={16} 
-                        animation="float" 
-                        trigger="hover"
-                        className="mr-2"
-                      />
-                    ) : (
-                      <span className="mr-2 inline-flex h-4 w-4 items-center justify-center rounded bg-black/10">
-                        {(String(m.display_name || m.name || '')?.slice(0,1) || '?').toUpperCase()}
-                      </span>
-                    )}
+                          {IconComp ? (
+                            <AnimatedIcon
+                              icon={m.icon}
+                              size={16}
+                              animation="float"
+                              trigger="hover"
+                              className="mr-2"
+                            />
+                          ) : (
+                            <span className="mr-2 inline-flex h-4 w-4 items-center justify-center rounded bg-black/10">
+                              {(String(m.display_name || m.name || '')?.slice(0, 1) || '?').toUpperCase()}
+                            </span>
+                          )}
                           {m.display_name || m.name}
                         </Button>
                       </Link>
@@ -371,7 +374,7 @@ export function Sidebar({ className }: SidebarProps) {
               </div>
             )}
             {index < menuItems.length - 1 && (
-              <div 
+              <div
                 className="my-3 border-t border-border"
                 style={{ borderColor: settings.fontColor, opacity: 0.3 }}
               />
@@ -379,10 +382,10 @@ export function Sidebar({ className }: SidebarProps) {
           </div>
         ))}
       </nav>
-      
-      <SystemSettingsModal 
-        open={showSettingsModal} 
-        onOpenChange={setShowSettingsModal} 
+
+      <SystemSettingsModal
+        open={showSettingsModal}
+        onOpenChange={setShowSettingsModal}
       />
     </div>
   )

@@ -4,7 +4,7 @@
  */
 
 // Utility functions
-export { hexToHsl } from './utils'
+export { hexToHsl, clearBrandingStyles } from './utils'
 
 // Color and styling functions
 export { applyBrandingColors } from './colors'

@@ -10,12 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { 
-  Layout, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye, 
+import {
+  Layout,
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
   Settings,
   FileText,
   Database,
@@ -28,6 +28,9 @@ import {
 } from 'lucide-react'
 import { SpacesEditorPage } from '@/lib/space-studio-manager'
 import { Template } from '@/lib/template-generator'
+import IconPickerPopover from '@/components/ui/icon-picker-popover'
+import { Z_INDEX } from '@/lib/z-index'
+import * as LucideIcons from "lucide-react"
 
 interface PagesManagementProps {
   spaceId: string
@@ -59,12 +62,13 @@ export function PagesManagement({
   const [editingPage, setEditingPage] = useState<SpacesEditorPage | null>(null)
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
   const [viewMode, setViewMode] = useState<'cards' | 'routes'>('cards')
-  
+
   const [newPageForm, setNewPageForm] = useState({
     name: '',
     displayName: '',
     description: '',
-    templateId: ''
+    templateId: '',
+    icon: ''
   })
 
   const handleCreatePage = async () => {
@@ -73,11 +77,10 @@ export function PagesManagement({
         name: newPageForm.name,
         displayName: newPageForm.displayName,
         description: newPageForm.description,
-        templateId: newPageForm.templateId || undefined,
-        isCustom: !newPageForm.templateId
+        icon: newPageForm.icon
       })
-      
-      setNewPageForm({ name: '', displayName: '', description: '', templateId: '' })
+
+      setNewPageForm({ name: '', displayName: '', description: '', templateId: '', icon: '' })
       setShowCreateDialog(false)
     } catch (error) {
       console.error('Failed to create page:', error)
@@ -86,17 +89,18 @@ export function PagesManagement({
 
   const handleCreateFromTemplate = async () => {
     if (!selectedTemplate) return
-    
+
     try {
       await onCreatePage({
         name: newPageForm.name,
         displayName: newPageForm.displayName,
         description: newPageForm.description,
         templateId: selectedTemplate.id,
-        isCustom: false
+        isCustom: false,
+        icon: newPageForm.icon
       })
-      
-      setNewPageForm({ name: '', displayName: '', description: '', templateId: '' })
+
+      setNewPageForm({ name: '', displayName: '', description: '', templateId: '', icon: '' })
       setSelectedTemplate(null)
       setShowTemplateDialog(false)
     } catch (error) {
@@ -115,6 +119,11 @@ export function PagesManagement({
   }
 
   const getPageIcon = (page: SpacesEditorPage) => {
+    if (page.icon) {
+      const Icon = (LucideIcons as any)[page.icon]
+      if (Icon) return <Icon className="h-5 w-5" />
+    }
+
     if (page.templateId) {
       const template = templates.find(t => t.id === page.templateId)
       if (template) {
@@ -130,7 +139,7 @@ export function PagesManagement({
         }
       }
     }
-    
+
     // Default icon for custom pages
     return <Layout className="h-5 w-5" />
   }
@@ -152,42 +161,42 @@ export function PagesManagement({
             Manage your space pages and assign templates
           </p>
         </div>
-              <div className="flex items-center gap-2">
-                <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'cards' | 'routes')}>
-                  <TabsList className="flex gap-2 justify-start">
-                    <TabsTrigger value="cards" className="flex items-center gap-2 justify-start">
-                      <Grid3X3 className="h-4 w-4" />
-                      Cards
-                    </TabsTrigger>
-                    <TabsTrigger value="routes" className="flex items-center gap-2 justify-start">
-                      <List className="h-4 w-4" />
-                      Routes
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-                {onResetPages && pages.length > 0 && (
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      if (confirm('Are you sure you want to remove all pages? This action cannot be undone.')) {
-                        onResetPages()
-                      }
-                    }}
-                    className="text-destructive hover:text-destructive/80"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Clear All
-                  </Button>
-                )}
-                <Button variant="outline" onClick={() => setShowTemplateDialog(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  From Template
-                </Button>
-                <Button onClick={() => setShowCreateDialog(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create New
-                </Button>
-              </div>
+        <div className="flex items-center gap-2">
+          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'cards' | 'routes')}>
+            <TabsList className="flex gap-2 justify-start">
+              <TabsTrigger value="cards" className="flex items-center gap-2 justify-start">
+                <Grid3X3 className="h-4 w-4" />
+                Cards
+              </TabsTrigger>
+              <TabsTrigger value="routes" className="flex items-center gap-2 justify-start">
+                <List className="h-4 w-4" />
+                Routes
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+          {onResetPages && pages.length > 0 && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (confirm('Are you sure you want to remove all pages? This action cannot be undone.')) {
+                  onResetPages()
+                }
+              }}
+              className="text-destructive hover:text-destructive/80"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Clear All
+            </Button>
+          )}
+          <Button variant="outline" onClick={() => setShowTemplateDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            From Template
+          </Button>
+          <Button onClick={() => setShowCreateDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Create New
+          </Button>
+        </div>
       </div>
 
       {/* Pages List */}
@@ -195,7 +204,7 @@ export function PagesManagement({
         {pages.map(page => {
           const status = getPageStatus(page)
           const template = page.templateId ? templates.find(t => t.id === page.templateId) : null
-          
+
           return (
             <Card key={page.id} className="hover:shadow-md transition-all duration-200 shadow-sm bg-transparent">
               <CardContent className="p-4">
@@ -204,7 +213,7 @@ export function PagesManagement({
                     <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
                       {getPageIcon(page)}
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="font-semibold text-lg truncate">{page.displayName}</h3>
@@ -219,11 +228,11 @@ export function PagesManagement({
                           )}
                         </div>
                       </div>
-                      
+
                       <p className="text-sm text-muted-foreground mb-3 line-clamp-1">
                         {page.description || 'No description provided'}
                       </p>
-                      
+
                       <div className="flex items-center gap-6 text-xs text-muted-foreground">
                         <div className="flex items-center gap-2">
                           <span className="font-medium">Path:</span>
@@ -242,7 +251,7 @@ export function PagesManagement({
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-2 ml-4">
                     <Button
                       size="sm"
@@ -260,7 +269,7 @@ export function PagesManagement({
                       <Edit className="h-4 w-4 mr-2" />
                       Edit
                     </Button>
-                    
+
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
@@ -276,7 +285,7 @@ export function PagesManagement({
                           <Edit className="h-4 w-4 mr-2" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           onClick={() => handleDeletePage(page)}
                           className="text-destructive focus:text-destructive"
                         >
@@ -326,6 +335,14 @@ export function PagesManagement({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            <div>
+              <Label className="mb-2 block">Page Icon</Label>
+              <IconPickerPopover
+                value={newPageForm.icon}
+                onChange={(icon) => setNewPageForm(prev => ({ ...prev, icon }))}
+                zIndex={Z_INDEX.dialogDropdown}
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="page-name">Page Name</Label>
               <Input
@@ -375,6 +392,14 @@ export function PagesManagement({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            <div>
+              <Label className="mb-2 block">Page Icon</Label>
+              <IconPickerPopover
+                value={newPageForm.icon}
+                onChange={(icon) => setNewPageForm(prev => ({ ...prev, icon }))}
+                zIndex={Z_INDEX.dialogDropdown}
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="template-page-name">Page Name</Label>
               <Input
@@ -402,18 +427,17 @@ export function PagesManagement({
                 placeholder="A description of this page"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label>Select Template</Label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-60 overflow-y-auto">
                 {templates.map(template => (
                   <Card
                     key={template.id}
-                    className={`cursor-pointer transition-all ${
-                      selectedTemplate?.id === template.id 
-                        ? 'ring-2 ring-primary bg-primary/5' 
-                        : 'hover:shadow-md'
-                    }`}
+                    className={`cursor-pointer transition-all ${selectedTemplate?.id === template.id
+                      ? 'ring-2 ring-primary bg-primary/5'
+                      : 'hover:shadow-md'
+                      }`}
                     onClick={() => setSelectedTemplate(template)}
                   >
                     <CardContent className="p-4">
@@ -446,7 +470,7 @@ export function PagesManagement({
             <Button variant="outline" onClick={() => setShowTemplateDialog(false)}>
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleCreateFromTemplate}
               disabled={!selectedTemplate}
             >

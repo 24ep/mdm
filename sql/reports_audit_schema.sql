@@ -1,4 +1,9 @@
 -- Audit Logging Table for Reports Module
+DROP TABLE IF EXISTS public.report_audit_logs CASCADE;
+DROP TABLE IF EXISTS public.report_versions CASCADE;
+DROP TABLE IF EXISTS public.report_templates CASCADE;
+DROP TABLE IF EXISTS public.report_share_links CASCADE;
+
 CREATE TABLE IF NOT EXISTS public.report_audit_logs (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES public.users(id) ON DELETE SET NULL,

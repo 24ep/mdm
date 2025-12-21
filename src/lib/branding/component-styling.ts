@@ -11,7 +11,7 @@ import { generateBorderOverrideCSS } from './component-styling-border-override'
 
 export function applyComponentStyling(branding: BrandingConfig) {
   const styleId = 'branding-component-styling'
-  
+
   // Always ensure platform sidebar CSS variables are set from main branding config
   // This is critical because the inline styles in PlatformSidebar use these variables
   const root = document.documentElement
@@ -19,7 +19,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
   root.style.setProperty('--brand-platform-sidebar-text', branding.platformSidebarTextColor)
   root.style.setProperty('--brand-secondary-sidebar-bg', branding.secondarySidebarBackgroundColor)
   root.style.setProperty('--brand-secondary-sidebar-text', branding.secondarySidebarTextColor)
-  
+
   // Set CSS variables for text-input padding and fontSize so textarea can use them
   const textInputStyle = branding.componentStyling?.['text-input']
   if (textInputStyle?.padding) {
@@ -28,7 +28,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
   if (textInputStyle?.fontSize) {
     root.style.setProperty('--text-input-font-size', textInputStyle.fontSize)
   }
-  
+
   // Set CSS variables for textarea (will use text-input values if not set)
   const textareaStyle = branding.componentStyling?.['textarea']
   const textareaPadding = textareaStyle?.padding || textInputStyle?.padding
@@ -39,11 +39,11 @@ export function applyComponentStyling(branding: BrandingConfig) {
   if (textareaFontSize) {
     root.style.setProperty('--textarea-font-size', textareaFontSize)
   }
-  
+
   // Also apply global text color to all text elements (excluding space modules)
   const globalTextColor = branding.bodyTextColor || (
     branding.bodyBackgroundColor && (
-      branding.bodyBackgroundColor.includes('#000') || 
+      branding.bodyBackgroundColor.includes('#000') ||
       branding.bodyBackgroundColor.includes('rgb(0') ||
       branding.bodyBackgroundColor.includes('rgba(0')
     ) ? '#F5F5F7' : '#1D1D1F'
@@ -66,7 +66,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
 
   // Always initialize CSS rules (even if empty, to clear previous styles)
   let cssRules = '/* Component-specific styling - excludes space modules */\n'
-  
+
   // Generate border override CSS for rgba colors
   cssRules += generateBorderOverrideCSS(branding)
 
@@ -106,12 +106,12 @@ export function applyComponentStyling(branding: BrandingConfig) {
     if (a === 'button-secondary' && b === 'button') return 1
     return 0
   })
-  
+
   sortedEntries.forEach(([componentId, componentStyle]) => {
     const selectors = componentSelectors[componentId] || []
 
     if (selectors.length === 0 || !componentStyle) return
-    
+
     // Debug logging for platform sidebar, text-input, form, badge, and accordion
     if (componentId === 'platform-sidebar-primary' || componentId === 'platform-sidebar-secondary' || componentId === 'text-input' || componentId === 'form' || componentId === 'badge' || componentId.startsWith('accordion-trigger')) {
       console.log(`[Branding] Processing ${componentId}:`, componentStyle)
@@ -121,7 +121,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
     // Check if there are any non-empty style properties
     // Helper to check if a value is non-empty
     const isNonEmpty = (val: any) => val && typeof val === 'string' && val.trim() !== '' || (val && typeof val !== 'string')
-    
+
     const hasStyles = isNonEmpty(componentStyle.backgroundColor) ||
       isNonEmpty(componentStyle.textColor) ||
       isNonEmpty(componentStyle.borderColor) ||
@@ -207,20 +207,20 @@ export function applyComponentStyling(branding: BrandingConfig) {
 
     const selector = selectors.join(',\n    ')
     let componentCSS = `    ${selector} {\n`
-    
+
     // Debug logging for platform sidebar and space settings menu
-    if (componentId === 'platform-sidebar-primary' || componentId === 'platform-sidebar-secondary' || 
-        componentId.startsWith('space-settings-menu')) {
+    if (componentId === 'platform-sidebar-primary' || componentId === 'platform-sidebar-secondary' ||
+      componentId.startsWith('space-settings-menu')) {
       console.log(`[Branding] Generating CSS for ${componentId} with selector:`, selector)
       console.log(`[Branding] Component style:`, componentStyle)
     }
-    
+
     // Debug logging for button-destructive
     if (componentId === 'button-destructive') {
       console.log(`[Branding] Generating CSS for ${componentId} with selector:`, selector)
       console.log(`[Branding] Component style:`, componentStyle)
     }
-    
+
     // Debug logging for form
     if (componentId === 'form') {
       console.log(`[Branding] Generating CSS for ${componentId} with selector:`, selector)
@@ -340,7 +340,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
     if (componentStyle.textColor && componentStyle.textColor.trim()) {
       componentCSS += `      color: ${componentStyle.textColor.trim()} !important;\n`
     }
-    
+
     // Debug logging for form
     if (componentId === 'form') {
       console.log(`[Branding] Generating CSS for ${componentId} with selector:`, selector)
@@ -363,6 +363,21 @@ export function applyComponentStyling(branding: BrandingConfig) {
         // Override Tailwind's --border CSS variable (used by bg-border class)
         // IMPORTANT: If the background color has an alpha channel, use it directly
         // because HSL conversion loses the alpha, making transparent colors appear opaque/black
+        if (hasAlphaChannel(bgColor)) {
+          componentCSS += `      --border: ${bgColor} !important;\n`
+        } else {
+          const borderHsl = rgbaToHsl(bgColor)
+          componentCSS += `      --border: ${borderHsl} !important;\n`
+        }
+      }
+
+      // For textarea, override Tailwind's bg-border class and globals.css rules
+      if (componentId === 'textarea') {
+        const bgColor = componentStyle.backgroundColor.trim()
+        componentCSS += `      background: ${bgColor} !important;\n`
+        componentCSS += `      background-color: ${bgColor} !important;\n`
+        componentCSS += `      background-image: none !important;\n`
+        // Override Tailwind's --border CSS variable if needed, similar to input
         if (hasAlphaChannel(bgColor)) {
           componentCSS += `      --border: ${bgColor} !important;\n`
         } else {
@@ -408,14 +423,14 @@ export function applyComponentStyling(branding: BrandingConfig) {
         componentCSS += `      background-image: none !important;\n`
         // Override any hover states that might use the CSS variable
         componentCSS += `      --tw-bg-opacity: 1 !important;\n`
-        
+
         // Also override CSS variable for consistency
         // Use the shared rgbaToHsl function which handles hex, rgba/rgb, and hsl formats
         const destructiveHsl = rgbaToHsl(bgColor)
         // Override Tailwind's --destructive CSS variable (used by bg-destructive class)
         componentCSS += `      --destructive: ${destructiveHsl} !important;\n`
       }
-      
+
       // For vertical-tab-menu-active, also set CSS variable to override inline styles
       // The inline style uses hsl(var(--muted)), so --muted must be in HSL format
       if (componentId === 'vertical-tab-menu-active') {
@@ -436,7 +451,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
         const textColor = componentStyle.textColor.trim()
         // Directly set color with !important to override Tailwind's text-destructive-foreground class
         componentCSS += `      color: ${textColor} !important;\n`
-        
+
         // Also override CSS variable for consistency
         // Use the shared rgbaToHsl function which handles hex, rgba/rgb, and hsl formats
         const destructiveForegroundHsl = rgbaToHsl(textColor)
@@ -572,7 +587,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
     if (componentStyle.borderLeftStyle && componentStyle.borderLeftStyle.trim() && !componentStyle.borderLeftColor) {
       componentCSS += `      border-left-style: ${componentStyle.borderLeftStyle.trim()} !important;\n`
     }
-    
+
     // General border properties (applied if individual sides are not specified)
     if (componentStyle.borderColor && componentStyle.borderColor.trim()) {
       const borderColorValue = componentStyle.borderColor.trim()
@@ -595,13 +610,13 @@ export function applyComponentStyling(branding: BrandingConfig) {
       // Only set width if borderWidth is not explicitly "0px" or "0"
       const borderWidthValue = componentStyle.borderWidth ? componentStyle.borderWidth.trim() : ''
       const isExplicitlyZero = borderWidthValue === '0px' || borderWidthValue === '0'
-      
+
       if (!isExplicitlyZero && (!componentStyle.borderWidth || !borderWidthValue)) {
         // Check if any individual side widths are set
         const hasIndividualWidths = (componentStyle.borderTopWidth && componentStyle.borderTopWidth.trim()) ||
-                                    (componentStyle.borderRightWidth && componentStyle.borderRightWidth.trim()) ||
-                                    (componentStyle.borderBottomWidth && componentStyle.borderBottomWidth.trim()) ||
-                                    (componentStyle.borderLeftWidth && componentStyle.borderLeftWidth.trim())
+          (componentStyle.borderRightWidth && componentStyle.borderRightWidth.trim()) ||
+          (componentStyle.borderBottomWidth && componentStyle.borderBottomWidth.trim()) ||
+          (componentStyle.borderLeftWidth && componentStyle.borderLeftWidth.trim())
         if (!hasIndividualWidths) {
           // Default to 1px if color is set but no width (and width is not explicitly 0)
           componentCSS += `      border-width: 1px !important;\n`
@@ -611,9 +626,9 @@ export function applyComponentStyling(branding: BrandingConfig) {
       if (!componentStyle.borderStyle || !componentStyle.borderStyle.trim()) {
         // Check if any individual side styles are set
         const hasIndividualStyles = (componentStyle.borderTopStyle && componentStyle.borderTopStyle.trim()) ||
-                                   (componentStyle.borderRightStyle && componentStyle.borderRightStyle.trim()) ||
-                                   (componentStyle.borderBottomStyle && componentStyle.borderBottomStyle.trim()) ||
-                                   (componentStyle.borderLeftStyle && componentStyle.borderLeftStyle.trim())
+          (componentStyle.borderRightStyle && componentStyle.borderRightStyle.trim()) ||
+          (componentStyle.borderBottomStyle && componentStyle.borderBottomStyle.trim()) ||
+          (componentStyle.borderLeftStyle && componentStyle.borderLeftStyle.trim())
         if (!hasIndividualStyles) {
           componentCSS += `      border-style: solid !important;\n`
         }
@@ -623,7 +638,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
       componentCSS += `      border-radius: ${componentStyle.borderRadius.trim()} !important;\n`
       // For platform-sidebar-menu, aggressively override button border-radius
       if (componentId.startsWith('platform-sidebar-menu')) {
-      componentCSS += `      border-radius: ${componentStyle.borderRadius.trim()} !important;\n`
+        componentCSS += `      border-radius: ${componentStyle.borderRadius.trim()} !important;\n`
       }
       // For badge, aggressively override Tailwind rounded-full class
       if (componentId === 'badge') {
@@ -679,7 +694,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
       componentCSS += `      padding: ${componentStyle.padding.trim()} !important;\n`
       // For platform-sidebar-menu, aggressively override button padding
       if (componentId.startsWith('platform-sidebar-menu')) {
-      componentCSS += `      padding: ${componentStyle.padding.trim()} !important;\n`
+        componentCSS += `      padding: ${componentStyle.padding.trim()} !important;\n`
       }
       // For badge, aggressively override Tailwind padding classes (px-*, py-*)
       if (componentId === 'badge') {
@@ -850,12 +865,12 @@ export function applyComponentStyling(branding: BrandingConfig) {
 
     componentCSS += `    }\n\n`
     cssRules += componentCSS
-    
+
     // For button-destructive, add additional high-specificity rules to ensure it overrides everything
     if (componentId === 'button-destructive') {
       const bgColor = componentStyle.backgroundColor?.trim()
       const textColor = componentStyle.textColor?.trim()
-      
+
       if (bgColor || textColor) {
         cssRules += `    /* High-specificity override for destructive buttons */\n`
         cssRules += `    body button.bg-destructive,\n`
@@ -871,7 +886,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
           cssRules += `      --destructive-foreground: ${hexToHsl(textColor)} !important;\n`
         }
         cssRules += `    }\n\n`
-        
+
         // Also handle hover state
         cssRules += `    body button.bg-destructive:hover,\n`
         cssRules += `    body button[class*="bg-destructive"]:hover,\n`
@@ -884,7 +899,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
         cssRules += `    }\n\n`
       }
     }
-    
+
     // For platform-sidebar-primary, always set CSS variables and apply styles directly
     // This ensures the inline style backgroundColor uses the theme color
     // Use main branding config colors if component styling doesn't have them
@@ -895,7 +910,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
       const sidebarBorderColor = (componentStyle.borderColor && componentStyle.borderColor.trim() && componentStyle.borderColor.trim() !== 'transparent')
         ? componentStyle.borderColor.trim()
         : globalBorderColor
-      
+
       // Apply border color to separator lines within this sidebar
       if (hasAlphaChannel(sidebarBorderColor)) {
         cssRules += `    /* Platform sidebar primary separator lines - use rgba directly */\n`
@@ -940,7 +955,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
       }
       cssRules += `    }\n\n`
     }
-    
+
     // For platform-sidebar-secondary, always set CSS variables and apply styles directly
     // This ensures the inline style backgroundColor uses the theme color
     // Use main branding config colors if component styling doesn't have them
@@ -951,7 +966,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
       const sidebarBorderColor = (componentStyle.borderColor && componentStyle.borderColor.trim() && componentStyle.borderColor.trim() !== 'transparent')
         ? componentStyle.borderColor.trim()
         : globalBorderColor
-      
+
       // Apply border color to separator lines within this sidebar
       if (hasAlphaChannel(sidebarBorderColor)) {
         cssRules += `    /* Platform sidebar secondary separator lines - use rgba directly */\n`
@@ -996,7 +1011,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
       }
       cssRules += `    }\n\n`
     }
-    
+
     // For platform-sidebar-menu components, add aggressive overrides to ensure button styles don't interfere
     if (componentId.startsWith('platform-sidebar-menu')) {
       cssRules += `    /* Aggressive override for platform-sidebar-menu to prevent button styles from interfering */\n`
@@ -1038,7 +1053,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
         }
       }
       cssRules += `    }\n\n`
-      
+
       // Special handling for active state - override Tailwind's !bg-muted and !text-foreground
       if (componentId === 'platform-sidebar-menu-active') {
         cssRules += `    /* Override Tailwind classes for active state - PRIMARY AND SECONDARY SIDEBARS */\n`
@@ -1083,7 +1098,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
         cssRules += `    }\n\n`
       }
     }
-    
+
     // Special handling for text-input to override Tailwind classes and globals.css
     // This must come AFTER the main component CSS to ensure it overrides globals.css
     if (componentId === 'text-input') {
@@ -1154,9 +1169,9 @@ export function applyComponentStyling(branding: BrandingConfig) {
         if (!componentStyle.borderWidth || !componentStyle.borderWidth.trim() || componentStyle.borderWidth.trim() === '0px' || componentStyle.borderWidth.trim() === '0') {
           // Check if any individual side widths are set
           const hasIndividualWidths = (componentStyle.borderTopWidth && componentStyle.borderTopWidth.trim()) ||
-                                    (componentStyle.borderRightWidth && componentStyle.borderRightWidth.trim()) ||
-                                    (componentStyle.borderBottomWidth && componentStyle.borderBottomWidth.trim()) ||
-                                    (componentStyle.borderLeftWidth && componentStyle.borderLeftWidth.trim())
+            (componentStyle.borderRightWidth && componentStyle.borderRightWidth.trim()) ||
+            (componentStyle.borderBottomWidth && componentStyle.borderBottomWidth.trim()) ||
+            (componentStyle.borderLeftWidth && componentStyle.borderLeftWidth.trim())
           if (!hasIndividualWidths) {
             // Default to 1px if color is set but no width
             cssRules += `      border-width: 1px !important;\n`
@@ -1166,9 +1181,9 @@ export function applyComponentStyling(branding: BrandingConfig) {
         if (!componentStyle.borderStyle || !componentStyle.borderStyle.trim()) {
           // Check if any individual side styles are set
           const hasIndividualStyles = (componentStyle.borderTopStyle && componentStyle.borderTopStyle.trim()) ||
-                                    (componentStyle.borderRightStyle && componentStyle.borderRightStyle.trim()) ||
-                                    (componentStyle.borderBottomStyle && componentStyle.borderBottomStyle.trim()) ||
-                                    (componentStyle.borderLeftStyle && componentStyle.borderLeftStyle.trim())
+            (componentStyle.borderRightStyle && componentStyle.borderRightStyle.trim()) ||
+            (componentStyle.borderBottomStyle && componentStyle.borderBottomStyle.trim()) ||
+            (componentStyle.borderLeftStyle && componentStyle.borderLeftStyle.trim())
           if (!hasIndividualStyles) {
             cssRules += `      border-style: solid !important;\n`
           }
@@ -1190,7 +1205,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
         cssRules += `      font-size: ${componentStyle.fontSize.trim()} !important;\n`
       }
       cssRules += `    }\n\n`
-      
+
       // Additional override specifically for Input component with Tailwind classes
       cssRules += `    /* Override Input component with Tailwind classes - including number inputs */\n`
       cssRules += `    body:not([data-space]) input:not([type]).text-foreground,\n`
@@ -1225,7 +1240,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
       }
       cssRules += `    }\n\n`
     }
-    
+
     // Special handling for textarea to override Tailwind classes and globals.css
     // This must come AFTER the main component CSS to ensure it overrides globals.css
     if (componentId === 'textarea') {
@@ -1288,9 +1303,9 @@ export function applyComponentStyling(branding: BrandingConfig) {
         if (!componentStyle.borderWidth || !componentStyle.borderWidth.trim() || componentStyle.borderWidth.trim() === '0px' || componentStyle.borderWidth.trim() === '0') {
           // Check if any individual side widths are set
           const hasIndividualWidths = (componentStyle.borderTopWidth && componentStyle.borderTopWidth.trim()) ||
-                                    (componentStyle.borderRightWidth && componentStyle.borderRightWidth.trim()) ||
-                                    (componentStyle.borderBottomWidth && componentStyle.borderBottomWidth.trim()) ||
-                                    (componentStyle.borderLeftWidth && componentStyle.borderLeftWidth.trim())
+            (componentStyle.borderRightWidth && componentStyle.borderRightWidth.trim()) ||
+            (componentStyle.borderBottomWidth && componentStyle.borderBottomWidth.trim()) ||
+            (componentStyle.borderLeftWidth && componentStyle.borderLeftWidth.trim())
           if (!hasIndividualWidths) {
             // Default to 1px if color is set but no width
             cssRules += `      border-width: 1px !important;\n`
@@ -1300,9 +1315,9 @@ export function applyComponentStyling(branding: BrandingConfig) {
         if (!componentStyle.borderStyle || !componentStyle.borderStyle.trim()) {
           // Check if any individual side styles are set
           const hasIndividualStyles = (componentStyle.borderTopStyle && componentStyle.borderTopStyle.trim()) ||
-                                    (componentStyle.borderRightStyle && componentStyle.borderRightStyle.trim()) ||
-                                    (componentStyle.borderBottomStyle && componentStyle.borderBottomStyle.trim()) ||
-                                    (componentStyle.borderLeftStyle && componentStyle.borderLeftStyle.trim())
+            (componentStyle.borderRightStyle && componentStyle.borderRightStyle.trim()) ||
+            (componentStyle.borderBottomStyle && componentStyle.borderBottomStyle.trim()) ||
+            (componentStyle.borderLeftStyle && componentStyle.borderLeftStyle.trim())
           if (!hasIndividualStyles) {
             cssRules += `      border-style: solid !important;\n`
           }
@@ -1331,7 +1346,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
         cssRules += `      line-height: ${componentStyle.lineHeight.trim()} !important;\n`
       }
       cssRules += `    }\n\n`
-      
+
       // Additional override specifically for Textarea component with Tailwind classes
       cssRules += `    /* Override Textarea component with Tailwind classes */\n`
       cssRules += `    body:not([data-space]) textarea.text-foreground,\n`
@@ -1367,7 +1382,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
       cssRules += `    }\n\n`
     }
   })
-  
+
   // Final aggressive override for text-input - must come after all component CSS to override globals.css
   // This uses maximum specificity to override globals.css rule: input:not([type="checkbox"])... { background-color: hsl(var(--border)) !important; }
   // Reuse the textInputStyle variable declared earlier in the function
@@ -1471,7 +1486,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
       cssRules += `      font-size: ${textInputStyle.fontSize.trim()} !important;\n`
     }
     cssRules += `    }\n\n`
-    
+
     // ULTIMATE OVERRIDE - Target ALL inputs with maximum specificity
     cssRules += `    /* ULTIMATE OVERRIDE - Maximum specificity for text inputs */\n`
     cssRules += `    body:not([data-space]) input:not([type]):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="hidden"]):not([type="color"]),\n`
@@ -1536,8 +1551,8 @@ export function applyComponentStyling(branding: BrandingConfig) {
         cssRules += `      border-style: ${textInputStyle.borderStyle.trim()} !important;\n`
       }
     }
-    if (textInputStyle.borderWidth && textInputStyle.borderWidth.trim() && 
-        textInputStyle.borderWidth.trim() !== '0px' && textInputStyle.borderWidth.trim() !== '0') {
+    if (textInputStyle.borderWidth && textInputStyle.borderWidth.trim() &&
+      textInputStyle.borderWidth.trim() !== '0px' && textInputStyle.borderWidth.trim() !== '0') {
       cssRules += `      border-width: ${textInputStyle.borderWidth.trim()} !important;\n`
     }
     if (textInputStyle.borderRadius) {
@@ -1663,7 +1678,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
       cssRules += `      line-height: ${textareaStyle.lineHeight.trim()} !important;\n`
     }
     cssRules += `    }\n\n`
-    
+
     // ULTIMATE OVERRIDE - Target ALL textareas with maximum specificity
     cssRules += `    /* ULTIMATE OVERRIDE - Maximum specificity for textareas */\n`
     cssRules += `    body:not([data-space]) textarea,\n`
@@ -1713,8 +1728,8 @@ export function applyComponentStyling(branding: BrandingConfig) {
         cssRules += `      border-style: ${textareaStyle.borderStyle.trim()} !important;\n`
       }
     }
-    if (textareaStyle.borderWidth && textareaStyle.borderWidth.trim() && 
-        textareaStyle.borderWidth.trim() !== '0px' && textareaStyle.borderWidth.trim() !== '0') {
+    if (textareaStyle.borderWidth && textareaStyle.borderWidth.trim() &&
+      textareaStyle.borderWidth.trim() !== '0px' && textareaStyle.borderWidth.trim() !== '0') {
       cssRules += `      border-width: ${textareaStyle.borderWidth.trim()} !important;\n`
     }
     if (textareaStyle.borderRadius) {
@@ -1754,8 +1769,8 @@ export function applyComponentStyling(branding: BrandingConfig) {
 
   // Always add platform sidebar CSS rules even if component styling doesn't have explicit colors
   // This ensures the sidebar always uses the main branding config colors
-  if (!branding.componentStyling?.['platform-sidebar-primary'] || 
-      !branding.componentStyling['platform-sidebar-primary'].backgroundColor) {
+  if (!branding.componentStyling?.['platform-sidebar-primary'] ||
+    !branding.componentStyling['platform-sidebar-primary'].backgroundColor) {
     cssRules += `    /* Platform sidebar primary - using main branding config colors */\n`
     cssRules += `    body:not([data-space]) [data-sidebar="primary"][data-component="platform-sidebar"],\n`
     cssRules += `    body:not([data-space]) [data-sidebar="primary"][data-component="platform-sidebar"].h-full,\n`
@@ -1771,9 +1786,9 @@ export function applyComponentStyling(branding: BrandingConfig) {
     }
     cssRules += `    }\n\n`
   }
-  
-  if (!branding.componentStyling?.['platform-sidebar-secondary'] || 
-      !branding.componentStyling['platform-sidebar-secondary'].backgroundColor) {
+
+  if (!branding.componentStyling?.['platform-sidebar-secondary'] ||
+    !branding.componentStyling['platform-sidebar-secondary'].backgroundColor) {
     cssRules += `    /* Platform sidebar secondary - using main branding config colors */\n`
     cssRules += `    body:not([data-space]) [data-sidebar="secondary"][data-component="platform-sidebar"],\n`
     cssRules += `    body:not([data-space]) [data-sidebar="secondary"][data-component="platform-sidebar"].h-full,\n`
@@ -1821,148 +1836,148 @@ export function applyComponentStyling(branding: BrandingConfig) {
   } else {
     console.warn('[Branding] Text input CSS NOT found in generated CSS!')
   }
-  
-    // Also apply styles directly to existing input elements as a fallback
-    // This ensures styles are applied even if CSS doesn't override properly
-    const textInputStyleDirect = branding.componentStyling?.['text-input']
-    if (textInputStyleDirect) {
-      console.log('[Branding] Applying text-input styles directly to existing inputs (including number inputs)')
-      
-      // Use the shared rgbaToHsl function which handles hex, rgba/rgb, and hsl formats
-      const colorToHsl = rgbaToHsl
-      
-      // Function to apply styles to an input element (EXACT same logic as color inputs)
-      const applyInputStyles = (input: HTMLInputElement) => {
-        if (!input.closest('[data-space]')) {
-          // Apply background color - same approach as ColorInput
-          if (textInputStyleDirect.backgroundColor) {
-            const bgColor = textInputStyleDirect.backgroundColor.trim()
-            // Direct inline style override (same as ColorInput would if it had inline styles)
-            input.style.setProperty('background-color', bgColor, 'important')
-            input.style.setProperty('background', bgColor, 'important')
-            input.style.setProperty('background-image', 'none', 'important')
-            
-            // Override CSS variables used by Tailwind classes (bg-border and bg-input)
-            // IMPORTANT: If the background color has an alpha channel, use it directly
-            // because HSL conversion loses the alpha, making transparent colors appear opaque/black
-            if (hasAlphaChannel(bgColor)) {
-              input.style.setProperty('--border', bgColor, 'important')
-              input.style.setProperty('--input', bgColor, 'important')
-            } else {
-              const bgHsl = colorToHsl(bgColor)
-              input.style.setProperty('--border', bgHsl, 'important')
-              input.style.setProperty('--input', bgHsl, 'important')
-            }
-          }
-          
-          // Apply text color - same approach as ColorInput
-          if (textInputStyleDirect.textColor) {
-            const textColor = textInputStyleDirect.textColor.trim()
-            // Direct inline style override (same as ColorInput)
-            input.style.setProperty('color', textColor, 'important')
-            
-            // Override CSS variable used by Tailwind's text-foreground class
-            const textHsl = colorToHsl(textColor)
-            input.style.setProperty('--foreground', textHsl, 'important')
-          }
-          
-          // Apply border styles
-          if (textInputStyleDirect.borderColor && textInputStyleDirect.borderColor.trim()) {
-            const borderColorValue = textInputStyleDirect.borderColor.trim()
-            input.style.setProperty('border-color', borderColorValue, 'important')
-            // Also set --border CSS variable for Tailwind classes
-            // IMPORTANT: If the border color has an alpha channel, use it directly
-            // because HSL conversion loses the alpha, making transparent colors appear opaque/black
-            if (hasAlphaChannel(borderColorValue)) {
-              input.style.setProperty('--border', borderColorValue, 'important')
-              input.style.setProperty('--input', borderColorValue, 'important')
-            } else {
-              const borderHsl = colorToHsl(borderColorValue)
-              input.style.setProperty('--border', borderHsl, 'important')
-              input.style.setProperty('--input', borderHsl, 'important')
-            }
-            // Ensure width is set if borderColor is set but borderWidth is not explicitly set
-            if (!textInputStyleDirect.borderWidth || !textInputStyleDirect.borderWidth.trim() || 
-                textInputStyleDirect.borderWidth.trim() === '0px' || textInputStyleDirect.borderWidth.trim() === '0') {
-              input.style.setProperty('border-width', '1px', 'important')
-            }
-            // Ensure style is set if borderColor is set but borderStyle is not explicitly set
-            if (!textInputStyleDirect.borderStyle || !textInputStyleDirect.borderStyle.trim()) {
-              input.style.setProperty('border-style', 'solid', 'important')
-            }
-          }
-          if (textInputStyleDirect.borderWidth && textInputStyleDirect.borderWidth.trim() && 
-              textInputStyleDirect.borderWidth.trim() !== '0px' && textInputStyleDirect.borderWidth.trim() !== '0') {
-            input.style.setProperty('border-width', textInputStyleDirect.borderWidth.trim(), 'important')
-          }
-          if (textInputStyleDirect.borderStyle && textInputStyleDirect.borderStyle.trim()) {
-            input.style.setProperty('border-style', textInputStyleDirect.borderStyle.trim(), 'important')
-          }
-          if (textInputStyleDirect.borderRadius) {
-            input.style.setProperty('border-radius', textInputStyleDirect.borderRadius.trim(), 'important')
+
+  // Also apply styles directly to existing input elements as a fallback
+  // This ensures styles are applied even if CSS doesn't override properly
+  const textInputStyleDirect = branding.componentStyling?.['text-input']
+  if (textInputStyleDirect) {
+    console.log('[Branding] Applying text-input styles directly to existing inputs (including number inputs)')
+
+    // Use the shared rgbaToHsl function which handles hex, rgba/rgb, and hsl formats
+    const colorToHsl = rgbaToHsl
+
+    // Function to apply styles to an input element (EXACT same logic as color inputs)
+    const applyInputStyles = (input: HTMLInputElement) => {
+      if (!input.closest('[data-space]')) {
+        // Apply background color - same approach as ColorInput
+        if (textInputStyleDirect.backgroundColor) {
+          const bgColor = textInputStyleDirect.backgroundColor.trim()
+          // Direct inline style override (same as ColorInput would if it had inline styles)
+          input.style.setProperty('background-color', bgColor, 'important')
+          input.style.setProperty('background', bgColor, 'important')
+          input.style.setProperty('background-image', 'none', 'important')
+
+          // Override CSS variables used by Tailwind classes (bg-border and bg-input)
+          // IMPORTANT: If the background color has an alpha channel, use it directly
+          // because HSL conversion loses the alpha, making transparent colors appear opaque/black
+          if (hasAlphaChannel(bgColor)) {
+            input.style.setProperty('--border', bgColor, 'important')
+            input.style.setProperty('--input', bgColor, 'important')
+          } else {
+            const bgHsl = colorToHsl(bgColor)
+            input.style.setProperty('--border', bgHsl, 'important')
+            input.style.setProperty('--input', bgHsl, 'important')
           }
         }
-      }
-      
-      // Apply to existing inputs immediately and after a delay
-      const applyToExisting = () => {
-        const inputs = document.querySelectorAll('body:not([data-space]) input:not([type]), body:not([data-space]) input[type="text"], body:not([data-space]) input[type="email"], body:not([data-space]) input[type="password"], body:not([data-space]) input[type="number"], body:not([data-space]) input[type="search"], body:not([data-space]) input[type="tel"], body:not([data-space]) input[type="url"]')
-        inputs.forEach((input: Element) => {
-          applyInputStyles(input as HTMLInputElement)
-        })
-        console.log(`[Branding] Applied styles directly to ${inputs.length} input elements (including number inputs)`)
-      }
-      
-      // Apply immediately
-      if (typeof window !== 'undefined') {
-        // Use requestAnimationFrame to ensure DOM is ready
-        requestAnimationFrame(() => {
-          applyToExisting()
-          // Also apply after React has rendered
-          setTimeout(applyToExisting, 0)
-          setTimeout(applyToExisting, 50)
-          setTimeout(applyToExisting, 100)
-          setTimeout(applyToExisting, 300)
-          setTimeout(applyToExisting, 500)
-          setTimeout(applyToExisting, 1000)
-        })
-      }
-      
-      // Use MutationObserver to apply styles to dynamically created inputs
-      if (typeof window !== 'undefined' && !(window as any).__textInputStyleObserver) {
-        const observer = new MutationObserver((mutations) => {
-          mutations.forEach((mutation) => {
-            mutation.addedNodes.forEach((node) => {
-              if (node.nodeType === 1) { // Element node
-                const element = node as Element
-                // Check if it's an input or contains inputs
-                const inputs = element.matches && element.matches('input:not([type]), input[type="text"], input[type="email"], input[type="password"], input[type="number"], input[type="search"], input[type="tel"], input[type="url"]')
-                  ? [element as HTMLInputElement]
-                  : Array.from(element.querySelectorAll?.('input:not([type]), input[type="text"], input[type="email"], input[type="password"], input[type="number"], input[type="search"], input[type="tel"], input[type="url"]') || []) as HTMLInputElement[]
-                
-                inputs.forEach((input) => {
-                  applyInputStyles(input)
-                })
-              }
-            })
-          })
-        })
-        
-        observer.observe(document.body, {
-          childList: true,
-          subtree: true
-        })
-        
-        ;(window as any).__textInputStyleObserver = observer
-        console.log('[Branding] MutationObserver set up for text and number inputs')
+
+        // Apply text color - same approach as ColorInput
+        if (textInputStyleDirect.textColor) {
+          const textColor = textInputStyleDirect.textColor.trim()
+          // Direct inline style override (same as ColorInput)
+          input.style.setProperty('color', textColor, 'important')
+
+          // Override CSS variable used by Tailwind's text-foreground class
+          const textHsl = colorToHsl(textColor)
+          input.style.setProperty('--foreground', textHsl, 'important')
+        }
+
+        // Apply border styles
+        if (textInputStyleDirect.borderColor && textInputStyleDirect.borderColor.trim()) {
+          const borderColorValue = textInputStyleDirect.borderColor.trim()
+          input.style.setProperty('border-color', borderColorValue, 'important')
+          // Also set --border CSS variable for Tailwind classes
+          // IMPORTANT: If the border color has an alpha channel, use it directly
+          // because HSL conversion loses the alpha, making transparent colors appear opaque/black
+          if (hasAlphaChannel(borderColorValue)) {
+            input.style.setProperty('--border', borderColorValue, 'important')
+            input.style.setProperty('--input', borderColorValue, 'important')
+          } else {
+            const borderHsl = colorToHsl(borderColorValue)
+            input.style.setProperty('--border', borderHsl, 'important')
+            input.style.setProperty('--input', borderHsl, 'important')
+          }
+          // Ensure width is set if borderColor is set but borderWidth is not explicitly set
+          if (!textInputStyleDirect.borderWidth || !textInputStyleDirect.borderWidth.trim() ||
+            textInputStyleDirect.borderWidth.trim() === '0px' || textInputStyleDirect.borderWidth.trim() === '0') {
+            input.style.setProperty('border-width', '1px', 'important')
+          }
+          // Ensure style is set if borderColor is set but borderStyle is not explicitly set
+          if (!textInputStyleDirect.borderStyle || !textInputStyleDirect.borderStyle.trim()) {
+            input.style.setProperty('border-style', 'solid', 'important')
+          }
+        }
+        if (textInputStyleDirect.borderWidth && textInputStyleDirect.borderWidth.trim() &&
+          textInputStyleDirect.borderWidth.trim() !== '0px' && textInputStyleDirect.borderWidth.trim() !== '0') {
+          input.style.setProperty('border-width', textInputStyleDirect.borderWidth.trim(), 'important')
+        }
+        if (textInputStyleDirect.borderStyle && textInputStyleDirect.borderStyle.trim()) {
+          input.style.setProperty('border-style', textInputStyleDirect.borderStyle.trim(), 'important')
+        }
+        if (textInputStyleDirect.borderRadius) {
+          input.style.setProperty('border-radius', textInputStyleDirect.borderRadius.trim(), 'important')
+        }
       }
     }
-  
+
+    // Apply to existing inputs immediately and after a delay
+    const applyToExisting = () => {
+      const inputs = document.querySelectorAll('body:not([data-space]) input:not([type]), body:not([data-space]) input[type="text"], body:not([data-space]) input[type="email"], body:not([data-space]) input[type="password"], body:not([data-space]) input[type="number"], body:not([data-space]) input[type="search"], body:not([data-space]) input[type="tel"], body:not([data-space]) input[type="url"]')
+      inputs.forEach((input: Element) => {
+        applyInputStyles(input as HTMLInputElement)
+      })
+      console.log(`[Branding] Applied styles directly to ${inputs.length} input elements (including number inputs)`)
+    }
+
+    // Apply immediately
+    if (typeof window !== 'undefined') {
+      // Use requestAnimationFrame to ensure DOM is ready
+      requestAnimationFrame(() => {
+        applyToExisting()
+        // Also apply after React has rendered
+        setTimeout(applyToExisting, 0)
+        setTimeout(applyToExisting, 50)
+        setTimeout(applyToExisting, 100)
+        setTimeout(applyToExisting, 300)
+        setTimeout(applyToExisting, 500)
+        setTimeout(applyToExisting, 1000)
+      })
+    }
+
+    // Use MutationObserver to apply styles to dynamically created inputs
+    if (typeof window !== 'undefined' && !(window as any).__textInputStyleObserver) {
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === 1) { // Element node
+              const element = node as Element
+              // Check if it's an input or contains inputs
+              const inputs = element.matches && element.matches('input:not([type]), input[type="text"], input[type="email"], input[type="password"], input[type="number"], input[type="search"], input[type="tel"], input[type="url"]')
+                ? [element as HTMLInputElement]
+                : Array.from(element.querySelectorAll?.('input:not([type]), input[type="text"], input[type="email"], input[type="password"], input[type="number"], input[type="search"], input[type="tel"], input[type="url"]') || []) as HTMLInputElement[]
+
+              inputs.forEach((input) => {
+                applyInputStyles(input)
+              })
+            }
+          })
+        })
+      })
+
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      })
+
+        ; (window as any).__textInputStyleObserver = observer
+      console.log('[Branding] MutationObserver set up for text and number inputs')
+    }
+  }
+
   // Also apply form styles directly to existing form elements as a fallback
   const formStyleDirect = branding.componentStyling?.['form']
   if (formStyleDirect) {
     console.log('[Branding] Applying form styles directly to existing form elements')
-    
+
     // Function to apply styles to a form element
     const applyFormStyles = (form: HTMLFormElement) => {
       if (!form.closest('[data-space]')) {
@@ -1973,18 +1988,18 @@ export function applyComponentStyling(branding: BrandingConfig) {
           form.style.setProperty('background', bgColor, 'important')
           form.style.setProperty('background-image', 'none', 'important')
         }
-        
+
         // Apply border styles
         if (formStyleDirect.borderColor) {
           form.style.setProperty('border-color', formStyleDirect.borderColor.trim(), 'important')
           // Ensure width is set if color is set
-          if (!formStyleDirect.borderWidth || !formStyleDirect.borderWidth.trim() || 
-              formStyleDirect.borderWidth.trim() === '0px' || formStyleDirect.borderWidth.trim() === '0') {
+          if (!formStyleDirect.borderWidth || !formStyleDirect.borderWidth.trim() ||
+            formStyleDirect.borderWidth.trim() === '0px' || formStyleDirect.borderWidth.trim() === '0') {
             form.style.setProperty('border-width', '1px', 'important')
           }
         }
-        if (formStyleDirect.borderWidth && formStyleDirect.borderWidth.trim() && 
-            formStyleDirect.borderWidth.trim() !== '0px' && formStyleDirect.borderWidth.trim() !== '0') {
+        if (formStyleDirect.borderWidth && formStyleDirect.borderWidth.trim() &&
+          formStyleDirect.borderWidth.trim() !== '0px' && formStyleDirect.borderWidth.trim() !== '0') {
           form.style.setProperty('border-width', formStyleDirect.borderWidth.trim(), 'important')
         }
         if (formStyleDirect.borderStyle && formStyleDirect.borderStyle.trim()) {
@@ -1992,7 +2007,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
         } else if (formStyleDirect.borderColor || formStyleDirect.borderWidth) {
           form.style.setProperty('border-style', 'solid', 'important')
         }
-        
+
         // Apply individual border sides
         if (formStyleDirect.borderTopColor) {
           form.style.setProperty('border-top-color', formStyleDirect.borderTopColor.trim(), 'important')
@@ -2006,7 +2021,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
         if (formStyleDirect.borderTopStyle && formStyleDirect.borderTopStyle.trim()) {
           form.style.setProperty('border-top-style', formStyleDirect.borderTopStyle.trim(), 'important')
         }
-        
+
         if (formStyleDirect.borderRightColor) {
           form.style.setProperty('border-right-color', formStyleDirect.borderRightColor.trim(), 'important')
           if (!formStyleDirect.borderRightWidth || !formStyleDirect.borderRightWidth.trim()) {
@@ -2019,7 +2034,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
         if (formStyleDirect.borderRightStyle && formStyleDirect.borderRightStyle.trim()) {
           form.style.setProperty('border-right-style', formStyleDirect.borderRightStyle.trim(), 'important')
         }
-        
+
         if (formStyleDirect.borderBottomColor) {
           form.style.setProperty('border-bottom-color', formStyleDirect.borderBottomColor.trim(), 'important')
           if (!formStyleDirect.borderBottomWidth || !formStyleDirect.borderBottomWidth.trim()) {
@@ -2032,7 +2047,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
         if (formStyleDirect.borderBottomStyle && formStyleDirect.borderBottomStyle.trim()) {
           form.style.setProperty('border-bottom-style', formStyleDirect.borderBottomStyle.trim(), 'important')
         }
-        
+
         if (formStyleDirect.borderLeftColor) {
           form.style.setProperty('border-left-color', formStyleDirect.borderLeftColor.trim(), 'important')
           if (!formStyleDirect.borderLeftWidth || !formStyleDirect.borderLeftWidth.trim()) {
@@ -2045,7 +2060,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
         if (formStyleDirect.borderLeftStyle && formStyleDirect.borderLeftStyle.trim()) {
           form.style.setProperty('border-left-style', formStyleDirect.borderLeftStyle.trim(), 'important')
         }
-        
+
         // Apply other styles
         if (formStyleDirect.borderRadius) {
           form.style.setProperty('border-radius', formStyleDirect.borderRadius.trim(), 'important')
@@ -2058,7 +2073,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
         }
       }
     }
-    
+
     // Apply to existing forms immediately and after delays
     const applyToExistingForms = () => {
       const forms = document.querySelectorAll('body:not([data-space]) form')
@@ -2067,7 +2082,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
       })
       console.log(`[Branding] Applied styles directly to ${forms.length} form elements`)
     }
-    
+
     // Apply immediately
     if (typeof window !== 'undefined') {
       requestAnimationFrame(() => {
@@ -2080,7 +2095,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
         setTimeout(applyToExistingForms, 1000)
       })
     }
-    
+
     // Use MutationObserver to apply styles to dynamically created forms
     if (typeof window !== 'undefined' && !(window as any).__formStyleObserver) {
       const observer = new MutationObserver((mutations) => {
@@ -2092,7 +2107,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
               const forms = element.matches && element.matches('form')
                 ? [element as HTMLFormElement]
                 : Array.from(element.querySelectorAll?.('form') || []) as HTMLFormElement[]
-              
+
               forms.forEach((form) => {
                 applyFormStyles(form)
               })
@@ -2100,20 +2115,20 @@ export function applyComponentStyling(branding: BrandingConfig) {
           })
         })
       })
-      
+
       observer.observe(document.body, {
         childList: true,
         subtree: true
       })
-      
-      ;(window as any).__formStyleObserver = observer
+
+        ; (window as any).__formStyleObserver = observer
       console.log('[Branding] MutationObserver set up for forms')
     }
   }
-  
+
   // Set the CSS content
   styleElement.textContent = cssRules
-  
+
   // Verify the CSS was actually set
   if (styleElement.textContent !== cssRules) {
     console.error('[Branding] ERROR: CSS was not set correctly!')
@@ -2122,7 +2137,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
   } else {
     console.log('[Branding] CSS successfully set in style element. Length:', styleElement.textContent.length)
   }
-  
+
   // Debug: Log if platform sidebar CSS was generated
   const hasPlatformSidebarCSS = cssRules.includes('platform-sidebar-primary') || cssRules.includes('platform-sidebar-secondary')
   if (hasPlatformSidebarCSS) {
@@ -2135,7 +2150,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
     console.warn('[Branding] Platform sidebar CSS NOT found in generated CSS!')
     console.log('[Branding] Available component IDs:', Object.keys(branding.componentStyling || {}))
   }
-  
+
   // Debug: Log if text-input CSS was generated
   const hasTextInputCSS = cssRules.includes('text-input') || cssRules.includes('input[type="text"]')
   if (hasTextInputCSS) {
@@ -2160,7 +2175,7 @@ export function applyComponentStyling(branding: BrandingConfig) {
       console.log('[Branding] Text input config exists:', branding.componentStyling['text-input'])
     }
   }
-  
+
   // Debug: Log if form CSS was generated
   const hasFormCSS = cssRules.includes('form') && (cssRules.includes('body:not([data-space]) form') || cssRules.includes('[data-component="form"]'))
   if (hasFormCSS) {
@@ -2183,15 +2198,15 @@ export function applyComponentStyling(branding: BrandingConfig) {
       })
       // Check if border properties are in the CSS
       if (formStyle.borderColor) {
-        const borderColorInCSS = cssRules.includes(`border-color: ${formStyle.borderColor.trim()}`) || 
-                                 cssRules.includes(`border-top-color: ${formStyle.borderColor.trim()}`) ||
-                                 cssRules.includes(`border-bottom-color: ${formStyle.borderColor.trim()}`)
+        const borderColorInCSS = cssRules.includes(`border-color: ${formStyle.borderColor.trim()}`) ||
+          cssRules.includes(`border-top-color: ${formStyle.borderColor.trim()}`) ||
+          cssRules.includes(`border-bottom-color: ${formStyle.borderColor.trim()}`)
         console.log('[Branding] Form borderColor in CSS:', borderColorInCSS, 'Value:', formStyle.borderColor)
       }
       if (formStyle.borderWidth) {
         const borderWidthInCSS = cssRules.includes(`border-width: ${formStyle.borderWidth.trim()}`) ||
-                                cssRules.includes(`border-top-width: ${formStyle.borderWidth.trim()}`) ||
-                                cssRules.includes(`border-bottom-width: ${formStyle.borderWidth.trim()}`)
+          cssRules.includes(`border-top-width: ${formStyle.borderWidth.trim()}`) ||
+          cssRules.includes(`border-bottom-width: ${formStyle.borderWidth.trim()}`)
         console.log('[Branding] Form borderWidth in CSS:', borderWidthInCSS, 'Value:', formStyle.borderWidth)
       }
     }
