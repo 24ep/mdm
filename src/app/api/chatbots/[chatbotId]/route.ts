@@ -140,7 +140,6 @@ async function putHandler(
     followUpQuestions,
     enableFileUpload,
     showCitations,
-    showCitations,
     deploymentType,
     widgetBackgroundColor,
     isPublished,
