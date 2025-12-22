@@ -11,11 +11,17 @@ export async function GET(request: NextRequest) {
   }
 
   // Generate embed script
+  // Get the origin from the request (this is the MDM server origin)
+  const serverOrigin = request.nextUrl.origin
+
   const script = `
 (function() {
   var chatbotId = '${chatbotId}';
   var type = '${type}';
-  var origin = window.location.origin;
+  
+  // Use the server origin (where the script is loaded from), not window.location.origin
+  // This is critical for cross-origin embeds
+  var serverOrigin = '${serverOrigin}';
   
   // Prevent multiple instances
   if (window['chatbotLoaded_' + chatbotId]) {
@@ -25,8 +31,8 @@ export async function GET(request: NextRequest) {
   
   // Load chatbot config
   function loadChatbotConfig(callback) {
-    // Try public API first (for embeds), then localStorage as fallback
-    fetch(origin + '/api/public/chatbots/' + chatbotId)
+    // Fetch from the MDM server's public API (not the current page origin)
+    fetch(serverOrigin + '/api/public/chatbots/' + chatbotId)
       .then(function(response) {
         if (response.ok) {
           return response.json();
@@ -385,7 +391,7 @@ export async function GET(request: NextRequest) {
     
     // Create iframe for chat
     var iframe = document.createElement('iframe');
-    iframe.src = window.location.origin + '/chat/' + chatbotId;
+    iframe.src = serverOrigin + '/chat/' + chatbotId;
     iframe.style.cssText = 'width: 100%; flex: 1; border: none; border-radius: 0 0 ' + chatWindowBorderRadius + ' ' + chatWindowBorderRadius + ';';
     iframe.style.border = 'none';
     
