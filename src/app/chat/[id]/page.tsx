@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
@@ -32,6 +32,8 @@ import { Z_INDEX } from '@/lib/z-index'
 
 export default function ChatPage() {
   const params = useParams()
+  const searchParams = useSearchParams()
+  const isEmbed = searchParams.get('mode') === 'embed'
   const chatbotId = params?.id as string
   const [previewDeploymentType, setPreviewDeploymentType] = useState<'popover' | 'fullpage' | 'popup-center'>('fullpage')
   const [isOpen, setIsOpen] = useState<boolean>(false)
@@ -272,14 +274,16 @@ export default function ChatPage() {
     return null
   }
 
+  const effectiveDeploymentType = isEmbed ? 'fullpage' : previewDeploymentType
+  
   const chatStyle = getChatStyle(chatbot)
-  const containerStyle = getContainerStyle(chatbot, previewDeploymentType, emulatorConfig)
-  const overlayStyle = getOverlayStyle(previewDeploymentType, chatbot, isOpen)
+  const containerStyle = getContainerStyle(chatbot, effectiveDeploymentType, emulatorConfig)
+  const overlayStyle = getOverlayStyle(effectiveDeploymentType, chatbot, isOpen)
   const popoverPositionStyle = getPopoverPositionStyle(chatbot)
   const widgetButtonStyle = getWidgetButtonStyle(chatbot)
 
-  const shouldShowWidgetButton = previewDeploymentType === 'popover' || previewDeploymentType === 'popup-center'
-  const shouldShowContainer = previewDeploymentType === 'fullpage' ? true : isOpen
+  const shouldShowWidgetButton = effectiveDeploymentType === 'popover' || effectiveDeploymentType === 'popup-center'
+  const shouldShowContainer = effectiveDeploymentType === 'fullpage' ? true : isOpen
 
   // Render ChatKit only if engine type is chatkit (not openai-agent-sdk)
   // Note: If ChatKit fails to load, it will fall back to regular chat style
@@ -291,7 +295,7 @@ export default function ChatPage() {
     chatbot.chatkitAgentId
 
   // Render ChatKit with regular style header overlay (only for popover/popup-center, not fullpage)
-  if (shouldRenderChatKit && useChatKitInRegularStyle && (previewDeploymentType === 'popover' || previewDeploymentType === 'popup-center')) {
+  if (shouldRenderChatKit && useChatKitInRegularStyle && (effectiveDeploymentType === 'popover' || effectiveDeploymentType === 'popup-center')) {
     // Always show container when using regular style header (no widget button to toggle)
     return (
       <div 
@@ -310,11 +314,13 @@ export default function ChatPage() {
         {shouldShowContainer && (
           <div className="flex flex-col relative" style={containerStyle}>
             {/* Regular Header on top */}
-            <ChatHeader 
-              chatbot={chatbot} 
-              onClearSession={() => setMessages([])}
-              onClose={shouldShowWidgetButton ? () => setIsOpen(false) : undefined}
-            />
+            {!isEmbed && (
+              <ChatHeader 
+                chatbot={chatbot} 
+                onClearSession={() => setMessages([])}
+                onClose={shouldShowWidgetButton ? () => setIsOpen(false) : undefined}
+              />
+            )}
             
             {/* ChatKit rendered below header - fills remaining space */}
             <div 
@@ -328,7 +334,7 @@ export default function ChatPage() {
             >
               <ChatKitRenderer 
                 chatbot={chatbot} 
-                previewDeploymentType={previewDeploymentType} 
+                previewDeploymentType={effectiveDeploymentType} 
                 isInIframe={isInIframe}
                 onChatKitUnavailable={() => setChatKitUnavailable(true)}
               />
@@ -376,8 +382,8 @@ export default function ChatPage() {
     )
   }
 
-  // Render ChatKit normally (without regular style wrapper)
-  if (shouldRenderChatKit && !useChatKitInRegularStyle) {
+  // Render ChatKit normally (without regular style wrapper) or if in embed mode (to skip wrapper/header)
+  if (shouldRenderChatKit && (!useChatKitInRegularStyle || isEmbed)) {
     return (
       <div 
         style={{ 
@@ -393,7 +399,7 @@ export default function ChatPage() {
       >
         <ChatKitRenderer 
           chatbot={chatbot} 
-          previewDeploymentType={previewDeploymentType} 
+          previewDeploymentType={effectiveDeploymentType} 
           isInIframe={isInIframe}
           onChatKitUnavailable={() => setChatKitUnavailable(true)}
         />
@@ -435,6 +441,7 @@ export default function ChatPage() {
         currentTranscript={currentTranscript}
         chatbotId={chatbotId}
         threadId={threadManagementEnabled ? currentThreadId : null}
+        hideHeader={isEmbed}
       />
     )
   }
@@ -627,8 +634,8 @@ export default function ChatPage() {
             </div>
           )}
 
-          {/* Close button - only show if headerShowCloseButton is not false */}
-          {((chatbot as any).headerShowCloseButton !== false && (chatbot as any).headerShowCloseButton !== null) && (
+          {/* Close button - only show if headerShowCloseButton is not false and not in embed mode */}
+          {((chatbot as any).headerShowCloseButton !== false && (chatbot as any).headerShowCloseButton !== null && !isEmbed) && (
             <button
               type="button"
               onClick={() => setIsOpen(false)}

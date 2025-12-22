@@ -421,7 +421,7 @@ export async function GET(request: NextRequest) {
     
     // Create iframe for chat
     var iframe = document.createElement('iframe');
-    iframe.src = serverOrigin + '/chat/' + chatbotId;
+    iframe.src = serverOrigin + '/chat/' + chatbotId + '?mode=embed';
     iframe.style.cssText = 'width: 100%; flex: 1; border: none; border-radius: 0 0 ' + chatWindowBorderRadius + ' ' + chatWindowBorderRadius + ';';
     iframe.style.border = 'none';
     

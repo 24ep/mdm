@@ -35,6 +35,7 @@ interface ChatContentProps {
   currentTranscript?: string
   chatbotId?: string
   threadId?: string | null
+  hideHeader?: boolean
 }
 
 export function ChatContent({
@@ -66,6 +67,7 @@ export function ChatContent({
   currentTranscript,
   chatbotId,
   threadId,
+  hideHeader = false,
 }: ChatContentProps) {
   // Check if wave UI should be shown
   const showWaveUI = chatbot.enableVoiceAgent && chatbot.voiceUIStyle === 'wave'
@@ -73,10 +75,12 @@ export function ChatContent({
   if (showWaveUI) {
     return (
       <div className="relative flex flex-col h-full">
-        <ChatHeader 
-          chatbot={chatbot} 
-          onClearSession={() => setMessages([])}
-        />
+        {!hideHeader && (
+          <ChatHeader 
+            chatbot={chatbot} 
+            onClearSession={() => setMessages([])}
+          />
+        )}
         <div className="flex-1 relative flex flex-col" style={{ minHeight: '400px' }}>
           {/* Wave UI takes most of the space */}
           <div className="flex-1 relative">
@@ -141,10 +145,12 @@ export function ChatContent({
 
   return (
     <div className="relative flex flex-col h-full">
-      <ChatHeader 
-        chatbot={chatbot} 
-        onClearSession={() => setMessages([])}
-      />
+      {!hideHeader && (
+        <ChatHeader 
+          chatbot={chatbot} 
+          onClearSession={() => setMessages([])}
+        />
+      )}
 
       <MessagesList
         messages={messages}
