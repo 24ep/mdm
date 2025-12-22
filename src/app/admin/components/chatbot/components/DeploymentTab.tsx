@@ -66,12 +66,36 @@ export function DeploymentTab({
           <Button
             variant={formData.isPublished ? "outline" : "default"}
             size="sm"
-            onClick={() => {
+            onClick={async () => {
+              const newIsPublished = !formData.isPublished
               setFormData(prev => ({
                 ...prev,
-                isPublished: !prev.isPublished
+                isPublished: newIsPublished
               }))
-              toast.success(formData.isPublished ? 'Chatbot unpublished' : 'Chatbot published')
+              
+              // Immediately persist to backend if chatbot exists
+              if (selectedChatbot?.id) {
+                try {
+                  const response = await fetch(`/api/chatbots/${selectedChatbot.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ isPublished: newIsPublished })
+                  })
+                  if (response.ok) {
+                    toast.success(newIsPublished ? 'Chatbot published' : 'Chatbot unpublished')
+                  } else {
+                    toast.error('Failed to update publish status')
+                    // Revert local state on error
+                    setFormData(prev => ({ ...prev, isPublished: !newIsPublished }))
+                  }
+                } catch (error) {
+                  toast.error('Failed to update publish status')
+                  // Revert local state on error
+                  setFormData(prev => ({ ...prev, isPublished: !newIsPublished }))
+                }
+              } else {
+                toast.success(newIsPublished ? 'Marked as published (save to persist)' : 'Marked as draft (save to persist)')
+              }
             }}
             className={formData.isPublished ? "" : "bg-green-600 hover:bg-green-700"}
           >
