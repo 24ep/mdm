@@ -19,34 +19,45 @@ export async function GET(request: NextRequest) {
   var chatbotId = '${chatbotId}';
   var type = '${type}';
   
-  // Use the server origin (where the script is loaded from), not window.location.origin
-  // This is critical for cross-origin embeds
-  var serverOrigin = '${serverOrigin}';
+  // Try to determine origin dynamically from the script source
+  // This handles cases where the server is behind a proxy or accessed via a different hostname
+  var scriptUrl = document.currentScript ? document.currentScript.src : null;
+  var dynamicOrigin = scriptUrl ? new URL(scriptUrl).origin : null;
+  // Fallback to server-detected origin
+  var serverOrigin = dynamicOrigin || '${serverOrigin}';
   
+  console.log('[Chatbot] Initializing widget for:', chatbotId);
+  console.log('[Chatbot] Server origin:', serverOrigin);
+
   // Prevent multiple instances
   if (window['chatbotLoaded_' + chatbotId]) {
+    console.warn('[Chatbot] Widget already loaded');
     return;
   }
   window['chatbotLoaded_' + chatbotId] = true;
   
   // Load chatbot config
   function loadChatbotConfig(callback) {
-    // Fetch from the MDM server's public API (not the current page origin)
-    fetch(serverOrigin + '/api/public/chatbots/' + chatbotId)
+    var apiUrl = serverOrigin + '/api/public/chatbots/' + chatbotId;
+    console.log('[Chatbot] Fetching config from:', apiUrl);
+    
+    fetch(apiUrl)
       .then(function(response) {
         if (response.ok) {
           return response.json();
         }
-        throw new Error('API request failed');
+        throw new Error('API request failed: ' + response.status);
       })
       .then(function(data) {
         if (data.chatbot) {
+          console.log('[Chatbot] Config loaded successfully');
           callback(data.chatbot);
           return;
         }
-        throw new Error('Chatbot not found in API');
+        throw new Error('Chatbot object missing in response');
       })
-      .catch(function() {
+      .catch(function(err) {
+        console.error('[Chatbot] Failed to load config:', err);
         // Fallback to localStorage
         try {
           var saved = localStorage.getItem('ai-chatbots');
@@ -54,12 +65,13 @@ export async function GET(request: NextRequest) {
             var chatbots = JSON.parse(saved);
             var chatbot = chatbots.find(function(c) { return c.id === chatbotId; });
             if (chatbot) {
+              console.log('[Chatbot] Using cached config from localStorage');
               callback(chatbot);
               return;
             }
           }
         } catch (e) {
-          console.error('Error loading chatbot config:', e);
+          console.error('[Chatbot] Error reading localStorage:', e);
         }
         callback(null);
       });
@@ -173,7 +185,7 @@ export async function GET(request: NextRequest) {
     // Create floating button/container
     var buttonContainer = document.createElement('div');
     buttonContainer.id = 'chatbot-button-container-' + chatbotId;
-    buttonContainer.style.cssText = 'position: fixed; ' + positionStyle + ' z-index: ' + widgetConfig.zIndex + '; display: ' + (widgetConfig.autoShow ? 'flex' : 'none') + '; flex-direction: column; align-items: center; gap: 8px; ' + animationStyle;
+    buttonContainer.style.cssText = 'position: fixed; ' + positionStyle + ' z-index: ' + widgetConfig.zIndex + '; display: ' + (widgetConfig.autoShow && (!widgetConfig.autoShowDelay || widgetConfig.autoShowDelay <= 0) ? 'flex' : 'none') + '; flex-direction: column; align-items: center; gap: 8px; ' + animationStyle;
     
     var button = document.createElement('button');
     button.id = 'chatbot-button-' + chatbotId;
@@ -669,6 +681,7 @@ export async function GET(request: NextRequest) {
       'Cache-Control': 'public, max-age=3600',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Private-Network': 'true',
     },
   })
 }
