@@ -29,38 +29,22 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
   try {
     // Fetch chatbot configuration for PWA metadata
-    // Use internal API since this runs on the server
-    let baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
-
-    // Vercel URL doesn't include protocol
-    if (process.env.VERCEL_URL) {
-      baseUrl = `https://${process.env.VERCEL_URL}`
-    }
-
-    // Ensure protocol
-    if (!baseUrl.startsWith('http')) {
-      baseUrl = `http://${baseUrl}`
-    }
-    const response = await fetch(`${baseUrl}/api/chatbots/${chatbotId}`, {
-      next: { revalidate: 300 }, // Cache for 5 minutes
+    // Use direct DB access to avoid network roundtrips and timeouts
+    const { db } = await import('@/lib/db')
+    const chatbot = await db.chatbot.findUnique({
+      where: { id: chatbotId }
     })
-
-    if (!response.ok) {
-      return defaultMetadata
-    }
-
-    const data = await response.json()
-    const chatbot = data.chatbot
 
     if (!chatbot) {
       return defaultMetadata
     }
 
     // Build metadata from chatbot configuration
-    const appName = chatbot.pwaAppName || chatbot.name || 'Chat Assistant'
-    const description = chatbot.pwaDescription || chatbot.description || 'AI Chat Assistant'
-    const themeColor = chatbot.pwaThemeColor || chatbot.primaryColor || '#3b82f6'
-    const iconUrl = chatbot.pwaIconUrl || chatbot.logo
+    const cb = chatbot as any
+    const appName = cb.pwaAppName || cb.name || 'Chat Assistant'
+    const description = cb.pwaDescription || cb.description || 'AI Chat Assistant'
+    const themeColor = cb.pwaThemeColor || cb.primaryColor || '#3b82f6'
+    const iconUrl = cb.pwaIconUrl || cb.logo
 
     return {
       title: appName,
@@ -70,7 +54,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       appleWebApp: {
         capable: true,
         statusBarStyle: 'default',
-        title: chatbot.pwaShortName || appName.split(' ')[0] || 'Chat',
+        title: (chatbot as any).pwaShortName || appName.split(' ')[0] || 'Chat',
       },
       icons: iconUrl ? [
         { url: iconUrl, sizes: '192x192', type: 'image/png' },

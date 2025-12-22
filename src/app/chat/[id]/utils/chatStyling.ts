@@ -234,15 +234,61 @@ export function getContainerStyle(
     height: '100%',
     display: 'flex',
     flexDirection: 'column',
-    backgroundColor: emulatorConfig.backgroundColor,
-    backgroundImage: emulatorConfig.backgroundImage ? `url(${emulatorConfig.backgroundImage})` : undefined,
-    backgroundSize: emulatorConfig.backgroundImage ? 'cover' : undefined,
-    backgroundPosition: emulatorConfig.backgroundImage ? 'center' : undefined,
-    backgroundRepeat: emulatorConfig.backgroundImage ? 'no-repeat' : undefined,
+    // For fullpage/embed, we should apply the chatbot theme unless emulator/preview config overrides it
+    ...(() => {
+      // Priority: Emulator Config > Chatbot Config > Default
+      
+      // If emulator config has explicit background (e.g. from preview settings), use it
+      if (emulatorConfig.backgroundColor || emulatorConfig.backgroundImage) {
+        return {
+          backgroundColor: emulatorConfig.backgroundColor,
+          backgroundImage: emulatorConfig.backgroundImage ? `url(${emulatorConfig.backgroundImage})` : undefined,
+          backgroundSize: emulatorConfig.backgroundImage ? 'cover' : undefined,
+          backgroundPosition: emulatorConfig.backgroundImage ? 'center' : undefined,
+          backgroundRepeat: emulatorConfig.backgroundImage ? 'no-repeat' : undefined,
+        }
+      }
+
+      // Otherwise, use the chatbot configuration (same logic as popover)
+      const bgValue = chatbot.messageBoxColor || '#ffffff'
+      const opacity = (chatbot as any).chatWindowBackgroundOpacity !== undefined ? (chatbot as any).chatWindowBackgroundOpacity : 100
+      
+      // Check if it's an image URL
+      if (bgValue.startsWith('url(') || bgValue.startsWith('http://') || bgValue.startsWith('https://') || bgValue.startsWith('/')) {
+        const imageUrl = bgValue.startsWith('url(') ? bgValue : `url(${bgValue})`
+        return {
+          backgroundImage: imageUrl,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          backgroundColor: opacity < 100 ? `rgba(255, 255, 255, ${opacity / 100})` : '#ffffff',
+        }
+      }
+      
+      // It's a color value
+      const bgColor = bgValue
+      if (opacity < 100) {
+        // Check if it's already rgba/rgb
+        if (bgColor.startsWith('rgba') || bgColor.startsWith('rgb')) {
+          const rgbMatch = bgColor.match(/(\d+),\s*(\d+),\s*(\d+)/)
+          if (rgbMatch) {
+            return { backgroundColor: `rgba(${rgbMatch[1]}, ${rgbMatch[2]}, ${rgbMatch[3]}, ${opacity / 100})` }
+          }
+        }
+        // Convert hex to rgba
+        return { backgroundColor: `rgba(${hexToRgb(bgColor)}, ${opacity / 100})` }
+      }
+      return { backgroundColor: bgColor }
+    })(),
     paddingLeft: (chatbot as any).chatWindowPaddingX || '0px',
     paddingRight: (chatbot as any).chatWindowPaddingX || '0px',
     paddingTop: (chatbot as any).chatWindowPaddingY || '0px',
     paddingBottom: (chatbot as any).chatWindowPaddingY || '0px',
+    // Apply blur if configured
+    ...((chatbot as any).chatWindowBackgroundBlur && (chatbot as any).chatWindowBackgroundBlur > 0 ? {
+      backdropFilter: `blur(${(chatbot as any).chatWindowBackgroundBlur}px)`,
+      WebkitBackdropFilter: `blur(${(chatbot as any).chatWindowBackgroundBlur}px)`,
+    } : {}),
   }
 }
 

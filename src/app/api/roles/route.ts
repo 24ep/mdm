@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { query } from '@/lib/db'
+import { query, db } from '@/lib/db'
 import { requireRole } from '@/lib/rbac'
 import { logger } from '@/lib/logger'
 import { validateQuery, validateBody } from '@/lib/api-validation'
@@ -26,38 +26,30 @@ export async function GET(request: NextRequest) {
 
     const level = queryValidation.data.level // 'global' or 'space' or null for all
 
-    let queryStr = 'SELECT id, name, description, level, is_system FROM public.roles'
-    const params: any[] = []
+    const roles = await db.role.findMany({
+      where: level ? { level } : undefined as any,
+      include: {
+        permissions: {
+          include: {
+            permission: true
+          }
+        }
+      },
+      orderBy: { name: 'asc' }
+    })
 
-    // Filter by level if specified
-    if (level) {
-      queryStr += ' WHERE level = $1'
-      params.push(level)
-    }
-
-    queryStr += ' ORDER BY name ASC'
-
-    const { rows: roles } = await query(queryStr, params)
-
-    const { rows: rolePerms } = await query(
-      `SELECT rp.role_id, p.id as permission_id, p.name, p.resource, p.action
-       FROM public.role_permissions rp
-       JOIN public.permissions p ON p.id = rp.permission_id`
-    )
-
-    const roleIdToPerms: Record<string, any[]> = {}
-    for (const rp of rolePerms) {
-      roleIdToPerms[rp.role_id] = roleIdToPerms[rp.role_id] || []
-      roleIdToPerms[rp.role_id].push({ id: rp.permission_id, name: rp.name, resource: rp.resource, action: rp.action })
-    }
-
-    const result = roles.map(r => ({
+    const result = roles.map((r: any) => ({
       id: r.id,
       name: r.name,
       description: r.description,
       level: r.level || 'space',
-      isSystem: r.is_system || false,
-      permissions: roleIdToPerms[r.id] || [],
+      isSystem: r.isSystem || false,
+      permissions: r.permissions.map((rp: any) => ({
+        id: rp.permission.id,
+        name: rp.permission.name,
+        resource: rp.permission.resource,
+        action: rp.permission.action
+      }))
     }))
 
     const duration = Date.now() - startTime
@@ -94,21 +86,28 @@ export async function POST(request: NextRequest) {
     const { name, description, level } = bodyValidation.data
 
     const roleLevel = level === 'global' ? 'global' : 'space'
-    const { rows } = await query(
-      'INSERT INTO public.roles (name, description, level, is_system) VALUES ($1, $2, $3, $4) RETURNING id, name, description, level, is_system',
-      [name, description || null, roleLevel, false]
-    )
+    
+    // Use Prisma Client to handle ID generation automatically
+    const role = await db.role.create({
+      data: {
+        name,
+        description: description || null,
+        level: roleLevel,
+        isSystem: false,
+      } as any
+    })
+
     const duration = Date.now() - startTime
     logger.apiResponse('POST', '/api/roles', 201, duration, {
-      roleId: rows[0].id
+      roleId: role.id
     })
     return addSecurityHeaders(NextResponse.json({
       role: {
-        id: rows[0].id,
-        name: rows[0].name,
-        description: rows[0].description,
-        level: rows[0].level,
-        isSystem: rows[0].is_system,
+        id: role.id,
+        name: role.name,
+        description: role.description,
+        level: (role as any).level,
+        isSystem: (role as any).isSystem, // Prisma maps is_system to isSystem
       }
     }, { status: 201 }))
   } catch (error: any) {
