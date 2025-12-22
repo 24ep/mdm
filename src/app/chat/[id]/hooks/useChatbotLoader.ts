@@ -80,118 +80,85 @@ export function useChatbotLoader({
   }, [chatbotId])
 
   const loadChatbot = async () => {
-    try {
-      // Best practice: Database is source of truth - try API first
-      // This ensures we always get the latest data when chatbot exists in database
-      if (isUuid(chatbotId)) {
-        // Check localStorage first to determine if we should make an API call
-        const saved = localStorage.getItem('ai-chatbots')
-        if (saved) {
-          const chatbots = JSON.parse(saved)
-          const found = chatbots.find((c: any) => c.id === chatbotId)
-          if (found) {
-            // Found in localStorage - check if it's been saved to database
-            const savedToDatabase = (found as any)._savedToDatabase === true
-            
-            if (savedToDatabase) {
-              // Chatbot has been saved to database - fetch latest version from API
-              try {
-                const response = await fetch(`/api/chatbots/${chatbotId}`)
-                if (response.ok) {
-                  const data = await response.json()
-                  if (data.chatbot) {
-                    // Found in database - use it (this is the source of truth)
-                    setChatbot(data.chatbot)
-                    if (onChatbotLoaded) {
-                      onChatbotLoaded(data.chatbot)
-                    }
-                    return
-                  }
-                } else if (response.status === 404) {
-                  // Not found in database but flag says it should be - use localStorage as fallback
-                  console.warn('Chatbot marked as saved to database but not found, using localStorage version')
-                  setChatbot(found)
-                  if (onChatbotLoaded) {
-                    onChatbotLoaded(found)
-                  }
-                  return
-                } else {
-                  // Other errors (500, etc.) - use localStorage as fallback
-                  console.error('API returned error status:', response.status)
-                  setChatbot(found)
-                  if (onChatbotLoaded) {
-                    onChatbotLoaded(found)
-                  }
-                  return
-                }
-              } catch (apiError) {
-                // Network error - use localStorage version
-                console.error('API load failed, using localStorage version:', apiError)
-                setChatbot(found)
-                if (onChatbotLoaded) {
-                  onChatbotLoaded(found)
-                }
-                return
-              }
-            } else {
-              // localStorage-only chatbot - skip API call to avoid 404 errors
-              setChatbot(found)
-              if (onChatbotLoaded) {
-                onChatbotLoaded(found)
-              }
-              return
-            }
+    // Helper for public fallback (guests/embeds)
+    const tryPublicApi = async () => {
+      try {
+        const res = await fetch(`/api/public/chatbots/${chatbotId}`)
+        if (res.ok) {
+          const d = await res.json()
+          if (d.chatbot) {
+            setChatbot(d.chatbot)
+            if (onChatbotLoaded) onChatbotLoaded(d.chatbot)
+            return true
           }
         }
-        
-        // Not in localStorage - try database (might be a database-only chatbot)
+      } catch (e) {
+        console.warn('Public API fallback failed', e)
+      }
+      return false
+    }
+
+    try {
+      if (isUuid(chatbotId)) {
+        // 1. Try Private API (Admin/Draft version)
         try {
           const response = await fetch(`/api/chatbots/${chatbotId}`)
-          if (response.ok) {
+          // Check for JSON content type to avoid handling auth redirects (HTML) as success
+          const contentType = response.headers.get('content-type')
+          
+          if (response.ok && contentType && contentType.includes('application/json')) {
             const data = await response.json()
             if (data.chatbot) {
-              // Found in database - use it
               setChatbot(data.chatbot)
-              if (onChatbotLoaded) {
-                onChatbotLoaded(data.chatbot)
-              }
+              if (onChatbotLoaded) onChatbotLoaded(data.chatbot)
               return
             }
-          } else if (response.status === 404) {
-            // Not found in database and not in localStorage
-            toast.error('Chatbot not found')
-            return
-          } else {
-            // Other errors (500, etc.)
-            console.error('API returned error status:', response.status)
-            toast.error('Failed to load chatbot from server')
-            return
           }
-        } catch (apiError) {
-          // Network errors
-          console.error('API load failed:', apiError)
-          toast.error('Failed to load chatbot from server')
-          return
+        } catch (e) {
+          // Failed to fetch private, continue to fallback
         }
-      } else {
-        // Non-UUID ID - only check localStorage (these are always localStorage-only)
+
+        // 2. Try Public API (Published version)
+        if (await tryPublicApi()) return
+
+        // 3. Fallback to LocalStorage
         const saved = localStorage.getItem('ai-chatbots')
         if (saved) {
           const chatbots = JSON.parse(saved)
           const found = chatbots.find((c: any) => c.id === chatbotId)
           if (found) {
             setChatbot(found)
-            if (onChatbotLoaded) {
-              onChatbotLoaded(found)
-            }
+            if (onChatbotLoaded) onChatbotLoaded(found)
             return
           }
         }
-        toast.error('Chatbot not found')
+
+        // 4. Not found anywhere
+        // Only show error toast if we're not in an iframe (to avoid spamming embeds)
+        if (!isInIframe) {
+          toast.error('Chatbot not found')
+        }
+      } else {
+        // Non-UUID ID - only check localStorage
+        const saved = localStorage.getItem('ai-chatbots')
+        if (saved) {
+          const chatbots = JSON.parse(saved)
+          const found = chatbots.find((c: any) => c.id === chatbotId)
+          if (found) {
+            setChatbot(found)
+            if (onChatbotLoaded) onChatbotLoaded(found)
+            return
+          }
+        }
+        if (!isInIframe) {
+          toast.error('Chatbot not found')
+        }
       }
     } catch (error) {
       console.error('Error loading chatbot:', error)
-      toast.error('Failed to load chatbot')
+      if (!isInIframe) {
+        toast.error('Failed to load chatbot')
+      }
     }
   }
 
