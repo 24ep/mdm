@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
       document.body.appendChild(widgetContainer);
     }
     
-    // Get widget configuration
+    // Get widget configuration - use config values only, no hardcoded defaults
     // For ChatKit, use theme accent color if available
     var isChatKit = chatbot.engineType === 'chatkit';
     var chatKitAccentColor = isChatKit && chatbot.chatkitOptions && chatbot.chatkitOptions.theme && chatbot.chatkitOptions.theme.color && chatbot.chatkitOptions.theme.color.accent && chatbot.chatkitOptions.theme.color.accent.primary
@@ -135,41 +135,41 @@ export async function GET(request: NextRequest) {
       : null;
     
     var widgetConfig = {
-      avatarStyle: chatbot.widgetAvatarStyle || 'circle',
-      position: chatbot.widgetPosition || 'bottom-right',
-      size: chatbot.widgetSize || '60px',
-      backgroundColor: chatbot.widgetBackgroundColor || chatKitAccentColor || chatbot.primaryColor || '#3b82f6',
-      borderColor: chatbot.widgetBorderColor || '#ffffff',
-      borderWidth: chatbot.widgetBorderWidth || '2px',
-      borderRadius: chatbot.widgetBorderRadius || '50%',
-      shadowColor: chatbot.widgetShadowColor || '#000000',
-      shadowBlur: chatbot.widgetShadowBlur || '8px',
-      shadowX: chatbot.widgetShadowX || '0px',
-      shadowY: chatbot.widgetShadowY || '0px',
-      shadowSpread: chatbot.widgetShadowSpread || '0px',
-      labelText: chatbot.widgetLabelText || 'Chat',
-      labelColor: chatbot.widgetLabelColor || '#ffffff',
-      logo: chatbot.logo || '',
-      animation: chatbot.widgetAnimation || 'fade',
-      autoShow: chatbot.widgetAutoShow !== undefined ? chatbot.widgetAutoShow : true,
-      autoShowDelay: chatbot.widgetAutoShowDelay || 0,
-      offsetX: chatbot.widgetOffsetX || '20px',
-      offsetY: chatbot.widgetOffsetY || '20px',
-      zIndex: chatbot.widgetZIndex || ${Z_INDEX.chatWidget},
-      showBadge: chatbot.showNotificationBadge || false,
-      badgeColor: chatbot.notificationBadgeColor || '#ef4444',
-      chatWidth: chatbot.chatWindowWidth || '380px',
-      chatHeight: chatbot.chatWindowHeight || '600px',
-      popoverPosition: chatbot.popoverPosition || 'left', // 'top' or 'left'
-      popoverMargin: chatbot.widgetPopoverMargin || '10px', // Margin between widget and popover
-      widgetBlur: chatbot.widgetBackgroundBlur || 0, // Widget blur percentage
-      widgetOpacity: chatbot.widgetBackgroundOpacity !== undefined ? chatbot.widgetBackgroundOpacity : 100, // Widget opacity percentage
-      chatBlur: chatbot.chatWindowBackgroundBlur || 0, // Chat window blur percentage
-      chatOpacity: chatbot.chatWindowBackgroundOpacity !== undefined ? chatbot.chatWindowBackgroundOpacity : 100, // Chat window opacity percentage
-      overlayEnabled: chatbot.overlayEnabled !== undefined ? chatbot.overlayEnabled : false, // Overlay enabled
-      overlayColor: chatbot.overlayColor || '#000000', // Overlay color
-      overlayOpacity: chatbot.overlayOpacity !== undefined ? chatbot.overlayOpacity : 50, // Overlay opacity percentage
-      overlayBlur: chatbot.overlayBlur || 0 // Overlay blur percentage
+      avatarStyle: chatbot.widgetAvatarStyle,
+      position: chatbot.widgetPosition,
+      size: chatbot.widgetSize,
+      backgroundColor: chatbot.widgetBackgroundColor || chatKitAccentColor || chatbot.primaryColor,
+      borderColor: chatbot.widgetBorderColor,
+      borderWidth: chatbot.widgetBorderWidth,
+      borderRadius: chatbot.widgetBorderRadius,
+      shadowColor: chatbot.widgetShadowColor,
+      shadowBlur: chatbot.widgetShadowBlur,
+      shadowX: chatbot.widgetShadowX,
+      shadowY: chatbot.widgetShadowY,
+      shadowSpread: chatbot.widgetShadowSpread,
+      labelText: chatbot.widgetLabelText,
+      labelColor: chatbot.widgetLabelColor,
+      logo: chatbot.logo,
+      animation: chatbot.widgetAnimation,
+      autoShow: chatbot.widgetAutoShow,
+      autoShowDelay: chatbot.widgetAutoShowDelay,
+      offsetX: chatbot.widgetOffsetX,
+      offsetY: chatbot.widgetOffsetY,
+      zIndex: chatbot.widgetZIndex,
+      showBadge: chatbot.showNotificationBadge,
+      badgeColor: chatbot.notificationBadgeColor,
+      chatWidth: chatbot.chatWindowWidth,
+      chatHeight: chatbot.chatWindowHeight,
+      popoverPosition: chatbot.popoverPosition,
+      popoverMargin: chatbot.widgetPopoverMargin,
+      widgetBlur: chatbot.widgetBackgroundBlur,
+      widgetOpacity: chatbot.widgetBackgroundOpacity,
+      chatBlur: chatbot.chatWindowBackgroundBlur,
+      chatOpacity: chatbot.chatWindowBackgroundOpacity,
+      overlayEnabled: chatbot.overlayEnabled,
+      overlayColor: chatbot.overlayColor,
+      overlayOpacity: chatbot.overlayOpacity,
+      overlayBlur: chatbot.overlayBlur
     };
     
     // Calculate position with custom offsets
