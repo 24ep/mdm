@@ -152,25 +152,31 @@ export function ConfigTab({ formData, setFormData }: ConfigTabProps) {
 
   return (
     <div className="w-full">
-      <Tabs defaultValue="conversation" className="flex w-full gap-6">
-        {/* Vertical Sidebar Menu */}
+      <Tabs defaultValue={isChatKitEngine ? "features" : "conversation"} className="flex w-full gap-6">
+        {/* Vertical Sidebar Menu - only show tabs that have content */}
         <TabsList orientation="vertical" className="bg-muted/30 p-1 min-h-[400px] h-fit flex-col justify-start items-stretch gap-1 w-[220px] rounded-lg shrink-0">
-          <TabsTrigger value="conversation" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
-            <MessageSquare className="h-4 w-4" />
-            Conversation
-          </TabsTrigger>
-          <TabsTrigger value="prompts" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
-            <Zap className="h-4 w-4" />
-            Prompts
-          </TabsTrigger>
+          {!isChatKitEngine && (
+            <TabsTrigger value="conversation" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
+              <MessageSquare className="h-4 w-4" />
+              Conversation
+            </TabsTrigger>
+          )}
+          {!isChatKitEngine && (
+            <TabsTrigger value="prompts" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
+              <Zap className="h-4 w-4" />
+              Prompts
+            </TabsTrigger>
+          )}
           <TabsTrigger value="features" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
             <Upload className="h-4 w-4" />
             Features
           </TabsTrigger>
-          <TabsTrigger value="voice" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
-            <Mic className="h-4 w-4" />
-            Voice
-          </TabsTrigger>
+          {!isChatKitEngine && (
+            <TabsTrigger value="voice" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
+              <Mic className="h-4 w-4" />
+              Voice
+            </TabsTrigger>
+          )}
           {isChatKitEngine && (
             <TabsTrigger value="chatkit" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
               <Settings className="h-4 w-4" />
