@@ -25,8 +25,8 @@ export async function GET(request: NextRequest) {
   
   // Load chatbot config
   function loadChatbotConfig(callback) {
-    // Try API first, then localStorage as fallback
-    fetch(origin + '/api/chatbots/' + chatbotId)
+    // Try public API first (for embeds), then localStorage as fallback
+    fetch(origin + '/api/public/chatbots/' + chatbotId)
       .then(function(response) {
         if (response.ok) {
           return response.json();
