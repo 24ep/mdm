@@ -209,17 +209,21 @@ async function putHandler(
     const latestVersion = updatedChatbot.versions[0]
     const existingConfig = latestVersion?.config || {}
 
+    // Build the new config - preserve existing values unless explicitly provided
+    // Important: Don't use || null conversion which would lose empty string values
+    const newConfig = {
+      ...existingConfig,
+      ...versionConfig,
+      name: name !== undefined ? name : existingConfig.name,
+      website: website !== undefined ? website : existingConfig.website,
+      description: description !== undefined ? description : existingConfig.description,
+    }
+
     await db.chatbotVersion.create({
       data: {
         chatbotId,
         version: currentVersion || latestVersion?.version || '1.0.0',
-        config: {
-          ...existingConfig,
-          ...versionConfig,
-          name: name || existingConfig.name,
-          website: website || existingConfig.website,
-          description: description || existingConfig.description,
-        },
+        config: newConfig,
         isPublished: isPublished || false,
         createdBy: session.user.id
       }
