@@ -22,6 +22,100 @@ export async function GET(request: NextRequest) {
   // Try to determine origin dynamically from the script source
   // This handles cases where the server is behind a proxy or accessed via a different hostname
   var scriptUrl = document.currentScript ? document.currentScript.src : null;
+  if (!scriptUrl) {
+    // Fallback for async injected scripts (document.currentScript is null for them)
+    // We look for a script tag that matches our endpoint and chatbot ID
+    var scripts = document.querySelectorAll('script[src*="/api/embed"]');
+    for (var i = 0; i < scripts.length; i++) {
+      if (scripts[i].src.indexOf(chatbotId) !== -1) {
+        scriptUrl = scripts[i].src;
+        break;
+      }
+    }
+  }
+  
+  var dynamicOrigin = scriptUrl ? new URL(scriptUrl).origin : null;
+  // Fallback to server-detected origin
+  var serverOrigin = dynamicOrigin || '${serverOrigin}';
+  
+  console.log('[Chatbot] Initializing widget for:', chatbotId);
+  console.log('[Chatbot] Server origin:', serverOrigin);
+  if (dynamicOrigin) {
+    console.log('[Chatbot] Detected origin from script:', dynamicOrigin);
+  } else {
+    console.log('[Chatbot] Using fallback server origin');
+  }
+
+  // Prevent multiple instances
+  if (window['chatbotLoaded_' + chatbotId]) {
+    console.warn('[Chatbot] Widget already loaded');
+    return;
+  }
+  window['chatbotLoaded_' + chatbotId] = true;
+  
+  // Load chatbot config
+  function loadChatbotConfig(callback) {
+    var apiUrl = serverOrigin + '/api/public/chatbots/' + chatbotId;
+    console.log('[Chatbot] Fetching config from:', apiUrl);
+    
+    fetch(apiUrl)
+      .then(function(response) {
+        if (response.ok) {
+          return response.json();
+        }
+        throw new Error('API request failed: ' + response.status);
+      })
+      .then(function(data) {
+        if (data.chatbot) {
+          console.log('[Chatbot] Config loaded successfully');
+          callback(data.chatbot);
+          return;
+        }
+        throw new Error('Chatbot object missing in response');
+      })
+      .catch(function(err) {
+        console.error('[Chatbot] Failed to load config:', err);
+        // Fallback to localStorage
+        try {
+          var saved = localStorage.getItem('ai-chatbots');
+          if (saved) {
+            var chatbots = JSON.parse(saved);
+            var chatbot = chatbots.find(function(c) { return c.id === chatbotId; });
+            if (chatbot) {
+              console.log('[Chatbot] Using cached config from localStorage');
+              callback(chatbot);
+              return;
+            }
+          }
+        } catch (e) {
+          console.error('[Chatbot] Error reading localStorage:', e);
+        }
+        callback(null);
+      });
+  }
+  }); // End of loadChatbotConfig callback (NOT YET - Wait this matches line 68 in original file)
+  // Actually, I am replacing the TOP part of the file, up to line 64 roughly.
+  // The structure is:
+  // (function() { ... loadChatbotConfig defined ... loadChatbotConfig(function(chatbot) { ...
+  
+  // Wait, I need to be careful with the replacement chunks.
+  // The previous replace replaced lines 19-64.
+  // I will target the same block but update line 669 as well (Cache-Control).
+  
+  // Let's do it in 2 chunks to be safe.
+  
+  
+// Chunk 1: Script Logic
+  var scriptUrl = document.currentScript ? document.currentScript.src : null;
+  if (!scriptUrl) {
+    var scripts = document.querySelectorAll('script[src*="/api/embed"]');
+    for (var i = 0; i < scripts.length; i++) {
+        if (scripts[i].src.indexOf(chatbotId) !== -1) {
+            scriptUrl = scripts[i].src;
+            break;
+        }
+    }
+  }
   var dynamicOrigin = scriptUrl ? new URL(scriptUrl).origin : null;
   // Fallback to server-detected origin
   var serverOrigin = dynamicOrigin || '${serverOrigin}';
@@ -29,11 +123,12 @@ export async function GET(request: NextRequest) {
   console.log('[Chatbot] Initializing widget for:', chatbotId);
   console.log('[Chatbot] Server origin:', serverOrigin);
 
-  // Prevent multiple instances
-  if (window['chatbotLoaded_' + chatbotId]) {
-    console.warn('[Chatbot] Widget already loaded');
-    return;
-  }
+// Chunk 2: Headers
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+
+
   window['chatbotLoaded_' + chatbotId] = true;
   
   // Load chatbot config
@@ -678,7 +773,9 @@ export async function GET(request: NextRequest) {
   return new NextResponse(script, {
     headers: {
       'Content-Type': 'application/javascript',
-      'Cache-Control': 'public, max-age=3600',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, OPTIONS',
       'Access-Control-Allow-Private-Network': 'true',
