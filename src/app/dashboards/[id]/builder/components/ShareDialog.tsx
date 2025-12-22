@@ -60,12 +60,17 @@ export function ShareDialog({ open, onOpenChange, dashboardName, shareSettings, 
     }
   }
 
-  const copyToClipboard = async (text: string, type: string) => {
+  const copyToClipboardHandler = async (text: string, type: string) => {
     try {
-      await navigator.clipboard.writeText(text)
-      setCopiedText(type)
-      setTimeout(() => setCopiedText(null), 2000)
-      toast.success(`${type} copied to clipboard`)
+      const { copyToClipboard } = await import('@/lib/clipboard')
+      const success = await copyToClipboard(text)
+      if (success) {
+        setCopiedText(type)
+        setTimeout(() => setCopiedText(null), 2000)
+        toast.success(`${type} copied to clipboard`)
+      } else {
+        toast.error('Failed to copy to clipboard')
+      }
     } catch (error) {
       toast.error('Failed to copy to clipboard')
     }
@@ -235,7 +240,7 @@ export function ShareDialog({ open, onOpenChange, dashboardName, shareSettings, 
                     />
                     <Button
                       variant="outline"
-                      onClick={() => copyToClipboard(
+                      onClick={() => copyToClipboardHandler(
                         `${window.location.origin}/dashboard/${settings.public_link}`,
                         'Link'
                       )}
@@ -265,7 +270,7 @@ export function ShareDialog({ open, onOpenChange, dashboardName, shareSettings, 
                 />
                 <Button
                   variant="outline"
-                  onClick={() => copyToClipboard(generateEmbedCode(), 'Embed Code')}
+                  onClick={() => copyToClipboardHandler(generateEmbedCode(), 'Embed Code')}
                   className="w-full"
                 >
                   {copiedText === 'Embed Code' ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}

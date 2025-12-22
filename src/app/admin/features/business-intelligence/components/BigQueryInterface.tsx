@@ -491,12 +491,18 @@ export function BigQueryInterface({ selectedSpace: externalSelectedSpace, onSpac
         updateCurrentTabQuery(`SELECT column_name, data_type, is_nullable FROM \`${projectName}.INFORMATION_SCHEMA.COLUMNS\` WHERE table_name = '${tableName}';`)
         break
       case 'copy_name':
-        navigator.clipboard.writeText(tableName)
-        toast.success('Table name copied to clipboard')
+        import('@/lib/clipboard').then(({ copyToClipboard }) => {
+          copyToClipboard(tableName).then(success => {
+            if (success) toast.success('Table name copied to clipboard')
+          })
+        })
         break
       case 'copy_path':
-        navigator.clipboard.writeText(`${projectName}.${tableName}`)
-        toast.success('Table path copied to clipboard')
+        import('@/lib/clipboard').then(({ copyToClipboard }) => {
+          copyToClipboard(`${projectName}.${tableName}`).then(success => {
+            if (success) toast.success('Table path copied to clipboard')
+          })
+        })
         break
       case 'drop':
         // Prevent dropping internal data source tables

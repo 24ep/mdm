@@ -391,10 +391,15 @@ export function StorageManagement() {
     }
   }
 
-  const handleCopyUrl = (file: StorageFile) => {
+  const handleCopyUrl = async (file: StorageFile) => {
     if (file.publicUrl) {
-      navigator.clipboard.writeText(file.publicUrl)
-      toast.success('Public URL copied to clipboard')
+      const { copyToClipboard } = await import('@/lib/clipboard')
+      const success = await copyToClipboard(file.publicUrl)
+      if (success) {
+        toast.success('Public URL copied to clipboard')
+      } else {
+        toast.error('Failed to copy URL')
+      }
     }
   }
 

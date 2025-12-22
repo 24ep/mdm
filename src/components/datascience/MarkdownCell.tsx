@@ -177,9 +177,14 @@ export function MarkdownCell({
     return html
   }
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(content)
-    toast.success('Markdown copied to clipboard')
+  const copyToClipboard = async () => {
+    const { copyToClipboard: copy } = await import('@/lib/clipboard')
+    const success = await copy(content)
+    if (success) {
+      toast.success('Markdown copied to clipboard')
+    } else {
+      toast.error('Failed to copy')
+    }
   }
 
   const exportMarkdown = () => {
@@ -461,7 +466,10 @@ Write your documentation here using **Markdown** syntax.
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => navigator.clipboard.writeText(JSON.stringify(output, null, 2))}
+                    onClick={async () => {
+                      const { copyToClipboard } = await import('@/lib/clipboard')
+                      await copyToClipboard(JSON.stringify(output, null, 2))
+                    }}
                     className="h-6 w-6 p-0"
                   >
                     <Copy className="h-3 w-3" />

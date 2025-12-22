@@ -529,15 +529,18 @@ export function DataScienceNotebook({
     setSelectedCellIds(allCellIds)
   }
 
-  const copySelectedCells = () => {
+  const copySelectedCells = async () => {
     const selectedCells = notebook.cells.filter(cell => selectedCellIds.has(cell.id))
-    navigator.clipboard.writeText(JSON.stringify(selectedCells, null, 2))
+    const { copyToClipboard } = await import('@/lib/clipboard')
+    await copyToClipboard(JSON.stringify(selectedCells, null, 2))
     toast.success(`${selectedCells.length} cells copied`)
   }
 
-  const pasteCells = () => {
-    navigator.clipboard.readText().then(text => {
-      try {
+  const pasteCells = async () => {
+    try {
+      const { pasteFromClipboard } = await import('@/lib/clipboard')
+      const text = await pasteFromClipboard()
+      if (text) {
         const pastedCells = JSON.parse(text)
         if (Array.isArray(pastedCells)) {
           const newCells = pastedCells.map(cell => ({
@@ -554,10 +557,10 @@ export function DataScienceNotebook({
           
           toast.success(`${newCells.length} cells pasted`)
         }
-      } catch (error) {
-        toast.error('Failed to paste cells')
       }
-    })
+    } catch {
+      toast.error('Failed to paste cells')
+    }
   }
 
   const undo = () => {

@@ -164,9 +164,14 @@ console.log("Hello, TypeScript!");`
     }
   }
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(content)
-    toast.success('Code copied to clipboard')
+  const copyToClipboard = async () => {
+    const { copyToClipboard: copy } = await import('@/lib/clipboard')
+    const success = await copy(content)
+    if (success) {
+      toast.success('Code copied to clipboard')
+    } else {
+      toast.error('Failed to copy code')
+    }
   }
 
   const formatOutput = (output: any) => {
@@ -454,7 +459,10 @@ console.log("Hello, TypeScript!");`
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => navigator.clipboard.writeText(formatOutput(output))}
+                    onClick={async () => {
+                      const { copyToClipboard } = await import('@/lib/clipboard')
+                      await copyToClipboard(formatOutput(output))
+                    }}
                     className="h-6 w-6 p-0"
                   >
                     <Copy className="h-3 w-3" />

@@ -389,9 +389,11 @@ export function createNotebookHandlers(
     }
   }
 
-  const pasteCell = () => {
-    navigator.clipboard.readText().then(text => {
-      try {
+  const pasteCell = async () => {
+    try {
+      const { pasteFromClipboard } = await import('@/lib/clipboard')
+      const text = await pasteFromClipboard()
+      if (text) {
         const cell = JSON.parse(text)
         const newCell = { ...cell, id: generateCellId() }
         setNotebook((prev: Notebook) => ({
@@ -401,10 +403,10 @@ export function createNotebookHandlers(
         }))
         setActiveCellId(newCell.id)
         toast.success('Cell pasted')
-      } catch (error) {
-        toast.error('Invalid cell data in clipboard')
       }
-    })
+    } catch {
+      toast.error('Invalid cell data in clipboard')
+    }
   }
 
   const mergeCells = () => {
@@ -891,26 +893,34 @@ export function createNotebookHandlers(
   }
 
   // Common cell feature handlers
-  const handleCopyCell = (cellId: string) => {
+  const handleCopyCell = async (cellId: string) => {
     const cell = notebook.cells.find((c: NotebookCell) => c.id === cellId)
     if (cell) {
       // Copy to clipboard
-      navigator.clipboard.writeText(cell.content)
-      toast.success('Cell copied to clipboard')
+      const { copyToClipboard } = await import('@/lib/clipboard')
+      const success = await copyToClipboard(cell.content)
+      if (success) {
+        toast.success('Cell copied to clipboard')
+      } else {
+        toast.error('Failed to copy cell')
+      }
     }
   }
 
-  const handleCutCell = (cellId: string) => {
+  const handleCutCell = async (cellId: string) => {
     const cell = notebook.cells.find((c: NotebookCell) => c.id === cellId)
     if (cell) {
-      navigator.clipboard.writeText(cell.content)
+      const { copyToClipboard } = await import('@/lib/clipboard')
+      await copyToClipboard(cell.content)
       deleteCell(cellId)
       toast.success('Cell cut and copied to clipboard')
     }
   }
 
-  const handlePasteCell = (cellId: string) => {
-    navigator.clipboard.readText().then(text => {
+  const handlePasteCell = async (cellId: string) => {
+    try {
+      const { pasteFromClipboard } = await import('@/lib/clipboard')
+      const text = await pasteFromClipboard()
       if (text) {
         const newCell = createNewCell('code')
         newCell.content = text
@@ -923,9 +933,9 @@ export function createNotebookHandlers(
         }))
         toast.success('Cell pasted')
       }
-    }).catch(() => {
+    } catch {
       toast.error('Failed to paste cell')
-    })
+    }
   }
 
   const handleMergeCells = (cellId: string, direction: 'above' | 'below') => {

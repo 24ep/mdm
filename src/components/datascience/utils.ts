@@ -112,7 +112,11 @@ export const importNotebook = (file: File): Promise<any> => {
 
 export const copyToClipboard = async (text: string): Promise<void> => {
   try {
-    await navigator.clipboard.writeText(text)
+    const { copyToClipboard: copy } = await import('@/lib/clipboard')
+    const success = await copy(text)
+    if (!success) {
+      throw new Error('Failed to copy')
+    }
   } catch (error) {
     console.error('Failed to copy to clipboard:', error)
     throw error

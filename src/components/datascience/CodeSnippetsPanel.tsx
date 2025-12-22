@@ -116,9 +116,14 @@ export function CodeSnippetsPanel({
     toast.success(`Snippet "${snippet.name}" inserted`)
   }
 
-  const handleCopy = (code: string) => {
-    navigator.clipboard.writeText(code)
-    toast.success('Code copied to clipboard')
+  const handleCopy = async (code: string) => {
+    const { copyToClipboard } = await import('@/lib/clipboard')
+    const success = await copyToClipboard(code)
+    if (success) {
+      toast.success('Code copied to clipboard')
+    } else {
+      toast.error('Failed to copy')
+    }
   }
 
   return (

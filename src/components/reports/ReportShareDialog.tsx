@@ -50,11 +50,16 @@ export function ReportShareDialog({ reportId, open, onOpenChange }: ReportShareD
     }
   }
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(shareLink)
-    setCopied(true)
-    toast.success('Link copied to clipboard')
-    setTimeout(() => setCopied(false), 2000)
+  const copyToClipboardHandler = async () => {
+    const { copyToClipboard } = await import('@/lib/clipboard')
+    const success = await copyToClipboard(shareLink)
+    if (success) {
+      setCopied(true)
+      toast.success('Link copied to clipboard')
+      setTimeout(() => setCopied(false), 2000)
+    } else {
+      toast.error('Failed to copy')
+    }
   }
 
   return (
@@ -134,7 +139,7 @@ export function ReportShareDialog({ reportId, open, onOpenChange }: ReportShareD
                   <Button
                     variant="outline"
                     size="icon"
-                    onClick={copyToClipboard}
+                    onClick={copyToClipboardHandler}
                   >
                     {copied ? (
                       <Check className="h-4 w-4 text-green-500" />

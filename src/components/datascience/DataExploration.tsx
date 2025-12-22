@@ -264,11 +264,16 @@ export function DataExploration({
     toast.success('Analysis exported')
   }
 
-  const copyAnalysis = () => {
+  const copyAnalysis = async () => {
     if (!analysisResults) return
     
-    navigator.clipboard.writeText(JSON.stringify(analysisResults, null, 2))
-    toast.success('Analysis copied to clipboard')
+    const { copyToClipboard } = await import('@/lib/clipboard')
+    const success = await copyToClipboard(JSON.stringify(analysisResults, null, 2))
+    if (success) {
+      toast.success('Analysis copied to clipboard')
+    } else {
+      toast.error('Failed to copy analysis')
+    }
   }
 
   const addFilter = () => {

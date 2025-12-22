@@ -125,10 +125,15 @@ export function MobileExportDialog({
       : JSON.stringify(exportResult.data, null, 2)
     
     try {
-      await navigator.clipboard.writeText(content)
-      setCopied(true)
-      toast.success('Copied to clipboard!')
-      setTimeout(() => setCopied(false), 2000)
+      const { copyToClipboard } = await import('@/lib/clipboard')
+      const success = await copyToClipboard(content)
+      if (success) {
+        setCopied(true)
+        toast.success('Copied to clipboard!')
+        setTimeout(() => setCopied(false), 2000)
+      } else {
+        toast.error('Failed to copy')
+      }
     } catch (error) {
       toast.error('Failed to copy')
     }

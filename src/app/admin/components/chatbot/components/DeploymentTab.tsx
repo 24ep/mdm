@@ -113,7 +113,7 @@ export function DeploymentTab({
           />
           <Button
             variant="outline"
-            onClick={() => {
+            onClick={async () => {
               const chatbotId = selectedChatbot?.id || 'new-chatbot-id'
               const chatbot = {
                 ...formData,
@@ -122,8 +122,13 @@ export function DeploymentTab({
                 customEmbedDomain: formData.customEmbedDomain
               } as Chatbot
               const code = onGenerateEmbedCode(chatbot)
-              navigator.clipboard.writeText(code)
-              toast.success('Embed code copied to clipboard')
+              const { copyToClipboard } = await import('@/lib/clipboard')
+              const success = await copyToClipboard(code)
+              if (success) {
+                toast.success('Embed code copied to clipboard')
+              } else {
+                toast.error('Failed to copy to clipboard')
+              }
             }}
           >
             <Copy className="h-4 w-4" />

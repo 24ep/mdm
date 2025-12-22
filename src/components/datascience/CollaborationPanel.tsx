@@ -272,9 +272,14 @@ export function CollaborationPanel({
     }
   }
 
-  const copyShareLink = () => {
-    navigator.clipboard.writeText(shareLink)
-    toast.success('Share link copied to clipboard')
+  const copyShareLink = async () => {
+    const { copyToClipboard } = await import('@/lib/clipboard')
+    const success = await copyToClipboard(shareLink)
+    if (success) {
+      toast.success('Share link copied to clipboard')
+    } else {
+      toast.error('Failed to copy share link')
+    }
   }
 
   const inviteUser = async () => {

@@ -132,7 +132,8 @@ export function SpaceDashboard({
 
       if (response.ok) {
         const data = await response.json()
-        navigator.clipboard.writeText(data.shareUrl)
+        const { copyToClipboard } = await import('@/lib/clipboard')
+        await copyToClipboard(data.shareUrl)
         // Show success message
       }
     } catch (error) {

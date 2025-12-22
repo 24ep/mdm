@@ -297,9 +297,14 @@ export function APIManagement() {
     }
   }
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-    showSuccess('Copied to clipboard')
+  const copyToClipboardHandler = async (text: string) => {
+    const { copyToClipboard } = await import('@/lib/clipboard')
+    const success = await copyToClipboard(text)
+    if (success) {
+      showSuccess('Copied to clipboard')
+    } else {
+      showError('Failed to copy')
+    }
   }
 
   const getStatusIcon = (isActive: boolean) => {
@@ -479,7 +484,7 @@ export function APIManagement() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => copyToClipboard(key.key)}
+                      onClick={() => copyToClipboardHandler(key.key)}
                     >
                       <Copy className="h-3 w-3" />
                     </Button>

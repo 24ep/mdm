@@ -283,9 +283,14 @@ export function FileManager({
   const handleFileShare = async (fileId: string) => {
     try {
       const shareLink = await onFileShare(fileId, 'read')
-      navigator.clipboard.writeText(shareLink)
-      toast.success('Share link copied to clipboard')
-    } catch (error) {
+      const { copyToClipboard } = await import('@/lib/clipboard')
+      const success = await copyToClipboard(shareLink)
+      if (success) {
+        toast.success('Share link copied to clipboard')
+      } else {
+        toast.error('Failed to copy share link')
+      }
+    } catch {
       toast.error('Failed to create share link')
     }
   }

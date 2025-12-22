@@ -156,9 +156,14 @@ export function BigQueryDataSource({ onDataLoad, onQueryExecute }: BigQueryDataS
     toast.success('Data exported to CSV')
   }
 
-  const copyQuery = (query: string) => {
-    navigator.clipboard.writeText(query)
-    toast.success('Query copied to clipboard')
+  const copyQuery = async (query: string) => {
+    const { copyToClipboard } = await import('@/lib/clipboard')
+    const success = await copyToClipboard(query)
+    if (success) {
+      toast.success('Query copied to clipboard')
+    } else {
+      toast.error('Failed to copy query')
+    }
   }
 
   const loadFromHistory = (query: string) => {

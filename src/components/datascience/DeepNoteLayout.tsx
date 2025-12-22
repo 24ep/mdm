@@ -735,17 +735,24 @@ export function DeepNoteLayout({
     setSelectedCellIds(new Set(notebook.cells.map(cell => cell.id)))
   }
 
-  const copyCell = (cellId: string) => {
+  const copyCell = async (cellId: string) => {
     const cell = notebook.cells.find(c => c.id === cellId)
     if (cell) {
-      navigator.clipboard.writeText(JSON.stringify(cell))
-      toast.success('Cell copied to clipboard')
+      const { copyToClipboard } = await import('@/lib/clipboard')
+      const success = await copyToClipboard(JSON.stringify(cell))
+      if (success) {
+        toast.success('Cell copied to clipboard')
+      } else {
+        toast.error('Failed to copy cell')
+      }
     }
   }
 
-  const pasteCell = () => {
-    navigator.clipboard.readText().then(text => {
-      try {
+  const pasteCell = async () => {
+    try {
+      const { pasteFromClipboard } = await import('@/lib/clipboard')
+      const text = await pasteFromClipboard()
+      if (text) {
         const cell = JSON.parse(text)
         const newCell = { ...cell, id: `cell-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` }
         setNotebook(prev => ({
@@ -755,10 +762,10 @@ export function DeepNoteLayout({
         }))
         setActiveCellId(newCell.id)
         toast.success('Cell pasted')
-      } catch (error) {
-        toast.error('Invalid cell data in clipboard')
       }
-    })
+    } catch {
+      toast.error('Invalid cell data in clipboard')
+    }
   }
 
   const mergeCells = () => {

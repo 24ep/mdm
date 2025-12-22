@@ -41,9 +41,12 @@ export function CellOutput({
 
   const copyToClipboard = async (text: string) => {
     try {
-      await navigator.clipboard.writeText(text)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      const { copyToClipboard: copy } = await import('@/lib/clipboard')
+      const success = await copy(text)
+      if (success) {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      }
     } catch (error) {
       console.error('Failed to copy:', error)
     }
