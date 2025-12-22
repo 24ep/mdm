@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Z_INDEX } from '@/lib/z-index'
+import { db } from '@/lib/db'
+import { renderToStaticMarkup } from 'react-dom/server'
+import * as Icons from 'lucide-react'
+import React from 'react'
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
@@ -11,9 +15,42 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-  // Generate embed script
-  // Get the origin from the request (this is the MDM server origin)
-  const serverOrigin = request.nextUrl.origin
+    // Fetch chatbot configuration server-side
+    const chatbot = await db.chatbot.findUnique({
+      where: { id: chatbotId }
+    })
+
+    if (!chatbot) {
+      return new NextResponse("Chatbot not found", { status: 404 })
+    }
+
+    // Generate Icon SVG if needed
+    let iconSvg = ''
+    if (chatbot.avatarType !== 'image') {
+      const IconName = (chatbot.avatarIcon || 'Bot') as keyof typeof Icons
+      // @ts-ignore - Dynamic access to icons
+      const IconComponent = Icons[IconName] || Icons.Bot
+      const iconColor = chatbot.avatarIconColor || '#ffffff'
+      // Render SVG with white color (or configured color) as it usually appears on a colored button
+      // forcing white for the button icon usually looks best on colored backgrounds, 
+      // but ChatPage uses avatarIconColor. We'll use the configured color.
+      iconSvg = renderToStaticMarkup(React.createElement(IconComponent, { 
+        size: 24, 
+        color: iconColor,
+        strokeWidth: 2
+      }))
+    }
+
+    // Render Close Icon (X) server-side to match emulator style
+    const closeIconColor = chatbot.avatarIconColor || '#ffffff'
+    const closeIconSvg = renderToStaticMarkup(React.createElement(Icons.X, {
+      size: 24,
+      color: closeIconColor,
+      strokeWidth: 2
+    }))
+
+    // Get the origin from the request (this is the MDM server origin)
+    const serverOrigin = request.nextUrl.origin
 
   const script = `
 (function() {
@@ -54,53 +91,18 @@ export async function GET(request: NextRequest) {
   }
   window['chatbotLoaded_' + chatbotId] = true;
   
-  // Load chatbot config
-  function loadChatbotConfig(callback) {
-    var apiUrl = serverOrigin + '/api/public/chatbots/' + chatbotId;
-    console.log('[Chatbot] Fetching config from:', apiUrl);
-    
-    fetch(apiUrl)
-      .then(function(response) {
-        if (response.ok) {
-          return response.json();
-        }
-        throw new Error('API request failed: ' + response.status);
-      })
-      .then(function(data) {
-        if (data.chatbot) {
-          console.log('[Chatbot] Config loaded successfully');
-          callback(data.chatbot);
-          return;
-        }
-        throw new Error('Chatbot object missing in response');
-      })
-      .catch(function(err) {
-        console.error('[Chatbot] Failed to load config:', err);
-        // Fallback to localStorage
-        try {
-          var saved = localStorage.getItem('ai-chatbots');
-          if (saved) {
-            var chatbots = JSON.parse(saved);
-            var chatbot = chatbots.find(function(c) { return c.id === chatbotId; });
-            if (chatbot) {
-              console.log('[Chatbot] Using cached config from localStorage');
-              callback(chatbot);
-              return;
-            }
-          }
-        } catch (e) {
-          console.error('[Chatbot] Error reading localStorage:', e);
-        }
-        callback(null);
-      });
+  // Inject server-fetched config directly
+  var chatbot = ${JSON.stringify(chatbot)};
+  var iconSvg = ${JSON.stringify(iconSvg)};
+  var closeIconSvg = ${JSON.stringify(closeIconSvg)};
+  
+  if (!chatbot) {
+    console.error('Chatbot config missing');
+    return;
   }
 
-  loadChatbotConfig(function(chatbot) {
-    if (!chatbot) {
-      console.error('Chatbot not found:', chatbotId);
-      // Show error state (optional - can be removed if not needed)
-      return;
-    }
+  // Legacy load check (keep for compatibility if needed, but we have config now)
+  console.log('[Chatbot] Config loaded server-side for:', chatbotId);
   
     if (type === 'popover') {
     // Create popover widget (Facebook Messenger style)
@@ -252,7 +254,9 @@ export async function GET(request: NextRequest) {
     
     // Create button content based on avatar style
     if (widgetConfig.avatarStyle === 'circle-with-label') {
-      button.innerHTML = (widgetConfig.logo ? '<img src="' + widgetConfig.logo + '" style="width: 100%; height: 100%; border-radius: ' + avatarBorderRadius + '; object-fit: cover;" onerror="this.style.display=\\'none\\'; this.parentElement.innerHTML=\\'💬\\'; this.parentElement.style.fontSize=\\'24px\\'; this.parentElement.style.color=\\'white\\';">' : '<span style="font-size: 24px; color: white;">💬</span>');
+      var iconHtml = widgetConfig.logo ? '<img src="' + widgetConfig.logo + '" style="width: 100%; height: 100%; border-radius: ' + avatarBorderRadius + '; object-fit: cover;" onerror="this.style.display=\\'none\\'; this.parentElement.innerHTML=\\'' + (iconSvg || '💬') + '\\';">' : (iconSvg || '<span style="font-size: 24px; color: white;">💬</span>');
+      
+      button.innerHTML = iconHtml;
       var buttonBgStyle = getWidgetBackgroundStyle(widgetConfig.backgroundColor, widgetConfig.widgetBlur, widgetConfig.widgetOpacity);
       var shadowX = parseFloat(widgetConfig.shadowX) || 0;
       var shadowY = parseFloat(widgetConfig.shadowY) || 0;
@@ -261,7 +265,7 @@ export async function GET(request: NextRequest) {
       var boxShadow = (shadowBlur !== 0 || shadowX !== 0 || shadowY !== 0 || shadowSpread !== 0)
         ? shadowX + 'px ' + shadowY + 'px ' + shadowBlur + 'px ' + shadowSpread + 'px ' + widgetConfig.shadowColor
         : 'none';
-      button.style.cssText = 'width: ' + widgetConfig.size + '; height: ' + widgetConfig.size + '; border-radius: ' + avatarBorderRadius + '; ' + buttonBgStyle + 'border: ' + widgetConfig.borderWidth + ' solid ' + widgetConfig.borderColor + '; color: white; font-size: 24px; cursor: pointer; box-shadow: ' + boxShadow + '; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; padding: 0; margin: 0;';
+      button.style.cssText = 'width: ' + widgetConfig.size + '; height: ' + widgetConfig.size + '; border-radius: ' + avatarBorderRadius + '; ' + buttonBgStyle + 'border: ' + widgetConfig.borderWidth + ' solid ' + widgetConfig.borderColor + '; color: white; cursor: pointer; box-shadow: ' + boxShadow + '; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; padding: 0; margin: 0;';
       
       var label = document.createElement('div');
       var labelBgStyle = getWidgetBackgroundStyle(widgetConfig.backgroundColor, widgetConfig.widgetBlur, widgetConfig.widgetOpacity);
@@ -270,7 +274,9 @@ export async function GET(request: NextRequest) {
       buttonContainer.appendChild(button);
       buttonContainer.appendChild(label);
     } else {
-      button.innerHTML = widgetConfig.logo ? '<img src="' + widgetConfig.logo + '" style="width: 100%; height: 100%; border-radius: ' + avatarBorderRadius + '; object-fit: cover;" onerror="this.parentElement.innerHTML=\\'💬\\'; this.parentElement.style.fontSize=\\'24px\\'; this.parentElement.style.color=\\'white\\';">' : '💬';
+      var iconHtml = widgetConfig.logo ? '<img src="' + widgetConfig.logo + '" style="width: 100%; height: 100%; border-radius: ' + avatarBorderRadius + '; object-fit: cover;" onerror="this.parentElement.innerHTML=\\'' + (iconSvg || '💬') + '\\';">' : (iconSvg || '💬');
+      
+      button.innerHTML = iconHtml;
       var buttonBgStyle = getWidgetBackgroundStyle(widgetConfig.backgroundColor, widgetConfig.widgetBlur, widgetConfig.widgetOpacity);
       var shadowX = parseFloat(widgetConfig.shadowX) || 0;
       var shadowY = parseFloat(widgetConfig.shadowY) || 0;
@@ -279,7 +285,7 @@ export async function GET(request: NextRequest) {
       var boxShadow = (shadowBlur !== 0 || shadowX !== 0 || shadowY !== 0 || shadowSpread !== 0)
         ? shadowX + 'px ' + shadowY + 'px ' + shadowBlur + 'px ' + shadowSpread + 'px ' + widgetConfig.shadowColor
         : 'none';
-      button.style.cssText = 'width: ' + widgetConfig.size + '; height: ' + widgetConfig.size + '; border-radius: ' + avatarBorderRadius + '; ' + buttonBgStyle + 'border: ' + widgetConfig.borderWidth + ' solid ' + widgetConfig.borderColor + '; color: white; font-size: 24px; cursor: pointer; box-shadow: ' + boxShadow + '; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; padding: 0; margin: 0; position: relative;';
+      button.style.cssText = 'width: ' + widgetConfig.size + '; height: ' + widgetConfig.size + '; border-radius: ' + avatarBorderRadius + '; ' + buttonBgStyle + 'border: ' + widgetConfig.borderWidth + ' solid ' + widgetConfig.borderColor + '; color: white; cursor: pointer; box-shadow: ' + boxShadow + '; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; padding: 0; margin: 0; position: relative;';
       buttonContainer.appendChild(button);
     }
     
@@ -331,8 +337,9 @@ export async function GET(request: NextRequest) {
       popoverMarginPx = parseFloat(widgetConfig.popoverMargin);
     }
     
+    // Match positioning logic from chatStyling.ts (Emulator) to ensure consistency
     if (popoverPos === 'top') {
-      // Position popover above the widget button
+      // Position popover above the widget button (Stacked)
       if (widgetConfig.position === 'bottom-right') {
         chatWindowPosition = 'bottom: calc(' + offsetY + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px); right: ' + offsetX + ';';
       } else if (widgetConfig.position === 'bottom-left') {
@@ -347,20 +354,27 @@ export async function GET(request: NextRequest) {
         chatWindowPosition = 'top: calc(' + offsetY + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px); left: 50%; transform: translateX(-50%);';
       }
     } else {
-      // Position popover to the left/right of widget button (default behavior)
-      var widgetOffset = widgetConfig.avatarStyle === 'circle-with-label' ? '120px' : '90px';
+      // Position popover to the left/right of widget button (Side-by-Side)
+      // IMPORTANT: In chatStyling.ts, we align the top/bottom edge with the widget
+      
       if (widgetConfig.position === 'bottom-right') {
-        chatWindowPosition = 'bottom: ' + widgetOffset + '; right: calc(' + offsetX + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px);';
+        // Aligned to bottom, to the left of widget
+        chatWindowPosition = 'bottom: ' + offsetY + '; right: calc(' + offsetX + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px);';
       } else if (widgetConfig.position === 'bottom-left') {
-        chatWindowPosition = 'bottom: ' + widgetOffset + '; left: calc(' + offsetX + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px);';
+        // Aligned to bottom, to the right of widget
+        chatWindowPosition = 'bottom: ' + offsetY + '; left: calc(' + offsetX + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px);';
       } else if (widgetConfig.position === 'top-right') {
-        chatWindowPosition = 'top: ' + widgetOffset + '; right: calc(' + offsetX + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px);';
+        // Aligned to top, to the left of widget
+        chatWindowPosition = 'top: ' + offsetY + '; right: calc(' + offsetX + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px);';
       } else if (widgetConfig.position === 'top-left') {
-        chatWindowPosition = 'top: ' + widgetOffset + '; left: calc(' + offsetX + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px);';
+        // Aligned to top, to the right of widget
+        chatWindowPosition = 'top: ' + offsetY + '; left: calc(' + offsetX + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px);';
       } else if (widgetConfig.position === 'bottom-center') {
-        chatWindowPosition = 'bottom: ' + widgetOffset + '; left: calc(50% + ' + (widgetSizePx / 2) + 'px + ' + popoverMarginPx + 'px); transform: translateX(0);';
+        // Aligned to bottom, to the right of widget (from center)
+        chatWindowPosition = 'bottom: ' + offsetY + '; left: calc(50% + ' + (widgetSizePx / 2) + 'px + ' + popoverMarginPx + 'px); transform: translateX(0);';
       } else if (widgetConfig.position === 'top-center') {
-        chatWindowPosition = 'top: ' + widgetOffset + '; left: calc(50% + ' + (widgetSizePx / 2) + 'px + ' + popoverMarginPx + 'px); transform: translateX(0);';
+         // Aligned to top, to the right of widget (from center)
+        chatWindowPosition = 'top: ' + offsetY + '; left: calc(50% + ' + (widgetSizePx / 2) + 'px + ' + popoverMarginPx + 'px); transform: translateX(0);';
       }
     }
     
@@ -594,7 +608,7 @@ export async function GET(request: NextRequest) {
         chatWindow.style.opacity = '1';
         chatWindow.style.transform = 'scale(1)';
       }, 10);
-      button.innerHTML = '✕';
+      button.innerHTML = closeIconSvg || '✕';
       // Hide badge when chat is open
       if (widgetConfig.showBadge) {
         var badge = document.getElementById('chatbot-badge-' + chatbotId);
