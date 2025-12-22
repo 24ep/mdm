@@ -2,15 +2,26 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 // Helper function to merge version config into chatbot object
+// Filters out undefined/null values from version config to prevent overwriting
+// valid chatbot base values with undefined
 function mergeVersionConfig(chatbot: any): any {
   if (!chatbot) return chatbot
   
   // Get the latest published version (or latest draft if none published)
   const publishedVersion = chatbot.versions?.find((v: any) => v.isPublished)
   const latestVersion = chatbot.versions && chatbot.versions.length > 0 ? chatbot.versions[0] : null
-  const versionConfig = (publishedVersion?.config || latestVersion?.config) || {}
+  const rawVersionConfig = (publishedVersion?.config || latestVersion?.config) || {}
   
-  // Merge version config into chatbot object
+  // Filter out undefined/null values from version config
+  // This ensures we don't overwrite valid chatbot base values with undefined
+  const versionConfig: Record<string, any> = {}
+  for (const [key, value] of Object.entries(rawVersionConfig)) {
+    if (value !== undefined && value !== null) {
+      versionConfig[key] = value
+    }
+  }
+  
+  // Merge: start with chatbot base, then apply version config (which has no undefined values)
   return {
     ...chatbot,
     ...versionConfig,
