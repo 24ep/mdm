@@ -4,12 +4,27 @@ import { NextRequest, NextResponse } from 'next/server'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
+import { checkRateLimit } from '@/lib/rate-limiter'
 
 async function postHandler(request: NextRequest) {
   try {
     const authResult = await requireAuth()
     if (!authResult.success) return authResult.response
     const { session } = authResult
+
+    // Rate limiting: Strict limit for uploads (resource intensive)
+    const rateLimitResult = await checkRateLimit('upload-emulator-bg', session.user.id, {
+      enabled: true,
+      maxRequestsPerMinute: 10,
+      blockDuration: 600, // 10 minutes block if abused
+    })
+
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: 'Too many upload requests. Please try again later.' },
+        { status: 429 }
+      )
+    }
 
     const formData = await request.formData()
     const file = formData.get('image') as File

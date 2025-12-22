@@ -18,9 +18,9 @@ interface ChatKitWrapperProps {
   setIsOpen: (open: boolean) => void
 }
 
-export function ChatKitWrapper({ 
-  chatkitModule, 
-  chatbot, 
+export function ChatKitWrapper({
+  chatkitModule,
+  chatbot,
   onError,
   previewDeploymentType = 'fullpage',
   isInIframe = false,
@@ -29,18 +29,18 @@ export function ChatKitWrapper({
 }: ChatKitWrapperProps) {
   const chatkitOptions = chatbot.chatkitOptions || {}
   const useChatKitInRegularStyle = (chatbot as any).useChatKitInRegularStyle === true
-  
+
   // Helper to extract numeric value from string like "8px" -> "8"
   const extractNumericValue = (value: string | undefined): string => {
     if (!value) return '0'
     const match = value.toString().match(/(\d+(?:\.\d+)?)/)
     return match ? match[1] : '0'
   }
-  
+
   // Build complete theme object with only valid ChatKit properties
   const theme = (() => {
     const validTheme: any = {}
-    
+
     if (chatkitOptions.theme) {
       // Validate colorScheme - handle 'system' by detecting browser preference
       const colorScheme = chatkitOptions.theme.colorScheme as 'light' | 'dark' | 'system' | undefined
@@ -53,20 +53,20 @@ export function ChatKitWrapper({
           validTheme.colorScheme = colorScheme
         }
       }
-      
+
       // Validate density
-      if (chatkitOptions.theme.density && 
-          ['compact', 'normal', 'spacious'].includes(chatkitOptions.theme.density)) {
+      if (chatkitOptions.theme.density &&
+        ['compact', 'normal', 'spacious'].includes(chatkitOptions.theme.density)) {
         validTheme.density = chatkitOptions.theme.density
       }
-      
+
       // Validate radius
-      if (chatkitOptions.theme.radius && 
-          ['pill', 'round', 'soft', 'sharp'].includes(chatkitOptions.theme.radius)) {
+      if (chatkitOptions.theme.radius &&
+        ['pill', 'round', 'soft', 'sharp'].includes(chatkitOptions.theme.radius)) {
         validTheme.radius = chatkitOptions.theme.radius
       }
     }
-    
+
     // Helper function to validate and convert color values to hex format
     // ChatKit primarily supports hex color format (e.g., #D7263D)
     const isValidColor = (color: string): boolean => {
@@ -74,13 +74,13 @@ export function ChatKitWrapper({
         return false
       }
       const trimmed = color.trim()
-      
+
       // ChatKit supports hex format - validate hex colors
       const hexPattern = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/
       if (hexPattern.test(trimmed)) {
         return true
       }
-      
+
       // Reject rgba/rgb colors with opacity 0 (transparent) - ChatKit doesn't accept these
       if (trimmed.startsWith('rgba')) {
         const rgbaMatch = trimmed.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/)
@@ -94,23 +94,23 @@ export function ChatKitWrapper({
         // ChatKit may not support rgba format - reject for now
         return false
       }
-      
+
       // Reject rgb format - ChatKit expects hex
       if (trimmed.startsWith('rgb')) {
         return false
       }
-      
+
       // Reject named colors - ChatKit expects hex
       return false
     }
-    
+
     // Helper function to convert color to hex format for ChatKit
     const convertToHex = (color: string): string | null => {
       if (!color || typeof color !== 'string') {
         return null
       }
       const trimmed = color.trim()
-      
+
       // Already hex format
       const hexPattern = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/
       if (hexPattern.test(trimmed)) {
@@ -123,7 +123,7 @@ export function ChatKitWrapper({
         }
         return trimmed
       }
-      
+
       // Convert rgb/rgba to hex (only if opacity > 0)
       const rgbMatch = trimmed.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(,\s*([\d.]+))?\)/)
       if (rgbMatch) {
@@ -131,7 +131,7 @@ export function ChatKitWrapper({
         const g = parseInt(rgbMatch[2])
         const b = parseInt(rgbMatch[3])
         const opacity = rgbMatch[5] ? parseFloat(rgbMatch[5]) : 1
-        
+
         // Only convert if opacity > 0
         if (opacity > 0) {
           const toHex = (n: number) => {
@@ -141,39 +141,39 @@ export function ChatKitWrapper({
           return `#${toHex(r)}${toHex(g)}${toHex(b)}`
         }
       }
-      
+
       return null
     }
-    
+
     // Build color object with validation
     const colorObj: any = {}
     let hasColor = false
-    
+
     if (chatkitOptions.theme?.color) {
       // Accent color (required) - ChatKit expects hex format
       const accentPrimaryRaw = chatkitOptions.theme.color.accent?.primary || chatbot.primaryColor || '#3b82f6'
       const accentPrimaryHex = convertToHex(accentPrimaryRaw) || '#3b82f6'
       const accentLevel = chatkitOptions.theme.color.accent?.level ?? 2
-      
+
       // Validate accent level (0-4)
-      const validLevel = typeof accentLevel === 'number' && accentLevel >= 0 && accentLevel <= 4 
-        ? accentLevel 
+      const validLevel = typeof accentLevel === 'number' && accentLevel >= 0 && accentLevel <= 4
+        ? accentLevel
         : 2
-      
+
       colorObj.accent = {
         primary: accentPrimaryHex,
         level: validLevel,
       }
       hasColor = true
-      
+
       // Add icon color if provided - convert to hex
       if ((chatkitOptions.theme.color.accent as any)?.icon) {
         const iconHex = convertToHex((chatkitOptions.theme.color.accent as any).icon)
         if (iconHex) {
-          ;(colorObj.accent as any).icon = iconHex
+          ; (colorObj.accent as any).icon = iconHex
         }
       }
-      
+
       // Only include color properties that are confirmed to be supported by ChatKit
       // ChatKit primarily supports accent colors - other color properties may not be supported
       // Commenting out unsupported properties to avoid "Invalid input" errors
@@ -237,25 +237,25 @@ export function ChatKitWrapper({
       }
       hasColor = true
     }
-    
+
     // Only add color if it has at least accent
     if (hasColor && colorObj.accent) {
       validTheme.color = colorObj
     }
-    
+
     // Add typography if present and valid
     if (chatkitOptions.theme?.typography) {
       const typographyObj: any = {}
       let hasTypography = false
-      
+
       // Include fontFamily - ChatKit accepts full font stacks
-      if (chatkitOptions.theme.typography.fontFamily && 
-          typeof chatkitOptions.theme.typography.fontFamily === 'string' &&
-          chatkitOptions.theme.typography.fontFamily.trim() !== '') {
+      if (chatkitOptions.theme.typography.fontFamily &&
+        typeof chatkitOptions.theme.typography.fontFamily === 'string' &&
+        chatkitOptions.theme.typography.fontFamily.trim() !== '') {
         typographyObj.fontFamily = chatkitOptions.theme.typography.fontFamily.trim()
         hasTypography = true
       }
-      
+
       // Commenting out other typography properties as they may not be supported
       // if (chatkitOptions.theme.typography.fontSize !== undefined && 
       //     chatkitOptions.theme.typography.fontSize !== null &&
@@ -281,13 +281,13 @@ export function ChatKitWrapper({
       //   typographyObj.letterSpacing = chatkitOptions.theme.typography.letterSpacing
       //   hasTypography = true
       // }
-      
+
       // Only add typography if it has at least one property
       if (hasTypography && Object.keys(typographyObj).length > 0) {
         validTheme.typography = typographyObj
       }
     }
-    
+
     // Return undefined if theme is empty, otherwise return valid theme
     return Object.keys(validTheme).length > 0 ? validTheme : undefined
   })()
@@ -296,54 +296,54 @@ export function ChatKitWrapper({
 
   try {
     const { useChatKit, ChatKit } = chatkitModule
-    
+
     const isAgentSDK = chatbot.engineType === 'openai-agent-sdk'
     const agentId = isAgentSDK ? chatbot.openaiAgentSdkAgentId : chatbot.chatkitAgentId
     const apiKey = isAgentSDK ? chatbot.openaiAgentSdkApiKey : chatbot.chatkitApiKey
-    
+
     const { control } = useChatKit({
       api: {
         async getClientSecret(existing: any) {
           try {
-              if (existing) {
-                const res = await fetch('/api/chatkit/session', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ 
-                    agentId: agentId, 
-                    existing,
-                    apiKey: apiKey 
-                  }),
-                })
-                if (!res.ok) {
-                  const errorData = await res.json().catch(() => ({ error: 'Unknown error' }))
-                  const errorMessage = errorData.details 
-                    ? `${errorData.error}: ${errorData.details}`
-                    : errorData.error || 'Failed to refresh ChatKit session'
-                  throw new Error(errorMessage)
-                }
-                const { client_secret } = await res.json()
-                return client_secret
-              }
-
+            if (existing) {
               const res = await fetch('/api/chatkit/session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                   agentId: agentId,
-                  apiKey: apiKey 
+                  existing,
+                  apiKey: apiKey
                 }),
               })
+              if (!res.ok) {
+                const errorData = await res.json().catch(() => ({ error: 'Unknown error' }))
+                const errorMessage = errorData.details
+                  ? `${errorData.error}: ${errorData.details}`
+                  : errorData.error || 'Failed to refresh ChatKit session'
+                throw new Error(errorMessage)
+              }
+              const { client_secret } = await res.json()
+              return client_secret
+            }
+
+            const res = await fetch('/api/chatkit/session', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                agentId: agentId,
+                apiKey: apiKey
+              }),
+            })
             if (!res.ok) {
               const errorData = await res.json().catch(() => ({ error: 'Unknown error' }))
               console.error('ChatKit session error details:', errorData)
-              const errorMessage = errorData.details 
+              const errorMessage = errorData.details
                 ? `${errorData.error}: ${errorData.details}`
                 : errorData.error || 'Failed to create ChatKit session'
               throw new Error(errorMessage)
             }
             const sessionData = await res.json()
-            console.log('ChatKit client secret received:', { 
+            console.log('ChatKit client secret received:', {
               has_secret: !!sessionData.client_secret,
               session_id: sessionData.session_id,
               secret_length: sessionData.client_secret?.length,
@@ -384,7 +384,7 @@ export function ChatKitWrapper({
       // Don't pass header config to ChatKit when using regular style header (regular header will be used instead)
       header: useChatKitInRegularStyle ? undefined : (chatkitOptions.header ? (() => {
         const header = { ...chatkitOptions.header }
-        
+
         const supportedHeader: any = {}
         if (header.title !== undefined) {
           if (typeof header.title === 'object' && header.title !== null) {
@@ -432,11 +432,11 @@ export function ChatKitWrapper({
       })() : undefined),
       startScreen: chatkitOptions.startScreen ? (() => {
         const supportedStartScreen: any = {}
-        
+
         if (chatkitOptions.startScreen.greeting) {
           supportedStartScreen.greeting = chatkitOptions.startScreen.greeting
         }
-        
+
         if (chatkitOptions.startScreen.prompts && chatkitOptions.startScreen.prompts.length > 0) {
           // Valid ChatKit icon names (ChatKitIcon type)
           const validChatKitIcons = [
@@ -448,7 +448,7 @@ export function ChatKitWrapper({
             'sparkle-double', 'square-code', 'square-image', 'square-text', 'suitcase', 'settings-slider',
             'user', 'wreath', 'write', 'write-alt', 'write-alt2', 'bug'
           ]
-          
+
           const filteredPrompts = chatkitOptions.startScreen.prompts.map((prompt: any) => {
             const supportedPrompt: any = {}
             // ChatKit supports 'label', 'prompt', and 'icon' properties
@@ -460,18 +460,18 @@ export function ChatKitWrapper({
               supportedPrompt.prompt = prompt.prompt
             }
             // Only include icon if it's a valid ChatKitIcon value
-            if (prompt.icon !== undefined && prompt.icon !== null && prompt.icon !== '' && 
-                validChatKitIcons.includes(prompt.icon)) {
+            if (prompt.icon !== undefined && prompt.icon !== null && prompt.icon !== '' &&
+              validChatKitIcons.includes(prompt.icon)) {
               supportedPrompt.icon = prompt.icon
             }
             return supportedPrompt
           }).filter((prompt: any) => prompt.label || prompt.prompt)
-          
+
           if (filteredPrompts.length > 0) {
             supportedStartScreen.prompts = filteredPrompts
           }
         }
-        
+
         return Object.keys(supportedStartScreen).length > 0 ? supportedStartScreen : undefined
       })() : undefined,
       entities: chatkitOptions.entities ? {
@@ -481,7 +481,7 @@ export function ChatKitWrapper({
       disclaimer: chatkitOptions.disclaimer && chatkitOptions.disclaimer.text && chatkitOptions.disclaimer.text.trim() !== '' ? {
         text: chatkitOptions.disclaimer.text.trim(),
       } : undefined,
-      threadItemActions: (chatkitOptions.threadItemActions && 
+      threadItemActions: (chatkitOptions.threadItemActions &&
         (chatkitOptions.threadItemActions.feedback === true || chatkitOptions.threadItemActions.retry === true)) ? {
         feedback: chatkitOptions.threadItemActions.feedback === true,
         retry: chatkitOptions.threadItemActions.retry === true,
@@ -505,7 +505,7 @@ export function ChatKitWrapper({
       if (pos.includes('left')) (style as any).left = offsetX
       if (pos.includes('center')) {
         (style as any).left = '50%'
-        ;(style as any).transform = 'translateX(-50%)'
+          ; (style as any).transform = 'translateX(-50%)'
       }
       return style
     }
@@ -527,7 +527,7 @@ export function ChatKitWrapper({
         const bgValue = chatbot.messageBoxColor || '#ffffff'
         const blurAmount = (chatbot as any).chatWindowBackgroundBlur || 0
         const opacity = (chatbot as any).chatWindowBackgroundOpacity !== undefined ? (chatbot as any).chatWindowBackgroundOpacity : 100
-        
+
         const style: React.CSSProperties = {
           width: chatbot.chatWindowWidth || '380px',
           height: chatbot.chatWindowHeight || '600px',
@@ -540,13 +540,13 @@ export function ChatKitWrapper({
           paddingTop: (chatbot as any).chatWindowPaddingY || '0px',
           paddingBottom: (chatbot as any).chatWindowPaddingY || '0px',
         }
-        
+
         // Apply glassmorphism effect
         if (blurAmount > 0) {
           style.backdropFilter = `blur(${blurAmount}px)`
           style.WebkitBackdropFilter = `blur(${blurAmount}px)`
         }
-        
+
         // Check if it's an image URL
         if (bgValue.startsWith('url(') || bgValue.startsWith('http://') || bgValue.startsWith('https://') || bgValue.startsWith('/')) {
           const imageUrl = bgValue.startsWith('url(') ? bgValue : `url(${bgValue})`
@@ -572,7 +572,7 @@ export function ChatKitWrapper({
             style.backgroundColor = bgValue
           }
         }
-        
+
         return style
       }
       return {
@@ -599,38 +599,43 @@ export function ChatKitWrapper({
         {shouldShowWidgetButton && (() => {
           const widgetAvatarStyle = chatbot.widgetAvatarStyle || 'circle'
           const widgetSize = (chatbot as any).widgetSize || '60px'
-          
+
           let borderRadius: string
           if (widgetAvatarStyle === 'square') {
             borderRadius = (chatbot as any).widgetBorderRadius || '8px'
           } else {
             borderRadius = (chatbot as any).widgetBorderRadius || '50%'
           }
-          
+
           const buttonContent = isOpen ? (
             <X className="h-6 w-6" style={{ color: chatbot?.avatarIconColor || '#ffffff' }} />
           ) : (() => {
             const widgetAvatarType = (chatbot as any).widgetAvatarType || chatbot?.avatarType || 'icon'
             const widgetAvatarImageUrl = (chatbot as any).widgetAvatarImageUrl || chatbot?.avatarImageUrl
             const widgetAvatarIcon = (chatbot as any).widgetAvatarIcon || chatbot?.avatarIcon || 'Bot'
-            
+
             if (widgetAvatarType === 'image' && widgetAvatarImageUrl) {
               return <img src={widgetAvatarImageUrl} alt="Chat" style={{ width: '60%', height: '60%', borderRadius: widgetAvatarStyle === 'square' ? '8px' : '50%', objectFit: 'cover' }} />
             }
-            const IconName = widgetAvatarIcon as string
-            const IconComponent = (Icons as any)[IconName] || Bot
+            const IconName = widgetAvatarIcon
+            // Ensure IconName is a valid string before lookup
+            const IconComponent = (typeof IconName === 'string' && IconName.trim() !== '')
+              ? ((Icons as any)[IconName] || Bot)
+              : Bot
             const iconColor = chatbot?.avatarIconColor || '#ffffff'
             return <IconComponent className="h-6 w-6" style={{ color: iconColor }} />
           })()
-          
+
           if (widgetAvatarStyle === 'circle-with-label') {
             const widgetBgValue = (chatbot as any).widgetBackgroundColor || chatbot.primaryColor || '#3b82f6'
             const widgetLabelText = (chatbot as any).widgetLabelText || 'Chat'
             const widgetLabelColor = (chatbot as any).widgetLabelColor || '#ffffff'
-            const widgetLabelFontSize = (chatbot as any).widgetLabelFontSize || '12px'
+            const widgetLabelFontSize = (chatbot as any).widgetLabelFontSize || '14px'
             const widgetBlur = (chatbot as any).widgetBackgroundBlur || 0
             const widgetOpacity = (chatbot as any).widgetBackgroundOpacity !== undefined ? (chatbot as any).widgetBackgroundOpacity : 100
-            
+            const widgetLabelShowIcon = (chatbot as any).widgetLabelShowIcon !== false
+            const widgetLabelIconPosition = (chatbot as any).widgetLabelIconPosition || 'left'
+
             // Helper to convert hex to RGB
             const hexToRgb = (hex: string): string => {
               hex = hex.replace('#', '')
@@ -642,7 +647,7 @@ export function ChatKitWrapper({
               const b = parseInt(hex.substring(4, 6), 16)
               return `${r}, ${g}, ${b}`
             }
-            
+
             // Build box-shadow with all properties (offsetX offsetY blur spread color)
             const shadowX = extractNumericValue((chatbot as any).widgetShadowX || '0px')
             const shadowY = extractNumericValue((chatbot as any).widgetShadowY || '0px')
@@ -652,29 +657,38 @@ export function ChatKitWrapper({
             const boxShadow = (shadowBlur !== '0' || shadowX !== '0' || shadowY !== '0' || shadowSpread !== '0')
               ? `${shadowX}px ${shadowY}px ${shadowBlur}px ${shadowSpread}px ${shadowColor}`
               : undefined
-            
+
+            // Use widgetLabelBorderRadius for circle-with-label, fallback to general borderRadius or default
+            const labelBorderRadius = (chatbot as any).widgetLabelBorderRadius || borderRadius || '8px'
+
             const buttonStyle: React.CSSProperties = {
-              width: widgetSize,
+              ...popoverPositionStyle(),
               height: widgetSize,
-              borderRadius: borderRadius,
+              borderRadius: labelBorderRadius,
               border: `${(chatbot as any).widgetBorderWidth || '0px'} solid ${(chatbot as any).widgetBorderColor || 'transparent'}`,
               boxShadow: boxShadow,
               display: 'flex',
+              flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'center',
+              gap: '8px',
               cursor: 'pointer',
-              padding: 0,
-              margin: 0,
-              borderTopRightRadius: 0,
-              borderBottomRightRadius: 0,
+              padding: '0 16px',
+              zIndex: ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) >= Z_INDEX.chatWidget
+                ? ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) + 1
+                : Z_INDEX.chatWidgetWindow,
+              color: widgetLabelColor,
+              fontSize: widgetLabelFontSize,
+              fontWeight: 500,
+              whiteSpace: 'nowrap',
             }
-            
+
             // Apply glassmorphism effect
             if (widgetBlur > 0) {
               buttonStyle.backdropFilter = `blur(${widgetBlur}px)`
               buttonStyle.WebkitBackdropFilter = `blur(${widgetBlur}px)`
             }
-            
+
             // Check if it's an image URL (starts with url(, http://, https://, or /)
             if (widgetBgValue.startsWith('url(') || widgetBgValue.startsWith('http://') || widgetBgValue.startsWith('https://') || widgetBgValue.startsWith('/')) {
               const imageUrl = widgetBgValue.startsWith('url(') ? widgetBgValue : `url(${widgetBgValue})`
@@ -703,104 +717,48 @@ export function ChatKitWrapper({
                 buttonStyle.backgroundColor = widgetBgValue
               }
             }
-            
+
+            // Get the icon component for display
+            const widgetAvatarType = (chatbot as any).widgetAvatarType || chatbot?.avatarType || 'icon'
+            const widgetAvatarImageUrl = (chatbot as any).widgetAvatarImageUrl || chatbot?.avatarImageUrl
+            const widgetAvatarIcon = (chatbot as any).widgetAvatarIcon || chatbot?.avatarIcon || 'Bot'
+            const iconColor = chatbot?.avatarIconColor || widgetLabelColor
+
+            const renderIcon = () => {
+              if (widgetAvatarType === 'image' && widgetAvatarImageUrl) {
+                return <img src={widgetAvatarImageUrl} alt="" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} />
+              }
+              const IconName = widgetAvatarIcon
+              const IconComponent = (typeof IconName === 'string' && IconName.trim() !== '')
+                ? ((Icons as any)[IconName] || Bot)
+                : Bot
+              return <IconComponent className="h-5 w-5" style={{ color: iconColor }} />
+            }
+
             return (
-              <div
-                style={{
-                  ...popoverPositionStyle(),
-                  display: 'flex',
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 0,
-                  zIndex: ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) >= Z_INDEX.chatWidget 
-                    ? ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) + 1 
-                    : Z_INDEX.chatWidgetWindow,
-                }}
+              <button
+                type="button"
+                aria-label={isOpen ? "Close chat" : "Open chat"}
+                onClick={() => setIsOpen(!isOpen)}
+                style={buttonStyle}
               >
-                <button
-                  type="button"
-                  aria-label={isOpen ? "Close chat" : "Open chat"}
-                  onClick={() => setIsOpen(!isOpen)}
-                  style={buttonStyle}
-                >
-                  {buttonContent}
-                </button>
-                <div
-                  style={{
-                    ...(() => {
-                      const widgetBgValue = (chatbot as any).widgetBackgroundColor || chatbot.primaryColor || '#3b82f6'
-                      // Check if it's an image URL
-                      if (widgetBgValue.startsWith('url(') || widgetBgValue.startsWith('http://') || widgetBgValue.startsWith('https://') || widgetBgValue.startsWith('/')) {
-                        const imageUrl = widgetBgValue.startsWith('url(') ? widgetBgValue : `url(${widgetBgValue})`
-                        return {
-                          backgroundImage: imageUrl,
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center',
-                          backgroundRepeat: 'no-repeat',
-                          ...(widgetOpacity < 100 ? { backgroundColor: `rgba(255, 255, 255, ${widgetOpacity / 100})` } : {})
-                        }
-                      } else {
-                        // It's a color value
-                        if (widgetOpacity < 100) {
-                          if (widgetBgValue.startsWith('rgba') || widgetBgValue.startsWith('rgb')) {
-                            const rgbMatch = widgetBgValue.match(/(\d+),\s*(\d+),\s*(\d+)/)
-                            if (rgbMatch) {
-                              return { backgroundColor: `rgba(${rgbMatch[1]}, ${rgbMatch[2]}, ${rgbMatch[3]}, ${widgetOpacity / 100})` }
-                            }
-                          }
-                          return { backgroundColor: `rgba(${hexToRgb(widgetBgValue)}, ${widgetOpacity / 100})` }
-                        }
-                        return { backgroundColor: widgetBgValue }
-                      }
-                    })(),
-                    ...(widgetBlur > 0 ? {
-                      backdropFilter: `blur(${widgetBlur}px)`,
-                      WebkitBackdropFilter: `blur(${widgetBlur}px)`,
-                    } : {}),
-                    color: widgetLabelColor,
-                    padding: '4px 12px',
-                    borderRadius: '0 4px 4px 0',
-                    fontSize: widgetLabelFontSize,
-                    fontWeight: 500,
-                    whiteSpace: 'nowrap',
-                    height: widgetSize,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    border: `${(chatbot as any).widgetBorderWidth || '0px'} solid ${(chatbot as any).widgetBorderColor || 'transparent'}`,
-                    borderLeft: 'none',
-                    boxShadow: (() => {
-                      const shadowX = extractNumericValue((chatbot as any).widgetShadowX || '0px')
-                      const shadowY = extractNumericValue((chatbot as any).widgetShadowY || '0px')
-                      const shadowBlur = extractNumericValue((chatbot as any).widgetShadowBlur || '0px')
-                      const shadowSpread = extractNumericValue((chatbot as any).widgetShadowSpread || '0px')
-                      const shadowColor = (chatbot as any).widgetShadowColor || 'rgba(0,0,0,0.2)'
-                      return (shadowBlur !== '0' || shadowX !== '0' || shadowY !== '0' || shadowSpread !== '0')
-                        ? `${shadowX}px ${shadowY}px ${shadowBlur}px ${shadowSpread}px ${shadowColor}`
-                        : undefined
-                    })(),
-                  }}
-                >
-                  <span>{widgetLabelText}</span>
-                  {isOpen && (
-                    <X 
-                      className="h-4 w-4" 
-                      style={{ color: widgetLabelColor, cursor: 'pointer' }}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setIsOpen(false)
-                      }}
-                    />
-                  )}
-                </div>
-              </div>
+                {isOpen ? (
+                  <X className="h-5 w-5" style={{ color: widgetLabelColor }} />
+                ) : (
+                  <>
+                    {widgetLabelShowIcon && widgetLabelIconPosition === 'left' && renderIcon()}
+                    <span>{widgetLabelText}</span>
+                    {widgetLabelShowIcon && widgetLabelIconPosition === 'right' && renderIcon()}
+                  </>
+                )}
+              </button>
             )
           }
-          
+
           const widgetBgValue = (chatbot as any).widgetBackgroundColor || chatbot.primaryColor || '#3b82f6'
           const widgetBlur = (chatbot as any).widgetBackgroundBlur || 0
           const widgetOpacity = (chatbot as any).widgetBackgroundOpacity !== undefined ? (chatbot as any).widgetBackgroundOpacity : 100
-          
+
           // Helper to convert hex to RGB
           const hexToRgb = (hex: string): string => {
             hex = hex.replace('#', '')
@@ -812,7 +770,7 @@ export function ChatKitWrapper({
             const b = parseInt(hex.substring(4, 6), 16)
             return `${r}, ${g}, ${b}`
           }
-          
+
           // Build box-shadow with all properties
           const shadowX = extractNumericValue((chatbot as any).widgetShadowX || '0px')
           const shadowY = extractNumericValue((chatbot as any).widgetShadowY || '0px')
@@ -822,7 +780,7 @@ export function ChatKitWrapper({
           const boxShadow = (shadowBlur !== '0' || shadowX !== '0' || shadowY !== '0' || shadowSpread !== '0')
             ? `${shadowX}px ${shadowY}px ${shadowBlur}px ${shadowSpread}px ${shadowColor}`
             : undefined
-          
+
           const buttonStyle: React.CSSProperties = {
             ...popoverPositionStyle(),
             width: widgetSize,
@@ -830,21 +788,21 @@ export function ChatKitWrapper({
             borderRadius: borderRadius,
             border: `${(chatbot as any).widgetBorderWidth || '0px'} solid ${(chatbot as any).widgetBorderColor || 'transparent'}`,
             boxShadow: boxShadow,
-            zIndex: ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) >= Z_INDEX.chatWidget 
-              ? ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) + 1 
+            zIndex: ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) >= Z_INDEX.chatWidget
+              ? ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) + 1
               : Z_INDEX.chatWidgetWindow,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
           }
-          
+
           // Apply glassmorphism effect
           if (widgetBlur > 0) {
             buttonStyle.backdropFilter = `blur(${widgetBlur}px)`
             buttonStyle.WebkitBackdropFilter = `blur(${widgetBlur}px)`
           }
-          
+
           // Check if it's an image URL (starts with url(, http://, https://, or /)
           if (widgetBgValue.startsWith('url(') || widgetBgValue.startsWith('http://') || widgetBgValue.startsWith('https://') || widgetBgValue.startsWith('/')) {
             const imageUrl = widgetBgValue.startsWith('url(') ? widgetBgValue : `url(${widgetBgValue})`
@@ -873,7 +831,7 @@ export function ChatKitWrapper({
               buttonStyle.backgroundColor = widgetBgValue
             }
           }
-          
+
           return (
             <button
               type="button"
@@ -901,42 +859,42 @@ export function ChatKitWrapper({
                 margin: 0,
                 padding: 0,
               } : {
-              ...containerStyle,
-              position: (deploymentType === 'popover' || deploymentType === 'popup-center') ? 'fixed' : 'relative',
-              ...(deploymentType === 'popover' ? (() => {
-                const pos = (chatbot as any).widgetPosition || 'bottom-right'
-                const offsetX = (chatbot as any).widgetOffsetX || '20px'
-                const offsetY = (chatbot as any).widgetOffsetY || '20px'
-                const widgetSize = (chatbot as any).widgetSize || '60px'
-                const style: React.CSSProperties = { position: 'fixed' }
-                
-                if (pos.includes('bottom')) {
-                  style.bottom = `calc(${offsetY} + ${widgetSize} + 10px)`
-                } else {
-                  style.top = `calc(${offsetY} + ${widgetSize} + 10px)`
-                }
-                
-                if (pos.includes('right')) {
-                  style.right = offsetX
-                } else if (pos.includes('left')) {
-                  style.left = offsetX
-                } else if (pos.includes('center')) {
-                  style.left = '50%'
-                  style.transform = 'translateX(-50%)'
-                }
-                
-                return style
-              })() : deploymentType === 'popup-center' ? ({
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                zIndex: ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) >= Z_INDEX.chatWidget 
-                  ? ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) + 1 
-                  : Z_INDEX.chatWidgetWindow,
-              } as React.CSSProperties) : {}),
-              zIndex: (chatbot as any).widgetZIndex || Z_INDEX.chatWidget,
-              display: 'flex',
-              flexDirection: 'column'
+                ...containerStyle,
+                position: (deploymentType === 'popover' || deploymentType === 'popup-center') ? 'fixed' : 'relative',
+                ...(deploymentType === 'popover' ? (() => {
+                  const pos = (chatbot as any).widgetPosition || 'bottom-right'
+                  const offsetX = (chatbot as any).widgetOffsetX || '20px'
+                  const offsetY = (chatbot as any).widgetOffsetY || '20px'
+                  const widgetSize = (chatbot as any).widgetSize || '60px'
+                  const style: React.CSSProperties = { position: 'fixed' }
+
+                  if (pos.includes('bottom')) {
+                    style.bottom = `calc(${offsetY} + ${widgetSize} + 10px)`
+                  } else {
+                    style.top = `calc(${offsetY} + ${widgetSize} + 10px)`
+                  }
+
+                  if (pos.includes('right')) {
+                    style.right = offsetX
+                  } else if (pos.includes('left')) {
+                    style.left = offsetX
+                  } else if (pos.includes('center')) {
+                    style.left = '50%'
+                    style.transform = 'translateX(-50%)'
+                  }
+
+                  return style
+                })() : deploymentType === 'popup-center' ? ({
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  zIndex: ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) >= Z_INDEX.chatWidget
+                    ? ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) + 1
+                    : Z_INDEX.chatWidgetWindow,
+                } as React.CSSProperties) : {}),
+                zIndex: (chatbot as any).widgetZIndex || Z_INDEX.chatWidget,
+                display: 'flex',
+                flexDirection: 'column'
               }),
             }}
           >
@@ -948,7 +906,7 @@ export function ChatKitWrapper({
                 else if (radiusValue === 'round') borderRadius = '12px'
                 else if (radiusValue === 'soft') borderRadius = '6px'
                 else if (radiusValue === 'sharp') borderRadius = '0px'
-                
+
                 return `
                   div[class*="message"],
                   div[class*="Message"],
@@ -987,15 +945,15 @@ export function ChatKitWrapper({
                 background-color: ${(chatbot as any).sendButtonBgColor || chatbot.primaryColor || '#3b82f6'} !important;
                 color: ${(chatbot as any).sendButtonIconColor || '#ffffff'} !important;
                 ${(chatbot as any).sendButtonBorderRadiusTopLeft || (chatbot as any).sendButtonBorderRadiusTopRight || (chatbot as any).sendButtonBorderRadiusBottomRight || (chatbot as any).sendButtonBorderRadiusBottomLeft
-                  ? `border-top-left-radius: ${(chatbot as any).sendButtonBorderRadiusTopLeft || (chatbot as any).sendButtonBorderRadius || '8px'} !important;
+                ? `border-top-left-radius: ${(chatbot as any).sendButtonBorderRadiusTopLeft || (chatbot as any).sendButtonBorderRadius || '8px'} !important;
                      border-top-right-radius: ${(chatbot as any).sendButtonBorderRadiusTopRight || (chatbot as any).sendButtonBorderRadius || '8px'} !important;
                      border-bottom-right-radius: ${(chatbot as any).sendButtonBorderRadiusBottomRight || (chatbot as any).sendButtonBorderRadius || '8px'} !important;
                      border-bottom-left-radius: ${(chatbot as any).sendButtonBorderRadiusBottomLeft || (chatbot as any).sendButtonBorderRadius || '8px'} !important;`
-                  : (chatbot as any).sendButtonBorderRadius
-                    ? `border-radius: ${(chatbot as any).sendButtonBorderRadius} !important;`
-                    : (chatbot as any).sendButtonRounded
-                      ? 'border-radius: 50% !important;'
-                      : ''}
+                : (chatbot as any).sendButtonBorderRadius
+                  ? `border-radius: ${(chatbot as any).sendButtonBorderRadius} !important;`
+                  : (chatbot as any).sendButtonRounded
+                    ? 'border-radius: 50% !important;'
+                    : ''}
                 ${(chatbot as any).sendButtonShadowBlur ? `box-shadow: 0 0 ${(chatbot as any).sendButtonShadowBlur} ${(chatbot as any).sendButtonShadowColor || '#000000'} !important;` : ''}
                 ${(chatbot as any).sendButtonPaddingX || (chatbot as any).sendButtonPaddingY ? `padding: ${(chatbot as any).sendButtonPaddingY || '8px'} ${(chatbot as any).sendButtonPaddingX || '8px'} !important;` : ''}
               }

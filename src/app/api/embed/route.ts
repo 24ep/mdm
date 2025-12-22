@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Z_INDEX } from '@/lib/z-index'
 import { db } from '@/lib/db'
-import { mergeVersionConfig } from '@/lib/chatbot-helper'
+import { mergeVersionConfig, sanitizeChatbotConfig } from '@/lib/chatbot-helper'
 // import { renderToStaticMarkup } from 'react-dom/server'
 import * as Icons from 'lucide-react'
 import React from 'react'
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Merge version config into chatbot object (this includes chatkitOptions, widgetBackgroundColor, etc.)
-    const chatbot = mergeVersionConfig(rawChatbot)
+    const chatbot = sanitizeChatbotConfig(mergeVersionConfig(rawChatbot))
 
     // Generate Icon SVG if needed
     let iconSvg = ''
@@ -47,8 +47,8 @@ export async function GET(request: NextRequest) {
       // Render SVG with white color (or configured color) as it usually appears on a colored button
       // forcing white for the button icon usually looks best on colored backgrounds, 
       // but ChatPage uses avatarIconColor. We'll use the configured color.
-      iconSvg = renderToStaticMarkup(React.createElement(IconComponent, { 
-        size: 24, 
+      iconSvg = renderToStaticMarkup(React.createElement(IconComponent, {
+        size: 24,
         color: iconColor,
         strokeWidth: 2
       }))
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
     // Get the origin from the request (this is the MDM server origin)
     const serverOrigin = request.nextUrl.origin
 
-  const script = `
+    const script = `
 (function() {
   var chatbotId = '${chatbotId}';
   var type = '${type}';
@@ -190,13 +190,15 @@ export async function GET(request: NextRequest) {
       positionStyle = 'top: ' + offsetY + '; left: 50%; transform: translateX(-50%);';
     }
     
-    // Determine border radius based on avatar style
-    var avatarBorderRadius = widgetConfig.borderRadius;
-    if (widgetConfig.avatarStyle === 'square') {
-      avatarBorderRadius = '8px';
-    } else if (widgetConfig.avatarStyle === 'circle' || widgetConfig.avatarStyle === 'circle-with-label') {
-      avatarBorderRadius = widgetConfig.borderRadius || '50%';
-    }
+    // Determine border radius based on avatar style and granular props
+    var avatarBorderRadius = getGranularRadius(
+      widgetConfig.borderRadius,
+      chatbot.widgetBorderRadiusTopLeft,
+      chatbot.widgetBorderRadiusTopRight,
+      chatbot.widgetBorderRadiusBottomRight,
+      chatbot.widgetBorderRadiusBottomLeft,
+      widgetConfig.avatarStyle === 'square' ? '8px' : '50%'
+    );
     
     // Animation styles
     var animationStyle = '';
@@ -394,11 +396,27 @@ export async function GET(request: NextRequest) {
     // Detect mobile
     var isMobile = window.innerWidth <= 768;
     
+    // Helper for granular border radius
+    function getGranularRadius(all, tl, tr, br, bl, defaultVal) {
+      if (tl || tr || br || bl) {
+        return (tl || all || defaultVal || '0') + ' ' + (tr || all || defaultVal || '0') + ' ' + (br || all || defaultVal || '0') + ' ' + (bl || all || defaultVal || '0');
+      }
+      return all || defaultVal;
+    }
+
     // Mobile chat window sizing
     var chatWindowWidth = isMobile ? '100vw' : widgetConfig.chatWidth;
     var chatWindowHeight = isMobile ? '100vh' : widgetConfig.chatHeight;
     var chatWindowPositionMobile = isMobile ? 'top: 0; left: 0; right: 0; bottom: 0; transform: none;' : chatWindowPosition;
-    var chatWindowBorderRadius = isMobile ? '0' : (chatbot.borderRadius || '8px');
+    
+    var chatWindowBorderRadius = isMobile ? '0' : getGranularRadius(
+      chatbot.chatWindowBorderRadius || chatbot.borderRadius,
+      chatbot.chatWindowBorderRadiusTopLeft,
+      chatbot.chatWindowBorderRadiusTopRight,
+      chatbot.chatWindowBorderRadiusBottomRight,
+      chatbot.chatWindowBorderRadiusBottomLeft,
+      '8px'
+    );
     
     // Create chat window
     var chatWindow = document.createElement('div');
@@ -415,32 +433,42 @@ export async function GET(request: NextRequest) {
     } else {
       chatBgStyle += 'background-color: ' + chatBgColor + '; ';
     }
-    chatWindow.style.cssText = 'position: fixed; ' + chatWindowPositionMobile + ' width: ' + chatWindowWidth + '; height: ' + chatWindowHeight + '; ' + chatBgStyle + 'border-radius: ' + chatWindowBorderRadius + '; box-shadow: 0 0 ' + chatWindowShadowBlur + ' ' + chatWindowShadowColor + '; border: ' + (chatbot.borderWidth || '1px') + ' solid ' + (chatbot.borderColor || '#e5e7eb') + '; font-family: ' + (chatbot.fontFamily || 'Inter') + '; font-size: ' + (chatbot.fontSize || '14px') + '; color: ' + (chatbot.fontColor || '#000000') + '; display: none; flex-direction: column; z-index: ' + (widgetConfig.zIndex >= ${Z_INDEX.chatWidget} ? widgetConfig.zIndex + 1 : ${Z_INDEX.chatWidgetWindow}) + '; transition: opacity 0.3s ease, transform 0.3s ease; opacity: 0; transform: scale(0.9);';
     
-    // Create header for chat window
+    var borderWidth = chatbot.chatWindowBorderWidth || chatbot.borderWidth || '1px';
+    var borderColor = chatbot.chatWindowBorderColor || chatbot.borderColor || '#e5e7eb';
+    
+    chatWindow.style.cssText = 'position: fixed; ' + chatWindowPositionMobile + ' width: ' + chatWindowWidth + '; height: ' + chatWindowHeight + '; ' + chatBgStyle + 'border-radius: ' + chatWindowBorderRadius + '; box-shadow: 0 0 ' + chatWindowShadowBlur + ' ' + chatWindowShadowColor + '; border: ' + borderWidth + ' solid ' + borderColor + '; font-family: ' + (chatbot.fontFamily || 'Inter') + '; font-size: ' + (chatbot.fontSize || '14px') + '; color: ' + (chatbot.fontColor || '#000000') + '; display: none; flex-direction: column; z-index: ' + (widgetConfig.zIndex >= ${Z_INDEX.chatWidget} ? widgetConfig.zIndex + 1 : ${Z_INDEX.chatWidgetWindow}) + '; transition: opacity 0.3s ease, transform 0.3s ease; opacity: 0; transform: scale(0.9);';
+    
+    // Create header for chat window - use proper header config
     var header = document.createElement('div');
-    header.style.cssText = 'padding: 12px 16px; border-bottom: 1px solid ' + (chatbot.borderColor || '#e5e7eb') + '; display: flex; justify-content: space-between; align-items: center; background: ' + (chatbot.messageBoxColor || '#ffffff') + '; border-radius: ' + chatWindowBorderRadius + ' ' + chatWindowBorderRadius + ' 0 0;';
+    var headerBgColor = chatbot.headerBgColor || chatbot.primaryColor || '#3b82f6';
+    var headerFontColor = chatbot.headerFontColor || '#ffffff';
+    var headerPaddingX = chatbot.headerPaddingX || '16px';
+    var headerPaddingY = chatbot.headerPaddingY || '12px';
+    var headerBorderColor = chatbot.headerBorderColor || chatbot.borderColor || '#e5e7eb';
+    var headerBorderEnabled = chatbot.headerBorderEnabled !== false;
+    header.style.cssText = 'padding: ' + headerPaddingY + ' ' + headerPaddingX + '; ' + (headerBorderEnabled ? 'border-bottom: 1px solid ' + headerBorderColor + '; ' : '') + 'display: flex; justify-content: space-between; align-items: center; background: ' + headerBgColor + '; border-radius: ' + chatWindowBorderRadius + ' ' + chatWindowBorderRadius + ' 0 0;';
     
     var headerContent = document.createElement('div');
     headerContent.style.cssText = 'display: flex; align-items: center; gap: 8px;';
-    if (chatbot.logo) {
+    if (chatbot.headerLogo || chatbot.logo) {
       var logoImg = document.createElement('img');
-      logoImg.src = chatbot.logo;
+      logoImg.src = chatbot.headerLogo || chatbot.logo;
       logoImg.style.cssText = 'width: 32px; height: 32px; border-radius: 50%; object-fit: cover;';
       logoImg.onerror = function() { this.style.display = 'none'; };
       headerContent.appendChild(logoImg);
     }
     var agentName = document.createElement('span');
     agentName.textContent = chatbot.name || 'Chat';
-    agentName.style.cssText = 'font-weight: 600; font-size: 16px; color: ' + (chatbot.fontColor || '#000000') + ';';
+    agentName.style.cssText = 'font-weight: 600; font-size: 16px; color: ' + headerFontColor + ';';
     headerContent.appendChild(agentName);
     
     var closeButton = document.createElement('button');
     closeButton.innerHTML = '✕';
     closeButton.setAttribute('aria-label', 'Close chat');
     closeButton.setAttribute('type', 'button');
-    closeButton.style.cssText = 'background: none; border: none; font-size: 24px; cursor: pointer; color: ' + (chatbot.fontColor || '#000000') + '; padding: 4px 8px; line-height: 1; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: background-color 0.2s;';
-    closeButton.onmouseover = function() { this.style.backgroundColor = 'rgba(0,0,0,0.1)'; };
+    closeButton.style.cssText = 'background: none; border: none; font-size: 24px; cursor: pointer; color: ' + headerFontColor + '; padding: 4px 8px; line-height: 1; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: background-color 0.2s;';
+    closeButton.onmouseover = function() { this.style.backgroundColor = 'rgba(255,255,255,0.1)'; };
     closeButton.onmouseout = function() { this.style.backgroundColor = 'transparent'; };
     
     header.appendChild(headerContent);
@@ -719,17 +747,17 @@ export async function GET(request: NextRequest) {
 })();
 `
 
-  return new NextResponse(script, {
-    headers: {
-      'Content-Type': 'application/javascript',
-      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Private-Network': 'true',
-    },
-  })
+    return new NextResponse(script, {
+      headers: {
+        'Content-Type': 'application/javascript',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Private-Network': 'true',
+      },
+    })
   } catch (error) {
     console.error('Error generating embed script:', error)
     return new NextResponse(`console.error("[Embed API Error] Server failed to generate script:", ${JSON.stringify(error instanceof Error ? error.message : String(error))});`, {

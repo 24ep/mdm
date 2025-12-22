@@ -104,7 +104,15 @@ export interface ChatbotConfig {
   bubblePadding?: string
   // Message bubble padding (separate for user and bot)
   userBubblePadding?: string
+  userBubblePaddingTop?: string
+  userBubblePaddingRight?: string
+  userBubblePaddingBottom?: string
+  userBubblePaddingLeft?: string
   botBubblePadding?: string
+  botBubblePaddingTop?: string
+  botBubblePaddingRight?: string
+  botBubblePaddingBottom?: string
+  botBubblePaddingLeft?: string
   userMessageBackgroundColor?: string
   botMessageBackgroundColor?: string
   userMessageFontColor?: string
@@ -160,6 +168,11 @@ export interface ChatbotConfig {
   typingIndicatorColor?: string
   showThinkingMessage?: boolean // Show "Thinking..." text like OpenAI
   thinkingMessageText?: string // Custom text for thinking message (default: "Thinking...")
+  // Page styling (for fullpage/embed view)
+  pageBackgroundColor?: string
+  pageBackgroundImage?: string
+  pageTitle?: string
+  pageDescription?: string
   headerTitle?: string
   headerDescription?: string
   headerLogo?: string
@@ -176,19 +189,44 @@ export interface ChatbotConfig {
   headerBorderColor?: string
   headerPaddingX?: string
   headerPaddingY?: string
+  headerPaddingTop?: string
+  headerPaddingRight?: string
+  headerPaddingBottom?: string
+  headerPaddingLeft?: string
+  headerBorderWidthTop?: string
+  headerBorderWidthRight?: string
+  headerBorderWidthBottom?: string
+  headerBorderWidthLeft?: string
   // Close Button
   closeButtonOffsetX?: string
   closeButtonOffsetY?: string
+  // Footer Styling
   footerBgColor?: string
   footerBorderColor?: string
   footerBorderWidth?: string
+  footerBorderWidthTop?: string
+  footerBorderWidthRight?: string
+  footerBorderWidthBottom?: string
+  footerBorderWidthLeft?: string
   footerBorderRadius?: string
+  footerBorderRadiusTopLeft?: string
+  footerBorderRadiusTopRight?: string
+  footerBorderRadiusBottomRight?: string
+  footerBorderRadiusBottomLeft?: string
   footerPaddingX?: string
   footerPaddingY?: string
   footerInputBgColor?: string
   footerInputBorderColor?: string
   footerInputBorderWidth?: string
+  footerInputBorderWidthTop?: string
+  footerInputBorderWidthRight?: string
+  footerInputBorderWidthBottom?: string
+  footerInputBorderWidthLeft?: string
   footerInputBorderRadius?: string
+  footerInputBorderRadiusTopLeft?: string
+  footerInputBorderRadiusTopRight?: string
+  footerInputBorderRadiusBottomRight?: string
+  footerInputBorderRadiusBottomLeft?: string
   footerInputFontColor?: string
   sendButtonIcon?: string
   sendButtonRounded?: boolean // Deprecated - use sendButtonBorderRadius instead
@@ -251,8 +289,23 @@ export interface ChatbotConfig {
   chatWindowBorderRadius?: string
   chatWindowShadowColor?: string
   chatWindowShadowBlur?: string
+
   chatWindowPaddingX?: string
   chatWindowPaddingY?: string
+  // PWA Configuration
+  enablePWA?: boolean
+  pwaName?: string
+  pwaShortName?: string
+  pwaDescription?: string
+  pwaBackgroundColor?: string
+  pwaThemeColor?: string
+  pwaStartUrl?: string
+  pwaDisplay?: 'standalone' | 'fullscreen' | 'minimal-ui' | 'browser'
+  pwaIcon192?: string
+  pwaIcon512?: string
+  pwaManifestPath?: string
+  pwaServiceWorkerPath?: string
+
   popoverPosition?: 'top' | 'left' // Position of popover relative to widget: 'top' = above widget, 'left' = to the left of widget
   widgetPopoverMargin?: string // Margin/spacing between widget button and popover window
 }

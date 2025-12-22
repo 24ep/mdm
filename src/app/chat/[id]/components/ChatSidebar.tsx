@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { X, Plus, MessageSquare, Trash2 } from 'lucide-react'
-import { Message } from '../types'
+import { ChatbotConfig, Message } from '../types'
 
 interface ChatHistoryItem {
   id: string
@@ -20,6 +20,7 @@ interface ChatSidebarProps {
   onSelectChat: (chatId: string) => void
   onNewChat: () => void
   onDeleteChat: (chatId: string, e: React.MouseEvent) => void
+  chatbot: ChatbotConfig
 }
 
 export function ChatSidebar({
@@ -30,6 +31,7 @@ export function ChatSidebar({
   onSelectChat,
   onNewChat,
   onDeleteChat,
+  chatbot,
 }: ChatSidebarProps) {
   return (
     <div className={`${sidebarOpen ? 'w-64' : 'w-0'} transition-all duration-300 border-r bg-background/95 backdrop-blur-sm flex flex-col overflow-hidden`}>
@@ -46,23 +48,30 @@ export function ChatSidebar({
               <X className="h-4 w-4" />
             </Button>
           </div>
-          
+
           <div className="p-4 border-b">
-            <Button onClick={onNewChat} className="w-full" size="sm">
+            <Button onClick={onNewChat} className="w-full" size="sm"
+              style={{
+                backgroundColor: chatbot.primaryColor,
+                color: chatbot.fontColor
+              }}
+            >
               <Plus className="h-4 w-4 mr-2" />
               New Chat
             </Button>
           </div>
-          
+
           <ScrollArea className="flex-1">
             <div className="p-2 space-y-1">
               {chatHistory.map((chat) => (
                 <div
                   key={chat.id}
                   onClick={() => onSelectChat(chat.id)}
-                  className={`p-3 rounded-lg cursor-pointer hover:bg-muted transition-colors group ${
-                    currentChatId === chat.id ? 'bg-blue-50 border border-blue-200' : ''
-                  }`}
+                  className={`p-3 rounded-lg cursor-pointer hover:bg-muted transition-colors group`}
+                  style={currentChatId === chat.id ? {
+                    backgroundColor: `${chatbot.primaryColor}15`, // 15 = ~8% opacity
+                    border: `1px solid ${chatbot.primaryColor}40` // 40 = ~25% opacity
+                  } : {}}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">

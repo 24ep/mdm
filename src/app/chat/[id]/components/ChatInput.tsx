@@ -43,7 +43,7 @@ export function ChatInput({
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const fileUploadLayout = (chatbot as any).fileUploadLayout || 'attach-first'
-  
+
   const attachButton = chatbot.enableFileUpload ? (
     <>
       <input
@@ -110,9 +110,14 @@ export function ChatInput({
         fontSize: chatbot.fontSize,
         color: (chatbot as any).footerInputFontColor || chatbot.fontColor,
         backgroundColor: (chatbot as any).footerInputBgColor || chatbot.messageBoxColor,
-        borderColor: (chatbot as any).footerInputBorderColor || chatbot.borderColor,
-        borderWidth: (chatbot as any).footerInputBorderWidth || chatbot.borderWidth,
-        borderRadius: (chatbot as any).footerInputBorderRadius || chatbot.borderRadius,
+        borderTopWidth: (chatbot as any).footerInputBorderWidthTop || (chatbot as any).footerInputBorderWidth || chatbot.borderWidth,
+        borderRightWidth: (chatbot as any).footerInputBorderWidthRight || (chatbot as any).footerInputBorderWidth || chatbot.borderWidth,
+        borderBottomWidth: (chatbot as any).footerInputBorderWidthBottom || (chatbot as any).footerInputBorderWidth || chatbot.borderWidth,
+        borderLeftWidth: (chatbot as any).footerInputBorderWidthLeft || (chatbot as any).footerInputBorderWidth || chatbot.borderWidth,
+        borderTopLeftRadius: (chatbot as any).footerInputBorderRadiusTopLeft || (chatbot as any).footerInputBorderRadius || chatbot.borderRadius,
+        borderTopRightRadius: (chatbot as any).footerInputBorderRadiusTopRight || (chatbot as any).footerInputBorderRadius || chatbot.borderRadius,
+        borderBottomRightRadius: (chatbot as any).footerInputBorderRadiusBottomRight || (chatbot as any).footerInputBorderRadius || chatbot.borderRadius,
+        borderBottomLeftRadius: (chatbot as any).footerInputBorderRadiusBottomLeft || (chatbot as any).footerInputBorderRadius || chatbot.borderRadius,
       }}
     />
   )
@@ -134,17 +139,17 @@ export function ChatInput({
   const sendButtonWidth = (chatbot as any).sendButtonWidth
   const sendButtonHeight = (chatbot as any).sendButtonHeight
   const sendButtonPosition = (chatbot as any).sendButtonPosition || 'outside'
-  
+
   // Default button height matches input height (h-10 = 40px)
   // Default button width matches height for square button
   const inputHeight = '40px' // Input component uses h-10 class = 40px
   const defaultButtonHeight = sendButtonHeight || inputHeight
   const defaultButtonWidth = sendButtonWidth || defaultButtonHeight // Square by default
-  
+
   // Determine border radius - use individual corners if set, otherwise use unified, fallback to rounded boolean
   const getSendButtonBorderRadius = () => {
-    if (sendButtonBorderRadiusTopLeft || sendButtonBorderRadiusTopRight || 
-        sendButtonBorderRadiusBottomRight || sendButtonBorderRadiusBottomLeft) {
+    if (sendButtonBorderRadiusTopLeft || sendButtonBorderRadiusTopRight ||
+      sendButtonBorderRadiusBottomRight || sendButtonBorderRadiusBottomLeft) {
       return {
         borderTopLeftRadius: sendButtonBorderRadiusTopLeft || sendButtonBorderRadius || '8px',
         borderTopRightRadius: sendButtonBorderRadiusTopRight || sendButtonBorderRadius || '8px',
@@ -160,7 +165,7 @@ export function ChatInput({
     }
     return undefined
   }
-  
+
   const sendButton = (
     <Button
       type="submit"
@@ -196,14 +201,14 @@ export function ChatInput({
               <div key={index} className="relative group">
                 <div className="rounded-lg overflow-hidden border transition-all duration-200 ease-out group-hover:shadow-md group-hover:scale-105" style={{ borderColor: chatbot.borderColor }}>
                   {attachment.type === 'image' ? (
-                    <img 
-                      src={attachment.url} 
-                      alt={attachment.name || 'Image'} 
+                    <img
+                      src={attachment.url}
+                      alt={attachment.name || 'Image'}
                       className="w-20 h-20 object-cover"
                     />
                   ) : (
-                    <video 
-                      src={attachment.url} 
+                    <video
+                      src={attachment.url}
                       className="w-20 h-20 object-cover"
                     />
                   )}
@@ -226,18 +231,27 @@ export function ChatInput({
       )}
 
       {/* Input Area */}
-      <form 
+      <form
         onSubmit={onSubmit}
         className="transition-all duration-200 ease-out"
-        style={{ 
+        style={{
           paddingLeft: (chatbot as any).footerPaddingX || chatbot.headerPaddingX || '20px',
           paddingRight: (chatbot as any).footerPaddingX || chatbot.headerPaddingX || '20px',
           paddingTop: (chatbot as any).footerPaddingY || chatbot.headerPaddingY || '16px',
           paddingBottom: (chatbot as any).footerPaddingY || chatbot.headerPaddingY || '16px',
           borderTopColor: (chatbot as any).footerBorderColor || chatbot.borderColor,
-          borderTopWidth: (chatbot as any).footerBorderWidth || chatbot.borderWidth,
-          borderBottomLeftRadius: (chatbot as any).footerBorderRadius || chatbot.chatWindowBorderRadius || chatbot.borderRadius,
-          borderBottomRightRadius: (chatbot as any).footerBorderRadius || chatbot.chatWindowBorderRadius || chatbot.borderRadius,
+          borderRightColor: (chatbot as any).footerBorderColor || chatbot.borderColor,
+          borderBottomColor: (chatbot as any).footerBorderColor || chatbot.borderColor,
+          borderLeftColor: (chatbot as any).footerBorderColor || chatbot.borderColor,
+          borderTopWidth: (chatbot as any).footerBorderWidthTop || (chatbot as any).footerBorderWidth || chatbot.borderWidth,
+          borderRightWidth: (chatbot as any).footerBorderWidthRight || ((chatbot as any).footerBorderWidth !== undefined ? (chatbot as any).footerBorderWidth : '0px'),
+          borderBottomWidth: (chatbot as any).footerBorderWidthBottom || ((chatbot as any).footerBorderWidth !== undefined ? (chatbot as any).footerBorderWidth : '0px'),
+          borderLeftWidth: (chatbot as any).footerBorderWidthLeft || ((chatbot as any).footerBorderWidth !== undefined ? (chatbot as any).footerBorderWidth : '0px'),
+          borderStyle: 'solid',
+          borderTopLeftRadius: (chatbot as any).footerBorderRadiusTopLeft || (chatbot as any).footerBorderRadius || '0px',
+          borderTopRightRadius: (chatbot as any).footerBorderRadiusTopRight || (chatbot as any).footerBorderRadius || '0px',
+          borderBottomRightRadius: (chatbot as any).footerBorderRadiusBottomRight || (chatbot as any).footerBorderRadius || chatbot.chatWindowBorderRadius || chatbot.borderRadius,
+          borderBottomLeftRadius: (chatbot as any).footerBorderRadiusBottomLeft || (chatbot as any).footerBorderRadius || chatbot.chatWindowBorderRadius || chatbot.borderRadius,
           backgroundColor: (chatbot as any).footerBgColor || chatbot.messageBoxColor
         }}
       >

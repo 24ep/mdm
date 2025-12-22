@@ -125,24 +125,26 @@ export async function query(
     const duration = Date.now() - startTime
 
     // Send error metric to SigNoz
-    try {
-      const { sendMetricToSigNoz, isSigNozEnabled } = await import('./signoz-client')
-      const enabled = await isSigNozEnabled()
+    if (!options.skipTracing) {
+      try {
+        const { sendMetricToSigNoz, isSigNozEnabled } = await import('./signoz-client')
+        const enabled = await isSigNozEnabled()
 
-      if (enabled) {
-        sendMetricToSigNoz({
-          name: 'db.query.errors',
-          value: 1,
-          type: 'counter',
-          attributes: {
-            operation,
-            'error.type': error?.code || 'unknown',
-            'error.message': error?.message?.substring(0, 100) || 'unknown'
-          }
-        }).catch(() => { })
+        if (enabled) {
+          sendMetricToSigNoz({
+            name: 'db.query.errors',
+            value: 1,
+            type: 'counter',
+            attributes: {
+              operation,
+              'error.type': error?.code || 'unknown',
+              'error.message': error?.message?.substring(0, 100) || 'unknown'
+            }
+          }).catch(() => { })
+        }
+      } catch (traceError) {
+        // Silently fail
       }
-    } catch (traceError) {
-      // Silently fail
     }
 
     // Suppress logging for expected "table does not exist" errors (42P01)

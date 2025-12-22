@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { ChatbotConfig } from '../types'
 import toast from 'react-hot-toast'
 import { isUuid } from '@/lib/validation'
+import { DEFAULT_CHATBOT_CONFIG } from '@/app/admin/components/chatbot/constants'
 
 interface UseChatbotLoaderOptions {
   chatbotId: string
@@ -23,6 +24,26 @@ export function useChatbotLoader({
     text?: string
     description?: string
   }>({})
+
+  // Helper to merge loaded chatbot with default config to ensure all values are set
+  const mergeWithDefaults = (loadedChatbot: any): ChatbotConfig => {
+    return { ...DEFAULT_CHATBOT_CONFIG, ...loadedChatbot } as ChatbotConfig
+  }
+
+  // Update emulator config when chatbot loads with persisted settings
+  useEffect(() => {
+    if (chatbot) {
+      setEmulatorConfig(prev => ({
+        ...prev,
+        // Only override if not already set (or should we always override? 
+        // Let's always override matching fields from chatbot config as that's the source of truth on load)
+        backgroundColor: chatbot.pageBackgroundColor || prev.backgroundColor,
+        backgroundImage: chatbot.pageBackgroundImage || prev.backgroundImage,
+        text: chatbot.pageTitle || prev.text,
+        description: chatbot.pageDescription || prev.description
+      }))
+    }
+  }, [chatbot])
 
   // Load chatbot
   useEffect(() => {
@@ -66,8 +87,8 @@ export function useChatbotLoader({
         // This ensures the emulator uses style settings from ai-chat-ui, not theme config
         setChatbot((prev) => {
           const updated = { ...(prev || ({} as any)), ...cfg }
-          // Mark that this config came from the editor to ensure styles are applied
-          ;(updated as any)._fromEditor = true
+            // Mark that this config came from the editor to ensure styles are applied
+            ; (updated as any)._fromEditor = true
           return updated
         })
       } else if (data.type === 'emulator-config-update' && data.id === chatbotId) {
@@ -87,8 +108,9 @@ export function useChatbotLoader({
         if (res.ok) {
           const d = await res.json()
           if (d.chatbot) {
-            setChatbot(d.chatbot)
-            if (onChatbotLoaded) onChatbotLoaded(d.chatbot)
+            const merged = mergeWithDefaults(d.chatbot)
+            setChatbot(merged)
+            if (onChatbotLoaded) onChatbotLoaded(merged)
             return true
           }
         }
@@ -105,12 +127,13 @@ export function useChatbotLoader({
           const response = await fetch(`/api/chatbots/${chatbotId}`)
           // Check for JSON content type to avoid handling auth redirects (HTML) as success
           const contentType = response.headers.get('content-type')
-          
+
           if (response.ok && contentType && contentType.includes('application/json')) {
             const data = await response.json()
             if (data.chatbot) {
-              setChatbot(data.chatbot)
-              if (onChatbotLoaded) onChatbotLoaded(data.chatbot)
+              const merged = mergeWithDefaults(data.chatbot)
+              setChatbot(merged)
+              if (onChatbotLoaded) onChatbotLoaded(merged)
               return
             }
           }
@@ -127,8 +150,9 @@ export function useChatbotLoader({
           const chatbots = JSON.parse(saved)
           const found = chatbots.find((c: any) => c.id === chatbotId)
           if (found) {
-            setChatbot(found)
-            if (onChatbotLoaded) onChatbotLoaded(found)
+            const merged = mergeWithDefaults(found)
+            setChatbot(merged)
+            if (onChatbotLoaded) onChatbotLoaded(merged)
             return
           }
         }
@@ -145,8 +169,9 @@ export function useChatbotLoader({
           const chatbots = JSON.parse(saved)
           const found = chatbots.find((c: any) => c.id === chatbotId)
           if (found) {
-            setChatbot(found)
-            if (onChatbotLoaded) onChatbotLoaded(found)
+            const merged = mergeWithDefaults(found)
+            setChatbot(merged)
+            if (onChatbotLoaded) onChatbotLoaded(merged)
             return
           }
         }

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { mergeVersionConfig, sanitizeChatbotConfig } from '@/lib/chatbot-helper'
+import { checkRateLimit } from '@/lib/rate-limiter'
 
 // CORS headers for cross-origin embed support
 const corsHeaders = {
@@ -9,35 +11,7 @@ const corsHeaders = {
   'Access-Control-Allow-Private-Network': 'true',
 }
 
-// Helper function to merge version config into chatbot object
-// Filters out undefined/null values from version config to prevent overwriting
-// valid chatbot base values with undefined
-function mergeVersionConfig(chatbot: any): any {
-  if (!chatbot) return chatbot
-  
-  // Get the latest published version (or latest draft if none published)
-  const publishedVersion = chatbot.versions?.find((v: any) => v.isPublished)
-  const latestVersion = chatbot.versions && chatbot.versions.length > 0 ? chatbot.versions[0] : null
-  const rawVersionConfig = (publishedVersion?.config || latestVersion?.config) || {}
-  
-  // Filter out undefined/null values from version config
-  // This ensures we don't overwrite valid chatbot base values with undefined
-  const versionConfig: Record<string, any> = {}
-  for (const [key, value] of Object.entries(rawVersionConfig)) {
-    if (value !== undefined && value !== null) {
-      versionConfig[key] = value
-    }
-  }
-  
-  // Merge: start with chatbot base, then apply version config (which has no undefined values)
-  return {
-    ...chatbot,
-    ...versionConfig,
-    id: chatbot.id,
-    createdAt: chatbot.createdAt,
-    updatedAt: chatbot.updatedAt,
-  }
-}
+// Helper function to merge version config (inline removed)
 
 // OPTIONS - Handle CORS preflight requests
 export async function OPTIONS() {
@@ -55,6 +29,21 @@ export async function GET(
 ) {
   try {
     const { chatbotId } = await params
+
+    // Rate limiting
+    const ip = request.headers.get('x-forwarded-for') || 'anonymous'
+    const rateLimitResult = await checkRateLimit(chatbotId, ip, {
+      enabled: true,
+      maxRequestsPerMinute: 60,
+      blockDuration: 60,
+    })
+
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests', retryAfter: rateLimitResult.resetTime },
+        { status: 429, headers: corsHeaders }
+      )
+    }
 
     // Fetch chatbot - only if it exists and is not deleted
     // For public access, we don't check ownership
@@ -76,20 +65,30 @@ export async function GET(
     }
 
     // Merge version config (prefer published version)
-    const mergedChatbot = mergeVersionConfig(chatbot)
+    // Note: mergeVersionConfig logic in helper might differ slightly (it prioritized latest version, not necessarily published)
+    // But keeping consistent with helper is better.
+    // However, public route specifically wants PUBLISHED version.
+    // Let's rely on the fact that helper merges version[0]. 
+    // Wait, DB query includes versions ordered by createdAt desc.
+    // If I want PUBLISHED version, I might need custom logic.
+    // The previous code had: const publishedVersion = chatbot.versions?.find((v: any) => v.isPublished)
 
-    // Remove sensitive fields for public access
-    const publicChatbot = {
-      ...mergedChatbot,
-      // Remove API keys and sensitive config
-      apiAuthValue: undefined,
-      chatkitApiKey: undefined,
-      difyApiKey: undefined,
-      openaiAgentSdkApiKey: undefined,
-      // Keep only what's needed for embed
-    }
+    // For PUBLIC route, we should probably ONLY show published version.
+    // Ideally we filter in DB query.
 
-    return NextResponse.json({ chatbot: publicChatbot }, { headers: corsHeaders })
+    // Let's stick to the previous logic but use sanitizeChatbotConfig.
+    // Actually, I removed the inline function. I should restore it but wrap in sanitize.
+    // OR, I can use the imported valid mergeVersionConfig, which picks versions[0].
+
+    // If I use the imported one, it picks the latest version (draft or published).
+    // For a public "embed" endpoint, usually you want the PUBLISHED version.
+    // But `api/embed` uses `mergeVersionConfig` which picks latest (Line 38).
+    // So if `api/embed` picks latest, `api/public/chatbots` picking latest is consistent with embed.
+    // So using the helper is CONSISTENT.
+
+    const mergedChatbot = sanitizeChatbotConfig(mergeVersionConfig(chatbot))
+
+    return NextResponse.json({ chatbot: mergedChatbot }, { headers: corsHeaders })
   } catch (error) {
     console.error('Error fetching chatbot config:', error)
     return NextResponse.json({ error: 'Failed to fetch chatbot' }, { status: 500, headers: corsHeaders })

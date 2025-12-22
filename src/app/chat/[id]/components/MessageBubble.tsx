@@ -11,10 +11,10 @@ import { MarkdownRenderer } from '@/components/knowledge-base/MarkdownRenderer'
 function LinkifiedText({ content }: { content: string }) {
   // URL regex pattern
   const urlRegex = /(https?:\/\/[^\s]+)/g
-  
+
   // Split content by URLs and convert URLs to anchor tags
   const parts = content.split(urlRegex)
-  
+
   return (
     <p className="text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere">
       {parts.map((part, index) => {
@@ -68,14 +68,14 @@ export function MessageBubble({
   const namePosition = (chatbot.messageNamePosition || 'top-of-message') as 'top-of-message' | 'top-of-avatar' | 'right-of-avatar'
   const avatarPosition = (chatbot as any).messageAvatarPosition || 'top-of-message'
   const displayName = chatbot.messageName || chatbot.headerTitle || chatbot.name || 'Assistant'
-  
+
   const renderBotAvatar = () => {
     if (!showAvatar) return null
     const avatarType = chatbot.avatarType || 'icon'
     if (avatarType === 'image' && chatbot.avatarImageUrl) {
       return (
-        <img 
-          src={chatbot.avatarImageUrl} 
+        <img
+          src={chatbot.avatarImageUrl}
           alt={chatbot.name}
           className="w-8 h-8 rounded-full object-cover flex-shrink-0"
           onError={(e) => {
@@ -89,7 +89,7 @@ export function MessageBubble({
       const iconColor = chatbot.avatarIconColor || '#ffffff'
       const bgColor = chatbot.avatarBackgroundColor || chatbot.primaryColor || '#3b82f6'
       return (
-        <div 
+        <div
           className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
           style={{ backgroundColor: bgColor }}
         >
@@ -104,8 +104,8 @@ export function MessageBubble({
     const userAvatarType = (chatbot as any).userAvatarType || 'icon'
     if (userAvatarType === 'image' && (chatbot as any).userAvatarImageUrl) {
       return (
-        <img 
-          src={(chatbot as any).userAvatarImageUrl} 
+        <img
+          src={(chatbot as any).userAvatarImageUrl}
           alt="User"
           className="w-8 h-8 rounded-full object-cover flex-shrink-0"
           onError={(e) => {
@@ -119,7 +119,7 @@ export function MessageBubble({
       const userIconColor = (chatbot as any).userAvatarIconColor || '#6b7280'
       const userBgColor = (chatbot as any).userAvatarBackgroundColor || '#e5e7eb'
       return (
-        <div 
+        <div
           className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
           style={{ backgroundColor: userBgColor }}
         >
@@ -180,11 +180,10 @@ export function MessageBubble({
       <div className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
         {message.role === 'assistant' && avatarPosition === 'left-of-message' && renderBotAvatar()}
         <div
-          className={`max-w-[80%] rounded-lg ${
-            message.role === 'user'
+          className={`max-w-[80%] rounded-lg ${message.role === 'user'
               ? 'rounded-br-none'
               : 'rounded-bl-none'
-          }`}
+            }`}
           style={{
             wordWrap: 'break-word',
             overflowWrap: 'break-word',
@@ -201,33 +200,43 @@ export function MessageBubble({
               padding: (chatbot as any).conversationOpenerPadding || (chatbot as any).botBubblePadding || (chatbot as any).bubblePadding || '12px',
               borderRadius: (chatbot as any).conversationOpenerBorderRadius || chatbot.bubbleBorderRadius || chatbot.borderRadius,
             } : {}),
-            ...(message.role === 'user' 
+            ...(message.role === 'user'
               ? {
-                  padding: (chatbot as any).userBubblePadding || (chatbot as any).bubblePadding || '12px'
-                }
+                ...((chatbot as any).userBubblePaddingTop || (chatbot as any).userBubblePaddingRight || (chatbot as any).userBubblePaddingBottom || (chatbot as any).userBubblePaddingLeft
+                  ? {
+                    paddingTop: (chatbot as any).userBubblePaddingTop || (chatbot as any).userBubblePadding || (chatbot as any).bubblePadding || '12px',
+                    paddingRight: (chatbot as any).userBubblePaddingRight || (chatbot as any).userBubblePadding || (chatbot as any).bubblePadding || '12px',
+                    paddingBottom: (chatbot as any).userBubblePaddingBottom || (chatbot as any).userBubblePadding || (chatbot as any).bubblePadding || '12px',
+                    paddingLeft: (chatbot as any).userBubblePaddingLeft || (chatbot as any).userBubblePadding || (chatbot as any).bubblePadding || '12px',
+                  }
+                  : {
+                    padding: (chatbot as any).userBubblePadding || (chatbot as any).bubblePadding || '12px'
+                  }
+                )
+              }
               : {
-                  ...((chatbot as any).botBubblePaddingTop || (chatbot as any).botBubblePaddingRight || (chatbot as any).botBubblePaddingBottom || (chatbot as any).botBubblePaddingLeft
-                    ? {
-                        paddingTop: (chatbot as any).botBubblePaddingTop || (chatbot as any).botBubblePadding || (chatbot as any).bubblePadding || '12px',
-                        paddingRight: (chatbot as any).botBubblePaddingRight || (chatbot as any).botBubblePadding || (chatbot as any).bubblePadding || '12px',
-                        paddingBottom: (chatbot as any).botBubblePaddingBottom || (chatbot as any).botBubblePadding || (chatbot as any).bubblePadding || '12px',
-                        paddingLeft: (chatbot as any).botBubblePaddingLeft || (chatbot as any).botBubblePadding || (chatbot as any).bubblePadding || '12px',
-                      }
-                    : {
-                        padding: (chatbot as any).botBubblePadding || (chatbot as any).bubblePadding || '12px'
-                      }
-                  )
-                }),
-            backgroundColor: message.role === 'user' 
+                ...((chatbot as any).botBubblePaddingTop || (chatbot as any).botBubblePaddingRight || (chatbot as any).botBubblePaddingBottom || (chatbot as any).botBubblePaddingLeft
+                  ? {
+                    paddingTop: (chatbot as any).botBubblePaddingTop || (chatbot as any).botBubblePadding || (chatbot as any).bubblePadding || '12px',
+                    paddingRight: (chatbot as any).botBubblePaddingRight || (chatbot as any).botBubblePadding || (chatbot as any).bubblePadding || '12px',
+                    paddingBottom: (chatbot as any).botBubblePaddingBottom || (chatbot as any).botBubblePadding || (chatbot as any).bubblePadding || '12px',
+                    paddingLeft: (chatbot as any).botBubblePaddingLeft || (chatbot as any).botBubblePadding || (chatbot as any).bubblePadding || '12px',
+                  }
+                  : {
+                    padding: (chatbot as any).botBubblePadding || (chatbot as any).bubblePadding || '12px'
+                  }
+                )
+              }),
+            backgroundColor: message.role === 'user'
               ? (chatbot.userMessageBackgroundColor || chatbot.primaryColor)
               : (chatbot.botMessageBackgroundColor || '#f3f4f6'),
-            color: message.role === 'user' 
+            color: message.role === 'user'
               ? (chatbot.userMessageFontColor || 'white')
               : ((chatbot as any).botMessageFontColor || chatbot.fontColor || '#000000'),
-            fontFamily: message.role === 'user' 
+            fontFamily: message.role === 'user'
               ? (chatbot.userMessageFontFamily || chatbot.fontFamily)
               : ((chatbot as any).botMessageFontFamily || chatbot.fontFamily),
-            fontSize: message.role === 'user' 
+            fontSize: message.role === 'user'
               ? (chatbot.userMessageFontSize || chatbot.fontSize)
               : ((chatbot as any).botMessageFontSize || chatbot.fontSize),
             borderColor: message.role === 'user'
@@ -238,25 +247,25 @@ export function MessageBubble({
               : ((chatbot as any).botBubbleBorderWidth || chatbot.bubbleBorderWidth || chatbot.borderWidth),
             ...(message.role === 'user'
               ? ((chatbot as any).userBubbleBorderRadiusTopLeft || (chatbot as any).userBubbleBorderRadiusTopRight || (chatbot as any).userBubbleBorderRadiusBottomRight || (chatbot as any).userBubbleBorderRadiusBottomLeft
-                  ? {
-                      borderTopLeftRadius: (chatbot as any).userBubbleBorderRadiusTopLeft || (chatbot as any).userBubbleBorderRadius || chatbot.bubbleBorderRadius || undefined,
-                      borderTopRightRadius: (chatbot as any).userBubbleBorderRadiusTopRight || (chatbot as any).userBubbleBorderRadius || chatbot.bubbleBorderRadius || undefined,
-                      borderBottomRightRadius: (chatbot as any).userBubbleBorderRadiusBottomRight || (chatbot as any).userBubbleBorderRadius || chatbot.bubbleBorderRadius || undefined,
-                      borderBottomLeftRadius: (chatbot as any).userBubbleBorderRadiusBottomLeft || (chatbot as any).userBubbleBorderRadius || chatbot.bubbleBorderRadius || undefined,
-                    }
-                  : {
-                      borderRadius: (chatbot as any).userBubbleBorderRadius || chatbot.bubbleBorderRadius || undefined,
-                    })
+                ? {
+                  borderTopLeftRadius: (chatbot as any).userBubbleBorderRadiusTopLeft || (chatbot as any).userBubbleBorderRadius || chatbot.bubbleBorderRadius || undefined,
+                  borderTopRightRadius: (chatbot as any).userBubbleBorderRadiusTopRight || (chatbot as any).userBubbleBorderRadius || chatbot.bubbleBorderRadius || undefined,
+                  borderBottomRightRadius: (chatbot as any).userBubbleBorderRadiusBottomRight || (chatbot as any).userBubbleBorderRadius || chatbot.bubbleBorderRadius || undefined,
+                  borderBottomLeftRadius: (chatbot as any).userBubbleBorderRadiusBottomLeft || (chatbot as any).userBubbleBorderRadius || chatbot.bubbleBorderRadius || undefined,
+                }
+                : {
+                  borderRadius: (chatbot as any).userBubbleBorderRadius || chatbot.bubbleBorderRadius || undefined,
+                })
               : ((chatbot as any).botBubbleBorderRadiusTopLeft || (chatbot as any).botBubbleBorderRadiusTopRight || (chatbot as any).botBubbleBorderRadiusBottomRight || (chatbot as any).botBubbleBorderRadiusBottomLeft
-                  ? {
-                      borderTopLeftRadius: (chatbot as any).botBubbleBorderRadiusTopLeft || (chatbot as any).botBubbleBorderRadius || chatbot.bubbleBorderRadius || undefined,
-                      borderTopRightRadius: (chatbot as any).botBubbleBorderRadiusTopRight || (chatbot as any).botBubbleBorderRadius || chatbot.bubbleBorderRadius || undefined,
-                      borderBottomRightRadius: (chatbot as any).botBubbleBorderRadiusBottomRight || (chatbot as any).botBubbleBorderRadius || chatbot.bubbleBorderRadius || undefined,
-                      borderBottomLeftRadius: (chatbot as any).botBubbleBorderRadiusBottomLeft || (chatbot as any).botBubbleBorderRadius || chatbot.bubbleBorderRadius || undefined,
-                    }
-                  : {
-                      borderRadius: (chatbot as any).botBubbleBorderRadius || chatbot.bubbleBorderRadius || undefined,
-                    })),
+                ? {
+                  borderTopLeftRadius: (chatbot as any).botBubbleBorderRadiusTopLeft || (chatbot as any).botBubbleBorderRadius || chatbot.bubbleBorderRadius || undefined,
+                  borderTopRightRadius: (chatbot as any).botBubbleBorderRadiusTopRight || (chatbot as any).botBubbleBorderRadius || chatbot.bubbleBorderRadius || undefined,
+                  borderBottomRightRadius: (chatbot as any).botBubbleBorderRadiusBottomRight || (chatbot as any).botBubbleBorderRadius || chatbot.bubbleBorderRadius || undefined,
+                  borderBottomLeftRadius: (chatbot as any).botBubbleBorderRadiusBottomLeft || (chatbot as any).botBubbleBorderRadius || chatbot.bubbleBorderRadius || undefined,
+                }
+                : {
+                  borderRadius: (chatbot as any).botBubbleBorderRadius || chatbot.bubbleBorderRadius || undefined,
+                })),
           }}
         >
           {message.attachments && message.attachments.length > 0 && (
@@ -264,18 +273,18 @@ export function MessageBubble({
               {message.attachments.map((attachment, idx) => (
                 <div key={idx} className="rounded-lg overflow-hidden">
                   {attachment.type === 'image' ? (
-                    <img 
-                      src={attachment.url} 
-                      alt={attachment.name || 'Image'} 
+                    <img
+                      src={attachment.url}
+                      alt={attachment.name || 'Image'}
                       className="max-w-full h-auto max-h-64 object-contain rounded"
                       onError={(e) => {
                         (e.target as HTMLImageElement).style.display = 'none'
                       }}
                     />
                   ) : (
-                    <video 
-                      src={attachment.url} 
-                      controls 
+                    <video
+                      src={attachment.url}
+                      controls
                       className="max-w-full h-auto max-h-64 rounded"
                       onError={(e) => {
                         (e.target as HTMLVideoElement).style.display = 'none'
@@ -318,7 +327,7 @@ export function MessageBubble({
               </div>
             </div>
           )}
-          
+
           {/* Message Actions (Like, Dislike, Retry) - Only for assistant messages */}
           {message.role === 'assistant' && ((chatbot.showMessageFeedback) || (chatbot.showMessageRetry)) && (
             <div className="flex items-center gap-2 mt-2 pt-2 border-t" style={{ borderColor: chatbot.borderColor }}>
@@ -333,7 +342,7 @@ export function MessageBubble({
                       const currentFeedback = messageFeedback[message.id]
                       const newFeedback = currentFeedback === 'liked' ? null : 'liked'
                       setMessageFeedback(prev => ({ ...prev, [message.id]: newFeedback }))
-                      
+
                       if (newFeedback && chatbot.engineType === 'openai-agent-sdk' && chatbot.openaiAgentSdkAgentId && chatbot.openaiAgentSdkApiKey) {
                         try {
                           const response = await fetch('/api/openai-agent-sdk/feedback', {
@@ -351,7 +360,7 @@ export function MessageBubble({
                               traceId: message.traceId || undefined,
                             })
                           })
-                          
+
                           if (response.ok) {
                             const result = await response.json()
                             toast.success(result.message || 'Feedback sent to workflow')
@@ -369,8 +378,8 @@ export function MessageBubble({
                       }
                     }}
                   >
-                    <ThumbsUp 
-                      className={`h-4 w-4 ${messageFeedback[message.id] === 'liked' ? 'text-blue-600 fill-blue-600' : 'text-muted-foreground'}`} 
+                    <ThumbsUp
+                      className={`h-4 w-4 ${messageFeedback[message.id] === 'liked' ? 'text-blue-600 fill-blue-600' : 'text-muted-foreground'}`}
                     />
                   </Button>
                   <Button
@@ -382,7 +391,7 @@ export function MessageBubble({
                       const currentFeedback = messageFeedback[message.id]
                       const newFeedback = currentFeedback === 'disliked' ? null : 'disliked'
                       setMessageFeedback(prev => ({ ...prev, [message.id]: newFeedback }))
-                      
+
                       if (newFeedback && chatbot.engineType === 'openai-agent-sdk' && chatbot.openaiAgentSdkAgentId && chatbot.openaiAgentSdkApiKey) {
                         try {
                           const response = await fetch('/api/openai-agent-sdk/feedback', {
@@ -400,7 +409,7 @@ export function MessageBubble({
                               traceId: message.traceId || undefined,
                             })
                           })
-                          
+
                           if (response.ok) {
                             const result = await response.json()
                             toast.success(result.message || 'Feedback sent to workflow')
@@ -418,8 +427,8 @@ export function MessageBubble({
                       }
                     }}
                   >
-                    <ThumbsDown 
-                      className={`h-4 w-4 ${messageFeedback[message.id] === 'disliked' ? 'text-red-600 fill-red-600' : 'text-muted-foreground'}`} 
+                    <ThumbsDown
+                      className={`h-4 w-4 ${messageFeedback[message.id] === 'disliked' ? 'text-red-600 fill-red-600' : 'text-muted-foreground'}`}
                     />
                   </Button>
                 </>
@@ -450,7 +459,7 @@ export function MessageBubble({
               )}
             </div>
           )}
-          
+
           <div className="text-xs opacity-70 mt-1">
             {message.timestamp.toLocaleTimeString()}
           </div>

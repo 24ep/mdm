@@ -1,5 +1,6 @@
 import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { NextRequest, NextResponse } from 'next/server'
+import { checkRateLimit } from '@/lib/rate-limiter'
 /**
  * OpenAI Realtime API WebSocket Endpoint
  * 
@@ -21,21 +22,36 @@ async function getHandler(request: NextRequest) {
   const chatbotId = searchParams.get('chatbotId')
   const apiKey = searchParams.get('apiKey')
 
-  if (!chatbotId || !apiKey) {
-    return NextResponse.json({ error: 'Missing chatbotId or apiKey' }, { status: 400 })
+  if (!chatbotId) {
+    return NextResponse.json({ error: 'Missing chatbotId' }, { status: 400 })
+  }
+
+  // Rate limiting: OpenAI Realtime sessions are expensive
+  // Limit to 10 new sessions per minute per user/chatbot combo
+  const rateLimitResult = await checkRateLimit(chatbotId, authResult.session.user.id, {
+    enabled: true,
+    maxRequestsPerMinute: 10,
+    blockDuration: 60,
+  })
+
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: 'Too many connection attempts. Please try again later.' },
+      { status: 429 }
+    )
   }
 
   // Return WebSocket proxy server URL
   // In production, this should point to your WebSocket proxy server
   const wsProxyUrl = process.env.WS_PROXY_URL || 'ws://localhost:3002/api/openai-realtime'
-  
+
   return NextResponse.json({
     success: true,
     wsUrl: wsProxyUrl,
     message: 'Connect to the WebSocket proxy server at the provided URL',
     instructions: {
       step1: 'Connect to the WebSocket URL',
-      step2: 'Send authentication message: { type: "auth", apiKey: "...", sessionConfig: {...} }',
+      step2: 'Send authentication message: { type: "auth", chatbotId: "...", sessionConfig: {...} }',
       step3: 'Start sending audio data',
     },
   })

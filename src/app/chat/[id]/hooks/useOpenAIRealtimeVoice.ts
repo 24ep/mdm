@@ -18,7 +18,7 @@ export function useOpenAIRealtimeVoice({
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [isConnected, setIsConnected] = useState(false)
   const [audioLevel, setAudioLevel] = useState(0) // Audio level 0-100 for visualization
-  
+
   // Track recording start time to ensure we have enough audio before committing
   const recordingStartTimeRef = useRef<number | null>(null)
   const audioChunksSentRef = useRef(0) // Track how many audio chunks we've sent
@@ -45,13 +45,13 @@ export function useOpenAIRealtimeVoice({
     // When voice is enabled, connect and keep connection open for continuous conversation
     if (chatbot?.enableVoiceAgent && chatbot?.voiceProvider === 'openai-realtime') {
       setIsVoiceEnabled(true)
-      
+
       // Check if prompt ID has changed or become available
       const currentPromptId = (chatbot as any)?.openaiAgentSdkRealtimePromptId
       const hasValidPromptId = currentPromptId && typeof currentPromptId === 'string' && currentPromptId.trim().length > 0
       const previousPromptId = previousPromptIdRef.current
       const promptIdChanged = currentPromptId !== previousPromptId
-      
+
       // If prompt ID changed from empty to valid, or changed to a different ID, reconnect
       if (promptIdChanged && hasValidPromptId && wsRef.current && isConnected) {
         console.log('🔄 Prompt ID changed or became available, reconnecting to use new prompt:', {
@@ -71,7 +71,7 @@ export function useOpenAIRealtimeVoice({
           console.error('Failed to auto-connect WebSocket:', error)
         })
       }
-      
+
       // Update previous prompt ID
       previousPromptIdRef.current = currentPromptId
     } else {
@@ -100,29 +100,29 @@ export function useOpenAIRealtimeVoice({
           sampleRate: 24000,
         })
       }
-      
+
       // Resume audio context if suspended (required for autoplay policies)
       if (audioContextRef.current.state === 'suspended') {
         await audioContextRef.current.resume()
       }
-      
+
       // Decode PCM16 audio data
       const int16Array = new Int16Array(audioData)
       const float32Array = new Float32Array(int16Array.length)
       for (let i = 0; i < int16Array.length; i++) {
         float32Array[i] = int16Array[i] / 32768.0
       }
-      
+
       const audioBuffer = audioContextRef.current.createBuffer(1, float32Array.length, 24000)
       audioBuffer.copyToChannel(float32Array, 0)
-      
+
       const source = audioContextRef.current.createBufferSource()
       source.buffer = audioBuffer
       source.connect(audioContextRef.current.destination) // This connects to speakers/headphones
-      
+
       // Queue the source to ensure smooth playback
       audioSourceQueueRef.current.push(source)
-      
+
       // Set up the source to play
       source.onended = () => {
         // Remove from queue
@@ -130,21 +130,21 @@ export function useOpenAIRealtimeVoice({
         if (index > -1) {
           audioSourceQueueRef.current.splice(index, 1)
         }
-        
+
         // If queue is empty, we're done speaking
         if (audioSourceQueueRef.current.length === 0) {
           isPlayingAudioRef.current = false
           setIsSpeaking(false)
         }
       }
-      
+
       // Start playing immediately
       const currentTime = audioContextRef.current.currentTime
       source.start(currentTime)
-      
+
       isPlayingAudioRef.current = true
       setIsSpeaking(true)
-      
+
       console.log('Playing audio chunk through speakers', {
         duration: audioBuffer.duration,
         sampleRate: audioContextRef.current.sampleRate,
@@ -183,7 +183,7 @@ export function useOpenAIRealtimeVoice({
       }
     })
     audioSourceQueueRef.current = []
-    
+
     if (audioContextRef.current) {
       audioContextRef.current.close()
       audioContextRef.current = null
@@ -199,11 +199,11 @@ export function useOpenAIRealtimeVoice({
   const connectWebSocket = async (): Promise<boolean> => {
     return new Promise((resolve, reject) => {
       try {
-        // Get API key from chatbot config
-        const apiKey = chatbot?.openaiAgentSdkApiKey
-        
-        if (!apiKey) {
-          toast.error('OpenAI API key is required for Realtime API')
+        // Use chatbotId for server-side key lookup (Security Best Practice)
+        const chatbotId = chatbot?.id
+
+        if (!chatbotId) {
+          console.error('Chatbot ID required for Realtime Voice')
           resolve(false)
           return
         }
@@ -241,7 +241,7 @@ export function useOpenAIRealtimeVoice({
               'Voice authentication timeout. The connection may have failed.\n\n' +
               'Please check:\n' +
               '1. WebSocket proxy server is running\n' +
-              '2. OpenAI API key is valid\n' +
+              '2. OpenAI API key is valid (server-side)\n' +
               '3. Prompt ID is correct (if configured)',
               { duration: 8000 }
             )
@@ -257,7 +257,7 @@ export function useOpenAIRealtimeVoice({
         ws.onopen = () => {
           clearTimeout(connectionTimeout)
           console.log('Connected to WebSocket proxy for Realtime Voice')
-          
+
           // Send authentication and session configuration
           // For realtime voice, use prompt ID (not workflow) and keep session open
           const sessionConfig: any = {
@@ -278,7 +278,7 @@ export function useOpenAIRealtimeVoice({
             temperature: 0.8,
             max_response_output_tokens: 4096,
           }
-          
+
           console.log('📋 Session configuration:', JSON.stringify(sessionConfig, null, 2))
           console.log('📋 Chatbot config for voice:', {
             hasChatbot: !!chatbot,
@@ -286,12 +286,12 @@ export function useOpenAIRealtimeVoice({
             promptVersion: (chatbot as any)?.openaiAgentSdkRealtimePromptVersion,
             instructions: chatbot?.openaiAgentSdkInstructions,
           })
-          
+
           // Store prompt ID for sending after authentication
           // According to OpenAI Realtime API docs, prompt should be sent via session.update event
           const promptId = (chatbot as any)?.openaiAgentSdkRealtimePromptId
           const hasValidPromptId = promptId && typeof promptId === 'string' && promptId.trim().length > 0
-          
+
           // Use instructions in initial session config if no prompt ID
           // Prompt ID will be sent via session.update after auth.success
           if (!hasValidPromptId) {
@@ -305,18 +305,18 @@ export function useOpenAIRealtimeVoice({
             })
             console.warn('⚠️ For best results, configure a Realtime Voice Prompt ID in chatbot settings.')
           }
-          
+
           ws.send(JSON.stringify({
             type: 'auth',
-            apiKey: apiKey,
+            chatbotId, // Send ID instead of Key
             sessionConfig,
           }))
-          
-          // Store prompt info for sending after auth
-          ;(ws as any)._pendingPromptId = hasValidPromptId ? promptId.trim() : null
-          ;(ws as any)._pendingPromptVersion = hasValidPromptId ? ((chatbot as any).openaiAgentSdkRealtimePromptVersion || '1') : null
+
+            // Store prompt info for sending after auth
+            ; (ws as any)._pendingPromptId = hasValidPromptId ? promptId.trim() : null
+            ; (ws as any)._pendingPromptVersion = hasValidPromptId ? ((chatbot as any).openaiAgentSdkRealtimePromptVersion || '1') : null
         }
-        
+
         ws.onmessage = async (event) => {
           try {
             // Handle both string and ArrayBuffer messages
@@ -331,14 +331,14 @@ export function useOpenAIRealtimeVoice({
               // Buffer or Uint8Array
               messageData = new TextDecoder().decode(event.data as ArrayBuffer)
             }
-            
+
             const data = JSON.parse(messageData)
-            
+
             // Log all messages for debugging (except ping/pong)
             if (data.type && !data.type.startsWith('ping') && !data.type.startsWith('pong')) {
               console.log('📨 Realtime API message:', data.type, data)
             }
-            
+
             // Handle auth confirmation
             if (data.type === 'auth.success') {
               if (!authSuccessReceived) {
@@ -348,19 +348,19 @@ export function useOpenAIRealtimeVoice({
                 console.log('✅ Authenticated with OpenAI Realtime API - session open for continuous conversation')
                 isConnectedRef.current = true
                 setIsConnected(true)
-                
+
                 // Send prompt ID via session.update event after authentication
                 // According to OpenAI Realtime API documentation:
                 // https://platform.openai.com/docs/guides/realtime-models-prompting
                 const pendingPromptId = (ws as any)._pendingPromptId
                 const pendingPromptVersion = (ws as any)._pendingPromptVersion
-                
+
                 if (pendingPromptId) {
                   console.log('📤 Sending prompt ID via session.update:', {
                     id: pendingPromptId,
                     version: pendingPromptVersion,
                   })
-                  
+
                   // Send session.update event with prompt configuration
                   // Note: session.type is not needed in session.update - only the fields to update
                   ws.send(JSON.stringify({
@@ -372,18 +372,18 @@ export function useOpenAIRealtimeVoice({
                       },
                     },
                   }))
-                  
+
                   console.log('✅ Prompt ID sent to Realtime API:', {
                     id: pendingPromptId,
                     version: pendingPromptVersion || '1',
                   })
                 }
-                
+
                 resolve(true)
               }
               return
             }
-            
+
             // Handle errors from proxy
             if (data.type === 'error') {
               clearTimeout(connectionTimeout)
@@ -399,7 +399,7 @@ export function useOpenAIRealtimeVoice({
               resolve(false)
               return
             }
-          
+
             // Handle session update confirmation
             if (data.type === 'session.updated') {
               console.log('✅ Session configuration updated - prompt ID applied')
@@ -407,7 +407,7 @@ export function useOpenAIRealtimeVoice({
               delete (ws as any)._pendingPromptId
               delete (ws as any)._pendingPromptVersion
             }
-            
+
             // Handle connection closed
             if (data.type === 'connection.closed') {
               console.log('Connection to OpenAI Realtime API closed')
@@ -418,7 +418,7 @@ export function useOpenAIRealtimeVoice({
               setIsSpeaking(false)
               return
             }
-            
+
             // Log all incoming messages for debugging
             if (data.type && !data.type.includes('ping') && !data.type.includes('pong')) {
               console.log('📨 Received message:', data.type, {
@@ -428,7 +428,7 @@ export function useOpenAIRealtimeVoice({
                 hasAudio: !!data.audio,
               })
             }
-            
+
             // Handle OpenAI Realtime API messages
             switch (data.type) {
               // Handle input transcription (what the user said)
@@ -441,7 +441,7 @@ export function useOpenAIRealtimeVoice({
                   }
                 }
                 break
-              
+
               case 'conversation.item.input_audio_transcription.delta':
                 // Real-time transcription updates as user speaks
                 if (data.delta) {
@@ -452,7 +452,7 @@ export function useOpenAIRealtimeVoice({
                   }
                 }
                 break
-              
+
               // Handle response transcription (what the assistant said)
               case 'response.audio_transcript.delta':
                 // Handle transcript updates - show in UI
@@ -465,7 +465,7 @@ export function useOpenAIRealtimeVoice({
                   }
                 }
                 break
-              
+
               case 'response.audio_transcript.done':
                 // Final transcript
                 if (data.transcript) {
@@ -476,7 +476,7 @@ export function useOpenAIRealtimeVoice({
                   }
                 }
                 break
-              
+
               // Handle audio response
               case 'response.create':
                 // Response generation started
@@ -493,7 +493,7 @@ export function useOpenAIRealtimeVoice({
                 }
                 console.log('🎙️ Response generation started', data)
                 break
-              
+
               case 'response.audio.delta':
                 // Handle audio chunks - play immediately
                 // The delta contains base64-encoded PCM16 audio data
@@ -501,15 +501,15 @@ export function useOpenAIRealtimeVoice({
                   try {
                     // Create a unique hash for this chunk to prevent duplicates
                     const chunkHash = `${data.delta.substring(0, 20)}_${data.delta.length}`
-                    
+
                     // Skip if this chunk was already processed
                     if (processedAudioChunksRef.current.has(chunkHash)) {
                       return
                     }
-                    
+
                     // Mark as processed
                     processedAudioChunksRef.current.add(chunkHash)
-                    
+
                     // Decode base64 to get the raw audio bytes
                     const base64Audio = data.delta
                     const binaryString = atob(base64Audio)
@@ -517,11 +517,11 @@ export function useOpenAIRealtimeVoice({
                     for (let i = 0; i < binaryString.length; i++) {
                       audioBytes[i] = binaryString.charCodeAt(i)
                     }
-                    
+
                     // The audio is already in PCM16 format (Int16)
                     // Convert Uint8Array to Int16Array buffer
                     const audioData = audioBytes.buffer
-                    
+
                     // Play audio automatically
                     playAudioChunk(audioData)
                     // Also call callback if provided
@@ -536,7 +536,7 @@ export function useOpenAIRealtimeVoice({
                   }
                 }
                 break
-              
+
               case 'response.audio.done':
                 // Audio response complete - wait for all queued audio to finish
                 console.log('✅ Audio response done, waiting for playback to complete', {
@@ -545,7 +545,7 @@ export function useOpenAIRealtimeVoice({
                 })
                 // Don't set isSpeaking to false yet - let the onended handlers do it
                 break
-              
+
               case 'response.done':
                 // Response complete - reset state
                 console.log('✅ Response completed - ready for next interaction', data)
@@ -558,7 +558,7 @@ export function useOpenAIRealtimeVoice({
                   }
                 }, 500)
                 break
-              
+
               case 'response.cancelled':
                 // Response was cancelled
                 console.log('❌ Response cancelled')
@@ -575,22 +575,22 @@ export function useOpenAIRealtimeVoice({
                 audioSourceQueueRef.current = []
                 isPlayingAudioRef.current = false
                 break
-              
+
               // Handle conversation events
               case 'conversation.item.created':
                 console.log('📝 Conversation item created by server_vad')
                 break
-              
+
               case 'conversation.item.input_audio_buffer.speech_started':
                 console.log('🎙️ Speech started - server_vad detected user speaking')
                 break
-              
+
               case 'conversation.item.input_audio_buffer.speech_stopped':
                 console.log('🛑 Speech stopped - server_vad will automatically commit and generate response')
                 // server_vad will automatically commit and generate response
                 // No need to manually request response
                 break
-              
+
               case 'conversation.item.input_audio_buffer.committed':
                 console.log('✅ Audio buffer committed by server_vad - requesting response...')
                 // server_vad has committed the buffer
@@ -616,7 +616,7 @@ export function useOpenAIRealtimeVoice({
                   }
                 }, 100) // Small delay to ensure commit is processed
                 break
-              
+
               case 'error':
                 console.error('OpenAI Realtime API error:', data.error)
                 toast.error(data.error?.message || 'Voice API error')
@@ -624,7 +624,7 @@ export function useOpenAIRealtimeVoice({
                 setIsRecording(false)
                 setIsSpeaking(false)
                 break
-              
+
               default:
                 // Log unknown message types for debugging
                 if (data.type && !data.type.startsWith('ping') && !data.type.startsWith('pong')) {
@@ -642,9 +642,9 @@ export function useOpenAIRealtimeVoice({
           clearTimeout(authTimeout)
           console.error('❌ WebSocket error:', error)
           console.error('Proxy URL attempted:', proxyUrl)
-          
+
           // Check if it's a connection refused error (server not running)
-          const errorMessage = 
+          const errorMessage =
             'Failed to connect to voice service. The WebSocket proxy server may not be running.\n\n' +
             'To fix this:\n' +
             '1. Open a new terminal\n' +
@@ -672,7 +672,7 @@ export function useOpenAIRealtimeVoice({
           setIsConnected(false)
           setIsRecording(false)
           setIsSpeaking(false)
-          
+
           // Code 1006 = abnormal closure (server not running or connection refused)
           if (event.code === 1006 && !authSuccessReceived) {
             toast.error(
@@ -760,7 +760,7 @@ export function useOpenAIRealtimeVoice({
 
     try {
       // Get user's microphone
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           sampleRate: 24000,
           channelCount: 1,
@@ -770,7 +770,7 @@ export function useOpenAIRealtimeVoice({
         }
       })
       mediaStreamRef.current = stream
-      
+
       // Log audio track info for debugging
       const audioTracks = stream.getAudioTracks()
       if (audioTracks.length > 0) {
@@ -785,26 +785,26 @@ export function useOpenAIRealtimeVoice({
           autoGainControl: settings.autoGainControl,
         })
       }
-      
+
       // Create audio context for processing
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({
         sampleRate: 24000,
       })
       audioContextRef.current = audioContext
-      
+
       const source = audioContext.createMediaStreamSource(stream)
       const processor = audioContext.createScriptProcessor(4096, 1, 1)
       processorRef.current = processor
-      
+
       processor.onaudioprocess = (e) => {
         // Use refs to avoid stale closure issues
         // Only send audio if connected and recording
-        if (wsRef.current && 
-            wsRef.current.readyState === WebSocket.OPEN && 
-            isRecordingRef.current && 
-            isConnectedRef.current) {
+        if (wsRef.current &&
+          wsRef.current.readyState === WebSocket.OPEN &&
+          isRecordingRef.current &&
+          isConnectedRef.current) {
           const inputData = e.inputBuffer.getChannelData(0)
-          
+
           // Calculate audio level (RMS - Root Mean Square) for visualization
           let sum = 0
           for (let i = 0; i < inputData.length; i++) {
@@ -816,13 +816,13 @@ export function useOpenAIRealtimeVoice({
           // Normalize: -60dB (silence) to 0dB (max) maps to 0-100
           const normalizedLevel = Math.max(0, Math.min(100, ((db + 60) / 60) * 100))
           setAudioLevel(normalizedLevel)
-          
+
           // Convert Float32Array to Int16Array (PCM16)
           const int16Data = new Int16Array(inputData.length)
           for (let i = 0; i < inputData.length; i++) {
             int16Data[i] = Math.max(-32768, Math.min(32767, inputData[i] * 32768))
           }
-          
+
           // Convert Int16Array to base64 string
           // OpenAI Realtime API expects base64-encoded PCM16 audio
           const uint8Array = new Uint8Array(int16Data.buffer)
@@ -831,7 +831,7 @@ export function useOpenAIRealtimeVoice({
             binaryString += String.fromCharCode(uint8Array[i])
           }
           const base64Audio = btoa(binaryString)
-          
+
           // Send audio to OpenAI Realtime API via proxy
           // Format: { type: 'input_audio_buffer.append', audio: base64_string }
           try {
@@ -839,27 +839,27 @@ export function useOpenAIRealtimeVoice({
               type: 'input_audio_buffer.append',
               audio: base64Audio,
             }
-            
+
             // Verify WebSocket is ready
             if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
               console.error('❌ WebSocket not open, cannot send audio. State:', wsRef.current?.readyState)
               return
             }
-            
+
             // Verify we're connected (use ref for real-time check)
             if (!isConnectedRef.current) {
               console.error('❌ Not connected to OpenAI, cannot send audio')
               return
             }
-            
+
             wsRef.current.send(JSON.stringify(audioMessage))
             audioChunksSentRef.current++
-            
+
             // Log every 50 chunks (roughly every second at 24kHz) to verify audio is being sent
             if (audioChunksSentRef.current % 50 === 0) {
               console.log(`✅ Audio chunks sent: ${audioChunksSentRef.current}, Audio level: ${normalizedLevel.toFixed(1)}% (${db.toFixed(1)}dB), Base64 length: ${base64Audio.length}`)
             }
-            
+
             // Log first chunk to verify format
             if (audioChunksSentRef.current === 1) {
               console.log('🎤 First audio chunk sent:', {
@@ -895,10 +895,10 @@ export function useOpenAIRealtimeVoice({
           setAudioLevel(normalizedLevel)
         }
       }
-      
+
       source.connect(processor)
       processor.connect(audioContext.destination)
-      
+
       // With server_vad turn detection, we just need to start sending audio
       // The API will automatically:
       // 1. Detect when speech starts (creates conversation item automatically)
@@ -920,23 +920,23 @@ export function useOpenAIRealtimeVoice({
 
   const stopRecording = () => {
     console.log('🛑 Stopping recording - letting server_vad handle buffer commit automatically')
-    
+
     // Stop sending new audio chunks by setting isRecording to false first
     // This prevents new audio from being sent while we clean up
     isRecordingRef.current = false // Set ref first for onaudioprocess callback
     setIsRecording(false)
-    
+
     // Stop microphone input
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach(track => track.stop())
       mediaStreamRef.current = null
     }
-    
+
     if (processorRef.current) {
       processorRef.current.disconnect()
       processorRef.current = null
     }
-    
+
     // With server_vad, we should NOT manually commit the buffer
     // server_vad will automatically:
     // 1. Detect when speech stops (based on silence_duration_ms = 500ms)
@@ -946,22 +946,22 @@ export function useOpenAIRealtimeVoice({
     //
     // If we manually commit, we might commit before enough audio is in the buffer
     // Let server_vad handle everything automatically for smooth real-time conversation
-    
-    const recordingDuration = recordingStartTimeRef.current 
-      ? Date.now() - recordingStartTimeRef.current 
+
+    const recordingDuration = recordingStartTimeRef.current
+      ? Date.now() - recordingStartTimeRef.current
       : 0
-    
+
     console.log(`📊 Recording stopped after ${recordingDuration}ms - server_vad will detect silence and commit automatically`)
-    
+
     // Cancel any pending response requests
     if (pendingResponseTimeoutRef.current) {
       clearTimeout(pendingResponseTimeoutRef.current)
       pendingResponseTimeoutRef.current = null
     }
-    
+
     // Don't cancel in-progress responses - let them complete naturally
     // Only cancel if user explicitly disconnects
-    
+
     recordingStartTimeRef.current = null
     audioChunksSentRef.current = 0
     setAudioLevel(0) // Reset audio level when stopping

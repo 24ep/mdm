@@ -6,15 +6,7 @@ import { Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { ChatKitWrapper } from './ChatKitWrapper'
 
-interface ChatbotConfig {
-  id: string
-  name: string
-  chatkitAgentId?: string
-  chatkitApiKey?: string
-  chatkitOptions?: any
-  primaryColor?: string
-  [key: string]: any
-}
+import { ChatbotConfig } from '../types'
 
 interface ChatKitRendererProps {
   chatbot: ChatbotConfig
@@ -23,8 +15,8 @@ interface ChatKitRendererProps {
   onChatKitUnavailable?: () => void // Callback when ChatKit fails to load
 }
 
-export function ChatKitRenderer({ 
-  chatbot, 
+export function ChatKitRenderer({
+  chatbot,
   previewDeploymentType = 'fullpage',
   isInIframe = false,
   onChatKitUnavailable
@@ -103,22 +95,22 @@ export function ChatKitRenderer({
       })
       .catch((error) => {
         // Handle module not found error gracefully
-        const isModuleNotFound = 
-          error instanceof Error && 
-          (error.message.includes('Cannot find module') || 
-           error.message.includes('Failed to fetch dynamically imported module') ||
-           (error as any).code === 'MODULE_NOT_FOUND')
-        
+        const isModuleNotFound =
+          error instanceof Error &&
+          (error.message.includes('Cannot find module') ||
+            error.message.includes('Failed to fetch dynamically imported module') ||
+            (error as any).code === 'MODULE_NOT_FOUND')
+
         if (isModuleNotFound) {
           console.warn('ChatKit module (@openai/chatkit-react) is not installed. Please run: npm install @openai/chatkit-react')
         } else {
           console.error('Error importing ChatKit module:', error)
         }
-        
+
         const errorMessage = error instanceof Error ? error.message : 'Unknown error'
         setChatkitError(errorMessage)
         setIsInitializing(false)
-        
+
         // Notify parent that ChatKit is unavailable so it can fall back to regular chat
         if (onChatKitUnavailable) {
           onChatKitUnavailable()

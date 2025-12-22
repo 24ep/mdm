@@ -31,16 +31,25 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     // Fetch chatbot configuration for PWA metadata
     // Use direct DB access to avoid network roundtrips and timeouts
     const { db } = await import('@/lib/db')
+    const { mergeVersionConfig } = await import('@/lib/chatbot-helper')
+
+    // Fetch chatbot with versions to get the config
     const chatbot = await db.chatbot.findUnique({
-      where: { id: chatbotId }
+      where: { id: chatbotId },
+      include: {
+        versions: {
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
+      }
     })
 
     if (!chatbot) {
       return defaultMetadata
     }
 
-    // Build metadata from chatbot configuration
-    const cb = chatbot as any
+    // Merge version config to get all PWA properties
+    const cb = mergeVersionConfig(chatbot)
     const appName = cb.pwaAppName || cb.name || 'Chat Assistant'
     const description = cb.pwaDescription || cb.description || 'AI Chat Assistant'
     const themeColor = cb.pwaThemeColor || cb.primaryColor || '#3b82f6'

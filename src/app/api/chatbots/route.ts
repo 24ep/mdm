@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { db } from '@/lib/db'
+import { mergeVersionConfig, sanitizeChatbotConfig } from '@/lib/chatbot-helper'
 import { encryptApiKey } from '@/lib/encryption'
 import { getSecretsManager } from '@/lib/secrets-manager'
 import { createAuditContext } from '@/lib/audit-context-helper'
 import { requireSpaceAccess } from '@/lib/space-access'
+import { checkRateLimit } from '@/lib/rate-limiter'
 
 const prisma = db
 
@@ -72,95 +74,78 @@ async function syncOpenAIApiKey(apiKey: string | null | undefined, request: Next
   }
 }
 
-// Helper function to merge version config into chatbot object
-// Filters out undefined/null values from version config to prevent overwriting
-// valid chatbot base values with undefined
-function mergeVersionConfig(chatbot: any): any {
-  if (!chatbot) return chatbot
-  
-  // Get the latest version config (first in the array since it's ordered by createdAt desc)
-  const latestVersion = chatbot.versions && chatbot.versions.length > 0 ? chatbot.versions[0] : null
-  const rawVersionConfig = latestVersion?.config || {}
-  
-  // Filter out undefined/null values from version config
-  // This ensures we don't overwrite valid chatbot base values with undefined
-  const versionConfig: Record<string, any> = {}
-  for (const [key, value] of Object.entries(rawVersionConfig)) {
-    if (value !== undefined && value !== null) {
-      versionConfig[key] = value
-    }
-  }
-  
-  // Merge version config into chatbot object (version config takes precedence for config fields)
-  return {
-    ...chatbot,
-    ...versionConfig,
-    // Preserve essential chatbot fields
-    id: chatbot.id,
-    createdAt: chatbot.createdAt,
-    updatedAt: chatbot.updatedAt,
-    createdBy: chatbot.createdBy,
-    spaceId: chatbot.spaceId,
-    versions: chatbot.versions,
-    creator: chatbot.creator,
-    space: chatbot.space,
-  }
-}
+// Helper function to sync OpenAI API key to global provider config
+// (Inline mergeVersionConfig removed)
 
 async function getHandler(request: NextRequest) {
-    const authResult = await requireAuthWithId()
-    if (!authResult.success) return authResult.response
-    const { session } = authResult
-    // TODO: Add requireSpaceAccess check if spaceId is available
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
 
-    const { searchParams } = new URL(request.url)
-    const spaceId = searchParams.get('spaceId')
-    const isPublished = searchParams.get('isPublished')
+  // Rate limiting for listing chatbots
+  const rateLimitResult = await checkRateLimit('list-chatbots', session.user.id, {
+    enabled: true,
+    maxRequestsPerMinute: 60,
+    blockDuration: 60,
+  })
 
-    const where: any = {
-      deletedAt: null,
-      OR: [
-        { createdBy: session.user.id },
-        { space: { members: { some: { userId: session.user.id } } } }
-      ]
-    }
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429 }
+    )
+  }
 
-    if (spaceId) {
-      where.spaceId = spaceId
-    }
+  // TODO: Add requireSpaceAccess check if spaceId is available
 
-    if (isPublished !== null) {
-      where.isPublished = isPublished === 'true'
-    }
+  const { searchParams } = new URL(request.url)
+  const spaceId = searchParams.get('spaceId')
+  const isPublished = searchParams.get('isPublished')
 
-    const chatbots = await db.chatbot.findMany({
-      where,
-      include: {
-        creator: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        },
-        space: {
-          select: {
-            id: true,
-            name: true,
-            slug: true
-          }
-        },
-        versions: {
-          orderBy: { createdAt: 'desc' },
-          take: 5
+  const where: any = {
+    deletedAt: null,
+    OR: [
+      { createdBy: session.user.id },
+      { space: { members: { some: { userId: session.user.id } } } }
+    ]
+  }
+
+  if (spaceId) {
+    where.spaceId = spaceId
+  }
+
+  if (isPublished !== null) {
+    where.isPublished = isPublished === 'true'
+  }
+
+  const chatbots = await db.chatbot.findMany({
+    where,
+    include: {
+      creator: {
+        select: {
+          id: true,
+          name: true,
+          email: true
         }
       },
-      orderBy: { createdAt: 'desc' }
-    })
-    
-  // Merge version config into each chatbot
-  const mergedChatbots = chatbots.map(mergeVersionConfig)
-  
+      space: {
+        select: {
+          id: true,
+          name: true,
+          slug: true
+        }
+      },
+      versions: {
+        orderBy: { createdAt: 'desc' },
+        take: 5
+      }
+    },
+    orderBy: { createdAt: 'desc' }
+  })
+
+  // Merge version config into each chatbot and sanitize
+  const mergedChatbots = chatbots.map(cb => sanitizeChatbotConfig(mergeVersionConfig(cb)))
+
   return NextResponse.json({ chatbots: mergedChatbots })
 }
 
@@ -174,308 +159,557 @@ async function postHandler(request: NextRequest) {
   const authResult = await requireAuthWithId()
   if (!authResult.success) return authResult.response
   const { session } = authResult
+
+  // Rate limiting for creating chatbots (strict)
+  const rateLimitResult = await checkRateLimit('create-chatbot', session.user.id, {
+    enabled: true,
+    maxRequestsPerHour: 10, // Max 10 chatbots per hour
+    blockDuration: 3600,
+  })
+
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: 'Too many chatbot creation requests. Please try again later.' },
+      { status: 429 }
+    )
+  }
+
   // TODO: Add requireSpaceAccess check if spaceId is available
 
-    const body = await request.json()
-    const {
+  const body = await request.json()
+  const {
+    name,
+    website,
+    description,
+    engineType,
+    apiEndpoint,
+    apiAuthType,
+    apiAuthValue,
+    logo,
+    primaryColor,
+    fontFamily,
+    fontSize,
+    fontColor,
+    borderColor,
+    borderWidth,
+    borderRadius,
+    messageBoxColor,
+    shadowColor,
+    shadowBlur,
+    conversationOpener,
+    followUpQuestions,
+    enableFileUpload,
+    showCitations,
+    enableVoiceAgent,
+    voiceProvider,
+    voiceUIStyle,
+    deploymentType,
+    currentVersion,
+    spaceId,
+    selectedModelId,
+    selectedEngineId,
+    chatkitAgentId,
+    chatkitApiKey,
+    chatkitOptions,
+    openaiAgentSdkAgentId,
+    openaiAgentSdkApiKey,
+    openaiAgentSdkModel,
+    openaiAgentSdkInstructions,
+    openaiAgentSdkReasoningEffort,
+    openaiAgentSdkStore,
+    openaiAgentSdkVectorStoreId,
+    openaiAgentSdkEnableWebSearch,
+    openaiAgentSdkEnableCodeInterpreter,
+    openaiAgentSdkEnableComputerUse,
+    openaiAgentSdkEnableImageGeneration,
+    openaiAgentSdkUseWorkflowConfig,
+    openaiAgentSdkGreeting,
+    openaiAgentSdkPlaceholder,
+    openaiAgentSdkBackgroundColor,
+    openaiAgentSdkWorkflowCode,
+    openaiAgentSdkWorkflowFile,
+    openaiAgentSdkRealtimePromptId,
+    openaiAgentSdkRealtimePromptVersion,
+    openaiAgentSdkGuardrails,
+    openaiAgentSdkInputGuardrails,
+    openaiAgentSdkOutputGuardrails,
+    // Dify specific
+    difyApiKey,
+    difyOptions,
+    // ChatKit specific
+    useChatKitInRegularStyle,
+    // Message display options
+    showMessageFeedback,
+    showMessageRetry,
+    typingIndicatorStyle,
+    fileUploadLayout,
+    // Message font styling
+    userMessageFontColor,
+    userMessageFontFamily,
+    userMessageFontSize,
+    botMessageFontColor,
+    botMessageFontFamily,
+    botMessageFontSize,
+    // Header configuration
+    headerTitle,
+    headerDescription,
+    headerLogo,
+    headerBgColor,
+    headerFontColor,
+    headerFontFamily,
+    headerShowAvatar,
+    headerAvatarType,
+    headerAvatarIcon,
+    headerAvatarIconColor,
+    headerAvatarBackgroundColor,
+    headerAvatarImageUrl,
+    headerBorderEnabled,
+    headerBorderColor,
+    headerPaddingX,
+    headerPaddingY,
+    headerShowClearSession,
+    headerShowCloseButton,
+    // Close button position
+    closeButtonOffsetX,
+    closeButtonOffsetY,
+    // Send button configuration
+    sendButtonWidth,
+    sendButtonHeight,
+    sendButtonPosition,
+    // Widget Button
+    widgetSize,
+    widgetPosition,
+    widgetAvatarStyle,
+    widgetBackgroundColor,
+    widgetBorderColor,
+    widgetBorderWidth,
+    widgetBorderRadius,
+    widgetShadowColor,
+    widgetShadowBlur,
+    widgetShadowX,
+    widgetShadowY,
+    widgetShadowSpread,
+    widgetLabelText,
+    widgetLabelColor,
+    widgetAnimation,
+    widgetAutoShow,
+    widgetAutoShowDelay,
+    widgetOffsetX,
+    widgetOffsetY,
+    widgetZIndex,
+    showNotificationBadge,
+    notificationBadgeColor,
+    widgetAvatarType,
+    widgetAvatarIcon,
+    widgetAvatarImageUrl,
+    // Chat Window
+    chatWindowWidth,
+    chatWindowHeight,
+    chatWindowBorderColor,
+    chatWindowBorderWidth,
+    chatWindowBorderRadius,
+    chatWindowShadowColor,
+    chatWindowShadowBlur,
+    chatWindowPaddingTop,
+    chatWindowPaddingRight,
+    chatWindowPaddingBottom,
+    chatWindowPaddingLeft,
+    // Footer
+    footerBgColor,
+    footerBorderColor,
+    footerBorderWidth,
+    footerBorderRadius,
+    footerPaddingTop,
+    footerPaddingRight,
+    footerPaddingBottom,
+    footerPaddingLeft,
+    footerInputBgColor,
+    footerInputBorderColor,
+    footerInputBorderWidth,
+    footerInputBorderRadius,
+    footerInputFontColor,
+    // Footer Granular
+    footerBorderWidthTop,
+    footerBorderWidthRight,
+    footerBorderWidthBottom,
+    footerBorderWidthLeft,
+    footerBorderRadiusTopLeft,
+    footerBorderRadiusTopRight,
+    footerBorderRadiusBottomRight,
+    footerBorderRadiusBottomLeft,
+    // Footer Input Granular
+    footerInputBorderWidthTop,
+    footerInputBorderWidthRight,
+    footerInputBorderWidthBottom,
+    footerInputBorderWidthLeft,
+    footerInputBorderRadiusTopLeft,
+    footerInputBorderRadiusTopRight,
+    footerInputBorderRadiusBottomRight,
+    footerInputBorderRadiusBottomLeft,
+    // Send Button
+    sendButtonIcon,
+    sendButtonBorderRadius,
+    sendButtonBgColor,
+    sendButtonIconColor,
+    sendButtonShadowColor,
+    sendButtonShadowBlur,
+    sendButtonPadding,
+    sendButtonRounded,
+    sendButtonPaddingX,
+    sendButtonPaddingY,
+    sendButtonBorderRadiusTopLeft,
+    sendButtonBorderRadiusTopRight,
+    sendButtonBorderRadiusBottomRight,
+    sendButtonBorderRadiusBottomLeft,
+    // Message Styles
+    userMessageBackgroundColor,
+    botMessageBackgroundColor,
+    userBubbleBorderColor,
+    userBubbleBorderWidth,
+    userBubbleBorderRadius,
+    botBubbleBorderColor,
+    botBubbleBorderWidth,
+    botBubbleBorderRadius,
+    // PWA
+    pwaEnabled,
+    pwaBannerText,
+    pwaBannerPosition,
+    pwaAppName,
+    pwaShortName,
+    pwaDescription,
+    pwaThemeColor,
+    pwaBackgroundColor,
+    pwaIconUrl,
+    pwaIconSize,
+    pwaDisplayMode,
+    pwaBannerBgColor,
+    pwaBannerFontColor,
+    pwaBannerFontFamily,
+    pwaBannerFontSize,
+    pwaBannerBorderRadius,
+    pwaBannerShadow,
+    pwaBannerPadding,
+    pwaBannerButtonBgColor,
+    pwaBannerButtonTextColor,
+    pwaBannerButtonBorderRadius,
+    pwaBannerButtonFontSize
+  } = body
+
+  // Validate required fields based on engine type
+  if (!name || !website) {
+    return NextResponse.json({ error: 'Missing required fields: name and website are required' }, { status: 400 })
+  }
+
+  const engine = engineType || 'custom'
+
+  if (engine === 'custom') {
+    if (!apiEndpoint) {
+      return NextResponse.json({ error: 'Missing required fields: API Endpoint is required for custom engine type' }, { status: 400 })
+    }
+  } else if (engine === 'openai') {
+    if (!selectedModelId) {
+      return NextResponse.json({ error: 'Missing required fields: OpenAI Model is required' }, { status: 400 })
+    }
+  } else if (engine === 'chatkit') {
+    if (!chatkitAgentId) {
+      return NextResponse.json({ error: 'Missing required fields: Agent Builder Agent ID is required for ChatKit' }, { status: 400 })
+    }
+  } else if (engine === 'openai-agent-sdk') {
+    if (!openaiAgentSdkAgentId) {
+      return NextResponse.json({ error: 'Missing required fields: Agent/Workflow ID is required for OpenAI Agent SDK' }, { status: 400 })
+    }
+    if (!openaiAgentSdkApiKey) {
+      return NextResponse.json({ error: 'Missing required fields: OpenAI API Key is required for OpenAI Agent SDK' }, { status: 400 })
+    }
+  }
+
+  // For non-custom engines, use a placeholder for apiEndpoint if not provided (database requires it)
+  const finalApiEndpoint = apiEndpoint || (engine === 'custom' ? '' : 'https://api.openai.com/v1')
+
+  // Create chatbot
+  const chatbot = await db.chatbot.create({
+    data: {
       name,
-      website,
-      description,
-      engineType,
-      apiEndpoint,
-      apiAuthType,
-      apiAuthValue,
-      logo,
-      primaryColor,
-      fontFamily,
-      fontSize,
-      fontColor,
-      borderColor,
-      borderWidth,
-      borderRadius,
-      messageBoxColor,
-      shadowColor,
-      shadowBlur,
-      conversationOpener,
-      followUpQuestions,
-      enableFileUpload,
-      showCitations,
-      enableVoiceAgent,
-      voiceProvider,
-      voiceUIStyle,
-      deploymentType,
-      currentVersion,
-      spaceId,
-      selectedModelId,
-      selectedEngineId,
-      chatkitAgentId,
-      chatkitApiKey,
-      chatkitOptions,
-      openaiAgentSdkAgentId,
-      openaiAgentSdkApiKey,
-      openaiAgentSdkModel,
-      openaiAgentSdkInstructions,
-      openaiAgentSdkReasoningEffort,
-      openaiAgentSdkStore,
-      openaiAgentSdkVectorStoreId,
-      openaiAgentSdkEnableWebSearch,
-      openaiAgentSdkEnableCodeInterpreter,
-      openaiAgentSdkEnableComputerUse,
-      openaiAgentSdkEnableImageGeneration,
-      openaiAgentSdkUseWorkflowConfig,
-      openaiAgentSdkGreeting,
-      openaiAgentSdkPlaceholder,
-      openaiAgentSdkBackgroundColor,
-      openaiAgentSdkWorkflowCode,
-      openaiAgentSdkWorkflowFile,
-      openaiAgentSdkRealtimePromptId,
-      openaiAgentSdkRealtimePromptVersion,
-      openaiAgentSdkGuardrails,
-      openaiAgentSdkInputGuardrails,
-      openaiAgentSdkOutputGuardrails,
-      // Dify specific
-      difyApiKey,
-      difyOptions,
-      // ChatKit specific
-      useChatKitInRegularStyle,
-      // Message display options
-      showMessageFeedback,
-      showMessageRetry,
-      typingIndicatorStyle,
-      fileUploadLayout,
-      // Message font styling
-      userMessageFontColor,
-      userMessageFontFamily,
-      userMessageFontSize,
-      botMessageFontColor,
-      botMessageFontFamily,
-      botMessageFontSize,
-      // Header configuration
-      headerTitle,
-      headerDescription,
-      headerLogo,
-      headerBgColor,
-      headerFontColor,
-      headerFontFamily,
-      headerShowAvatar,
-      headerAvatarType,
-      headerAvatarIcon,
-      headerAvatarIconColor,
-      headerAvatarBackgroundColor,
-      headerAvatarImageUrl,
-      headerBorderEnabled,
-      headerBorderColor,
-      headerPaddingX,
-      headerPaddingY,
-      headerShowClearSession,
-      headerShowCloseButton,
-      // Close button position
-      closeButtonOffsetX,
-      closeButtonOffsetY,
-      // Send button configuration
-      sendButtonWidth,
-      sendButtonHeight,
-      sendButtonPosition
-    } = body
-
-    // Validate required fields based on engine type
-    if (!name || !website) {
-      return NextResponse.json({ error: 'Missing required fields: name and website are required' }, { status: 400 })
-    }
-
-    const engine = engineType || 'custom'
-    
-    if (engine === 'custom') {
-      if (!apiEndpoint) {
-        return NextResponse.json({ error: 'Missing required fields: API Endpoint is required for custom engine type' }, { status: 400 })
+      website: website || null,
+      description: description || null,
+      apiEndpoint: finalApiEndpoint,
+      apiAuthType: apiAuthType || 'none',
+      apiAuthValue: apiAuthValue || null,
+      logo: logo || null,
+      primaryColor: primaryColor || null,
+      fontFamily: fontFamily || null,
+      fontSize: fontSize || null,
+      fontColor: fontColor || null,
+      borderColor: borderColor || null,
+      borderWidth: borderWidth || null,
+      borderRadius: borderRadius || null,
+      messageBoxColor: messageBoxColor || null,
+      shadowColor: shadowColor || null,
+      shadowBlur: shadowBlur || null,
+      conversationOpener: conversationOpener || null,
+      followUpQuestions: followUpQuestions || [],
+      enableFileUpload: enableFileUpload || false,
+      showCitations: showCitations !== undefined ? showCitations : true,
+      deploymentType: deploymentType || 'popover',
+      isPublished: false,
+      currentVersion: currentVersion || null,
+      createdBy: session.user.id,
+      spaceId: spaceId || null,
+      versions: {
+        create: {
+          version: currentVersion || '1.0.0',
+          config: {
+            name,
+            website,
+            description,
+            engineType: engine || 'custom',
+            apiEndpoint,
+            apiAuthType: apiAuthType || 'none',
+            apiAuthValue: apiAuthValue || null,
+            selectedModelId: selectedModelId || null,
+            selectedEngineId: selectedEngineId || null,
+            chatkitAgentId: chatkitAgentId || null,
+            chatkitApiKey: chatkitApiKey || null,
+            chatkitOptions: chatkitOptions || null,
+            useChatKitInRegularStyle: useChatKitInRegularStyle !== undefined ? useChatKitInRegularStyle : null,
+            difyApiKey: difyApiKey || null,
+            difyOptions: difyOptions || null,
+            openaiAgentSdkAgentId: openaiAgentSdkAgentId || null,
+            openaiAgentSdkApiKey: openaiAgentSdkApiKey || null,
+            openaiAgentSdkModel: openaiAgentSdkModel || null,
+            openaiAgentSdkInstructions: openaiAgentSdkInstructions || null,
+            openaiAgentSdkReasoningEffort: openaiAgentSdkReasoningEffort || null,
+            openaiAgentSdkStore: openaiAgentSdkStore !== undefined ? openaiAgentSdkStore : null,
+            openaiAgentSdkVectorStoreId: openaiAgentSdkVectorStoreId || null,
+            openaiAgentSdkEnableWebSearch: openaiAgentSdkEnableWebSearch !== undefined ? openaiAgentSdkEnableWebSearch : null,
+            openaiAgentSdkEnableCodeInterpreter: openaiAgentSdkEnableCodeInterpreter !== undefined ? openaiAgentSdkEnableCodeInterpreter : null,
+            openaiAgentSdkEnableComputerUse: openaiAgentSdkEnableComputerUse !== undefined ? openaiAgentSdkEnableComputerUse : null,
+            openaiAgentSdkEnableImageGeneration: openaiAgentSdkEnableImageGeneration !== undefined ? openaiAgentSdkEnableImageGeneration : null,
+            openaiAgentSdkUseWorkflowConfig: openaiAgentSdkUseWorkflowConfig !== undefined ? openaiAgentSdkUseWorkflowConfig : null,
+            openaiAgentSdkGreeting: openaiAgentSdkGreeting || null,
+            openaiAgentSdkPlaceholder: openaiAgentSdkPlaceholder || null,
+            openaiAgentSdkBackgroundColor: openaiAgentSdkBackgroundColor || null,
+            openaiAgentSdkWorkflowCode: openaiAgentSdkWorkflowCode || null,
+            openaiAgentSdkWorkflowFile: openaiAgentSdkWorkflowFile || null,
+            openaiAgentSdkRealtimePromptId: openaiAgentSdkRealtimePromptId || null,
+            openaiAgentSdkRealtimePromptVersion: openaiAgentSdkRealtimePromptVersion || null,
+            openaiAgentSdkGuardrails: openaiAgentSdkGuardrails !== undefined ? openaiAgentSdkGuardrails : null,
+            openaiAgentSdkInputGuardrails: openaiAgentSdkInputGuardrails !== undefined ? openaiAgentSdkInputGuardrails : null,
+            openaiAgentSdkOutputGuardrails: openaiAgentSdkOutputGuardrails !== undefined ? openaiAgentSdkOutputGuardrails : null,
+            logo: logo || null,
+            primaryColor: primaryColor || null,
+            fontFamily: fontFamily || null,
+            fontSize: fontSize || null,
+            fontColor: fontColor || null,
+            borderColor: borderColor || null,
+            borderWidth: borderWidth || null,
+            borderRadius: borderRadius || null,
+            messageBoxColor: messageBoxColor || null,
+            shadowColor: shadowColor || null,
+            shadowBlur: shadowBlur || null,
+            conversationOpener: conversationOpener || null,
+            showStartConversation: (body as any).showStartConversation !== undefined ? (body as any).showStartConversation : null,
+            startScreenPrompts: (body as any).startScreenPrompts || null,
+            startScreenPromptsStyle: (body as any).startScreenPromptsStyle || null,
+            startScreenPromptsPosition: (body as any).startScreenPromptsPosition || null,
+            startScreenPromptsIconDisplay: (body as any).startScreenPromptsIconDisplay || null,
+            startScreenPromptsBackgroundColor: (body as any).startScreenPromptsBackgroundColor || null,
+            startScreenPromptsFontColor: (body as any).startScreenPromptsFontColor || null,
+            startScreenPromptsFontFamily: (body as any).startScreenPromptsFontFamily || null,
+            startScreenPromptsFontSize: (body as any).startScreenPromptsFontSize || null,
+            startScreenPromptsPadding: (body as any).startScreenPromptsPadding || null,
+            startScreenPromptsBorderColor: (body as any).startScreenPromptsBorderColor || null,
+            startScreenPromptsBorderWidth: (body as any).startScreenPromptsBorderWidth || null,
+            startScreenPromptsBorderRadius: (body as any).startScreenPromptsBorderRadius || null,
+            followUpQuestions: followUpQuestions || [],
+            enableFileUpload: enableFileUpload || false,
+            showCitations: showCitations !== undefined ? showCitations : true,
+            deploymentType: deploymentType || 'popover',
+            // Message font styling
+            userMessageFontColor: userMessageFontColor || null,
+            userMessageFontFamily: userMessageFontFamily || null,
+            userMessageFontSize: userMessageFontSize || null,
+            botMessageFontColor: botMessageFontColor || null,
+            botMessageFontFamily: botMessageFontFamily || null,
+            botMessageFontSize: botMessageFontSize || null,
+            // Header configuration
+            headerTitle: headerTitle || null,
+            headerDescription: headerDescription || null,
+            headerLogo: headerLogo || null,
+            headerBgColor: headerBgColor || null,
+            headerFontColor: headerFontColor || null,
+            headerFontFamily: headerFontFamily || null,
+            headerShowAvatar: headerShowAvatar !== undefined ? headerShowAvatar : null,
+            headerAvatarType: headerAvatarType || null,
+            headerAvatarIcon: headerAvatarIcon || null,
+            headerAvatarIconColor: headerAvatarIconColor || null,
+            headerAvatarBackgroundColor: headerAvatarBackgroundColor || null,
+            headerAvatarImageUrl: headerAvatarImageUrl || null,
+            headerBorderEnabled: headerBorderEnabled !== undefined ? headerBorderEnabled : null,
+            headerBorderColor: headerBorderColor || null,
+            headerPaddingX: headerPaddingX || null,
+            headerPaddingY: headerPaddingY || null,
+            headerShowClearSession: headerShowClearSession !== undefined ? headerShowClearSession : null,
+            headerShowCloseButton: headerShowCloseButton !== undefined ? headerShowCloseButton : null,
+            // Close button position
+            closeButtonOffsetX: closeButtonOffsetX || null,
+            closeButtonOffsetY: closeButtonOffsetY || null,
+            // Send button configuration
+            sendButtonWidth: sendButtonWidth || null,
+            sendButtonHeight: sendButtonHeight || null,
+            sendButtonPosition: sendButtonPosition || 'outside',
+            // Widget Button
+            widgetSize: widgetSize || null,
+            widgetPosition: widgetPosition || null,
+            widgetAvatarStyle: widgetAvatarStyle || null,
+            widgetBackgroundColor: widgetBackgroundColor || null,
+            widgetBorderColor: widgetBorderColor || null,
+            widgetBorderWidth: widgetBorderWidth || null,
+            widgetBorderRadius: widgetBorderRadius || null,
+            widgetShadowColor: widgetShadowColor || null,
+            widgetShadowBlur: widgetShadowBlur || null,
+            widgetShadowX: (body as any).widgetShadowX || null,
+            widgetShadowY: (body as any).widgetShadowY || null,
+            widgetShadowSpread: (body as any).widgetShadowSpread || null,
+            widgetLabelText: widgetLabelText || null,
+            widgetLabelColor: widgetLabelColor || null,
+            widgetAnimation: widgetAnimation || null,
+            widgetAutoShow: (body as any).widgetAutoShow !== undefined ? (body as any).widgetAutoShow : null,
+            widgetAutoShowDelay: (body as any).widgetAutoShowDelay !== undefined ? (body as any).widgetAutoShowDelay : null,
+            widgetOffsetX: widgetOffsetX || null,
+            widgetOffsetY: widgetOffsetY || null,
+            widgetZIndex: (body as any).widgetZIndex !== undefined ? (body as any).widgetZIndex : null,
+            showNotificationBadge: (body as any).showNotificationBadge !== undefined ? (body as any).showNotificationBadge : null,
+            notificationBadgeColor: notificationBadgeColor || null,
+            widgetAvatarType: widgetAvatarType || null,
+            widgetAvatarIcon: widgetAvatarIcon || null,
+            widgetAvatarImageUrl: widgetAvatarImageUrl || null,
+            // Chat Window
+            chatWindowWidth: chatWindowWidth || null,
+            chatWindowHeight: chatWindowHeight || null,
+            chatWindowBorderColor: (body as any).chatWindowBorderColor || null,
+            chatWindowBorderWidth: (body as any).chatWindowBorderWidth || null,
+            chatWindowBorderRadius: (body as any).chatWindowBorderRadius || null,
+            chatWindowShadowColor: (body as any).chatWindowShadowColor || null,
+            chatWindowShadowBlur: (body as any).chatWindowShadowBlur || null,
+            chatWindowPaddingTop: (body as any).chatWindowPaddingTop || null,
+            chatWindowPaddingRight: (body as any).chatWindowPaddingRight || null,
+            chatWindowPaddingBottom: (body as any).chatWindowPaddingBottom || null,
+            chatWindowPaddingLeft: (body as any).chatWindowPaddingLeft || null,
+            // Footer
+            footerBgColor: footerBgColor || null,
+            footerBorderColor: footerBorderColor || null,
+            footerBorderWidth: footerBorderWidth || null,
+            footerBorderRadius: footerBorderRadius || null,
+            footerPaddingTop: footerPaddingTop || null,
+            footerPaddingRight: footerPaddingRight || null,
+            footerPaddingBottom: footerPaddingBottom || null,
+            footerPaddingLeft: footerPaddingLeft || null,
+            footerInputBgColor: footerInputBgColor || null,
+            footerInputBorderColor: footerInputBorderColor || null,
+            footerInputBorderWidth: footerInputBorderWidth || null,
+            footerInputBorderRadius: footerInputBorderRadius || null,
+            footerInputFontColor: footerInputFontColor || null,
+            // Footer Granular
+            footerBorderWidthTop: (body as any).footerBorderWidthTop || null,
+            footerBorderWidthRight: (body as any).footerBorderWidthRight || null,
+            footerBorderWidthBottom: (body as any).footerBorderWidthBottom || null,
+            footerBorderWidthLeft: (body as any).footerBorderWidthLeft || null,
+            footerBorderRadiusTopLeft: (body as any).footerBorderRadiusTopLeft || null,
+            footerBorderRadiusTopRight: (body as any).footerBorderRadiusTopRight || null,
+            footerBorderRadiusBottomRight: (body as any).footerBorderRadiusBottomRight || null,
+            footerBorderRadiusBottomLeft: (body as any).footerBorderRadiusBottomLeft || null,
+            // Footer Input Granular
+            footerInputBorderWidthTop: (body as any).footerInputBorderWidthTop || null,
+            footerInputBorderWidthRight: (body as any).footerInputBorderWidthRight || null,
+            footerInputBorderWidthBottom: (body as any).footerInputBorderWidthBottom || null,
+            footerInputBorderWidthLeft: (body as any).footerInputBorderWidthLeft || null,
+            footerInputBorderRadiusTopLeft: (body as any).footerInputBorderRadiusTopLeft || null,
+            footerInputBorderRadiusTopRight: (body as any).footerInputBorderRadiusTopRight || null,
+            footerInputBorderRadiusBottomRight: (body as any).footerInputBorderRadiusBottomRight || null,
+            footerInputBorderRadiusBottomLeft: (body as any).footerInputBorderRadiusBottomLeft || null,
+            // Send Button
+            sendButtonIcon: sendButtonIcon || null,
+            sendButtonBorderRadius: sendButtonBorderRadius || null,
+            sendButtonBgColor: sendButtonBgColor || null,
+            sendButtonIconColor: sendButtonIconColor || null,
+            sendButtonShadowColor: sendButtonShadowColor || null,
+            sendButtonShadowBlur: sendButtonShadowBlur || null,
+            sendButtonPadding: sendButtonPadding || null,
+            sendButtonRounded: (body as any).sendButtonRounded !== undefined ? (body as any).sendButtonRounded : null,
+            sendButtonPaddingX: (body as any).sendButtonPaddingX || null,
+            sendButtonPaddingY: (body as any).sendButtonPaddingY || null,
+            sendButtonBorderRadiusTopLeft: (body as any).sendButtonBorderRadiusTopLeft || null,
+            sendButtonBorderRadiusTopRight: (body as any).sendButtonBorderRadiusTopRight || null,
+            sendButtonBorderRadiusBottomRight: (body as any).sendButtonBorderRadiusBottomRight || null,
+            sendButtonBorderRadiusBottomLeft: (body as any).sendButtonBorderRadiusBottomLeft || null,
+            // Message Styles
+            userMessageBackgroundColor: userMessageBackgroundColor || null,
+            botMessageBackgroundColor: botMessageBackgroundColor || null,
+            userBubbleBorderColor: userBubbleBorderColor || null,
+            userBubbleBorderWidth: userBubbleBorderWidth || null,
+            userBubbleBorderRadius: userBubbleBorderRadius || null,
+            botBubbleBorderColor: botBubbleBorderColor || null,
+            botBubbleBorderWidth: botBubbleBorderWidth || null,
+            botBubbleBorderRadius: botBubbleBorderRadius || null,
+            // PWA
+            pwaEnabled: (body as any).pwaEnabled !== undefined ? (body as any).pwaEnabled : null,
+            pwaBannerText: (body as any).pwaBannerText || null,
+            pwaBannerPosition: (body as any).pwaBannerPosition || null,
+            pwaAppName: (body as any).pwaAppName || null,
+            pwaShortName: (body as any).pwaShortName || null,
+            pwaDescription: (body as any).pwaDescription || null,
+            pwaThemeColor: (body as any).pwaThemeColor || null,
+            pwaBackgroundColor: (body as any).pwaBackgroundColor || null,
+            pwaIconUrl: (body as any).pwaIconUrl || null,
+            pwaIconSize: (body as any).pwaIconSize || null,
+            pwaDisplayMode: (body as any).pwaDisplayMode || null,
+            pwaBannerBgColor: (body as any).pwaBannerBgColor || null,
+            pwaBannerFontColor: (body as any).pwaBannerFontColor || null,
+            pwaBannerFontFamily: (body as any).pwaBannerFontFamily || null,
+            pwaBannerFontSize: (body as any).pwaBannerFontSize || null,
+            pwaBannerBorderRadius: (body as any).pwaBannerBorderRadius || null,
+            pwaBannerShadow: (body as any).pwaBannerShadow || null,
+            pwaBannerPadding: (body as any).pwaBannerPadding || null,
+            pwaBannerButtonBgColor: (body as any).pwaBannerButtonBgColor || null,
+            pwaBannerButtonTextColor: (body as any).pwaBannerButtonTextColor || null,
+            pwaBannerButtonBorderRadius: (body as any).pwaBannerButtonBorderRadius || null,
+            pwaBannerButtonFontSize: (body as any).pwaBannerButtonFontSize || null
+          },
+          isPublished: false,
+          createdBy: session.user.id
+        }
       }
-    } else if (engine === 'openai') {
-      if (!selectedModelId) {
-        return NextResponse.json({ error: 'Missing required fields: OpenAI Model is required' }, { status: 400 })
-      }
-    } else if (engine === 'chatkit') {
-      if (!chatkitAgentId) {
-        return NextResponse.json({ error: 'Missing required fields: Agent Builder Agent ID is required for ChatKit' }, { status: 400 })
-      }
-    } else if (engine === 'openai-agent-sdk') {
-      if (!openaiAgentSdkAgentId) {
-        return NextResponse.json({ error: 'Missing required fields: Agent/Workflow ID is required for OpenAI Agent SDK' }, { status: 400 })
-      }
-      if (!openaiAgentSdkApiKey) {
-        return NextResponse.json({ error: 'Missing required fields: OpenAI API Key is required for OpenAI Agent SDK' }, { status: 400 })
-      }
-    }
-    
-    // For non-custom engines, use a placeholder for apiEndpoint if not provided (database requires it)
-    const finalApiEndpoint = apiEndpoint || (engine === 'custom' ? '' : 'https://api.openai.com/v1')
-
-    // Create chatbot
-    const chatbot = await db.chatbot.create({
-      data: {
-        name,
-        website: website || null,
-        description: description || null,
-        apiEndpoint: finalApiEndpoint,
-        apiAuthType: apiAuthType || 'none',
-        apiAuthValue: apiAuthValue || null,
-        logo: logo || null,
-        primaryColor: primaryColor || null,
-        fontFamily: fontFamily || null,
-        fontSize: fontSize || null,
-        fontColor: fontColor || null,
-        borderColor: borderColor || null,
-        borderWidth: borderWidth || null,
-        borderRadius: borderRadius || null,
-        messageBoxColor: messageBoxColor || null,
-        shadowColor: shadowColor || null,
-        shadowBlur: shadowBlur || null,
-              conversationOpener: conversationOpener || null,
-              followUpQuestions: followUpQuestions || [],
-              enableFileUpload: enableFileUpload || false,
-              showCitations: showCitations !== undefined ? showCitations : true,
-              deploymentType: deploymentType || 'popover',
-        isPublished: false,
-        currentVersion: currentVersion || null,
-        createdBy: session.user.id,
-        spaceId: spaceId || null,
-        versions: {
-          create: {
-            version: currentVersion || '1.0.0',
-            config: {
-              name,
-              website,
-              description,
-              engineType: engine || 'custom',
-              apiEndpoint,
-              apiAuthType: apiAuthType || 'none',
-              apiAuthValue: apiAuthValue || null,
-              selectedModelId: selectedModelId || null,
-              selectedEngineId: selectedEngineId || null,
-              chatkitAgentId: chatkitAgentId || null,
-              chatkitApiKey: chatkitApiKey || null,
-              chatkitOptions: chatkitOptions || null,
-              useChatKitInRegularStyle: useChatKitInRegularStyle !== undefined ? useChatKitInRegularStyle : null,
-              difyApiKey: difyApiKey || null,
-              difyOptions: difyOptions || null,
-              openaiAgentSdkAgentId: openaiAgentSdkAgentId || null,
-              openaiAgentSdkApiKey: openaiAgentSdkApiKey || null,
-              openaiAgentSdkModel: openaiAgentSdkModel || null,
-              openaiAgentSdkInstructions: openaiAgentSdkInstructions || null,
-              openaiAgentSdkReasoningEffort: openaiAgentSdkReasoningEffort || null,
-              openaiAgentSdkStore: openaiAgentSdkStore !== undefined ? openaiAgentSdkStore : null,
-              openaiAgentSdkVectorStoreId: openaiAgentSdkVectorStoreId || null,
-              openaiAgentSdkEnableWebSearch: openaiAgentSdkEnableWebSearch !== undefined ? openaiAgentSdkEnableWebSearch : null,
-              openaiAgentSdkEnableCodeInterpreter: openaiAgentSdkEnableCodeInterpreter !== undefined ? openaiAgentSdkEnableCodeInterpreter : null,
-              openaiAgentSdkEnableComputerUse: openaiAgentSdkEnableComputerUse !== undefined ? openaiAgentSdkEnableComputerUse : null,
-              openaiAgentSdkEnableImageGeneration: openaiAgentSdkEnableImageGeneration !== undefined ? openaiAgentSdkEnableImageGeneration : null,
-              openaiAgentSdkUseWorkflowConfig: openaiAgentSdkUseWorkflowConfig !== undefined ? openaiAgentSdkUseWorkflowConfig : null,
-              openaiAgentSdkGreeting: openaiAgentSdkGreeting || null,
-              openaiAgentSdkPlaceholder: openaiAgentSdkPlaceholder || null,
-              openaiAgentSdkBackgroundColor: openaiAgentSdkBackgroundColor || null,
-              openaiAgentSdkWorkflowCode: openaiAgentSdkWorkflowCode || null,
-              openaiAgentSdkWorkflowFile: openaiAgentSdkWorkflowFile || null,
-              openaiAgentSdkRealtimePromptId: openaiAgentSdkRealtimePromptId || null,
-              openaiAgentSdkRealtimePromptVersion: openaiAgentSdkRealtimePromptVersion || null,
-              openaiAgentSdkGuardrails: openaiAgentSdkGuardrails !== undefined ? openaiAgentSdkGuardrails : null,
-              openaiAgentSdkInputGuardrails: openaiAgentSdkInputGuardrails !== undefined ? openaiAgentSdkInputGuardrails : null,
-              openaiAgentSdkOutputGuardrails: openaiAgentSdkOutputGuardrails !== undefined ? openaiAgentSdkOutputGuardrails : null,
-              logo: logo || null,
-              primaryColor: primaryColor || null,
-              fontFamily: fontFamily || null,
-              fontSize: fontSize || null,
-              fontColor: fontColor || null,
-              borderColor: borderColor || null,
-              borderWidth: borderWidth || null,
-              borderRadius: borderRadius || null,
-              messageBoxColor: messageBoxColor || null,
-              shadowColor: shadowColor || null,
-              shadowBlur: shadowBlur || null,
-              conversationOpener: conversationOpener || null,
-              showStartConversation: (body as any).showStartConversation !== undefined ? (body as any).showStartConversation : null,
-              startScreenPrompts: (body as any).startScreenPrompts || null,
-              startScreenPromptsStyle: (body as any).startScreenPromptsStyle || null,
-              startScreenPromptsPosition: (body as any).startScreenPromptsPosition || null,
-              startScreenPromptsIconDisplay: (body as any).startScreenPromptsIconDisplay || null,
-              startScreenPromptsBackgroundColor: (body as any).startScreenPromptsBackgroundColor || null,
-              startScreenPromptsFontColor: (body as any).startScreenPromptsFontColor || null,
-              startScreenPromptsFontFamily: (body as any).startScreenPromptsFontFamily || null,
-              startScreenPromptsFontSize: (body as any).startScreenPromptsFontSize || null,
-              startScreenPromptsPadding: (body as any).startScreenPromptsPadding || null,
-              startScreenPromptsBorderColor: (body as any).startScreenPromptsBorderColor || null,
-              startScreenPromptsBorderWidth: (body as any).startScreenPromptsBorderWidth || null,
-              startScreenPromptsBorderRadius: (body as any).startScreenPromptsBorderRadius || null,
-              followUpQuestions: followUpQuestions || [],
-              enableFileUpload: enableFileUpload || false,
-              showCitations: showCitations !== undefined ? showCitations : true,
-              deploymentType: deploymentType || 'popover',
-              // Message font styling
-              userMessageFontColor: userMessageFontColor || null,
-              userMessageFontFamily: userMessageFontFamily || null,
-              userMessageFontSize: userMessageFontSize || null,
-              botMessageFontColor: botMessageFontColor || null,
-              botMessageFontFamily: botMessageFontFamily || null,
-              botMessageFontSize: botMessageFontSize || null,
-              // Header configuration
-              headerTitle: headerTitle || null,
-              headerDescription: headerDescription || null,
-              headerLogo: headerLogo || null,
-              headerBgColor: headerBgColor || null,
-              headerFontColor: headerFontColor || null,
-              headerFontFamily: headerFontFamily || null,
-              headerShowAvatar: headerShowAvatar !== undefined ? headerShowAvatar : null,
-              headerAvatarType: headerAvatarType || null,
-              headerAvatarIcon: headerAvatarIcon || null,
-              headerAvatarIconColor: headerAvatarIconColor || null,
-              headerAvatarBackgroundColor: headerAvatarBackgroundColor || null,
-              headerAvatarImageUrl: headerAvatarImageUrl || null,
-              headerBorderEnabled: headerBorderEnabled !== undefined ? headerBorderEnabled : null,
-              headerBorderColor: headerBorderColor || null,
-              headerPaddingX: headerPaddingX || null,
-              headerPaddingY: headerPaddingY || null,
-              headerShowClearSession: headerShowClearSession !== undefined ? headerShowClearSession : null,
-              headerShowCloseButton: headerShowCloseButton !== undefined ? headerShowCloseButton : null,
-              // Close button position
-              closeButtonOffsetX: closeButtonOffsetX || null,
-              closeButtonOffsetY: closeButtonOffsetY || null,
-              // Send button configuration
-              sendButtonWidth: sendButtonWidth || null,
-              sendButtonHeight: sendButtonHeight || null,
-              sendButtonPosition: sendButtonPosition || 'outside'
-            },
-            isPublished: false,
-            createdBy: session.user.id
-          }
+    },
+    include: {
+      creator: {
+        select: {
+          id: true,
+          name: true,
+          email: true
         }
       },
-      include: {
-        creator: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        },
-        space: {
-          select: {
-            id: true,
-            name: true,
-            slug: true
-          }
-        },
-        versions: {
-          orderBy: { createdAt: 'desc' },
-          take: 1
+      space: {
+        select: {
+          id: true,
+          name: true,
+          slug: true
         }
+      },
+      versions: {
+        orderBy: { createdAt: 'desc' },
+        take: 1
       }
-    })
-
-    // Sync OpenAI API key to global provider config if provided
-    if (openaiAgentSdkApiKey) {
-      await syncOpenAIApiKey(openaiAgentSdkApiKey, request, session.user)
     }
+  })
 
-    // Merge version config into chatbot object
-    const mergedChatbot = mergeVersionConfig(chatbot)
+  // Sync OpenAI API key to global provider config if provided
+  if (openaiAgentSdkApiKey) {
+    await syncOpenAIApiKey(openaiAgentSdkApiKey, request, session.user)
+  }
+
+  // Merge version config into chatbot object and sanitize
+  const mergedChatbot = sanitizeChatbotConfig(mergeVersionConfig(chatbot))
 
   return NextResponse.json({ chatbot: mergedChatbot }, { status: 201 })
 }

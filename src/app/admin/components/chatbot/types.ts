@@ -341,6 +341,8 @@ export interface Chatbot {
   widgetShadowBlur: string
   widgetLabelText?: string
   widgetLabelColor?: string
+  widgetLabelShowIcon?: boolean // Show icon next to label
+  widgetLabelIconPosition?: 'left' | 'right' // Icon position relative to label
   // Widget behavior
   widgetAnimation: 'none' | 'fade' | 'slide' | 'bounce'
   widgetAutoShow: boolean
@@ -410,6 +412,8 @@ export interface Chatbot {
   headerAvatarImageUrl?: string
   headerBorderEnabled?: boolean
   headerBorderColor?: string
+  headerShowClearSession?: boolean // Show/hide clear session button in header
+  headerShowCloseButton?: boolean // Show/hide close button in header
   headerPaddingX?: string
   headerPaddingY?: string
   // Individual header padding sides

@@ -22,12 +22,12 @@ export async function sendMessageToEngine(options: SendMessageOptions): Promise<
   const { chatbot, content, attachments, conversationHistory, onStreamingUpdate, threadId, chatbotId, spaceId } = options
 
   // Handle OpenAI Agent SDK
-  if (chatbot.engineType === 'openai-agent-sdk' && chatbot.openaiAgentSdkAgentId && chatbot.openaiAgentSdkApiKey) {
+  if (chatbot.engineType === 'openai-agent-sdk' && chatbot.openaiAgentSdkAgentId) {
     return await sendToOpenAIAgentSDK(chatbot, content, attachments, conversationHistory, onStreamingUpdate, threadId, chatbotId, spaceId)
   }
 
   // Handle Dify
-  if (chatbot.engineType === 'dify' && chatbot.difyApiKey && chatbot.difyOptions?.apiBaseUrl) {
+  if (chatbot.engineType === 'dify') {
     return await sendToDify(chatbot, content, attachments, conversationHistory, onStreamingUpdate)
   }
 
@@ -49,18 +49,15 @@ async function sendToOpenAIAgentSDK(
   if (!chatbot.openaiAgentSdkAgentId) {
     throw new Error('Agent ID is required for OpenAI Agent SDK')
   }
-  if (!chatbot.openaiAgentSdkApiKey) {
-    throw new Error('API key is required for OpenAI Agent SDK')
-  }
-  
+
   const proxyUrl = '/api/openai-agent-sdk/chat-messages'
-  
+
   const response = await fetch(proxyUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       agentId: chatbot.openaiAgentSdkAgentId,
-      apiKey: chatbot.openaiAgentSdkApiKey,
+      // API Key is looked up server-side using chatbotId
       model: chatbot.openaiAgentSdkModel,
       instructions: chatbot.openaiAgentSdkInstructions,
       reasoningEffort: chatbot.openaiAgentSdkReasoningEffort,
@@ -98,7 +95,7 @@ async function sendToOpenAIAgentSDK(
     } catch {
       errorText = await response.text().catch(() => 'Unknown error')
     }
-    
+
     // Create a more descriptive error message
     let errorMessage = `OpenAI Agent SDK API request failed`
     if (response.status === 400) {
@@ -116,7 +113,7 @@ async function sendToOpenAIAgentSDK(
     } else {
       errorMessage = `${errorMessage} (${response.status}): ${errorText}`
     }
-    
+
     throw new Error(errorMessage)
   }
 
@@ -158,9 +155,8 @@ async function sendToDify(
   conversationHistory: Message[],
   onStreamingUpdate?: (content: string) => void
 ): Promise<SendMessageResult> {
-  const difyOptions = chatbot.difyOptions!
-  let apiBaseUrl = (difyOptions.apiBaseUrl || '').replace(/\/$/, '').replace(/\/v1$/, '')
-  
+  const difyOptions = chatbot.difyOptions || {}
+
   const files = (attachments || []).map(att => ({
     type: att.type === 'image' ? 'image' : att.type === 'video' ? 'video' : 'document',
     transfer_method: 'remote_url' as const,
@@ -183,7 +179,11 @@ async function sendToDify(
   const response = await fetch(proxyUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ apiBaseUrl, apiKey: chatbot.difyApiKey, requestBody })
+    body: JSON.stringify({
+      chatbotId: chatbot.id,
+      requestBody
+      // API Key and Base URL are looked up server-side
+    })
   })
 
   if (!response.ok) {
@@ -284,7 +284,7 @@ async function handleStreamingResponse(
       } else if (line.startsWith('data: ')) {
         try {
           const data = JSON.parse(line.slice(6))
-          
+
           if (isOpenAIAgentSDK) {
             // Handle OpenAI Agent SDK SSE format
             // Handle thread.message.delta events (content deltas)

@@ -44,6 +44,18 @@ export default function ChatPage() {
   const [currentTranscript, setCurrentTranscript] = useState('') // Separate state for voice transcript display
   // Track if ChatKit is unavailable (for fallback to regular chat)
   const [chatKitUnavailable, setChatKitUnavailable] = useState(false)
+  // Track if viewport is mobile
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Detect mobile viewport
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   // Check if page is loaded in an iframe
   useEffect(() => {
@@ -69,7 +81,7 @@ export default function ChatPage() {
 
   // Message management (must be initialized first to provide setMessages)
   const [currentChatId, setCurrentChatId] = useState<string | null>(null)
-  
+
   // OpenAI Agent SDK Thread management (must be initialized before useChatMessages)
   const {
     currentThreadId,
@@ -109,8 +121,8 @@ export default function ChatPage() {
         // Create thread record if it doesn't exist
         if (newThreadId && !threads.find(t => t.threadId === newThreadId)) {
           createThread(newThreadId)
+        }
       }
-    }
     },
   })
 
@@ -143,7 +155,7 @@ export default function ChatPage() {
 
   // Voice agent - select provider based on chatbot config
   const voiceProvider = chatbot?.voiceProvider || 'browser'
-  
+
   // Browser-based voice (Web Speech API)
   const browserVoice = useChatVoice({
     chatbot: voiceProvider === 'browser' ? chatbot : null,
@@ -176,29 +188,29 @@ export default function ChatPage() {
   })
 
   // Select the appropriate voice hook based on provider
-  const voiceState = voiceProvider === 'openai-realtime' 
+  const voiceState = voiceProvider === 'openai-realtime'
     ? {
-        isRecording: openaiRealtimeVoice.isRecording,
-        isVoiceEnabled: openaiRealtimeVoice.isVoiceEnabled,
-        isSpeaking: openaiRealtimeVoice.isSpeaking,
-        audioLevel: openaiRealtimeVoice.audioLevel, // Real-time audio level for visualization
-        handleStartRecording: openaiRealtimeVoice.startRecording,
-        handleStopRecording: openaiRealtimeVoice.stopRecording,
-        toggleVoiceOutput: () => {
-          // For OpenAI Realtime, toggle is handled by the API
-          if (openaiRealtimeVoice.isSpeaking) {
-            openaiRealtimeVoice.stopRecording()
-          }
-        },
-      }
+      isRecording: openaiRealtimeVoice.isRecording,
+      isVoiceEnabled: openaiRealtimeVoice.isVoiceEnabled,
+      isSpeaking: openaiRealtimeVoice.isSpeaking,
+      audioLevel: openaiRealtimeVoice.audioLevel, // Real-time audio level for visualization
+      handleStartRecording: openaiRealtimeVoice.startRecording,
+      handleStopRecording: openaiRealtimeVoice.stopRecording,
+      toggleVoiceOutput: () => {
+        // For OpenAI Realtime, toggle is handled by the API
+        if (openaiRealtimeVoice.isSpeaking) {
+          openaiRealtimeVoice.stopRecording()
+        }
+      },
+    }
     : {
-        isRecording: browserVoice.isRecording,
-        isVoiceEnabled: browserVoice.isVoiceEnabled,
-        isSpeaking: browserVoice.isSpeaking,
-        handleStartRecording: browserVoice.handleStartRecording,
-        handleStopRecording: browserVoice.handleStopRecording,
-        toggleVoiceOutput: browserVoice.toggleVoiceOutput,
-      }
+      isRecording: browserVoice.isRecording,
+      isVoiceEnabled: browserVoice.isVoiceEnabled,
+      isSpeaking: browserVoice.isSpeaking,
+      handleStartRecording: browserVoice.handleStartRecording,
+      handleStopRecording: browserVoice.handleStopRecording,
+      toggleVoiceOutput: browserVoice.toggleVoiceOutput,
+    }
 
   const {
     isRecording,
@@ -239,7 +251,7 @@ export default function ChatPage() {
           // Reset isOpen state when preview mode changes to show widget button
           if (val === 'popover' || val === 'popup-center') {
             setIsOpen(false)
-        } else {
+          } else {
             setIsOpen(true)
           }
         }
@@ -268,27 +280,29 @@ export default function ChatPage() {
 
   // Check if chatbot is enabled (default to true if not set)
   const chatbotEnabled = (chatbot as any).chatbotEnabled !== false
-  
+
   // If chatbot is disabled, don't render anything
   if (!chatbotEnabled) {
     return null
   }
 
   const effectiveDeploymentType = isEmbed ? 'fullpage' : previewDeploymentType
-  
+
   const chatStyle = getChatStyle(chatbot)
-  const containerStyle = getContainerStyle(chatbot, effectiveDeploymentType, emulatorConfig)
+  const containerStyle = getContainerStyle(chatbot, effectiveDeploymentType, emulatorConfig, isMobile)
   const overlayStyle = getOverlayStyle(effectiveDeploymentType, chatbot, isOpen)
   const popoverPositionStyle = getPopoverPositionStyle(chatbot)
   const widgetButtonStyle = getWidgetButtonStyle(chatbot)
 
-  const shouldShowWidgetButton = effectiveDeploymentType === 'popover' || effectiveDeploymentType === 'popup-center'
+  // On mobile, when chat is open, hide widget button (fullpage mode covers entire screen)
+  const shouldShowWidgetButton = (effectiveDeploymentType === 'popover' || effectiveDeploymentType === 'popup-center') && !(isMobile && isOpen)
   const shouldShowContainer = effectiveDeploymentType === 'fullpage' ? true : isOpen
 
   // Render ChatKit only if engine type is chatkit (not openai-agent-sdk)
   // Note: If ChatKit fails to load, it will fall back to regular chat style
   // Also check useChatKitInRegularStyle - if true, render ChatKit inside regular style container with regular header
-  const useChatKitInRegularStyle = (chatbot as any).useChatKitInRegularStyle === true
+  // Note: This only applies on desktop. On mobile, always use ChatKit native UI for better mobile experience
+  const useChatKitInRegularStyle = !isMobile && (chatbot as any).useChatKitInRegularStyle === true
   const shouldRenderChatKit =
     !chatKitUnavailable &&
     chatbot.engineType === 'chatkit' &&
@@ -298,9 +312,9 @@ export default function ChatPage() {
   if (shouldRenderChatKit && useChatKitInRegularStyle && (effectiveDeploymentType === 'popover' || effectiveDeploymentType === 'popup-center')) {
     // Always show container when using regular style header (no widget button to toggle)
     return (
-      <div 
-        style={{ 
-          position: 'relative', 
+      <div
+        style={{
+          position: 'relative',
           height: '100%',
           // Apply emulator background to page container (not popover)
           backgroundColor: emulatorConfig.backgroundColor,
@@ -315,33 +329,33 @@ export default function ChatPage() {
           <div className="flex flex-col relative" style={containerStyle}>
             {/* Regular Header on top */}
             {!isEmbed && (
-              <ChatHeader 
-                chatbot={chatbot} 
+              <ChatHeader
+                chatbot={chatbot}
                 onClearSession={() => setMessages([])}
                 onClose={shouldShowWidgetButton ? () => setIsOpen(false) : undefined}
               />
             )}
-            
+
             {/* ChatKit rendered below header - fills remaining space */}
-            <div 
-              className="flex-1 relative overflow-hidden chatkit-in-regular-style" 
-              style={{ 
+            <div
+              className="flex-1 relative overflow-hidden chatkit-in-regular-style"
+              style={{
                 flex: '1 1 auto',
                 minHeight: 0,
                 display: 'flex',
                 flexDirection: 'column',
               }}
             >
-              <ChatKitRenderer 
-                chatbot={chatbot} 
-                previewDeploymentType={effectiveDeploymentType} 
+              <ChatKitRenderer
+                chatbot={chatbot}
+                previewDeploymentType={effectiveDeploymentType}
                 isInIframe={isInIframe}
                 onChatKitUnavailable={() => setChatKitUnavailable(true)}
               />
             </div>
           </div>
         )}
-        
+
         {/* Widget button and overlay for popover/popup-center - OUTSIDE the popover container */}
         {overlayStyle && (
           <div style={overlayStyle} aria-hidden="true" onClick={() => setIsOpen(false)} />
@@ -385,9 +399,9 @@ export default function ChatPage() {
   // Render ChatKit normally (without regular style wrapper) or if in embed mode (to skip wrapper/header)
   if (shouldRenderChatKit && (!useChatKitInRegularStyle || isEmbed)) {
     return (
-      <div 
-        style={{ 
-          position: 'relative', 
+      <div
+        style={{
+          position: 'relative',
           height: '100%',
           // Apply emulator background to page container (not popover)
           backgroundColor: emulatorConfig.backgroundColor,
@@ -397,9 +411,9 @@ export default function ChatPage() {
           backgroundRepeat: emulatorConfig.backgroundImage ? 'no-repeat' : undefined,
         }}
       >
-        <ChatKitRenderer 
-          chatbot={chatbot} 
-          previewDeploymentType={effectiveDeploymentType} 
+        <ChatKitRenderer
+          chatbot={chatbot}
+          previewDeploymentType={effectiveDeploymentType}
           isInIframe={isInIframe}
           onChatKitUnavailable={() => setChatKitUnavailable(true)}
         />
@@ -410,7 +424,7 @@ export default function ChatPage() {
   // Render chat content (header, messages, input) - reusable for full page layout
   const renderChatContent = () => {
     if (!chatbot) return null
-    
+
     return (
       <ChatContent
         chatbot={chatbot}
@@ -441,23 +455,23 @@ export default function ChatPage() {
         currentTranscript={currentTranscript}
         chatbotId={chatbotId}
         threadId={threadManagementEnabled ? currentThreadId : null}
-        hideHeader={isEmbed}
+        hideHeader={!!(shouldRenderChatKit && !useChatKitInRegularStyle)}
       />
     )
   }
 
   // Full page layout with sidebar
   if (previewDeploymentType === 'fullpage' && !isInIframe) {
-    
+
     return (
       <div
         className="flex h-screen w-screen overflow-hidden"
         style={{
-        backgroundColor: emulatorConfig.backgroundColor,
-        backgroundImage: emulatorConfig.backgroundImage ? `url(${emulatorConfig.backgroundImage})` : undefined,
-        backgroundSize: emulatorConfig.backgroundImage ? 'cover' : undefined,
-        backgroundPosition: emulatorConfig.backgroundImage ? 'center' : undefined,
-        backgroundRepeat: emulatorConfig.backgroundImage ? 'no-repeat' : undefined,
+          backgroundColor: emulatorConfig.backgroundColor,
+          backgroundImage: emulatorConfig.backgroundImage ? `url(${emulatorConfig.backgroundImage})` : undefined,
+          backgroundSize: emulatorConfig.backgroundImage ? 'cover' : undefined,
+          backgroundPosition: emulatorConfig.backgroundImage ? 'center' : undefined,
+          backgroundRepeat: emulatorConfig.backgroundImage ? 'no-repeat' : undefined,
         }}
       >
         {/* Thread Selector for OpenAI Agent SDK */}
@@ -481,18 +495,19 @@ export default function ChatPage() {
         )}
 
         {/* Sidebar for regular chat history */}
-        {!threadManagementEnabled && (
-        <ChatSidebar
-          sidebarOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          chatHistory={chatHistory}
-          currentChatId={currentChatId}
-          onSelectChat={handleSelectChat}
-          onNewChat={handleNewChat}
-          onDeleteChat={handleDeleteChat}
-        />
+        {!threadManagementEnabled && chatbot && (
+          <ChatSidebar
+            sidebarOpen={sidebarOpen}
+            onClose={() => setSidebarOpen(false)}
+            chatHistory={chatHistory}
+            currentChatId={currentChatId}
+            onSelectChat={handleSelectChat}
+            onNewChat={handleNewChat}
+            onDeleteChat={handleDeleteChat}
+            chatbot={chatbot}
+          />
         )}
-        
+
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col overflow-hidden relative">
           {/* Top Bar with Menu and Preview Type */}
@@ -507,8 +522,8 @@ export default function ChatPage() {
             </div>
             <div className="flex items-center gap-2">
               <Label className="text-xs whitespace-nowrap">Preview Type:</Label>
-              <Select 
-                value={previewDeploymentType} 
+              <Select
+                value={previewDeploymentType}
                 onValueChange={(value: string) => {
                   const deploymentType = value as 'popover' | 'fullpage' | 'popup-center'
                   setPreviewDeploymentType(deploymentType)
@@ -530,7 +545,7 @@ export default function ChatPage() {
               </Select>
             </div>
           </div>
-          
+
           {/* Chat Container */}
           <div className="flex-1 flex flex-col p-6">
             <div className="flex-1 flex flex-col overflow-hidden relative">
@@ -545,9 +560,9 @@ export default function ChatPage() {
   }
 
   return (
-    <div 
-      style={{ 
-        position: 'relative', 
+    <div
+      style={{
+        position: 'relative',
         height: '100%',
         // Apply emulator background to page container (not popover)
         backgroundColor: emulatorConfig.backgroundColor,
@@ -561,8 +576,8 @@ export default function ChatPage() {
       {!isInIframe && (
         <div className="fixed top-4 right-4 flex items-center gap-2 bg-background/90 backdrop-blur-sm border rounded-md p-2 shadow-lg" style={{ zIndex: Z_INDEX.chatWidgetPreview }}>
           <Label className="text-xs whitespace-nowrap">Preview Type:</Label>
-          <Select 
-            value={previewDeploymentType} 
+          <Select
+            value={previewDeploymentType}
             onValueChange={(value: string) => {
               const deploymentType = value as 'popover' | 'fullpage' | 'popup-center'
               setPreviewDeploymentType(deploymentType)
@@ -584,7 +599,7 @@ export default function ChatPage() {
           </Select>
         </div>
       )}
-      
+
       {overlayStyle && (
         <div style={overlayStyle} aria-hidden="true" onClick={() => setIsOpen(false)} />
       )}
@@ -640,13 +655,13 @@ export default function ChatPage() {
               type="button"
               onClick={() => setIsOpen(false)}
               aria-label="Close chat"
-              style={{ 
-                position: 'absolute', 
-                top: chatbot.headerPaddingY || '16px', 
-                right: '8px', 
-                background: 'transparent', 
-                border: 0, 
-                color: chatbot.headerFontColor || '#fff', 
+              style={{
+                position: 'absolute',
+                top: chatbot.headerPaddingY || '16px',
+                right: '8px',
+                background: 'transparent',
+                border: 0,
+                color: chatbot.headerFontColor || '#fff',
                 zIndex: Z_INDEX.chatWidgetControl,
               }}
             >
@@ -654,9 +669,19 @@ export default function ChatPage() {
             </button>
           )}
 
+          {/* On mobile, show header with back button for popover/popup-center modes (only when not using ChatKit's native header) */}
+          {isMobile && (effectiveDeploymentType === 'popover' || effectiveDeploymentType === 'popup-center') && (!shouldRenderChatKit || useChatKitInRegularStyle) && (
+            <ChatHeader
+              chatbot={chatbot}
+              onClearSession={() => setMessages([])}
+              onClose={() => setIsOpen(false)}
+              isMobile={true}
+            />
+          )}
+
           <div className="flex flex-col h-full" style={chatStyle}>
             {renderChatContent()}
-              </div>
+          </div>
         </div>
       )}
     </div>

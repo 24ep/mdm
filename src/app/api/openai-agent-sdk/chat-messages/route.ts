@@ -7,6 +7,7 @@ import { getCachedResponse, getCacheConfig } from '@/lib/response-cache'
 import { getBudgetConfig } from '@/lib/cost-tracker'
 import { handleWorkflowRequest } from './handlers/workflow-handler'
 import { handleAssistantRequest } from './handlers/assistant-handler'
+import { db } from '@/lib/db'
 
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -23,15 +24,15 @@ async function postHandler(request: NextRequest) {
   const authResult = await requireAuthWithId()
   if (!authResult.success) return authResult.response
   const { session } = authResult
-  
+
   const body = await request.json()
-  const { 
-    agentId, 
-    apiKey, 
-    message, 
-    attachments, 
-    conversationHistory, 
-    model, 
+  let {
+    agentId,
+    apiKey,
+    message,
+    attachments,
+    conversationHistory,
+    model,
     instructions,
     reasoningEffort,
     store,
@@ -47,12 +48,28 @@ async function postHandler(request: NextRequest) {
     spaceId
   } = body
 
-    if (!agentId || !apiKey) {
-      return NextResponse.json(
-        { error: 'Missing agentId or apiKey' },
-        { status: 400 }
-      )
+  // Server-side API Key Lookup
+  if (!apiKey && chatbotId) {
+    try {
+      const chatbot = await db.chatbot.findUnique({
+        where: { id: chatbotId },
+        include: { versions: { orderBy: { createdAt: 'desc' }, take: 1 } }
+      })
+      if (chatbot) {
+        const config = (chatbot.versions[0]?.config || {}) as any
+        apiKey = config.openaiAgentSdkApiKey
+      }
+    } catch (error) {
+      console.warn('Failed to lookup API key:', error)
     }
+  }
+
+  if (!agentId || !apiKey) {
+    return NextResponse.json(
+      { error: 'Missing agentId or apiKey (and could not lookup via chatbotId)' },
+      { status: 400 }
+    )
+  }
 
   // Budget Check
   if (chatbotId) {
@@ -78,13 +95,13 @@ async function postHandler(request: NextRequest) {
 
   // Rate Limiting Check
   if (chatbotId && session?.user?.id) {
-      const rateLimitConfig = await getRateLimitConfig(chatbotId)
-      if (rateLimitConfig) {
-        const rateLimitResult = await checkRateLimit(
-          chatbotId,
-          session.user.id,
-          rateLimitConfig
-        )
+    const rateLimitConfig = await getRateLimitConfig(chatbotId)
+    if (rateLimitConfig) {
+      const rateLimitResult = await checkRateLimit(
+        chatbotId,
+        session.user.id,
+        rateLimitConfig
+      )
 
       if (!rateLimitResult.allowed) {
         const { recordMetric } = await import('@/lib/performance-metrics')
@@ -93,7 +110,7 @@ async function postHandler(request: NextRequest) {
           metricType: 'rate_limit_violation',
           value: 1,
           metadata: { userId: session.user.id, reason: rateLimitResult.reason },
-        }).catch(() => {})
+        }).catch(() => { })
 
         const { sendWebhook } = await import('@/lib/webhook-service')
         await sendWebhook(chatbotId, 'rate_limit_exceeded', {
@@ -101,7 +118,7 @@ async function postHandler(request: NextRequest) {
           reason: rateLimitResult.reason,
           resetTime: rateLimitResult.resetTime,
           blockedUntil: rateLimitResult.blockedUntil,
-        }).catch(() => {})
+        }).catch(() => { })
 
         return NextResponse.json(
           {
@@ -144,7 +161,7 @@ async function postHandler(request: NextRequest) {
           chatbotId,
           metricType: 'cache_hit',
           value: 1,
-        }).catch(() => {})
+        }).catch(() => { })
 
         return NextResponse.json({
           ...cached.response,
@@ -156,7 +173,7 @@ async function postHandler(request: NextRequest) {
           chatbotId,
           metricType: 'cache_miss',
           value: 1,
-        }).catch(() => {})
+        }).catch(() => { })
       }
     }
   }
@@ -167,7 +184,7 @@ async function postHandler(request: NextRequest) {
 
   if (!isWorkflow && !isAssistant) {
     return NextResponse.json(
-      { 
+      {
         error: 'Invalid agent ID format',
         details: 'Agent ID must start with "wf_" (workflow) or "asst_" (assistant)'
       },

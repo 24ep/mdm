@@ -13,16 +13,16 @@ interface EmulatorConfig {
 function hexToRgb(hex: string): string {
   // Remove # if present
   hex = hex.replace('#', '')
-  
+
   // Handle 3-digit hex
   if (hex.length === 3) {
     hex = hex.split('').map(char => char + char).join('')
   }
-  
+
   const r = parseInt(hex.substring(0, 2), 16)
   const g = parseInt(hex.substring(2, 4), 16)
   const b = parseInt(hex.substring(4, 6), 16)
-  
+
   return `${r}, ${g}, ${b}`
 }
 
@@ -46,8 +46,8 @@ export function getPopoverPositionStyle(chatbot: ChatbotConfig): React.CSSProper
   if (pos.includes('right')) (style as any).right = offsetX
   if (pos.includes('left')) (style as any).left = offsetX
   if (pos.includes('center')) {
-    ;(style as any).left = '50%'
-    ;(style as any).transform = 'translateX(-50%)'
+    ; (style as any).left = '50%'
+      ; (style as any).transform = 'translateX(-50%)'
   }
   return style
 }
@@ -55,7 +55,8 @@ export function getPopoverPositionStyle(chatbot: ChatbotConfig): React.CSSProper
 export function getContainerStyle(
   chatbot: ChatbotConfig,
   previewDeploymentType: 'popover' | 'fullpage' | 'popup-center',
-  emulatorConfig: EmulatorConfig
+  emulatorConfig: EmulatorConfig,
+  isMobile: boolean = false
 ): React.CSSProperties {
   const shadowColor = (chatbot as any).chatWindowShadowColor || chatbot.shadowColor || '#000000'
   const shadowBlur = (chatbot as any).chatWindowShadowBlur || chatbot.shadowBlur || '4px'
@@ -73,6 +74,39 @@ export function getContainerStyle(
   }
 
   if (previewDeploymentType === 'popover') {
+    // On mobile, popover becomes fullpage
+    if (isMobile) {
+      return {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100%',
+        height: '100%',
+        border: 'none',
+        borderRadius: 0,
+        zIndex: Z_INDEX.chatWidget,
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        ...(() => {
+          const bgValue = chatbot.messageBoxColor || '#ffffff'
+          if (bgValue.startsWith('url(') || bgValue.startsWith('http://') || bgValue.startsWith('https://') || bgValue.startsWith('/')) {
+            const imageUrl = bgValue.startsWith('url(') ? bgValue : `url(${bgValue})`
+            return {
+              backgroundImage: imageUrl,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              backgroundColor: '#ffffff',
+            }
+          }
+          return { backgroundColor: bgValue }
+        })(),
+      }
+    }
+
     const x = chatbot as any
     const pos = (x.widgetPosition || 'bottom-right') as string
     const offsetX = x.widgetOffsetX || '20px'
@@ -101,7 +135,7 @@ export function getContainerStyle(
       ...(() => {
         const bgValue = chatbot.messageBoxColor || '#ffffff'
         const opacity = (chatbot as any).chatWindowBackgroundOpacity !== undefined ? (chatbot as any).chatWindowBackgroundOpacity : 100
-        
+
         // Check if it's an image URL
         if (bgValue.startsWith('url(') || bgValue.startsWith('http://') || bgValue.startsWith('https://') || bgValue.startsWith('/')) {
           const imageUrl = bgValue.startsWith('url(') ? bgValue : `url(${bgValue})`
@@ -113,7 +147,7 @@ export function getContainerStyle(
             backgroundColor: opacity < 100 ? `rgba(255, 255, 255, ${opacity / 100})` : '#ffffff', // Fallback color with opacity
           }
         }
-        
+
         // It's a color value
         const bgColor = emulatorConfig.backgroundColor || bgValue
         if (opacity < 100) {
@@ -136,7 +170,7 @@ export function getContainerStyle(
       paddingBottom: (chatbot as any).chatWindowPaddingY || '0px',
     }
 
-    // Get popover position preference (top or left of widget)
+    // Get popover position preference (top or left of widget) - configurable from chatbot config
     const popoverPos = (x.popoverPosition || 'left') as 'top' | 'left'
     const popoverMargin = x.widgetPopoverMargin || '10px'
     const popoverMarginPx = parseFloat(popoverMargin) || 10
@@ -146,43 +180,43 @@ export function getContainerStyle(
       if (pos.includes('bottom')) {
         // Widget is at bottom, popover appears above it
         const bottomOffset = `calc(${offsetY} + ${widgetSizePx}px + ${popoverMarginPx}px)`
-        ;(popoverStyle as any).bottom = bottomOffset
+          ; (popoverStyle as any).bottom = bottomOffset
       } else {
         // Widget is at top, popover appears above it (above the viewport edge)
         const topOffset = `calc(${offsetY} + ${widgetSizePx}px + ${popoverMarginPx}px)`
-        ;(popoverStyle as any).top = topOffset
+          ; (popoverStyle as any).top = topOffset
       }
 
       // Horizontal alignment matches widget position
       if (pos.includes('right')) {
-        ;(popoverStyle as any).right = offsetX
+        ; (popoverStyle as any).right = offsetX
       } else if (pos.includes('left')) {
-        ;(popoverStyle as any).left = offsetX
+        ; (popoverStyle as any).left = offsetX
       } else if (pos.includes('center')) {
-        ;(popoverStyle as any).left = '50%'
-        ;(popoverStyle as any).transform = 'translateX(-50%)'
+        ; (popoverStyle as any).left = '50%'
+          ; (popoverStyle as any).transform = 'translateX(-50%)'
       }
     } else {
       // Position popover to the left/right of widget button (default behavior)
       if (pos.includes('bottom')) {
-        ;(popoverStyle as any).bottom = offsetY
+        ; (popoverStyle as any).bottom = offsetY
       } else {
-        ;(popoverStyle as any).top = offsetY
+        ; (popoverStyle as any).top = offsetY
       }
 
       // Place popover to the right of widget button (horizontally adjacent)
       if (pos.includes('right')) {
         // Widget is on right side, popover appears to the left of widget
         const rightOffset = `calc(${offsetX} + ${widgetSizePx}px + ${popoverMarginPx}px)`
-        ;(popoverStyle as any).right = rightOffset
+          ; (popoverStyle as any).right = rightOffset
       } else if (pos.includes('left')) {
         // Widget is on left side, popover appears to the right of widget
         const leftOffset = `calc(${offsetX} + ${widgetSizePx}px + ${popoverMarginPx}px)`
-        ;(popoverStyle as any).left = leftOffset
+          ; (popoverStyle as any).left = leftOffset
       } else if (pos.includes('center')) {
         // For center positions, place popover to the right of widget
-        ;(popoverStyle as any).left = `calc(50% + ${widgetSizePx / 2}px + ${popoverMarginPx}px)`
-        ;(popoverStyle as any).transform = 'translateX(0)'
+        ; (popoverStyle as any).left = `calc(50% + ${widgetSizePx / 2}px + ${popoverMarginPx}px)`
+          ; (popoverStyle as any).transform = 'translateX(0)'
       }
     }
 
@@ -190,6 +224,40 @@ export function getContainerStyle(
   }
 
   if (previewDeploymentType === 'popup-center') {
+    // On mobile, popup-center becomes fullpage
+    if (isMobile) {
+      return {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100%',
+        height: '100%',
+        border: 'none',
+        borderRadius: 0,
+        zIndex: Z_INDEX.chatWidgetWindow,
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        transform: 'none',
+        ...(() => {
+          const bgValue = chatbot.messageBoxColor || '#ffffff'
+          if (bgValue.startsWith('url(') || bgValue.startsWith('http://') || bgValue.startsWith('https://') || bgValue.startsWith('/')) {
+            const imageUrl = bgValue.startsWith('url(') ? bgValue : `url(${bgValue})`
+            return {
+              backgroundImage: imageUrl,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              backgroundColor: '#ffffff',
+            }
+          }
+          return { backgroundColor: bgValue }
+        })(),
+      }
+    }
+
     return {
       width: '90%',
       maxWidth: '640px',
@@ -237,7 +305,7 @@ export function getContainerStyle(
     // For fullpage/embed, we should apply the chatbot theme unless emulator/preview config overrides it
     ...(() => {
       // Priority: Emulator Config > Chatbot Config > Default
-      
+
       // If emulator config has explicit background (e.g. from preview settings), use it
       if (emulatorConfig.backgroundColor || emulatorConfig.backgroundImage) {
         return {
@@ -252,7 +320,7 @@ export function getContainerStyle(
       // Otherwise, use the chatbot configuration (same logic as popover)
       const bgValue = chatbot.messageBoxColor || '#ffffff'
       const opacity = (chatbot as any).chatWindowBackgroundOpacity !== undefined ? (chatbot as any).chatWindowBackgroundOpacity : 100
-      
+
       // Check if it's an image URL
       if (bgValue.startsWith('url(') || bgValue.startsWith('http://') || bgValue.startsWith('https://') || bgValue.startsWith('/')) {
         const imageUrl = bgValue.startsWith('url(') ? bgValue : `url(${bgValue})`
@@ -264,7 +332,7 @@ export function getContainerStyle(
           backgroundColor: opacity < 100 ? `rgba(255, 255, 255, ${opacity / 100})` : '#ffffff',
         }
       }
-      
+
       // It's a color value
       const bgColor = bgValue
       if (opacity < 100) {
@@ -301,23 +369,23 @@ export function getOverlayStyle(
   if (previewDeploymentType === 'popup-center') {
     return { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: Z_INDEX.chatWidgetOverlay }
   }
-  
+
   // For popover mode, check if overlay is enabled and chat is open
   if (previewDeploymentType === 'popover' && chatbot && isOpen) {
-    const overlayEnabled = (chatbot as any).overlayEnabled !== undefined 
-      ? (chatbot as any).overlayEnabled 
+    const overlayEnabled = (chatbot as any).overlayEnabled !== undefined
+      ? (chatbot as any).overlayEnabled
       : false
-    
+
     if (!overlayEnabled) {
       return undefined
     }
-    
+
     const overlayColor = (chatbot as any).overlayColor || '#000000'
-    const overlayOpacity = (chatbot as any).overlayOpacity !== undefined 
-      ? (chatbot as any).overlayOpacity 
+    const overlayOpacity = (chatbot as any).overlayOpacity !== undefined
+      ? (chatbot as any).overlayOpacity
       : 50
     const overlayBlur = (chatbot as any).overlayBlur || 0
-    
+
     // Calculate background color with opacity
     let backgroundColor: string
     if (overlayColor.startsWith('rgba') || overlayColor.startsWith('rgb')) {
@@ -332,25 +400,25 @@ export function getOverlayStyle(
       // Convert hex to rgba
       backgroundColor = `rgba(${hexToRgb(overlayColor)}, ${overlayOpacity / 100})`
     }
-    
+
     const overlayStyle: React.CSSProperties = {
       position: 'fixed',
       inset: 0,
       backgroundColor,
-      zIndex: ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) >= Z_INDEX.chatWidget 
-        ? ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) - 1 
+      zIndex: ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) >= Z_INDEX.chatWidget
+        ? ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) - 1
         : Z_INDEX.chatWidgetOverlay, // Place overlay below widget and popover
     }
-    
+
     // Apply blur if specified
     if (overlayBlur > 0) {
       overlayStyle.backdropFilter = `blur(${overlayBlur}px)`
       overlayStyle.WebkitBackdropFilter = `blur(${overlayBlur}px)`
     }
-    
+
     return overlayStyle
   }
-  
+
   return undefined
 }
 
@@ -365,39 +433,39 @@ export function getWidgetButtonStyle(chatbot: ChatbotConfig): React.CSSPropertie
   const widgetBgValue = (chatbot as any).widgetBackgroundColor || chatbot.primaryColor || '#3b82f6'
   const blurAmount = (chatbot as any).widgetBackgroundBlur || 0
   const opacity = (chatbot as any).widgetBackgroundOpacity !== undefined ? (chatbot as any).widgetBackgroundOpacity : 100
-  
+
   // Build box-shadow with all properties (offsetX offsetY blur spread color)
   const shadowX = extractNumericValue((chatbot as any).widgetShadowX || '0px')
   const shadowY = extractNumericValue((chatbot as any).widgetShadowY || '0px')
   const shadowBlur = extractNumericValue((chatbot as any).widgetShadowBlur || '0px')
   const shadowSpread = extractNumericValue((chatbot as any).widgetShadowSpread || '0px')
   const shadowColor = (chatbot as any).widgetShadowColor || 'rgba(0,0,0,0.2)'
-  
+
   const boxShadow = (shadowBlur !== '0' || shadowX !== '0' || shadowY !== '0' || shadowSpread !== '0')
     ? `${shadowX}px ${shadowY}px ${shadowBlur}px ${shadowSpread}px ${shadowColor}`
     : undefined
-  
+
   const baseStyle: React.CSSProperties = {
     width: (chatbot as any).widgetSize || '60px',
     height: (chatbot as any).widgetSize || '60px',
     borderRadius: (chatbot as any).widgetBorderRadius || '50%',
     border: `${(chatbot as any).widgetBorderWidth || '0px'} solid ${(chatbot as any).widgetBorderColor || 'transparent'}`,
     boxShadow: boxShadow,
-    zIndex: ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) >= Z_INDEX.chatWidget 
-      ? ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) + 1 
+    zIndex: ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) >= Z_INDEX.chatWidget
+      ? ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) + 1
       : Z_INDEX.chatWidgetWindow, // Higher than popover to stay on top
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     cursor: 'pointer',
   }
-  
+
   // Apply glassmorphism effect
   if (blurAmount > 0) {
     baseStyle.backdropFilter = `blur(${blurAmount}px)`
     baseStyle.WebkitBackdropFilter = `blur(${blurAmount}px)`
   }
-  
+
   // Check if it's an image URL (starts with url(, http://, https://, or /)
   if (widgetBgValue.startsWith('url(') || widgetBgValue.startsWith('http://') || widgetBgValue.startsWith('https://') || widgetBgValue.startsWith('/')) {
     const imageUrl = widgetBgValue.startsWith('url(') ? widgetBgValue : `url(${widgetBgValue})`
@@ -426,7 +494,7 @@ export function getWidgetButtonStyle(chatbot: ChatbotConfig): React.CSSPropertie
       baseStyle.backgroundColor = widgetBgValue
     }
   }
-  
+
   return baseStyle
 }
 

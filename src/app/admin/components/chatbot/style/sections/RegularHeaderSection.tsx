@@ -3,7 +3,7 @@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-
+import { Switch } from '@/components/ui/switch'
 import { X } from 'lucide-react'
 import type { Chatbot } from '../../types'
 
@@ -26,6 +26,46 @@ export function RegularHeaderSection({ formData, setFormData, chatkitOptions }: 
             <p className="text-xs text-muted-foreground mb-4">
               Configure the header appearance, title, description, logo, and custom buttons.
             </p>
+          </div>
+
+          {/* Header Action Buttons */}
+          <div className="space-y-4">
+            <h4 className="text-md font-semibold mb-2">Header Action Buttons</h4>
+            <p className="text-xs text-muted-foreground mb-4">
+              Show or hide action buttons in the header.
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center justify-between rounded-lg border p-3">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-medium">Clear Button</Label>
+                  <p className="text-xs text-muted-foreground">Show clear session button</p>
+                </div>
+                <Switch
+                  checked={formData.headerShowClearSession !== false}
+                  onCheckedChange={(checked) => {
+                    setFormData({
+                      ...formData,
+                      headerShowClearSession: checked
+                    })
+                  }}
+                />
+              </div>
+              <div className="flex items-center justify-between rounded-lg border p-3">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-medium">Close Button</Label>
+                  <p className="text-xs text-muted-foreground">Show close chat button</p>
+                </div>
+                <Switch
+                  checked={formData.headerShowCloseButton !== false}
+                  onCheckedChange={(checked) => {
+                    setFormData({
+                      ...formData,
+                      headerShowCloseButton: checked
+                    })
+                  }}
+                />
+              </div>
+            </div>
           </div>
 
           <div className="space-y-4">

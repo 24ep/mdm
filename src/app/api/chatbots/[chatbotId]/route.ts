@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { db } from '@/lib/db'
-import { mergeVersionConfig } from '@/lib/chatbot-helper'
+import { mergeVersionConfig, sanitizeChatbotConfig } from '@/lib/chatbot-helper'
 
 // GET - Fetch a specific chatbot by ID
 async function getHandler(
@@ -49,8 +49,8 @@ async function getHandler(
     return NextResponse.json({ error: 'Chatbot not found' }, { status: 404 })
   }
 
-  // Merge version config into chatbot object
-  const mergedChatbot = mergeVersionConfig(chatbot)
+  // Merge version config into chatbot object and sanitize
+  const mergedChatbot = sanitizeChatbotConfig(mergeVersionConfig(chatbot))
 
   return NextResponse.json({ chatbot: mergedChatbot })
 }
@@ -115,6 +115,9 @@ async function putHandler(
     ...versionConfig
   } = body
 
+  // Check if there are version-specific config updates
+  const hasVersionConfig = Object.keys(versionConfig).length > 0
+
   // Update the chatbot
   const updatedChatbot = await db.chatbot.update({
     where: { id: chatbotId },
@@ -149,10 +152,10 @@ async function putHandler(
       // Only allow isPublished: true if it's explicitly passed AND we are NOT updating config (Publish action)
       isPublished: (hasVersionConfig || name || description || logo || primaryColor || messageBoxColor) ? false : (isPublished !== undefined ? isPublished : undefined),
       ...(currentVersion !== undefined && { currentVersion }),
-      ...(spaceId !== undefined && { 
-        space: spaceId 
-          ? { connect: { id: spaceId } } 
-          : { disconnect: true } 
+      ...(spaceId !== undefined && {
+        space: spaceId
+          ? { connect: { id: spaceId } }
+          : { disconnect: true }
       }),
       ...(customEmbedDomain !== undefined && { customEmbedDomain }),
       updatedAt: new Date()
@@ -179,12 +182,11 @@ async function putHandler(
     }
   })
 
-  // If there are version-specific config updates, create a new version
-  const hasVersionConfig = Object.keys(versionConfig).length > 0
+  // Check if there are version-specific config updates (already calculated above)
   if (hasVersionConfig) {
     // Get latest version config to merge with
     const latestVersion = updatedChatbot.versions[0]
-    const existingConfig = latestVersion?.config || {}
+    const existingConfig = (latestVersion?.config || {}) as any
 
     // Build the new config - preserve existing values unless explicitly provided
     // Important: Don't use || null conversion which would lose empty string values
@@ -222,8 +224,6 @@ async function putHandler(
         chatbotId,
         version: currentVersion || latestVersion?.version || '1.0.0',
         config: newConfig,
-        version: currentVersion || latestVersion?.version || '1.0.0',
-        config: newConfig,
         // New versions created from "Save" should always be drafts until explicitly published
         isPublished: false,
         createdBy: session.user.id
@@ -256,8 +256,8 @@ async function putHandler(
     }
   })
 
-  // Merge version config into chatbot object
-  const mergedChatbot = mergeVersionConfig(finalChatbot)
+  // Merge version config into chatbot object and sanitize
+  const mergedChatbot = sanitizeChatbotConfig(mergeVersionConfig(finalChatbot))
 
   return NextResponse.json({ chatbot: mergedChatbot })
 }

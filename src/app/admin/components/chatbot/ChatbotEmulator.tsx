@@ -4,7 +4,7 @@ import { useRef, useEffect, useState } from 'react'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { ExternalLink, Settings } from 'lucide-react'
+import { ExternalLink, Settings, Monitor, Tablet, Smartphone } from 'lucide-react'
 import { Chatbot } from './types'
 import { EmulatorConfigDrawer } from './EmulatorConfigDrawer'
 import { Z_INDEX } from '@/lib/z-index'
@@ -14,22 +14,40 @@ interface ChatbotEmulatorProps {
   previewMode: 'popover' | 'fullpage' | 'popup-center'
   onPreviewModeChange: (mode: 'popover' | 'fullpage' | 'popup-center') => void
   formData: Partial<Chatbot>
+  onFormDataChange?: React.Dispatch<React.SetStateAction<Partial<Chatbot>>>
 }
 
 export function ChatbotEmulator({
   selectedChatbot,
   previewMode,
   onPreviewModeChange,
-  formData
+  formData,
+  onFormDataChange
 }: ChatbotEmulatorProps) {
   const emulatorRef = useRef<HTMLIFrameElement | null>(null)
   const [configDrawerOpen, setConfigDrawerOpen] = useState(false)
-  const [emulatorConfig, setEmulatorConfig] = useState({
-    backgroundColor: '#ffffff',
-    backgroundImage: '',
-    text: '',
-    description: ''
-  })
+  const [deviceType, setDeviceType] = useState<'desktop' | 'tablet' | 'mobile'>('desktop')
+
+  // Map formData fields to emulator config
+  const emulatorConfig = {
+    backgroundColor: (formData as any).pageBackgroundColor || '#ffffff',
+    backgroundImage: (formData as any).pageBackgroundImage || '',
+    text: (formData as any).pageTitle || '',
+    description: (formData as any).pageDescription || ''
+  }
+
+  // Handle emulator config changes by updating formData
+  const handleEmulatorConfigChange = (newConfig: any) => {
+    if (!onFormDataChange) return
+
+    onFormDataChange(prev => ({
+      ...prev,
+      pageBackgroundColor: newConfig.backgroundColor,
+      pageBackgroundImage: newConfig.backgroundImage,
+      pageTitle: newConfig.text,
+      pageDescription: newConfig.description
+    }))
+  }
 
   // Send preview mode and emulator config to iframe when it loads or when preview mode changes
   useEffect(() => {
@@ -116,14 +134,60 @@ export function ChatbotEmulator({
     }
   }, [selectedChatbot?.id, emulatorConfig])
 
+  const getDeviceDimensions = () => {
+    switch (deviceType) {
+      case 'mobile':
+        return { width: '375px', height: '667px', borderRadius: '40px', borderWidth: '12px' }
+      case 'tablet':
+        return { width: '768px', height: '1024px', borderRadius: '24px', borderWidth: '12px' }
+      default:
+        return { width: '100%', height: '100%', borderRadius: '0px', borderWidth: '0px' }
+    }
+  }
+
+  const deviceStyle = getDeviceDimensions()
+
   return (
-    <div className="min-h-[800px] border-l overflow-visible relative bg-transparent" style={{ borderColor: formData.borderColor }}>
-      <div className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: formData.borderColor }}>
-        <div className="text-sm font-medium">Emulator</div>
+    <div className="min-h-[800px] border-l overflow-visible relative bg-muted/10 h-full flex flex-col" style={{ borderColor: formData.borderColor }}>
+      <div className="flex items-center justify-between px-3 py-2 border-b bg-background z-10" style={{ borderColor: formData.borderColor }}>
+        <div className="flex items-center gap-2">
+          <div className="text-sm font-medium">Emulator</div>
+          <div className="w-px h-4 bg-border mx-1" />
+          <div className="flex bg-muted rounded-lg p-0.5 gap-0.5">
+            <Button
+              variant={deviceType === 'desktop' ? 'default' : 'ghost'}
+              size="icon"
+              className={`h-7 w-7 rounded-md transition-all ${deviceType === 'desktop' ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted-foreground/10'}`}
+              onClick={() => setDeviceType('desktop')}
+              title="Desktop View"
+            >
+              <Monitor className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={deviceType === 'tablet' ? 'default' : 'ghost'}
+              size="icon"
+              className={`h-7 w-7 rounded-md transition-all ${deviceType === 'tablet' ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted-foreground/10'}`}
+              onClick={() => setDeviceType('tablet')}
+              title="Tablet View"
+            >
+              <Tablet className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={deviceType === 'mobile' ? 'default' : 'ghost'}
+              size="icon"
+              className={`h-7 w-7 rounded-md transition-all ${deviceType === 'mobile' ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted-foreground/10'}`}
+              onClick={() => setDeviceType('mobile')}
+              title="Mobile View"
+            >
+              <Smartphone className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
         <div className="flex items-center gap-2">
           <Label className="text-xs">Preview as</Label>
           <Select value={previewMode} onValueChange={(v: any) => onPreviewModeChange(v)}>
-            <SelectTrigger className="h-8 w-[180px]">
+            <SelectTrigger className="h-8 w-[140px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -137,7 +201,7 @@ export function ChatbotEmulator({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8"
+                className="h-8 w-8 p-0"
                 onClick={() => setConfigDrawerOpen(true)}
               >
                 <Settings className="h-4 w-4" />
@@ -149,55 +213,66 @@ export function ChatbotEmulator({
                 onClick={() => window.open(`/chat/${selectedChatbot.id}`, '_blank')}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
-                Open in new page
+                New Tab
               </Button>
             </>
           )}
         </div>
       </div>
+
       {selectedChatbot?.id ? (
-        <div className="relative w-full h-[760px] overflow-hidden">
-          {(formData as any).pwaInstallBannerEnabled && (
-            <div
-              className="absolute top-0 left-0 right-0 z-[50] p-3 flex items-center justify-between shadow-sm"
-              style={{
-                backgroundColor: (formData as any).pwaInstallBannerBackgroundColor || '#ffffff',
-                color: (formData as any).pwaInstallBannerTextColor || '#000000'
-              }}
-            >
-              <div className="flex items-center gap-2">
-                {/* We could render the icon here if accessible, or just a generic placeholder if complex */}
-                <div className="w-8 h-8 rounded-lg bg-gray-200 flex items-center justify-center overflow-hidden">
-                  {(formData as any).pwaInstallBannerIcon ? (
-                    <img src={(formData as any).pwaInstallBannerIcon} alt="App Icon" className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-xs font-bold">App</span>
-                  )}
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-semibold leading-tight">{(formData as any).pwaInstallBannerText || 'Install our App'}</span>
-                  <span className="text-xs opacity-80">Add to home screen</span>
-                </div>
-              </div>
-              <Button
-                size="sm"
-                className="h-7 text-xs px-3"
+        <div className="relative w-full flex-1 overflow-auto flex items-center justify-center p-8 bg-muted/10">
+          <div
+            className="relative bg-background shadow-2xl transition-all duration-300 ease-in-out flex flex-col overflow-hidden shrink-0"
+            style={{
+              width: deviceStyle.width,
+              height: deviceStyle.height,
+              borderRadius: deviceStyle.borderRadius,
+              border: deviceType !== 'desktop' ? `${deviceStyle.borderWidth} solid #1a1a1a` : 'none',
+              maxHeight: '100%'
+            }}
+          >
+            {(formData as any).pwaInstallBannerEnabled && (
+              <div
+                className="absolute top-0 left-0 right-0 z-[50] p-3 flex items-center justify-between shadow-sm"
                 style={{
-                  backgroundColor: (formData as any).pwaInstallBannerButtonColor || '#000000',
-                  color: (formData as any).pwaInstallBannerButtonTextColor || '#ffffff'
+                  backgroundColor: (formData as any).pwaInstallBannerBackgroundColor || '#ffffff',
+                  color: (formData as any).pwaInstallBannerTextColor || '#000000'
                 }}
               >
-                {(formData as any).pwaInstallBannerButtonText || 'Install'}
-              </Button>
-            </div>
-          )}
-          <iframe
-            ref={emulatorRef}
-            src={`/chat/${selectedChatbot.id}`}
-            className="w-full h-full border-0"
-            title="Chat Emulator"
-            style={{ position: 'relative', zIndex: Z_INDEX.content }}
-          />
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-gray-200 flex items-center justify-center overflow-hidden">
+                    {(formData as any).pwaInstallBannerIcon ? (
+                      <img src={(formData as any).pwaInstallBannerIcon} alt="App Icon" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-xs font-bold">App</span>
+                    )}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold leading-tight">{(formData as any).pwaInstallBannerText || 'Install our App'}</span>
+                    <span className="text-xs opacity-80">Add to home screen</span>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  className="h-7 text-xs px-3"
+                  style={{
+                    backgroundColor: (formData as any).pwaInstallBannerButtonColor || '#000000',
+                    color: (formData as any).pwaInstallBannerButtonTextColor || '#ffffff'
+                  }}
+                >
+                  {(formData as any).pwaInstallBannerButtonText || 'Install'}
+                </Button>
+              </div>
+            )}
+            <iframe
+              ref={emulatorRef}
+              src={`/chat/${selectedChatbot.id}`}
+              className="w-full h-full border-0 bg-background"
+              title="Chat Emulator"
+              style={{ position: 'relative', zIndex: Z_INDEX.content }}
+            />
+          </div>
         </div>
       ) : (
         <div className="h-full flex items-center justify-center text-muted-foreground p-6 text-sm">
@@ -209,7 +284,7 @@ export function ChatbotEmulator({
         open={configDrawerOpen}
         onOpenChange={setConfigDrawerOpen}
         config={emulatorConfig}
-        onConfigChange={(config) => setEmulatorConfig(prev => ({ ...prev, ...config }))}
+        onConfigChange={handleEmulatorConfigChange}
       />
     </div>
   )

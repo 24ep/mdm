@@ -1,9 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import bcrypt from 'bcryptjs'
+import { checkRateLimit } from '@/lib/rate-limiter'
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const ip = request.headers.get('x-forwarded-for') || 'anonymous'
+    const rateLimitResult = await checkRateLimit('signup', ip, {
+      enabled: true,
+      maxRequestsPerHour: 5, // Strict limit for signups
+      blockDuration: 3600,
+    })
+
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: 'Too many signup attempts. Please try again later.' },
+        { status: 429 }
+      )
+    }
+
     const { email, password, name } = await request.json()
 
     if (!email || !password || !name) {
@@ -44,7 +60,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Signup error:', error)
     return NextResponse.json(
-      { error: 'Internal server error', details: error?.message || String(error) },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

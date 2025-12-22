@@ -31,10 +31,11 @@ export function AccordionSectionWrapper({
                 type="single"
                 collapsible
                 value={value}
-                onValueChange={setValue}
-                className={cn("space-y-2", className)}
+                onValueChange={(val) => setValue(val as string)}
             >
-                {children}
+                <div className={cn("space-y-2", className)}>
+                    {children}
+                </div>
             </Accordion>
         </AccordionSectionContext.Provider>
     )
