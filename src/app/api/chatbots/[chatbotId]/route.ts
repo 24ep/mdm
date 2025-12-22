@@ -176,7 +176,11 @@ async function putHandler(
       ...(deploymentType !== undefined && { deploymentType }),
       ...(isPublished !== undefined && { isPublished }),
       ...(currentVersion !== undefined && { currentVersion }),
-      ...(spaceId !== undefined && { spaceId }),
+      ...(spaceId !== undefined && { 
+        space: spaceId 
+          ? { connect: { id: spaceId } } 
+          : { disconnect: true } 
+      }),
       ...(customEmbedDomain !== undefined && { customEmbedDomain }),
       updatedAt: new Date()
     },
