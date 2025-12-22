@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Z_INDEX } from '@/lib/z-index'
 import { db } from '@/lib/db'
+import { mergeVersionConfig } from '@/lib/chatbot-helper'
 // import { renderToStaticMarkup } from 'react-dom/server'
 import * as Icons from 'lucide-react'
 import React from 'react'
@@ -18,14 +19,23 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Fetch chatbot configuration server-side
-    const chatbot = await db.chatbot.findUnique({
-      where: { id: chatbotId }
+    // Fetch chatbot configuration server-side (including versions for merged config)
+    const rawChatbot = await db.chatbot.findUnique({
+      where: { id: chatbotId },
+      include: {
+        versions: {
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
+      }
     })
 
-    if (!chatbot) {
+    if (!rawChatbot) {
       return new NextResponse("Chatbot not found", { status: 404 })
     }
+
+    // Merge version config into chatbot object (this includes chatkitOptions, widgetBackgroundColor, etc.)
+    const chatbot = mergeVersionConfig(rawChatbot)
 
     // Generate Icon SVG if needed
     let iconSvg = ''
@@ -706,7 +716,6 @@ export async function GET(request: NextRequest) {
       }
     });
     }
-  });
 })();
 `
 
