@@ -26,6 +26,21 @@ export function RegularHeaderSection({ formData, setFormData, chatkitOptions }: 
             <p className="text-xs text-muted-foreground mb-4">
               Configure the header appearance, title, description, logo, and custom buttons.
             </p>
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div className="space-y-0.5">
+                <Label className="text-sm font-medium">Show Header</Label>
+                <p className="text-xs text-muted-foreground">Show header in chat widget and full page</p>
+              </div>
+              <Switch
+                checked={formData.headerEnabled !== false}
+                onCheckedChange={(checked) => {
+                  setFormData({
+                    ...formData,
+                    headerEnabled: checked
+                  })
+                }}
+              />
+            </div>
           </div>
 
           {/* Header Action Buttons */}

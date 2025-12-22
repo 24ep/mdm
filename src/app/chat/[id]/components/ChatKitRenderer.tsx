@@ -30,8 +30,11 @@ export function ChatKitRenderer({
   // Auto-show for widget (only auto-open, don't auto-close)
   useEffect(() => {
     if (!chatbot) return
-    if (previewDeploymentType === 'fullpage') {
-      setIsOpen(true) // Full page always shows
+    const useChatKitInRegularStyle = (chatbot as any).useChatKitInRegularStyle === true
+
+    // Regular Style UI on desktop should always be "open" internally to fill our container
+    if (previewDeploymentType === 'fullpage' || useChatKitInRegularStyle) {
+      setIsOpen(true)
       return
     }
     // For popover/popup-center, start closed to show widget button

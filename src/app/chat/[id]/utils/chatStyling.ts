@@ -171,7 +171,7 @@ export function getContainerStyle(
     }
 
     // Get popover position preference (top or left of widget) - configurable from chatbot config
-    const popoverPos = (x.popoverPosition || 'left') as 'top' | 'left'
+    const popoverPos = (x.popoverPosition || 'top') as 'top' | 'left'
     const popoverMargin = x.widgetPopoverMargin || '10px'
     const popoverMarginPx = parseFloat(popoverMargin) || 10
 

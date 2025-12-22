@@ -136,46 +136,56 @@ export async function GET(request: NextRequest) {
     
     var widgetConfig = {
       avatarStyle: chatbot.widgetAvatarStyle,
-      position: chatbot.widgetPosition,
-      size: chatbot.widgetSize,
+      position: chatbot.widgetPosition || 'bottom-right',
+      size: chatbot.widgetSize || '60px',
       backgroundColor: chatbot.widgetBackgroundColor || chatKitAccentColor || chatbot.primaryColor,
-      borderColor: chatbot.widgetBorderColor,
-      borderWidth: chatbot.widgetBorderWidth,
-      borderRadius: chatbot.widgetBorderRadius,
-      shadowColor: chatbot.widgetShadowColor,
-      shadowBlur: chatbot.widgetShadowBlur,
-      shadowX: chatbot.widgetShadowX,
-      shadowY: chatbot.widgetShadowY,
-      shadowSpread: chatbot.widgetShadowSpread,
-      labelText: chatbot.widgetLabelText,
-      labelColor: chatbot.widgetLabelColor,
+      borderColor: chatbot.widgetBorderColor || 'transparent',
+      borderWidth: chatbot.widgetBorderWidth || '0px',
+      borderRadius: chatbot.widgetBorderRadius || '50%',
+      shadowColor: chatbot.widgetShadowColor || 'rgba(0,0,0,0.2)',
+      shadowBlur: chatbot.widgetShadowBlur || '0px',
+      shadowX: chatbot.widgetShadowX || '0px',
+      shadowY: chatbot.widgetShadowY || '0px',
+      shadowSpread: chatbot.widgetShadowSpread || '0px',
+      labelText: chatbot.widgetLabelText || 'Chat',
+      labelColor: chatbot.widgetLabelColor || '#ffffff',
       logo: chatbot.logo,
-      animation: chatbot.widgetAnimation,
-      autoShow: chatbot.widgetAutoShow,
-      autoShowDelay: chatbot.widgetAutoShowDelay,
-      offsetX: chatbot.widgetOffsetX,
-      offsetY: chatbot.widgetOffsetY,
-      zIndex: chatbot.widgetZIndex,
+      animation: chatbot.widgetAnimation || 'scale',
+      autoShow: chatbot.widgetAutoShow !== undefined ? chatbot.widgetAutoShow : true,
+      autoShowDelay: chatbot.widgetAutoShowDelay || 0,
+      offsetX: chatbot.widgetOffsetX || '20px',
+      offsetY: chatbot.widgetOffsetY || '20px',
+      zIndex: chatbot.widgetZIndex || 99999,
       showBadge: chatbot.showNotificationBadge,
-      badgeColor: chatbot.notificationBadgeColor,
-      chatWidth: chatbot.chatWindowWidth,
-      chatHeight: chatbot.chatWindowHeight,
-      popoverPosition: chatbot.popoverPosition,
-      popoverMargin: chatbot.widgetPopoverMargin,
-      widgetBlur: chatbot.widgetBackgroundBlur,
-      widgetOpacity: chatbot.widgetBackgroundOpacity,
-      chatBlur: chatbot.chatWindowBackgroundBlur,
-      chatOpacity: chatbot.chatWindowBackgroundOpacity,
-      overlayEnabled: chatbot.overlayEnabled,
-      overlayColor: chatbot.overlayColor,
-      overlayOpacity: chatbot.overlayOpacity,
-      overlayBlur: chatbot.overlayBlur
+      badgeColor: chatbot.notificationBadgeColor || '#ff0000',
+      chatWidth: chatbot.chatWindowWidth || '380px',
+      chatHeight: chatbot.chatWindowHeight || '600px',
+      popoverPosition: chatbot.popoverPosition || 'top',
+      popoverMargin: chatbot.widgetPopoverMargin || '10px',
+      widgetBlur: chatbot.widgetBackgroundBlur || 0,
+      widgetOpacity: chatbot.widgetBackgroundOpacity !== undefined ? chatbot.widgetBackgroundOpacity : 100,
+      chatBlur: chatbot.chatWindowBackgroundBlur || 0,
+      chatOpacity: chatbot.chatWindowBackgroundOpacity !== undefined ? chatbot.chatWindowBackgroundOpacity : 100,
+      overlayEnabled: chatbot.overlayEnabled || false,
+      overlayColor: chatbot.overlayColor || '#000000',
+      overlayOpacity: chatbot.overlayOpacity !== undefined ? chatbot.overlayOpacity : 50,
+      overlayBlur: chatbot.overlayBlur || 0
     };
     
+    // Helper to ensure dimensions have units
+    function formatDim(val) {
+      if (!val) return '0px';
+      var s = val.toString();
+      if (s.match(/^-?\\d+$/)) return s + 'px';
+      return s;
+    }
+
     // Calculate position with custom offsets
     var positionStyle = '';
-    var offsetX = widgetConfig.offsetX;
-    var offsetY = widgetConfig.offsetY;
+    var baseWidgetTransform = '';
+    var offsetX = formatDim(widgetConfig.offsetX);
+    var offsetY = formatDim(widgetConfig.offsetY);
+    
     if (widgetConfig.position === 'bottom-right') {
       positionStyle = 'bottom: ' + offsetY + '; right: ' + offsetX + ';';
     } else if (widgetConfig.position === 'bottom-left') {
@@ -185,9 +195,11 @@ export async function GET(request: NextRequest) {
     } else if (widgetConfig.position === 'top-left') {
       positionStyle = 'top: ' + offsetY + '; left: ' + offsetX + ';';
     } else if (widgetConfig.position === 'bottom-center') {
-      positionStyle = 'bottom: ' + offsetY + '; left: 50%; transform: translateX(-50%);';
+      positionStyle = 'bottom: ' + offsetY + '; left: 50%;';
+      baseWidgetTransform = 'translateX(-50%)';
     } else if (widgetConfig.position === 'top-center') {
-      positionStyle = 'top: ' + offsetY + '; left: 50%; transform: translateX(-50%);';
+      positionStyle = 'top: ' + offsetY + '; left: 50%;';
+      baseWidgetTransform = 'translateX(-50%)';
     }
     
     // Determine border radius based on avatar style and granular props
@@ -325,20 +337,19 @@ export async function GET(request: NextRequest) {
       button.appendChild(badge);
     }
     
-    button.onmouseover = function() { this.style.transform = 'scale(1.1)'; };
+    button.onmouseover = function() { 
+      this.style.transform = baseWidgetTransform + ' scale(1.1)'; 
+    };
     button.onmouseout = function() { 
-      if (widgetConfig.position === 'bottom-center' || widgetConfig.position === 'top-center') {
-        this.style.transform = 'translateX(-50%)';
-      } else {
-        this.style.transform = 'scale(1)';
-      }
+      this.style.transform = baseWidgetTransform || 'scale(1)';
     };
     
     // Calculate chat window position based on widget position and popover position preference
     var chatWindowPosition = '';
+    var baseChatTransform = '';
     var popoverPos = widgetConfig.popoverPosition || 'left';
-    var offsetX = widgetConfig.offsetX;
-    var offsetY = widgetConfig.offsetY;
+    var offsetX = formatDim(widgetConfig.offsetX);
+    var offsetY = formatDim(widgetConfig.offsetY);
     
     // Parse widget size to get numeric value for calculations
     var widgetSizePx = parseFloat(widgetConfig.size) || 60;
@@ -364,37 +375,39 @@ export async function GET(request: NextRequest) {
       } else if (widgetConfig.position === 'top-left') {
         chatWindowPosition = 'top: calc(' + offsetY + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px); left: ' + offsetX + ';';
       } else if (widgetConfig.position === 'bottom-center') {
-        chatWindowPosition = 'bottom: calc(' + offsetY + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px); left: 50%; transform: translateX(-50%);';
+        chatWindowPosition = 'bottom: calc(' + offsetY + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px); left: 50%;';
+        baseChatTransform = 'translateX(-50%)';
       } else if (widgetConfig.position === 'top-center') {
-        chatWindowPosition = 'top: calc(' + offsetY + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px); left: 50%; transform: translateX(-50%);';
+        chatWindowPosition = 'top: calc(' + offsetY + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px); left: 50%;';
+        baseChatTransform = 'translateX(-50%)';
       }
     } else {
       // Position popover to the left/right of widget button (Side-by-Side)
-      // IMPORTANT: In chatStyling.ts, we align the top/bottom edge with the widget
-      
       if (widgetConfig.position === 'bottom-right') {
-        // Aligned to bottom, to the left of widget
         chatWindowPosition = 'bottom: ' + offsetY + '; right: calc(' + offsetX + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px);';
       } else if (widgetConfig.position === 'bottom-left') {
-        // Aligned to bottom, to the right of widget
         chatWindowPosition = 'bottom: ' + offsetY + '; left: calc(' + offsetX + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px);';
       } else if (widgetConfig.position === 'top-right') {
-        // Aligned to top, to the left of widget
         chatWindowPosition = 'top: ' + offsetY + '; right: calc(' + offsetX + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px);';
       } else if (widgetConfig.position === 'top-left') {
-        // Aligned to top, to the right of widget
         chatWindowPosition = 'top: ' + offsetY + '; left: calc(' + offsetX + ' + ' + widgetSizePx + 'px + ' + popoverMarginPx + 'px);';
       } else if (widgetConfig.position === 'bottom-center') {
-        // Aligned to bottom, to the right of widget (from center)
-        chatWindowPosition = 'bottom: ' + offsetY + '; left: calc(50% + ' + (widgetSizePx / 2) + 'px + ' + popoverMarginPx + 'px); transform: translateX(0);';
+        chatWindowPosition = 'bottom: ' + offsetY + '; left: calc(50% + ' + (widgetSizePx / 2) + 'px + ' + popoverMarginPx + 'px);';
+        baseChatTransform = 'translateX(0)';
       } else if (widgetConfig.position === 'top-center') {
-         // Aligned to top, to the right of widget (from center)
-        chatWindowPosition = 'top: ' + offsetY + '; left: calc(50% + ' + (widgetSizePx / 2) + 'px + ' + popoverMarginPx + 'px); transform: translateX(0);';
+        chatWindowPosition = 'top: ' + offsetY + '; left: calc(50% + ' + (widgetSizePx / 2) + 'px + ' + popoverMarginPx + 'px);';
+        baseChatTransform = 'translateX(0)';
       }
     }
     
     // Detect mobile
     var isMobile = window.innerWidth <= 768;
+    
+    // Sizing and responsive position
+    var chatWindowWidth = isMobile ? '100vw' : formatDim(widgetConfig.chatWidth);
+    var chatWindowHeight = isMobile ? '100vh' : formatDim(widgetConfig.chatHeight);
+    var chatWindowPositionMobile = isMobile ? 'top: 0; left: 0; right: 0; bottom: 0;' : chatWindowPosition;
+    var currentBaseChatTransform = isMobile ? 'none' : baseChatTransform;
     
     // Helper for granular border radius
     function getGranularRadius(all, tl, tr, br, bl, defaultVal) {
@@ -404,11 +417,6 @@ export async function GET(request: NextRequest) {
       return all || defaultVal;
     }
 
-    // Mobile chat window sizing
-    var chatWindowWidth = isMobile ? '100vw' : widgetConfig.chatWidth;
-    var chatWindowHeight = isMobile ? '100vh' : widgetConfig.chatHeight;
-    var chatWindowPositionMobile = isMobile ? 'top: 0; left: 0; right: 0; bottom: 0; transform: none;' : chatWindowPosition;
-    
     var chatWindowBorderRadius = isMobile ? '0' : getGranularRadius(
       chatbot.chatWindowBorderRadius || chatbot.borderRadius,
       chatbot.chatWindowBorderRadiusTopLeft,
@@ -418,9 +426,7 @@ export async function GET(request: NextRequest) {
       '8px'
     );
     
-    // Create chat window
-    var chatWindow = document.createElement('div');
-    chatWindow.id = 'chatbot-window-' + chatbotId;
+    // Styling variables for the chat window
     var chatWindowShadowColor = chatbot.chatWindowShadowColor || chatbot.shadowColor || '#000000';
     var chatWindowShadowBlur = chatbot.chatWindowShadowBlur || chatbot.shadowBlur || '4px';
     var chatBgColor = chatbot.messageBoxColor || '#ffffff';
@@ -437,47 +443,56 @@ export async function GET(request: NextRequest) {
     var borderWidth = chatbot.chatWindowBorderWidth || chatbot.borderWidth || '1px';
     var borderColor = chatbot.chatWindowBorderColor || chatbot.borderColor || '#e5e7eb';
     
-    chatWindow.style.cssText = 'position: fixed; ' + chatWindowPositionMobile + ' width: ' + chatWindowWidth + '; height: ' + chatWindowHeight + '; ' + chatBgStyle + 'border-radius: ' + chatWindowBorderRadius + '; box-shadow: 0 0 ' + chatWindowShadowBlur + ' ' + chatWindowShadowColor + '; border: ' + borderWidth + ' solid ' + borderColor + '; font-family: ' + (chatbot.fontFamily || 'Inter') + '; font-size: ' + (chatbot.fontSize || '14px') + '; color: ' + (chatbot.fontColor || '#000000') + '; display: none; flex-direction: column; z-index: ' + (widgetConfig.zIndex >= ${Z_INDEX.chatWidget} ? widgetConfig.zIndex + 1 : ${Z_INDEX.chatWidgetWindow}) + '; transition: opacity 0.3s ease, transform 0.3s ease; opacity: 0; transform: scale(0.9);';
+    // Create chat window
+    var chatWindow = document.createElement('div');
+    chatWindow.id = 'chatbot-window-' + chatbotId;
+    chatWindow.style.cssText = 'position: fixed; ' + chatWindowPositionMobile + ' width: ' + chatWindowWidth + '; height: ' + chatWindowHeight + '; ' + chatBgStyle + 'border-radius: ' + chatWindowBorderRadius + '; box-shadow: 0 0 ' + chatWindowShadowBlur + ' ' + chatWindowShadowColor + '; border: ' + borderWidth + ' solid ' + borderColor + '; font-family: ' + (chatbot.fontFamily || 'Inter') + '; font-size: ' + (chatbot.fontSize || '14px') + '; color: ' + (chatbot.fontColor || '#000000') + '; display: none; flex-direction: column; z-index: ' + (widgetConfig.zIndex >= ${Z_INDEX.chatWidget} ? widgetConfig.zIndex + 1 : ${Z_INDEX.chatWidgetWindow}) + '; transition: opacity 0.3s ease, transform 0.3s ease; opacity: 0; transform: ' + (currentBaseChatTransform !== 'none' ? currentBaseChatTransform + ' scale(0.9)' : 'scale(0.9)') + ';';
     
-    // Create header for chat window - use proper header config
-    var header = document.createElement('div');
-    var headerBgColor = chatbot.headerBgColor || chatbot.primaryColor || '#3b82f6';
-    var headerFontColor = chatbot.headerFontColor || '#ffffff';
-    var headerPaddingX = chatbot.headerPaddingX || '16px';
-    var headerPaddingY = chatbot.headerPaddingY || '12px';
-    var headerBorderColor = chatbot.headerBorderColor || chatbot.borderColor || '#e5e7eb';
-    var headerBorderEnabled = chatbot.headerBorderEnabled !== false;
-    header.style.cssText = 'padding: ' + headerPaddingY + ' ' + headerPaddingX + '; ' + (headerBorderEnabled ? 'border-bottom: 1px solid ' + headerBorderColor + '; ' : '') + 'display: flex; justify-content: space-between; align-items: center; background: ' + headerBgColor + '; border-radius: ' + chatWindowBorderRadius + ' ' + chatWindowBorderRadius + ' 0 0;';
-    
-    var headerContent = document.createElement('div');
-    headerContent.style.cssText = 'display: flex; align-items: center; gap: 8px;';
-    if (chatbot.headerLogo || chatbot.logo) {
-      var logoImg = document.createElement('img');
-      logoImg.src = chatbot.headerLogo || chatbot.logo;
-      logoImg.style.cssText = 'width: 32px; height: 32px; border-radius: 50%; object-fit: cover;';
-      logoImg.onerror = function() { this.style.display = 'none'; };
-      headerContent.appendChild(logoImg);
+    // Toggle functionality
+    function toggleChat(forceOpen) {
+      var isOpen = forceOpen !== undefined ? forceOpen : chatWindow.style.display === 'none';
+      
+      if (isOpen) {
+        chatWindow.style.display = 'flex';
+        // Allow display:flex to take effect before animating opacity/transform
+        setTimeout(function() {
+          chatWindow.style.opacity = '1';
+          chatWindow.style.transform = (currentBaseChatTransform !== 'none' ? currentBaseChatTransform + ' scale(1)' : 'scale(1)');
+          if (overlay) overlay.style.display = 'block';
+        }, 10);
+        
+        button.innerHTML = closeIconSvg;
+        button.style.transform = baseWidgetTransform || 'scale(1)';
+      } else {
+        chatWindow.style.opacity = '0';
+        chatWindow.style.transform = (currentBaseChatTransform !== 'none' ? currentBaseChatTransform + ' scale(0.9)' : 'scale(0.9)');
+        if (overlay) overlay.style.display = 'none';
+        
+        setTimeout(function() {
+          chatWindow.style.display = 'none';
+        }, 300);
+        
+        button.innerHTML = widgetInner;
+        button.style.transform = baseWidgetTransform || 'scale(1)';
+      }
     }
-    var agentName = document.createElement('span');
-    agentName.textContent = chatbot.name || 'Chat';
-    agentName.style.cssText = 'font-weight: 600; font-size: 16px; color: ' + headerFontColor + ';';
-    headerContent.appendChild(agentName);
+
+    button.onclick = function() { toggleChat(); };
+    window['openChatbot_' + chatbotId] = function() { toggleChat(true); };
+    window['closeChatbot_' + chatbotId] = function() { toggleChat(false); };
     
-    var closeButton = document.createElement('button');
-    closeButton.innerHTML = '✕';
-    closeButton.setAttribute('aria-label', 'Close chat');
-    closeButton.setAttribute('type', 'button');
-    closeButton.style.cssText = 'background: none; border: none; font-size: 24px; cursor: pointer; color: ' + headerFontColor + '; padding: 4px 8px; line-height: 1; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: background-color 0.2s;';
-    closeButton.onmouseover = function() { this.style.backgroundColor = 'rgba(255,255,255,0.1)'; };
-    closeButton.onmouseout = function() { this.style.backgroundColor = 'transparent'; };
-    
-    header.appendChild(headerContent);
-    header.appendChild(closeButton);
+    // Event listener for closing the chat via postMessage from the iframe
+    window.addEventListener('message', function(event) {
+      if (event.data && event.data.type === 'close-chat') {
+        closeChat();
+      }
+    });
+
     
     // Create iframe for chat
     var iframe = document.createElement('iframe');
     iframe.src = serverOrigin + '/chat/' + chatbotId + '?mode=embed';
-    iframe.style.cssText = 'width: 100%; flex: 1; border: none; border-radius: 0 0 ' + chatWindowBorderRadius + ' ' + chatWindowBorderRadius + ';';
+    iframe.style.cssText = 'width: 100%; flex: 1; border: none; border-radius: ' + chatWindowBorderRadius + ';';
     iframe.style.border = 'none';
     
     // PWA Install Banner
@@ -578,7 +593,6 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    chatWindow.appendChild(header);
     chatWindow.appendChild(iframe);
     if (pwaBanner) {
       chatWindow.appendChild(pwaBanner);
@@ -690,10 +704,6 @@ export async function GET(request: NextRequest) {
       }
     };
     
-    closeButton.onclick = function(e) {
-      e.stopPropagation();
-      closeChat();
-    };
     
     // Close on outside click (only if not mobile, or if mobile and clicked outside)
     document.addEventListener('click', function(e) {

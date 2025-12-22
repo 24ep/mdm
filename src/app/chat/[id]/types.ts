@@ -173,6 +173,7 @@ export interface ChatbotConfig {
   pageBackgroundImage?: string
   pageTitle?: string
   pageDescription?: string
+  headerEnabled?: boolean // Manually show/hide header
   headerTitle?: string
   headerDescription?: string
   headerLogo?: string

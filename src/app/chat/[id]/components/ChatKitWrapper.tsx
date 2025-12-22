@@ -592,11 +592,11 @@ export function ChatKitWrapper({
 
     return (
       <>
-        {overlayStyle && (
+        {overlayStyle && !useChatKitInRegularStyle && (
           <div style={overlayStyle} onClick={() => setIsOpen(false)} />
         )}
 
-        {shouldShowWidgetButton && (() => {
+        {(shouldShowWidgetButton && !useChatKitInRegularStyle) && (() => {
           const widgetAvatarStyle = chatbot.widgetAvatarStyle || 'circle'
           const widgetSize = (chatbot as any).widgetSize || '60px'
 

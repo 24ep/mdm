@@ -73,20 +73,6 @@ export function ChatHeader({ chatbot, onClearSession, onClose, isMobile = false 
         borderBottomRightRadius: 0,
       }}
     >
-      {/* Mobile: Back arrow button on left (Inkeep-style) */}
-      {isMobile && onClose && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onClose}
-          className={headerButtonClassName}
-          style={headerButtonStyle}
-          title="Back"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-      )}
-
       {/* Header Logo (separate from avatar) - if logo is set and showLogo is enabled, don't show avatar */}
       {((chatbot as any).headerShowLogo !== false && chatbot.headerLogo) ? (
         <img

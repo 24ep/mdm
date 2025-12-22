@@ -256,10 +256,20 @@ export default function ChatPage() {
           }
         }
       }
+      if (data.type === 'clear-session') {
+        setMessages([])
+      }
     }
     window.addEventListener('message', handler)
     return () => window.removeEventListener('message', handler)
   }, [])
+
+  const handleClose = () => {
+    if (isEmbed || isInIframe) {
+      window.parent.postMessage({ type: 'close-chat' }, '*')
+    }
+    setIsOpen(false)
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -294,136 +304,58 @@ export default function ChatPage() {
   const popoverPositionStyle = getPopoverPositionStyle(chatbot)
   const widgetButtonStyle = getWidgetButtonStyle(chatbot)
 
-  // On mobile, when chat is open, hide widget button (fullpage mode covers entire screen)
-  const shouldShowWidgetButton = (effectiveDeploymentType === 'popover' || effectiveDeploymentType === 'popup-center') && !(isMobile && isOpen)
-  const shouldShowContainer = effectiveDeploymentType === 'fullpage' ? true : isOpen
-
   // Render ChatKit only if engine type is chatkit (not openai-agent-sdk)
   // Note: If ChatKit fails to load, it will fall back to regular chat style
   // Also check useChatKitInRegularStyle - if true, render ChatKit inside regular style container with regular header
-  // Note: This only applies on desktop. On mobile, always use ChatKit native UI for better mobile experience
-  const useChatKitInRegularStyle = !isMobile && (chatbot as any).useChatKitInRegularStyle === true
+  // Mobile popovers always use regular style container to show our header
+  const useChatKitInRegularStyle = (chatbot as any).useChatKitInRegularStyle === true || (isMobile && effectiveDeploymentType !== 'fullpage')
   const shouldRenderChatKit =
     !chatKitUnavailable &&
     chatbot.engineType === 'chatkit' &&
     chatbot.chatkitAgentId
 
-  // Render ChatKit with regular style header overlay (only for popover/popup-center, not fullpage)
-  if (shouldRenderChatKit && useChatKitInRegularStyle && (effectiveDeploymentType === 'popover' || effectiveDeploymentType === 'popup-center')) {
-    // Always show container when using regular style header (no widget button to toggle)
-    return (
-      <div
-        style={{
-          position: 'relative',
-          height: '100%',
-          // Apply emulator background to page container (not popover)
-          backgroundColor: emulatorConfig.backgroundColor,
-          backgroundImage: emulatorConfig.backgroundImage ? `url(${emulatorConfig.backgroundImage})` : undefined,
-          backgroundSize: emulatorConfig.backgroundImage ? 'cover' : undefined,
-          backgroundPosition: emulatorConfig.backgroundImage ? 'center' : undefined,
-          backgroundRepeat: emulatorConfig.backgroundImage ? 'no-repeat' : undefined,
-        }}
-      >
-        {/* Regular style container with ChatKit inside */}
-        {shouldShowContainer && (
-          <div className="flex flex-col relative" style={containerStyle}>
-            {/* Regular Header on top */}
-            {!isEmbed && (
-              <ChatHeader
-                chatbot={chatbot}
-                onClearSession={() => setMessages([])}
-                onClose={shouldShowWidgetButton ? () => setIsOpen(false) : undefined}
-              />
-            )}
+  const isNativeChatKit = shouldRenderChatKit && !useChatKitInRegularStyle
 
-            {/* ChatKit rendered below header - fills remaining space */}
-            <div
-              className="flex-1 relative overflow-hidden chatkit-in-regular-style"
-              style={{
-                flex: '1 1 auto',
-                minHeight: 0,
-                display: 'flex',
-                flexDirection: 'column',
-              }}
-            >
-              <ChatKitRenderer
-                chatbot={chatbot}
-                previewDeploymentType={effectiveDeploymentType}
-                isInIframe={isInIframe}
-                onChatKitUnavailable={() => setChatKitUnavailable(true)}
-              />
-            </div>
-          </div>
-        )}
+  // On mobile, when chat is open, hide widget button (fullpage mode covers entire screen)
+  const shouldShowWidgetButton = !isNativeChatKit && (effectiveDeploymentType === 'popover' || effectiveDeploymentType === 'popup-center') && !(isMobile && isOpen)
+  const shouldShowContainer = !isNativeChatKit && (effectiveDeploymentType === 'fullpage' ? true : isOpen)
 
-        {/* Widget button and overlay for popover/popup-center - OUTSIDE the popover container */}
-        {overlayStyle && (
-          <div style={overlayStyle} aria-hidden="true" onClick={() => setIsOpen(false)} />
-        )}
-        {shouldShowWidgetButton && (
-          <button
-            type="button"
-            aria-label={isOpen ? 'Close chat' : 'Open chat'}
-            onClick={() => setIsOpen(!isOpen)}
-            style={{
-              ...popoverPositionStyle,
-              ...widgetButtonStyle,
-            }}
-          >
-            {isOpen ? (
-              <X className="h-6 w-6" style={{ color: chatbot?.avatarIconColor || '#ffffff' }} />
-            ) : (
-              (() => {
-                const avatarType = chatbot?.avatarType || 'icon'
-                if (avatarType === 'image' && chatbot?.avatarImageUrl) {
-                  return (
-                    <img
-                      src={chatbot.avatarImageUrl}
-                      alt="Chat"
-                      style={{ width: '60%', height: '60%', borderRadius: '50%', objectFit: 'cover' }}
-                    />
-                  )
-                }
-                const IconName = (chatbot?.avatarIcon || 'Bot') as string
-                const IconComponent = (Icons as any)[IconName] || Bot
-                const iconColor = chatbot?.avatarIconColor || '#ffffff'
-                return <IconComponent className="h-6 w-6" style={{ color: iconColor }} />
-              })()
-            )}
-          </button>
-        )}
-      </div>
-    )
-  }
+  const renderChatContent = () => {
+    if (!chatbot) return null
 
-  // Render ChatKit normally (without regular style wrapper) or if in embed mode (to skip wrapper/header)
-  if (shouldRenderChatKit && (!useChatKitInRegularStyle || isEmbed)) {
-    return (
-      <div
-        style={{
-          position: 'relative',
-          height: '100%',
-          // Apply emulator background to page container (not popover)
-          backgroundColor: emulatorConfig.backgroundColor,
-          backgroundImage: emulatorConfig.backgroundImage ? `url(${emulatorConfig.backgroundImage})` : undefined,
-          backgroundSize: emulatorConfig.backgroundImage ? 'cover' : undefined,
-          backgroundPosition: emulatorConfig.backgroundImage ? 'center' : undefined,
-          backgroundRepeat: emulatorConfig.backgroundImage ? 'no-repeat' : undefined,
-        }}
-      >
+    // If it's ChatKit but NOT in regular style mode, use native ChatKit (Desktop only, if enabled)
+    if (shouldRenderChatKit && !useChatKitInRegularStyle) {
+      return (
         <ChatKitRenderer
           chatbot={chatbot}
           previewDeploymentType={effectiveDeploymentType}
           isInIframe={isInIframe}
           onChatKitUnavailable={() => setChatKitUnavailable(true)}
         />
-      </div>
-    )
-  }
+      )
+    }
 
-  // Render chat content (header, messages, input) - reusable for full page layout
-  const renderChatContent = () => {
-    if (!chatbot) return null
+    // If it's ChatKit in regular style mode (Desktop windowed OR Mobile Popover/Fullpage), use platform container + headless ChatKit
+    if (shouldRenderChatKit && useChatKitInRegularStyle) {
+      return (
+        <div
+          className="flex-1 relative overflow-hidden chatkit-in-regular-style"
+          style={{
+            flex: '1 1 auto',
+            minHeight: 0,
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          <ChatKitRenderer
+            chatbot={chatbot}
+            previewDeploymentType={effectiveDeploymentType}
+            isInIframe={isInIframe}
+            onChatKitUnavailable={() => setChatKitUnavailable(true)}
+          />
+        </div>
+      )
+    }
 
     return (
       <ChatContent
@@ -455,7 +387,7 @@ export default function ChatPage() {
         currentTranscript={currentTranscript}
         chatbotId={chatbotId}
         threadId={threadManagementEnabled ? currentThreadId : null}
-        hideHeader={!!(shouldRenderChatKit && !useChatKitInRegularStyle)}
+        hideHeader={true} // Main loop handles header rendering now for consistency
       />
     )
   }
@@ -547,13 +479,38 @@ export default function ChatPage() {
           </div>
 
           {/* Chat Container */}
-          <div className="flex-1 flex flex-col p-6">
-            <div className="flex-1 flex flex-col overflow-hidden relative">
-              <div className="flex-1 flex flex-col overflow-hidden" style={chatStyle}>
-                {renderChatContent()}
+          {(() => {
+            const isWindowedMode = !isMobile && !isEmbed && (chatbot as any).useChatKitInRegularStyle === true
+            const showHeader = (chatbot as any).headerEnabled !== false && (!shouldRenderChatKit || useChatKitInRegularStyle)
+
+            return (
+              <div className={`flex-1 flex flex-col ${isWindowedMode ? 'p-4 md:p-8 lg:p-12 items-center justify-center' : 'p-0'}`}>
+                <div
+                  className={`flex-1 flex flex-col overflow-hidden relative bg-background transition-all duration-300 ease-in-out ${isWindowedMode ? 'shadow-2xl' : ''}`}
+                  style={{
+                    width: isWindowedMode ? (chatbot?.chatWindowWidth || '800px') : '100%',
+                    maxWidth: '100%',
+                    maxHeight: isWindowedMode ? (chatbot?.chatWindowHeight || '85vh') : '100%',
+                    borderRadius: isWindowedMode ? (chatbot?.chatWindowBorderRadius || chatbot?.borderRadius || '12px') : '0px',
+                    border: isWindowedMode ? `${chatbot?.chatWindowBorderWidth || chatbot?.borderWidth || '1px'} solid ${chatbot?.chatWindowBorderColor || chatbot?.borderColor || 'rgba(0,0,0,0.1)'}` : 'none',
+                  }}
+                >
+                  {/* Custom Header for Fullpage Desktop/Mobile (Regular Style) */}
+                  {showHeader && (
+                    <ChatHeader
+                      chatbot={chatbot}
+                      onClearSession={() => setMessages([])}
+                      onClose={handleClose}
+                      isMobile={isMobile}
+                    />
+                  )}
+                  <div className="flex-1 min-h-0">
+                    {renderChatContent()}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            )
+          })()}
         </div>
       </div>
     )
@@ -604,6 +561,9 @@ export default function ChatPage() {
         <div style={overlayStyle} aria-hidden="true" onClick={() => setIsOpen(false)} />
       )}
 
+      {/* Native ChatKit rendering (renders its own widget/container) */}
+      {isNativeChatKit && renderChatContent()}
+
       {/* Widget launcher button */}
       {shouldShowWidgetButton && (
         <button
@@ -649,28 +609,17 @@ export default function ChatPage() {
             </div>
           )}
 
-          {/* Close button - only show if headerShowCloseButton is not false and not in embed mode */}
-          {((chatbot as any).headerShowCloseButton !== false && (chatbot as any).headerShowCloseButton !== null && !isEmbed) && (
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              aria-label="Close chat"
-              style={{
-                position: 'absolute',
-                top: chatbot.headerPaddingY || '16px',
-                right: '8px',
-                background: 'transparent',
-                border: 0,
-                color: chatbot.headerFontColor || '#fff',
-                zIndex: Z_INDEX.chatWidgetControl,
-              }}
-            >
-              <X className="h-5 w-5" />
-            </button>
+          {/* Main Chat Header (Desktop/Regular Style) - Fallback/Safety check */}
+          {((chatbot as any).headerEnabled !== false) && (!isEmbed && (!shouldRenderChatKit || useChatKitInRegularStyle) && !isMobile && effectiveDeploymentType !== 'fullpage') && (
+            <ChatHeader
+              chatbot={chatbot}
+              onClearSession={() => setMessages([])}
+              onClose={() => setIsOpen(false)}
+            />
           )}
 
-          {/* On mobile, show header with back button for popover/popup-center modes (only when not using ChatKit's native header) */}
-          {isMobile && (effectiveDeploymentType === 'popover' || effectiveDeploymentType === 'popup-center') && (!shouldRenderChatKit || useChatKitInRegularStyle) && (
+          {/* Mobile header (back button layout) */}
+          {(isMobile && (effectiveDeploymentType === 'popover' || effectiveDeploymentType === 'popup-center') && ((chatbot as any).headerEnabled !== false)) && (
             <ChatHeader
               chatbot={chatbot}
               onClearSession={() => setMessages([])}
