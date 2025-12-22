@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 
 import { Switch } from '@/components/ui/switch'
 import { Copy, Globe, Info, Smartphone, Check } from 'lucide-react'
+import * as Icons from 'lucide-react'
 import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 import { Chatbot, ChatbotVersion } from '../types'
 import { VersionDrawer } from './VersionDrawer'
@@ -60,12 +61,39 @@ export function DeploymentTab({
             <Badge variant="secondary">Draft</Badge>
           )}
         </div>
-        <VersionDrawer
-          versions={versions}
-          currentVersion={currentVersion}
-          onRestore={handleRestoreVersion}
-          chatbot={formData}
-        />
+        <div className="flex items-center gap-2">
+          {/* Publish/Unpublish Button */}
+          <Button
+            variant={formData.isPublished ? "outline" : "default"}
+            size="sm"
+            onClick={() => {
+              setFormData(prev => ({
+                ...prev,
+                isPublished: !prev.isPublished
+              }))
+              toast.success(formData.isPublished ? 'Chatbot unpublished' : 'Chatbot published')
+            }}
+            className={formData.isPublished ? "" : "bg-green-600 hover:bg-green-700"}
+          >
+            {formData.isPublished ? (
+              <>
+                <Icons.EyeOff className="h-4 w-4 mr-1.5" />
+                Unpublish
+              </>
+            ) : (
+              <>
+                <Icons.Send className="h-4 w-4 mr-1.5" />
+                Publish
+              </>
+            )}
+          </Button>
+          <VersionDrawer
+            versions={versions}
+            currentVersion={currentVersion}
+            onRestore={handleRestoreVersion}
+            chatbot={formData}
+          />
+        </div>
       </div>
 
       <div className="space-y-2">
