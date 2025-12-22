@@ -1323,6 +1323,7 @@ model Chatbot {
   borderWidth        String?   @map("border_width")
   borderRadius       String?   @map("border_radius")
   messageBoxColor    String?   @map("message_box_color")
+  widgetBackgroundColor String? @map("widget_background_color")
   shadowColor        String?   @map("shadow_color")
   shadowBlur         String?   @map("shadow_blur")
   conversationOpener String?   @map("conversation_opener") @db.Text

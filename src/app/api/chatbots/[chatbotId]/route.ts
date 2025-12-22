@@ -140,7 +140,9 @@ async function putHandler(
     followUpQuestions,
     enableFileUpload,
     showCitations,
+    showCitations,
     deploymentType,
+    widgetBackgroundColor,
     isPublished,
     currentVersion,
     spaceId,
@@ -174,6 +176,7 @@ async function putHandler(
       ...(enableFileUpload !== undefined && { enableFileUpload }),
       ...(showCitations !== undefined && { showCitations }),
       ...(deploymentType !== undefined && { deploymentType }),
+      ...(widgetBackgroundColor !== undefined && { widgetBackgroundColor }),
       ...(isPublished !== undefined && { isPublished }),
       ...(currentVersion !== undefined && { currentVersion }),
       ...(spaceId !== undefined && { 
