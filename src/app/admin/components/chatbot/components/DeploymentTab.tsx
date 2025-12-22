@@ -4,11 +4,13 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/ui/badge'
 
 import { Switch } from '@/components/ui/switch'
-import { Copy, Globe, Info, Smartphone } from 'lucide-react'
+import { Copy, Globe, Info, Smartphone, Check } from 'lucide-react'
 import { ColorInput } from '@/components/studio/layout-config/ColorInput'
-import { Chatbot } from '../types'
+import { Chatbot, ChatbotVersion } from '../types'
+import { VersionDrawer } from './VersionDrawer'
 import toast from 'react-hot-toast'
 
 interface DeploymentTabProps {
@@ -24,8 +26,48 @@ export function DeploymentTab({
   selectedChatbot,
   onGenerateEmbedCode,
 }: DeploymentTabProps) {
+  
+  // Handle restoring a version
+  const handleRestoreVersion = (version: ChatbotVersion) => {
+    // The version's config should be merged back into formData
+    // For now, we restore the version string - the actual config restoration
+    // would need the full version config from the API
+    setFormData(prev => ({
+      ...prev,
+      currentVersion: version.version,
+      isPublished: version.isPublished
+    }))
+  }
+
+  const versions = selectedChatbot?.versions || formData.versions || []
+  const currentVersion = formData.currentVersion || selectedChatbot?.currentVersion
+
   return (
     <div className="space-y-4 pt-4">
+      {/* Version Status Bar */}
+      <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border">
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-medium">Current Version:</span>
+          <Badge variant="outline" className="font-mono">
+            v{currentVersion || '1.0.0'}
+          </Badge>
+          {formData.isPublished ? (
+            <Badge variant="default" className="bg-green-600 hover:bg-green-700">
+              <Check className="h-3 w-3 mr-1" />
+              Published
+            </Badge>
+          ) : (
+            <Badge variant="secondary">Draft</Badge>
+          )}
+        </div>
+        <VersionDrawer
+          versions={versions}
+          currentVersion={currentVersion}
+          onRestore={handleRestoreVersion}
+          chatbot={formData}
+        />
+      </div>
+
       <div className="space-y-2">
         <Label>Deployment Type</Label>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
