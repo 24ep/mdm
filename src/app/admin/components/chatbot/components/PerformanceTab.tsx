@@ -416,33 +416,37 @@ export function PerformanceTab({ chatbot }: PerformanceTabProps) {
 
   return (
     <div className="w-full">
-    <Tabs defaultValue="rate-limit">
-      <TabsList className="grid w-full grid-cols-6">
-        <TabsTrigger value="rate-limit">
-          <Zap className="h-4 w-4 mr-2" />
+    <Tabs defaultValue="rate-limit" className="flex w-full gap-6">
+      {/* Vertical Sidebar Menu */}
+      <TabsList orientation="vertical" className="bg-muted/30 p-1 min-h-[400px] h-fit flex-col justify-start items-stretch gap-1 w-[220px] rounded-lg shrink-0">
+        <TabsTrigger value="rate-limit" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
+          <Zap className="h-4 w-4" />
           Rate Limits
         </TabsTrigger>
-        <TabsTrigger value="cache">
-          <RefreshCw className="h-4 w-4 mr-2" />
+        <TabsTrigger value="cache" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
+          <RefreshCw className="h-4 w-4" />
           Cache
         </TabsTrigger>
-        <TabsTrigger value="retry">
-          <RefreshCw className="h-4 w-4 mr-2" />
+        <TabsTrigger value="retry" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
+          <RefreshCw className="h-4 w-4" />
           Retry
         </TabsTrigger>
-        <TabsTrigger value="budget">
-          <DollarSign className="h-4 w-4 mr-2" />
+        <TabsTrigger value="budget" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
+          <DollarSign className="h-4 w-4" />
           Budget
         </TabsTrigger>
-        <TabsTrigger value="analytics">
-          <BarChart3 className="h-4 w-4 mr-2" />
+        <TabsTrigger value="analytics" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
+          <BarChart3 className="h-4 w-4" />
           Analytics
         </TabsTrigger>
-        <TabsTrigger value="observability">
-          <TrendingUp className="h-4 w-4 mr-2" />
+        <TabsTrigger value="observability" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
+          <TrendingUp className="h-4 w-4" />
           Observability
         </TabsTrigger>
       </TabsList>
+
+      {/* Content Area */}
+      <div className="flex-1 w-full max-w-[800px]">
 
       {/* Rate Limiting Tab */}
       <TabsContent value="rate-limit" className="space-y-4 pt-4">
@@ -986,6 +990,7 @@ export function PerformanceTab({ chatbot }: PerformanceTabProps) {
       <TabsContent value="observability" className="space-y-4 pt-4">
         <ObservabilityDashboard chatbot={chatbot} />
       </TabsContent>
+      </div>
     </Tabs>
     </div>
   )

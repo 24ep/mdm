@@ -7,12 +7,12 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Combobox } from '@/components/ui/combobox'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Check, ChevronsUpDown } from 'lucide-react'
+import { Check, ChevronsUpDown, MessageSquare, Zap, Upload, Mic, Settings, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import { Accordion } from '@/components/ui/accordion'
 import { X } from 'lucide-react'
 import * as Icons from 'lucide-react'
 import { Chatbot } from '../types'
@@ -44,44 +44,7 @@ function IconSelectCombobox({ value, onValueChange }: { value: string; onValueCh
     'Home', 'Folder', 'File', 'FileText', 'Image', 'Video', 'Music', 'Download', 'Upload', 'Share',
     'Copy', 'Scissors', 'Save', 'Lock', 'Unlock', 'Key', 'Shield', 'Eye', 'EyeOff', 'Bell', 'BellOff',
     'Tag', 'Tags', 'Filter', 'Sliders', 'Grid', 'List', 'Layout', 'Columns', 'Rows', 'Maximize', 'Minimize',
-    'RefreshCw', 'RotateCw', 'RotateCcw', 'Repeat', 'Shuffle', 'Play', 'Pause', 'Stop', 'SkipForward', 'SkipBack',
-    'Volume', 'Volume1', 'Volume2', 'VolumeX', 'Mic', 'MicOff', 'Headphones', 'Radio', 'Tv', 'Monitor',
-    'Laptop', 'Smartphone', 'Tablet', 'Watch', 'Camera', 'CameraOff', 'Film', 'Aperture', 'Focus',
-    'Sun', 'Moon', 'Cloud', 'CloudRain', 'CloudSnow', 'Wind', 'Droplet', 'Flame', 'Battery',
-    'Wifi', 'WifiOff', 'Bluetooth', 'Signal', 'Activity', 'Pulse', 'Heartbeat', 'Thermometer',
-    'Gift', 'Package', 'ShoppingCart', 'ShoppingBag', 'CreditCard', 'DollarSign', 'Coins', 'Receipt',
-    'BarChart', 'BarChart2', 'LineChart', 'PieChart', 'TrendingDown', 'ArrowUpRight', 'ArrowDownRight',
-    'Database', 'Server', 'HardDrive', 'Cpu', 'MemoryStick', 'Network', 'CloudUpload', 'CloudDownload',
-    'Code', 'Code2', 'Terminal', 'Command', 'GitBranch', 'GitCommit', 'GitMerge', 'GitPullRequest',
-    'Bug', 'Wrench', 'Tool', 'Hammer', 'Screwdriver', 'Paintbrush', 'Palette',
-    'Pen', 'PenTool', 'Highlighter', 'Eraser', 'Ruler', 'Navigation', 'Map',
-    'Flag', 'Award', 'Trophy', 'Medal', 'Crown', 'Gem', 'Diamond', 'Banknote',
-    'Coffee', 'Utensils', 'Apple', 'Carrot', 'Cookie', 'IceCream', 'Pizza', 'Beer', 'Wine',
-    'Gamepad', 'Gamepad2', 'Dice1', 'Dice2', 'Dice3', 'Dice4', 'Dice5', 'Dice6', 'Puzzle',
-    'Book', 'Bookmark', 'Library', 'GraduationCap', 'School', 'University', 'Briefcase',
-    'Building', 'Building2', 'Hotel', 'Store', 'Archive', 'Box',
-    'Truck', 'Car', 'Bike', 'Plane', 'Ship', 'Train', 'Bus', 'Taxi',
-    'Music2', 'Mic2', 'VideoOff', 'Images', 'PictureInPicture',
-    'Brush', 'Crop', 'Layers', 'Frame',
-    'MessageCircle', 'Inbox', 'Send', 'Reply', 'Forward',
-    'UserPlus', 'UserMinus', 'UserCheck', 'UserX', 'UserCircle', 'UserSquare',
-    'HeartOff', 'ThumbsUp', 'ThumbsDown', 'Frown', 'Meh', 'Laugh',
-    'FlagOff', 'BookmarkCheck', 'StarOff',
-    'ShieldOff', 'SearchX',
-    'Cog', 'Hospital', 'Church', 'Factory',
-    'Earth', 'World', 'Location',
-    'Clock', 'Timer', 'Stopwatch', 'AlarmClock', 'Hourglass', 'History',
-    'FolderOpen', 'FileImage', 'FileVideo', 'FileAudio', 'FileCode',
-    'Link', 'Link2', 'ExternalLink',
-    'SaveAll', 'FolderPlus', 'FilePlus', 'Trash',
-    'Edit2', 'Edit3', 'Type', 'AlignLeft', 'AlignCenter',
-    'ChevronsRight', 'ChevronsLeft',
-    'MoreHorizontal', 'MoreVertical', 'Menu', 'MenuSquare',
-    'Maximize2', 'Minimize2', 'Expand', 'Shrink', 'Move',
-    'Square', 'Circle', 'Triangle', 'Hexagon', 'Octagon',
-    'CloudLightning', 'BatteryCharging', 'BatteryLow', 'BatteryFull', 'Power',
-    'SignalLow', 'SignalMedium', 'SignalHigh',
-    'Gauge'
+    'RefreshCw', 'RotateCw', 'RotateCcw', 'Repeat', 'Shuffle', 'Play', 'Pause', 'Stop', 'SkipForward', 'SkipBack'
   ]
 
   const iconOptions = iconList.map(iconName => {
@@ -138,11 +101,6 @@ function IconSelectCombobox({ value, onValueChange }: { value: string; onValueCh
                     value={option.value}
                     keywords={[option.value.toLowerCase(), option.label.toLowerCase()]}
                     onSelect={handleSelect}
-                    onMouseDown={(e) => {
-                      // Fallback handler in case onSelect doesn't fire
-                      e.preventDefault()
-                      handleSelect()
-                    }}
                   >
                     <Check
                       className={cn(
@@ -170,7 +128,7 @@ export function ConfigTab({ formData, setFormData }: ConfigTabProps) {
   const [accordionValue, setAccordionValue] = useState<string>('startScreen')
   const chatkitOptions = (formData as any).chatkitOptions || {}
   const engineType = (formData as any).engineType || 'custom'
-  const isChatKitEngine = engineType === 'chatkit' // Only show ChatKit config for chatkit engine, not for agent-sdk
+  const isChatKitEngine = engineType === 'chatkit'
   const isAgentSDK = engineType === 'openai-agent-sdk'
 
   const addFollowUpQuestion = () => {
@@ -193,317 +151,305 @@ export function ConfigTab({ formData, setFormData }: ConfigTabProps) {
   }
 
   return (
-    <div className="space-y-4 pt-4">
-      {/* Start Conversation / Opener Message (NOT for ChatKit - uses ChatKit configuration) */}
-      {!isChatKitEngine && (
-        <div className="space-y-4 border-b pb-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex-1">
-              <Label>Show Start Conversation Message</Label>
-              <p className="text-xs text-muted-foreground">Display an initial greeting message when the chat opens</p>
-            </div>
-            <Switch
-              checked={(formData as any).showStartConversation !== false}
-              onCheckedChange={(checked) => setFormData({ ...formData, showStartConversation: checked } as any)}
-            />
-          </div>
-          
-          {(formData as any).showStartConversation !== false && (
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <Label>Start Conversation Message</Label>
-                <p className="text-xs text-muted-foreground">
-                  Initial message shown when the chat opens. For Agent SDK workflows, this may be overridden by the workflow configuration.
-                </p>
-              </div>
-              <div className="w-[400px]">
-                <Textarea
-                  value={formData.conversationOpener || (formData as any).openaiAgentSdkGreeting || ''}
-                  onChange={(e) => {
-                    const value = e.target.value
-                    setFormData({ 
-                      ...formData, 
-                      conversationOpener: value,
-                      // Also update Agent SDK greeting if it's an Agent SDK chatbot
-                      ...(isAgentSDK && { openaiAgentSdkGreeting: value })
-                    } as any)
-                  }}
-                  placeholder="Hello! How can I help you today?"
-                  rows={3}
-                  className="resize-none"
-                />
-              </div>
-            </div>
+    <div className="w-full">
+      <Tabs defaultValue="conversation" className="flex w-full gap-6">
+        {/* Vertical Sidebar Menu */}
+        <TabsList orientation="vertical" className="bg-muted/30 p-1 min-h-[400px] h-fit flex-col justify-start items-stretch gap-1 w-[220px] rounded-lg shrink-0">
+          <TabsTrigger value="conversation" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
+            <MessageSquare className="h-4 w-4" />
+            Conversation
+          </TabsTrigger>
+          <TabsTrigger value="prompts" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
+            <Zap className="h-4 w-4" />
+            Prompts
+          </TabsTrigger>
+          <TabsTrigger value="features" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
+            <Upload className="h-4 w-4" />
+            Features
+          </TabsTrigger>
+          <TabsTrigger value="voice" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
+            <Mic className="h-4 w-4" />
+            Voice
+          </TabsTrigger>
+          {isChatKitEngine && (
+            <TabsTrigger value="chatkit" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
+              <Settings className="h-4 w-4" />
+              ChatKit
+            </TabsTrigger>
           )}
-        </div>
-      )}
+        </TabsList>
 
-      {/* Start Screen Prompts (for Agent SDK and other engines, NOT for ChatKit) */}
-      {!isChatKitEngine && (
-      <div className="space-y-4 border-b pb-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1">
-            <Label>Start Screen Prompts</Label>
-            <p className="text-xs text-muted-foreground">
-              Add quick prompt buttons that appear when the chat starts (for Agent SDK and other engines)
-            </p>
-          </div>
-          <div className="w-[400px] space-y-2">
-            {((formData as any).startScreenPrompts || []).map((prompt: { label?: string; prompt: string; icon?: string }, index: number) => (
-              <div key={index} className="border rounded-lg p-3 space-y-2">
-                <div className="flex gap-2 items-start">
-                  <div className="space-y-1 w-32">
-                    <Label className="text-xs">Icon (optional)</Label>
-                    <IconSelectCombobox
-                      value={prompt.icon || 'none'}
-                      onValueChange={(value) => {
-                        const prompts = [...((formData as any).startScreenPrompts || [])]
-                        prompts[index] = { ...prompts[index], icon: value === 'none' ? undefined : value }
-                        setFormData({ ...formData, startScreenPrompts: prompts } as any)
+        {/* Content Area */}
+        <div className="flex-1 w-full max-w-[800px]">
+          {/* Conversation Tab */}
+          <TabsContent value="conversation" className="m-0 mt-0 space-y-4">
+            {!isChatKitEngine && (
+              <>
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <Label>Show Start Conversation Message</Label>
+                    <p className="text-xs text-muted-foreground">Display an initial greeting message when the chat opens</p>
+                  </div>
+                  <Switch
+                    checked={(formData as any).showStartConversation !== false}
+                    onCheckedChange={(checked) => setFormData({ ...formData, showStartConversation: checked } as any)}
+                  />
+                </div>
+                
+                {(formData as any).showStartConversation !== false && (
+                  <div className="space-y-2">
+                    <Label>Start Conversation Message</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Initial message shown when the chat opens.
+                    </p>
+                    <Textarea
+                      value={formData.conversationOpener || (formData as any).openaiAgentSdkGreeting || ''}
+                      onChange={(e) => {
+                        const value = e.target.value
+                        setFormData({ 
+                          ...formData, 
+                          conversationOpener: value,
+                          ...(isAgentSDK && { openaiAgentSdkGreeting: value })
+                        } as any)
                       }}
+                      placeholder="Hello! How can I help you today?"
+                      rows={3}
+                      className="resize-none"
                     />
                   </div>
-                  <div className="flex-1 grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <Label className="text-xs">Button Label</Label>
-                      <Input
-                        value={prompt.label || ''}
-                        onChange={(e) => {
-                          const prompts = [...((formData as any).startScreenPrompts || [])]
-                          prompts[index] = { ...prompts[index], label: e.target.value }
-                          setFormData({ ...formData, startScreenPrompts: prompts } as any)
-                        }}
-                        placeholder="Button Label"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Prompt Text (required)</Label>
-                      <Input
-                        value={prompt.prompt || ''}
-                        onChange={(e) => {
-                          const prompts = [...((formData as any).startScreenPrompts || [])]
-                          prompts[index] = { ...prompts[index], prompt: e.target.value }
-                          setFormData({ ...formData, startScreenPrompts: prompts } as any)
-                        }}
-                        placeholder="Prompt Text"
-                      />
-                    </div>
+                )}
+
+                <div className="space-y-2 border-t pt-4">
+                  <Label>Follow-up Questions</Label>
+                  <p className="text-xs text-muted-foreground">Add suggested follow-up questions for users</p>
+                  <div className="flex gap-2">
+                    <Input
+                      value={newFollowUpQuestion}
+                      onChange={(e) => setNewFollowUpQuestion(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && addFollowUpQuestion()}
+                      placeholder="Enter a follow-up question"
+                    />
+                    <Button onClick={addFollowUpQuestion}>Add</Button>
                   </div>
+                  <div className="space-y-2">
+                    {(formData.followUpQuestions || []).map((question, index) => (
+                      <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded">
+                        <span className="flex-1">{question}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFollowUpQuestion(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </TabsContent>
+
+          {/* Prompts Tab */}
+          <TabsContent value="prompts" className="m-0 mt-0 space-y-4">
+            {!isChatKitEngine && (
+              <div className="space-y-4">
+                <div>
+                  <Label>Start Screen Prompts</Label>
+                  <p className="text-xs text-muted-foreground mb-4">
+                    Add quick prompt buttons that appear when the chat starts
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  {((formData as any).startScreenPrompts || []).map((prompt: { label?: string; prompt: string; icon?: string }, index: number) => (
+                    <div key={index} className="border rounded-lg p-3 space-y-2">
+                      <div className="flex gap-2 items-start">
+                        <div className="space-y-1 w-32">
+                          <Label className="text-xs">Icon (optional)</Label>
+                          <IconSelectCombobox
+                            value={prompt.icon || 'none'}
+                            onValueChange={(value) => {
+                              const prompts = [...((formData as any).startScreenPrompts || [])]
+                              prompts[index] = { ...prompts[index], icon: value === 'none' ? undefined : value }
+                              setFormData({ ...formData, startScreenPrompts: prompts } as any)
+                            }}
+                          />
+                        </div>
+                        <div className="flex-1 grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <Label className="text-xs">Button Label</Label>
+                            <Input
+                              value={prompt.label || ''}
+                              onChange={(e) => {
+                                const prompts = [...((formData as any).startScreenPrompts || [])]
+                                prompts[index] = { ...prompts[index], label: e.target.value }
+                                setFormData({ ...formData, startScreenPrompts: prompts } as any)
+                              }}
+                              placeholder="Button Label"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Prompt Text (required)</Label>
+                            <Input
+                              value={prompt.prompt || ''}
+                              onChange={(e) => {
+                                const prompts = [...((formData as any).startScreenPrompts || [])]
+                                prompts[index] = { ...prompts[index], prompt: e.target.value }
+                                setFormData({ ...formData, startScreenPrompts: prompts } as any)
+                              }}
+                              placeholder="Prompt Text"
+                            />
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const prompts = [...((formData as any).startScreenPrompts || [])]
+                            prompts.splice(index, 1)
+                            setFormData({ ...formData, startScreenPrompts: prompts } as any)
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     onClick={() => {
-                      const prompts = [...((formData as any).startScreenPrompts || [])]
-                      prompts.splice(index, 1)
+                      const prompts = [...((formData as any).startScreenPrompts || []), { prompt: '', label: '' }]
                       setFormData({ ...formData, startScreenPrompts: prompts } as any)
                     }}
                   >
-                    <X className="h-4 w-4" />
+                    + Add Prompt
                   </Button>
                 </div>
               </div>
-            ))}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                const prompts = [...((formData as any).startScreenPrompts || []), { prompt: '', label: '' }]
-                setFormData({ ...formData, startScreenPrompts: prompts } as any)
-              }}
-            >
-              + Add Prompt
-            </Button>
-          </div>
-        </div>
-      </div>
-      )}
+            )}
+          </TabsContent>
 
-      <div className="flex items-start justify-between gap-4 border-b pb-4">
-        <div className="flex-1">
-          <Label>Follow-up Questions</Label>
-          <p className="text-xs text-muted-foreground">Add suggested follow-up questions for users</p>
-        </div>
-        <div className="w-[400px] space-y-2">
-          <div className="flex gap-2">
-            <Input
-              value={newFollowUpQuestion}
-              onChange={(e) => setNewFollowUpQuestion(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && addFollowUpQuestion()}
-              placeholder="Enter a follow-up question"
-            />
-            <Button onClick={addFollowUpQuestion}>Add</Button>
-          </div>
-          <div className="space-y-2">
-            {(formData.followUpQuestions || []).map((question, index) => (
-              <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded">
-                <span className="flex-1">{question}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeFollowUpQuestion(index)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex-1">
-            <Label>Enable File Upload</Label>
-          </div>
-          <Switch
-            checked={formData.enableFileUpload}
-            onCheckedChange={(checked) => setFormData({ ...formData, enableFileUpload: checked })}
-          />
-        </div>
-        {!isChatKitEngine && !isAgentSDK && (
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex-1">
-              <Label>Show Citations and Attributions</Label>
-            </div>
-            <Switch
-              checked={formData.showCitations}
-              onCheckedChange={(checked) => setFormData({ ...formData, showCitations: checked })}
-            />
-          </div>
-        )}
-        {!isChatKitEngine && (
-          <>
+          {/* Features Tab */}
+          <TabsContent value="features" className="m-0 mt-0 space-y-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex-1">
-                <Label>Enable Voice Agent</Label>
-                <p className="text-xs text-muted-foreground">Allow users to interact via voice input and hear responses</p>
+                <Label>Enable File Upload</Label>
+                <p className="text-xs text-muted-foreground">Allow users to upload files in chat</p>
               </div>
               <Switch
-                checked={formData.enableVoiceAgent || false}
-                onCheckedChange={(checked) => setFormData({ ...formData, enableVoiceAgent: checked })}
+                checked={formData.enableFileUpload}
+                onCheckedChange={(checked) => setFormData({ ...formData, enableFileUpload: checked })}
               />
             </div>
-            
-            {formData.enableVoiceAgent && (
-              <div className="space-y-4 pl-4 border-l-2 border-muted">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <Label>Voice Provider</Label>
-                    <p className="text-xs text-muted-foreground">
-                      {formData.voiceProvider === 'openai-realtime' 
-                        ? 'Uses OpenAI Realtime API for high-quality voice interactions (requires OpenAI API key)'
-                        : 'Uses browser built-in speech recognition and synthesis'}
-                    </p>
-                  </div>
-                  <div className="w-[400px]">
-                    <Select
-                      value={formData.voiceProvider || 'browser'}
-                      onValueChange={(value: string) => setFormData({ ...formData, voiceProvider: value as 'browser' | 'openai-realtime' })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="browser">Browser Web Speech API</SelectItem>
-                        <SelectItem value="openai-realtime">OpenAI Realtime API</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+            {!isChatKitEngine && !isAgentSDK && (
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1">
+                  <Label>Show Citations and Attributions</Label>
+                  <p className="text-xs text-muted-foreground">Display source citations in responses</p>
                 </div>
-                
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <Label>Voice UI Style</Label>
-                    <p className="text-xs text-muted-foreground">
-                      {formData.voiceUIStyle === 'wave' 
-                        ? 'Shows wave animation in background with turn on/off voice button and subtitle'
-                        : 'Uses the current chat interface for voice interactions'}
-                    </p>
-                  </div>
-                  <div className="w-[400px]">
-                    <Select
-                      value={formData.voiceUIStyle || 'chat'}
-                      onValueChange={(value: string) => setFormData({ ...formData, voiceUIStyle: value as 'chat' | 'wave' })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="chat">Chat-like (Current)</SelectItem>
-                        <SelectItem value="wave">Wave Animation Background</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* Realtime Voice Settings - Only show when voice is enabled and provider is openai-realtime */}
-                {formData.voiceProvider === 'openai-realtime' && (
-                  <div className="space-y-4 pt-2 border-t">
-                    <h5 className="text-sm font-medium">Realtime Voice Settings</h5>
-                    <p className="text-xs text-muted-foreground">
-                      Configure prompt for OpenAI Realtime Voice API. If prompt ID is provided, it will be used instead of instructions.
-                    </p>
-                    
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <Label>Realtime Voice Prompt ID (Optional)</Label>
-                        <p className="text-xs text-muted-foreground">
-                          Enter the prompt ID from OpenAI Realtime API. This will be used for voice interactions instead of instructions.
-                          You can create prompts at <a href="https://platform.openai.com/prompts" target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 underline">OpenAI Platform</a>.
-                        </p>
-                      </div>
-                      <div className="w-[400px]">
-                        <Input
-                          value={(formData as any).openaiAgentSdkRealtimePromptId || ''}
-                          onChange={(e) => setFormData({ ...formData, openaiAgentSdkRealtimePromptId: e.target.value } as any)}
-                          placeholder="pmpt_6910de2213d881909b426f4ebc8644010d67268fbf2a125c"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <Label>Prompt Version (Optional)</Label>
-                        <p className="text-xs text-muted-foreground">
-                          Version of the prompt to use. Defaults to "1" if not specified.
-                        </p>
-                      </div>
-                      <div className="w-[400px]">
-                        <Input
-                          value={(formData as any).openaiAgentSdkRealtimePromptVersion || '1'}
-                          onChange={(e) => setFormData({ ...formData, openaiAgentSdkRealtimePromptVersion: e.target.value } as any)}
-                          placeholder="1"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
+                <Switch
+                  checked={formData.showCitations}
+                  onCheckedChange={(checked) => setFormData({ ...formData, showCitations: checked })}
+                />
               </div>
             )}
-          </>
-        )}
-      </div>
+          </TabsContent>
 
-      {isChatKitEngine && (
-        <div className="space-y-4 border-t pt-4">
-          <h3 className="text-lg font-semibold mb-2">ChatKit Configuration</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Configure ChatKit-specific features and options.
-          </p>
+          {/* Voice Tab */}
+          <TabsContent value="voice" className="m-0 mt-0 space-y-4">
+            {!isChatKitEngine && (
+              <>
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <Label>Enable Voice Agent</Label>
+                    <p className="text-xs text-muted-foreground">Allow users to interact via voice input and hear responses</p>
+                  </div>
+                  <Switch
+                    checked={formData.enableVoiceAgent || false}
+                    onCheckedChange={(checked) => setFormData({ ...formData, enableVoiceAgent: checked })}
+                  />
+                </div>
+                
+                {formData.enableVoiceAgent && (
+                  <div className="space-y-4 pl-4 border-l-2 border-muted">
+                    <div className="space-y-2">
+                      <Label>Voice Provider</Label>
+                      <Select
+                        value={formData.voiceProvider || 'browser'}
+                        onValueChange={(value: string) => setFormData({ ...formData, voiceProvider: value as 'browser' | 'openai-realtime' })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="browser">Browser Web Speech API</SelectItem>
+                          <SelectItem value="openai-realtime">OpenAI Realtime API</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Voice UI Style</Label>
+                      <Select
+                        value={formData.voiceUIStyle || 'chat'}
+                        onValueChange={(value: string) => setFormData({ ...formData, voiceUIStyle: value as 'chat' | 'wave' })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="chat">Chat-like (Current)</SelectItem>
+                          <SelectItem value="wave">Wave Animation Background</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-          <div className="space-y-0">
-          <Accordion type="single" collapsible value={accordionValue} onValueChange={(value) => setAccordionValue(typeof value === 'string' ? value : value[0] || '')}>
-            <StartScreenSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
-            <ThreadItemActionsSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
-            <DisclaimerSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
-            <ModelPickerSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
-            <PersonaPickerSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
-          </Accordion>
+                    {formData.voiceProvider === 'openai-realtime' && (
+                      <div className="space-y-4 pt-2 border-t">
+                        <h5 className="text-sm font-medium">Realtime Voice Settings</h5>
+                        <div className="space-y-2">
+                          <Label>Realtime Voice Prompt ID (Optional)</Label>
+                          <Input
+                            value={(formData as any).openaiAgentSdkRealtimePromptId || ''}
+                            onChange={(e) => setFormData({ ...formData, openaiAgentSdkRealtimePromptId: e.target.value } as any)}
+                            placeholder="pmpt_..."
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Prompt Version (Optional)</Label>
+                          <Input
+                            value={(formData as any).openaiAgentSdkRealtimePromptVersion || '1'}
+                            onChange={(e) => setFormData({ ...formData, openaiAgentSdkRealtimePromptVersion: e.target.value } as any)}
+                            placeholder="1"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+          </TabsContent>
+
+          {/* ChatKit Tab */}
+          {isChatKitEngine && (
+            <TabsContent value="chatkit" className="m-0 mt-0 space-y-4">
+              <h3 className="text-lg font-semibold mb-2">ChatKit Configuration</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Configure ChatKit-specific features and options.
+              </p>
+              <Accordion type="single" collapsible value={accordionValue} onValueChange={(value) => setAccordionValue(typeof value === 'string' ? value : value[0] || '')}>
+                <StartScreenSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
+                <ThreadItemActionsSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
+                <DisclaimerSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
+                <ModelPickerSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
+                <PersonaPickerSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
+              </Accordion>
+            </TabsContent>
+          )}
         </div>
-        </div>
-      )}
-
+      </Tabs>
     </div>
   )
 }
-
