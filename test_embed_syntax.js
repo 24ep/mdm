@@ -1,24 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { Z_INDEX } from '@/lib/z-index'
-
-export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams
-  const chatbotId = searchParams.get('id')
-  const type = searchParams.get('type') || 'popover'
-
-  if (!chatbotId) {
-    return new NextResponse("Missing chatbot ID", { status: 400 })
-  }
-
-  try {
-  // Generate embed script
-  // Get the origin from the request (this is the MDM server origin)
-  const serverOrigin = request.nextUrl.origin
-
-  const script = `
 (function() {
-  var chatbotId = '${chatbotId}';
-  var type = '${type}';
+  var chatbotId = 'test-id';
+  var type = 'popover';
   
   // Try to determine origin dynamically from the script source
   // This handles cases where the server is behind a proxy or accessed via a different hostname
@@ -37,7 +19,7 @@ export async function GET(request: NextRequest) {
   
   var dynamicOrigin = scriptUrl ? new URL(scriptUrl).origin : null;
   // Fallback to server-detected origin
-  var serverOrigin = dynamicOrigin || '${serverOrigin}';
+  var serverOrigin = dynamicOrigin || 'http://localhost:3000';
   
   console.log('[Chatbot] Initializing widget for:', chatbotId);
   console.log('[Chatbot] Server origin:', serverOrigin);
@@ -140,7 +122,7 @@ export async function GET(request: NextRequest) {
       autoShowDelay: chatbot.widgetAutoShowDelay || 0,
       offsetX: chatbot.widgetOffsetX || '20px',
       offsetY: chatbot.widgetOffsetY || '20px',
-      zIndex: chatbot.widgetZIndex || ${Z_INDEX.chatWidget},
+      zIndex: chatbot.widgetZIndex || 4000,
       showBadge: chatbot.showNotificationBadge || false,
       badgeColor: chatbot.notificationBadgeColor || '#ef4444',
       chatWidth: chatbot.chatWindowWidth || '380px',
@@ -388,7 +370,7 @@ export async function GET(request: NextRequest) {
     } else {
       chatBgStyle += 'background-color: ' + chatBgColor + '; ';
     }
-    chatWindow.style.cssText = 'position: fixed; ' + chatWindowPositionMobile + ' width: ' + chatWindowWidth + '; height: ' + chatWindowHeight + '; ' + chatBgStyle + 'border-radius: ' + chatWindowBorderRadius + '; box-shadow: 0 0 ' + chatWindowShadowBlur + ' ' + chatWindowShadowColor + '; border: ' + (chatbot.borderWidth || '1px') + ' solid ' + (chatbot.borderColor || '#e5e7eb') + '; font-family: ' + (chatbot.fontFamily || 'Inter') + '; font-size: ' + (chatbot.fontSize || '14px') + '; color: ' + (chatbot.fontColor || '#000000') + '; display: none; flex-direction: column; z-index: ' + (widgetConfig.zIndex >= ${Z_INDEX.chatWidget} ? widgetConfig.zIndex + 1 : ${Z_INDEX.chatWidgetWindow}) + '; transition: opacity 0.3s ease, transform 0.3s ease; opacity: 0; transform: scale(0.9);';
+    chatWindow.style.cssText = 'position: fixed; ' + chatWindowPositionMobile + ' width: ' + chatWindowWidth + '; height: ' + chatWindowHeight + '; ' + chatBgStyle + 'border-radius: ' + chatWindowBorderRadius + '; box-shadow: 0 0 ' + chatWindowShadowBlur + ' ' + chatWindowShadowColor + '; border: ' + (chatbot.borderWidth || '1px') + ' solid ' + (chatbot.borderColor || '#e5e7eb') + '; font-family: ' + (chatbot.fontFamily || 'Inter') + '; font-size: ' + (chatbot.fontSize || '14px') + '; color: ' + (chatbot.fontColor || '#000000') + '; display: none; flex-direction: column; z-index: ' + (widgetConfig.zIndex >= 4000 ? widgetConfig.zIndex + 1 : 4100) + '; transition: opacity 0.3s ease, transform 0.3s ease; opacity: 0; transform: scale(0.9);';
     
     // Create header for chat window
     var header = document.createElement('div');
@@ -556,7 +538,7 @@ export async function GET(request: NextRequest) {
         // Convert hex to rgba
         overlayBgStyle += 'background-color: rgba(' + hexToRgb(overlayBgColor) + ', ' + (widgetConfig.overlayOpacity / 100) + '); ';
       }
-      overlay.style.cssText = 'position: fixed; inset: 0; ' + overlayBgStyle + 'z-index: ' + (widgetConfig.zIndex >= ${Z_INDEX.chatWidget} ? widgetConfig.zIndex - 1 : ${Z_INDEX.chatWidgetOverlay}) + '; display: none; pointer-events: auto;';
+      overlay.style.cssText = 'position: fixed; inset: 0; ' + overlayBgStyle + 'z-index: ' + (widgetConfig.zIndex >= 4000 ? widgetConfig.zIndex - 1 : 3900) + '; display: none; pointer-events: auto;';
       overlay.setAttribute('aria-hidden', 'true');
       overlay.onclick = function() { closeChat(); };
     }
@@ -691,28 +673,3 @@ export async function GET(request: NextRequest) {
     }
   });
 })();
-`
-
-  return new NextResponse(script, {
-    headers: {
-      'Content-Type': 'application/javascript',
-      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Private-Network': 'true',
-    },
-  })
-  } catch (error) {
-    console.error('Error generating embed script:', error)
-    return new NextResponse(`console.error("[Embed API Error] Server failed to generate script:", ${JSON.stringify(error instanceof Error ? error.message : String(error))});`, {
-      headers: {
-        'Content-Type': 'application/javascript',
-        'Cache-Control': 'no-store',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Private-Network': 'true',
-      }
-    })
-  }
-}
