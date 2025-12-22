@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Z_INDEX } from '@/lib/z-index'
 import { db } from '@/lib/db'
-import { renderToStaticMarkup } from 'react-dom/server'
+// import { renderToStaticMarkup } from 'react-dom/server'
 import * as Icons from 'lucide-react'
 import React from 'react'
 
 export async function GET(request: NextRequest) {
+  // Dynamically import renderToStaticMarkup to avoid build errors with Next.js Edge/Server boundary checks
+  const { renderToStaticMarkup } = await import('react-dom/server')
+
   const searchParams = request.nextUrl.searchParams
   const chatbotId = searchParams.get('id')
   const type = searchParams.get('type') || 'popover'

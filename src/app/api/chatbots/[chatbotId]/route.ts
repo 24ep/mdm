@@ -176,7 +176,12 @@ async function putHandler(
       ...(showCitations !== undefined && { showCitations }),
       ...(deploymentType !== undefined && { deploymentType }),
       ...(widgetBackgroundColor !== undefined && { widgetBackgroundColor }),
-      ...(isPublished !== undefined && { isPublished }),
+      ...(showCitations !== undefined && { showCitations }),
+      ...(deploymentType !== undefined && { deploymentType }),
+      ...(widgetBackgroundColor !== undefined && { widgetBackgroundColor }),
+      // Force Draft mode (isPublished: false) if we are updating config fields (Save action)
+      // Only allow isPublished: true if it's explicitly passed AND we are NOT updating config (Publish action)
+      isPublished: (hasVersionConfig || name || description || logo || primaryColor || messageBoxColor) ? false : (isPublished !== undefined ? isPublished : undefined),
       ...(currentVersion !== undefined && { currentVersion }),
       ...(spaceId !== undefined && { 
         space: spaceId 
@@ -223,6 +228,27 @@ async function putHandler(
       name: name !== undefined ? name : existingConfig.name,
       website: website !== undefined ? website : existingConfig.website,
       description: description !== undefined ? description : existingConfig.description,
+      apiEndpoint: apiEndpoint !== undefined ? apiEndpoint : existingConfig.apiEndpoint,
+      apiAuthType: apiAuthType !== undefined ? apiAuthType : existingConfig.apiAuthType,
+      apiAuthValue: apiAuthValue !== undefined ? apiAuthValue : existingConfig.apiAuthValue,
+      logo: logo !== undefined ? logo : existingConfig.logo,
+      primaryColor: primaryColor !== undefined ? primaryColor : existingConfig.primaryColor,
+      fontFamily: fontFamily !== undefined ? fontFamily : existingConfig.fontFamily,
+      fontSize: fontSize !== undefined ? fontSize : existingConfig.fontSize,
+      fontColor: fontColor !== undefined ? fontColor : existingConfig.fontColor,
+      borderColor: borderColor !== undefined ? borderColor : existingConfig.borderColor,
+      borderWidth: borderWidth !== undefined ? borderWidth : existingConfig.borderWidth,
+      borderRadius: borderRadius !== undefined ? borderRadius : existingConfig.borderRadius,
+      messageBoxColor: messageBoxColor !== undefined ? messageBoxColor : existingConfig.messageBoxColor,
+      widgetBackgroundColor: widgetBackgroundColor !== undefined ? widgetBackgroundColor : existingConfig.widgetBackgroundColor,
+      shadowColor: shadowColor !== undefined ? shadowColor : existingConfig.shadowColor,
+      shadowBlur: shadowBlur !== undefined ? shadowBlur : existingConfig.shadowBlur,
+      conversationOpener: conversationOpener !== undefined ? conversationOpener : existingConfig.conversationOpener,
+      followUpQuestions: followUpQuestions !== undefined ? followUpQuestions : existingConfig.followUpQuestions,
+      enableFileUpload: enableFileUpload !== undefined ? enableFileUpload : existingConfig.enableFileUpload,
+      showCitations: showCitations !== undefined ? showCitations : existingConfig.showCitations,
+      deploymentType: deploymentType !== undefined ? deploymentType : existingConfig.deploymentType,
+      customEmbedDomain: customEmbedDomain !== undefined ? customEmbedDomain : existingConfig.customEmbedDomain,
     }
 
     await db.chatbotVersion.create({
@@ -230,7 +256,10 @@ async function putHandler(
         chatbotId,
         version: currentVersion || latestVersion?.version || '1.0.0',
         config: newConfig,
-        isPublished: isPublished || false,
+        version: currentVersion || latestVersion?.version || '1.0.0',
+        config: newConfig,
+        // New versions created from "Save" should always be drafts until explicitly published
+        isPublished: false,
         createdBy: session.user.id
       }
     })

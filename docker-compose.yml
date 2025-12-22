@@ -82,7 +82,7 @@ services:
       - MAIN_APP_URL=${MAIN_APP_URL:-http://app:8029}
     volumes:
       # Mount plugins directory for persistence
-      - /var/dockers/8029/plugin-hub:/app/plugins
+      - /var/dockers/8028/plugin-hub:/app/plugins
     restart: unless-stopped
     networks:
       - mdm-network
@@ -107,7 +107,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-postgres}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
     volumes:
-      - /var/dockers/8029/postgres:/var/lib/postgresql/data
+      - /var/dockers/8028/postgres:/var/lib/postgresql/data
     restart: unless-stopped
     networks:
       - mdm-network
@@ -158,7 +158,7 @@ services:
       - "8329:9000"
       - "8429:9001"
     volumes:
-      - /var/dockers/8029/minio:/data
+      - /var/dockers/8028/minio:/data
     restart: unless-stopped
     networks:
       - mdm-network
@@ -177,8 +177,8 @@ services:
     cap_add:
       - IPC_LOCK
     volumes:
-      - /var/dockers/8029/vault/data:/vault/data
-      - /var/dockers/8029/vault/logs:/vault/logs
+      - /var/dockers/8028/vault/data:/vault/data
+      - /var/dockers/8028/vault/logs:/vault/logs
     restart: unless-stopped
     networks:
       - mdm-network
@@ -196,7 +196,7 @@ services:
       - "8729:6379"
     command: redis-server --appendonly yes --requirepass "${REDIS_PASSWORD:-redispassword}"
     volumes:
-      - /var/dockers/8029/redis:/data
+      - /var/dockers/8028/redis:/data
     restart: unless-stopped
     networks:
       - mdm-network
