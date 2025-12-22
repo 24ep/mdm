@@ -667,6 +667,8 @@ export async function GET(request: NextRequest) {
     headers: {
       'Content-Type': 'application/javascript',
       'Cache-Control': 'public, max-age=3600',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
     },
   })
 }

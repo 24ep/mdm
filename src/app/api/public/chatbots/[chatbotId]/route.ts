@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
+// CORS headers for cross-origin embed support
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+}
+
 // Helper function to merge version config into chatbot object
 // Filters out undefined/null values from version config to prevent overwriting
 // valid chatbot base values with undefined
@@ -31,6 +38,14 @@ function mergeVersionConfig(chatbot: any): any {
   }
 }
 
+// OPTIONS - Handle CORS preflight requests
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: corsHeaders
+  })
+}
+
 // GET - Public endpoint to fetch chatbot config for embeds (no auth required)
 // Only returns published chatbots
 export async function GET(
@@ -56,7 +71,7 @@ export async function GET(
     })
 
     if (!chatbot) {
-      return NextResponse.json({ error: 'Chatbot not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Chatbot not found' }, { status: 404, headers: corsHeaders })
     }
 
     // Merge version config (prefer published version)
@@ -73,9 +88,10 @@ export async function GET(
       // Keep only what's needed for embed
     }
 
-    return NextResponse.json({ chatbot: publicChatbot })
+    return NextResponse.json({ chatbot: publicChatbot }, { headers: corsHeaders })
   } catch (error) {
     console.error('Error fetching chatbot config:', error)
-    return NextResponse.json({ error: 'Failed to fetch chatbot' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to fetch chatbot' }, { status: 500, headers: corsHeaders })
   }
 }
+
