@@ -116,7 +116,7 @@ export function VoiceWaveUI({
             const variation = Math.sin((Date.now() / 100) + i * 0.5) * 10 // Subtle animation
             const barLevel = Math.max(10, Math.min(100, baseLevel + variation + (i % 3) * 5))
             const height = 10 + (barLevel / 100) * 80 // Scale from 10% to 90% based on audio level
-            
+
             return (
               <div
                 key={i}
@@ -142,7 +142,7 @@ export function VoiceWaveUI({
           size="lg"
           className="rounded-full w-20 h-20 p-0 shadow-lg hover:scale-105 transition-transform"
           style={{
-            backgroundColor: isVoiceOn 
+            backgroundColor: isVoiceOn
               ? (chatbot.primaryColor || '#3b82f6')
               : '#e5e7eb',
             color: isVoiceOn ? '#ffffff' : '#6b7280',
@@ -156,14 +156,14 @@ export function VoiceWaveUI({
         </Button>
 
         {/* Subtitle with typing effect */}
-        <p 
+        <p
           className="text-sm font-medium text-center px-4 max-w-md min-h-[1.5rem]"
           style={{
             color: chatbot.fontColor || '#374151',
           }}
         >
           {transcript ? (
-            <TypingText 
+            <TypingText
               text={transcript}
               speed={50} // Fast typing speed for real-time feel
               className="inline-block"
@@ -172,10 +172,10 @@ export function VoiceWaveUI({
             getSubtitle()
           )}
         </p>
-        
+
         {/* Transcript Display - More prominent when recording */}
         {isRecording && transcript && (
-          <div 
+          <div
             className="mt-2 px-6 py-3 rounded-lg max-w-lg text-center min-h-[3rem] flex items-center justify-center"
             style={{
               backgroundColor: chatbot.primaryColor || '#3b82f6',
@@ -184,7 +184,7 @@ export function VoiceWaveUI({
             }}
           >
             <p className="text-base font-medium">
-              <TypingText 
+              <TypingText
                 text={transcript}
                 speed={40} // Slightly slower for main transcript display
                 style={{ color: '#ffffff' }}
@@ -202,7 +202,7 @@ export function VoiceWaveUI({
               key={idx}
               className="px-3 py-2 rounded-lg text-sm backdrop-blur-sm"
               style={{
-                backgroundColor: msg.role === 'user' 
+                backgroundColor: msg.role === 'user'
                   ? (chatbot.userMessageBackgroundColor || chatbot.primaryColor || '#3b82f6')
                   : (chatbot.botMessageBackgroundColor || '#f3f4f6'),
                 color: msg.role === 'user'

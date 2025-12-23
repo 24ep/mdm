@@ -19,6 +19,7 @@ interface DeploymentTabProps {
   setFormData: React.Dispatch<React.SetStateAction<Partial<Chatbot>>>
   selectedChatbot: Chatbot | null
   onGenerateEmbedCode: (chatbot: Chatbot) => string
+  onSave?: () => Promise<Chatbot | null>
 }
 
 export function DeploymentTab({
@@ -26,8 +27,9 @@ export function DeploymentTab({
   setFormData,
   selectedChatbot,
   onGenerateEmbedCode,
+  onSave,
 }: DeploymentTabProps) {
-  
+
   // Handle restoring a version
   const handleRestoreVersion = (version: ChatbotVersion) => {
     // The version's config should be merged back into formData
@@ -72,13 +74,35 @@ export function DeploymentTab({
                 ...prev,
                 isPublished: newIsPublished
               }))
-              
-              // Immediately persist to backend if chatbot exists
-              if (selectedChatbot?.id) {
+
+
+              // 1. Optimistic update
+              setFormData(prev => ({
+                ...prev,
+                isPublished: newIsPublished
+              }))
+
+              let targetBotId = selectedChatbot?.id
+
+              // 2. Persist keys first (Save) if handler provided
+              if (onSave) {
+                const savedBot = await onSave()
+                if (!savedBot) {
+                  // Save failed, revert toggle
+                  setFormData(prev => ({ ...prev, isPublished: !newIsPublished }))
+                  return
+                }
+                targetBotId = savedBot.id
+              }
+
+              // 3. Update Publish Status in Backend
+              // Only proceed if we have a valid ID (it might be a fresh create)
+              if (targetBotId) {
                 try {
-                  const response = await fetch(`/api/chatbots/${selectedChatbot.id}`, {
+                  const response = await fetch(`/api/chatbots/${targetBotId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
+                    // We only send the status flag here. The config was saved in step 2.
                     body: JSON.stringify({ isPublished: newIsPublished })
                   })
                   if (response.ok) {
@@ -94,6 +118,7 @@ export function DeploymentTab({
                   setFormData(prev => ({ ...prev, isPublished: !newIsPublished }))
                 }
               } else {
+                // LocalStorage only or fallback
                 toast.success(newIsPublished ? 'Marked as published (save to persist)' : 'Marked as draft (save to persist)')
               }
             }}

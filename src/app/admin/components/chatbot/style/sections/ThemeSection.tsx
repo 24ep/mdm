@@ -408,9 +408,9 @@ export function ThemeSection({ formData, setFormData, chatkitOptions }: SectionP
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Font Family</Label>
-                    <Input
+                    <Select
                       value={chatkitOptions?.theme?.typography?.fontFamily || 'Inter, sans-serif'}
-                      onChange={(e) => setFormData({
+                      onValueChange={(v) => setFormData({
                         ...formData,
                         chatkitOptions: {
                           ...chatkitOptions,
@@ -418,13 +418,39 @@ export function ThemeSection({ formData, setFormData, chatkitOptions }: SectionP
                             ...chatkitOptions?.theme,
                             typography: {
                               ...chatkitOptions?.theme?.typography,
-                              fontFamily: e.target.value
+                              fontFamily: v
                             }
                           }
                         }
                       } as any)}
-                      placeholder="Inter, sans-serif"
-                    />
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select font family" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Inter, sans-serif">Inter</SelectItem>
+                        <SelectItem value="system-ui, sans-serif">System UI</SelectItem>
+                        <SelectItem value="Roboto, sans-serif">Roboto</SelectItem>
+                        <SelectItem value="Open Sans, sans-serif">Open Sans</SelectItem>
+                        <SelectItem value="Lato, sans-serif">Lato</SelectItem>
+                        <SelectItem value="Montserrat, sans-serif">Montserrat</SelectItem>
+                        <SelectItem value="Poppins, sans-serif">Poppins</SelectItem>
+                        <SelectItem value="Source Sans Pro, sans-serif">Source Sans Pro</SelectItem>
+                        <SelectItem value="Nunito, sans-serif">Nunito</SelectItem>
+                        <SelectItem value="Raleway, sans-serif">Raleway</SelectItem>
+                        <SelectItem value="Ubuntu, sans-serif">Ubuntu</SelectItem>
+                        <SelectItem value="Outfit, sans-serif">Outfit</SelectItem>
+                        <SelectItem value="Work Sans, sans-serif">Work Sans</SelectItem>
+                        <SelectItem value="Arial, sans-serif">Arial</SelectItem>
+                        <SelectItem value="Helvetica, sans-serif">Helvetica</SelectItem>
+                        <SelectItem value="Georgia, serif">Georgia</SelectItem>
+                        <SelectItem value="Times New Roman, serif">Times New Roman</SelectItem>
+                        <SelectItem value="Courier New, monospace">Courier New</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Select a font family for the chat interface
+                    </p>
                   </div>
 
                   <div className="space-y-2">

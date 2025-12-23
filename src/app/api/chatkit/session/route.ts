@@ -6,7 +6,38 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { agentId, apiKey, existing } = body;
+    const { agentId, apiKey: providedApiKey, existing, chatbotId } = body;
+
+    let apiKey = providedApiKey;
+
+    // If API key is missing but we have chatbotId, fetch it from DB
+    if (!apiKey && chatbotId) {
+      try {
+        // Import db dynamically to avoid build cycle issues if any
+        const { db } = await import('@/lib/db');
+        const { mergeVersionConfig } = await import('@/lib/chatbot-helper');
+
+        const chatbot = await db.chatbot.findUnique({
+          where: { id: chatbotId },
+          include: {
+            versions: {
+              orderBy: { createdAt: 'desc' },
+              take: 1
+            }
+          }
+        });
+
+        if (chatbot) {
+          const config = mergeVersionConfig(chatbot);
+          // Determine which key to use
+          const isAgentSDK = config.engineType === 'openai-agent-sdk';
+          apiKey = isAgentSDK ? config.openaiAgentSdkApiKey : config.chatkitApiKey;
+        }
+      } catch (dbError) {
+        console.error('Error fetching API key from DB:', dbError);
+        // Continue to see if we can fail gracefully or if apiKey was optional
+      }
+    }
 
     if (!agentId) {
       return NextResponse.json(
@@ -17,21 +48,22 @@ export async function POST(request: NextRequest) {
 
     if (!apiKey) {
       return NextResponse.json(
-        { error: 'Missing API key', details: 'No OpenAI API key provided for this chatbot' },
+        { error: 'Missing API key', details: 'No OpenAI API key provided or found for this chatbot' },
         { status: 400 }
       );
     }
 
-    // Call OpenAI's Realtime API to create a session
-    // Based on ChatKit documentation, we need to create a realtime session
-    const openaiUrl = 'https://api.openai.com/v1/realtime/sessions';
-    
+    // Call OpenAI's ChatKit Sessions API to create a session
+    // Based on ChatKit SDK pattern (openai.chatkit.sessions.create)
+    const openaiUrl = 'https://api.openai.com/v1/chatkit/sessions';
+
+    // Build session payload for ChatKit
     const sessionPayload: any = {
-      model: 'gpt-4o-realtime-preview-2024-12-17',
+      agent_id: agentId,
     };
 
-    // If refreshing an existing session
-    if (existing) {
+    // If refreshing an existing session, include session info
+    if (existing && existing.session_id) {
       sessionPayload.session_id = existing.session_id;
     }
 
@@ -40,6 +72,7 @@ export async function POST(request: NextRequest) {
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
+        'OpenAI-Beta': 'chatkit_beta=v1',
       },
       body: JSON.stringify(sessionPayload),
     });
@@ -52,7 +85,7 @@ export async function POST(request: NextRequest) {
       } catch {
         errorDetails = { raw: errorText };
       }
-      
+
       console.error('OpenAI session creation failed:', {
         status: response.status,
         statusText: response.statusText,
@@ -60,9 +93,9 @@ export async function POST(request: NextRequest) {
       });
 
       return NextResponse.json(
-        { 
-          error: 'Failed to create OpenAI session', 
-          details: errorDetails.error?.message || errorDetails.raw || response.statusText 
+        {
+          error: 'Failed to create OpenAI session',
+          details: errorDetails.error?.message || errorDetails.raw || response.statusText
         },
         { status: response.status }
       );
@@ -86,9 +119,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('ChatKit session error:', error);
     return NextResponse.json(
-      { 
-        error: 'Internal server error', 
-        details: error instanceof Error ? error.message : 'Unknown error' 
+      {
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
     );

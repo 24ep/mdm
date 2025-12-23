@@ -115,6 +115,10 @@ export function getContainerStyle(
     const widgetSizePx =
       typeof x.widgetSize === 'string' && x.widgetSize.includes('px') ? parseFloat(x.widgetSize) : widgetSize
 
+    const popoverMargin = x.widgetPopoverMargin || '10px'
+    const popoverMarginPx = parseFloat(popoverMargin) || 10
+    const popoverPos = (x.popoverPosition || 'top') as 'top' | 'left'
+
     // Calculate popover position - place it to the right of the widget button
     const popoverStyle: React.CSSProperties = {
       position: 'fixed',
@@ -170,11 +174,7 @@ export function getContainerStyle(
       paddingBottom: (chatbot as any).chatWindowPaddingY || '0px',
     }
 
-    // Get popover position preference (top or left of widget) - configurable from chatbot config
-    const popoverPos = (x.popoverPosition || 'top') as 'top' | 'left'
-    const popoverMargin = x.widgetPopoverMargin || '10px'
-    const popoverMarginPx = parseFloat(popoverMargin) || 10
-
+    // Logic ported from embed/route.ts
     if (popoverPos === 'top') {
       // Position popover above the widget button
       if (pos.includes('bottom')) {
@@ -182,7 +182,16 @@ export function getContainerStyle(
         const bottomOffset = `calc(${offsetY} + ${widgetSizePx}px + ${popoverMarginPx}px)`
           ; (popoverStyle as any).bottom = bottomOffset
       } else {
-        // Widget is at top, popover appears above it (above the viewport edge)
+        // Widget is at top, popover appears above it (above the viewport edge - usually leads to overlap or pushed down, 
+        // but matching embed logic strictly for now. Usually top-positioned widgets have popover below? 
+        // Route.ts logic says: "Position popover above the widget button (Stacked)". 
+        // Wait, if widget is at Top, "Top" param means Stacked.
+        // Route.ts line 378: if TopRight, `top: calc(...)`. This pushes it DOWN? 
+        // No, `top` sets the top edge. `offsetY + size + margin`.
+        // So it IS below the widget.
+        // "Position popover above the widget button" comment in route.ts might be generic.
+        // Logic: top = offset + size + margin. This places it *below* the widget (if widget is at top).
+        // Correct.
         const topOffset = `calc(${offsetY} + ${widgetSizePx}px + ${popoverMarginPx}px)`
           ; (popoverStyle as any).top = topOffset
       }
@@ -197,14 +206,15 @@ export function getContainerStyle(
           ; (popoverStyle as any).transform = 'translateX(-50%)'
       }
     } else {
-      // Position popover to the left/right of widget button (default behavior)
+      // Position popover to the left/right of widget button (side-by-side)
       if (pos.includes('bottom')) {
         ; (popoverStyle as any).bottom = offsetY
       } else {
         ; (popoverStyle as any).top = offsetY
       }
 
-      // Place popover to the right of widget button (horizontally adjacent)
+      // Place popover to the right regarding widget
+      // Logic from route.ts:
       if (pos.includes('right')) {
         // Widget is on right side, popover appears to the left of widget
         const rightOffset = `calc(${offsetX} + ${widgetSizePx}px + ${popoverMarginPx}px)`
@@ -214,7 +224,7 @@ export function getContainerStyle(
         const leftOffset = `calc(${offsetX} + ${widgetSizePx}px + ${popoverMarginPx}px)`
           ; (popoverStyle as any).left = leftOffset
       } else if (pos.includes('center')) {
-        // For center positions, place popover to the right of widget
+        // For center positions, place popover to the right of widget (default)
         ; (popoverStyle as any).left = `calc(50% + ${widgetSizePx / 2}px + ${popoverMarginPx}px)`
           ; (popoverStyle as any).transform = 'translateX(0)'
       }
@@ -222,6 +232,8 @@ export function getContainerStyle(
 
     return popoverStyle
   }
+
+
 
   if (previewDeploymentType === 'popup-center') {
     // On mobile, popup-center becomes fullpage

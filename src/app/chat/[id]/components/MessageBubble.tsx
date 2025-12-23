@@ -181,8 +181,8 @@ export function MessageBubble({
         {message.role === 'assistant' && avatarPosition === 'left-of-message' && renderBotAvatar()}
         <div
           className={`max-w-[80%] rounded-lg ${message.role === 'user'
-              ? 'rounded-br-none'
-              : 'rounded-bl-none'
+            ? 'rounded-br-none'
+            : 'rounded-bl-none'
             }`}
           style={{
             wordWrap: 'break-word',

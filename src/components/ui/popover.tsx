@@ -112,14 +112,17 @@ const PopoverTrigger = React.forwardRef<
         } else if (ref) {
           (ref as React.MutableRefObject<HTMLButtonElement | null>).current = node
         }
-        if ((children as any).ref) {
-          if (typeof (children as any).ref === 'function') {
-            (children as any).ref(node)
+        // React 19: access ref from props instead of element.ref
+        const childProps = (children as any).props
+        if (childProps?.ref) {
+          if (typeof childProps.ref === 'function') {
+            childProps.ref(node)
           } else {
-            ((children as any).ref as React.MutableRefObject<HTMLButtonElement | null>).current = node
+            (childProps.ref as React.MutableRefObject<HTMLButtonElement | null>).current = node
           }
         }
       },
+
     })
   }
 
@@ -165,7 +168,7 @@ const PopoverContent = React.forwardRef<
       setPosition(null)
       return
     }
-    
+
     if (!context.triggerRef.current) {
       // If triggerRef not set yet, don't calculate position
       // It will be recalculated when ref is available
@@ -174,71 +177,71 @@ const PopoverContent = React.forwardRef<
 
     try {
       const rect = context.triggerRef.current.getBoundingClientRect()
-    const contentRect = contentRef.current?.getBoundingClientRect()
-    
-    // If content isn't rendered yet, use default dimensions
-    if (!contentRect) {
-      // Set initial position, will be recalculated once content is rendered
-      const defaultWidth = 256
+      const contentRect = contentRef.current?.getBoundingClientRect()
+
+      // If content isn't rendered yet, use default dimensions
+      if (!contentRect) {
+        // Set initial position, will be recalculated once content is rendered
+        const defaultWidth = 256
+        let left = rect.left
+        if (align === "center") {
+          left = rect.left + (rect.width / 2) - (defaultWidth / 2)
+        } else if (align === "end") {
+          left = rect.right - defaultWidth
+        }
+        setPosition({
+          top: rect.bottom + sideOffset,
+          left,
+        })
+        return
+      }
+
+      const width = contentRect.width
+      const height = contentRect.height
+
+      // Calculate initial position
       let left = rect.left
       if (align === "center") {
-        left = rect.left + (rect.width / 2) - (defaultWidth / 2)
+        left = rect.left + (rect.width / 2) - (width / 2)
       } else if (align === "end") {
-        left = rect.right - defaultWidth
+        left = rect.right - width
       }
-      setPosition({
-        top: rect.bottom + sideOffset,
-        left,
-      })
-      return
-    }
 
-    const width = contentRect.width
-    const height = contentRect.height
-    
-    // Calculate initial position
-    let left = rect.left
-    if (align === "center") {
-      left = rect.left + (rect.width / 2) - (width / 2)
-    } else if (align === "end") {
-      left = rect.right - width
-    }
+      // Calculate top position (below trigger by default)
+      let top = rect.bottom + sideOffset
 
-    // Calculate top position (below trigger by default)
-    let top = rect.bottom + sideOffset
+      // Keep popover within viewport bounds
+      const viewportWidth = window.innerWidth
+      const viewportHeight = window.innerHeight
+      const padding = 8 // Padding from viewport edges
 
-    // Keep popover within viewport bounds
-    const viewportWidth = window.innerWidth
-    const viewportHeight = window.innerHeight
-    const padding = 8 // Padding from viewport edges
+      // Adjust horizontal position if it goes off-screen
+      if (left < padding) {
+        left = padding
+      } else if (left + width > viewportWidth - padding) {
+        left = viewportWidth - width - padding
+      }
 
-    // Adjust horizontal position if it goes off-screen
-    if (left < padding) {
-      left = padding
-    } else if (left + width > viewportWidth - padding) {
-      left = viewportWidth - width - padding
-    }
+      // If popover would go off bottom, show it above the trigger instead
+      if (top + height > viewportHeight - padding) {
+        top = rect.top - height - sideOffset
+        // If it still doesn't fit above, position it at the top of viewport
+        if (top < padding) {
+          top = padding
+        }
+      }
 
-    // If popover would go off bottom, show it above the trigger instead
-    if (top + height > viewportHeight - padding) {
-      top = rect.top - height - sideOffset
-      // If it still doesn't fit above, position it at the top of viewport
+      // Ensure top is within bounds
       if (top < padding) {
         top = padding
+      } else if (top + height > viewportHeight - padding) {
+        top = viewportHeight - height - padding
       }
-    }
 
-    // Ensure top is within bounds
-    if (top < padding) {
-      top = padding
-    } else if (top + height > viewportHeight - padding) {
-      top = viewportHeight - height - padding
-    }
-
-    setPosition({
-      top,
-      left,
-    })
+      setPosition({
+        top,
+        left,
+      })
     } catch (error) {
       // If getBoundingClientRect fails, set a default position
       console.warn('Failed to calculate popover position:', error)
@@ -255,20 +258,20 @@ const PopoverContent = React.forwardRef<
       if (context.triggerRef.current) {
         calculatePosition()
       }
-      
+
       // Also use requestAnimationFrame as backup
       const frame = requestAnimationFrame(() => {
         if (context.triggerRef.current) {
           calculatePosition()
         }
       })
-      
+
       return () => cancelAnimationFrame(frame)
     } else {
       setPosition(null)
     }
   }, [context?.open, calculatePosition])
-  
+
 
   // Recalculate position once content is rendered (in case we used fallback position)
   React.useEffect(() => {
@@ -316,9 +319,9 @@ const PopoverContent = React.forwardRef<
     const handleClickOutside = (e: MouseEvent) => {
       // Ignore clicks immediately after opening
       if (justOpenedRef.current) return
-      
+
       const target = e.target as HTMLElement
-      
+
       // Check if click is inside a dropdown menu (which is portaled to body)
       // Dropdown menus are portaled and have higher z-index, check by traversing up the DOM
       let isInsideDropdown = false
@@ -338,7 +341,7 @@ const PopoverContent = React.forwardRef<
         }
         element = element.parentElement
       }
-      
+
       if (
         context?.open &&
         contentRef.current &&
@@ -411,15 +414,15 @@ const PopoverContent = React.forwardRef<
   }, [context?.open])
 
   if (!context?.open) return null
-  
+
   // Always calculate a position - use fallback if position state not set yet
   let finalPosition = position
   if (!finalPosition && context.triggerRef.current) {
     try {
       const rect = context.triggerRef.current.getBoundingClientRect()
-      finalPosition = { 
-        top: Math.min(rect.bottom + 4, window.innerHeight - 400), 
-        left: Math.min(rect.left, window.innerWidth - 340) 
+      finalPosition = {
+        top: Math.min(rect.bottom + 4, window.innerHeight - 400),
+        left: Math.min(rect.left, window.innerWidth - 340)
       }
     } catch {
       finalPosition = { top: 100, left: 100 }
@@ -435,30 +438,30 @@ const PopoverContent = React.forwardRef<
     const root = document.documentElement
     const popoverValue = getComputedStyle(root).getPropertyValue('--popover').trim()
     const isDark = root.classList.contains('dark')
-    
+
     // Parse HSL: "h s% l%" format
     const hslMatch = popoverValue.match(/(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)%?/)
     if (hslMatch) {
       const h = parseFloat(hslMatch[1]) / 360
       const s = parseFloat(hslMatch[2]) / 100
       const l = parseFloat(hslMatch[3]) / 100
-      
+
       // Convert HSL to RGB
       const c = (1 - Math.abs(2 * l - 1)) * s
       const x = c * (1 - Math.abs(((h * 6) % 2) - 1))
       const m = l - c / 2
-      
+
       let r = 0, g = 0, b = 0
-      if (h < 1/6) { r = c; g = x; b = 0 }
-      else if (h < 2/6) { r = x; g = c; b = 0 }
-      else if (h < 3/6) { r = 0; g = c; b = x }
-      else if (h < 4/6) { r = 0; g = x; b = c }
-      else if (h < 5/6) { r = x; g = 0; b = c }
+      if (h < 1 / 6) { r = c; g = x; b = 0 }
+      else if (h < 2 / 6) { r = x; g = c; b = 0 }
+      else if (h < 3 / 6) { r = 0; g = c; b = x }
+      else if (h < 4 / 6) { r = 0; g = x; b = c }
+      else if (h < 5 / 6) { r = x; g = 0; b = c }
       else { r = c; g = 0; b = x }
-      
+
       return `rgba(${Math.round((r + m) * 255)}, ${Math.round((g + m) * 255)}, ${Math.round((b + m) * 255)}, 0.50)`
     }
-    
+
     // Fallback
     return isDark ? 'rgba(17, 24, 39, 0.50)' : 'rgba(255, 255, 255, 0.50)'
   }
@@ -494,14 +497,14 @@ const PopoverContent = React.forwardRef<
   )
 
   if (typeof window === "undefined") return null
-  
+
   // Ensure we're portaling to body
   const portalTarget = document.body
   if (!portalTarget) {
     console.warn('⚠️ document.body is null!')
     return null
   }
-  
+
   console.log('✅ Creating PopoverContent portal to body, position:', finalPosition)
   return createPortal(content, portalTarget)
 })

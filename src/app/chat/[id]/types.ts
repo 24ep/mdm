@@ -293,6 +293,9 @@ export interface ChatbotConfig {
 
   chatWindowPaddingX?: string
   chatWindowPaddingY?: string
+  // Composer Styling
+  composerBackgroundColor?: string
+  composerFontColor?: string
   // PWA Configuration
   enablePWA?: boolean
   pwaName?: string

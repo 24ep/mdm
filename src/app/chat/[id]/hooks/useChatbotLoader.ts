@@ -26,8 +26,17 @@ export function useChatbotLoader({
   }>({})
 
   // Helper to merge loaded chatbot with default config to ensure all values are set
+  // Filter out undefined values from defaults to prevent them from overriding valid loaded values
   const mergeWithDefaults = (loadedChatbot: any): ChatbotConfig => {
-    return { ...DEFAULT_CHATBOT_CONFIG, ...loadedChatbot } as ChatbotConfig
+    // Create a clean defaults object without undefined values
+    const cleanDefaults: Record<string, any> = {}
+    for (const [key, value] of Object.entries(DEFAULT_CHATBOT_CONFIG)) {
+      if (value !== undefined) {
+        cleanDefaults[key] = value
+      }
+    }
+    // Merge: clean defaults first, then loaded chatbot values take precedence
+    return { ...cleanDefaults, ...loadedChatbot } as ChatbotConfig
   }
 
   // Update emulator config when chatbot loads with persisted settings
@@ -104,7 +113,7 @@ export function useChatbotLoader({
     // Helper for public fallback (guests/embeds)
     const tryPublicApi = async () => {
       try {
-        const res = await fetch(`/api/public/chatbots/${chatbotId}`)
+        const res = await fetch(`/api/public/chatbots/${chatbotId}`, { cache: 'no-store' })
         if (res.ok) {
           const d = await res.json()
           if (d.chatbot) {
@@ -124,7 +133,7 @@ export function useChatbotLoader({
       if (isUuid(chatbotId)) {
         // 1. Try Private API (Admin/Draft version)
         try {
-          const response = await fetch(`/api/chatbots/${chatbotId}`)
+          const response = await fetch(`/api/chatbots/${chatbotId}`, { cache: 'no-store' })
           // Check for JSON content type to avoid handling auth redirects (HTML) as success
           const contentType = response.headers.get('content-type')
 

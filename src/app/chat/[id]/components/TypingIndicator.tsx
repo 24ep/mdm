@@ -15,8 +15,8 @@ export function TypingIndicator({ chatbot }: TypingIndicatorProps) {
   const renderAvatar = () => {
     if (avatarType === 'image' && chatbot.avatarImageUrl) {
       return (
-        <img 
-          src={chatbot.avatarImageUrl} 
+        <img
+          src={chatbot.avatarImageUrl}
           alt={chatbot.name}
           className="w-8 h-8 rounded-full object-cover flex-shrink-0"
           onError={(e) => {
@@ -30,7 +30,7 @@ export function TypingIndicator({ chatbot }: TypingIndicatorProps) {
       const iconColor = chatbot.avatarIconColor || '#ffffff'
       const bgColor = chatbot.avatarBackgroundColor || chatbot.primaryColor || '#3b82f6'
       return (
-        <div 
+        <div
           className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
           style={{ backgroundColor: bgColor }}
         >

@@ -112,11 +112,14 @@ async function putHandler(
     currentVersion,
     spaceId,
     customEmbedDomain,
+    chatkitApiKey, // Explicitly extract
+    chatkitOptions, // Explicitly extract
+    engineType, // Explicitly extract
     ...versionConfig
   } = body
 
   // Check if there are version-specific config updates
-  const hasVersionConfig = Object.keys(versionConfig).length > 0
+  const hasVersionConfig = Object.keys(versionConfig).length > 0 || chatkitApiKey !== undefined || chatkitOptions !== undefined || engineType !== undefined
 
   // Update the chatbot
   const updatedChatbot = await db.chatbot.update({
@@ -126,6 +129,7 @@ async function putHandler(
       ...(website !== undefined && { website }),
       ...(description !== undefined && { description }),
       ...(apiEndpoint !== undefined && { apiEndpoint }),
+      ...(engineType !== undefined && { engineType }),
       ...(apiAuthType !== undefined && { apiAuthType }),
       ...(apiAuthValue !== undefined && { apiAuthValue }),
       ...(logo !== undefined && { logo }),
@@ -217,6 +221,9 @@ async function putHandler(
       showCitations: showCitations !== undefined ? showCitations : existingConfig.showCitations,
       deploymentType: deploymentType !== undefined ? deploymentType : existingConfig.deploymentType,
       customEmbedDomain: customEmbedDomain !== undefined ? customEmbedDomain : existingConfig.customEmbedDomain,
+      chatkitApiKey: chatkitApiKey !== undefined ? chatkitApiKey : existingConfig.chatkitApiKey,
+      chatkitOptions: chatkitOptions !== undefined ? chatkitOptions : existingConfig.chatkitOptions,
+      engineType: engineType !== undefined ? engineType : existingConfig.engineType,
     }
 
     await db.chatbotVersion.create({

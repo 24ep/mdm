@@ -43,7 +43,7 @@ export function ComposerSection({ formData, setFormData, chatkitOptions }: Secti
               Add tools/actions to the composer. Select a preset tool type or create a custom button.
             </p>
             <div className="space-y-2">
-              {(chatkitOptions?.composer?.tools || []).map((tool: { id?: string; label?: string; icon?: string; pinned?: boolean; type?: string; [key: string]: any }, index: number) => {
+              {(chatkitOptions?.composer?.tools || []).map((tool: { id?: string; label?: string; icon?: string; pinned?: boolean; type?: string;[key: string]: any }, index: number) => {
                 // Determine tool type from existing tool
                 const getToolType = () => {
                   if (tool.type === 'file_upload') {
@@ -57,7 +57,7 @@ export function ComposerSection({ formData, setFormData, chatkitOptions }: Secti
                   return 'custom'
                 }
                 const toolType = getToolType()
-                
+
                 return (
                   <div key={index} className="border rounded-lg p-3 space-y-3">
                     <div className="flex gap-2 items-start">
@@ -69,7 +69,7 @@ export function ComposerSection({ formData, setFormData, chatkitOptions }: Secti
                             onValueChange={(v) => {
                               const tools = [...(chatkitOptions?.composer?.tools || [])]
                               let newTool: any = { ...tools[index] }
-                              
+
                               // Auto-fill based on preset
                               if (v === 'file_upload_all') {
                                 newTool = {
@@ -124,7 +124,7 @@ export function ComposerSection({ formData, setFormData, chatkitOptions }: Secti
                                   pinned: newTool.pinned || false
                                 }
                               }
-                              
+
                               tools[index] = newTool
                               setFormData({
                                 ...formData,
@@ -181,7 +181,7 @@ export function ComposerSection({ formData, setFormData, chatkitOptions }: Secti
                             </SelectContent>
                           </Select>
                         </div>
-                        
+
                         {toolType === 'custom' && (
                           <>
                             <div className="grid grid-cols-2 gap-2">
@@ -276,7 +276,7 @@ export function ComposerSection({ formData, setFormData, chatkitOptions }: Secti
                             </div>
                           </>
                         )}
-                        
+
                         {(toolType === 'file_upload_all' || toolType === 'file_upload_image' || toolType === 'file_upload_video' || toolType === 'file_upload_document') && (
                           <div className="space-y-3">
                             <div className="p-2 bg-muted rounded text-xs text-muted-foreground space-y-2">
@@ -356,7 +356,7 @@ export function ComposerSection({ formData, setFormData, chatkitOptions }: Secti
                             </div>
                           </div>
                         )}
-                        
+
                         {toolType === 'rate' && (
                           <div className="space-y-3">
                             <div className="p-2 bg-muted rounded text-xs text-muted-foreground">
@@ -430,7 +430,7 @@ export function ComposerSection({ formData, setFormData, chatkitOptions }: Secti
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
-                    
+
                     <div className="flex items-center justify-between pt-2 border-t">
                       <Label className="text-xs">Pin to Composer</Label>
                       <Switch
@@ -475,6 +475,7 @@ export function ComposerSection({ formData, setFormData, chatkitOptions }: Secti
               </Button>
             </div>
           </div>
+
         </div>
       </AccordionContent>
     </AccordionItem>

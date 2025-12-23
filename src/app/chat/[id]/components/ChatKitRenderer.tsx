@@ -12,6 +12,7 @@ interface ChatKitRendererProps {
   chatbot: ChatbotConfig
   previewDeploymentType?: 'popover' | 'fullpage' | 'popup-center'
   isInIframe?: boolean
+  isMobile?: boolean
   onChatKitUnavailable?: () => void // Callback when ChatKit fails to load
 }
 
@@ -19,6 +20,7 @@ export function ChatKitRenderer({
   chatbot,
   previewDeploymentType = 'fullpage',
   isInIframe = false,
+  isMobile = false,
   onChatKitUnavailable
 }: ChatKitRendererProps) {
   const [chatkitLoaded, setChatkitLoaded] = useState(false)
@@ -131,6 +133,7 @@ export function ChatKitRenderer({
         onError={setChatkitError}
         previewDeploymentType={previewDeploymentType}
         isInIframe={isInIframe}
+        isMobile={isMobile}
         isOpen={isOpen}
         setIsOpen={setIsOpen}
       />

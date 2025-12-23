@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       // Render SVG with white color (or configured color) as it usually appears on a colored button
       // forcing white for the button icon usually looks best on colored backgrounds, 
       // but ChatPage uses avatarIconColor. We'll use the configured color.
-      iconSvg = renderToStaticMarkup(React.createElement(IconComponent, {
+      iconSvg = renderToStaticMarkup(React.createElement(IconComponent as any, {
         size: 24,
         color: iconColor,
         strokeWidth: 2
@@ -130,8 +130,12 @@ export async function GET(request: NextRequest) {
     // Get widget configuration - use config values only, no hardcoded defaults
     // For ChatKit, use theme accent color if available
     var isChatKit = chatbot.engineType === 'chatkit';
-    var chatKitAccentColor = isChatKit && chatbot.chatkitOptions && chatbot.chatkitOptions.theme && chatbot.chatkitOptions.theme.color && chatbot.chatkitOptions.theme.color.accent && chatbot.chatkitOptions.theme.color.accent.primary
-      ? chatbot.chatkitOptions.theme.color.accent.primary
+    var ckTheme = (isChatKit && chatbot.chatkitOptions && chatbot.chatkitOptions.theme) || {};
+    var ckColor = ckTheme.color || {};
+    var ckAccent = ckColor.accent || {};
+    
+    var chatKitAccentColor = isChatKit && (ckAccent.primary || ckTheme.primaryColor) 
+      ? (ckAccent.primary || ckTheme.primaryColor)
       : null;
     
     var widgetConfig = {
@@ -448,39 +452,6 @@ export async function GET(request: NextRequest) {
     chatWindow.id = 'chatbot-window-' + chatbotId;
     chatWindow.style.cssText = 'position: fixed; ' + chatWindowPositionMobile + ' width: ' + chatWindowWidth + '; height: ' + chatWindowHeight + '; ' + chatBgStyle + 'border-radius: ' + chatWindowBorderRadius + '; box-shadow: 0 0 ' + chatWindowShadowBlur + ' ' + chatWindowShadowColor + '; border: ' + borderWidth + ' solid ' + borderColor + '; font-family: ' + (chatbot.fontFamily || 'Inter') + '; font-size: ' + (chatbot.fontSize || '14px') + '; color: ' + (chatbot.fontColor || '#000000') + '; display: none; flex-direction: column; z-index: ' + (widgetConfig.zIndex >= ${Z_INDEX.chatWidget} ? widgetConfig.zIndex + 1 : ${Z_INDEX.chatWidgetWindow}) + '; transition: opacity 0.3s ease, transform 0.3s ease; opacity: 0; transform: ' + (currentBaseChatTransform !== 'none' ? currentBaseChatTransform + ' scale(0.9)' : 'scale(0.9)') + ';';
     
-    // Toggle functionality
-    function toggleChat(forceOpen) {
-      var isOpen = forceOpen !== undefined ? forceOpen : chatWindow.style.display === 'none';
-      
-      if (isOpen) {
-        chatWindow.style.display = 'flex';
-        // Allow display:flex to take effect before animating opacity/transform
-        setTimeout(function() {
-          chatWindow.style.opacity = '1';
-          chatWindow.style.transform = (currentBaseChatTransform !== 'none' ? currentBaseChatTransform + ' scale(1)' : 'scale(1)');
-          if (overlay) overlay.style.display = 'block';
-        }, 10);
-        
-        button.innerHTML = closeIconSvg;
-        button.style.transform = baseWidgetTransform || 'scale(1)';
-      } else {
-        chatWindow.style.opacity = '0';
-        chatWindow.style.transform = (currentBaseChatTransform !== 'none' ? currentBaseChatTransform + ' scale(0.9)' : 'scale(0.9)');
-        if (overlay) overlay.style.display = 'none';
-        
-        setTimeout(function() {
-          chatWindow.style.display = 'none';
-        }, 300);
-        
-        button.innerHTML = widgetInner;
-        button.style.transform = baseWidgetTransform || 'scale(1)';
-      }
-    }
-
-    button.onclick = function() { toggleChat(); };
-    window['openChatbot_' + chatbotId] = function() { toggleChat(true); };
-    window['closeChatbot_' + chatbotId] = function() { toggleChat(false); };
-    
     // Event listener for closing the chat via postMessage from the iframe
     window.addEventListener('message', function(event) {
       if (event.data && event.data.type === 'close-chat') {
@@ -488,7 +459,6 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    
     // Create iframe for chat
     var iframe = document.createElement('iframe');
     iframe.src = serverOrigin + '/chat/' + chatbotId + '?mode=embed';
@@ -614,7 +584,7 @@ export async function GET(request: NextRequest) {
       }
       if (overlayBgColor.startsWith('rgba') || overlayBgColor.startsWith('rgb')) {
         // Extract RGB values and apply new opacity
-        var rgbMatch = overlayBgColor.match(/(\\d+),\\s*(\\d+),\\s*(\\d+)/);
+        var rgbMatch = overlayBgColor.match(/(\d+),\s*(\d+),\s*(\d+)/);
         if (rgbMatch) {
           overlayBgStyle += 'background-color: rgba(' + rgbMatch[1] + ', ' + rgbMatch[2] + ', ' + rgbMatch[3] + ', ' + (widgetConfig.overlayOpacity / 100) + '); ';
         } else {
@@ -643,6 +613,7 @@ export async function GET(request: NextRequest) {
         buttonContainer.style.display = 'flex';
       }, widgetConfig.autoShowDelay * 1000);
     }
+
     
     var isOpen = false;
     var originalButtonHTML = button.innerHTML;
@@ -651,19 +622,27 @@ export async function GET(request: NextRequest) {
       isOpen = true;
       chatWindow.style.display = 'flex';
       button.setAttribute('aria-expanded', 'true');
+      
       // Show overlay if enabled
       if (overlay && widgetConfig.overlayEnabled) {
         overlay.style.display = 'block';
       }
+      
       // Prevent body scroll on mobile when chat is open
       if (isMobile) {
         document.body.style.overflow = 'hidden';
+        // HIDE launcher button on mobile to avoid overlap/clutter (internal header has close button)
+        buttonContainer.style.display = 'none';
+      } else {
+        // Change button to close icon on desktop
+        button.innerHTML = closeIconSvg || '✕';
       }
+
       setTimeout(function() {
         chatWindow.style.opacity = '1';
         chatWindow.style.transform = 'scale(1)';
       }, 10);
-      button.innerHTML = closeIconSvg || '✕';
+      
       // Hide badge when chat is open
       if (widgetConfig.showBadge) {
         var badge = document.getElementById('chatbot-badge-' + chatbotId);
@@ -678,18 +657,27 @@ export async function GET(request: NextRequest) {
     function closeChat() {
       isOpen = false;
       button.setAttribute('aria-expanded', 'false');
+      
       // Hide overlay if enabled
       if (overlay && widgetConfig.overlayEnabled) {
         overlay.style.display = 'none';
       }
+      
       // Restore body scroll
       document.body.style.overflow = '';
+      
+      // Restore launcher button if it was hidden (mobile)
+      if (isMobile) {
+        buttonContainer.style.display = 'flex';
+      }
+      button.innerHTML = originalButtonHTML;
+
       chatWindow.style.opacity = '0';
       chatWindow.style.transform = 'scale(0.9)';
       setTimeout(function() {
         chatWindow.style.display = 'none';
       }, 300);
-      button.innerHTML = originalButtonHTML;
+      
       // Return focus to button
       setTimeout(function() {
         button.focus();
@@ -703,6 +691,10 @@ export async function GET(request: NextRequest) {
         openChat();
       }
     };
+
+    // Expose control functions globally
+    window['openChatbot_' + chatbotId] = function() { openChat(); };
+    window['closeChatbot_' + chatbotId] = function() { closeChat(); };
     
     
     // Close on outside click (only if not mobile, or if mobile and clicked outside)

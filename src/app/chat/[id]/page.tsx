@@ -2,10 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
-import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { Card } from '@/components/ui/card'
 import { X, Bot, Menu, Loader2 } from 'lucide-react'
 import * as Icons from 'lucide-react'
 import { ChatbotConfig } from './types'
@@ -29,6 +27,9 @@ import {
   getWidgetButtonStyle,
 } from './utils/chatStyling'
 import { Z_INDEX } from '@/lib/z-index'
+import { ChatWidgetButton } from './components/ChatWidgetButton'
+import { WidgetChatContainer } from './components/WidgetChatContainer'
+import { FullPageChatLayout } from './components/FullPageChatLayout'
 
 export default function ChatPage() {
   const params = useParams()
@@ -70,6 +71,23 @@ export default function ChatPage() {
     onChatbotLoaded: (loadedChatbot) => {
       if (loadedChatbot.deploymentType) {
         setPreviewDeploymentType(loadedChatbot.deploymentType)
+        // Update isOpen state based on the loaded deployment type
+        if (loadedChatbot.deploymentType === 'popover' || loadedChatbot.deploymentType === 'popup-center') {
+          // Check for auto-show setting, otherwise default to closed (false)
+          // Note: Logic in useEffect below handles auto-show timing, but we should set initial state correctly
+          // If we set it to false here, the useEffect regarding valid deployment types might not trigger if it was already false?
+          // Actually, let's just let the state update trigger the effect logic if needed, or explicitly set it.
+          // For Popover/Popup, usually starts closed unless autoShow is strictly true and delay is 0.
+          // To match Embed logic:
+          const shouldAuto = (loadedChatbot as any).widgetAutoShow !== undefined ? (loadedChatbot as any).widgetAutoShow : true
+          if (!shouldAuto) {
+            setIsOpen(false)
+          }
+          // If shouldAuto is true, the useEffect [chatbot, previewDeploymentType] will handle opening it after delay
+        } else {
+          // Fullpage always open
+          setIsOpen(true)
+        }
       }
       // Add greeting message for non-fullpage modes
       const greetingMessage = loadedChatbot.openaiAgentSdkGreeting || loadedChatbot.conversationOpener
@@ -305,10 +323,7 @@ export default function ChatPage() {
   const widgetButtonStyle = getWidgetButtonStyle(chatbot)
 
   // Render ChatKit only if engine type is chatkit (not openai-agent-sdk)
-  // Note: If ChatKit fails to load, it will fall back to regular chat style
-  // Also check useChatKitInRegularStyle - if true, render ChatKit inside regular style container with regular header
-  // Mobile popovers always use regular style container to show our header
-  const useChatKitInRegularStyle = (chatbot as any).useChatKitInRegularStyle === true || (isMobile && effectiveDeploymentType !== 'fullpage')
+  const useChatKitInRegularStyle = (chatbot as any).useChatKitInRegularStyle === true || isMobile
   const shouldRenderChatKit =
     !chatKitUnavailable &&
     chatbot.engineType === 'chatkit' &&
@@ -330,6 +345,7 @@ export default function ChatPage() {
           chatbot={chatbot}
           previewDeploymentType={effectiveDeploymentType}
           isInIframe={isInIframe}
+          isMobile={isMobile}
           onChatKitUnavailable={() => setChatKitUnavailable(true)}
         />
       )
@@ -351,6 +367,7 @@ export default function ChatPage() {
             chatbot={chatbot}
             previewDeploymentType={effectiveDeploymentType}
             isInIframe={isInIframe}
+            isMobile={isMobile}
             onChatKitUnavailable={() => setChatKitUnavailable(true)}
           />
         </div>
@@ -394,127 +411,53 @@ export default function ChatPage() {
 
   // Full page layout with sidebar
   if (previewDeploymentType === 'fullpage' && !isInIframe) {
-
     return (
-      <div
-        className="flex h-screen w-screen overflow-hidden"
-        style={{
-          backgroundColor: emulatorConfig.backgroundColor,
-          backgroundImage: emulatorConfig.backgroundImage ? `url(${emulatorConfig.backgroundImage})` : undefined,
-          backgroundSize: emulatorConfig.backgroundImage ? 'cover' : undefined,
-          backgroundPosition: emulatorConfig.backgroundImage ? 'center' : undefined,
-          backgroundRepeat: emulatorConfig.backgroundImage ? 'no-repeat' : undefined,
-        }}
+      <FullPageChatLayout
+        emulatorConfig={emulatorConfig}
+        chatbot={chatbot}
+        threadManagementEnabled={!!threadManagementEnabled}
+        currentThreadId={currentThreadId}
+        threads={threads}
+        threadsLoading={threadsLoading}
+        setCurrentThreadId={setCurrentThreadId}
+        setMessages={setMessages}
+        deleteThread={deleteThread}
+        updateThreadTitle={updateThreadTitle}
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        chatHistory={chatHistory}
+        currentChatId={currentChatId}
+        handleSelectChat={handleSelectChat}
+        handleNewChat={handleNewChat}
+        handleDeleteChat={handleDeleteChat}
+        previewDeploymentType={previewDeploymentType}
+        setPreviewDeploymentType={setPreviewDeploymentType}
+        setIsOpen={setIsOpen}
+        isMobile={isMobile}
+        isEmbed={isEmbed}
+        useChatKitInRegularStyle={useChatKitInRegularStyle}
+        shouldRenderChatKit={!!shouldRenderChatKit}
+        handleClose={handleClose}
       >
-        {/* Thread Selector for OpenAI Agent SDK */}
-        {threadManagementEnabled && (
-          <ThreadSelector
-            threads={threads}
-            currentThreadId={currentThreadId}
-            onSelectThread={(threadId: string) => {
-              setCurrentThreadId(threadId)
-              // Messages will be loaded by useChatMessages hook when threadId changes
-            }}
-            onNewThread={() => {
-              setCurrentThreadId(null)
-              setMessages([]) // Clear messages for new thread
-            }}
-            onDeleteThread={deleteThread}
-            onUpdateThreadTitle={updateThreadTitle}
-            isLoading={threadsLoading}
-            chatbot={chatbot}
-          />
-        )}
-
-        {/* Sidebar for regular chat history */}
-        {!threadManagementEnabled && chatbot && (
-          <ChatSidebar
-            sidebarOpen={sidebarOpen}
-            onClose={() => setSidebarOpen(false)}
-            chatHistory={chatHistory}
-            currentChatId={currentChatId}
-            onSelectChat={handleSelectChat}
-            onNewChat={handleNewChat}
-            onDeleteChat={handleDeleteChat}
-            chatbot={chatbot}
-          />
-        )}
-
-        {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col overflow-hidden relative">
-          {/* Top Bar with Menu and Preview Type */}
-          <div className="h-14 border-b border-border bg-background/95 backdrop-blur-sm flex items-center justify-between px-6 z-10 transition-all duration-200 ease-out">
-            <div className="flex items-center gap-2">
-              {!threadManagementEnabled && !sidebarOpen && (
-                <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)} className="h-8 w-8 p-0">
-                  <Menu className="h-4 w-4" />
-                </Button>
-              )}
-              <h1 className="font-semibold">{chatbot?.name || 'Chat'}</h1>
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="text-xs whitespace-nowrap">Preview Type:</Label>
-              <Select
-                value={previewDeploymentType}
-                onValueChange={(value: string) => {
-                  const deploymentType = value as 'popover' | 'fullpage' | 'popup-center'
-                  setPreviewDeploymentType(deploymentType)
-                  if (deploymentType === 'popover' || deploymentType === 'popup-center') {
-                    setIsOpen(false)
-                  } else {
-                    setIsOpen(true)
-                  }
-                }}
-              >
-                <SelectTrigger className="h-8 w-[140px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="popover">Popover</SelectItem>
-                  <SelectItem value="popup-center">Popup Center</SelectItem>
-                  <SelectItem value="fullpage">Full Page</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Chat Container */}
-          {(() => {
-            const isWindowedMode = !isMobile && !isEmbed && (chatbot as any).useChatKitInRegularStyle === true
-            const showHeader = (chatbot as any).headerEnabled !== false && (!shouldRenderChatKit || useChatKitInRegularStyle)
-
-            return (
-              <div className={`flex-1 flex flex-col ${isWindowedMode ? 'p-4 md:p-8 lg:p-12 items-center justify-center' : 'p-0'}`}>
-                <div
-                  className={`flex-1 flex flex-col overflow-hidden relative bg-background transition-all duration-300 ease-in-out ${isWindowedMode ? 'shadow-2xl' : ''}`}
-                  style={{
-                    width: isWindowedMode ? (chatbot?.chatWindowWidth || '800px') : '100%',
-                    maxWidth: '100%',
-                    maxHeight: isWindowedMode ? (chatbot?.chatWindowHeight || '85vh') : '100%',
-                    borderRadius: isWindowedMode ? (chatbot?.chatWindowBorderRadius || chatbot?.borderRadius || '12px') : '0px',
-                    border: isWindowedMode ? `${chatbot?.chatWindowBorderWidth || chatbot?.borderWidth || '1px'} solid ${chatbot?.chatWindowBorderColor || chatbot?.borderColor || 'rgba(0,0,0,0.1)'}` : 'none',
-                  }}
-                >
-                  {/* Custom Header for Fullpage Desktop/Mobile (Regular Style) */}
-                  {showHeader && (
-                    <ChatHeader
-                      chatbot={chatbot}
-                      onClearSession={() => setMessages([])}
-                      onClose={handleClose}
-                      isMobile={isMobile}
-                    />
-                  )}
-                  <div className="flex-1 min-h-0">
-                    {renderChatContent()}
-                  </div>
-                </div>
-              </div>
-            )
-          })()}
-        </div>
-      </div>
+        {renderChatContent()}
+      </FullPageChatLayout>
     )
   }
+
+  // Debug logging
+  console.log('ChatPage Render:', {
+    chatbotId,
+    previewDeploymentType,
+    isEmbed,
+    isInIframe,
+    isMobile,
+    isOpen,
+    shouldShowWidgetButton,
+    shouldShowContainer,
+    isNativeChatKit,
+    useChatKitInRegularStyle,
+    effectiveDeploymentType
+  })
 
   return (
     <div
@@ -566,72 +509,32 @@ export default function ChatPage() {
 
       {/* Widget launcher button */}
       {shouldShowWidgetButton && (
-        <button
-          type="button"
-          aria-label={isOpen ? 'Close chat' : 'Open chat'}
+        <ChatWidgetButton
+          chatbot={chatbot}
+          isOpen={isOpen}
           onClick={() => setIsOpen(!isOpen)}
-          style={{
-            ...popoverPositionStyle,
-            ...widgetButtonStyle,
-          }}
-        >
-          {isOpen ? (
-            <X className="h-6 w-6" style={{ color: chatbot?.avatarIconColor || '#ffffff' }} />
-          ) : (
-            (() => {
-              const avatarType = chatbot?.avatarType || 'icon'
-              if (avatarType === 'image' && chatbot?.avatarImageUrl) {
-                return (
-                  <img
-                    src={chatbot.avatarImageUrl}
-                    alt="Chat"
-                    style={{ width: '60%', height: '60%', borderRadius: '50%', objectFit: 'cover' }}
-                  />
-                )
-              }
-              const IconName = (chatbot?.avatarIcon || 'Bot') as string
-              const IconComponent = (Icons as any)[IconName] || Bot
-              const iconColor = chatbot?.avatarIconColor || '#ffffff'
-              return <IconComponent className="h-6 w-6" style={{ color: iconColor }} />
-            })()
-          )}
-        </button>
+          widgetButtonStyle={widgetButtonStyle}
+          popoverPositionStyle={popoverPositionStyle}
+        />
       )}
 
       {/* Chat container */}
       {shouldShowContainer && (
-        <div className="flex flex-col relative" style={containerStyle}>
-          {/* Emulator text and description overlay - positioned below header */}
-          {(emulatorConfig.text || emulatorConfig.description) && (
-            <div className="absolute top-0 left-0 right-0 p-4 bg-black/50 text-white backdrop-blur-sm" style={{ zIndex: Z_INDEX.chatWidgetOverlayText }}>
-              {emulatorConfig.text && <h2 className="text-lg font-semibold mb-2">{emulatorConfig.text}</h2>}
-              {emulatorConfig.description && <p className="text-sm opacity-90">{emulatorConfig.description}</p>}
-            </div>
-          )}
-
-          {/* Main Chat Header (Desktop/Regular Style) - Fallback/Safety check */}
-          {((chatbot as any).headerEnabled !== false) && (!isEmbed && (!shouldRenderChatKit || useChatKitInRegularStyle) && !isMobile && effectiveDeploymentType !== 'fullpage') && (
-            <ChatHeader
-              chatbot={chatbot}
-              onClearSession={() => setMessages([])}
-              onClose={() => setIsOpen(false)}
-            />
-          )}
-
-          {/* Mobile header (back button layout) */}
-          {(isMobile && (effectiveDeploymentType === 'popover' || effectiveDeploymentType === 'popup-center') && ((chatbot as any).headerEnabled !== false)) && (
-            <ChatHeader
-              chatbot={chatbot}
-              onClearSession={() => setMessages([])}
-              onClose={() => setIsOpen(false)}
-              isMobile={true}
-            />
-          )}
-
-          <div className="flex flex-col h-full" style={chatStyle}>
-            {renderChatContent()}
-          </div>
-        </div>
+        <WidgetChatContainer
+          chatbot={chatbot}
+          containerStyle={containerStyle}
+          chatStyle={chatStyle}
+          emulatorConfig={emulatorConfig}
+          isMobile={isMobile}
+          isEmbed={isEmbed}
+          useChatKitInRegularStyle={useChatKitInRegularStyle}
+          shouldRenderChatKit={!!shouldRenderChatKit}
+          effectiveDeploymentType={effectiveDeploymentType}
+          handleClose={handleClose}
+          onClearSession={() => setMessages([])}
+        >
+          {renderChatContent()}
+        </WidgetChatContainer>
       )}
     </div>
   )

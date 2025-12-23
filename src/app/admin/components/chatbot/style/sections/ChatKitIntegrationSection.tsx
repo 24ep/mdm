@@ -64,14 +64,7 @@ export function ChatKitIntegrationSection({ formData, setFormData }: ChatKitInte
                 onCheckedChange={(checked) => setFormData({ ...formData, useChatKitInRegularStyle: checked })}
               />
             </div>
-            <div className="rounded-md bg-muted p-3">
-              <p className="text-xs text-muted-foreground">
-                <strong>Note:</strong> {isChatKitEngine
-                  ? "Regular style UI will be used, but only the header configuration from ChatKit options will be applied. All other ChatKit configurations (theme, composer, start screen, etc.) will be ignored."
-                  : "ChatKit will be used but only the header configuration from ChatKit options will be applied. All other ChatKit configurations (theme, composer, start screen, etc.) will be ignored."
-                }
-              </p>
-            </div>
+
           </div>
         </SectionGroup>
 
@@ -205,6 +198,73 @@ export function ChatKitIntegrationSection({ formData, setFormData }: ChatKitInte
             )}
           </div>
         </SectionGroup>
+
+        <SectionGroup title="History Panel Settings">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Show History Panel</Label>
+                <p className="text-xs text-muted-foreground">Enable the chat history panel/sidebar in ChatKit</p>
+              </div>
+              <Switch
+                checked={(formData as any).chatkitOptions?.history?.enabled !== false}
+                onCheckedChange={(checked) => setFormData({
+                  ...formData,
+                  chatkitOptions: {
+                    ...(formData as any).chatkitOptions,
+                    history: {
+                      ...(formData as any).chatkitOptions?.history,
+                      enabled: checked
+                    }
+                  }
+                } as any)}
+              />
+            </div>
+            {(formData as any).chatkitOptions?.history?.enabled !== false && (
+              <>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Allow Thread Deletion</Label>
+                    <p className="text-xs text-muted-foreground">Show delete action for conversation threads</p>
+                  </div>
+                  <Switch
+                    checked={(formData as any).chatkitOptions?.history?.showDelete !== false}
+                    onCheckedChange={(checked) => setFormData({
+                      ...formData,
+                      chatkitOptions: {
+                        ...(formData as any).chatkitOptions,
+                        history: {
+                          ...(formData as any).chatkitOptions?.history,
+                          showDelete: checked
+                        }
+                      }
+                    } as any)}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Allow Thread Renaming</Label>
+                    <p className="text-xs text-muted-foreground">Show rename action for conversation threads</p>
+                  </div>
+                  <Switch
+                    checked={(formData as any).chatkitOptions?.history?.showRename !== false}
+                    onCheckedChange={(checked) => setFormData({
+                      ...formData,
+                      chatkitOptions: {
+                        ...(formData as any).chatkitOptions,
+                        history: {
+                          ...(formData as any).chatkitOptions?.history,
+                          showRename: checked
+                        }
+                      }
+                    } as any)}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        </SectionGroup>
+
       </div>
     </div>
   )

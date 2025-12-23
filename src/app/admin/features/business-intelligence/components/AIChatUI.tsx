@@ -176,12 +176,12 @@ export function AIChatUI() {
     setShowEditDialog(true)
   }
 
-  const handleSave = async () => {
+  const handleSave = async (): Promise<Chatbot | null> => {
     // Validate form data
     const validation = validateChatbot(formData)
     if (!validation.valid) {
       toast.error(validation.errors.join(', '))
-      return
+      return null
     }
 
     try {
@@ -198,6 +198,8 @@ export function AIChatUI() {
         selectedModelId: formData.selectedModelId || null,
         selectedEngineId: formData.selectedEngineId || null,
         chatkitAgentId: formData.chatkitAgentId || null,
+        chatkitApiKey: (formData as any).chatkitApiKey || null,
+        chatkitOptions: (formData as any).chatkitOptions || null,
         openaiAgentSdkAgentId: formData.openaiAgentSdkAgentId || null,
         openaiAgentSdkApiKey: formData.openaiAgentSdkApiKey || null,
         // For workflows, always use workflow config automatically (per AgentSDK documentation)
@@ -708,7 +710,10 @@ export function AIChatUI() {
     } catch (error) {
       console.error('Error saving chatbot:', error)
       toast.error('Failed to save chatbot')
+      return null
     }
+
+    return savedChatbot
   }
 
   const handlePublish = async (chatbot: Chatbot) => {
@@ -1018,6 +1023,7 @@ export function AIChatUI() {
                 onTabChange={setActiveTab}
                 onGenerateEmbedCode={generateEmbedCode}
                 hideTabsList={true}
+                onSave={handleSave}
               />
             </div>
 

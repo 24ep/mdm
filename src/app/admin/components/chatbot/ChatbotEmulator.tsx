@@ -4,10 +4,12 @@ import { useRef, useEffect, useState } from 'react'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { ExternalLink, Settings, Monitor, Tablet, Smartphone } from 'lucide-react'
+import { ExternalLink, Settings, Monitor, Tablet, Smartphone, Code, Copy } from 'lucide-react'
 import { Chatbot } from './types'
 import { EmulatorConfigDrawer } from './EmulatorConfigDrawer'
 import { Z_INDEX } from '@/lib/z-index'
+import { generateEmbedCode } from './utils'
+import toast from 'react-hot-toast'
 
 interface ChatbotEmulatorProps {
   selectedChatbot: Chatbot | null
@@ -198,6 +200,31 @@ export function ChatbotEmulator({
           </Select>
           {selectedChatbot?.id && (
             <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8"
+                onClick={async () => {
+                  const chatbot = {
+                    ...formData,
+                    id: selectedChatbot.id,
+                    deploymentType: formData.deploymentType || previewMode,
+                    customEmbedDomain: formData.customEmbedDomain
+                  } as Chatbot
+                  const code = generateEmbedCode(chatbot)
+                  const { copyToClipboard } = await import('@/lib/clipboard')
+                  const success = await copyToClipboard(code)
+                  if (success) {
+                    toast.success('Embed code copied to clipboard!')
+                  } else {
+                    toast.error('Failed to copy to clipboard')
+                  }
+                }}
+                title="Copy Embed Code"
+              >
+                <Code className="h-4 w-4 mr-2" />
+                Embed
+              </Button>
               <Button
                 variant="outline"
                 size="sm"

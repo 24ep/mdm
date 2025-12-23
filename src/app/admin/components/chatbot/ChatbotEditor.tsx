@@ -18,6 +18,7 @@ interface ChatbotEditorProps {
   onTabChange: (tab: 'engine' | 'style' | 'config' | 'deployment' | 'performance' | 'pwa') => void
   onGenerateEmbedCode: (chatbot: Chatbot) => string
   hideTabsList?: boolean
+  onSave?: () => Promise<Chatbot | null>
 }
 
 export function ChatbotEditor({
@@ -28,6 +29,7 @@ export function ChatbotEditor({
   onTabChange,
   onGenerateEmbedCode,
   hideTabsList = false,
+  onSave,
 }: ChatbotEditorProps) {
   // Render tab content based on activeTab when hideTabsList is true
   const renderTabContent = () => {
@@ -54,6 +56,7 @@ export function ChatbotEditor({
           setFormData={setFormData}
           selectedChatbot={selectedChatbot}
           onGenerateEmbedCode={onGenerateEmbedCode}
+          onSave={onSave}
         />
       )
     }
@@ -123,6 +126,7 @@ export function ChatbotEditor({
             setFormData={setFormData}
             selectedChatbot={selectedChatbot}
             onGenerateEmbedCode={onGenerateEmbedCode}
+            onSave={onSave}
           />
         </TabsContent>
 

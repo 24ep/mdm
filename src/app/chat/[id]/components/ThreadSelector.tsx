@@ -37,15 +37,15 @@ export function ThreadSelector({
   // Render header avatar for each thread item
   const renderHeaderAvatar = () => {
     if (!chatbot) return null
-    
+
     // Use header avatar config, fallback to message avatar config for backward compatibility
     const headerAvatarType = chatbot.headerAvatarType || chatbot.avatarType || 'icon'
     if (headerAvatarType === 'image' && (chatbot.headerLogo || chatbot.headerAvatarImageUrl)) {
       const imageSrc = chatbot.headerLogo || chatbot.headerAvatarImageUrl
       if (!imageSrc) return null
       return (
-        <img 
-          src={imageSrc} 
+        <img
+          src={imageSrc}
           alt={chatbot.name}
           className="w-8 h-8 rounded-full object-cover flex-shrink-0"
           onError={(e) => {
@@ -59,7 +59,7 @@ export function ThreadSelector({
       const iconColor = chatbot.headerAvatarIconColor || chatbot.avatarIconColor || '#ffffff'
       const bgColor = chatbot.headerAvatarBackgroundColor || chatbot.avatarBackgroundColor || chatbot.primaryColor || '#3b82f6'
       return (
-        <div 
+        <div
           className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
           style={{ backgroundColor: bgColor }}
         >
@@ -120,11 +120,10 @@ export function ThreadSelector({
             threads.map((thread) => (
               <div
                 key={thread.threadId}
-                className={`group relative p-2 rounded-lg cursor-pointer transition-colors ${
-                  currentThreadId === thread.threadId
+                className={`group relative p-2 rounded-lg cursor-pointer transition-colors ${currentThreadId === thread.threadId
                     ? 'bg-blue-100 dark:bg-blue-900'
                     : 'hover:bg-muted'
-                }`}
+                  }`}
                 onClick={() => onSelectThread(thread.threadId)}
               >
                 {editingThreadId === thread.threadId ? (
@@ -173,11 +172,11 @@ export function ThreadSelector({
                               {chatbot?.engineType && (
                                 <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
                                   {chatbot.engineType === 'openai-agent-sdk' ? 'Agent SDK' :
-                                   chatbot.engineType === 'chatkit' ? 'ChatKit' :
-                                   chatbot.engineType === 'dify' ? 'Dify' :
-                                   chatbot.engineType === 'openai' ? 'OpenAI' :
-                                   chatbot.engineType === 'custom' ? 'Custom' :
-                                   chatbot.engineType}
+                                    chatbot.engineType === 'chatkit' ? 'ChatKit' :
+                                      chatbot.engineType === 'dify' ? 'Dify' :
+                                        chatbot.engineType === 'openai' ? 'OpenAI' :
+                                          chatbot.engineType === 'custom' ? 'Custom' :
+                                            chatbot.engineType}
                                 </span>
                               )}
                               {chatbot?.engineType === 'openai-agent-sdk' && (chatbot as any).openaiAgentSdkWorkflowFile && (
@@ -192,32 +191,32 @@ export function ThreadSelector({
                             </div>
                           </div>
                         </div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleStartEdit(thread)
-                          }}
-                        >
-                          <Edit2 className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            if (confirm('Delete this conversation?')) {
-                              onDeleteThread(thread.threadId)
-                            }
-                          }}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleStartEdit(thread)
+                            }}
+                          >
+                            <Edit2 className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (confirm('Delete this conversation?')) {
+                                onDeleteThread(thread.threadId)
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </>
