@@ -1,6 +1,6 @@
 'use client'
 
-import { ProjectsList } from '@/components/datascience/ProjectsList'
+import { ProjectsList } from '@plugins/data-science/src/components/ProjectsList'
 
 export default function NotebookPage() {
   return (

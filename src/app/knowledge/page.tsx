@@ -1,6 +1,6 @@
 'use client'
 
-import { OutlineKnowledgeBase } from '@/features/knowledge'
+import { OutlineKnowledgeBase } from '@plugins/knowledge-base/src/components/OutlineKnowledgeBase'
 
 export default function KnowledgePage() {
   return (

@@ -177,12 +177,47 @@ export class PluginLoader {
       // Resolve component path relative to installed plugin
       let componentFile: string
       
-      if (componentPath.startsWith('@/')) {
-        // Convert @/ path to relative path from installed plugin
-        const relativePath = componentPath.replace('@/features/marketplace/plugins/', '')
-        const path = require('path')
-        componentFile = path.join(plugin.installedPath!, relativePath)
-      } else if (componentPath.startsWith('./')) {
+      if (componentPath.startsWith('@plugins/')) {
+        // Convert @plugins/ path to relative path from installed plugin
+        // For local hub plugins, installedPath usually points to the plugin directory
+        // e.g. .../plugin-hub/plugins/sql-query
+        // componentPath is @plugins/sql-query/src/components/BigQueryInterface
+        // We need to strip @plugins/ and the plugin id?
+        // Actually, let's assume installedPath is correct and just use require/import if generic.
+        // But here we are constructing a file path.
+        
+        // If we treat @plugins alias as absolute, we can try resolving it directly?
+        // But this loader is for "installed path".
+        
+        // Let's assume installedPath is the plugin root. 
+        // We need to strip '@plugins/<plugin-id>/' to get relative path within plugin.
+        // Or better yet, just strip '@plugins/' and let navigation happen?
+        // But installedPath is specific to ONE plugin.
+        
+        // Simple fix: if it starts with @plugins/, we don't know relative path easily without parsing ID.
+        // But wait, if componentPath is passed, it is the Full Path.
+        // If plugin definition has componentPath: '@plugins/sql-query/...',
+        // And we are loading it.
+        
+        // If we just want to support the alias, maybe we don't need to join with installedPath?
+        // NOTE: Dynamic import of aliased path might work in Next.js/Webpack if statically analyzable?
+        // But this is dynamic string.
+        
+        // Let's just fix the logic to be safe:
+        const relativePath = componentPath.replace('@plugins/', '')
+         // This leaves 'sql-query/src/...'
+         // If installedPath is '.../plugin-hub/plugins/sql-query'
+         // Then joining them gives '.../plugin-hub/plugins/sql-query/sql-query/src/...' -> duplicate!
+         
+         // We should strip the plugin ID too?
+         // relativePath = relativePath.split('/').slice(1).join('/')
+         // This assumes ID is first segment.
+         
+         const parts = relativePath.split('/')
+         const pathWithoutPluginId = parts.slice(1).join('/') 
+         const path = require('path')
+         componentFile = path.join(plugin.installedPath!, pathWithoutPluginId)
+      } else if (componentPath.startsWith('@/')) {
         const path = require('path')
         componentFile = path.join(plugin.installedPath!, componentPath.replace('./', ''))
       } else {

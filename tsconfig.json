@@ -55,6 +55,9 @@
       ],
       "@/shared/*": [
         "./src/shared/*"
+      ],
+      "@plugins/*": [
+        "./plugin-hub/plugins/*"
       ]
     }
   },
@@ -63,12 +66,15 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    "plugin-hub/plugins/**/*.ts",
+    "plugin-hub/plugins/**/*.tsx"
   ],
   "exclude": [
     "node_modules",
     "playwright.config.ts",
     "e2e",
-    "plugin-hub"
+    // "plugin-hub"
   ]
 }

@@ -51,6 +51,16 @@ import { Z_INDEX } from '@/lib/z-index'
 import { APP_VERSION } from '@/lib/version'
 import { HorizonSidebar } from '@/components/infrastructure/HorizonSidebar'
 import { InfrastructureInstance } from '@/features/infrastructure/types'
+import { useMarketplacePlugins } from '@/features/marketplace/hooks/useMarketplacePlugins'
+
+// Map of icon names to components for dynamic rendering
+const ICON_MAP: Record<string, any> = {
+  Monitor, Users, Building, Building2, Code, FileText, MessageCircle, Settings, Shield, Activity, Cloud, Key, FileTextIcon, DatabaseIcon, GitBranch, CheckCircle2, FileCode, ShieldCheck, Zap, HardDrive, BarChart3, Kanban, Network, History, Palette, FlaskConical, Bot, Store, FolderKanban, Layout, BookOpen
+}
+
+const getIcon = (name: string) => ICON_MAP[name] || FileText
+
+
 
 interface PlatformSidebarProps {
   activeTab: string
@@ -103,6 +113,12 @@ export function PlatformSidebar({
   const searchValue = searchQuery !== undefined ? searchQuery : localSearchQuery
   const handleSearchChange = onSearchChange || ((query: string) => setLocalSearchQuery(query))
   const router = useRouter()
+
+  // Fetch installed plugins with navigation data
+  const { plugins: installedPlugins } = useMarketplacePlugins({ 
+    filters: { installedOnly: true },
+    spaceId: selectedSpace
+  })
 
   const adminTabs = [
     {
@@ -271,51 +287,84 @@ export function PlatformSidebar({
     },
   ]
 
-  const groupedTabs = {
-    overview: [
-      { id: 'overview', name: 'Homepage', icon: Monitor, href: '/' },
-      { id: 'knowledge-base', name: 'Knowledge Base', icon: BookOpen, href: '/knowledge' },
-      { id: 'projects', name: 'Project Management', icon: Kanban, href: '/tools/projects' },
-    ],
-    tools: [
-      { id: 'bigquery', name: 'SQL Query', icon: Code, href: '/tools/bigquery' },
-      { id: 'notebook', name: 'Data Science', icon: FileText, href: '/tools/notebook' },
-      { id: 'ai-analyst', name: 'Chat with AI', icon: MessageCircle, href: '/tools/ai-analyst' },
-      { id: 'ai-chat-ui', name: 'Agent Embed GUI', icon: Bot, href: '/tools/ai-chat-ui' },
-      { id: 'marketplace', name: 'Marketplace', icon: Store, href: '/marketplace' },
-      { id: 'bi', name: 'BI & Reports', icon: BarChart3, href: '/tools/bi' },
-      { id: 'storage', name: 'Storage', icon: HardDrive, href: '/tools/storage' },
-      { id: 'data-governance', name: 'Data Governance', icon: Shield, href: '/tools/data-governance' },
-    ],
-    system: [
-      { id: 'users', name: 'Users & Roles', icon: Users, href: '/system/users' },
-      { id: 'space-layouts', name: 'Space Layouts', icon: Layout, href: '/system/space-layouts' },
-      { id: 'assets', name: 'Asset Management', icon: Database, href: '/system/assets' },
+  const groupedTabs = useMemo(() => {
+    // Base tabs
+    const tabs: any = {
+      overview: [
+        { id: 'overview', name: 'Homepage', icon: Monitor, href: '/' },
+      ],
+      tools: [
+        { id: 'marketplace', name: 'Marketplace', icon: Store, href: '/marketplace' },
+        { id: 'bi', name: 'BI & Reports', icon: BarChart3, href: '/tools/bi' },
+        { id: 'storage', name: 'Storage', icon: HardDrive, href: '/tools/storage' },
+        { id: 'data-governance', name: 'Data Governance', icon: Shield, href: '/tools/data-governance' },
+      ],
+      system: [
+        { id: 'users', name: 'Users & Roles', icon: Users, href: '/system/users' },
+        { id: 'space-layouts', name: 'Space Layouts', icon: Layout, href: '/system/space-layouts' },
+        { id: 'assets', name: 'Asset Management', icon: Database, href: '/system/assets' },
 
-      { id: 'kernels', name: 'Kernel Management', icon: Server, href: '/system/kernels' },
-      { id: 'logs', name: 'Logs', icon: FileTextIcon, href: '/system/logs' },
-      { id: 'audit', name: 'Audit Logs', icon: History, href: '/system/audit' },
-      { id: 'database', name: 'Database Data Models', icon: DatabaseIcon, href: '/system/database' },
-      { id: 'change-requests', name: 'Change Requests', icon: GitBranch, href: '/system/change-requests' },
-      { id: 'sql-linting', name: 'SQL Linting', icon: CheckCircle2, href: '/system/sql-linting' },
-      { id: 'schema-migrations', name: 'Schema Migrations', icon: FileCode, href: '/system/schema-migrations' },
-      { id: 'data-masking', name: 'Data Masking', icon: ShieldCheck, href: '/system/data-masking' },
-      { id: 'cache', name: 'Cache', icon: Zap, href: '/system/cache' },
-      { id: 'backup', name: 'Backup & Recovery', icon: Cloud, href: '/system/backup' },
-      { id: 'security', name: 'Security', icon: Shield, href: '/system/security' },
-      { id: 'performance', name: 'Performance', icon: Activity, href: '/system/performance' },
-      { id: 'settings', name: 'System Settings', icon: Settings, href: '/system/settings' },
-      { id: 'themes', name: 'Theme & Branding', icon: Palette, href: '/system/themes' },
-      { id: 'integrations', name: 'Integrations', icon: Key, href: '/system/integrations' },
-      { id: 'api', name: 'API Management', icon: Key, href: '/system/api' }
-    ],
-    'data-management': [
-      { id: 'space-selection', name: 'Data Management', icon: FolderKanban, href: '/admin/space-selection' }
-    ],
-    infrastructure: [
-      { id: 'infrastructure', name: 'Infrastructure', icon: Network, href: '/infrastructure' }
-    ]
-  }
+        { id: 'logs', name: 'Logs', icon: FileTextIcon, href: '/system/logs' },
+        { id: 'audit', name: 'Audit Logs', icon: History, href: '/system/audit' },
+        { id: 'database', name: 'Database Data Models', icon: DatabaseIcon, href: '/system/database' },
+        { id: 'change-requests', name: 'Change Requests', icon: GitBranch, href: '/system/change-requests' },
+        { id: 'sql-linting', name: 'SQL Linting', icon: CheckCircle2, href: '/system/sql-linting' },
+        { id: 'schema-migrations', name: 'Schema Migrations', icon: FileCode, href: '/system/schema-migrations' },
+        { id: 'data-masking', name: 'Data Masking', icon: ShieldCheck, href: '/system/data-masking' },
+        { id: 'cache', name: 'Cache', icon: Zap, href: '/system/cache' },
+        { id: 'backup', name: 'Backup & Recovery', icon: Cloud, href: '/system/backup' },
+        { id: 'security', name: 'Security', icon: Shield, href: '/system/security' },
+        { id: 'performance', name: 'Performance', icon: Activity, href: '/system/performance' },
+        { id: 'settings', name: 'System Settings', icon: Settings, href: '/system/settings' },
+        { id: 'themes', name: 'Theme & Branding', icon: Palette, href: '/system/themes' },
+        { id: 'integrations', name: 'Integrations', icon: Key, href: '/system/integrations' },
+        { id: 'api', name: 'API Management', icon: Key, href: '/system/api' }
+      ],
+      'data-management': [
+        { id: 'space-selection', name: 'Data Management', icon: FolderKanban, href: '/admin/space-selection' }
+      ],
+      infrastructure: [
+        { id: 'infrastructure', name: 'Infrastructure', icon: Network, href: '/infrastructure' }
+      ]
+    }
+
+    // Inject plugin tabs
+    installedPlugins.forEach(plugin => {
+      if (plugin.navigation) {
+        const { group, label, icon, href, priority } = plugin.navigation
+        if (group && tabs[group]) {
+          const newItem = {
+            id: plugin.slug,
+            name: label,
+            icon: getIcon(icon),
+            href: href || `/tools/${plugin.slug}`,
+            priority: priority || 100
+          }
+          
+          // Check if already exists to avoid duplicates (though installedPlugins should be unique)
+          if (!tabs[group].find((t: any) => t.id === newItem.id)) {
+            tabs[group].push(newItem)
+          }
+        }
+      }
+    })
+
+    // Sort tabs by priority if supported, otherwise keep default order
+    // (Note: default tabs don't have priority, let's assume they come first or we need to add priority to them too)
+    // For now, simpler: just push them. If we want sorting, we can sort.
+    
+    // Sort overview group specifically as we want Homepage first
+    tabs.overview.sort((a: any, b: any) => {
+        if (a.id === 'overview') return -1
+        if (b.id === 'overview') return 1
+        return (a.priority || 100) - (b.priority || 100)
+    })
+
+    // Sort tools group (Marketplace last? or first?)
+    // Let's keep Marketplace at end or specific position
+    
+    return tabs
+  }, [installedPlugins])
 
   // Group metadata for primary sidebar
   const groupMetadata = {
@@ -388,7 +437,7 @@ export function PlatformSidebar({
       return tabs
     }
     const lowerQuery = query.toLowerCase()
-    return tabs.filter(tab =>
+    return tabs.filter((tab: any) =>
       tab.name.toLowerCase().includes(lowerQuery) ||
       tab.id.toLowerCase().includes(lowerQuery) ||
       (tab.description && tab.description.toLowerCase().includes(lowerQuery))
@@ -604,8 +653,8 @@ export function PlatformSidebar({
                         Management
                       </div>
                       {groupedTabs.system
-                        .filter(tab => groupSections.management.includes(tab.id))
-                        .map(tab => (
+                        .filter((tab: any) => groupSections.management.includes(tab.id))
+                        .map((tab: any) => (
                           <Button
                             key={tab.id}
                             variant="ghost"
@@ -637,9 +686,9 @@ export function PlatformSidebar({
                         Kernels
                       </div>
                       {filterTabs(
-                        groupedTabs.system.filter(tab => groupSections.kernels.includes(tab.id)),
+                        groupedTabs.system.filter((tab: any) => groupSections.kernels.includes(tab.id)),
                         searchValue
-                      ).map(tab => (
+                      ).map((tab: any) => (
                         <Button
                           key={tab.id}
                           variant="ghost"
@@ -671,9 +720,9 @@ export function PlatformSidebar({
                         System
                       </div>
                       {filterTabs(
-                        groupedTabs.system.filter(tab => groupSections.system.includes(tab.id)),
+                        groupedTabs.system.filter((tab: any) => groupSections.system.includes(tab.id)),
                         searchValue
-                      ).map(tab => (
+                      ).map((tab: any) => (
                         <Button
                           key={tab.id}
                           variant="ghost"
@@ -705,9 +754,9 @@ export function PlatformSidebar({
                         Security
                       </div>
                       {filterTabs(
-                        groupedTabs.system.filter(tab => groupSections.security.includes(tab.id)),
+                        groupedTabs.system.filter((tab: any) => groupSections.security.includes(tab.id)),
                         searchValue
-                      ).map(tab => (
+                      ).map((tab: any) => (
                         <Button
                           key={tab.id}
                           variant="ghost"
@@ -739,9 +788,9 @@ export function PlatformSidebar({
                         Integrations
                       </div>
                       {filterTabs(
-                        groupedTabs.system.filter(tab => groupSections.integrations.includes(tab.id)),
+                        groupedTabs.system.filter((tab: any) => groupSections.integrations.includes(tab.id)),
                         searchValue
-                      ).map(tab => (
+                      ).map((tab: any) => (
                         <Button
                           key={tab.id}
                           variant="ghost"
@@ -773,9 +822,9 @@ export function PlatformSidebar({
                           {sectionName}
                         </div>
                         {filterTabs(
-                          groupedTabs.tools.filter(tab => ids.includes(tab.id)),
+                          groupedTabs.tools.filter((tab: any) => ids.includes(tab.id)),
                           searchValue
-                        ).map(tab => (
+                        ).map((tab: any) => (
                           <Button
                             key={tab.id}
                             variant="ghost"

@@ -1,6 +1,6 @@
 'use client'
 
-import { TicketsList } from '@/features/tickets'
+import { TicketsList } from '@plugins/project-management/src/tickets'
 
 export default function ProjectsPage() {
   return (

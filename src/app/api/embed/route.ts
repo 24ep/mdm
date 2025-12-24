@@ -133,17 +133,46 @@ export async function GET(request: NextRequest) {
     var ckTheme = (isChatKit && chatbot.chatkitOptions && chatbot.chatkitOptions.theme) || {};
     var ckColor = ckTheme.color || {};
     var ckAccent = ckColor.accent || {};
+    var ckTypography = ckTheme.typography || {};
     
     var chatKitAccentColor = isChatKit && (ckAccent.primary || ckTheme.primaryColor) 
       ? (ckAccent.primary || ckTheme.primaryColor)
       : null;
+      
+    var chatKitBorderColor = isChatKit && (ckColor.border || ckTheme.borderColor) 
+      ? (ckColor.border || ckTheme.borderColor)
+      : null;
+
+    var chatKitIconColor = isChatKit && (ckAccent.icon || ckTheme.iconColor)
+      ? (ckAccent.icon || ckTheme.iconColor)
+      : null;
+      
+    var chatKitBgColor = isChatKit && (ckColor.background || ckTheme.backgroundColor) 
+      ? (ckColor.background || ckTheme.backgroundColor)
+      : null;
+      
+    var chatKitTextColor = isChatKit && (ckColor.text || ckTheme.textColor) 
+      ? (ckColor.text || ckTheme.textColor)
+      : null;
+      
+    var chatKitFontFamily = isChatKit && (ckTypography.fontFamily || ckTheme.fontFamily) 
+      ? (ckTypography.fontFamily || ckTheme.fontFamily)
+      : null;
+      
+    var chatKitFontSize = isChatKit && (ckTypography.fontSize || ckTheme.fontSize) 
+      ? (ckTypography.fontSize || ckTheme.fontSize)
+      : null;
     
+    var chatKitBorderRadius = isChatKit && (ckTheme.radius || ckTheme.borderRadius) 
+      ? (ckTheme.radius || ckTheme.borderRadius)
+      : null;
+
     var widgetConfig = {
       avatarStyle: chatbot.widgetAvatarStyle,
       position: chatbot.widgetPosition || 'bottom-right',
       size: chatbot.widgetSize || '60px',
       backgroundColor: chatbot.widgetBackgroundColor || chatKitAccentColor || chatbot.primaryColor,
-      borderColor: chatbot.widgetBorderColor || 'transparent',
+      borderColor: chatKitBorderColor || chatbot.widgetBorderColor || 'transparent',
       borderWidth: chatbot.widgetBorderWidth || '0px',
       borderRadius: chatbot.widgetBorderRadius || '50%',
       shadowColor: chatbot.widgetShadowColor || 'rgba(0,0,0,0.2)',
@@ -175,6 +204,22 @@ export async function GET(request: NextRequest) {
       overlayOpacity: chatbot.overlayOpacity !== undefined ? chatbot.overlayOpacity : 50,
       overlayBlur: chatbot.overlayBlur || 0
     };
+    
+    // Add animation keyframes
+    if (widgetConfig.animation !== 'none') {
+      var style = document.createElement('style');
+      style.textContent = '@keyframes fadeIn { to { opacity: 1; } } @keyframes slideIn { to { transform: translateY(0); opacity: 1; } } @keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.05); } 70% { transform: scale(0.9); } 100% { transform: scale(1); opacity: 1; } }';
+      document.head.appendChild(style);
+    }
+    
+    // Inject Google Font if specified
+    var fontFamily = chatKitFontFamily || chatbot.fontFamily;
+    if (fontFamily && fontFamily !== 'Inter' && fontFamily !== 'sans-serif' && fontFamily !== 'serif' && fontFamily !== 'monospace') {
+      var link = document.createElement('link');
+      link.href = 'https://fonts.googleapis.com/css2?family=' + fontFamily.replace(/ /g, '+') + ':wght@400;500;600;700&display=swap';
+      link.rel = 'stylesheet';
+      document.head.appendChild(link);
+    }
     
     // Helper to ensure dimensions have units
     function formatDim(val) {
@@ -224,13 +269,6 @@ export async function GET(request: NextRequest) {
       animationStyle = 'transform: translateY(' + (widgetConfig.position.indexOf('bottom') !== -1 ? '20px' : '-20px') + '); opacity: 0; animation: slideIn 0.5s ease-out forwards;';
     } else if (widgetConfig.animation === 'bounce') {
       animationStyle = 'opacity: 0; animation: bounceIn 0.6s ease-out forwards;';
-    }
-    
-    // Add animation keyframes
-    if (widgetConfig.animation !== 'none') {
-      var style = document.createElement('style');
-      style.textContent = '@keyframes fadeIn { to { opacity: 1; } } @keyframes slideIn { to { transform: translateY(0); opacity: 1; } } @keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.05); } 70% { transform: scale(0.9); } 100% { transform: scale(1); opacity: 1; } }';
-      document.head.appendChild(style);
     }
     
     // Create floating button/container
@@ -285,7 +323,8 @@ export async function GET(request: NextRequest) {
     
     // Create button content based on avatar style
     if (widgetConfig.avatarStyle === 'circle-with-label') {
-      var iconHtml = widgetConfig.logo ? '<img src="' + widgetConfig.logo + '" style="width: 100%; height: 100%; border-radius: ' + avatarBorderRadius + '; object-fit: cover;" onerror="this.style.display=\\'none\\'; this.parentElement.innerHTML=\\'' + (iconSvg || '💬') + '\\';">' : (iconSvg || '<span style="font-size: 24px; color: white;">💬</span>');
+      var iconSvg = widgetConfig.widgetAvatarIcon ? getIconSvg(widgetConfig.widgetAvatarIcon, chatKitIconColor) : null;
+      var iconHtml = widgetConfig.logo ? '<img src="' + widgetConfig.logo + '" style="width: 100%; height: 100%; border-radius: ' + avatarBorderRadius + '; object-fit: cover;" onerror="this.style.display=\\'none\\'; this.parentElement.innerHTML=\\'' + (iconSvg || '') + '\\';">' : (iconSvg || '<span style="font-size: 24px; color: ' + (chatKitIconColor || 'white') + ';"></span>');
       
       button.innerHTML = iconHtml;
       var buttonBgStyle = getWidgetBackgroundStyle(widgetConfig.backgroundColor, widgetConfig.widgetBlur, widgetConfig.widgetOpacity);
@@ -305,7 +344,8 @@ export async function GET(request: NextRequest) {
       buttonContainer.appendChild(button);
       buttonContainer.appendChild(label);
     } else {
-      var iconHtml = widgetConfig.logo ? '<img src="' + widgetConfig.logo + '" style="width: 100%; height: 100%; border-radius: ' + avatarBorderRadius + '; object-fit: cover;" onerror="this.parentElement.innerHTML=\\'' + (iconSvg || '💬') + '\\';">' : (iconSvg || '💬');
+      var iconSvg = widgetConfig.widgetAvatarIcon ? getIconSvg(widgetConfig.widgetAvatarIcon, chatKitIconColor) : null;
+      var iconHtml = widgetConfig.logo ? '<img src="' + widgetConfig.logo + '" style="width: 100%; height: 100%; border-radius: ' + avatarBorderRadius + '; object-fit: cover;" onerror="this.parentElement.innerHTML=\\'' + (iconSvg || '💬') + '\\';">' : (iconSvg || '<span style="font-size: 24px; color: ' + (chatKitIconColor || 'white') + ';">💬</span>');
       
       button.innerHTML = iconHtml;
       var buttonBgStyle = getWidgetBackgroundStyle(widgetConfig.backgroundColor, widgetConfig.widgetBlur, widgetConfig.widgetOpacity);
@@ -422,7 +462,7 @@ export async function GET(request: NextRequest) {
     }
 
     var chatWindowBorderRadius = isMobile ? '0' : getGranularRadius(
-      chatbot.chatWindowBorderRadius || chatbot.borderRadius,
+      chatKitBorderRadius || chatbot.chatWindowBorderRadius || chatbot.borderRadius,
       chatbot.chatWindowBorderRadiusTopLeft,
       chatbot.chatWindowBorderRadiusTopRight,
       chatbot.chatWindowBorderRadiusBottomRight,
@@ -433,7 +473,7 @@ export async function GET(request: NextRequest) {
     // Styling variables for the chat window
     var chatWindowShadowColor = chatbot.chatWindowShadowColor || chatbot.shadowColor || '#000000';
     var chatWindowShadowBlur = chatbot.chatWindowShadowBlur || chatbot.shadowBlur || '4px';
-    var chatBgColor = chatbot.messageBoxColor || '#ffffff';
+    var chatBgColor = chatKitBgColor || chatbot.messageBoxColor || '#ffffff';
     var chatBgStyle = '';
     if (widgetConfig.chatBlur > 0) {
       chatBgStyle += 'backdrop-filter: blur(' + widgetConfig.chatBlur + 'px); -webkit-backdrop-filter: blur(' + widgetConfig.chatBlur + 'px); ';
@@ -450,7 +490,7 @@ export async function GET(request: NextRequest) {
     // Create chat window
     var chatWindow = document.createElement('div');
     chatWindow.id = 'chatbot-window-' + chatbotId;
-    chatWindow.style.cssText = 'position: fixed; ' + chatWindowPositionMobile + ' width: ' + chatWindowWidth + '; height: ' + chatWindowHeight + '; ' + chatBgStyle + 'border-radius: ' + chatWindowBorderRadius + '; box-shadow: 0 0 ' + chatWindowShadowBlur + ' ' + chatWindowShadowColor + '; border: ' + borderWidth + ' solid ' + borderColor + '; font-family: ' + (chatbot.fontFamily || 'Inter') + '; font-size: ' + (chatbot.fontSize || '14px') + '; color: ' + (chatbot.fontColor || '#000000') + '; display: none; flex-direction: column; z-index: ' + (widgetConfig.zIndex >= ${Z_INDEX.chatWidget} ? widgetConfig.zIndex + 1 : ${Z_INDEX.chatWidgetWindow}) + '; transition: opacity 0.3s ease, transform 0.3s ease; opacity: 0; transform: ' + (currentBaseChatTransform !== 'none' ? currentBaseChatTransform + ' scale(0.9)' : 'scale(0.9)') + ';';
+    chatWindow.style.cssText = 'position: fixed; ' + chatWindowPositionMobile + ' width: ' + chatWindowWidth + '; height: ' + chatWindowHeight + '; ' + chatBgStyle + 'border-radius: ' + chatWindowBorderRadius + '; box-shadow: 0 0 ' + chatWindowShadowBlur + ' ' + chatWindowShadowColor + '; border: ' + borderWidth + ' solid ' + borderColor + '; font-family: ' + (chatKitFontFamily || chatbot.fontFamily || 'Inter') + '; font-size: ' + (chatKitFontSize || chatbot.fontSize || '14px') + '; color: ' + (chatKitTextColor || chatbot.fontColor || '#000000') + '; display: none; flex-direction: column; z-index: ' + (widgetConfig.zIndex >= ${Z_INDEX.chatWidget} ? widgetConfig.zIndex + 1 : ${Z_INDEX.chatWidgetWindow}) + '; transition: opacity 0.3s ease, transform 0.3s ease; opacity: 0; transform: ' + (currentBaseChatTransform !== 'none' ? currentBaseChatTransform + ' scale(0.9)' : 'scale(0.9)') + ';';
     
     // Event listener for closing the chat via postMessage from the iframe
     window.addEventListener('message', function(event) {

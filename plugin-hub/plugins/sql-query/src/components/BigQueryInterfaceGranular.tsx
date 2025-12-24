@@ -16,7 +16,7 @@ import {
   KeyboardShortcuts,
   TableContextMenu,
   useQueryValidation
-} from '@/components/bigquery'
+} from './'
 import { useKeyboardShortcuts, useQueryExecutor } from '@/hooks'
 
 interface QueryResult {

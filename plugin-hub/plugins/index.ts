@@ -7,7 +7,7 @@
  * To use hub plugins, set USE_PLUGIN_HUB=true in .env
  */
 
-import { PluginDefinition } from '../types'
+import { PluginDefinition } from '@/features/marketplace/types'
 
 /**
  * All available marketplace plugins
@@ -16,7 +16,26 @@ import { PluginDefinition } from '../types'
  * This array is kept for backward compatibility but will be empty.
  * Use the hub API to fetch plugins: /api/plugin-hub/plugins
  */
-export const marketplacePlugins: PluginDefinition[] = []
+import { knowledgeBasePlugin } from './knowledge-base/plugin'
+import { projectManagementPlugin } from './project-management/plugin'
+import { dataSciencePlugin } from './data-science/plugin'
+import { sqlQueryPlugin } from './sql-query/plugin'
+import { aiAssistantPlugin } from './ai-assistant/plugin'
+
+/**
+ * All available marketplace plugins
+ * 
+ * NOTE: Plugins are loaded from the hub, not built-in.
+ * This array is kept for backward compatibility but will be empty.
+ * Use the hub API to fetch plugins: /api/plugin-hub/plugins
+ */
+export const marketplacePlugins: PluginDefinition[] = [
+  knowledgeBasePlugin,
+  projectManagementPlugin,
+  dataSciencePlugin,
+  sqlQueryPlugin,
+  aiAssistantPlugin,
+]
 
 /**
  * Get plugin by slug

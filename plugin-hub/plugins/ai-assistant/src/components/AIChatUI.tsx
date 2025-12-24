@@ -28,6 +28,7 @@ import { ChatbotEmulator } from '../../../components/chatbot/ChatbotEmulator'
 import { NameDialog } from '../../../components/chatbot/NameDialog'
 import { ChatbotSearch } from '../../../components/chatbot/ChatbotSearch'
 import { ChatbotFilters } from '../../../components/chatbot/ChatbotFilters'
+import { PWATab } from '../../../components/chatbot/components/PWATab'
 import { DEFAULT_CHATBOT_CONFIG, createDefaultChatbot } from '../../../components/chatbot/constants'
 import { generateEmbedCode, createNewVersion, validateChatbot, duplicateChatbot, exportChatbot, importChatbot } from '../../../components/chatbot/utils'
 import { isUuid } from '@/lib/validation'
@@ -184,9 +185,9 @@ export function AIChatUI() {
       return null
     }
 
-    try {
-      let savedChatbot: Chatbot | null = null
+    let savedChatbot: Chatbot | null = null
 
+    try {
       // Best Practice: Save to Database (PostgreSQL) as primary storage
       // Database is the source of truth for all saved chatbots
       const chatbotData = {
@@ -1000,15 +1001,17 @@ export function AIChatUI() {
                     <Rocket className="h-4 w-4 mr-2" />
                     Deployment
                   </TabsTrigger>
-                  <TabsTrigger value="performance">
+                  <TabsTrigger value="performance" className="data-[state=active]:bg-background">
                     <TrendingUp className="h-4 w-4 mr-2" />
                     Performance
                   </TabsTrigger>
-                  <TabsTrigger value="pwa">
+                  <TabsTrigger value="pwa" className="data-[state=active]:bg-background">
                     <Smartphone className="h-4 w-4 mr-2" />
                     PWA
                   </TabsTrigger>
                 </TabsList>
+
+
               </div>
             </Tabs>
 

@@ -37,6 +37,15 @@ export interface PluginDefinition {
   downloadUrl?: string    // URL to download plugin package
   checksum?: string        // SHA256 checksum for verification
   installedPath?: string   // Where plugin is installed locally
+  
+  // Navigation configuration
+  navigation?: {
+    group: 'overview' | 'tools' | 'system' | 'infrastructure' | 'data-management'
+    label: string
+    icon: string // Lucide icon name
+    href?: string
+    priority?: number
+  }
 }
 
 export type PluginCategory =

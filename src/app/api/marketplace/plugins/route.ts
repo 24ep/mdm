@@ -120,10 +120,15 @@ async function getHandler(request: NextRequest) {
 
     // If installedOnly is true, join with service_installations to filter
     let joinClause = ''
-    if (installedOnly && spaceId) {
-      joinClause = `INNER JOIN service_installations si ON si.service_id = sr.id AND si.space_id = $${paramIndex} AND si.status = 'active'`
-      queryParams.push(spaceId)
-      paramIndex++
+    if (installedOnly) {
+      if (spaceId) {
+        joinClause = `INNER JOIN service_installations si ON si.service_id = sr.id AND si.space_id = $${paramIndex} AND si.status = 'active'`
+        queryParams.push(spaceId)
+        paramIndex++
+      } else {
+        // Global installations
+        joinClause = `INNER JOIN service_installations si ON si.service_id = sr.id AND si.space_id IS NULL AND si.status = 'active'`
+      }
     }
 
     const whereClause = whereConditions.join(' AND ')

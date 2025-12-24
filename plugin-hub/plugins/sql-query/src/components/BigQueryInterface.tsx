@@ -97,11 +97,11 @@ import {
   QueryExportImport,
   QueryComments,
   QueryVersionHistory,
-} from '@/components/bigquery'
+} from './'
 import { useKeyboardShortcuts, useSpaces, useDataModels } from '@/hooks'
 import { formatSQL } from '@/lib/sql-formatter'
-import { QueryPlanViewer } from '@/components/bigquery/QueryPlanViewer'
-import { QueryPerformanceDashboard } from '@/components/bigquery/QueryPerformanceDashboard'
+import { QueryPlanViewer } from './QueryPlanViewer'
+import { QueryPerformanceDashboard } from './QueryPerformanceDashboard'
 
 interface QueryResult {
   id: string

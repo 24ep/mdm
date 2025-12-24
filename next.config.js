@@ -70,7 +70,7 @@ const nextConfig = {
       ...config.watchOptions,
       ignored: [
         ...(Array.isArray(config.watchOptions?.ignored) ? config.watchOptions.ignored : []),
-        '**/plugin-hub/**',
+        // '**/plugin-hub/**', // ALLOW PLUGIN HUB FOR EXTERNAL PLUGINS
       ],
     }
     
@@ -199,21 +199,23 @@ const nextConfig = {
         })
       )
       // Ignore plugin-hub directory (separate service) - prevent any resolution attempts
-      config.plugins.push(
-        new webpack.IgnorePlugin({
-          resourceRegExp: /plugin-hub/,
-        })
-      )
+      // ALLOW PLUGIN HUB FOR EXTERNAL PLUGINS
+      // config.plugins.push(
+      //   new webpack.IgnorePlugin({
+      //     resourceRegExp: /plugin-hub/,
+      //   })
+      // )
       // Also add to externals to prevent any module resolution
       if (!Array.isArray(config.externals)) {
         config.externals = [config.externals].filter(Boolean)
       }
-      config.externals.push(({ request }, callback) => {
-        if (request && request.includes('plugin-hub')) {
-          return callback(null, 'commonjs ' + request)
-        }
-        callback()
-      })
+      // ALLOW PLUGIN HUB FOR EXTERNAL PLUGINS
+      // config.externals.push(({ request }, callback) => {
+      //   if (request && request.includes('plugin-hub')) {
+      //     return callback(null, 'commonjs ' + request)
+      //   }
+      //   callback()
+      // })
       // Exclude native modules from server bundle - mark Node.js built-ins as external
       config.externals = config.externals || []
       config.externals.push('ssh2-sftp-client', 'ftp', 'ssh2', 'child_process')

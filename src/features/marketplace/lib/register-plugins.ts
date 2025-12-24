@@ -9,7 +9,7 @@
  */
 
 import { query } from '@/lib/db'
-import { marketplacePlugins } from '../plugins'
+import { marketplacePlugins } from '@plugins'
 import { PluginDefinition } from '../types'
 
 const USE_PLUGIN_HUB = process.env.USE_PLUGIN_HUB === 'true'
