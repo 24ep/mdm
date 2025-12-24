@@ -1331,6 +1331,8 @@ model Chatbot {
   enableFileUpload   Boolean   @default(false) @map("enable_file_upload")
   showCitations      Boolean   @default(true) @map("show_citations")
   deploymentType     String    @default("popover") @map("deployment_type")
+  engineType         String    @default("chatkit") @map("engine_type")
+  customEmbedDomain  String?   @map("custom_embed_domain")
   isPublished        Boolean   @default(false) @map("is_published")
   currentVersion     String?   @map("current_version")
   createdBy          String    @map("created_by") @db.Uuid
