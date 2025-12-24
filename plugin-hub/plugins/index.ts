@@ -21,6 +21,15 @@ import { projectManagementPlugin } from './project-management/plugin'
 import { dataSciencePlugin } from './data-science/plugin'
 import { sqlQueryPlugin } from './sql-query/plugin'
 import { aiAssistantPlugin } from './ai-assistant/plugin'
+import { grafanaPlugin } from './grafana/plugin'
+import { grafanaManagementPlugin } from './grafana-management/plugin'
+import { kongManagementPlugin } from './kong-management/plugin'
+import { lookerStudioPlugin } from './looker-studio/plugin'
+import { minioManagementPlugin } from './minio-management/plugin'
+import { postgresqlManagementPlugin } from './postgresql-management/plugin'
+import { powerBiPlugin } from './power-bi/plugin'
+import { prometheusManagementPlugin } from './prometheus-management/plugin'
+import { redisManagementPlugin } from './redis-management/plugin'
 
 /**
  * All available marketplace plugins
@@ -35,6 +44,15 @@ export const marketplacePlugins: PluginDefinition[] = [
   dataSciencePlugin,
   sqlQueryPlugin,
   aiAssistantPlugin,
+  grafanaPlugin,
+  grafanaManagementPlugin,
+  kongManagementPlugin,
+  lookerStudioPlugin,
+  minioManagementPlugin,
+  postgresqlManagementPlugin,
+  powerBiPlugin,
+  prometheusManagementPlugin,
+  redisManagementPlugin,
 ]
 
 /**
