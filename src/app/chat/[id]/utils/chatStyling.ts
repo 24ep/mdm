@@ -27,16 +27,26 @@ function hexToRgb(hex: string): string {
 }
 
 export function getChatStyle(chatbot: ChatbotConfig): React.CSSProperties {
+  const options = (chatbot as any).chatkitOptions
+  const theme = options?.theme || {}
+  const typography = theme.typography || {}
+  
   return {
-    fontFamily: chatbot.fontFamily,
-    fontSize: chatbot.fontSize,
-    color: chatbot.fontColor,
-    backgroundColor: chatbot.openaiAgentSdkBackgroundColor || chatbot.messageBoxColor,
+    fontFamily: typography.fontFamily || chatbot.fontFamily,
+    fontSize: typography.fontSize ? `${typography.fontSize}px` : chatbot.fontSize,
+    color: theme.color?.text || theme.textColor || chatbot.fontColor,
+    backgroundColor: theme.color?.background || theme.backgroundColor || chatbot.openaiAgentSdkBackgroundColor || chatbot.messageBoxColor,
   }
 }
 
 export function getPopoverPositionStyle(chatbot: ChatbotConfig): React.CSSProperties {
   const x = chatbot as any
+  const options = x.chatkitOptions || {}
+  
+  // Check options.widget or root properties
+  // Note: WidgetSection likely saves to root or chatkitOptions.widget. 
+  // We'll check both if needed, but prioritizing root for now as usually widget position is a root setting in older code.
+  // If WidgetSection saves to chatkitOptions.widget, we should check that too. Assuming root for now as per old code.
   const pos = (x.widgetPosition || 'bottom-right') as string
   const offsetX = x.widgetOffsetX || '20px'
   const offsetY = x.widgetOffsetY || '20px'
@@ -59,6 +69,9 @@ export function getContainerStyle(
   isMobile: boolean = false,
   isEmbed: boolean = false
 ): React.CSSProperties {
+  const options = (chatbot as any).chatkitOptions || {}
+  const theme = options.theme || {}
+  
   const shadowColor = (chatbot as any).chatWindowShadowColor || chatbot.shadowColor || '#000000'
   const shadowBlur = (chatbot as any).chatWindowShadowBlur || chatbot.shadowBlur || '4px'
 
@@ -76,7 +89,7 @@ export function getContainerStyle(
 
   // Common background logic helper
   const getBackgroundStyle = () => {
-    // Priority: Emulator Config > Chatbot Config > Default
+    // Priority: Emulator Config > Chatbot Config (Theme) > Chatbot Config (Root) > Default
     
     // If emulator config has explicit background (e.g. from preview settings), use it
     if (emulatorConfig.backgroundColor || emulatorConfig.backgroundImage) {
@@ -89,11 +102,11 @@ export function getContainerStyle(
       }
     }
 
-    const bgValue = chatbot.messageBoxColor || '#ffffff'
+    const bgValue = theme.color?.background || theme.backgroundColor || chatbot.messageBoxColor || '#ffffff'
     const opacity = (chatbot as any).chatWindowBackgroundOpacity !== undefined ? (chatbot as any).chatWindowBackgroundOpacity : 100
 
     // Check if it's an image URL
-    if (bgValue.startsWith('url(') || bgValue.startsWith('http://') || bgValue.startsWith('https://') || bgValue.startsWith('/')) {
+    if (bgValue && (bgValue.startsWith('url(') || bgValue.startsWith('http://') || bgValue.startsWith('https://') || bgValue.startsWith('/'))) {
       const imageUrl = bgValue.startsWith('url(') ? bgValue : `url(${bgValue})`
       return {
         backgroundImage: imageUrl,
@@ -229,7 +242,7 @@ export function getContainerStyle(
   if (previewDeploymentType === 'popup-center') {
     // On mobile or EMBED, popup-center logic needs careful handling. 
     // If embedded, it should probably fill the frame too if the frame is already the popup.
-    // For now assuming popup-center frame in embed script is full page overlay? 
+    // For now assuming popup-center embed script is full page overlay? 
     // Usually popup-center embed script creates a full-page overlay div with the iframe inside.
     // So if isEmbed is true, we want the content to be centered in that full frame? 
     // OR if the iframe itself is the popup box.
@@ -252,21 +265,7 @@ export function getContainerStyle(
         display: 'flex',
         flexDirection: 'column',
         transform: 'none',
-        ...(() => {
-        const bgValue = chatbot.messageBoxColor || '#ffffff'
-        // Check if it's an image URL
-        if (bgValue.startsWith('url(') || bgValue.startsWith('http://') || bgValue.startsWith('https://') || bgValue.startsWith('/')) {
-          const imageUrl = bgValue.startsWith('url(') ? bgValue : `url(${bgValue})`
-          return {
-            backgroundImage: imageUrl,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            backgroundColor: '#ffffff', // Fallback color
-          }
-        }
-        return { backgroundColor: bgValue }
-      })(),
+        ...getBackgroundStyle(), // Use updated background style helper
       }
     }
 
@@ -283,21 +282,7 @@ export function getContainerStyle(
       top: '50%',
       left: '50%',
       transform: 'translate(-50%, -50%)',
-      ...(() => {
-        const bgValue = chatbot.messageBoxColor || '#ffffff'
-        // Check if it's an image URL
-        if (bgValue.startsWith('url(') || bgValue.startsWith('http://') || bgValue.startsWith('https://') || bgValue.startsWith('/')) {
-          const imageUrl = bgValue.startsWith('url(') ? bgValue : `url(${bgValue})`
-          return {
-            backgroundImage: imageUrl,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            backgroundColor: '#ffffff', // Fallback color
-          }
-        }
-        return { backgroundColor: bgValue }
-      })(),
+      ...getBackgroundStyle(), // Use updated background style helper
       // Note: Emulator background should NOT be applied to popup-center - only to page background
       display: 'flex',
       flexDirection: 'column',
@@ -398,7 +383,10 @@ function extractNumericValue(value: string | undefined): string {
 }
 
 export function getWidgetButtonStyle(chatbot: ChatbotConfig): React.CSSProperties {
-  const widgetBgValue = (chatbot as any).widgetBackgroundColor || chatbot.primaryColor || '#3b82f6'
+  const options = (chatbot as any).chatkitOptions || {}
+  const theme = options.theme || {}
+
+  const widgetBgValue = (chatbot as any).widgetBackgroundColor || theme.color?.accent?.primary || theme.primaryColor || chatbot.primaryColor || '#3b82f6'
   const blurAmount = (chatbot as any).widgetBackgroundBlur || 0
   const opacity = (chatbot as any).widgetBackgroundOpacity !== undefined ? (chatbot as any).widgetBackgroundOpacity : 100
 
