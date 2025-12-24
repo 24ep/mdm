@@ -5,7 +5,6 @@ import { Providers } from './providers'
 import { SidebarProvider } from '@/contexts/sidebar-context'
 import { SpaceProvider } from '@/contexts/space-context'
 import { DynamicFavicon } from '@/components/ui/dynamic-favicon'
-import { Toaster } from 'react-hot-toast'
 import { Suspense } from 'react'
 import { LoadingPage } from '@/components/ui/loading-spinner'
 import { GlobalErrorHandler } from '@/components/global-error-handler'
@@ -47,7 +46,6 @@ export default function RootLayout({
             </Suspense>
           </SidebarProvider>
         </Providers>
-        <Toaster />
       </body>
     </html>
   )

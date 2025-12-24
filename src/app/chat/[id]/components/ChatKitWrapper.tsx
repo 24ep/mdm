@@ -55,6 +55,7 @@ export function ChatKitWrapper({
                 const res = await fetch('/api/chatkit/session', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
+                  credentials: 'omit', // Don't send cookies - this is a public API
                   body: JSON.stringify({
                     agentId: agentId,
                     chatbotId: chatbot.id,
@@ -76,6 +77,7 @@ export function ChatKitWrapper({
               const res = await fetch('/api/chatkit/session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'omit', // Don't send cookies - this is a public API
                 body: JSON.stringify({
                   agentId: agentId,
                   chatbotId: chatbot.id,
