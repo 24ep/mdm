@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { db as prisma } from '@/lib/db'
 
 export interface StopCondition {
   type: 'max_iterations' | 'timeout' | 'condition' | 'error_threshold'

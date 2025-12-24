@@ -1,10 +1,8 @@
 import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
 import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { db as prisma } from '@/lib/db'
 import { isUuid } from '@/lib/validation'
-
-const prisma = new PrismaClient()
 
 // GET - List custom functions
 async function getHandler(

@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { db as prisma } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { validateParams, commonSchemas } from '@/lib/api-validation'
 import { handleApiError } from '@/lib/api-middleware'
 import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
-
-const prisma = new PrismaClient()
 
 export async function GET(
   request: NextRequest,

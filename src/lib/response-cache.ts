@@ -1,5 +1,5 @@
 import crypto from 'crypto'
-import { PrismaClient } from '@prisma/client'
+import { db as prisma } from '@/lib/db'
 import { get, set, del, delPattern, isRedisAvailable } from './redis-client'
 
 // Conditionally import redis-init only if not in build mode
@@ -20,8 +20,6 @@ if (typeof process !== 'undefined') {
     })
   }
 }
-
-const prisma = new PrismaClient()
 
 // In-memory cache store (fallback when Redis is not available)
 const cacheStore = new Map<string, {

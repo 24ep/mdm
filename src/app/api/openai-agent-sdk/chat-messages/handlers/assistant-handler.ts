@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { db as prisma } from '@/lib/db'
 import { getLangfuseClient, isLangfuseEnabled } from '@/lib/langfuse'
 import { getCachedResponse, setCachedResponse, getCacheConfig } from '@/lib/response-cache'
 import { retryWithBackoff } from '@/lib/retry-handler'
 import { calculateCost, recordCost } from '@/lib/cost-tracker'
 import { getRetryConfigFromDB } from '../utils/agent-helpers'
-
-const prisma = new PrismaClient()
 
 interface AssistantHandlerOptions {
   agentId: string

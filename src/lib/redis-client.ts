@@ -69,11 +69,11 @@ interface MemoryEntry {
 
 const memoryStore = new Map<string, MemoryEntry>()
 
-// Configuration for in-memory store
+// Configuration for in-memory store (reduced limits to prevent memory bloat)
 const MEMORY_STORE_CONFIG = {
-  maxSize: 10000, // Maximum number of entries
+  maxSize: 2000, // Maximum number of entries (reduced from 10000)
   cleanupInterval: 60000, // Clean up expired entries every 60 seconds
-  maxAge: 3600000, // Maximum age for entries without TTL (1 hour)
+  maxAge: 1800000, // Maximum age for entries without TTL (30 minutes, reduced from 1 hour)
 }
 
 // Track last cleanup time

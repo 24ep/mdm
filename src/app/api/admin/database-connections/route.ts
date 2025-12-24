@@ -1,12 +1,10 @@
 import { requireAdmin, withErrorHandling } from '@/lib/api-middleware'
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { db as prisma } from '@/lib/db'
 import { getSecretsManager } from '@/lib/secrets-manager'
 import { encryptApiKey } from '@/lib/encryption'
 import { createAuditContext } from '@/lib/audit-context-helper'
 import { requireSpaceAccess } from '@/lib/space-access'
-
-const prisma = new PrismaClient()
 
 export async function GET() {
   try {

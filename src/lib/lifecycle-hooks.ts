@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { db as prisma } from '@/lib/db'
 
 export type HookType = 'before_execution' | 'after_execution' | 'on_tool_call' | 'on_error' | 'on_handoff'
 

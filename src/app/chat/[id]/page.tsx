@@ -257,7 +257,7 @@ export default function ChatPage() {
     }
   }, [chatbot, previewDeploymentType])
 
-  // Listen for preview mode changes
+  // Listen for preview mode changes and external control commands
   useEffect(() => {
     const handler = (event: MessageEvent) => {
       const data = event.data
@@ -276,6 +276,13 @@ export default function ChatPage() {
       }
       if (data.type === 'clear-session') {
         setMessages([])
+      }
+      // Handle external control commands from parent window (embed script)
+      if (data.type === 'open-chat') {
+        setIsOpen(true)
+      }
+      if (data.type === 'close-chat') {
+        setIsOpen(false)
       }
     }
     window.addEventListener('message', handler)

@@ -1,9 +1,6 @@
-import { query } from '@/lib/db'
+import { query, db as prisma } from '@/lib/db'
 import { createExternalClient } from '@/lib/external-db'
-import { PrismaClient } from '@prisma/client'
 import { NotificationService } from '@/lib/notifications'
-
-const prisma = new PrismaClient()
 
 export interface SyncExecutionResult {
   success: boolean

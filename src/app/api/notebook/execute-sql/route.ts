@@ -2,12 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { SQLExecutor } from '@/lib/sql-executor'
 import { createExternalClient } from '@/lib/external-db'
-import { PrismaClient } from '@prisma/client'
+import { db as prisma } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { validateBody, commonSchemas } from '@/lib/api-validation'
 import { z } from 'zod'
 
-const prisma = new PrismaClient()
 const sqlExecutor = new SQLExecutor()
 
 // Rate limiting store (in production, use Redis)

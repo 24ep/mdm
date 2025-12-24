@@ -4,11 +4,9 @@
  * Or via npm script: npm run seed:themes
  */
 
-import { PrismaClient } from '@prisma/client'
+import { db as prisma } from '@/lib/db'
 import * as fs from 'fs'
 import * as path from 'path'
-
-const prisma = new PrismaClient()
 
 // Theme configurations directory
 const THEMES_DIR = path.join(__dirname, '../config/themes')

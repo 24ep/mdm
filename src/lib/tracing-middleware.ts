@@ -25,6 +25,31 @@ const activeSpans = new Map<string, {
   name: string
 }>()
 
+// Configuration for span cleanup
+const SPAN_TTL_MS = 300000 // 5 minutes - spans older than this are considered stale
+const CLEANUP_INTERVAL_MS = 60000 // 1 minute cleanup interval
+
+// Periodic cleanup of stale spans to prevent memory leaks
+if (typeof window === 'undefined') {
+  setInterval(() => {
+    const now = Date.now()
+    
+    // Clean up stale trace contexts
+    for (const [key, context] of traceContext.entries()) {
+      if (now - context.startTime > SPAN_TTL_MS) {
+        traceContext.delete(key)
+      }
+    }
+    
+    // Clean up stale active spans
+    for (const [key, span] of activeSpans.entries()) {
+      if (now - span.startTime > SPAN_TTL_MS) {
+        activeSpans.delete(key)
+      }
+    }
+  }, CLEANUP_INTERVAL_MS)
+}
+
 // Sampling configuration
 interface SamplingConfig {
   // Sample rate (0.0 to 1.0) - percentage of requests to trace

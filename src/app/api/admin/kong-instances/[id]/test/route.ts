@@ -1,12 +1,10 @@
 import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { db as prisma } from '@/lib/db'
 import { getSecretsManager } from '@/lib/secrets-manager'
 import { decryptApiKey } from '@/lib/encryption'
 import { KongClient } from '@/lib/kong-client'
 import { createAuditContext } from '@/lib/audit-context-helper'
-
-const prisma = new PrismaClient()
 
 async function postHandler(
   request: NextRequest,

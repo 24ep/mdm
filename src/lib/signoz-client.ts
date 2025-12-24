@@ -64,12 +64,26 @@ async function getSigNozConfig(): Promise<SigNozConfig | null> {
   }
 }
 
+// Cache for isSigNozEnabled result to avoid repeated DB queries
+let enabledCacheValue: boolean | null = null
+let enabledCacheTime = 0
+const ENABLED_CACHE_TTL = 60000 // 1 minute
+
 /**
- * Check if SigNoz is enabled and configured
+ * Check if SigNoz is enabled and configured (with caching)
  */
 export async function isSigNozEnabled(): Promise<boolean> {
+  const now = Date.now()
+  
+  // Return cached value if still valid
+  if (enabledCacheValue !== null && (now - enabledCacheTime) < ENABLED_CACHE_TTL) {
+    return enabledCacheValue
+  }
+  
   const config = await getSigNozConfig()
-  return config !== null && !!config.url
+  enabledCacheValue = config !== null && !!config.url
+  enabledCacheTime = now
+  return enabledCacheValue
 }
 
 /**

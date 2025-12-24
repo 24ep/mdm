@@ -13,6 +13,27 @@ export interface PerformanceMetric {
  */
 export class PerformanceMonitor {
   private measurements: Map<string, number> = new Map()
+  private readonly MEASUREMENT_TTL_MS = 60000 // 1 minute - measurements older than this are orphaned
+  private cleanupTimer: NodeJS.Timeout | null = null
+
+  constructor() {
+    // Start periodic cleanup of orphaned measurements on server-side
+    if (typeof window === 'undefined') {
+      this.cleanupTimer = setInterval(() => this.cleanupOrphans(), 30000)
+    }
+  }
+
+  /**
+   * Clean up orphaned measurements that were never ended
+   */
+  private cleanupOrphans(): void {
+    const now = performance.now()
+    for (const [key, startTime] of this.measurements.entries()) {
+      if (now - startTime > this.MEASUREMENT_TTL_MS) {
+        this.measurements.delete(key)
+      }
+    }
+  }
 
   /**
    * Start measuring a performance metric
@@ -35,33 +56,11 @@ export class PerformanceMonitor {
     const endTime = performance.now()
     const duration = endTime - startTime
 
-    // Record metric in metrics collector (which sends to SigNoz)
+    // Record metric in metrics collector (which already sends to SigNoz)
+    // No need for direct SigNoz call - avoids duplicate metrics
     metricsCollector.histogram(`performance.${name}`, duration, {
       unit: 'ms',
     })
-
-    // Also send directly to SigNoz for immediate visibility
-    if (typeof window === 'undefined') {
-      // Server-side only
-      import('@/lib/signoz-client').then(({ sendMetricToSigNoz, isSigNozEnabled }) => {
-        isSigNozEnabled().then(enabled => {
-          if (enabled) {
-            sendMetricToSigNoz({
-              name: `performance.${name}`,
-              value: duration,
-              type: 'histogram',
-              unit: 'ms',
-              attributes: {
-                'metric.type': 'performance',
-                'metric.name': name
-              }
-            }).catch(() => {
-              // Silently fail
-            })
-          }
-        }).catch(() => {})
-      }).catch(() => {})
-    }
 
     this.measurements.delete(name)
 
@@ -103,6 +102,16 @@ export class PerformanceMonitor {
     } catch (error) {
       this.end(name)
       throw error
+    }
+  }
+
+  /**
+   * Dispose of the monitor (cleanup timer)
+   */
+  dispose(): void {
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer)
+      this.cleanupTimer = null
     }
   }
 }

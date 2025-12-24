@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { db as prisma } from '@/lib/db'
 
 export type ConnectorType = 'gmail' | 'google_drive' | 'github' | 'slack' | 'notion' | 'jira'
 

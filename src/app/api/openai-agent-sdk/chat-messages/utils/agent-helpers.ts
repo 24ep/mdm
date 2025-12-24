@@ -1,7 +1,5 @@
 import { AgentInputItem } from '@openai/agents'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { db as prisma } from '@/lib/db'
 
 // Helper to get retry config from database
 export async function getRetryConfigFromDB(chatbotId: string) {

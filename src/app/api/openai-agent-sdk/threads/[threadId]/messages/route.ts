@@ -1,10 +1,8 @@
 import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
 import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { db as prisma } from '@/lib/db'
 import { OpenAI } from 'openai'
-
-const prisma = new PrismaClient()
 
 // GET - Get messages for a specific thread
 async function getHandler(

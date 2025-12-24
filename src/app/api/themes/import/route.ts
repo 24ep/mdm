@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { db as prisma } from '@/lib/db'
 import yaml from 'js-yaml'
 import { safeParseBrandingConfig, ImportThemeInputSchema } from '@/lib/theme-types'
-
-const prisma = new PrismaClient()
 
 // POST /api/themes/import - Import theme from JSON or YAML
 export async function POST(request: NextRequest) {
