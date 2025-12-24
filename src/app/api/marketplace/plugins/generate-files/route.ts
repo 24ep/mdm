@@ -50,7 +50,7 @@ async function postHandler(request: NextRequest) {
 
     // Get project root (assuming we're in src/app/api, go up 4 levels)
     const projectRoot = process.cwd()
-    const pluginsDir = join(projectRoot, 'src', 'features', 'marketplace', 'plugins', slug)
+    const pluginsDir = join(projectRoot, 'plugin-hub', 'plugins', slug)
 
     if (generateCodeFiles) {
       // Create plugin directory
@@ -128,9 +128,9 @@ async function postHandler(request: NextRequest) {
       // Update index.ts to include the plugin (only if not already there)
       const indexUpdated = await updatePluginIndex(slug, name)
       if (indexUpdated) {
-        results.created.push('Updated src/features/marketplace/plugins/index.ts')
+        results.created.push('Updated plugin-hub/plugins/index.ts')
       } else {
-        results.created.push('Plugin already in src/features/marketplace/plugins/index.ts')
+        results.created.push('Plugin already in plugin-hub/plugins/index.ts')
       }
 
       // Automatically register the plugin in the database
@@ -191,7 +191,7 @@ function generatePluginFile(options: {
   const uiConfig = generateUIComponent
     ? `  uiType: 'react_component',
   uiConfig: {
-    componentPath: '@/features/marketplace/plugins/${slug}/components/${componentName}UI',
+    componentPath: '@plugins/${slug}/components/${componentName}UI',
   },`
     : `  uiType: 'iframe',
   uiConfig: {
@@ -318,9 +318,7 @@ async function registerPluginFromCode(slug: string): Promise<void> {
     const projectRoot = process.cwd()
     const pluginPath = join(
       projectRoot,
-      'src',
-      'features',
-      'marketplace',
+      'plugin-hub',
       'plugins',
       slug,
       'plugin.ts'
@@ -354,9 +352,7 @@ async function updatePluginIndex(slug: string, name: string): Promise<boolean> {
   const projectRoot = process.cwd()
   const indexPath = join(
     projectRoot,
-    'src',
-    'features',
-    'marketplace',
+    'plugin-hub',
     'plugins',
     'index.ts'
   )
