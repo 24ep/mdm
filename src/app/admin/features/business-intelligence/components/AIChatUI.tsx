@@ -185,6 +185,8 @@ export function AIChatUI() {
     }
 
     try {
+      let savedChatbot: Chatbot | null = null
+
       // Best Practice: Save to Database (PostgreSQL) as primary storage
       // Database is the source of truth for all saved chatbots
       const chatbotData = {
@@ -476,8 +478,7 @@ export function AIChatUI() {
         headerShowLogo: (formData as any).headerShowLogo !== undefined ? (formData as any).headerShowLogo : null,
       }
 
-      let savedChatbot: Chatbot | null = null
-
+      
       // Check if chatbot has been saved to database
       const isSavedToDatabase = selectedChatbot && (selectedChatbot as any)._savedToDatabase === true
 

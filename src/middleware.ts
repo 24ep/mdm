@@ -25,7 +25,20 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token }) => {
+      authorized: ({ token, req }) => {
+        const path = req.nextUrl.pathname
+        
+        // Allow public routes that need headers but no auth
+        if (
+          path.startsWith('/chat') ||
+          path.startsWith('/api/public') ||
+          path.startsWith('/api/embed') ||
+          path.startsWith('/api/chatkit') ||
+          path.startsWith('/api/dify')
+        ) {
+          return true
+        }
+
         if (!token) return false
         const exp = (token as any).exp as number | undefined
         if (!exp) return true // fallback: if no exp set, allow (legacy sessions)
@@ -38,8 +51,9 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    // Protect all routes except auth, API debug, API public, API embed, API dify, API chatkit, chat interface, static files, and sign-in page
-    '/((?!api/auth|api/debug|api/public|api/embed|api/dify|api/chatkit|chat|_next/static|_next/image|favicon.ico|auth/signin|[^/]+/auth/signin|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // Protect all routes except auth, API debug, static files, and sign-in page
+    // Note: We include chat and public APIs here so headers are applied, but authorized callback allows them
+    '/((?!api/auth|api/debug|auth/signin|[^/]+/auth/signin|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
 
