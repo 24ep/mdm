@@ -71,7 +71,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
-import { KernelSetupGuide } from '../../../components/KernelSetupGuide'
+import { KernelSetupGuide } from '@/app/admin/components/KernelSetupGuide'
 import { KernelServer, KernelTemplate } from '../types'
 
 export function KernelManagement() {

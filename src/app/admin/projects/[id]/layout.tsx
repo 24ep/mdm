@@ -1,4 +1,3 @@
-import { ProjectLayout } from '@/features/projects/layouts/ProjectLayout'
 import { prisma } from '@/lib/db'
 import { notFound } from 'next/navigation'
 
@@ -20,9 +19,11 @@ export default async function Layout({ children, params }: LayoutProps) {
         notFound()
     }
 
+    // TODO: Add ProjectLayout component when implemented
     return (
-        <ProjectLayout projectId={project.id} projectName={project.name}>
+        <div className="container mx-auto py-6">
+            <h1 className="text-2xl font-bold mb-4">{project.name}</h1>
             {children}
-        </ProjectLayout>
+        </div>
     )
 }

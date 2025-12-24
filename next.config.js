@@ -46,6 +46,11 @@ const nextConfig = {
   // Disable source maps to save memory and space used during build
   productionBrowserSourceMaps: false,
   
+  // Disable inline source maps as well
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+  
   // Reduce server components bundle size by keeping heavy libraries out of the bundle
   serverExternalPackages: [
     'ssh2-sftp-client',
@@ -109,8 +114,8 @@ const nextConfig = {
       config.optimization.splitChunks = {
         chunks: 'all',
         // Reduce max chunk size to lower memory usage
-        maxSize: 200 * 1024, // 200KB per chunk
-        minSize: 20 * 1024,  // 20KB minimum
+        maxSize: 100 * 1024, // 100KB per chunk - smaller chunks use less memory
+        minSize: 10 * 1024,  // 10KB minimum
         maxAsyncRequests: 30,
         maxInitialRequests: 30,
         cacheGroups: {
@@ -156,7 +161,7 @@ const nextConfig = {
     }
     
     // Reduce parallelism to lower RAM usage during build
-    config.parallelism = 2 // Default is 100, reducing to 2 significantly lowers memory
+    config.parallelism = 1 // Set to 1 for maximum memory efficiency
     
     // Custom error handling to collect all errors
     const originalEmit = config.plugins?.find(p => p.constructor.name === 'ForkTsCheckerWebpackPlugin')
