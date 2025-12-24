@@ -241,17 +241,156 @@ const defaultPlugins = [
     },
     webhookSupported: false,
     webhookEvents: [],
-    iconUrl: '/icons/grafana.svg',
+    screenshots: [],
+  },
+  {
+    name: 'Kafka Stream Manager',
+    slug: 'kafka-manager',
+    version: '0.9.5',
+    provider: 'Apache',
+    category: 'data-integration',
+    status: 'approved',
+    verified: false,
+    description: 'Monitor Kafka topics, consumer groups, and broker health in real-time.',
+    capabilities: {
+      source: 'hub',
+      serviceType: 'docker_container',
+      supportedServices: ['kafka'],
+    },
+    uiType: 'react_component',
+    uiConfig: {},
+    webhookSupported: false,
+    webhookEvents: [],
+    iconUrl: '/icons/kafka.svg',
+    screenshots: [],
+  },
+  {
+    name: 'Jenkins CI/CD',
+    slug: 'jenkins-ci',
+    version: '1.3.4',
+    provider: 'Jenkins',
+    category: 'development-tools',
+    status: 'approved',
+    verified: true,
+    description: 'View build status, trigger pipelines, and manage Jenkins jobs from a central dashboard.',
+    capabilities: {
+      source: 'hub',
+      serviceType: 'docker_container',
+      supportedServices: ['jenkins'],
+    },
+    uiType: 'react_component',
+    uiConfig: {},
+    webhookSupported: true,
+    webhookEvents: ['build_status'],
+    iconUrl: '/icons/jenkins.svg',
+    screenshots: [],
+  },
+  {
+    name: 'SQL Query Editor',
+    slug: 'sql-query-editor',
+    version: '1.0.0',
+    provider: 'MDM Platform',
+    category: 'database-management',
+    status: 'approved',
+    verified: true,
+    description: 'Advanced SQL query editor with syntax highlighting, auto-complete, query history, and result visualization.',
+    capabilities: {
+      source: 'hub',
+      queryExecution: true,
+      syntaxHighlighting: true,
+      autoComplete: true,
+      resultExport: true,
+    },
+    uiType: 'react_component',
+    uiConfig: {
+      componentPath: '@/features/marketplace/plugins/sql-query-editor/components/SQLQueryEditorUI',
+    },
+    webhookSupported: false,
+    webhookEvents: [],
+    iconUrl: '/icons/sql.svg',
+    screenshots: [],
+  },
+  {
+    name: 'Knowledge Base Manager',
+    slug: 'knowledge-base',
+    version: '1.0.0',
+    provider: 'MDM Platform',
+    category: 'ai-ml',
+    status: 'approved',
+    verified: true,
+    description: 'Create and manage vector-based knowledge bases for AI chatbots. Supports document ingestion, embedding, and semantic search.',
+    capabilities: {
+      source: 'hub',
+      documentIngestion: true,
+      vectorEmbedding: true,
+      semanticSearch: true,
+      chatbotIntegration: true,
+    },
+    uiType: 'react_component',
+    uiConfig: {
+      componentPath: '@/features/marketplace/plugins/knowledge-base/components/KnowledgeBaseUI',
+    },
+    webhookSupported: false,
+    webhookEvents: [],
+    iconUrl: '/icons/knowledge-base.svg',
+    screenshots: [],
+  },
+  {
+    name: 'Data Pipeline Manager',
+    slug: 'data-pipeline',
+    version: '1.0.0',
+    provider: 'MDM Platform',
+    category: 'data-integration',
+    status: 'approved',
+    verified: true,
+    description: 'Design, schedule, and monitor ETL data pipelines with visual workflow builder.',
+    capabilities: {
+      source: 'hub',
+      visualWorkflow: true,
+      scheduling: true,
+      monitoring: true,
+    },
+    uiType: 'react_component',
+    uiConfig: {
+      componentPath: '@/features/marketplace/plugins/data-pipeline/components/DataPipelineUI',
+    },
+    webhookSupported: true,
+    webhookEvents: ['pipeline_complete', 'pipeline_failed'],
+    iconUrl: '/icons/data-pipeline.svg',
+    screenshots: [],
+  },
+  {
+    name: 'API Documentation',
+    slug: 'api-docs',
+    version: '1.0.0',
+    provider: 'MDM Platform',
+    category: 'development-tools',
+    status: 'approved',
+    verified: true,
+    description: 'Auto-generate and host interactive API documentation from OpenAPI/Swagger specs.',
+    capabilities: {
+      source: 'hub',
+      openApiSupport: true,
+      interactivePlayground: true,
+      codeGeneration: true,
+    },
+    uiType: 'react_component',
+    uiConfig: {
+      componentPath: '@/features/marketplace/plugins/api-docs/components/APIDocsUI',
+    },
+    webhookSupported: false,
+    webhookEvents: [],
+    iconUrl: '/icons/api-docs.svg',
     screenshots: [],
   },
 ];
 
 async function seedPlugins() {
   console.log('🔌 Seeding marketplace plugins...');
-  
+
   let seeded = 0;
   let skipped = 0;
-  
+
   for (const plugin of defaultPlugins) {
     try {
       // Check if plugin already exists
@@ -259,13 +398,13 @@ async function seedPlugins() {
         'SELECT id FROM service_registry WHERE slug = $1 AND deleted_at IS NULL',
         plugin.slug
       );
-      
+
       if (Array.isArray(existing) && existing.length > 0) {
         console.log(`  ⏭️  Plugin ${plugin.slug} already exists, skipping...`);
         skipped++;
         continue;
       }
-      
+
       // Insert plugin
       await prisma.$executeRawUnsafe(
         `INSERT INTO service_registry (
@@ -302,7 +441,7 @@ async function seedPlugins() {
         plugin.pricingInfo ? JSON.stringify(plugin.pricingInfo) : null,
         plugin.verified || false
       );
-      
+
       console.log(`  ✅ Seeded plugin: ${plugin.name} (${plugin.slug})`);
       seeded++;
     } catch (error) {
@@ -310,7 +449,7 @@ async function seedPlugins() {
       // Continue with other plugins
     }
   }
-  
+
   console.log(`\n🔌 Plugin seeding complete: ${seeded} seeded, ${skipped} skipped`);
 }
 

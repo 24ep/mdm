@@ -124,6 +124,9 @@ export function ChatKitRenderer({
       })
   }, [chatkitLoaded, chatbot.chatkitAgentId, chatkitModule, isInitializing, onChatKitUnavailable])
 
+  // Debug: Trace ChatKitRenderer state
+  console.log('ChatKitRenderer state:', { chatkitLoaded, chatkitModule: !!chatkitModule, chatkitError, isInitializing, isMobile, previewDeploymentType, agentId: chatbot.chatkitAgentId })
+
   // Render ChatKit component when ready
   if (chatkitModule && chatbot.chatkitAgentId && !chatkitError) {
     return (

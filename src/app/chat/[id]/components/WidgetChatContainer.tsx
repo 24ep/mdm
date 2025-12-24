@@ -39,7 +39,9 @@ export function WidgetChatContainer({
 
     const showMobileHeader = isMobile && ((chatbot as any).headerEnabled !== false)
 
-    const mobileHeaderCloseCallback = (effectiveDeploymentType === 'popover' || effectiveDeploymentType === 'popup-center' || (isEmbed && effectiveDeploymentType === 'fullpage'))
+    // On mobile, always show close button if embedded (since popover is converted to fullpage)
+    // Also show close for popover/popup-center modes
+    const mobileHeaderCloseCallback = (effectiveDeploymentType === 'popover' || effectiveDeploymentType === 'popup-center' || (isEmbed && isMobile) || (isEmbed && effectiveDeploymentType === 'fullpage'))
         ? handleClose
         : undefined
 
@@ -55,7 +57,7 @@ export function WidgetChatContainer({
     }
 
     return (
-        <div className="flex flex-col relative" style={adaptedContainerStyle}>
+        <div className="flex flex-col relative h-full" style={adaptedContainerStyle}>
             {/* Emulator text and description overlay - positioned below header */}
             {showEmulatorOverlay && (
                 <div className="absolute top-0 left-0 right-0 p-4 bg-black/50 text-white backdrop-blur-sm" style={{ zIndex: Z_INDEX.chatWidgetOverlayText }}>

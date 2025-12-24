@@ -134,11 +134,10 @@ export function ChatKitWrapper({
         // Don't pass header config to ChatKit when using regular style header (regular header will be used instead)
         // Note: ChatKit header only supports specific properties - description, logo are NOT supported
         // The title should be an object with 'text' property, not a plain string
-        header: useChatKitInRegularStyle ? undefined : (chatkitOptions.header ? (() => {
-          const header = { ...chatkitOptions.header }
-
+        header: useChatKitInRegularStyle ? undefined : (() => {
+          const header = { ...(chatkitOptions.header || {}) }
           const supportedHeader: any = {}
-          
+
           // ChatKit expects title as an object with 'text' property
           if (header.title !== undefined) {
             if (typeof header.title === 'object' && header.title !== null) {
@@ -152,10 +151,10 @@ export function ChatKitWrapper({
             // Support legacy formData.headerTitle - convert to object format
             supportedHeader.title = { text: (chatbot as any).headerTitle }
           }
-          
+
           // Note: 'description' and 'logo' are NOT supported by ChatKit header
           // These fields are ignored to prevent "Unrecognized keys" errors
-          
+
           // Pass customButtonLeft if present
           if (header.customButtonLeft && Array.isArray(header.customButtonLeft) && header.customButtonLeft.length > 0) {
             supportedHeader.customButtonLeft = header.customButtonLeft.map((button: any) => {
@@ -172,8 +171,20 @@ export function ChatKitWrapper({
               return supportedButton
             }).filter((button: any) => button.icon || button.label)
           }
+
+          // Add close button for popover/popup-center modes (native ChatKit header needs a way to close)
+          const showCloseButton = (chatbot as any).headerShowCloseButton !== false
+          const effectiveType = previewDeploymentType || chatbot.deploymentType || 'fullpage'
+          if (showCloseButton && (effectiveType === 'popover' || effectiveType === 'popup-center')) {
+            // ChatKit uses 'rightAction' (singular object, not array) for header button
+            supportedHeader.rightAction = {
+              icon: 'chevron-right', // ChatKit's available close-like icon
+              onClick: () => setIsOpen(false)
+            }
+          }
+
           return Object.keys(supportedHeader).length > 0 ? supportedHeader : undefined
-        })() : undefined),
+        })(),
         startScreen: chatkitOptions.startScreen ? (() => {
           const supportedStartScreen: any = {}
 
@@ -253,6 +264,9 @@ export function ChatKitWrapper({
         !(isMobile && isOpen)
 
       const shouldShowContainer = deploymentType === 'fullpage' ? true : isOpen
+
+      // Debug: Trace widget button visibility
+      console.log('ChatKitWrapper Debug:', { shouldShowWidgetButton, shouldShowContainer, deploymentType, useChatKitInRegularStyle, isMobile, isOpen })
 
       const popoverPositionStyle = (): React.CSSProperties => {
         const pos = (chatbot as any).widgetPosition || 'bottom-right'

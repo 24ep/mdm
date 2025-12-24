@@ -30,7 +30,7 @@ export function getChatStyle(chatbot: ChatbotConfig): React.CSSProperties {
   const options = (chatbot as any).chatkitOptions
   const theme = options?.theme || {}
   const typography = theme.typography || {}
-  
+
   return {
     fontFamily: typography.fontFamily || chatbot.fontFamily,
     fontSize: typography.fontSize ? `${typography.fontSize}px` : chatbot.fontSize,
@@ -42,7 +42,7 @@ export function getChatStyle(chatbot: ChatbotConfig): React.CSSProperties {
 export function getPopoverPositionStyle(chatbot: ChatbotConfig): React.CSSProperties {
   const x = chatbot as any
   const options = x.chatkitOptions || {}
-  
+
   // Check options.widget or root properties
   // Note: WidgetSection likely saves to root or chatkitOptions.widget. 
   // We'll check both if needed, but prioritizing root for now as usually widget position is a root setting in older code.
@@ -71,7 +71,7 @@ export function getContainerStyle(
 ): React.CSSProperties {
   const options = (chatbot as any).chatkitOptions || {}
   const theme = options.theme || {}
-  
+
   const shadowColor = (chatbot as any).chatWindowShadowColor || chatbot.shadowColor || '#000000'
   const shadowBlur = (chatbot as any).chatWindowShadowBlur || chatbot.shadowBlur || '4px'
 
@@ -90,7 +90,7 @@ export function getContainerStyle(
   // Common background logic helper
   const getBackgroundStyle = () => {
     // Priority: Emulator Config > Chatbot Config (Theme) > Chatbot Config (Root) > Default
-    
+
     // If emulator config has explicit background (e.g. from preview settings), use it
     if (emulatorConfig.backgroundColor || emulatorConfig.backgroundImage) {
       return {
@@ -134,8 +134,9 @@ export function getContainerStyle(
   }
 
   if (previewDeploymentType === 'popover') {
-    // On mobile or EMBED, popover becomes fullpage layout (fills the container/iframe)
-    if (isMobile || isEmbed) {
+    // On mobile only, popover becomes fullpage layout (fills the container/iframe)
+    // Desktop embed should still show as popover with proper positioning
+    if (isMobile) {
       return {
         position: 'fixed',
         top: 0,

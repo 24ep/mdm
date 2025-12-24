@@ -47,7 +47,7 @@ export function EngineConfig({ formData, setFormData }: EngineConfigProps) {
       const response = await fetch('/api/admin/ai-models')
       if (response.ok) {
         const data = await response.json()
-        const openaiModels = (data.models || []).filter((model: AIModel) => 
+        const openaiModels = (data.models || []).filter((model: AIModel) =>
           model.provider === 'openai' && model.isAvailable
         )
         setAvailableModels(openaiModels)
@@ -68,7 +68,7 @@ export function EngineConfig({ formData, setFormData }: EngineConfigProps) {
       <div className="space-y-2">
         <Label>Name *</Label>
         <Input
-          value={formData.name}
+          value={formData.name || ''}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder="Chatbot Name"
         />
@@ -77,7 +77,7 @@ export function EngineConfig({ formData, setFormData }: EngineConfigProps) {
       <div className="space-y-2">
         <Label>Website *</Label>
         <Input
-          value={formData.website}
+          value={formData.website || ''}
           onChange={(e) => setFormData({ ...formData, website: e.target.value })}
           placeholder="https://example.com"
         />
@@ -99,8 +99,8 @@ export function EngineConfig({ formData, setFormData }: EngineConfigProps) {
           value={engineType}
           onValueChange={(v: string) => {
             const engineTypeValue = v as 'custom' | 'openai' | 'chatkit' | 'dify' | 'openai-agent-sdk'
-            setFormData({ 
-              ...formData, 
+            setFormData({
+              ...formData,
               engineType: engineTypeValue,
               selectedModelId: undefined,
               selectedEngineId: undefined,
@@ -304,7 +304,7 @@ export function EngineConfig({ formData, setFormData }: EngineConfigProps) {
               className="font-mono text-xs"
             />
             <p className="text-xs text-muted-foreground">
-              JSON object with input variables for your Dify workflow/app. Leave empty object {} if not needed.
+              JSON object with input variables for your Dify workflow/app. Leave empty object { } if not needed.
             </p>
           </div>
         </div>
@@ -315,7 +315,7 @@ export function EngineConfig({ formData, setFormData }: EngineConfigProps) {
           <div className="space-y-2">
             <Label>API Endpoint *</Label>
             <Input
-              value={formData.apiEndpoint}
+              value={formData.apiEndpoint || ''}
               onChange={(e) => setFormData({ ...formData, apiEndpoint: e.target.value })}
               placeholder="https://api.example.com/chat"
             />
@@ -325,7 +325,7 @@ export function EngineConfig({ formData, setFormData }: EngineConfigProps) {
             <div className="space-y-2">
               <Label>API Authentication Type</Label>
               <Select
-                value={formData.apiAuthType}
+                value={formData.apiAuthType || 'none'}
                 onValueChange={(v: any) => setFormData({ ...formData, apiAuthType: v })}
               >
                 <SelectTrigger>
@@ -344,7 +344,7 @@ export function EngineConfig({ formData, setFormData }: EngineConfigProps) {
                 <Label>Authentication Value</Label>
                 <Input
                   type="password"
-                  value={formData.apiAuthValue}
+                  value={formData.apiAuthValue || ''}
                   onChange={(e) => setFormData({ ...formData, apiAuthValue: e.target.value })}
                   placeholder="Enter auth value"
                 />

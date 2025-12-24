@@ -115,7 +115,7 @@ export function PlatformSidebar({
   const router = useRouter()
 
   // Fetch installed plugins with navigation data
-  const { plugins: installedPlugins } = useMarketplacePlugins({ 
+  const { plugins: installedPlugins } = useMarketplacePlugins({
     filters: { installedOnly: true },
     spaceId: selectedSpace
   })
@@ -298,6 +298,7 @@ export function PlatformSidebar({
         { id: 'bi', name: 'BI & Reports', icon: BarChart3, href: '/tools/bi' },
         { id: 'storage', name: 'Storage', icon: HardDrive, href: '/tools/storage' },
         { id: 'data-governance', name: 'Data Governance', icon: Shield, href: '/tools/data-governance' },
+        { id: 'ai-chat-ui', name: 'Chat Embed UI', icon: MessageCircle, href: '/tools/ai-chat-ui' },
       ],
       system: [
         { id: 'users', name: 'Users & Roles', icon: Users, href: '/system/users' },
@@ -340,7 +341,7 @@ export function PlatformSidebar({
             href: href || `/tools/${plugin.slug}`,
             priority: priority || 100
           }
-          
+
           // Check if already exists to avoid duplicates (though installedPlugins should be unique)
           if (!tabs[group].find((t: any) => t.id === newItem.id)) {
             tabs[group].push(newItem)
@@ -352,17 +353,17 @@ export function PlatformSidebar({
     // Sort tabs by priority if supported, otherwise keep default order
     // (Note: default tabs don't have priority, let's assume they come first or we need to add priority to them too)
     // For now, simpler: just push them. If we want sorting, we can sort.
-    
+
     // Sort overview group specifically as we want Homepage first
     tabs.overview.sort((a: any, b: any) => {
-        if (a.id === 'overview') return -1
-        if (b.id === 'overview') return 1
-        return (a.priority || 100) - (b.priority || 100)
+      if (a.id === 'overview') return -1
+      if (b.id === 'overview') return 1
+      return (a.priority || 100) - (b.priority || 100)
     })
 
     // Sort tools group (Marketplace last? or first?)
     // Let's keep Marketplace at end or specific position
-    
+
     return tabs
   }, [installedPlugins])
 

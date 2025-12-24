@@ -306,4 +306,5 @@ async function deleteHandler(
 
 export const GET = withErrorHandling(getHandler, 'GET /api/chatbots/[chatbotId]')
 export const PUT = withErrorHandling(putHandler, 'PUT /api/chatbots/[chatbotId]')
+export const PATCH = withErrorHandling(putHandler, 'PATCH /api/chatbots/[chatbotId]')
 export const DELETE = withErrorHandling(deleteHandler, 'DELETE /api/chatbots/[chatbotId]')

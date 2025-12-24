@@ -19,12 +19,13 @@ const securityHeaders = {
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   'Content-Security-Policy': [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // Note: unsafe-eval needed for some Next.js features
-    "style-src 'self' 'unsafe-inline'",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.platform.openai.com", // Next.js features + ChatKit
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com", // Google Fonts CSS
     "img-src 'self' data: https:",
-    "font-src 'self' data:",
+    "font-src 'self' data: https://fonts.gstatic.com", // Google Fonts files
     "connect-src 'self' https:",
-    "frame-ancestors *", // Allow embedding in iframes from any origin (for chat embed)
+    "frame-src 'self' https://cdn.platform.openai.com", // OpenAI ChatKit frames
+    "frame-ancestors *", // Allow embedding in iframes from any origin
   ].join('; '),
 }
 
@@ -76,13 +77,13 @@ export function handleCors(request: NextRequest, options: CorsOptions = {}): Nex
   // Handle preflight requests
   if (request.method === 'OPTIONS') {
     const response = new NextResponse(null, { status: 204 })
-    
+
     // Set allowed origin
-    if (origin && (typeof opts.origin === 'function' 
+    if (origin && (typeof opts.origin === 'function'
       ? opts.origin(origin)
       : Array.isArray(opts.origin)
-      ? opts.origin.includes(origin)
-      : opts.origin === '*' || opts.origin === origin)) {
+        ? opts.origin.includes(origin)
+        : opts.origin === '*' || opts.origin === origin)) {
       response.headers.set('Access-Control-Allow-Origin', origin)
     } else if (opts.origin === '*') {
       response.headers.set('Access-Control-Allow-Origin', '*')
@@ -91,7 +92,7 @@ export function handleCors(request: NextRequest, options: CorsOptions = {}): Nex
     response.headers.set('Access-Control-Allow-Methods', opts.methods.join(', '))
     response.headers.set('Access-Control-Allow-Headers', opts.allowedHeaders.join(', '))
     response.headers.set('Access-Control-Max-Age', String(opts.maxAge))
-    
+
     if (opts.credentials) {
       response.headers.set('Access-Control-Allow-Credentials', 'true')
     }
@@ -116,8 +117,8 @@ export function addCorsHeaders(
   if (origin && (typeof opts.origin === 'function'
     ? opts.origin(origin)
     : Array.isArray(opts.origin)
-    ? opts.origin.includes(origin)
-    : opts.origin === '*' || opts.origin === origin)) {
+      ? opts.origin.includes(origin)
+      : opts.origin === '*' || opts.origin === origin)) {
     response.headers.set('Access-Control-Allow-Origin', origin)
   } else if (opts.origin === '*') {
     response.headers.set('Access-Control-Allow-Origin', '*')

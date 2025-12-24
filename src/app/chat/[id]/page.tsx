@@ -35,9 +35,12 @@ export default function ChatPage() {
   const params = useParams()
   const searchParams = useSearchParams()
   const isEmbed = searchParams.get('mode') === 'embed'
+  const urlDeploymentType = searchParams.get('deploymentType') || searchParams.get('type')
   const chatbotId = params?.id as string
-  const [previewDeploymentType, setPreviewDeploymentType] = useState<'popover' | 'fullpage' | 'popup-center'>('fullpage')
-  const [isOpen, setIsOpen] = useState<boolean>(false)
+  const [previewDeploymentType, setPreviewDeploymentType] = useState<'popover' | 'fullpage' | 'popup-center'>(
+    (urlDeploymentType === 'popover' || urlDeploymentType === 'popup-center') ? urlDeploymentType : 'fullpage'
+  )
+  const [isOpen, setIsOpen] = useState<boolean>(urlDeploymentType === 'fullpage' || (!urlDeploymentType && !isEmbed))
   const [isInIframe, setIsInIframe] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [messageFeedback, setMessageFeedback] = useState<Record<string, 'liked' | 'disliked' | null>>({})
@@ -62,6 +65,13 @@ export default function ChatPage() {
   useEffect(() => {
     setIsInIframe(window.self !== window.top)
   }, [])
+
+  // Auto-open on mobile fullpage embed (since popover was converted to fullpage)
+  useEffect(() => {
+    if (isMobile && isEmbed) {
+      setIsOpen(true)
+    }
+  }, [isMobile, isEmbed])
 
   // Load chatbot
   const { chatbot, setChatbot, emulatorConfig, setEmulatorConfig } = useChatbotLoader({
@@ -321,9 +331,15 @@ export default function ChatPage() {
     return null
   }
 
-  const effectiveDeploymentType = (isEmbed && searchParams.get('type')) 
+  // Determine deployment type - force fullpage on mobile/tablet for popover modes
+  const baseDeploymentType = (isEmbed && searchParams.get('type'))
     ? (searchParams.get('type') as 'popover' | 'fullpage' | 'popup-center')
     : (isEmbed ? 'fullpage' : previewDeploymentType)
+
+  // On mobile/tablet, auto-switch popover/popup-center to fullpage for better UX
+  const effectiveDeploymentType = (isMobile && (baseDeploymentType === 'popover' || baseDeploymentType === 'popup-center'))
+    ? 'fullpage'
+    : baseDeploymentType
 
   const chatStyle = getChatStyle(chatbot)
   const containerStyle = getContainerStyle(chatbot, effectiveDeploymentType, emulatorConfig, isMobile, isEmbed)
@@ -338,12 +354,33 @@ export default function ChatPage() {
     chatbot.engineType === 'chatkit' &&
     chatbot.chatkitAgentId
 
+  // Debug: Trace ChatKit rendering conditions
+  console.log('ChatKit Debug:', {
+    shouldRenderChatKit,
+    chatKitUnavailable,
+    engineType: chatbot.engineType,
+    chatkitAgentId: chatbot.chatkitAgentId,
+    useChatKitInRegularStyle,
+    isMobile
+  })
+
   const isNativeChatKit = shouldRenderChatKit && !useChatKitInRegularStyle
 
   // On mobile, when chat is open, hide widget button (fullpage mode covers entire screen)
-  // Also hide widget button if valid Embed (iframe handles visibility)
-  const shouldShowWidgetButton = !isNativeChatKit && (effectiveDeploymentType === 'popover' || effectiveDeploymentType === 'popup-center') && !(isMobile && isOpen) && !isEmbed
-  const shouldShowContainer = !isNativeChatKit && ((effectiveDeploymentType === 'fullpage' || isEmbed) ? true : isOpen)
+  // Widget button should show in embed mode if deployment type is popover/popup-center
+  // Also show widget button on mobile embed when chat is closed (so user can re-open)
+  const shouldShowWidgetButton = !isNativeChatKit && (
+    (effectiveDeploymentType === 'popover' || effectiveDeploymentType === 'popup-center') ||
+    (isMobile && isEmbed && !isOpen)  // Mobile embed: show button when closed
+  ) && !(isMobile && isOpen)
+  // For mobile embed (where popover was converted to fullpage), respect isOpen state
+  // Regular fullpage always shows container, but mobile embed fullpage can be closed
+  const isMobileEmbedFullpage = isMobile && isEmbed && effectiveDeploymentType === 'fullpage'
+  const shouldShowContainer = !isNativeChatKit && (
+    effectiveDeploymentType === 'fullpage'
+      ? (isMobileEmbedFullpage ? isOpen : true)  // Mobile embed respects isOpen
+      : isOpen
+  )
 
   const renderChatContent = () => {
     if (!chatbot) return null
@@ -369,6 +406,7 @@ export default function ChatPage() {
           style={{
             flex: '1 1 auto',
             minHeight: 0,
+            height: '100%', // Ensure full height for ChatKit on mobile
             display: 'flex',
             flexDirection: 'column',
           }}
@@ -420,7 +458,7 @@ export default function ChatPage() {
   }
 
   // Full page layout with sidebar
-  if (previewDeploymentType === 'fullpage' && !isInIframe) {
+  if (effectiveDeploymentType === 'fullpage' && !isInIframe) {
     return (
       <FullPageChatLayout
         emulatorConfig={emulatorConfig}
@@ -467,6 +505,16 @@ export default function ChatPage() {
     isNativeChatKit,
     useChatKitInRegularStyle,
     effectiveDeploymentType
+  })
+
+  // Debug: Log container style for embed debugging
+  console.log('Container Style Debug:', {
+    effectiveDeploymentType,
+    isEmbed,
+    isMobile,
+    containerStyle,
+    shouldShowContainer,
+    shouldShowWidgetButton
   })
 
   return (

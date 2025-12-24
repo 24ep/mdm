@@ -17,6 +17,9 @@ export function ChatHeader({ chatbot, onClearSession, onClose, isMobile = false 
   const showCloseButton = (chatbot as any).headerShowCloseButton !== false // Default to true
   const useChatKitInRegularStyle = (chatbot as any).useChatKitInRegularStyle === true
 
+  // Debug logging for close button visibility
+  console.log('ChatHeader Debug:', { showCloseButton, onClose: !!onClose, isMobile, headerShowCloseButton: (chatbot as any).headerShowCloseButton })
+
   // Get ChatKit header config if useChatKitInRegularStyle is enabled
   const chatkitHeader = useChatKitInRegularStyle && chatbot.chatkitOptions?.header
   const chatkitCustomButtons = chatkitHeader?.customButtonLeft || []

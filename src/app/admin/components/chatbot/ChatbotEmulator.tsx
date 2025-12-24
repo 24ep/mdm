@@ -4,7 +4,7 @@ import { useRef, useEffect, useState } from 'react'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { ExternalLink, Settings, Monitor, Tablet, Smartphone, Code, Copy } from 'lucide-react'
+import { ExternalLink, Settings, Monitor, Tablet, Smartphone, Code, GripVertical } from 'lucide-react'
 import { Chatbot } from './types'
 import { EmulatorConfigDrawer } from './EmulatorConfigDrawer'
 import { Z_INDEX } from '@/lib/z-index'
@@ -29,6 +29,41 @@ export function ChatbotEmulator({
   const emulatorRef = useRef<HTMLIFrameElement | null>(null)
   const [configDrawerOpen, setConfigDrawerOpen] = useState(false)
   const [deviceType, setDeviceType] = useState<'desktop' | 'tablet' | 'mobile'>('desktop')
+  const [emulatorWidth, setEmulatorWidth] = useState<number | null>(null)
+  const [isResizing, setIsResizing] = useState(false)
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const startXRef = useRef<number>(0)
+  const startWidthRef = useRef<number>(0)
+
+  // Handle resize drag
+  const handleResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsResizing(true)
+    startXRef.current = e.clientX
+    startWidthRef.current = containerRef.current?.offsetWidth || 500
+  }
+
+  useEffect(() => {
+    if (!isResizing) return
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const delta = startXRef.current - e.clientX
+      const newWidth = Math.max(320, Math.min(1920, startWidthRef.current + delta))
+      setEmulatorWidth(newWidth)
+      setDeviceType('desktop') // Switch to desktop mode to allow custom width
+    }
+
+    const handleMouseUp = () => {
+      setIsResizing(false)
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isResizing])
 
   // Map formData fields to emulator config
   const emulatorConfig = {
@@ -137,6 +172,10 @@ export function ChatbotEmulator({
   }, [selectedChatbot?.id, emulatorConfig])
 
   const getDeviceDimensions = () => {
+    // If emulatorWidth is set (from dragging), use that
+    if (emulatorWidth && deviceType === 'desktop') {
+      return { width: `${emulatorWidth}px`, height: '100%', borderRadius: '0px', borderWidth: '0px' }
+    }
     switch (deviceType) {
       case 'mobile':
         return { width: '375px', height: '667px', borderRadius: '40px', borderWidth: '12px' }
@@ -150,7 +189,15 @@ export function ChatbotEmulator({
   const deviceStyle = getDeviceDimensions()
 
   return (
-    <div className="min-h-[800px] border-l overflow-visible relative bg-muted/10 h-full flex flex-col" style={{ borderColor: formData.borderColor }}>
+    <div ref={containerRef} className="min-h-[800px] overflow-visible relative bg-muted/10 h-full flex flex-col" style={{ borderColor: formData.borderColor }}>
+      {/* Draggable resize handle on left border */}
+      <div
+        className={`absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize group flex items-center justify-center bg-border hover:bg-primary/20 transition-colors ${isResizing ? 'bg-primary/30' : ''}`}
+        onMouseDown={handleResizeStart}
+        title="Drag to resize"
+      >
+        <GripVertical className="h-4 w-4 text-muted-foreground group-hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+      </div>
       <div className="flex items-center justify-between px-3 py-2 border-b bg-background z-10" style={{ borderColor: formData.borderColor }}>
         <div className="flex items-center gap-2">
           <div className="text-sm font-medium">Emulator</div>
@@ -184,6 +231,9 @@ export function ChatbotEmulator({
               <Smartphone className="h-4 w-4" />
             </Button>
           </div>
+          {emulatorWidth && deviceType === 'desktop' && (
+            <span className="text-xs text-muted-foreground">{emulatorWidth}px</span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -294,7 +344,7 @@ export function ChatbotEmulator({
             )}
             <iframe
               ref={emulatorRef}
-              src={`/chat/${selectedChatbot.id}`}
+              src={`/chat/${selectedChatbot.id}?preview=true&deploymentType=${previewMode}`}
               className="w-full h-full border-0 bg-background"
               title="Chat Emulator"
               style={{ position: 'relative', zIndex: Z_INDEX.content }}
