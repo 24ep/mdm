@@ -497,7 +497,6 @@ export function AIChatUI() {
               // Mark as saved to database
               if (savedChatbot) {
                 ; (savedChatbot as any)._savedToDatabase = true
-                toast.success('Chatbot created in database successfully')
 
                 // Update localStorage with the database version and flag
                 const saved = localStorage.getItem('ai-chatbots')
@@ -582,7 +581,6 @@ export function AIChatUI() {
               // Mark as saved to database
               if (savedChatbot) {
                 ; (savedChatbot as any)._savedToDatabase = true
-                toast.success('Chatbot saved to database successfully')
 
                 // Update localStorage with the database version and flag
                 const saved = localStorage.getItem('ai-chatbots')
@@ -653,7 +651,6 @@ export function AIChatUI() {
             // Mark as saved to database
             if (savedChatbot) {
               ; (savedChatbot as any)._savedToDatabase = true
-              toast.success('Chatbot created in database successfully')
 
               // Update localStorage with the database version and flag
               const saved = localStorage.getItem('ai-chatbots')
@@ -1050,7 +1047,12 @@ export function AIChatUI() {
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleSave}>
+                <Button onClick={async () => {
+                  const savedBot = await handleSave()
+                  if (savedBot) {
+                    toast.success('Chatbot saved successfully')
+                  }
+                }}>
                   <Save className="h-4 w-4 mr-2" />
                   Save
                 </Button>

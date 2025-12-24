@@ -70,13 +70,8 @@ export function DeploymentTab({
             size="sm"
             onClick={async () => {
               const newIsPublished = !formData.isPublished
-              setFormData(prev => ({
-                ...prev,
-                isPublished: newIsPublished
-              }))
-
-
-              // 1. Optimistic update
+              
+              // Optimistic update
               setFormData(prev => ({
                 ...prev,
                 isPublished: newIsPublished
@@ -84,7 +79,7 @@ export function DeploymentTab({
 
               let targetBotId = selectedChatbot?.id
 
-              // 2. Persist keys first (Save) if handler provided
+              // Persist config first (Save) if handler provided
               if (onSave) {
                 const savedBot = await onSave()
                 if (!savedBot) {

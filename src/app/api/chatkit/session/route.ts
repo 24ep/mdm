@@ -54,12 +54,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Call OpenAI's ChatKit Sessions API to create a session
-    // Based on ChatKit SDK pattern (openai.chatkit.sessions.create)
+    // API requires: user (string), workflow.id (string)
+    // See: https://platform.openai.com/docs/api-reference/chatkit/sessions
     const openaiUrl = 'https://api.openai.com/v1/chatkit/sessions';
 
     // Build session payload for ChatKit
+    // Generate a unique user ID for the session (could be enhanced with real user IDs)
+    const userId = body.userId || `user_${chatbotId}_${Date.now()}`;
+    
     const sessionPayload: any = {
-      agent_id: agentId,
+      user: userId,
+      workflow: {
+        id: agentId,
+      },
     };
 
     // If refreshing an existing session, include session info
