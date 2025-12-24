@@ -132,36 +132,30 @@ export function ChatKitWrapper({
           }).filter((tool: any) => tool.id || tool.label)
         } : undefined,
         // Don't pass header config to ChatKit when using regular style header (regular header will be used instead)
+        // Note: ChatKit header only supports specific properties - description, logo are NOT supported
+        // The title should be an object with 'text' property, not a plain string
         header: useChatKitInRegularStyle ? undefined : (chatkitOptions.header ? (() => {
           const header = { ...chatkitOptions.header }
 
           const supportedHeader: any = {}
+          
+          // ChatKit expects title as an object with 'text' property
           if (header.title !== undefined) {
             if (typeof header.title === 'object' && header.title !== null) {
+              // Already an object, pass through
               supportedHeader.title = header.title
             } else if (typeof header.title === 'string' && header.title !== '') {
-              supportedHeader.title = header.title
+              // Convert string to expected object format
+              supportedHeader.title = { text: header.title }
             }
           } else if ((chatbot as any).headerTitle) {
-            // Support legacy formData.headerTitle
-            supportedHeader.title = (chatbot as any).headerTitle
+            // Support legacy formData.headerTitle - convert to object format
+            supportedHeader.title = { text: (chatbot as any).headerTitle }
           }
-          if (header.description !== undefined) {
-            if (typeof header.description === 'object' && header.description !== null) {
-              supportedHeader.description = header.description
-            } else if (typeof header.description === 'string' && header.description !== '') {
-              supportedHeader.description = header.description
-            }
-          } else if ((chatbot as any).headerDescription) {
-            // Support legacy formData.headerDescription
-            supportedHeader.description = (chatbot as any).headerDescription
-          }
-          if (header.logo !== undefined) {
-            supportedHeader.logo = header.logo
-          } else if ((chatbot as any).headerLogo) {
-            // Support legacy formData.headerLogo
-            supportedHeader.logo = (chatbot as any).headerLogo
-          }
+          
+          // Note: 'description' and 'logo' are NOT supported by ChatKit header
+          // These fields are ignored to prevent "Unrecognized keys" errors
+          
           // Pass customButtonLeft if present
           if (header.customButtonLeft && Array.isArray(header.customButtonLeft) && header.customButtonLeft.length > 0) {
             supportedHeader.customButtonLeft = header.customButtonLeft.map((button: any) => {

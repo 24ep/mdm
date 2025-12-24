@@ -11,7 +11,8 @@ import { NextRequest, NextResponse } from 'next/server'
 const securityHeaders = {
   'X-DNS-Prefetch-Control': 'on',
   'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
-  'X-Frame-Options': 'SAMEORIGIN',
+  // Note: X-Frame-Options removed - use CSP frame-ancestors instead
+  // Chat embed functionality requires allowing iframes from any origin
   'X-Content-Type-Options': 'nosniff',
   'X-XSS-Protection': '1; mode=block',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
@@ -23,7 +24,7 @@ const securityHeaders = {
     "img-src 'self' data: https:",
     "font-src 'self' data:",
     "connect-src 'self' https:",
-    "frame-ancestors 'self'",
+    "frame-ancestors *", // Allow embedding in iframes from any origin (for chat embed)
   ].join('; '),
 }
 
