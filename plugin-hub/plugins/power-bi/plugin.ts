@@ -1,6 +1,6 @@
 import { PluginDefinition } from '../../types'
 
-export const powerBIPlugin: PluginDefinition = {
+export const powerBiPlugin: PluginDefinition = {
   source: 'hub',
   id: 'power-bi',
   name: 'Power BI',
