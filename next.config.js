@@ -28,7 +28,7 @@ const nextConfig = {
   // Experimental features for better build performance
   experimental: {
     // Reduce memory usage by limiting concurrent workers
-    webpackBuildWorker: true,
+    webpackBuildWorker: false, // Disabled to prevent "Array buffer allocation failed" error
     // Enable parallel routes for better route optimization
     parallelServerBuildTraces: false,
     // Optimize package imports to reduce bundle size
