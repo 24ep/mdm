@@ -35,7 +35,6 @@ export default function ChatPage() {
   const params = useParams()
   const searchParams = useSearchParams()
   const isEmbed = searchParams.get('mode') === 'embed'
-  const isPreview = searchParams.get('preview') === 'true' // Emulator preview mode
   const urlDeploymentType = searchParams.get('deploymentType') || searchParams.get('type')
   const chatbotId = params?.id as string
   const [previewDeploymentType, setPreviewDeploymentType] = useState<'popover' | 'fullpage' | 'popup-center'>(
@@ -348,19 +347,21 @@ export default function ChatPage() {
   const popoverPositionStyle = getPopoverPositionStyle(chatbot)
   const widgetButtonStyle = getWidgetButtonStyle(chatbot)
 
-  // Render ChatKit only if engine type is chatkit (not openai-agent-sdk)
+  // Render ChatKit only if engine type is chatkit or openai-agent-sdk with agent ID
   const useChatKitInRegularStyle = (chatbot as any).useChatKitInRegularStyle === true || isMobile
+  const isAgentSDK = chatbot.engineType === 'openai-agent-sdk'
+  const agentId = isAgentSDK ? chatbot.openaiAgentSdkAgentId : chatbot.chatkitAgentId
   const shouldRenderChatKit =
     !chatKitUnavailable &&
-    chatbot.engineType === 'chatkit' &&
-    chatbot.chatkitAgentId
+    (chatbot.engineType === 'chatkit' || chatbot.engineType === 'openai-agent-sdk') &&
+    agentId
 
   // Debug: Trace ChatKit rendering conditions
   console.log('ChatKit Debug:', {
     shouldRenderChatKit,
     chatKitUnavailable,
     engineType: chatbot.engineType,
-    chatkitAgentId: chatbot.chatkitAgentId,
+    agentId: agentId,
     useChatKitInRegularStyle,
     isMobile
   })
@@ -459,9 +460,8 @@ export default function ChatPage() {
     )
   }
 
-  // Full page layout with sidebar - but NOT in preview/emulator mode
-  // In preview mode, we want to show the widget/popover behavior even for fullpage type
-  if (effectiveDeploymentType === 'fullpage' && !isInIframe && !isPreview) {
+  // Full page layout with sidebar
+  if (effectiveDeploymentType === 'fullpage' && !isInIframe) {
     return (
       <FullPageChatLayout
         emulatorConfig={emulatorConfig}

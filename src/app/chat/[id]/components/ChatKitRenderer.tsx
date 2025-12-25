@@ -79,9 +79,13 @@ export function ChatKitRenderer({
     }
   }, [])
 
+  // Compute agent ID once
+  const isAgentSDK = chatbot.engineType === 'openai-agent-sdk'
+  const agentId = isAgentSDK ? chatbot.openaiAgentSdkAgentId : chatbot.chatkitAgentId
+
   // Load ChatKit module when script is loaded
   useEffect(() => {
-    if (!chatkitLoaded || !chatbot.chatkitAgentId || chatkitModule || isInitializing) {
+    if (!chatkitLoaded || !agentId || chatkitModule || isInitializing) {
       return
     }
 
@@ -122,13 +126,13 @@ export function ChatKitRenderer({
         }
         console.warn('ChatKit module not available, will use regular chat style')
       })
-  }, [chatkitLoaded, chatbot.chatkitAgentId, chatkitModule, isInitializing, onChatKitUnavailable])
+  }, [chatkitLoaded, agentId, chatkitModule, isInitializing, onChatKitUnavailable])
 
   // Debug: Trace ChatKitRenderer state
-  console.log('ChatKitRenderer state:', { chatkitLoaded, chatkitModule: !!chatkitModule, chatkitError, isInitializing, isMobile, previewDeploymentType, agentId: chatbot.chatkitAgentId })
+  console.log('ChatKitRenderer state:', { chatkitLoaded, chatkitModule: !!chatkitModule, chatkitError, isInitializing, isMobile, previewDeploymentType, agentId: agentId, engineType: chatbot.engineType })
 
   // Render ChatKit component when ready
-  if (chatkitModule && chatbot.chatkitAgentId && !chatkitError) {
+  if (chatkitModule && agentId && !chatkitError) {
     return (
       <ChatKitWrapper
         chatkitModule={chatkitModule}
