@@ -65,7 +65,15 @@ async function putHandler(
   const { session } = authResult
 
   const { chatbotId } = await params
-  const body = await request.json()
+  
+  let body: any
+  try {
+    body = await request.json()
+    console.log('[PUT /api/chatbots] Request body:', JSON.stringify(body, null, 2))
+  } catch (parseError) {
+    console.error('[PUT /api/chatbots] Failed to parse request body:', parseError)
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
 
   // Check if chatbot exists and user has access
   const existingChatbot = await db.chatbot.findFirst({
@@ -115,76 +123,101 @@ async function putHandler(
     chatkitApiKey, // Explicitly extract
     chatkitOptions, // Explicitly extract
     engineType, // Explicitly extract
+    // IMPORTANT: Extract and discard internal/system fields to prevent them from
+    // being included in versionConfig, which would cause circular references or
+    // invalid JSON in the version config. These fields come from the frontend
+    // when it sends the full chatbot object.
+    id: _id,
+    createdAt: _createdAt,
+    updatedAt: _updatedAt,
+    deletedAt: _deletedAt,
+    versions: _versions,
+    creator: _creator,
+    space: _space,
+    createdBy: _createdBy,
     ...versionConfig
   } = body
 
   // Check if there are version-specific config updates
-  const hasVersionConfig = Object.keys(versionConfig).length > 0 || chatkitApiKey !== undefined || chatkitOptions !== undefined || engineType !== undefined
+  // Filter out any remaining internal fields that might have slipped through
+  const internalFields = ['id', 'createdAt', 'updatedAt', 'deletedAt', 'versions', 'creator', 'space', 'createdBy']
+  const cleanVersionConfig = Object.fromEntries(
+    Object.entries(versionConfig).filter(([key]) => !internalFields.includes(key))
+  )
+  const hasVersionConfig = Object.keys(cleanVersionConfig).length > 0 || chatkitApiKey !== undefined || chatkitOptions !== undefined || engineType !== undefined
 
   // Update the chatbot
-  const updatedChatbot = await db.chatbot.update({
-    where: { id: chatbotId },
-    data: {
-      ...(name !== undefined && { name }),
-      ...(website !== undefined && { website }),
-      ...(description !== undefined && { description }),
-      ...(apiEndpoint !== undefined && { apiEndpoint }),
-      ...(engineType !== undefined && { engineType }),
-      ...(apiAuthType !== undefined && { apiAuthType }),
-      ...(apiAuthValue !== undefined && { apiAuthValue }),
-      ...(logo !== undefined && { logo }),
-      ...(primaryColor !== undefined && { primaryColor }),
-      ...(fontFamily !== undefined && { fontFamily }),
-      ...(fontSize !== undefined && { fontSize }),
-      ...(fontColor !== undefined && { fontColor }),
-      ...(borderColor !== undefined && { borderColor }),
-      ...(borderWidth !== undefined && { borderWidth }),
-      ...(borderRadius !== undefined && { borderRadius }),
-      ...(messageBoxColor !== undefined && { messageBoxColor }),
-      ...(shadowColor !== undefined && { shadowColor }),
-      ...(shadowBlur !== undefined && { shadowBlur }),
-      ...(conversationOpener !== undefined && { conversationOpener }),
-      ...(followUpQuestions !== undefined && { followUpQuestions }),
-      ...(enableFileUpload !== undefined && { enableFileUpload }),
-      ...(showCitations !== undefined && { showCitations }),
-      ...(deploymentType !== undefined && { deploymentType }),
-      ...(widgetBackgroundColor !== undefined && { widgetBackgroundColor }),
-      ...(showCitations !== undefined && { showCitations }),
-      ...(deploymentType !== undefined && { deploymentType }),
-      ...(widgetBackgroundColor !== undefined && { widgetBackgroundColor }),
-      // Force Draft mode (isPublished: false) if we are updating config fields (Save action)
-      // Only allow isPublished: true if it's explicitly passed AND we are NOT updating config (Publish action)
-      isPublished: (hasVersionConfig || name || description || logo || primaryColor || messageBoxColor) ? false : (isPublished !== undefined ? isPublished : undefined),
-      ...(currentVersion !== undefined && { currentVersion }),
-      ...(spaceId !== undefined && {
-        space: spaceId
-          ? { connect: { id: spaceId } }
-          : { disconnect: true }
-      }),
-      ...(customEmbedDomain !== undefined && { customEmbedDomain }),
-      updatedAt: new Date()
-    },
-    include: {
-      creator: {
-        select: {
-          id: true,
-          name: true,
-          email: true
-        }
+  let updatedChatbot: any
+  try {
+    updatedChatbot = await db.chatbot.update({
+      where: { id: chatbotId },
+      data: {
+        ...(name !== undefined && { name }),
+        ...(website !== undefined && { website }),
+        ...(description !== undefined && { description }),
+        ...(apiEndpoint !== undefined && { apiEndpoint }),
+        ...(engineType !== undefined && { engineType }),
+        ...(apiAuthType !== undefined && { apiAuthType }),
+        ...(apiAuthValue !== undefined && { apiAuthValue }),
+        ...(logo !== undefined && { logo }),
+        ...(primaryColor !== undefined && { primaryColor }),
+        ...(fontFamily !== undefined && { fontFamily }),
+        ...(fontSize !== undefined && { fontSize }),
+        ...(fontColor !== undefined && { fontColor }),
+        ...(borderColor !== undefined && { borderColor }),
+        ...(borderWidth !== undefined && { borderWidth }),
+        ...(borderRadius !== undefined && { borderRadius }),
+        ...(messageBoxColor !== undefined && { messageBoxColor }),
+        ...(shadowColor !== undefined && { shadowColor }),
+        ...(shadowBlur !== undefined && { shadowBlur }),
+        ...(conversationOpener !== undefined && { conversationOpener }),
+        ...(followUpQuestions !== undefined && { followUpQuestions }),
+        ...(enableFileUpload !== undefined && { enableFileUpload }),
+        ...(showCitations !== undefined && { showCitations }),
+        ...(deploymentType !== undefined && { deploymentType }),
+        ...(widgetBackgroundColor !== undefined && { widgetBackgroundColor }),
+        ...(showCitations !== undefined && { showCitations }),
+        ...(deploymentType !== undefined && { deploymentType }),
+        ...(widgetBackgroundColor !== undefined && { widgetBackgroundColor }),
+        // Force Draft mode (isPublished: false) if we are updating config fields (Save action)
+        // Only allow isPublished: true if it's explicitly passed AND we are NOT updating config (Publish action)
+        isPublished: (hasVersionConfig || name || description || logo || primaryColor || messageBoxColor) ? false : (isPublished !== undefined ? isPublished : undefined),
+        ...(currentVersion !== undefined && { currentVersion }),
+        ...(spaceId !== undefined && {
+          space: spaceId
+            ? { connect: { id: spaceId } }
+            : { disconnect: true }
+        }),
+        ...(customEmbedDomain !== undefined && { customEmbedDomain }),
+        updatedAt: new Date()
       },
-      space: {
-        select: {
-          id: true,
-          name: true,
-          slug: true
+      include: {
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        space: {
+          select: {
+            id: true,
+            name: true,
+            slug: true
+          }
+        },
+        versions: {
+          orderBy: { createdAt: 'desc' },
+          take: 5
         }
-      },
-      versions: {
-        orderBy: { createdAt: 'desc' },
-        take: 5
       }
-    }
-  })
+    })
+    console.log('[PUT /api/chatbots] Chatbot updated successfully:', updatedChatbot.id)
+  } catch (updateError: any) {
+    console.error('[PUT /api/chatbots] Failed to update chatbot:', updateError.message)
+    console.error('[PUT /api/chatbots] Error details:', updateError)
+    throw updateError
+  }
 
   // Check if there are version-specific config updates (already calculated above)
   if (hasVersionConfig) {
@@ -196,7 +229,7 @@ async function putHandler(
     // Important: Don't use || null conversion which would lose empty string values
     const newConfig = {
       ...existingConfig,
-      ...versionConfig,
+      ...cleanVersionConfig,
       name: name !== undefined ? name : existingConfig.name,
       website: website !== undefined ? website : existingConfig.website,
       description: description !== undefined ? description : existingConfig.description,
