@@ -85,7 +85,17 @@ export function PluginCard({ plugin, onInstall, onUninstall, installing = false,
                   <Trash2 className="mr-2 h-4 w-4" />
                   {installing ? 'Uninstalling...' : 'Uninstall'}
                 </Button>
-              ) : null
+              ) : (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled
+                  className="cursor-default bg-muted text-muted-foreground"
+                >
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Installed
+                </Button>
+              )
             ) : (
               <Button
                 size="sm"

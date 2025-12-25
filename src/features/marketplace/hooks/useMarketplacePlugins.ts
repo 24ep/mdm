@@ -82,7 +82,7 @@ export function useMarketplacePlugins(
 
   useEffect(() => {
     fetchPlugins()
-  }, [category, filters.status, filters.verified, filters.serviceType])
+  }, [category, filters.status, filters.verified, filters.serviceType, filters.installedOnly, spaceId])
 
   return {
     plugins,

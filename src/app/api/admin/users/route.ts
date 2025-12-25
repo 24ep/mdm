@@ -51,16 +51,15 @@ async function postHandler(request: NextRequest) {
 
     // Create user
     const result = await query(
-      `INSERT INTO users (email, name, password, role, is_active, default_space_id, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
-       RETURNING id, email, name, role, is_active, created_at, default_space_id`,
+      `INSERT INTO users (email, name, password, role, is_active, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+       RETURNING id, email, name, role, is_active, created_at`,
       [
         email,
         name,
         hashedPassword,
         userRole,
-        isActive !== undefined ? isActive : true,
-        defaultSpaceId || null
+        isActive !== undefined ? isActive : true
       ]
     )
 
@@ -86,8 +85,7 @@ async function postHandler(request: NextRequest) {
           name: newUser.name,
           role: newUser.role,
           isActive: newUser.is_active,
-          createdAt: newUser.created_at,
-          defaultSpaceId: newUser.default_space_id
+          createdAt: newUser.created_at
         }
       },
       { status: 201 }
@@ -159,9 +157,8 @@ async function getHandler(request: NextRequest) {
     const users = await query(`
       SELECT 
         u.id, u.name, u.email, u.role, u.created_at,
-        true as is_active,
+        u.is_active,
         null as last_login_at,
-        null as default_space_id,
         COALESCE(
           json_agg(
             json_build_object(
@@ -176,7 +173,7 @@ async function getHandler(request: NextRequest) {
       LEFT JOIN space_members sm ON u.id = sm.user_id
       LEFT JOIN spaces s ON sm.space_id = s.id
       ${whereClause}
-      GROUP BY u.id, u.name, u.email, u.role, u.created_at
+      GROUP BY u.id, u.name, u.email, u.role, u.created_at, u.is_active
       ORDER BY u.created_at DESC
       LIMIT $${limitParamIndex} OFFSET $${offsetParamIndex}
     `, usersQueryParams)

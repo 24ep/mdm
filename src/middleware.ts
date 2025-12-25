@@ -20,8 +20,8 @@ export default withAuth(
     // Create response
     const response = NextResponse.next()
 
-    // Add security headers to all responses
-    return addSecurityHeaders(response)
+    // Add security headers to all responses with route-specific CSP
+    return addSecurityHeaders(response, req.nextUrl.pathname)
   },
   {
     callbacks: {

@@ -133,18 +133,37 @@ async function postHandler(request: NextRequest) {
 
     // Check if already installed (globally if no spaceId, or in specific space)
     const existingQuery = spaceId
-      ? `SELECT id FROM service_installations 
+      ? `SELECT id, service_id, space_id, status FROM service_installations 
          WHERE service_id = CAST($1 AS uuid) AND space_id = CAST($2 AS uuid) AND deleted_at IS NULL`
-      : `SELECT id FROM service_installations 
+      : `SELECT id, service_id, space_id, status FROM service_installations 
          WHERE service_id = CAST($1 AS uuid) AND space_id IS NULL AND deleted_at IS NULL`
     
     const existingParams = spaceId ? [serviceId, spaceId] : [serviceId]
     const existing = await query(existingQuery, existingParams)
 
     if (existing.rows.length > 0) {
+      // Return existing installation instead of error
+      const existingInstallation = existing.rows[0]
+      await logAPIRequest(
+        session.user.id,
+        'POST',
+        '/api/marketplace/installations',
+        200,
+        spaceId
+      )
+      
       return NextResponse.json(
-        { error: spaceId ? 'Plugin already installed in this space' : 'Plugin already installed globally' },
-        { status: 409 }
+        { 
+          installation: {
+            id: existingInstallation.id,
+            serviceId: existingInstallation.service_id,
+            spaceId: existingInstallation.space_id,
+            status: existingInstallation.status,
+          },
+          message: 'Plugin already installed',
+          alreadyInstalled: true
+        },
+        { status: 200 }
       )
     }
 

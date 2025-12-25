@@ -19,9 +19,9 @@ const securityHeaders = {
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   'Content-Security-Policy': [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.platform.openai.com", // Next.js features + ChatKit
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com", // Google Fonts CSS
-    "img-src 'self' data: https:",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://cdn.platform.openai.com", // Next.js features + ChatKit + blob for dynamic modules
+    "style-src 'self' 'unsafe-inline' data: blob: https://fonts.googleapis.com", // Google Fonts CSS + data/blob for Next.js CSS
+    "img-src 'self' data: blob: https:",
     "font-src 'self' data: https://fonts.gstatic.com", // Google Fonts files
     "connect-src 'self' https:",
     "frame-src 'self' https://cdn.platform.openai.com", // OpenAI ChatKit frames
@@ -30,11 +30,38 @@ const securityHeaders = {
 }
 
 /**
+ * Get appropriate CSP header based on route
+ */
+export function getCspForRoute(pathname: string): string {
+  // Relaxed CSP for embedded chat routes
+  if (pathname.startsWith('/chat') || pathname.startsWith('/api/chatkit') || pathname.startsWith('/api/embed')) {
+    return [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://cdn.platform.openai.com *.openai.com",
+      "style-src 'self' 'unsafe-inline' data: blob: https://fonts.googleapis.com *",
+      "img-src 'self' data: blob: https: *",
+      "font-src 'self' data: blob: https://fonts.gstatic.com *",
+      "connect-src 'self' https: wss: *",
+      "frame-src 'self' https://cdn.platform.openai.com *",
+      "frame-ancestors *",
+    ].join('; ')
+  }
+  
+  // Strict CSP for admin and other routes
+  return securityHeaders['Content-Security-Policy']
+}
+
+/**
  * Add security headers to a response
  */
-export function addSecurityHeaders(response: NextResponse): NextResponse {
+export function addSecurityHeaders(response: NextResponse, pathname?: string): NextResponse {
   Object.entries(securityHeaders).forEach(([key, value]) => {
-    response.headers.set(key, value)
+    if (key === 'Content-Security-Policy' && pathname) {
+      // Use route-specific CSP
+      response.headers.set(key, getCspForRoute(pathname))
+    } else {
+      response.headers.set(key, value)
+    }
   })
   return response
 }

@@ -460,8 +460,12 @@ export default function ChatPage() {
     )
   }
 
-  // Full page layout with sidebar
-  if (effectiveDeploymentType === 'fullpage' && !isInIframe) {
+  // Full page layout with sidebar - Only use this layout when:
+  // 1. Deployment type is fullpage AND not in iframe (normal fullpage access)
+  // 2. OR when not in iframe regardless of deployment type (non-embed access without sidebar uses widget/container below)
+  // In emulator (isInIframe=true), always use the widget/container rendering path below to properly show popover button
+  const isPreview = searchParams.get('preview') === 'true'
+  if (effectiveDeploymentType === 'fullpage' && !isInIframe && !isPreview) {
     return (
       <FullPageChatLayout
         emulatorConfig={emulatorConfig}
