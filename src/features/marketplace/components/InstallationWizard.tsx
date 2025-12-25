@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export interface InstallationWizardProps {
   plugin: PluginDefinition
-  spaceId: string
+  spaceId: string | null // Allow null for global installations
   open: boolean
   onOpenChange: (open: boolean) => void
   onComplete: (

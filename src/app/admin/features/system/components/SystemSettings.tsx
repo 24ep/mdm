@@ -206,15 +206,63 @@ export function SystemSettings() {
 
       <div className="w-full">
       <Tabs defaultValue="general">
-        <TabsList className="grid w-full grid-cols-8">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="database">Database</TabsTrigger>
-          <TabsTrigger value="email">Email</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="sso">SSO</TabsTrigger>
-          <TabsTrigger value="features">Features</TabsTrigger>
-          <TabsTrigger value="integrations">Integrations</TabsTrigger>
-          <TabsTrigger value="storage">Storage</TabsTrigger>
+        <TabsList className="inline-flex h-auto w-auto justify-start bg-transparent border-b border-border p-0 gap-6">
+          <TabsTrigger 
+            value="general" 
+            className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-0 pb-3 data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+          >
+            <Globe className="h-4 w-4" />
+            General
+          </TabsTrigger>
+          <TabsTrigger 
+            value="database"
+            className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-0 pb-3 data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+          >
+            <Database className="h-4 w-4" />
+            Database
+          </TabsTrigger>
+          <TabsTrigger 
+            value="email"
+            className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-0 pb-3 data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+          >
+            <Mail className="h-4 w-4" />
+            Email
+          </TabsTrigger>
+          <TabsTrigger 
+            value="security"
+            className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-0 pb-3 data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+          >
+            <Shield className="h-4 w-4" />
+            Security
+          </TabsTrigger>
+          <TabsTrigger 
+            value="sso"
+            className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-0 pb-3 data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+          >
+            <Key className="h-4 w-4" />
+            SSO
+          </TabsTrigger>
+          <TabsTrigger 
+            value="features"
+            className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-0 pb-3 data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+          >
+            <Bell className="h-4 w-4" />
+            Features
+          </TabsTrigger>
+          <TabsTrigger 
+            value="integrations"
+            className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-0 pb-3 data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+          >
+            <Server className="h-4 w-4" />
+            Integrations
+          </TabsTrigger>
+          <TabsTrigger 
+            value="storage"
+            className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-0 pb-3 data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+          >
+            <Database className="h-4 w-4" />
+            Storage
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="space-y-6">

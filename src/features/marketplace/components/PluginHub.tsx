@@ -95,17 +95,12 @@ export function PluginHub() {
 
   const handleInstall = async (plugin: PluginDefinition) => {
     try {
-      if (!currentSpace?.id) {
-        showError('Please select a space to install the plugin')
-        return
-      }
-
       const response = await fetch(`/api/marketplace/installations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           serviceId: plugin.id,
-          spaceId: currentSpace.id,
+          spaceId: currentSpace?.id || null, // Allow global installation if no space selected
         }),
       })
 

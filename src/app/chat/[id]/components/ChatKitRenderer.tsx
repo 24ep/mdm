@@ -149,19 +149,10 @@ export function ChatKitRenderer({
     return null
   }
 
+  // Loading state - don't show full screen, just return null
+  // The parent component should handle showing the page content while ChatKit loads in the background
   if (!chatkitLoaded || !chatkitModule) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin mb-2" />
-        <span className="ml-2">Loading ChatKit...</span>
-        {!chatkitLoaded && (
-          <p className="text-sm text-muted-foreground mt-2">Loading ChatKit script...</p>
-        )}
-        {chatkitLoaded && !chatkitModule && (
-          <p className="text-sm text-muted-foreground mt-2">Loading ChatKit module...</p>
-        )}
-      </div>
-    )
+    return null
   }
 
   return null

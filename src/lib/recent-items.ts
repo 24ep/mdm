@@ -1,4 +1,5 @@
 export type RecentItemType = 'tool' | 'page' | 'space'
+export type RecentItemCategory = 'tools' | 'admin' | 'system' | 'content' | 'overview'
 
 export interface RecentItem {
   id: string
@@ -8,11 +9,13 @@ export interface RecentItem {
   color?: string
   url?: string
   tabId?: string
+  category?: RecentItemCategory
+  description?: string
   accessedAt: number
 }
 
 const STORAGE_KEY = 'mdm-recent-items'
-const MAX_ITEMS = 10
+const MAX_ITEMS = 20 // Increased from 10
 
 export function addRecentItem(item: Omit<RecentItem, 'accessedAt'>): void {
   try {
@@ -50,6 +53,42 @@ export function getRecentItems(limit: number = MAX_ITEMS): RecentItem[] {
   }
 }
 
+export function getRecentItemsByCategory(category: RecentItemCategory, limit: number = MAX_ITEMS): RecentItem[] {
+  try {
+    const allItems = getRecentItems(MAX_ITEMS)
+    return allItems.filter(item => item.category === category).slice(0, limit)
+  } catch (error) {
+    console.error('Failed to filter recent items by category:', error)
+    return []
+  }
+}
+
+export function getRecentItemsByType(type: RecentItemType, limit: number = MAX_ITEMS): RecentItem[] {
+  try {
+    const allItems = getRecentItems(MAX_ITEMS)
+    return allItems.filter(item => item.type === type).slice(0, limit)
+  } catch (error) {
+    console.error('Failed to filter recent items by type:', error)
+    return []
+  }
+}
+
+export function removeRecentItem(id: string, type: RecentItemType): void {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (!stored) return
+    
+    const recent: RecentItem[] = JSON.parse(stored)
+    const filtered = recent.filter(
+      (r) => !(r.id === id && r.type === type)
+    )
+    
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered))
+  } catch (error) {
+    console.error('Failed to remove recent item:', error)
+  }
+}
+
 export function clearRecentItems(): void {
   try {
     localStorage.removeItem(STORAGE_KEY)
@@ -58,3 +97,19 @@ export function clearRecentItems(): void {
   }
 }
 
+export function getRelativeTimeString(timestamp: number): string {
+  const now = Date.now()
+  const diff = now - timestamp
+  
+  const seconds = Math.floor(diff / 1000)
+  const minutes = Math.floor(seconds / 60)
+  const hours = Math.floor(minutes / 60)
+  const days = Math.floor(hours / 24)
+  
+  if (seconds < 60) return 'Just now'
+  if (minutes < 60) return `${minutes}m ago`
+  if (hours < 24) return `${hours}h ago`
+  if (days < 7) return `${days}d ago`
+  
+  return new Date(timestamp).toLocaleDateString()
+}

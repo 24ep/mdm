@@ -392,7 +392,7 @@ export function MarketplaceHome({
       {showInstallWizard && selectedPlugin && (
         <InstallationWizard
           plugin={selectedPlugin}
-          spaceId={effectiveSpaceId || currentSpace?.id || ''}
+          spaceId={(effectiveSpaceId || currentSpace?.id || null) as string | null}
           open={showInstallWizard}
           onOpenChange={setShowInstallWizard}
           onComplete={handleInstallationComplete}

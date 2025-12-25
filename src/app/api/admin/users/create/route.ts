@@ -1,6 +1,6 @@
 import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { NextRequest, NextResponse } from 'next/server'
-import { query } from '@/lib/db'
+import { db } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 
 async function postHandler(request: NextRequest) {
@@ -32,9 +32,12 @@ async function postHandler(request: NextRequest) {
         return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
     }
 
-    // Check availability
-    const existing = await query('SELECT id FROM users WHERE email = $1', [email])
-    if (existing.rows.length > 0) {
+    // Check if user already exists using Prisma
+    const existing = await db.user.findUnique({
+      where: { email: email }
+    })
+    
+    if (existing) {
       return NextResponse.json({ error: 'User with this email already exists' }, { status: 409 })
     }
 
@@ -43,30 +46,42 @@ async function postHandler(request: NextRequest) {
     const isActiveValue = isActive !== undefined ? isActive : true
     const reqPassChangeValue = requiresPasswordChange !== undefined ? requiresPasswordChange : false
 
-    const { rows } = await query(
-      `INSERT INTO users (
-        email, 
-        name, 
-        password, 
-        role, 
-        is_active, 
-        requires_password_change, 
-        created_at, 
-        updated_at
-       ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW()) 
-       RETURNING id, email, name, role, is_active, created_at`,
-      [email, name, hashedPassword, roleValue, isActiveValue, reqPassChangeValue]
-    )
+    // Create user using Prisma
+    const newUser = await db.user.create({
+      data: {
+        email,
+        name,
+        password: hashedPassword,
+        role: roleValue,
+        isActive: isActiveValue,
+        requiresPasswordChange: reqPassChangeValue,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+      }
+    })
 
     return NextResponse.json({
       success: true,
-      user: rows[0]
+      user: {
+        id: newUser.id,
+        email: newUser.email,
+        name: newUser.name,
+        role: newUser.role,
+        is_active: newUser.isActive,
+        created_at: newUser.createdAt,
+      }
     })
 
   } catch (error: any) {
     console.error('Error creating user:', error)
     return NextResponse.json(
-      { error: 'Failed to create user' },
+      { error: 'Failed to create user', details: error.message },
       { status: 500 }
     )
   }

@@ -369,10 +369,11 @@ export default function ChatPage() {
   // On mobile, when chat is open, hide widget button (fullpage mode covers entire screen)
   // Widget button should show in embed mode if deployment type is popover/popup-center
   // Also show widget button on mobile embed when chat is closed (so user can re-open)
+  // IMPORTANT: In preview/emulator mode (!isInIframe), always show widget for popover/popup-center
   const shouldShowWidgetButton = !isNativeChatKit && (
     (effectiveDeploymentType === 'popover' || effectiveDeploymentType === 'popup-center') ||
     (isMobile && isEmbed && !isOpen)  // Mobile embed: show button when closed
-  ) && !(isMobile && isOpen)
+  ) && !(isMobile && isOpen && isEmbed) // Hide on mobile when open in embed mode
   // For mobile embed (where popover was converted to fullpage), respect isOpen state
   // Regular fullpage always shows container, but mobile embed fullpage can be closed
   const isMobileEmbedFullpage = isMobile && isEmbed && effectiveDeploymentType === 'fullpage'

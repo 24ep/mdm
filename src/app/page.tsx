@@ -35,9 +35,14 @@ import {
   BookOpen,
   Building2,
   Kanban,
-  TestTube
+  TestTube,
+  Clock,
+  X,
+  Trash2,
+  History
 } from 'lucide-react'
-import { addRecentItem, getRecentItems, type RecentItem } from '@/lib/recent-items'
+import { addRecentItem, getRecentItems, clearRecentItems, getRelativeTimeString, type RecentItem } from '@/lib/recent-items'
+import { usePageTracking } from '@/hooks/usePageTracking'
 import { PlatformLayout } from '@/components/platform/PlatformLayout'
 import { BigQueryInterface } from './admin/features/business-intelligence'
 import { OutlineKnowledgeBase } from '@plugins/knowledge-base/src/components/OutlineKnowledgeBase'
@@ -52,7 +57,6 @@ import { BackupRecovery } from './admin/features/storage'
 import { APIManagement } from './admin/features/integration'
 import { NotificationCenter, ThemeManager } from './admin/features/system'
 import { SecurityFeatures } from './admin/features/security'
-import { PerformanceMonitoring } from './admin/features/analytics'
 import { DataExportImport } from './admin/features/data'
 import { IntegrationHub } from './admin/features/integration'
 import { LogManagement } from './admin/features/analytics'
@@ -103,7 +107,6 @@ const getRouteForTab = (tab: string): string => {
     'cache': '/system/cache',
     'backup': '/system/backup',
     'security': '/system/security',
-    'performance': '/system/performance',
     'settings': '/system/settings',
     'page-templates': '/system/page-templates',
     'notifications': '/system/notifications',
@@ -124,6 +127,9 @@ export default function HomePage() {
   const [selectedSpace, setSelectedSpace] = useState<string>('')
   const [error, setError] = useState<string | null>(null)
   const [recentItems, setRecentItems] = useState<RecentItem[]>([])
+
+  // Auto-track page navigation
+  usePageTracking()
 
   useEffect(() => {
     // Add error boundary for client-side errors
@@ -148,10 +154,15 @@ export default function HomePage() {
     }
   }, [searchParams, pathname, router])
 
-  // Load recent items
+  // Load recent items (show up to 12)
   useEffect(() => {
-    setRecentItems(getRecentItems(8))
+    setRecentItems(getRecentItems(12))
   }, [])
+
+  // Refresh recent items when pathname changes
+  useEffect(() => {
+    setRecentItems(getRecentItems(12))
+  }, [pathname])
 
   // Track tab changes as recent items
   useEffect(() => {
@@ -277,30 +288,58 @@ export default function HomePage() {
         {/* Homepage Content */}
         {activeTab === 'overview' && (
           <div className="p-6">
-            {/* Recent Items Section */}
+            {/* Recent Pages Section - Enhanced */}
             {recentItems.length > 0 && (
               <div className="mb-8">
-                <h2 className="text-lg font-semibold mb-4">Recent</h2>
-                <div className="flex gap-4 overflow-x-auto pb-2">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <History className="h-5 w-5 text-muted-foreground" />
+                    <h2 className="text-lg font-semibold">Recent Pages</h2>
+                    <span className="text-sm text-muted-foreground">({recentItems.length})</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      clearRecentItems()
+                      setRecentItems([])
+                    }}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Clear All
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                   {recentItems.map((item) => {
                     const IconComponent = getIconComponent(item.icon)
                     return (
                       <button
                         key={`${item.type}-${item.id}`}
                         onClick={() => handleRecentItemClick(item)}
-                        className="flex flex-col items-center gap-2 min-w-[80px] hover:opacity-80 transition-opacity group"
+                        className="flex flex-col items-start gap-2 p-3 rounded-lg border bg-card hover:bg-accent hover:border-accent-foreground/20 transition-all group"
                       >
-                        <div
-                          className="w-16 h-16 rounded-lg flex items-center justify-center shadow-sm transition-shadow group-hover:shadow-md"
-                          style={{
-                            backgroundColor: item.color || '#6b7280',
-                          }}
-                        >
-                          <IconComponent className="h-8 w-8 text-white" />
+                        <div className="flex items-start justify-between w-full">
+                          <div
+                            className="w-10 h-10 rounded-md flex items-center justify-center shadow-sm transition-all group-hover:scale-110"
+                            style={{
+                              backgroundColor: item.color || '#6b7280',
+                            }}
+                          >
+                            <IconComponent className="h-5 w-5 text-white" />
+                          </div>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Clock className="h-3 w-3" />
+                          </div>
                         </div>
-                        <span className="text-xs text-center text-foreground max-w-[80px] truncate">
-                          {item.name}
-                        </span>
+                        <div className="w-full text-left">
+                          <p className="text-sm font-medium text-foreground truncate w-full group-hover:text-accent-foreground transition-colors">
+                            {item.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {getRelativeTimeString(item.accessedAt)}
+                          </p>
+                        </div>
                       </button>
                     )
                   })}
@@ -554,7 +593,6 @@ export default function HomePage() {
         {activeTab === 'notifications' && <NotificationCenter />}
         {activeTab === 'themes' && <ThemeManager />}
         {activeTab === 'security' && <SecurityFeatures />}
-        {activeTab === 'performance' && <PerformanceMonitoring />}
         {activeTab === 'data' && <DataModelManagement />}
         {activeTab === 'export' && <DataExportImport />}
         {activeTab === 'logs' && <LogManagement />}

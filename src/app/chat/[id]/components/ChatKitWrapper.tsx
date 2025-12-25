@@ -177,8 +177,8 @@ export function ChatKitWrapper({
           const effectiveType = previewDeploymentType || chatbot.deploymentType || 'fullpage'
           if (showCloseButton && (effectiveType === 'popover' || effectiveType === 'popup-center')) {
             // ChatKit uses 'rightAction' (singular object, not array) for header button
+            // Note: rightAction only accepts onClick, not icon property
             supportedHeader.rightAction = {
-              icon: 'chevron-right', // ChatKit's available close-like icon
               onClick: () => setIsOpen(false)
             }
           }
@@ -519,6 +519,7 @@ export function ChatKitWrapper({
 
           {shouldShowContainer && (
             <div
+              className={`chatbot-popover-container ${isOpen ? 'chatbot-popover-enter' : 'chatbot-popover-exit'}`}
               style={{
                 // When using regular style header, remove positioning and fill container
                 ...(useChatKitInRegularStyle ? {
@@ -577,6 +578,43 @@ export function ChatKitWrapper({
               <div className="w-full h-full relative">
                 <ChatKit control={control} className="w-full h-full" />
               </div>
+              
+              {/* Smooth Animation Styles */}
+              <style jsx>{`
+                @keyframes chatbotPopoverFadeIn {
+                  from {
+                    opacity: 0;
+                    transform: scale(0.95) translateY(10px);
+                  }
+                  to {
+                    opacity: 1;
+                    transform: scale(1) translateY(0);
+                  }
+                }
+
+                @keyframes chatbotPopoverFadeOut {
+                  from {
+                    opacity: 1;
+                    transform: scale(1) translateY(0);
+                  }
+                  to {
+                    opacity: 0;
+                    transform: scale(0.95) translateY(10px);
+                  }
+                }
+
+                .chatbot-popover-container {
+                  transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+                }
+
+                .chatbot-popover-enter {
+                  animation: chatbotPopoverFadeIn 0.25s ease-out forwards;
+                }
+
+                .chatbot-popover-exit {
+                  animation: chatbotPopoverFadeOut 0.2s ease-in forwards;
+                }
+              `}</style>
             </div>
           )}
         </>
