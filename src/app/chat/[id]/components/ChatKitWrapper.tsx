@@ -50,8 +50,15 @@ export function ChatKitWrapper({
       const { control } = useChatKit({
         api: {
           async getClientSecret(existing: any) {
+            console.log('🔑 ChatKit getClientSecret called', {
+              hasExisting: !!existing,
+              agentId: agentId?.substring(0, 20) + '...',
+              chatbotId: chatbot.id,
+              hasApiKey: !!apiKey
+            })
             try {
               if (existing) {
+                console.log('🔄 Refreshing existing ChatKit session')
                 const res = await fetch('/api/chatkit/session', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -63,17 +70,21 @@ export function ChatKitWrapper({
                     apiKey: apiKey
                   }),
                 })
+                console.log('🌐 Session refresh response status:', res.status)
                 if (!res.ok) {
                   const errorData = await res.json().catch(() => ({ error: 'Unknown error' }))
+                  console.error('❌ Session refresh failed:', errorData)
                   const errorMessage = errorData.details
                     ? `${errorData.error}: ${errorData.details}`
                     : errorData.error || 'Failed to refresh ChatKit session'
                   throw new Error(errorMessage)
                 }
                 const { client_secret } = await res.json()
+                console.log('✅ Session refreshed successfully')
                 return client_secret
               }
 
+              console.log('🆕 Creating new ChatKit session')
               const res = await fetch('/api/chatkit/session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -84,32 +95,39 @@ export function ChatKitWrapper({
                   apiKey: apiKey
                 }),
               })
+              console.log('🌐 Session creation response status:', res.status)
               if (!res.ok) {
                 const errorData = await res.json().catch(() => ({ error: 'Unknown error' }))
-                console.error('ChatKit session error details:', errorData)
+                console.error('❌ ChatKit session creation failed:', {
+                  status: res.status,
+                  statusText: res.statusText,
+                  errorData
+                })
                 const errorMessage = errorData.details
                   ? `${errorData.error}: ${errorData.details}`
                   : errorData.error || 'Failed to create ChatKit session'
                 throw new Error(errorMessage)
               }
               const sessionData = await res.json()
-              console.log('ChatKit client secret received:', {
+              console.log('📦 ChatKit session data received:', {
                 has_secret: !!sessionData.client_secret,
                 session_id: sessionData.session_id,
                 secret_length: sessionData.client_secret?.length,
                 secret_type: typeof sessionData.client_secret
               })
               if (!sessionData.client_secret) {
+                console.error('❌ No client secret in response')
                 throw new Error('No client secret received from session endpoint')
               }
               const clientSecret = String(sessionData.client_secret).trim()
               if (!clientSecret) {
+                console.error('❌ Client secret is empty after trimming')
                 throw new Error('Client secret is empty')
               }
-              console.log('Returning client secret to ChatKit (first 20 chars):', clientSecret.substring(0, 20) + '...')
+              console.log('✅ Client secret validated, returning to ChatKit (first 20 chars):', clientSecret.substring(0, 20) + '...')
               return clientSecret
             } catch (error) {
-              console.error('Error getting client secret:', error)
+              console.error('❌ Error in getClientSecret:', error)
               throw error
             }
           },

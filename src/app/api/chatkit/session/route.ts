@@ -4,14 +4,24 @@ import { NextRequest, NextResponse } from 'next/server';
 // This endpoint is called by the ChatKitWrapper to get a client_secret
 
 export async function POST(request: NextRequest) {
+  console.log('🔵 ChatKit session API called')
   try {
     const body = await request.json();
     const { agentId, apiKey: providedApiKey, existing, chatbotId } = body;
+
+    console.log('📝 Session request details:', {
+      hasAgentId: !!agentId,
+      agentIdPrefix: agentId?.substring(0, 10),
+      hasChatbotId: !!chatbotId,
+      hasProvidedApiKey: !!providedApiKey,
+      hasExistingSession: !!existing
+    })
 
     let apiKey = providedApiKey;
 
     // If API key is missing but we have chatbotId, fetch it from DB
     if (!apiKey && chatbotId) {
+      console.log('🔍 Fetching API key from database for chatbot:', chatbotId)
       try {
         // Import db dynamically to avoid build cycle issues if any
         const { db } = await import('@/lib/db');
@@ -32,14 +42,21 @@ export async function POST(request: NextRequest) {
           // Determine which key to use
           const isAgentSDK = config.engineType === 'openai-agent-sdk';
           apiKey = isAgentSDK ? config.openaiAgentSdkApiKey : config.chatkitApiKey;
+          console.log('✅ Retrieved API key from database', {
+            engineType: config.engineType,
+            hasKey: !!apiKey
+          })
+        } else {
+          console.warn('⚠️ Chatbot not found in database:', chatbotId)
         }
       } catch (dbError) {
-        console.error('Error fetching API key from DB:', dbError);
+        console.error('❌ Error fetching API key from DB:', dbError);
         // Continue to see if we can fail gracefully or if apiKey was optional
       }
     }
 
     if (!agentId) {
+      console.error('❌ Missing agentId in request')
       return NextResponse.json(
         { error: 'Missing agentId' },
         { status: 400 }
@@ -47,6 +64,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!apiKey) {
+      console.error('❌ Missing API key')
       return NextResponse.json(
         { error: 'Missing API key', details: 'No OpenAI API key provided or found for this chatbot' },
         { status: 400 }
@@ -72,7 +90,15 @@ export async function POST(request: NextRequest) {
     // If refreshing an existing session, include session info
     if (existing && existing.session_id) {
       sessionPayload.session_id = existing.session_id;
+      console.log('🔄 Refreshing session:', existing.session_id)
     }
+
+    console.log('🌐 Calling OpenAI ChatKit API:', {
+      url: openaiUrl,
+      userId,
+      workflowId: agentId?.substring(0, 20) + '...',
+      isRefresh: !!existing
+    })
 
     const response = await fetch(openaiUrl, {
       method: 'POST',
@@ -84,6 +110,8 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(sessionPayload),
     });
 
+    console.log('📡 OpenAI API response status:', response.status, response.statusText)
+
     if (!response.ok) {
       const errorText = await response.text();
       let errorDetails;
@@ -93,7 +121,7 @@ export async function POST(request: NextRequest) {
         errorDetails = { raw: errorText };
       }
 
-      console.error('OpenAI session creation failed:', {
+      console.error('❌ OpenAI session creation failed:', {
         status: response.status,
         statusText: response.statusText,
         error: errorDetails
@@ -109,6 +137,11 @@ export async function POST(request: NextRequest) {
     }
 
     const sessionData = await response.json();
+    console.log('✅ Session created successfully:', {
+      session_id: sessionData.id,
+      has_client_secret: !!sessionData.client_secret,
+      expires_at: sessionData.expires_at
+    })
 
     // Return the client_secret to the frontend
     return NextResponse.json({
@@ -124,7 +157,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('ChatKit session error:', error);
+    console.error('❌ ChatKit session error:', error);
     return NextResponse.json(
       {
         error: 'Internal server error',

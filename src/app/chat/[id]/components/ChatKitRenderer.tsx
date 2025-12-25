@@ -29,6 +29,35 @@ export function ChatKitRenderer({
   const [isInitializing, setIsInitializing] = useState(false)
   const [isOpen, setIsOpen] = useState<boolean>(false)
 
+  // Debug: Log chatbot config for ChatKit requirements on mount
+  useEffect(() => {
+    const isAgentSDK = chatbot.engineType === 'openai-agent-sdk'
+    const agentId = isAgentSDK ? chatbot.openaiAgentSdkAgentId : chatbot.chatkitAgentId
+    const apiKey = isAgentSDK ? chatbot.openaiAgentSdkApiKey : chatbot.chatkitApiKey
+    
+    console.log('🔍 ChatKit Configuration Check:', {
+      engineType: chatbot.engineType,
+      isChatKitEngine: chatbot.engineType === 'chatkit',
+      isAgentSDK: chatbot.engineType === 'openai-agent-sdk',
+      hasAgentId: !!agentId,
+      agentIdPreview: agentId ? agentId.substring(0, 20) + '...' : 'NOT SET',
+      hasApiKey: !!apiKey,
+      chatbotId: chatbot.id,
+      chatbotName: chatbot.name
+    })
+    
+    // Log warnings for missing configuration
+    if (chatbot.engineType !== 'chatkit' && chatbot.engineType !== 'openai-agent-sdk') {
+      console.warn('⚠️ ChatKit will NOT render: engineType is', chatbot.engineType, '(must be "chatkit" or "openai-agent-sdk")')
+    }
+    if (!agentId) {
+      console.warn('⚠️ ChatKit will NOT render: agentId is not configured')
+    }
+    if (!apiKey) {
+      console.warn('⚠️ ChatKit sessions may fail: API key is not configured')
+    }
+  }, [chatbot])
+
   // Auto-show for widget (only auto-open, don't auto-close)
   useEffect(() => {
     if (!chatbot) return
@@ -129,10 +158,21 @@ export function ChatKitRenderer({
   }, [chatkitLoaded, agentId, chatkitModule, isInitializing, onChatKitUnavailable])
 
   // Debug: Trace ChatKitRenderer state
-  console.log('ChatKitRenderer state:', { chatkitLoaded, chatkitModule: !!chatkitModule, chatkitError, isInitializing, isMobile, previewDeploymentType, agentId: agentId, engineType: chatbot.engineType })
+  console.log('ChatKitRenderer state:', { 
+    chatkitLoaded, 
+    chatkitModule: !!chatkitModule, 
+    chatkitError, 
+    isInitializing, 
+    isMobile, 
+    previewDeploymentType, 
+    agentId: agentId, 
+    engineType: chatbot.engineType,
+    timestamp: new Date().toISOString()
+  })
 
   // Render ChatKit component when ready
   if (chatkitModule && agentId && !chatkitError) {
+    console.log('✅ ChatKit ready to render')
     return (
       <ChatKitWrapper
         chatkitModule={chatkitModule}
@@ -147,16 +187,80 @@ export function ChatKitRenderer({
     )
   }
 
-  // If ChatKit fails to load, show loading state briefly then return null
-  // The parent component will handle the fallback to regular chat
+  // If ChatKit fails to load, show error state and trigger fallback
   if (chatkitError) {
+    console.error('❌ ChatKit error detected:', chatkitError)
+    // Notify parent to use fallback
+    if (onChatKitUnavailable) {
+      console.log('🔄 Triggering ChatKit unavailable callback')
+      onChatKitUnavailable()
+    }
+    
+    // Show visible error in development, return null in production to use fallback
+    if (process.env.NODE_ENV === 'development') {
+      return (
+        <div className="flex flex-col items-center justify-center h-full p-4 text-center">
+          <div className="max-w-md">
+            <div className="text-red-500 mb-2">⚠️ ChatKit Error</div>
+            <p className="text-sm text-muted-foreground mb-4">{chatkitError}</p>
+            <p className="text-xs text-muted-foreground">Falling back to regular chat...</p>
+          </div>
+        </div>
+      )
+    }
     return null
   }
 
-  // Loading state - don't show full screen, just return null
-  // The parent component should handle showing the page content while ChatKit loads in the background
-  if (!chatkitLoaded || !chatkitModule) {
-    return null
+  // Loading state - show spinner while initializing
+  if (!chatkitLoaded) {
+    console.log('⏳ ChatKit script loading...')
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Loading ChatKit...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // No agent ID configured - show error BEFORE checking module loading
+  // This prevents infinite "Initializing..." spinner when agentId is missing
+  if (!agentId) {
+    console.error('❌ ChatKit cannot render: No agent ID configured')
+    console.log('💡 To fix: Set chatkitAgentId (for ChatKit engine) or openaiAgentSdkAgentId (for Agent SDK)')
+    
+    // Always try to fallback
+    if (onChatKitUnavailable) {
+      onChatKitUnavailable()
+    }
+    
+    // Show helpful error message
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-4 text-center">
+        <div className="max-w-md">
+          <div className="text-amber-500 mb-2">⚠️ ChatKit Configuration Missing</div>
+          <p className="text-sm text-muted-foreground mb-2">
+            Agent ID is not configured.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Please set the Agent ID in the chatbot&apos;s Engine Configuration.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isInitializing || !chatkitModule) {
+    console.log('⏳ ChatKit module initializing...')
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Initializing ChatKit module...</p>
+        </div>
+      </div>
+    )
   }
 
   return null
