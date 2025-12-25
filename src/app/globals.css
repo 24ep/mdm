@@ -1,5 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-@import "tailwindcss";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @layer base {
   :root {
@@ -189,7 +192,9 @@
   }
 
   /* Input styling - light grey background for light theme */
-  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]),
+  input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='submit']):not(
+      [type='button']
+    ):not([type='reset']),
   textarea,
   select {
     background-color: hsl(var(--muted)) !important;
@@ -197,7 +202,6 @@
     border: 1px solid hsl(var(--border)) !important;
   }
 }
-
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
@@ -354,7 +358,7 @@
 }
 
 /* Hide ChatKit header when rendered inside regular style container */
-.chatkit-in-regular-style>div>div:first-child,
+.chatkit-in-regular-style > div > div:first-child,
 .chatkit-in-regular-style [data-chatkit-header],
 .chatkit-in-regular-style header {
   display: none !important;
@@ -373,7 +377,7 @@
   bottom: 0 !important;
 }
 
-.chatkit-in-regular-style>div {
+.chatkit-in-regular-style > div {
   width: 100% !important;
   height: 100% !important;
   margin: 0 !important;
@@ -400,7 +404,7 @@
 }
 
 /* Hide ChatKit header when rendered inside regular style container */
-.chatkit-in-regular-style>div>div:first-child,
+.chatkit-in-regular-style > div > div:first-child,
 .chatkit-in-regular-style [data-chatkit-header],
 .chatkit-in-regular-style header {
   display: none !important;
@@ -419,7 +423,7 @@
   bottom: 0 !important;
 }
 
-.chatkit-in-regular-style>div {
+.chatkit-in-regular-style > div {
   width: 100% !important;
   height: 100% !important;
   margin: 0 !important;

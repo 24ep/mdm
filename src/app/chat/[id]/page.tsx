@@ -35,6 +35,7 @@ export default function ChatPage() {
   const params = useParams()
   const searchParams = useSearchParams()
   const isEmbed = searchParams.get('mode') === 'embed'
+  const isPreview = searchParams.get('preview') === 'true' // Emulator preview mode
   const urlDeploymentType = searchParams.get('deploymentType') || searchParams.get('type')
   const chatbotId = params?.id as string
   const [previewDeploymentType, setPreviewDeploymentType] = useState<'popover' | 'fullpage' | 'popup-center'>(
@@ -458,8 +459,9 @@ export default function ChatPage() {
     )
   }
 
-  // Full page layout with sidebar
-  if (effectiveDeploymentType === 'fullpage' && !isInIframe) {
+  // Full page layout with sidebar - but NOT in preview/emulator mode
+  // In preview mode, we want to show the widget/popover behavior even for fullpage type
+  if (effectiveDeploymentType === 'fullpage' && !isInIframe && !isPreview) {
     return (
       <FullPageChatLayout
         emulatorConfig={emulatorConfig}
