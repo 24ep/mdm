@@ -120,6 +120,7 @@ async function putHandler(
     currentVersion,
     spaceId,
     customEmbedDomain,
+    chatkitAgentId, // Explicitly extract
     chatkitApiKey, // Explicitly extract
     chatkitOptions, // Explicitly extract
     engineType, // Explicitly extract
@@ -144,7 +145,7 @@ async function putHandler(
   const cleanVersionConfig = Object.fromEntries(
     Object.entries(versionConfig).filter(([key]) => !internalFields.includes(key))
   )
-  const hasVersionConfig = Object.keys(cleanVersionConfig).length > 0 || chatkitApiKey !== undefined || chatkitOptions !== undefined || engineType !== undefined
+  const hasVersionConfig = Object.keys(cleanVersionConfig).length > 0 || chatkitAgentId !== undefined || chatkitApiKey !== undefined || chatkitOptions !== undefined || engineType !== undefined
 
   // Update the chatbot
   let updatedChatbot: any
@@ -254,6 +255,7 @@ async function putHandler(
       showCitations: showCitations !== undefined ? showCitations : existingConfig.showCitations,
       deploymentType: deploymentType !== undefined ? deploymentType : existingConfig.deploymentType,
       customEmbedDomain: customEmbedDomain !== undefined ? customEmbedDomain : existingConfig.customEmbedDomain,
+      chatkitAgentId: chatkitAgentId !== undefined ? chatkitAgentId : existingConfig.chatkitAgentId,
       chatkitApiKey: chatkitApiKey !== undefined ? chatkitApiKey : existingConfig.chatkitApiKey,
       chatkitOptions: chatkitOptions !== undefined ? chatkitOptions : existingConfig.chatkitOptions,
       engineType: engineType !== undefined ? engineType : existingConfig.engineType,
