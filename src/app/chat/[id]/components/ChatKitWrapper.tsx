@@ -33,6 +33,19 @@ export function ChatKitWrapper({
   isOpen,
   setIsOpen
 }: ChatKitWrapperProps) {
+  // Trigger resize when popover opens to help ChatKit recalculate its internal iframe dimensions
+  const prevIsOpenRef = React.useRef(isOpen)
+  React.useEffect(() => {
+    if (!prevIsOpenRef.current && isOpen && previewDeploymentType !== 'fullpage') {
+      // Delay the resize event to ensure DOM is ready
+      const t = setTimeout(() => {
+        window.dispatchEvent(new Event('resize'))
+      }, 100)
+      return () => clearTimeout(t)
+    }
+    prevIsOpenRef.current = isOpen
+  }, [isOpen, previewDeploymentType])
+
   try {
     const chatkitOptions = chatbot.chatkitOptions || {}
     const useChatKitInRegularStyle = (chatbot as any).useChatKitInRegularStyle === true
@@ -585,16 +598,21 @@ export function ChatKitWrapper({
                       : Z_INDEX.chatWidgetWindow,
                   } as React.CSSProperties) : {}),
                   zIndex: (chatbot as any).widgetZIndex || Z_INDEX.chatWidget,
-                  display: 'flex',
-                  flexDirection: 'column'
                 }),
               }}
             >
               <ChatKitGlobalStyles chatbot={chatbot} chatkitOptions={chatkitOptions} />
               <ChatKitStyleEnforcer chatbot={chatbot} />
 
-              <div className="w-full h-full relative">
-                <ChatKit control={control} className="w-full h-full" />
+              <div 
+                style={{ 
+                  width: '100%',
+                  height: '100%',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+              >
+                <ChatKit control={control} style={{ width: '100%', height: '100%' }} />
               </div>
               
               {/* Smooth Animation Styles */}
@@ -602,22 +620,18 @@ export function ChatKitWrapper({
                 @keyframes chatbotPopoverFadeIn {
                   from {
                     opacity: 0;
-                    transform: scale(0.95) translateY(10px);
                   }
                   to {
                     opacity: 1;
-                    transform: scale(1) translateY(0);
                   }
                 }
 
                 @keyframes chatbotPopoverFadeOut {
                   from {
                     opacity: 1;
-                    transform: scale(1) translateY(0);
                   }
                   to {
                     opacity: 0;
-                    transform: scale(0.95) translateY(10px);
                   }
                 }
 

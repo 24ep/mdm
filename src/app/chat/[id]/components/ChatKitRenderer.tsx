@@ -59,19 +59,32 @@ export function ChatKitRenderer({
   }, [chatbot])
 
   // Auto-show for widget (only auto-open, don't auto-close)
+  // Use refs to track one-time initialization and prevent re-triggering
+  const initializedRef = React.useRef(false)
+  const autoShowTriggeredRef = React.useRef(false)
+  
   useEffect(() => {
     if (!chatbot) return
+    
+    // Only run initialization logic once per mount
+    if (initializedRef.current) return
+    initializedRef.current = true
+    
     const useChatKitInRegularStyle = (chatbot as any).useChatKitInRegularStyle === true
 
-    // Regular Style UI on desktop should always be "open" internally to fill our container
+    // Regular Style UI on desktop or fullpage should always be "open"
     if (previewDeploymentType === 'fullpage' || useChatKitInRegularStyle) {
       setIsOpen(true)
       return
     }
+    
     // For popover/popup-center, start closed to show widget button
     setIsOpen(false)
+    
+    // Check if auto-show is enabled
     const shouldAuto = (chatbot as any).widgetAutoShow !== undefined ? (chatbot as any).widgetAutoShow : true
-    if (shouldAuto) {
+    if (shouldAuto && !autoShowTriggeredRef.current) {
+      autoShowTriggeredRef.current = true
       const delayMs = ((chatbot as any).widgetAutoShowDelay || 0) * 1000
       const t = setTimeout(() => setIsOpen(true), delayMs)
       return () => clearTimeout(t)
