@@ -11,7 +11,7 @@ export default withAuth(
         origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
         credentials: true,
       })
-      
+
       if (corsResponse) {
         return corsResponse
       }
@@ -27,7 +27,7 @@ export default withAuth(
     callbacks: {
       authorized: ({ token, req }) => {
         const path = req.nextUrl.pathname
-        
+
         // Allow public routes that need headers but no auth
         if (
           path.startsWith('/chat') ||

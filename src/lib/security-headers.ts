@@ -25,7 +25,7 @@ const securityHeaders = {
     "font-src 'self' data: https://fonts.gstatic.com", // Google Fonts files
     "connect-src 'self' https:",
     "frame-src 'self' https://cdn.platform.openai.com", // OpenAI ChatKit frames
-    "frame-ancestors *", // Allow embedding in iframes from any origin
+    "frame-ancestors * http: https: file: http://localhost:* https://localhost:*", // Allow embedding in iframes from any origin
   ].join('; '),
 }
 
@@ -43,10 +43,10 @@ export function getCspForRoute(pathname: string): string {
       "font-src 'self' data: blob: https://fonts.gstatic.com *",
       "connect-src 'self' https: wss: *",
       "frame-src 'self' https://cdn.platform.openai.com *",
-      "frame-ancestors *",
+      "frame-ancestors * http: https: file: http://localhost:* https://localhost:*",
     ].join('; ')
   }
-  
+
   // Strict CSP for admin and other routes
   return securityHeaders['Content-Security-Policy']
 }

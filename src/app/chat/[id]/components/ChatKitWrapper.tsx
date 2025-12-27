@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { X, Bot } from 'lucide-react'
+import { X, Bot, Menu, Loader2, Paperclip } from 'lucide-react'
 import * as Icons from 'lucide-react'
 import toast from 'react-hot-toast'
 import { ChatbotConfig } from '../types'
@@ -11,6 +11,7 @@ import { extractNumericValue, convertToHex, isLightColor, hexToRgb } from './cha
 import { buildChatKitTheme } from './chatkit/configBuilder'
 import { ChatKitGlobalStyles, getContainerStyle } from './chatkit/ChatKitStyles'
 import { ChatKitStyleEnforcer } from './chatkit/ChatKitStyleEnforcer'
+import { PWAInstallBanner } from './PWAInstallBanner'
 
 interface ChatKitWrapperProps {
   chatkitModule: any
@@ -19,8 +20,12 @@ interface ChatKitWrapperProps {
   previewDeploymentType?: 'popover' | 'fullpage' | 'popup-center'
   isInIframe?: boolean
   isMobile?: boolean
+  isPreview?: boolean  // True when in emulator preview mode (always show widget on popover)
+  isDesktopPreview?: boolean  // True when in emulator desktop view
   isOpen: boolean
   setIsOpen: (open: boolean) => void
+  useChatKitInRegularStyle?: boolean
+  isNative?: boolean
 }
 
 export function ChatKitWrapper({
@@ -30,11 +35,18 @@ export function ChatKitWrapper({
   previewDeploymentType = 'fullpage',
   isInIframe = false,
   isMobile = false,
+  isPreview = false,
+  isDesktopPreview = false,
   isOpen,
-  setIsOpen
+  setIsOpen,
+  useChatKitInRegularStyle: propUseChatKitInRegularStyle,
+  isNative = false
 }: ChatKitWrapperProps) {
   // Trigger resize when popover opens to help ChatKit recalculate its internal iframe dimensions
   const prevIsOpenRef = React.useRef(isOpen)
+  const containerRef = React.useRef<HTMLDivElement>(null)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
+
   React.useEffect(() => {
     if (!prevIsOpenRef.current && isOpen && previewDeploymentType !== 'fullpage') {
       // Delay the resize event to ensure DOM is ready
@@ -46,9 +58,81 @@ export function ChatKitWrapper({
     prevIsOpenRef.current = isOpen
   }, [isOpen, previewDeploymentType])
 
+  // Handle file upload tool click
+  React.useEffect(() => {
+    if (!containerRef.current) return
+
+    const handleToolClick = (e: MouseEvent) => {
+      // Check if the clicked element is part of the file upload tool
+      // Accessing DOM elements created by ChatKit is tricky as we don't control the render
+      // But we know we injected a tool with label 'Attach file' and id 'file-upload'
+      // ChatKit usually renders buttons with aria-label same as tool label or similar
+      const target = e.target as HTMLElement
+      const button = target.closest('button')
+
+      if (button) {
+        // Check for aria-label or title matching our tool
+        const label = button.getAttribute('aria-label') || button.getAttribute('title') || ''
+        const type = button.getAttribute('type')
+
+        // If we identify it's our file upload button
+        if (label.includes('Attach file') || label.includes('file-upload')) {
+          e.preventDefault()
+          e.stopPropagation()
+          fileInputRef.current?.click()
+        }
+      }
+    }
+
+    const container = containerRef.current
+    container.addEventListener('click', handleToolClick, true) // Capture phase to intercept early
+
+    return () => {
+      container.removeEventListener('click', handleToolClick, true)
+    }
+  }, [])
+
+  // Handle file selection and inject into ChatKit via drag-and-drop simulation
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0 && containerRef.current) {
+      const files = Array.from(e.target.files)
+      const container = containerRef.current
+
+      // Find the textarea or input within ChatKit
+      // ChatKit usually puts the composer in a textarea
+      const composerInput = container.querySelector('textarea') || container.querySelector('input[type="text"]')
+
+      if (composerInput) {
+        // Create a DataTransfer object to simulate drag-and-drop
+        const dt = new DataTransfer()
+        files.forEach(file => dt.items.add(file))
+
+        // Dispatch drop event
+        const dropEvent = new DragEvent('drop', {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          dataTransfer: dt
+        })
+
+        composerInput.dispatchEvent(dropEvent)
+
+        // Also dispatch input event to ensure state update if needed, though drop usually handles it
+        // Or if ChatKit listens to 'change' on a file input we can't see...
+        // But drop is the standard way to inject files into a complex editor
+
+        // Reset file input
+        if (fileInputRef.current) fileInputRef.current.value = ''
+      } else {
+        console.warn('ChatKit composer input not found, cannot attach file')
+        toast.error('Could not attach file: Editor input not found')
+      }
+    }
+  }
+
   try {
     const chatkitOptions = chatbot.chatkitOptions || {}
-    const useChatKitInRegularStyle = (chatbot as any).useChatKitInRegularStyle === true
+    const useChatKitInRegularStyle = propUseChatKitInRegularStyle ?? (chatbot as any).useChatKitInRegularStyle === true
 
     // Build complete theme object
     const theme = buildChatKitTheme(chatbot)
@@ -147,21 +231,46 @@ export function ChatKitWrapper({
         },
         theme: theme as any,
         locale: chatkitOptions.locale as any,
-        composer: chatkitOptions.composer ? {
-          placeholder: chatkitOptions.composer.placeholder,
-          tools: chatkitOptions.composer.tools?.map((tool: any) => {
-            const supportedTool: any = {}
-            if (tool.id !== undefined && tool.id !== null && tool.id !== '') supportedTool.id = tool.id
-            if (tool.label !== undefined && tool.label !== null && tool.label !== '') supportedTool.label = tool.label
-            if (tool.shortLabel !== undefined && tool.shortLabel !== null && tool.shortLabel !== '') supportedTool.shortLabel = tool.shortLabel
-            if (tool.icon !== undefined && tool.icon !== null && tool.icon !== '') supportedTool.icon = tool.icon
-            if (tool.pinned !== undefined) supportedTool.pinned = tool.pinned
-            if (tool.type !== undefined && tool.type !== null && tool.type !== '') supportedTool.type = tool.type
-            if (tool.accept !== undefined && tool.accept !== null && tool.accept !== '') supportedTool.accept = tool.accept
-            if (tool.placeholderOverride !== undefined && tool.placeholderOverride !== null && tool.placeholderOverride !== '') supportedTool.placeholderOverride = tool.placeholderOverride
-            return supportedTool
-          }).filter((tool: any) => tool.id || tool.label)
-        } : undefined,
+        composer: (() => {
+          // Build composer tools array
+          const composerTools: any[] = []
+
+          // Add file upload tool if enabled
+          if (chatbot.enableFileUpload) {
+            composerTools.push({
+              id: 'file-upload',
+              label: 'Attach file',
+              icon: 'document',
+              pinned: true
+            })
+          }
+
+          // Add custom tools from chatkitOptions
+          if (chatkitOptions.composer?.tools && Array.isArray(chatkitOptions.composer.tools)) {
+            const customTools = chatkitOptions.composer.tools.map((tool: any) => {
+              const supportedTool: any = {}
+              if (tool.id !== undefined && tool.id !== null && tool.id !== '') supportedTool.id = tool.id
+              if (tool.label !== undefined && tool.label !== null && tool.label !== '') supportedTool.label = tool.label
+              if (tool.shortLabel !== undefined && tool.shortLabel !== null && tool.shortLabel !== '') supportedTool.shortLabel = tool.shortLabel
+              if (tool.icon !== undefined && tool.icon !== null && tool.icon !== '') supportedTool.icon = tool.icon
+              if (tool.pinned !== undefined) supportedTool.pinned = tool.pinned
+              if (tool.type !== undefined && tool.type !== null && tool.type !== '') supportedTool.type = tool.type
+              if (tool.accept !== undefined && tool.accept !== null && tool.accept !== '') supportedTool.accept = tool.accept
+              if (tool.placeholderOverride !== undefined && tool.placeholderOverride !== null && tool.placeholderOverride !== '') supportedTool.placeholderOverride = tool.placeholderOverride
+              return supportedTool
+            }).filter((tool: any) => tool.id || tool.label)
+            composerTools.push(...customTools)
+          }
+
+          // Return composer config if there's any configuration
+          if (chatkitOptions.composer?.placeholder || composerTools.length > 0) {
+            return {
+              placeholder: chatkitOptions.composer?.placeholder,
+              tools: composerTools.length > 0 ? composerTools : undefined
+            }
+          }
+          return undefined
+        })(),
         // Don't pass header config to ChatKit when using regular style header (regular header will be used instead)
         // Note: ChatKit header only supports specific properties - description, logo are NOT supported
         // The title should be an object with 'text' property, not a plain string
@@ -187,6 +296,9 @@ export function ChatKitWrapper({
           // These fields are ignored to prevent "Unrecognized keys" errors
 
           // Pass customButtonLeft if present
+          // FIXME: ChatKit error: Unrecognized key: "customButtonLeft"
+          // This feature is currently unsupported by the underlying ChatKit library.
+          /*
           if (header.customButtonLeft && Array.isArray(header.customButtonLeft) && header.customButtonLeft.length > 0) {
             supportedHeader.customButtonLeft = header.customButtonLeft.map((button: any) => {
               const supportedButton: any = {}
@@ -202,19 +314,22 @@ export function ChatKitWrapper({
               return supportedButton
             }).filter((button: any) => button.icon || button.label)
           }
+          */
 
-          // Add close button for popover/popup-center modes (native ChatKit header needs a way to close)
-          const showCloseButton = (chatbot as any).headerShowCloseButton !== false
-          const effectiveType = previewDeploymentType || chatbot.deploymentType || 'fullpage'
-          if (showCloseButton && (effectiveType === 'popover' || effectiveType === 'popup-center')) {
-            // ChatKit uses 'rightAction' (singular object, not array) for header button
-            // Note: rightAction only accepts onClick, not icon property
-            supportedHeader.rightAction = {
-              onClick: () => setIsOpen(false)
-            }
+          // Note: rightAction for close button is not added as ChatKit's rightAction API doesn't 
+          // seem to accept icon property correctly. Close is handled by clicking overlay or
+          // using the custom widget button to toggle.
+
+          // Force removal of rightAction if it exists in source config to prevent errors
+          if (supportedHeader.rightAction) {
+            delete supportedHeader.rightAction
           }
 
-          return Object.keys(supportedHeader).length > 0 ? supportedHeader : undefined
+          if (Object.keys(supportedHeader).length > 0) {
+            console.log('ChatKitWrapper Header Config (sanitized):', JSON.stringify(supportedHeader, null, 2))
+            return supportedHeader
+          }
+          return undefined
         })(),
         startScreen: chatkitOptions.startScreen ? (() => {
           const supportedStartScreen: any = {}
@@ -289,15 +404,32 @@ export function ChatKitWrapper({
       })
 
       const deploymentType = previewDeploymentType || chatbot.deploymentType || 'fullpage'
-      // Hide ChatKit widget button when using regular style header OR when on mobile and chat is open (prevent overlap)
+      // Hide ChatKit widget button when:
+      // - using regular style header
+      // - OR on mobile when chat is open (fullpage covers screen)
+      // EXCEPTION: In emulator preview mode (isPreview=true from URL), always show widget
       const shouldShowWidgetButton = (deploymentType === 'popover' || deploymentType === 'popup-center') &&
         !useChatKitInRegularStyle &&
-        !(isMobile && isOpen)
+        !(isMobile && isOpen && !isPreview)  // Don't hide in emulator preview mode
 
       const shouldShowContainer = deploymentType === 'fullpage' ? true : isOpen
 
       // Debug: Trace widget button visibility
-      console.log('ChatKitWrapper Debug:', { shouldShowWidgetButton, shouldShowContainer, deploymentType, useChatKitInRegularStyle, isMobile, isOpen })
+      console.log('ChatKitWrapper Debug:', {
+        shouldShowWidgetButton,
+        shouldShowContainer,
+        deploymentType,
+        useChatKitInRegularStyle,
+        isMobile,
+        isOpen,
+        isPreview,
+        isDesktopPreview,
+        // Show the breakdown of the condition
+        condition1_deploymentOK: (deploymentType === 'popover' || deploymentType === 'popup-center'),
+        condition2_notRegularStyle: !useChatKitInRegularStyle,
+        condition3_shouldNotHide: !(isMobile && isOpen && !isPreview),
+        hideExpression: (isMobile && isOpen && !isPreview)
+      })
 
       const popoverPositionStyle = (): React.CSSProperties => {
         const pos = (chatbot as any).widgetPosition || 'bottom-right'
@@ -318,10 +450,38 @@ export function ChatKitWrapper({
 
       const overlayStyle = getOverlayStyle(deploymentType, chatbot, isOpen)
 
+      // Check if we're in an embedded context
+      const isEmbed = isInIframe || (typeof window !== 'undefined' && window.self !== window.top)
+
+      // Handler for closing that also notifies parent
+      const handleBackdropClose = (e: React.MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        setIsOpen(false)
+        // Also notify parent window for embed mode
+        if (isEmbed) {
+          window.parent.postMessage({ type: 'close-chat' }, '*')
+        }
+      }
+
       return (
         <>
+          {/* Transparent click-to-close backdrop for embed mode (when no visible overlay) */}
+          {isEmbed && (deploymentType === 'popover' || deploymentType === 'popup-center') && isOpen && !overlayStyle && !useChatKitInRegularStyle && (
+            <div
+              style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'transparent',
+                zIndex: Z_INDEX.chatWidgetOverlay,
+              }}
+              aria-hidden="true"
+              onClick={handleBackdropClose}
+            />
+          )}
+
           {overlayStyle && !useChatKitInRegularStyle && (
-            <div style={overlayStyle} onClick={() => setIsOpen(false)} />
+            <div style={overlayStyle} onClick={handleBackdropClose} />
           )}
 
           {(shouldShowWidgetButton && !useChatKitInRegularStyle) && (() => {
@@ -335,29 +495,13 @@ export function ChatKitWrapper({
               borderRadius = (chatbot as any).widgetBorderRadius || '50%'
             }
 
-            const buttonContent = isOpen ? (
-              <X className="h-6 w-6" style={{ color: chatbot?.avatarIconColor || '#ffffff' }} />
-            ) : (() => {
-              const widgetAvatarType = (chatbot as any).widgetAvatarType || chatbot?.avatarType || 'icon'
-              const widgetAvatarImageUrl = (chatbot as any).widgetAvatarImageUrl || chatbot?.avatarImageUrl
-              const widgetAvatarIcon = (chatbot as any).widgetAvatarIcon || chatbot?.avatarIcon || 'Bot'
 
-              if (widgetAvatarType === 'image' && widgetAvatarImageUrl) {
-                return <img src={widgetAvatarImageUrl} alt="Chat" style={{ width: '60%', height: '60%', borderRadius: widgetAvatarStyle === 'square' ? '8px' : '50%', objectFit: 'cover' }} />
-              }
-              const IconName = widgetAvatarIcon
-              // Ensure IconName is a valid string before lookup
-              const IconComponent = (typeof IconName === 'string' && IconName.trim() !== '')
-                ? ((Icons as any)[IconName] || Bot)
-                : Bot
-              const iconColor = chatbot?.avatarIconColor || '#ffffff'
-              return <IconComponent className="h-6 w-6" style={{ color: iconColor }} />
-            })()
 
             if (widgetAvatarStyle === 'circle-with-label') {
               const widgetBgValue = (chatbot as any).widgetBackgroundColor || chatbot.primaryColor || '#3b82f6'
               const widgetLabelText = (chatbot as any).widgetLabelText || 'Chat'
-              const widgetLabelColor = (chatbot as any).widgetLabelColor || '#ffffff'
+              const defaultLabelColor = isLightColor(widgetBgValue) ? '#000000' : '#ffffff'
+              const widgetLabelColor = (chatbot as any).widgetLabelColor || defaultLabelColor
               const widgetLabelFontSize = (chatbot as any).widgetLabelFontSize || '14px'
               const widgetBlur = (chatbot as any).widgetBackgroundBlur || 0
               const widgetOpacity = (chatbot as any).widgetBackgroundOpacity !== undefined ? (chatbot as any).widgetBackgroundOpacity : 100
@@ -390,9 +534,10 @@ export function ChatKitWrapper({
                 gap: '8px',
                 cursor: 'pointer',
                 padding: '0 16px',
-                zIndex: ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) >= Z_INDEX.chatWidget
-                  ? ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) + 1
-                  : Z_INDEX.chatWidgetWindow,
+                zIndex: Math.max(
+                  ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget),
+                  Z_INDEX.chatWidgetWindow + 10
+                ),
                 color: widgetLabelColor,
                 fontSize: widgetLabelFontSize,
                 fontWeight: 500,
@@ -472,6 +617,27 @@ export function ChatKitWrapper({
             }
 
             const widgetBgValue = (chatbot as any).widgetBackgroundColor || chatbot.primaryColor || '#3b82f6'
+            const defaultIconColor = isLightColor(widgetBgValue) ? '#000000' : '#ffffff'
+
+            const buttonContent = isOpen ? (
+              <X className="h-6 w-6" style={{ color: chatbot?.avatarIconColor || defaultIconColor }} />
+            ) : (() => {
+              const widgetAvatarType = (chatbot as any).widgetAvatarType || chatbot?.avatarType || 'icon'
+              const widgetAvatarImageUrl = (chatbot as any).widgetAvatarImageUrl || chatbot?.avatarImageUrl
+              const widgetAvatarIcon = (chatbot as any).widgetAvatarIcon || chatbot?.avatarIcon || 'Bot'
+
+              if (widgetAvatarType === 'image' && widgetAvatarImageUrl) {
+                return <img src={widgetAvatarImageUrl} alt="Chat" style={{ width: '60%', height: '60%', borderRadius: widgetAvatarStyle === 'square' ? '8px' : '50%', objectFit: 'cover' }} />
+              }
+              const IconName = widgetAvatarIcon
+              // Ensure IconName is a valid string before lookup
+              const IconComponent = (typeof IconName === 'string' && IconName.trim() !== '')
+                ? ((Icons as any)[IconName] || Bot)
+                : Bot
+              const iconColor = chatbot?.avatarIconColor || defaultIconColor
+              return <IconComponent className="h-6 w-6" style={{ color: iconColor }} />
+            })()
+
             const widgetBlur = (chatbot as any).widgetBackgroundBlur || 0
             const widgetOpacity = (chatbot as any).widgetBackgroundOpacity !== undefined ? (chatbot as any).widgetBackgroundOpacity : 100
 
@@ -492,9 +658,10 @@ export function ChatKitWrapper({
               borderRadius: borderRadius,
               border: `${(chatbot as any).widgetBorderWidth || '0px'} solid ${(chatbot as any).widgetBorderColor || 'transparent'}`,
               boxShadow: boxShadow,
-              zIndex: ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) >= Z_INDEX.chatWidget
-                ? ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) + 1
-                : Z_INDEX.chatWidgetWindow,
+              zIndex: Math.max(
+                ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget),
+                Z_INDEX.chatWidgetWindow + 10
+              ),
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -604,17 +771,26 @@ export function ChatKitWrapper({
               <ChatKitGlobalStyles chatbot={chatbot} chatkitOptions={chatkitOptions} />
               <ChatKitStyleEnforcer chatbot={chatbot} />
 
-              <div 
-                style={{ 
+              <div
+                ref={containerRef}
+                style={{
                   width: '100%',
                   height: '100%',
                   position: 'relative',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column'
                 }}
               >
-                <ChatKit control={control} style={{ width: '100%', height: '100%' }} />
+                {/* Render banner only if we are in native mode AND NOT fullpage (since FullPageChatLayout handles fullpage) */}
+                {(isNative && deploymentType !== 'fullpage') && (
+                  <PWAInstallBanner chatbot={chatbot} isMobile={isMobile} />
+                )}
+                <div style={{ flex: 1, width: '100%', position: 'relative', overflow: 'hidden' }}>
+                  <ChatKit control={control} style={{ width: '100%', height: '100%' }} />
+                </div>
               </div>
-              
+
               {/* Smooth Animation Styles */}
               <style jsx>{`
                 @keyframes chatbotPopoverFadeIn {
@@ -649,6 +825,19 @@ export function ChatKitWrapper({
               `}</style>
             </div>
           )}
+
+          {/* Debug overlay removed */}
+
+
+          {/* Hidden File Input for manual upload handling */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            multiple
+            accept="image/*,video/*,.pdf,.doc,.docx,.txt,.csv,.xls,.xlsx"
+            onChange={handleFileSelect}
+          />
         </>
       )
     } catch (error) {

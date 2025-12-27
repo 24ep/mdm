@@ -49,17 +49,19 @@ export function ChatSidebar({
             </Button>
           </div>
 
-          <div className="p-4 border-b">
-            <Button onClick={onNewChat} className="w-full" size="sm"
-              style={{
-                backgroundColor: chatbot.primaryColor,
-                color: chatbot.fontColor
-              }}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New Chat
-            </Button>
-          </div>
+          {(chatbot as any).showNewChatButton !== false && (
+            <div className="p-4 border-b">
+              <Button onClick={onNewChat} className="w-full" size="sm"
+                style={{
+                  backgroundColor: chatbot.primaryColor,
+                  color: chatbot.fontColor
+                }}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                New Chat
+              </Button>
+            </div>
+          )}
 
           <ScrollArea className="flex-1">
             <div className="p-2 space-y-1">

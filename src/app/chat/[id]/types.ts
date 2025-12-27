@@ -175,12 +175,16 @@ export interface ChatbotConfig {
   pageDescription?: string
   headerEnabled?: boolean // Manually show/hide header
   headerTitle?: string
+  headerShowTitle?: boolean // Show/hide header title
   headerDescription?: string
   headerLogo?: string
+  headerShowLogo?: boolean // Show/hide header logo
   headerBgColor?: string
   headerFontColor?: string
   headerFontFamily?: string
   headerShowAvatar?: boolean
+  // Enable/Disable conversation renaming
+  enableConversationRenaming?: boolean
   headerAvatarType?: 'icon' | 'image'
   headerAvatarIcon?: string
   headerAvatarIconColor?: string
@@ -312,5 +316,11 @@ export interface ChatbotConfig {
 
   popoverPosition?: 'top' | 'left' // Position of popover relative to widget: 'top' = above widget, 'left' = to the left of widget
   widgetPopoverMargin?: string // Margin/spacing between widget button and popover window
+
+  // Animation Configuration
+  widgetAnimationEntry?: 'slide-up' | 'scale' | 'fade' | 'slide-side'
+  widgetAnimationExit?: 'slide-down' | 'scale' | 'fade' | 'slide-side'
+  widgetAnimationDuration?: number // Animation duration in seconds
+  widgetAnimationType?: 'spring' | 'tween' // Animation physics type
 }
 

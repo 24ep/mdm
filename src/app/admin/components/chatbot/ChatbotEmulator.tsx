@@ -344,7 +344,7 @@ export function ChatbotEmulator({
             )}
             <iframe
               ref={emulatorRef}
-              src={`/chat/${selectedChatbot.id}?preview=true&deploymentType=${previewMode}`}
+              src={`/chat/${selectedChatbot.id}?preview=true&deploymentType=${previewMode}&previewDevice=${deviceType}`}
               className="w-full h-full border-0 bg-background"
               title="Chat Emulator"
               style={{ position: 'relative', zIndex: Z_INDEX.content }}

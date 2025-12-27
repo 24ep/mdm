@@ -1,4 +1,5 @@
 /** @type {import('next').NextConfig} */
+// Force restart
 const nextConfig = {
   images: {
     remotePatterns: [
@@ -23,14 +24,14 @@ const nextConfig = {
   output: process.env.NODE_ENV === 'production' && process.env.DOCKER_BUILD ? 'standalone' : undefined,
   // Add empty turbopack config to silence Next.js 16 warning (we use webpack)
   turbopack: {},
-  
+
   // ========== BUILD OPTIMIZATION FOR LOWER RAM/CPU USAGE ==========
   // Experimental features for better build performance
   experimental: {
-    // Reduce memory usage by limiting concurrent workers
-    webpackBuildWorker: false, // Disabled to prevent "Array buffer allocation failed" error
-    // Enable parallel routes for better route optimization
-    parallelServerBuildTraces: false,
+    // Reduce memory usage by limiting concurrent workers (Production Only)
+    webpackBuildWorker: process.env.NODE_ENV === 'production' ? false : undefined,
+    // Enable parallel routes for better route optimization (Disable in dev for speed)
+    parallelServerBuildTraces: process.env.NODE_ENV === 'production' ? false : true,
     // Optimize package imports to reduce bundle size
     optimizePackageImports: [
       'lucide-react',
@@ -45,12 +46,12 @@ const nextConfig = {
 
   // Disable source maps to save memory and space used during build
   productionBrowserSourceMaps: false,
-  
+
   // Disable inline source maps as well
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
-  
+
   // Reduce server components bundle size by keeping heavy libraries out of the bundle
   serverExternalPackages: [
     'ssh2-sftp-client',
@@ -68,7 +69,7 @@ const nextConfig = {
     'langfuse',
     'minio',
   ],
-  
+
   webpack: (config, { isServer, webpack }) => {
     // Exclude plugin-hub directory from build analysis (it's a separate service)
     config.watchOptions = {
@@ -78,10 +79,10 @@ const nextConfig = {
         // '**/plugin-hub/**', // ALLOW PLUGIN HUB FOR EXTERNAL PLUGINS
       ],
     }
-    
+
     // CRITICAL: Don't bail on first error - show all errors
     config.bail = false
-    
+
     // Configure stats to show all errors and warnings with full details
     if (!config.stats) {
       config.stats = {}
@@ -97,20 +98,22 @@ const nextConfig = {
     config.stats.assets = false
     config.stats.all = false // Don't show everything, just errors/warnings
     config.stats.preset = false // Disable presets to use custom config
-    
+
     // Enhanced error reporting - show all errors
     config.infrastructureLogging = {
       level: 'error',
     }
-    
+
     // Collect all errors before failing
     config.optimization = config.optimization || {}
     config.optimization.removeAvailableModules = false
     config.optimization.removeEmptyChunks = false
-    
+
+
     // ========== CHUNKING CONFIGURATION FOR LOWER RAM/CPU USAGE ==========
     // Split large bundles into smaller chunks to reduce memory during build
-    if (!isServer) {
+    // ONLY APPLY IN PRODUCTION - Development needs faster HMR
+    if (!isServer && process.env.NODE_ENV === 'production') {
       config.optimization.splitChunks = {
         chunks: 'all',
         // Reduce max chunk size to lower memory usage
@@ -148,6 +151,7 @@ const nextConfig = {
             priority: 10,
             chunks: 'all',
             reuseExistingChunk: true,
+            enforce: true,
           },
           // Common components shared across pages
           commons: {
@@ -159,10 +163,12 @@ const nextConfig = {
         },
       }
     }
-    
-    // Reduce parallelism to lower RAM usage during build
-    config.parallelism = 1 // Set to 1 for maximum memory efficiency
-    
+
+    // Reduce parallelism to lower RAM usage during build (Production only)
+    if (process.env.NODE_ENV === 'production') {
+      config.parallelism = 1 // Set to 1 for maximum memory efficiency
+    }
+
     // Custom error handling to collect all errors
     const originalEmit = config.plugins?.find(p => p.constructor.name === 'ForkTsCheckerWebpackPlugin')
     if (originalEmit) {
@@ -177,7 +183,7 @@ const nextConfig = {
         },
       }
     }
-    
+
     // Override webpack's error handling to collect all errors
     const originalOnError = config.infrastructureLogging
     if (config.plugins) {
@@ -195,7 +201,7 @@ const nextConfig = {
         },
       })
     }
-    
+
     if (isServer) {
       // Ignore client-only packages on server
       config.plugins.push(
@@ -257,7 +263,7 @@ const nextConfig = {
         })
       )
     }
-    
+
     // Handle mqtt and socket.io-client - they use dynamic imports
     // Use IgnorePlugin to prevent webpack from trying to resolve them during build
     // Dynamic imports at runtime will still work because they bypass webpack
@@ -267,7 +273,7 @@ const nextConfig = {
         contextRegExp: /src\/features\/api-client/,
       })
     )
-    
+
     // Suppress critical dependency warnings for external-plugin-loader.ts
     // These warnings are expected because we intentionally use dynamic requires for plugin loading
     config.ignoreWarnings = [
@@ -277,7 +283,7 @@ const nextConfig = {
         message: /Critical dependency: the request of a dependency is an expression/,
       },
     ]
-    
+
     return config
   },
   // Experimental: Continue build even with errors

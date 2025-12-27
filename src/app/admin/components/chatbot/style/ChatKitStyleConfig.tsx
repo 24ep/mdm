@@ -2,151 +2,129 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Accordion } from '@/components/ui/accordion'
-import * as Icons from 'lucide-react'
+import { Palette, LayoutTemplate, Layers, Languages, UserCircle, Bot, Sparkles, MessageSquare } from 'lucide-react'
 import { useState } from 'react'
 import type { Chatbot } from '../types'
+import type { ChatbotConfig } from '@/app/chat/[id]/types'
 import {
   ThemeSection,
-  ComposerSection,
   LocaleSection,
-  StartScreenSection,
-  HeaderSection,
   PopoverSection,
   WidgetSection,
   PersonaPickerSection
 } from './sections'
 import { ChatKitIntegrationSection } from './sections/ChatKitIntegrationSection'
+import { AnimationSection } from './sections/AnimationSection'
 
 interface ChatKitStyleConfigProps {
   formData: Partial<Chatbot>
-  setFormData: React.Dispatch<React.SetStateAction<Partial<Chatbot>>>
+  setFormData: (data: Partial<Chatbot> | ((prev: Partial<Chatbot>) => Partial<Chatbot>)) => void
+  chatkitOptions: any
 }
 
-// Wrapper to render a section's accordion within a tab
-// This maintains the accordion content styling while being usable in tabs
-function SectionWrapper({ 
-  children, 
-  defaultValue,
-  className = ''
-}: { 
-  children: React.ReactNode
-  defaultValue: string
-  className?: string
-}) {
-  const [accordionValue, setAccordionValue] = useState<string>(defaultValue)
-  
+// Wrapper for section content to ensure consistent styling
+const SectionWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className={className}>
-      <Accordion 
-        type="single" 
-        collapsible 
-        value={accordionValue} 
-        onValueChange={(value) => setAccordionValue(typeof value === 'string' ? value : value[0] || '')}
-      >
-        {children}
-      </Accordion>
+    <div className="w-full bg-white dark:bg-card rounded-lg border shadow-sm p-0 overflow-hidden">
+      {children}
     </div>
   )
 }
 
-export function ChatKitStyleConfig({ formData, setFormData }: ChatKitStyleConfigProps) {
-  const chatkitOptions = (formData as any).chatkitOptions || {}
+export function ChatKitStyleConfig({ formData, setFormData, chatkitOptions }: ChatKitStyleConfigProps) {
+  const [activeTab, setActiveTab] = useState('theme')
+
+  const handleChange = (field: keyof ChatbotConfig, value: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
+  const config = formData as ChatbotConfig
 
   return (
-    <div className="w-full">
-      <Tabs defaultValue="integration" className="flex w-full gap-6">
-        {/* Vertical Sidebar Menu */}
-        <TabsList orientation="vertical" className="bg-muted/30 p-1 min-h-[400px] h-fit flex-col justify-start items-stretch gap-1 w-[220px] rounded-lg shrink-0">
-          <TabsTrigger value="integration" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
-            <Icons.Plug className="h-4 w-4" />
-            Integration
-          </TabsTrigger>
-          <TabsTrigger value="theme" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
-            <Icons.Palette className="h-4 w-4" />
+    <div className="space-y-6">
+      <Tabs defaultValue="theme" value={activeTab} onValueChange={setActiveTab} className="flex flex-col md:flex-row w-full gap-6">
+        <TabsList className="flex flex-col h-auto gap-2 bg-transparent p-0 w-full md:w-48 lg:w-64 shrink-0 justify-start">
+          <TabsTrigger value="theme" className="justify-start gap-3 px-3 py-2.5 rounded-md w-full aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all text-sm">
+            <Palette className="h-4 w-4" />
             Theme
           </TabsTrigger>
-          <TabsTrigger value="composer" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
-            <Icons.PenTool className="h-4 w-4" />
-            Composer
-          </TabsTrigger>
-          <TabsTrigger value="startScreen" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
-            <Icons.Zap className="h-4 w-4" />
-            Start Screen
-          </TabsTrigger>
-          <TabsTrigger value="locale" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
-            <Icons.Globe className="h-4 w-4" />
+          <TabsTrigger value="locale" className="justify-start gap-3 px-3 py-2.5 rounded-md w-full aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all text-sm">
+            <Languages className="h-4 w-4" />
             Locale
           </TabsTrigger>
-          <TabsTrigger value="header" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
-            <Icons.PanelTop className="h-4 w-4" />
-            Header
+          {/* Header removed from here */}
+          <TabsTrigger value="persona" className="justify-start gap-3 px-3 py-2.5 rounded-md w-full aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all text-sm">
+            <UserCircle className="h-4 w-4" />
+            Persona
           </TabsTrigger>
-          <TabsTrigger value="persona" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
-            <Icons.Users className="h-4 w-4" />
-            Persona Picker
-          </TabsTrigger>
-          <TabsTrigger value="popover" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
-            <Icons.Layout className="h-4 w-4" />
+          <TabsTrigger value="popover" className="justify-start gap-3 px-3 py-2.5 rounded-md w-full aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all text-sm">
+            <MessageSquare className="h-4 w-4" />
             Popover
           </TabsTrigger>
-          <TabsTrigger value="widget" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
-            <Icons.MessageSquare className="h-4 w-4" />
+          <TabsTrigger value="widget" className="justify-start gap-3 px-3 py-2.5 rounded-md w-full aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all text-sm">
+            <LayoutTemplate className="h-4 w-4" />
             Widget
+          </TabsTrigger>
+          <TabsTrigger value="integration" className="justify-start gap-3 px-3 py-2.5 rounded-md w-full aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all text-sm">
+            <Layers className="h-4 w-4" />
+            Header
+          </TabsTrigger>
+          <TabsTrigger value="animation" className="justify-start gap-3 px-3 py-2.5 rounded-md w-full aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all text-sm">
+            <Sparkles className="h-4 w-4" />
+            Animation
           </TabsTrigger>
         </TabsList>
 
-        {/* Content Area - Each section wrapped in accordion for expandable subsections */}
-        <div className="flex-1 w-full max-w-[800px]">
-          <TabsContent value="integration" className="m-0 mt-0">
-            <ChatKitIntegrationSection formData={formData} setFormData={setFormData} />
-          </TabsContent>
-          
+        {/* Content Area - Each section wrapped in container for consistent styling */}
+        <div className="flex-1 min-w-0 space-y-6">
           <TabsContent value="theme" className="m-0 mt-0">
-            <SectionWrapper defaultValue="theme">
+            <SectionWrapper>
               <ThemeSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
             </SectionWrapper>
           </TabsContent>
-          
-          <TabsContent value="composer" className="m-0 mt-0">
-            <SectionWrapper defaultValue="composer">
-              <ComposerSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
-            </SectionWrapper>
-          </TabsContent>
-          
-          <TabsContent value="startScreen" className="m-0 mt-0">
-            <SectionWrapper defaultValue="startScreen">
-              <StartScreenSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
-            </SectionWrapper>
-          </TabsContent>
-          
+
           <TabsContent value="locale" className="m-0 mt-0">
-            <SectionWrapper defaultValue="locale">
+            <SectionWrapper>
               <LocaleSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
             </SectionWrapper>
           </TabsContent>
-          
-          <TabsContent value="header" className="m-0 mt-0">
-            <SectionWrapper defaultValue="header">
-              <HeaderSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
-            </SectionWrapper>
-          </TabsContent>
-          
+
+          {/* Old Header tab removed */}
+
           <TabsContent value="persona" className="m-0 mt-0">
-            <SectionWrapper defaultValue="personaPicker">
+            <SectionWrapper>
+              {/* Persona Picker Section */}
               <PersonaPickerSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
             </SectionWrapper>
           </TabsContent>
-          
+
           <TabsContent value="popover" className="m-0 mt-0">
-            <SectionWrapper defaultValue="popover">
+            <SectionWrapper>
               <PopoverSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
             </SectionWrapper>
           </TabsContent>
-          
+
           <TabsContent value="widget" className="m-0 mt-0">
-            <SectionWrapper defaultValue="widget">
+            <SectionWrapper>
               <WidgetSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
             </SectionWrapper>
+          </TabsContent>
+
+          <TabsContent value="integration" className="m-0 mt-0">
+            {/* Renamed to Header in UI, but keeping value 'integration' to match trigger */}
+            <SectionWrapper>
+              <ChatKitIntegrationSection formData={formData} setFormData={setFormData} />
+            </SectionWrapper>
+          </TabsContent>
+
+          <TabsContent value="animation" className="m-0 mt-0">
+            {/* AnimationSection renders directly without accordion wrapper */}
+            <div className="w-full bg-white dark:bg-card rounded-lg border shadow-sm p-6">
+              <AnimationSection config={config} handleChange={handleChange} />
+            </div>
           </TabsContent>
         </div>
       </Tabs>

@@ -1,10 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { ChatKitWrapper } from './ChatKitWrapper'
+import { ChatWidgetButton } from './ChatWidgetButton'
+import { getPopoverPositionStyle, getWidgetButtonStyle } from '../utils/chatStyling'
 
 import { ChatbotConfig } from '../types'
 
@@ -13,7 +15,11 @@ interface ChatKitRendererProps {
   previewDeploymentType?: 'popover' | 'fullpage' | 'popup-center'
   isInIframe?: boolean
   isMobile?: boolean
+  isPreview?: boolean  // True when in emulator preview mode (has ?preview=true in URL)
+  isDesktopPreview?: boolean  // True when in emulator desktop view (overrides isMobile for widget visibility)
+  shouldShowWidgetButton?: boolean // Control widget visibility external to internal logic (e.g. from page layout)
   onChatKitUnavailable?: () => void // Callback when ChatKit fails to load
+  useChatKitInRegularStyle?: boolean // Propagate regular style setting from parent
 }
 
 export function ChatKitRenderer({
@@ -21,20 +27,30 @@ export function ChatKitRenderer({
   previewDeploymentType = 'fullpage',
   isInIframe = false,
   isMobile = false,
-  onChatKitUnavailable
+  isPreview = false,
+  isDesktopPreview = false,
+  onChatKitUnavailable,
+  useChatKitInRegularStyle: propUseChatKitInRegularStyle
 }: ChatKitRendererProps) {
   const [chatkitLoaded, setChatkitLoaded] = useState(false)
   const [chatkitModule, setChatkitModule] = useState<any>(null)
   const [chatkitError, setChatkitError] = useState<string | null>(null)
   const [isInitializing, setIsInitializing] = useState(false)
-  const [isOpen, setIsOpen] = useState<boolean>(false)
+  // Initialize isOpen state
+  // In preview mode (emulator), start open so user sees content immediately, but allow closing.
+  // For fullpage/regular style, logic below will enforce it.
+  const [isOpen, setIsOpen] = useState<boolean>(isPreview)
 
+  // Use prop if provided, otherwise check config
+  const useChatKitInRegularStyle = propUseChatKitInRegularStyle ?? (chatbot as any).useChatKitInRegularStyle === true
+
+  // Debug: Log chatbot config for ChatKit requirements on mount
   // Debug: Log chatbot config for ChatKit requirements on mount
   useEffect(() => {
     const isAgentSDK = chatbot.engineType === 'openai-agent-sdk'
     const agentId = isAgentSDK ? chatbot.openaiAgentSdkAgentId : chatbot.chatkitAgentId
     const apiKey = isAgentSDK ? chatbot.openaiAgentSdkApiKey : chatbot.chatkitApiKey
-    
+
     console.log('🔍 ChatKit Configuration Check:', {
       engineType: chatbot.engineType,
       isChatKitEngine: chatbot.engineType === 'chatkit',
@@ -43,9 +59,10 @@ export function ChatKitRenderer({
       agentIdPreview: agentId ? agentId.substring(0, 20) + '...' : 'NOT SET',
       hasApiKey: !!apiKey,
       chatbotId: chatbot.id,
-      chatbotName: chatbot.name
+      chatbotName: chatbot.name,
+      useChatKitInRegularStyle
     })
-    
+
     // Log warnings for missing configuration
     if (chatbot.engineType !== 'chatkit' && chatbot.engineType !== 'openai-agent-sdk') {
       console.warn('⚠️ ChatKit will NOT render: engineType is', chatbot.engineType, '(must be "chatkit" or "openai-agent-sdk")')
@@ -56,31 +73,41 @@ export function ChatKitRenderer({
     if (!apiKey) {
       console.warn('⚠️ ChatKit sessions may fail: API key is not configured')
     }
-  }, [chatbot])
+  }, [chatbot, useChatKitInRegularStyle]) // Ensure this dependency array matches original or is correct
 
   // Auto-show for widget (only auto-open, don't auto-close)
   // Use refs to track one-time initialization and prevent re-triggering
   const initializedRef = React.useRef(false)
   const autoShowTriggeredRef = React.useRef(false)
-  
+
+  // Effect to enforce open state for fullpage/regular style
+  // This must run whenever the mode changes, so do NOT block with initializedRef
+  useEffect(() => {
+    // Note: We REMOVED the check for 'isPreview' here to allow users to close the popover in preview mode.
+    // Initial state is set to true for preview, but we shouldn't force it open if user closes it.
+
+    if ((previewDeploymentType === 'fullpage' || useChatKitInRegularStyle) && !isOpen) {
+      console.log('🔄 Enforcing open state for fullpage/regular style')
+      setIsOpen(true)
+    }
+  }, [previewDeploymentType, useChatKitInRegularStyle, isOpen]) // Removed isPreview dependency
+
+  // Effect for auto-show logic (only run once per mount/session)
   useEffect(() => {
     if (!chatbot) return
-    
+
     // Only run initialization logic once per mount
     if (initializedRef.current) return
     initializedRef.current = true
-    
-    const useChatKitInRegularStyle = (chatbot as any).useChatKitInRegularStyle === true
 
-    // Regular Style UI on desktop or fullpage should always be "open"
+    // If we are already forced open by the effect above, we don't need to do anything here for fullpage
     if (previewDeploymentType === 'fullpage' || useChatKitInRegularStyle) {
-      setIsOpen(true)
       return
     }
-    
+
     // For popover/popup-center, start closed to show widget button
     setIsOpen(false)
-    
+
     // Check if auto-show is enabled
     const shouldAuto = (chatbot as any).widgetAutoShow !== undefined ? (chatbot as any).widgetAutoShow : true
     if (shouldAuto && !autoShowTriggeredRef.current) {
@@ -89,7 +116,7 @@ export function ChatKitRenderer({
       const t = setTimeout(() => setIsOpen(true), delayMs)
       return () => clearTimeout(t)
     }
-  }, [chatbot, previewDeploymentType])
+  }, [chatbot, previewDeploymentType, useChatKitInRegularStyle])
 
   // Load ChatKit script
   useEffect(() => {
@@ -124,6 +151,29 @@ export function ChatKitRenderer({
   // Compute agent ID once
   const isAgentSDK = chatbot.engineType === 'openai-agent-sdk'
   const agentId = isAgentSDK ? chatbot.openaiAgentSdkAgentId : chatbot.chatkitAgentId
+
+  // Compute widget button visibility for loading states (popover/popup-center modes)
+  const shouldShowWidgetInLoading =
+    !useChatKitInRegularStyle &&
+    (previewDeploymentType === 'popover' || previewDeploymentType === 'popup-center')
+
+  // Compute widget button styles for loading states
+  const widgetButtonStyle = getWidgetButtonStyle(chatbot)
+  const popoverPositionStyle = getPopoverPositionStyle(chatbot)
+
+  // Helper to render widget button in loading/error states
+  const renderWidgetButton = () => {
+    if (!shouldShowWidgetInLoading) return null
+    return (
+      <ChatWidgetButton
+        chatbot={chatbot}
+        isOpen={isOpen}
+        onClick={() => setIsOpen(!isOpen)}
+        widgetButtonStyle={widgetButtonStyle}
+        popoverPositionStyle={popoverPositionStyle}
+      />
+    )
+  }
 
   // Load ChatKit module when script is loaded
   useEffect(() => {
@@ -171,16 +221,17 @@ export function ChatKitRenderer({
   }, [chatkitLoaded, agentId, chatkitModule, isInitializing, onChatKitUnavailable])
 
   // Debug: Trace ChatKitRenderer state
-  console.log('ChatKitRenderer state:', { 
-    chatkitLoaded, 
-    chatkitModule: !!chatkitModule, 
-    chatkitError, 
-    isInitializing, 
-    isMobile, 
-    previewDeploymentType, 
-    agentId: agentId, 
+  console.log('ChatKitRenderer state:', {
+    chatkitLoaded,
+    chatkitModule: !!chatkitModule,
+    chatkitError,
+    isInitializing,
+    isMobile,
+    previewDeploymentType,
+    agentId: agentId,
     engineType: chatbot.engineType,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    useChatKitInRegularStyle
   })
 
   // Render ChatKit component when ready
@@ -194,8 +245,12 @@ export function ChatKitRenderer({
         previewDeploymentType={previewDeploymentType}
         isInIframe={isInIframe}
         isMobile={isMobile}
+        isPreview={isPreview}
+        isDesktopPreview={isDesktopPreview}
         isOpen={isOpen}
         setIsOpen={setIsOpen}
+        useChatKitInRegularStyle={useChatKitInRegularStyle}
+        isNative={!useChatKitInRegularStyle}
       />
     )
   }
@@ -208,7 +263,7 @@ export function ChatKitRenderer({
       console.log('🔄 Triggering ChatKit unavailable callback')
       onChatKitUnavailable()
     }
-    
+
     // Show visible error in development, return null in production to use fallback
     if (process.env.NODE_ENV === 'development') {
       return (
@@ -227,13 +282,16 @@ export function ChatKitRenderer({
   // Loading state - show spinner while initializing
   if (!chatkitLoaded) {
     console.log('⏳ ChatKit script loading...')
+    // For popover modes, show widget button during loading
+    if (shouldShowWidgetInLoading) {
+      return (
+        <>
+          {renderWidgetButton()}
+        </>
+      )
+    }
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Loading ChatKit...</p>
-        </div>
-      </div>
+      <div className="h-full w-full bg-transparent" />
     )
   }
 
@@ -242,12 +300,12 @@ export function ChatKitRenderer({
   if (!agentId) {
     console.error('❌ ChatKit cannot render: No agent ID configured')
     console.log('💡 To fix: Set chatkitAgentId (for ChatKit engine) or openaiAgentSdkAgentId (for Agent SDK)')
-    
+
     // Always try to fallback
     if (onChatKitUnavailable) {
       onChatKitUnavailable()
     }
-    
+
     // Show helpful error message
     return (
       <div className="flex flex-col items-center justify-center h-full p-4 text-center">
@@ -266,13 +324,16 @@ export function ChatKitRenderer({
 
   if (isInitializing || !chatkitModule) {
     console.log('⏳ ChatKit module initializing...')
+    // For popover modes, show widget button during initialization
+    if (shouldShowWidgetInLoading) {
+      return (
+        <>
+          {renderWidgetButton()}
+        </>
+      )
+    }
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Initializing ChatKit module...</p>
-        </div>
-      </div>
+      <div className="h-full w-full bg-transparent" />
     )
   }
 

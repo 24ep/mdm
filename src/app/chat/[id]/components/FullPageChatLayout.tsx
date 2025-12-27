@@ -8,6 +8,7 @@ import { ChatbotConfig } from '../types'
 import { ThreadSelector } from './ThreadSelector'
 import { ChatSidebar } from './ChatSidebar'
 import { ChatHeader } from './ChatHeader'
+import { PWAInstallBanner } from './PWAInstallBanner'
 
 interface FullPageChatLayoutProps {
     emulatorConfig: any
@@ -76,26 +77,29 @@ export function FullPageChatLayout({
                 backgroundSize: isEmbed ? undefined : (emulatorConfig.backgroundImage ? 'cover' : undefined),
                 backgroundPosition: isEmbed ? undefined : (emulatorConfig.backgroundImage ? 'center' : undefined),
                 backgroundRepeat: isEmbed ? undefined : (emulatorConfig.backgroundImage ? 'no-repeat' : undefined),
+                pointerEvents: isEmbed ? 'none' : 'auto', // Allow clicks to pass through transparent background in embed mode
             }}
         >
             {/* Thread Selector for OpenAI Agent SDK */}
             {threadManagementEnabled && (
-                <ThreadSelector
-                    threads={threads}
-                    currentThreadId={currentThreadId}
-                    onSelectThread={(threadId: string) => {
-                        setCurrentThreadId(threadId)
-                        // Messages will be loaded by useChatMessages hook when threadId changes
-                    }}
-                    onNewThread={() => {
-                        setCurrentThreadId(null)
-                        setMessages([]) // Clear messages for new thread
-                    }}
-                    onDeleteThread={deleteThread}
-                    onUpdateThreadTitle={updateThreadTitle}
-                    isLoading={threadsLoading}
-                    chatbot={chatbot}
-                />
+                <div style={{ pointerEvents: 'auto', height: '100%' }}>
+                    <ThreadSelector
+                        threads={threads}
+                        currentThreadId={currentThreadId}
+                        onSelectThread={(threadId: string) => {
+                            setCurrentThreadId(threadId)
+                            // Messages will be loaded by useChatMessages hook when threadId changes
+                        }}
+                        onNewThread={() => {
+                            setCurrentThreadId(null)
+                            setMessages([]) // Clear messages for new thread
+                        }}
+                        onDeleteThread={deleteThread}
+                        onUpdateThreadTitle={updateThreadTitle}
+                        isLoading={threadsLoading}
+                        chatbot={chatbot}
+                    />
+                </div>
             )}
 
             {/* Sidebar for regular chat history */}
@@ -114,6 +118,7 @@ export function FullPageChatLayout({
 
             {/* Main Chat Area */}
             <div className="flex-1 flex flex-col overflow-hidden relative">
+
                 {/* Top Bar with Menu and Preview Type - Hide in Embed Mode */}
                 {!isEmbed && (
                     <div className="h-14 border-b border-border bg-background/95 backdrop-blur-sm flex items-center justify-between px-6 z-10 transition-all duration-200 ease-out">
@@ -167,6 +172,7 @@ export function FullPageChatLayout({
                                     maxHeight: isWindowedMode ? (chatbot?.chatWindowHeight || '85vh') : '100%',
                                     borderRadius: isWindowedMode ? (chatbot?.chatWindowBorderRadius || chatbot?.borderRadius || '12px') : '0px',
                                     border: isWindowedMode ? `${chatbot?.chatWindowBorderWidth || chatbot?.borderWidth || '1px'} solid ${chatbot?.chatWindowBorderColor || chatbot?.borderColor || 'rgba(0,0,0,0.1)'}` : 'none',
+                                    pointerEvents: 'auto', // Ensure chat window allows interaction
                                 }}
                             >
                                 {/* Custom Header for Fullpage Desktop/Mobile (Regular Style) */}
@@ -178,6 +184,8 @@ export function FullPageChatLayout({
                                         isMobile={isMobile}
                                     />
                                 )}
+                                {/* PWA Install Banner - Only shows on mobile */}
+                                <PWAInstallBanner chatbot={chatbot} isMobile={isMobile} />
                                 <div className="flex-1 min-h-0">
                                     {children}
                                 </div>

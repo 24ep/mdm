@@ -121,8 +121,8 @@ export function ThreadSelector({
               <div
                 key={thread.threadId}
                 className={`group relative p-2 rounded-lg cursor-pointer transition-colors ${currentThreadId === thread.threadId
-                    ? 'bg-blue-100 dark:bg-blue-900'
-                    : 'hover:bg-muted'
+                  ? 'bg-blue-100 dark:bg-blue-900'
+                  : 'hover:bg-muted'
                   }`}
                 onClick={() => onSelectThread(thread.threadId)}
               >
@@ -192,17 +192,19 @@ export function ThreadSelector({
                           </div>
                         </div>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleStartEdit(thread)
-                            }}
-                          >
-                            <Edit2 className="h-3 w-3" />
-                          </Button>
+                          {((chatbot as any).enableConversationRenaming !== false) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleStartEdit(thread)
+                              }}
+                            >
+                              <Edit2 className="h-3 w-3" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"

@@ -400,8 +400,8 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
 
           <div className="flex items-center justify-between mb-4">
             <div className="space-y-0.5">
-              <Label>Auto Show Widget</Label>
-              <p className="text-xs text-muted-foreground">Show widget automatically on page load</p>
+              <Label>Auto Open Chat Window</Label>
+              <p className="text-xs text-muted-foreground">Automatically open the chat window on page load</p>
             </div>
             <Switch
               checked={formData.widgetAutoShow !== undefined ? formData.widgetAutoShow : true}

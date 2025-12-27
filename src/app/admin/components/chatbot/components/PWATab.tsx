@@ -71,6 +71,25 @@ export function PWATab({
                                 </div>
 
                                 <div className="space-y-2">
+                                    <Label>Installation Context</Label>
+                                    <Select
+                                        value={formData.pwaInstallScope || 'chat'}
+                                        onValueChange={(v) => setFormData({ ...formData, pwaInstallScope: v as 'chat' | 'website' })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="chat">Chat Widget (Inline)</SelectItem>
+                                            <SelectItem value="website">Host Website (Top Overlay)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <p className="text-xs text-muted-foreground">
+                                        "Chat Widget" places banner inside the flow. "Host Website" overlays it at the top of the screen.
+                                    </p>
+                                </div>
+
+                                <div className="space-y-2">
                                     <Label>Banner Text</Label>
                                     <Input
                                         placeholder="Install app for quick access"
@@ -79,21 +98,7 @@ export function PWATab({
                                     />
                                 </div>
 
-                                <div className="space-y-2">
-                                    <Label>Banner Position</Label>
-                                    <Select
-                                        value={formData.pwaBannerPosition || 'bottom'}
-                                        onValueChange={(v) => setFormData({ ...formData, pwaBannerPosition: v as 'top' | 'bottom' })}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="bottom">Above Input (Floating)</SelectItem>
-                                            <SelectItem value="top">Top of Chat Window</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+
 
                                 <div className="space-y-2">
                                     <Label>Display Mode</Label>
@@ -323,6 +328,16 @@ export function PWATab({
                                         value={formData.pwaBannerShadow || ''}
                                         onChange={(e) => setFormData({ ...formData, pwaBannerShadow: e.target.value })}
                                     />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>Margin</Label>
+                                    <Input
+                                        placeholder="0 12px"
+                                        value={formData.pwaBannerMargin || ''}
+                                        onChange={(e) => setFormData({ ...formData, pwaBannerMargin: e.target.value })}
+                                    />
+                                    <p className="text-xs text-muted-foreground">Margin around the banner (e.g., "8px 12px")</p>
                                 </div>
                             </div>
                         </TabsContent>

@@ -28,8 +28,8 @@
       position: fixed;
       bottom: 0;
       right: 0;
-      top: 0;
-      left: 0;
+      width: 100%;
+      height: 100%;
       z-index: 999999;
       pointer-events: none;
     `;
@@ -66,15 +66,25 @@
             const data = event.data;
             if (data.type === 'chat-widget-resize') {
                 if (data.isOpen) {
-                    container.style.pointerEvents = 'auto';
+                    container.style.width = '100%';
+                    container.style.height = '100%';
+                    container.style.pointerEvents = 'auto'; // allow interaction with overlay
                 } else {
-                    container.style.pointerEvents = 'none';
-                    iframe.style.pointerEvents = 'auto';
+                    // Closed: shrink to widget button size to avoid blocking page
+                    // Default to bottom-right area. 
+                    // Note: If widget position is changed in config, this might need dynamic positioning updates.
+                    container.style.width = '120px'; // Sufficient for standard 60px button + margins/badge
+                    container.style.height = '120px';
+                    container.style.pointerEvents = 'none'; // container itself doesn't capture
+                    iframe.style.pointerEvents = 'auto'; // button inside needs clicks
                 }
             }
 
             // Handle close chat message - minimize container but keep iframe for button
             if (data.type === 'close-chat') {
+                // Shrink container to widget button size (same as chat-widget-resize with isOpen: false)
+                container.style.width = '120px';
+                container.style.height = '120px';
                 container.style.pointerEvents = 'none';
                 iframe.style.pointerEvents = 'auto';
             }

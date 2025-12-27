@@ -118,12 +118,14 @@ export function ChatHeader({ chatbot, onClearSession, onClose, isMobile = false 
         }
         return null
       })()}
-      <div className="flex-1 min-w-0">
-        <h3 className="font-semibold text-sm leading-tight truncate">{chatbot.headerTitle || chatbot.name}</h3>
-        {chatbot.headerDescription && (
-          <p className="text-xs opacity-90 mt-0.5 truncate">{chatbot.headerDescription}</p>
-        )}
-      </div>
+      {((chatbot as any).headerShowTitle !== false) && (
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-sm leading-tight truncate">{chatbot.headerTitle || chatbot.name}</h3>
+          {chatbot.headerDescription && (
+            <p className="text-xs opacity-90 mt-0.5 truncate">{chatbot.headerDescription}</p>
+          )}
+        </div>
+      )}
 
       {/* Button Container - Ensures both buttons are aligned */}
       <div className="flex items-center gap-2">

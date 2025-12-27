@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Check, ChevronsUpDown, MessageSquare, Zap, Upload, Mic, Settings, Users } from 'lucide-react'
+import { Check, ChevronsUpDown, MessageSquare, Zap, Upload, Mic, Settings, Users, Megaphone } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Accordion } from '@/components/ui/accordion'
 import { X } from 'lucide-react'
@@ -22,7 +22,8 @@ import {
   DisclaimerSection,
   ModelPickerSection,
   PersonaPickerSection,
-  StartScreenSection
+  StartScreenSection,
+  ComposerSection
 } from '../style/sections'
 
 interface ConfigTabProps {
@@ -33,11 +34,11 @@ interface ConfigTabProps {
 // Icon Select Combobox Component with search and icons
 function IconSelectCombobox({ value, onValueChange }: { value: string; onValueChange: (value: string) => void }) {
   const [open, setOpen] = useState(false)
-  
+
   // Comprehensive list of Lucide icons
   const iconList = [
-    'None', 'Lightbulb', 'Star', 'Search', 'Zap', 'Sparkles', 'BookOpen', 'Compass', 'Globe', 'Mail', 
-    'Phone', 'User', 'Users', 'Settings', 'Info', 'CheckCircle2', 'Calendar', 'MapPin', 'Plus', 'Edit', 
+    'None', 'Lightbulb', 'Star', 'Search', 'Zap', 'Sparkles', 'BookOpen', 'Compass', 'Globe', 'Mail',
+    'Phone', 'User', 'Users', 'Settings', 'Info', 'CheckCircle2', 'Calendar', 'MapPin', 'Plus', 'Edit',
     'Trash2', 'Heart', 'Smile', 'MessageSquare', 'Brain', 'Rocket', 'Target', 'TrendingUp', 'HelpCircle',
     'AlertCircle', 'AlertTriangle', 'Check', 'X', 'XCircle', 'Minus', 'PlusCircle', 'MinusCircle',
     'ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown', 'ChevronRight', 'ChevronLeft', 'ChevronUp', 'ChevronDown',
@@ -183,6 +184,10 @@ export function ConfigTab({ formData, setFormData }: ConfigTabProps) {
               ChatKit
             </TabsTrigger>
           )}
+          <TabsTrigger value="composer" className="justify-start gap-2 px-3 py-2.5 rounded-md aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all">
+            <Megaphone className="h-4 w-4" />
+            Composer
+          </TabsTrigger>
         </TabsList>
 
         {/* Content Area */}
@@ -201,7 +206,7 @@ export function ConfigTab({ formData, setFormData }: ConfigTabProps) {
                     onCheckedChange={(checked) => setFormData({ ...formData, showStartConversation: checked } as any)}
                   />
                 </div>
-                
+
                 {(formData as any).showStartConversation !== false && (
                   <div className="space-y-2">
                     <Label>Start Conversation Message</Label>
@@ -212,8 +217,8 @@ export function ConfigTab({ formData, setFormData }: ConfigTabProps) {
                       value={formData.conversationOpener || (formData as any).openaiAgentSdkGreeting || ''}
                       onChange={(e) => {
                         const value = e.target.value
-                        setFormData({ 
-                          ...formData, 
+                        setFormData({
+                          ...formData,
                           conversationOpener: value,
                           ...(isAgentSDK && { openaiAgentSdkGreeting: value })
                         } as any)
@@ -376,7 +381,7 @@ export function ConfigTab({ formData, setFormData }: ConfigTabProps) {
                     onCheckedChange={(checked) => setFormData({ ...formData, enableVoiceAgent: checked })}
                   />
                 </div>
-                
+
                 {formData.enableVoiceAgent && (
                   <div className="space-y-4 pl-4 border-l-2 border-muted">
                     <div className="space-y-2">
@@ -394,7 +399,7 @@ export function ConfigTab({ formData, setFormData }: ConfigTabProps) {
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label>Voice UI Style</Label>
                       <Select
@@ -454,6 +459,13 @@ export function ConfigTab({ formData, setFormData }: ConfigTabProps) {
               </Accordion>
             </TabsContent>
           )}
+
+          {/* Composer Tab */}
+          <TabsContent value="composer" className="m-0 mt-0">
+            <div className="w-full bg-white dark:bg-card rounded-lg border shadow-sm p-0 overflow-hidden">
+              <ComposerSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
+            </div>
+          </TabsContent>
         </div>
       </Tabs>
     </div>

@@ -397,6 +397,7 @@ export interface Chatbot {
   thinkingMessageText?: string // Custom text for thinking message (default: "Thinking...")
   // Header
   headerTitle?: string
+  headerShowTitle?: boolean
   headerDescription?: string
   headerLogo?: string
   headerShowLogo?: boolean // Show/hide header logo
@@ -404,6 +405,7 @@ export interface Chatbot {
   headerFontColor?: string
   headerFontFamily?: string
   headerShowAvatar?: boolean
+  enableConversationRenaming?: boolean
   // Header Avatar (separate from message avatar)
   headerAvatarType?: 'icon' | 'image'
   headerAvatarIcon?: string
@@ -500,6 +502,7 @@ export interface Chatbot {
   userAvatarImageUrl?: string
   // PWA Configuration
   pwaEnabled?: boolean // Enable/disable PWA install banner in embedded chat
+  pwaInstallScope?: 'chat' | 'website' // Scope of installation: 'chat' (inline banner) or 'website' (top overlay)
   pwaBannerText?: string // Custom banner text (default: "Install app for quick access")
   pwaBannerPosition?: 'top' | 'bottom' // Banner position relative to input (default: 'bottom' = above input)
   // PWA Metadata
@@ -524,6 +527,7 @@ export interface Chatbot {
   pwaBannerButtonTextColor?: string // Install button text color (default: primaryColor)
   pwaBannerButtonBorderRadius?: string // Install button border radius (default: 4px)
   pwaBannerButtonFontSize?: string // Install button font size (default: 12px)
+  pwaBannerMargin?: string // Banner margin (default: 0)
   isPublished: boolean
   createdAt: Date
   updatedAt: Date

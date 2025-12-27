@@ -54,16 +54,83 @@ export default function ChatEmbedUIPage() {
             conversationOpener: 'Hello! How can I help you today?',
             openaiAgentSdkModel: 'gpt-4o',
             deploymentType: 'popover',
-            // Default style
-            primaryColor: '#000000',
+
+            // ===== Default Style Settings =====
+            // Primary colors
+            primaryColor: '#3b82f6',
             fontFamily: 'Inter',
+
+            // Header settings
+            headerTitle: 'New Chatbot',
+            headerDescription: 'How can I help you today?',
+            headerShowTitle: true,
+            headerShowLogo: false,
+            headerBgColor: '#3b82f6',
+            headerFontColor: '#ffffff',
+            headerBorderEnabled: true,
+            headerBorderColor: '#e5e7eb',
+            headerShowClearSession: true,
+
+            // Widget settings
             widgetPosition: 'bottom-right',
+            widgetOffsetX: '20px',
+            widgetOffsetY: '20px',
+            widgetSize: '60px',
+            widgetAvatarStyle: 'circle',
+            widgetBackgroundColor: '#3b82f6',
+            widgetBorderRadius: '50%',
+            widgetBorderWidth: '0px',
+            widgetBorderColor: 'transparent',
+            widgetShadowBlur: '8px',
+            widgetShadowColor: 'rgba(0,0,0,0.2)',
+            widgetAutoShow: false,
+            widgetAutoShowDelay: 3,
+
+            // Chat container settings
+            chatBackgroundColor: '#ffffff',
+            chatFontColor: '#1f2937',
+            chatBorderRadius: '12px',
+
+            // Message bubble settings
+            userBubbleColor: '#3b82f6',
+            userBubbleFontColor: '#ffffff',
+            botBubbleColor: '#f3f4f6',
+            botBubbleFontColor: '#1f2937',
+
+            // Composer settings
+            composerBackgroundColor: '#ffffff',
+            composerFontColor: '#1f2937',
+            composerPlaceholder: 'Type a message...',
+
+            // Popover settings
+            popoverWidth: '400px',
+            popoverHeight: '600px',
+            popoverBorderRadius: '16px',
+
+            // Avatar settings
+            avatarType: 'icon',
+            avatarIcon: 'Bot',
+            avatarIconColor: '#ffffff',
+
+            // Conversation settings
+            showStartConversation: true,
+            enableConversationRenaming: true,
+
             // Required arrays/booleans
             followUpQuestions: [],
             enableFileUpload: false,
             showCitations: true,
-            isPublished: false
-        })
+            isPublished: false,
+
+            // ChatKit options with defaults
+            chatkitOptions: {
+                history: {
+                    enabled: true,
+                    showDelete: true,
+                    showRename: true
+                }
+            }
+        } as any)
         setIsEditing(true)
         setActiveTab('engine')
     }

@@ -67,7 +67,8 @@ export function getContainerStyle(
   previewDeploymentType: 'popover' | 'fullpage' | 'popup-center',
   emulatorConfig: EmulatorConfig,
   isMobile: boolean = false,
-  isEmbed: boolean = false
+  isEmbed: boolean = false,
+  isPreview: boolean = false
 ): React.CSSProperties {
   const options = (chatbot as any).chatkitOptions || {}
   const theme = options.theme || {}
@@ -136,7 +137,8 @@ export function getContainerStyle(
   if (previewDeploymentType === 'popover') {
     // On mobile only, popover becomes fullpage layout (fills the container/iframe)
     // Desktop embed should still show as popover with proper positioning
-    if (isMobile) {
+    // EXCEPTION: In preview mode (emulator), always show as popover so users can preview the widget behavior
+    if (isMobile && !isPreview) {
       return {
         position: 'fixed',
         top: 0,
@@ -250,7 +252,8 @@ export function getContainerStyle(
     // Current embed script (route.ts) doesn't seem to handle 'popup-center' explicitly with a different container structure 
     // other than 'popover' logic or default. 
     // Let's assume for now isEmbed mainly affects popover/fullpage.
-    if (isMobile) {
+    // EXCEPTION: In preview mode (emulator), always show as popup-center so users can preview the widget behavior
+    if (isMobile && !isPreview) {
       return {
         position: 'fixed',
         top: 0,

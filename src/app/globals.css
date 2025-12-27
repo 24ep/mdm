@@ -182,7 +182,12 @@
     border-color: hsl(var(--border));
   }
 
+  html {
+    height: 100%;
+  }
+
   body {
+    height: 100%;
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
     font-family: 'Inter', sans-serif;
@@ -429,6 +434,16 @@
   left: 0 !important;
   right: 0 !important;
   bottom: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Force specific internal ChatKit elements to expand */
+.chatkit-in-regular-style openai-chatkit,
+.chatkit-in-regular-style [class*="chatkit"] {
+  height: 100% !important;
+  width: 100% !important;
+  flex: 1 !important;
   display: flex !important;
   flex-direction: column !important;
 }
