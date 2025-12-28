@@ -76,8 +76,8 @@ export function ChatContent({
     return (
       <div className="relative flex flex-col h-full">
         {!hideHeader && (
-          <ChatHeader 
-            chatbot={chatbot} 
+          <ChatHeader
+            chatbot={chatbot}
             onClearSession={() => setMessages([])}
           />
         )}
@@ -98,7 +98,7 @@ export function ChatContent({
               showMessages={true}
             />
           </div>
-          
+
           {/* Optional: Show compact input at bottom for text fallback - Floating */}
           <div className="absolute bottom-0 left-0 right-0 z-50 border-t p-2" style={{
             borderColor: chatbot.borderColor,
@@ -146,8 +146,8 @@ export function ChatContent({
   return (
     <div className="relative flex flex-col h-full">
       {!hideHeader && (
-        <ChatHeader 
-          chatbot={chatbot} 
+        <ChatHeader
+          chatbot={chatbot}
           onClearSession={() => setMessages([])}
         />
       )}
@@ -179,20 +179,20 @@ export function ChatContent({
                 borderColor: chatbot.borderColor,
                 borderWidth: chatbot.borderWidth,
                 ...(() => {
-              const bgValue = chatbot.messageBoxColor
-              // Check if it's an image URL
-              if (bgValue && (bgValue.startsWith('url(') || bgValue.startsWith('http://') || bgValue.startsWith('https://') || bgValue.startsWith('/'))) {
-                const imageUrl = bgValue.startsWith('url(') ? bgValue : `url(${bgValue})`
-                return {
-                  backgroundImage: imageUrl,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  backgroundRepeat: 'no-repeat',
-                  backgroundColor: '#ffffff', // Fallback color
-                }
-              }
-              return { backgroundColor: bgValue }
-            })(),
+                  const bgValue = chatbot.messageBoxColor
+                  // Check if it's an image URL
+                  if (bgValue && (bgValue.startsWith('url(') || bgValue.startsWith('http://') || bgValue.startsWith('https://') || bgValue.startsWith('/'))) {
+                    const imageUrl = bgValue.startsWith('url(') ? bgValue : `url(${bgValue})`
+                    return {
+                      backgroundImage: imageUrl,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat',
+                      backgroundColor: '#ffffff', // Fallback color
+                    }
+                  }
+                  return { backgroundColor: bgValue }
+                })(),
                 color: chatbot.fontColor,
               }}
             >

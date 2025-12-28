@@ -357,7 +357,7 @@ export function ChatKitIntegrationSection({ formData, setFormData }: ChatKitInte
                 <ColorInput
                   value={formData.headerBgColor || '#3b82f6'}
                   onChange={(color) => setFormData({ ...formData, headerBgColor: color })}
-                  allowImageVideo={false}
+                  allowImageVideo={true}
                   className="relative"
                   placeholder="#3b82f6"
                   inputClassName="h-7 text-xs pl-7 w-full"

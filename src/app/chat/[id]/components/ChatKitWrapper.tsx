@@ -9,6 +9,7 @@ import { getOverlayStyle } from '../utils/chatStyling'
 import { Z_INDEX } from '@/lib/z-index'
 import { extractNumericValue, convertToHex, isLightColor, hexToRgb } from './chatkit/themeUtils'
 import { buildChatKitTheme } from './chatkit/configBuilder'
+import { loadGoogleFont } from './chatkit/fontLoader'
 import { ChatKitGlobalStyles, getContainerStyle } from './chatkit/ChatKitStyles'
 import { ChatKitStyleEnforcer } from './chatkit/ChatKitStyleEnforcer'
 import { PWAInstallBanner } from './PWAInstallBanner'
@@ -46,8 +47,64 @@ export function ChatKitWrapper({
   const prevIsOpenRef = React.useRef(isOpen)
   const containerRef = React.useRef<HTMLDivElement>(null)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const chatkitControlRef = React.useRef<any>(null)  // Store ChatKit control for runtime updates
+  const chatkitOptionsRef = React.useRef<any>(null)  // Store options for setOptions calls
+
+  // Detect if we're in an embedded context (this is needed for resize message sync)
+  const isEmbed = isInIframe || (typeof window !== 'undefined' && window.self !== window.top)
+
+  // Use ref to track isMobile without causing effect re-runs
+  // This prevents loops where isMobile change -> resize message -> iframe resize -> isMobile change
+  const isMobileRef = React.useRef(isMobile)
+  React.useEffect(() => { isMobileRef.current = isMobile }, [isMobile])
+
+  // CRITICAL: Send resize messages to parent when isOpen changes in embed mode
+  // This ensures the parent iframe size stays in sync with ChatKitWrapper's popover state
+  // IMPORTANT: Do NOT include isMobile in dependencies - use ref instead to prevent loops
+  React.useEffect(() => {
+    if (!isEmbed) return
+    if (previewDeploymentType === 'fullpage') return
+
+    const isPopover = previewDeploymentType === 'popover' || previewDeploymentType === 'popup-center'
+    if (!isPopover) return
+
+    let width = '100%'
+    let height = '100%'
+
+    if (!isOpen) {
+      // If PWA overlay is enabled and we are on mobile, we must keep the iframe full scale
+      // so the banner (fixed at top) remains visible.
+      // The pointer-events: none on the container (in page.tsx) will allow clicks to pass through.
+      const isPwaOverlay = (chatbot as any).pwaInstallScope === 'website'
+      if (isPwaOverlay && isMobileRef.current) {
+        width = '100%'
+        height = '100%'
+      } else {
+        width = '120px'
+        height = '120px'
+      }
+    } else if (!isMobileRef.current) {
+      // Desktop popover open size (use ref to avoid dependency loop)
+      width = '450px'
+      height = '800px'
+    }
+    // Mobile open popover remains 100%
+
+
+    window.parent.postMessage({
+      type: 'chat-widget-resize',
+      isOpen,
+      width,
+      height,
+      deploymentType: previewDeploymentType
+    }, '*')
+  }, [isOpen, isEmbed, previewDeploymentType])  // Removed isMobile - use ref instead
 
   React.useEffect(() => {
+    // Skip in embed mode - internal resize event can trigger isMobile changes that cause loops
+    // The iframe resize is handled by postMessage above, not by window resize events
+    if (isEmbed) return
+
     if (!prevIsOpenRef.current && isOpen && previewDeploymentType !== 'fullpage') {
       // Delay the resize event to ensure DOM is ready
       const t = setTimeout(() => {
@@ -56,7 +113,7 @@ export function ChatKitWrapper({
       return () => clearTimeout(t)
     }
     prevIsOpenRef.current = isOpen
-  }, [isOpen, previewDeploymentType])
+  }, [isOpen, previewDeploymentType, isEmbed])
 
   // Handle file upload tool click
   React.useEffect(() => {
@@ -130,12 +187,53 @@ export function ChatKitWrapper({
     }
   }
 
-  try {
-    const chatkitOptions = chatbot.chatkitOptions || {}
-    const useChatKitInRegularStyle = propUseChatKitInRegularStyle ?? (chatbot as any).useChatKitInRegularStyle === true
+  // Force theme refresh when popover opens
+  // This helps apply styles that may not have been ready during initial mount
+  React.useEffect(() => {
+    if (isOpen && chatkitControlRef.current && chatkitOptionsRef.current) {
+      // Delay the setOptions call to ensure ChatKit iframe is ready
+      const refreshTheme = () => {
+        try {
+          if (chatkitControlRef.current?.setOptions) {
+            chatkitControlRef.current.setOptions(chatkitOptionsRef.current)
+          }
+        } catch (e) {
+          console.warn('[ChatKitWrapper] setOptions failed, likely not ready yet:', e)
+        }
+      }
 
-    // Build complete theme object
-    const theme = buildChatKitTheme(chatbot)
+      // Try multiple times with increasing delays to catch the iframe becoming ready
+      const t1 = setTimeout(refreshTheme, 100)
+      const t2 = setTimeout(refreshTheme, 500)
+      const t3 = setTimeout(refreshTheme, 1000)
+      const t4 = setTimeout(refreshTheme, 2000)
+
+      return () => {
+        clearTimeout(t1)
+        clearTimeout(t2)
+        clearTimeout(t3)
+        clearTimeout(t4)
+      }
+    }
+  }, [isOpen])
+
+  // Lifted from try block to allow hooks
+  const chatkitOptions = chatbot.chatkitOptions || {}
+  const useChatKitInRegularStyle = propUseChatKitInRegularStyle ?? (chatbot as any).useChatKitInRegularStyle === true
+
+  // Memoize theme calculation
+  const theme = React.useMemo(() => buildChatKitTheme(chatbot), [chatbot])
+
+  // Dynamically load Google Fonts if specified in theme
+  React.useEffect(() => {
+    const fontFamily = theme?.typography?.fontFamily || chatbot.fontFamily
+    if (fontFamily) {
+      loadGoogleFont(fontFamily)
+    }
+  }, [theme, chatbot.fontFamily])
+
+  try {
+    // Variables lifted to outer scope: chatkitOptions, useChatKitInRegularStyle, theme
 
     try {
       const { useChatKit, ChatKit } = chatkitModule
@@ -147,15 +245,8 @@ export function ChatKitWrapper({
       const { control } = useChatKit({
         api: {
           async getClientSecret(existing: any) {
-            console.log('🔑 ChatKit getClientSecret called', {
-              hasExisting: !!existing,
-              agentId: agentId?.substring(0, 20) + '...',
-              chatbotId: chatbot.id,
-              hasApiKey: !!apiKey
-            })
             try {
               if (existing) {
-                console.log('🔄 Refreshing existing ChatKit session')
                 const res = await fetch('/api/chatkit/session', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -167,7 +258,6 @@ export function ChatKitWrapper({
                     apiKey: apiKey
                   }),
                 })
-                console.log('🌐 Session refresh response status:', res.status)
                 if (!res.ok) {
                   const errorData = await res.json().catch(() => ({ error: 'Unknown error' }))
                   console.error('❌ Session refresh failed:', errorData)
@@ -177,11 +267,9 @@ export function ChatKitWrapper({
                   throw new Error(errorMessage)
                 }
                 const { client_secret } = await res.json()
-                console.log('✅ Session refreshed successfully')
                 return client_secret
               }
 
-              console.log('🆕 Creating new ChatKit session')
               const res = await fetch('/api/chatkit/session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -192,7 +280,6 @@ export function ChatKitWrapper({
                   apiKey: apiKey
                 }),
               })
-              console.log('🌐 Session creation response status:', res.status)
               if (!res.ok) {
                 const errorData = await res.json().catch(() => ({ error: 'Unknown error' }))
                 console.error('❌ ChatKit session creation failed:', {
@@ -206,12 +293,6 @@ export function ChatKitWrapper({
                 throw new Error(errorMessage)
               }
               const sessionData = await res.json()
-              console.log('📦 ChatKit session data received:', {
-                has_secret: !!sessionData.client_secret,
-                session_id: sessionData.session_id,
-                secret_length: sessionData.client_secret?.length,
-                secret_type: typeof sessionData.client_secret
-              })
               if (!sessionData.client_secret) {
                 console.error('❌ No client secret in response')
                 throw new Error('No client secret received from session endpoint')
@@ -221,7 +302,6 @@ export function ChatKitWrapper({
                 console.error('❌ Client secret is empty after trimming')
                 throw new Error('Client secret is empty')
               }
-              console.log('✅ Client secret validated, returning to ChatKit (first 20 chars):', clientSecret.substring(0, 20) + '...')
               return clientSecret
             } catch (error) {
               console.error('❌ Error in getClientSecret:', error)
@@ -326,7 +406,6 @@ export function ChatKitWrapper({
           }
 
           if (Object.keys(supportedHeader).length > 0) {
-            console.log('ChatKitWrapper Header Config (sanitized):', JSON.stringify(supportedHeader, null, 2))
             return supportedHeader
           }
           return undefined
@@ -403,33 +482,71 @@ export function ChatKitWrapper({
         })() : undefined,
       })
 
+      // Store control and options in refs for runtime updates
+      chatkitControlRef.current = control
+      chatkitOptionsRef.current = {
+        theme: theme as any,
+        locale: chatkitOptions.locale,
+      }
+
       const deploymentType = previewDeploymentType || chatbot.deploymentType || 'fullpage'
+
+      // Check if we're in an embedded context
+      const isEmbed = isInIframe || (typeof window !== 'undefined' && window.self !== window.top)
+
+      // Force font application in embed mode
+      React.useEffect(() => {
+        if (isEmbed) {
+          const fontFamily = theme?.typography?.fontFamily || chatbot.fontFamily
+          if (fontFamily && fontFamily !== 'inherit') {
+            // 1. Force load the font
+            loadGoogleFont(fontFamily)
+
+            // 2. Force apply to body to ensure inheritance works if ChatKit falls back to inherit
+            document.body.style.setProperty('font-family', fontFamily, 'important')
+
+            // 3. Create a hidden element to force browser to download the font immediately
+            // This fixes issues where the font is defined but not downloaded until used
+            const probe = document.createElement('span')
+            probe.textContent = 'font-probe'
+            probe.style.fontFamily = fontFamily
+            probe.style.position = 'absolute'
+            probe.style.top = '-9999px'
+            probe.style.left = '-9999px'
+            probe.style.opacity = '0'
+            probe.style.pointerEvents = 'none'
+            document.body.appendChild(probe)
+
+            // Allow some time for download, then cleanup
+            const cleanup = setTimeout(() => {
+              if (document.body.contains(probe)) {
+                document.body.removeChild(probe)
+              }
+            }, 3000)
+
+            return () => {
+              clearTimeout(cleanup)
+              if (document.body.contains(probe)) {
+                document.body.removeChild(probe)
+              }
+            }
+          }
+        }
+      }, [isEmbed, theme, chatbot.fontFamily])
+
       // Hide ChatKit widget button when:
       // - using regular style header
       // - OR on mobile when chat is open (fullpage covers screen)
+      // - OR in embed mode (parent embed script handles the launcher button)
       // EXCEPTION: In emulator preview mode (isPreview=true from URL), always show widget
       const shouldShowWidgetButton = (deploymentType === 'popover' || deploymentType === 'popup-center') &&
         !useChatKitInRegularStyle &&
+        (!isEmbed || isPreview) && // Hide internal button in embed mode as parent script handles it, unless in preview
         !(isMobile && isOpen && !isPreview)  // Don't hide in emulator preview mode
 
       const shouldShowContainer = deploymentType === 'fullpage' ? true : isOpen
 
-      // Debug: Trace widget button visibility
-      console.log('ChatKitWrapper Debug:', {
-        shouldShowWidgetButton,
-        shouldShowContainer,
-        deploymentType,
-        useChatKitInRegularStyle,
-        isMobile,
-        isOpen,
-        isPreview,
-        isDesktopPreview,
-        // Show the breakdown of the condition
-        condition1_deploymentOK: (deploymentType === 'popover' || deploymentType === 'popup-center'),
-        condition2_notRegularStyle: !useChatKitInRegularStyle,
-        condition3_shouldNotHide: !(isMobile && isOpen && !isPreview),
-        hideExpression: (isMobile && isOpen && !isPreview)
-      })
+
 
       const popoverPositionStyle = (): React.CSSProperties => {
         const pos = (chatbot as any).widgetPosition || 'bottom-right'
@@ -450,9 +567,6 @@ export function ChatKitWrapper({
 
       const overlayStyle = getOverlayStyle(deploymentType, chatbot, isOpen)
 
-      // Check if we're in an embedded context
-      const isEmbed = isInIframe || (typeof window !== 'undefined' && window.self !== window.top)
-
       // Handler for closing that also notifies parent
       const handleBackdropClose = (e: React.MouseEvent) => {
         e.preventDefault()
@@ -463,6 +577,24 @@ export function ChatKitWrapper({
           window.parent.postMessage({ type: 'close-chat' }, '*')
         }
       }
+
+      // Styles for embed mode to ensure it fills the iframe correctly without double borders/shadows
+      // BUT skip this override in preview mode to allow simulating the popover positioning inside the fixed-size emulator iframe
+      const embedContainerOverride: React.CSSProperties = (isEmbed && !isPreview) ? {
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        margin: 0,
+        padding: 0,
+        boxShadow: 'none',
+        border: 'none',
+        borderRadius: 0,
+        transform: 'none', // Prevent double transforms
+      } : {}
 
       return (
         <>
@@ -550,8 +682,11 @@ export function ChatKitWrapper({
                 buttonStyle.WebkitBackdropFilter = `blur(${widgetBlur}px)`
               }
 
-              // Check if it's an image URL (starts with url(, http://, https://, or /)
-              if (widgetBgValue.startsWith('url(') || widgetBgValue.startsWith('http://') || widgetBgValue.startsWith('https://') || widgetBgValue.startsWith('/')) {
+              // Check if it's an image URL or gradient
+              const isGradient = widgetBgValue.includes('gradient')
+              const isUrl = widgetBgValue.startsWith('url(') || widgetBgValue.startsWith('http://') || widgetBgValue.startsWith('https://') || widgetBgValue.startsWith('/')
+
+              if (isUrl) {
                 const imageUrl = widgetBgValue.startsWith('url(') ? widgetBgValue : `url(${widgetBgValue})`
                 buttonStyle.backgroundImage = imageUrl
                 buttonStyle.backgroundSize = 'cover'
@@ -561,6 +696,9 @@ export function ChatKitWrapper({
                 if (widgetOpacity < 100) {
                   buttonStyle.backgroundColor = `rgba(255, 255, 255, ${widgetOpacity / 100})` // Fallback color with opacity
                 }
+              } else if (isGradient) {
+                // Apply gradient directly to background
+                buttonStyle.background = widgetBgValue
               } else {
                 // It's a color value - apply opacity
                 if (widgetOpacity < 100) {
@@ -572,7 +710,17 @@ export function ChatKitWrapper({
                       buttonStyle.backgroundColor = widgetBgValue
                     }
                   } else {
-                    buttonStyle.backgroundColor = `rgba(${hexToRgb(widgetBgValue)}, ${widgetOpacity / 100})`
+                    // Try to convert hex to rgb, fallback to original value if it fails (e.g. named color)
+                    try {
+                      const rgb = hexToRgb(widgetBgValue)
+                      if (rgb) {
+                        buttonStyle.backgroundColor = `rgba(${rgb}, ${widgetOpacity / 100})`
+                      } else {
+                        buttonStyle.backgroundColor = widgetBgValue
+                      }
+                    } catch (e) {
+                      buttonStyle.backgroundColor = widgetBgValue
+                    }
                   }
                 } else {
                   buttonStyle.backgroundColor = widgetBgValue
@@ -674,8 +822,11 @@ export function ChatKitWrapper({
               buttonStyle.WebkitBackdropFilter = `blur(${widgetBlur}px)`
             }
 
-            // Check if it's an image URL (starts with url(, http://, https://, or /)
-            if (widgetBgValue.startsWith('url(') || widgetBgValue.startsWith('http://') || widgetBgValue.startsWith('https://') || widgetBgValue.startsWith('/')) {
+            // Check if it's an image URL or Gradient
+            const isGradient = widgetBgValue.toLowerCase().includes('gradient')
+            const isUrl = widgetBgValue.startsWith('url(') || widgetBgValue.startsWith('http://') || widgetBgValue.startsWith('https://') || widgetBgValue.startsWith('/')
+
+            if (isUrl) {
               const imageUrl = widgetBgValue.startsWith('url(') ? widgetBgValue : `url(${widgetBgValue})`
               buttonStyle.backgroundImage = imageUrl
               buttonStyle.backgroundSize = 'cover'
@@ -685,6 +836,12 @@ export function ChatKitWrapper({
               if (widgetOpacity < 100) {
                 buttonStyle.backgroundColor = `rgba(255, 255, 255, ${widgetOpacity / 100})` // Fallback color with opacity
               }
+            } else if (isGradient) {
+              // Gradients must use 'background' property
+              // Note: React style object doesn't support !important directly, so we rely on specificity or the style attribute order.
+              // Since this is inline style, it should win.
+              buttonStyle.background = widgetBgValue
+              delete buttonStyle.backgroundColor; // Ensure no conflict
             } else {
               // It's a color value - apply opacity
               if (widgetOpacity < 100) {
@@ -696,7 +853,11 @@ export function ChatKitWrapper({
                     buttonStyle.backgroundColor = widgetBgValue
                   }
                 } else {
-                  buttonStyle.backgroundColor = `rgba(${hexToRgb(widgetBgValue)}, ${widgetOpacity / 100})`
+                  try {
+                    buttonStyle.backgroundColor = `rgba(${hexToRgb(widgetBgValue)}, ${widgetOpacity / 100})`
+                  } catch (e) {
+                    buttonStyle.backgroundColor = widgetBgValue
+                  }
                 }
               } else {
                 buttonStyle.backgroundColor = widgetBgValue
@@ -732,8 +893,12 @@ export function ChatKitWrapper({
                   padding: 0,
                 } : {
                   ...containerStyle,
-                  position: (deploymentType === 'popover' || deploymentType === 'popup-center') ? 'fixed' : 'relative',
-                  ...(deploymentType === 'popover' ? (() => {
+                  ...embedContainerOverride, // Apply embed overrides (removes fixed pos, borders, etc.)
+                  position: (isEmbed && !isPreview) ? 'relative' : (deploymentType === 'popover' || deploymentType === 'popup-center') ? 'fixed' : 'relative',
+                  ...(deploymentType === 'popover' && (!isEmbed || isPreview) ? (() => {
+                    // Only apply complex positioning if NOT embedded (embed handles positioning via iframe)
+                    // OR if in preview mode (simulating popover in emulator)
+                    // ... (existing positioning logic, essentially skipped for embed due to embedContainerOverride)
                     const pos = (chatbot as any).widgetPosition || 'bottom-right'
                     const offsetX = (chatbot as any).widgetOffsetX || '20px'
                     const offsetY = (chatbot as any).widgetOffsetY || '20px'
@@ -756,7 +921,8 @@ export function ChatKitWrapper({
                     }
 
                     return style
-                  })() : deploymentType === 'popup-center' ? ({
+                  })() : deploymentType === 'popup-center' && (!isEmbed || isPreview) ? ({
+                    // Only apply popup center positioning if NOT embedded OR if in preview mode
                     top: '50%',
                     left: '50%',
                     transform: 'translate(-50%, -50%)',
@@ -764,12 +930,15 @@ export function ChatKitWrapper({
                       ? ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) + 1
                       : Z_INDEX.chatWidgetWindow,
                   } as React.CSSProperties) : {}),
+                  // Ensure z-index is correct
                   zIndex: (chatbot as any).widgetZIndex || Z_INDEX.chatWidget,
+                  // Re-apply embed override to be absolutely sure it wins
+                  ...embedContainerOverride
                 }),
               }}
             >
               <ChatKitGlobalStyles chatbot={chatbot} chatkitOptions={chatkitOptions} />
-              <ChatKitStyleEnforcer chatbot={chatbot} />
+              <ChatKitStyleEnforcer chatbot={chatbot} chatkitOptions={chatkitOptions} containerRef={containerRef} isOpen={isOpen} />
 
               <div
                 ref={containerRef}
@@ -782,10 +951,7 @@ export function ChatKitWrapper({
                   flexDirection: 'column'
                 }}
               >
-                {/* Render banner only if we are in native mode AND NOT fullpage (since FullPageChatLayout handles fullpage) */}
-                {(isNative && deploymentType !== 'fullpage') && (
-                  <PWAInstallBanner chatbot={chatbot} isMobile={isMobile} />
-                )}
+
                 <div style={{ flex: 1, width: '100%', position: 'relative', overflow: 'hidden' }}>
                   <ChatKit control={control} style={{ width: '100%', height: '100%' }} />
                 </div>

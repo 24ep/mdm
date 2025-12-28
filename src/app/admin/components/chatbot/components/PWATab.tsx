@@ -7,6 +7,9 @@ import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import * as Icons from 'lucide-react'
 import { ColorInput } from '@/components/studio/layout-config/ColorInput'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Button } from '@/components/ui/button'
+import { Maximize2, BoxSelect } from 'lucide-react'
 import { Chatbot } from '../types'
 
 interface PWATabProps {
@@ -261,7 +264,7 @@ export function PWATab({
                                         <ColorInput
                                             value={formData.pwaBannerBgColor || formData.primaryColor || '#3b82f6'}
                                             onChange={(color) => setFormData({ ...formData, pwaBannerBgColor: color })}
-                                            allowImageVideo={false}
+                                            allowImageVideo={true}
                                             className="relative"
                                             placeholder={formData.primaryColor || '#3b82f6'}
                                             inputClassName="h-10 text-xs pl-9 w-full"
@@ -303,6 +306,79 @@ export function PWATab({
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <Label>Border Width</Label>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-4 w-4 rounded-full hover:bg-muted">
+                                                        <BoxSelect className="h-3 w-3 text-muted-foreground" />
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-80 p-4">
+                                                    <div className="space-y-4">
+                                                        <h4 className="font-medium leading-none">Individual Border Widths</h4>
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <div className="space-y-2">
+                                                                <Label className="text-xs">Top</Label>
+                                                                <Input
+                                                                    placeholder="1px"
+                                                                    value={(formData as any).pwaBannerBorderWidthTop || ''}
+                                                                    onChange={(e) => setFormData({ ...formData, pwaBannerBorderWidthTop: e.target.value } as any)}
+                                                                />
+                                                            </div>
+                                                            <div className="space-y-2">
+                                                                <Label className="text-xs">Right</Label>
+                                                                <Input
+                                                                    placeholder="1px"
+                                                                    value={(formData as any).pwaBannerBorderWidthRight || ''}
+                                                                    onChange={(e) => setFormData({ ...formData, pwaBannerBorderWidthRight: e.target.value } as any)}
+                                                                />
+                                                            </div>
+                                                            <div className="space-y-2">
+                                                                <Label className="text-xs">Bottom</Label>
+                                                                <Input
+                                                                    placeholder="1px"
+                                                                    value={(formData as any).pwaBannerBorderWidthBottom || ''}
+                                                                    onChange={(e) => setFormData({ ...formData, pwaBannerBorderWidthBottom: e.target.value } as any)}
+                                                                />
+                                                            </div>
+                                                            <div className="space-y-2">
+                                                                <Label className="text-xs">Left</Label>
+                                                                <Input
+                                                                    placeholder="1px"
+                                                                    value={(formData as any).pwaBannerBorderWidthLeft || ''}
+                                                                    onChange={(e) => setFormData({ ...formData, pwaBannerBorderWidthLeft: e.target.value } as any)}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </PopoverContent>
+                                            </Popover>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <Input
+                                                placeholder="1px"
+                                                value={formData.pwaBannerBorderWidth || ''}
+                                                onChange={(e) => setFormData({ ...formData, pwaBannerBorderWidth: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label>Border Color</Label>
+                                        <ColorInput
+                                            value={formData.pwaBannerBorderColor || '#e2e8f0'}
+                                            onChange={(color) => setFormData({ ...formData, pwaBannerBorderColor: color })}
+                                            allowImageVideo={false}
+                                            className="relative"
+                                            placeholder="#e2e8f0"
+                                            inputClassName="h-10 text-xs pl-9 w-full"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
                                         <Label>Border Radius</Label>
                                         <Input
                                             placeholder="8px"
@@ -321,8 +397,57 @@ export function PWATab({
                                     </div>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <Label>Shadow</Label>
+                                <div className="space-y-4 pt-2">
+                                    <Label className="text-base font-semibold">Shadow Customization</Label>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label>Shadow X Offset</Label>
+                                            <Input
+                                                placeholder="0px"
+                                                value={(formData as any).pwaBannerShadowX || ''}
+                                                onChange={(e) => setFormData({ ...formData, pwaBannerShadowX: e.target.value } as any)}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Shadow Y Offset</Label>
+                                            <Input
+                                                placeholder="4px"
+                                                value={(formData as any).pwaBannerShadowY || ''}
+                                                onChange={(e) => setFormData({ ...formData, pwaBannerShadowY: e.target.value } as any)}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Shadow Blur</Label>
+                                            <Input
+                                                placeholder="10px"
+                                                value={(formData as any).pwaBannerShadowBlur || ''}
+                                                onChange={(e) => setFormData({ ...formData, pwaBannerShadowBlur: e.target.value } as any)}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Shadow Spread</Label>
+                                            <Input
+                                                placeholder="0px"
+                                                value={(formData as any).pwaBannerShadowSpread || ''}
+                                                onChange={(e) => setFormData({ ...formData, pwaBannerShadowSpread: e.target.value } as any)}
+                                            />
+                                        </div>
+                                        <div className="col-span-2 space-y-2">
+                                            <Label>Shadow Color</Label>
+                                            <ColorInput
+                                                value={(formData as any).pwaBannerShadowColor || 'rgba(0,0,0,0.1)'}
+                                                onChange={(color) => setFormData({ ...formData, pwaBannerShadowColor: color } as any)}
+                                                allowImageVideo={false}
+                                                className="relative"
+                                                placeholder="rgba(0,0,0,0.1)"
+                                                inputClassName="h-10 text-xs pl-9 w-full"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2 hidden">
+                                    <Label>Legacy Shadow</Label>
                                     <Input
                                         placeholder="0 -2px 10px rgba(0,0,0,0.1)"
                                         value={formData.pwaBannerShadow || ''}

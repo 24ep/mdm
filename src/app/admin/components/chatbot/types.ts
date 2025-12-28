@@ -208,6 +208,8 @@ export interface Chatbot {
   fontFamily: string
   fontSize: string
   fontColor: string
+  secondaryColor?: string
+  backgroundColor?: string
   borderColor: string
   borderWidth: string
   borderRadius: string
@@ -345,7 +347,9 @@ export interface Chatbot {
   widgetLabelIconPosition?: 'left' | 'right' // Icon position relative to label
   // Widget behavior
   widgetAnimation: 'none' | 'fade' | 'slide' | 'bounce'
-  widgetAutoShow: boolean
+  widgetAutoShow?: boolean // Deprecated in favor of widgetAutoShowDesktop
+  widgetAutoShowDesktop?: boolean // Default true
+  widgetAutoShowMobile?: boolean // Default false
   widgetAutoShowDelay: number // seconds
   widgetOffsetX: string // horizontal offset from edge
   widgetOffsetY: string // vertical offset from edge
@@ -520,7 +524,14 @@ export interface Chatbot {
   pwaBannerFontFamily?: string // Banner font family (default: inherit from chatbot)
   pwaBannerFontSize?: string // Banner text font size (default: 13px)
   pwaBannerBorderRadius?: string // Banner border radius (default: 8px)
+  pwaBannerBorderColor?: string // Banner border color
+  pwaBannerBorderWidth?: string // Banner border width
   pwaBannerShadow?: string // Banner box shadow (default: 0 -2px 10px rgba(0,0,0,0.1))
+  pwaBannerShadowX?: string
+  pwaBannerShadowY?: string
+  pwaBannerShadowBlur?: string
+  pwaBannerShadowSpread?: string
+  pwaBannerShadowColor?: string
   pwaBannerPadding?: string // Banner padding (default: 10px 12px)
   // PWA Banner Button Styling
   pwaBannerButtonBgColor?: string // Install button background (default: #ffffff)

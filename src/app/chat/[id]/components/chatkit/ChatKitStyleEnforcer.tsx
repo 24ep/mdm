@@ -1,160 +1,203 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { ChatbotConfig } from '../../types'
 import { isLightColor } from './themeUtils'
+import { loadGoogleFont } from './fontLoader'
 
 interface ChatKitStyleEnforcerProps {
     chatbot: ChatbotConfig
-    containerRef?: React.RefObject<HTMLDivElement>
+    chatkitOptions?: any
+    containerRef?: React.RefObject<HTMLDivElement | null>
+    isOpen?: boolean
 }
 
-/**
- * This component uses a MutationObserver to enforce styles on ChatKit elements
- * after they are rendered. This is necessary because ChatKit uses Shadow DOM
- * and inline styles that override our global CSS selectors.
- */
-export function ChatKitStyleEnforcer({ chatbot }: ChatKitStyleEnforcerProps) {
+export function ChatKitStyleEnforcer({ chatbot, chatkitOptions, containerRef, isOpen }: ChatKitStyleEnforcerProps) {
     const observerRef = useRef<MutationObserver | null>(null)
+    const prevIsOpenRef = useRef(isOpen)
+    const applyStylesRef = useRef<() => void>(() => { })
 
-    useEffect(() => {
-        // Calculate default composer colors based on background contrast
-        const defaultComposerBg = isLightColor((chatbot.messageBoxColor || '#ffffff'))
-            ? '#f3f4f6' // Light theme: Gray-100 input
-            : '#374151' // Dark theme: Gray-700 input
+    // Resolve Font Family from new options or legacy prop
+    const fontFamily = chatkitOptions?.theme?.typography?.fontFamily || chatbot.fontFamily || 'inherit'
 
-        const defaultComposerFg = isLightColor((chatbot.messageBoxColor || '#ffffff'))
-            ? '#000000'
-            : '#ffffff'
+    // Calculate default/configured colors
+    const defaultComposerBg = isLightColor((chatbot.messageBoxColor || '#ffffff')) ? '#f3f4f6' : '#374151'
+    const defaultComposerFg = isLightColor((chatbot.messageBoxColor || '#ffffff')) ? '#000000' : '#ffffff'
+    const composerBg = (chatbot as any).composerBackgroundColor || (chatbot as any).footerInputBgColor || defaultComposerBg
+    const composerFg = (chatbot as any).composerFontColor || (chatbot as any).footerInputFontColor || chatbot.fontColor || defaultComposerFg
 
-        const composerBg = (chatbot as any).composerBackgroundColor || (chatbot as any).footerInputBgColor || defaultComposerBg
-        const composerFg = (chatbot as any).composerFontColor || (chatbot as any).footerInputFontColor || chatbot.fontColor || defaultComposerFg
-        const fontFamily = chatbot.fontFamily || 'inherit'
-
-        // Selectors to target ChatKit composer input elements
-        const inputSelectors = [
-            'input[type="text"]',
-            'input:not([type])',
-            'textarea',
-            '[contenteditable="true"]',
-            '[role="textbox"]',
-            '[data-slate-editor]',
-            '[data-lexical-editor]',
-            '.ProseMirror',
-        ]
+    const applyStylesToDocument = useCallback(() => {
+        const isInputLike = (element: HTMLElement) => {
+            const tagName = element.tagName.toLowerCase()
+            return (
+                tagName === 'input' ||
+                tagName === 'textarea' ||
+                element.getAttribute('contenteditable') === 'true' ||
+                element.getAttribute('role') === 'textbox' ||
+                element.hasAttribute('data-slate-editor') ||
+                element.hasAttribute('data-lexical-editor') ||
+                element.classList.contains('ProseMirror')
+            )
+        }
 
         const applyStylesToElement = (element: HTMLElement) => {
-            // Check if this is an input-like element
-            const tagName = element.tagName.toLowerCase()
-            const isInput = tagName === 'input' || tagName === 'textarea'
-            const isContentEditable = element.getAttribute('contenteditable') === 'true'
-            const isTextbox = element.getAttribute('role') === 'textbox'
-            const isSlateEditor = element.hasAttribute('data-slate-editor')
-            const isLexicalEditor = element.hasAttribute('data-lexical-editor')
-            const isProseMirror = element.classList.contains('ProseMirror')
+            // Apply font family to almost everything if configured
+            // This ensures it penetrates Shadow DOM where global CSS might fail
+            if (fontFamily !== 'inherit') {
+                // Skip known icon elements to prevent breaking them
+                if (!element.classList.contains('lucide') && !element.classList.contains('material-icons')) {
+                    element.style.setProperty('font-family', fontFamily, 'important')
+                }
+            }
 
-            if (isInput || isContentEditable || isTextbox || isSlateEditor || isLexicalEditor || isProseMirror) {
-                // Apply background color
+            // FORCE GRADIENT OVERRIDES
+            // ChatKit theme engine only supports hex colors, so we must manually inject gradients
+
+            // 1. Header Background Override
+            // Check for common ChatKit header class names or attributes
+            // Note: Class names might change, so we try multiple strategies
+            if (
+                (chatbot as any).headerBgColor &&
+                ((chatbot as any).headerBgColor.includes('gradient') || (chatbot as any).headerBgColor.startsWith('url'))
+            ) {
+                if (
+                    element.classList.contains('ck-header') ||
+                    element.getAttribute('data-id') === 'ck-header' ||
+                    // Fallback: check if it looks like a header (class contains 'Header' and is a div/header)
+                    (element.className && typeof element.className === 'string' && element.className.toLowerCase().includes('header') && !element.className.toLowerCase().includes('message'))
+                ) {
+                    const targetBg = (chatbot as any).headerBgColor
+                    const alreadyApplied = element.getAttribute('data-ck-gradient-applied') === targetBg
+
+                    if (!alreadyApplied) {
+                        element.style.setProperty('background', targetBg, 'important')
+                        element.style.setProperty('background-image', targetBg, 'important') // Force image/gradient
+                        element.setAttribute('data-ck-gradient-applied', targetBg)
+                    }
+                }
+            }
+
+            // 2. Widget Button Override (if rendered by ChatKit and not manual wrapper)
+            if (
+                (chatbot as any).widgetBackgroundColor &&
+                ((chatbot as any).widgetBackgroundColor.includes('gradient') || (chatbot as any).widgetBackgroundColor.startsWith('url'))
+            ) {
+                if (
+                    element.classList.contains('ck-widget-button') ||
+                    element.getAttribute('data-id') === 'ck-widget-button' ||
+                    element.getAttribute('aria-label') === 'Open chat' // Heuristic
+                ) {
+                    const targetBg = (chatbot as any).widgetBackgroundColor
+                    const alreadyApplied = element.getAttribute('data-ck-gradient-applied') === targetBg
+
+                    if (!alreadyApplied) {
+                        element.style.setProperty('background', targetBg, 'important')
+                        element.setAttribute('data-ck-gradient-applied', targetBg)
+                    }
+                }
+            }
+
+
+            // Apply special styles for inputs
+            if (isInputLike(element)) {
                 element.style.setProperty('background-color', composerBg, 'important')
                 element.style.setProperty('background', composerBg, 'important')
                 element.style.setProperty('background-image', 'none', 'important')
-
-                // Apply font color
                 element.style.setProperty('color', composerFg, 'important')
                 element.style.setProperty('-webkit-text-fill-color', composerFg, 'important')
-
-                // Apply font family
-                if (fontFamily !== 'inherit') {
-                    element.style.setProperty('font-family', fontFamily, 'important')
-                }
-
-                // Remove any default box-shadow that might hide the background
                 element.style.setProperty('box-shadow', 'none', 'important')
             }
         }
 
-        // Recursively traverse DOM including Shadow DOM
         const traverseAndApply = (root: Document | ShadowRoot | Element) => {
-            // Query all input-like elements in this root
-            inputSelectors.forEach(selector => {
-                try {
-                    const elements = root.querySelectorAll(selector)
-                    elements.forEach(element => {
-                        applyStylesToElement(element as HTMLElement)
-                    })
-                } catch (e) {
-                    // Ignore selector errors
-                }
-            })
+            try {
+                // Query all elements to ensure comprehensive application
+                const allElements = root.querySelectorAll('*')
+                allElements.forEach(element => {
+                    applyStylesToElement(element as HTMLElement)
 
-            // Find all elements that might have shadow roots
-            const allElements = root.querySelectorAll('*')
-            allElements.forEach(element => {
-                // Check if element has a shadow root
-                if (element.shadowRoot) {
-                    traverseAndApply(element.shadowRoot)
-                }
-            })
+                    // Recurse into Shadow DOM if present
+                    if (element.shadowRoot) {
+                        traverseAndApply(element.shadowRoot)
+                    }
+
+                    // Recurse into IFrame if present and accessible (same-origin)
+                    if (element.tagName.toLowerCase() === 'iframe') {
+                        try {
+                            const iframe = element as HTMLIFrameElement
+                            const iframeDoc = iframe.contentDocument
+                            if (iframeDoc) {
+                                if (fontFamily !== 'inherit') {
+                                    loadGoogleFont(fontFamily, iframeDoc)
+                                    iframeDoc.body.style.setProperty('font-family', fontFamily, 'important')
+                                }
+                                traverseAndApply(iframeDoc)
+                            }
+                        } catch (e) {
+                            // Cross-origin iframe or other access error - ignore
+                        }
+                    }
+                })
+            } catch (e) {
+                // Ignore selector errors
+            }
         }
 
-        const applyStylesToDocument = () => {
-            // Start traversal from document
-            traverseAndApply(document)
+        const root = containerRef?.current || document
+        traverseAndApply(root)
 
-            // Also specifically look for the openai-chatkit web component
-            const chatkitElements = document.querySelectorAll('openai-chatkit')
-            chatkitElements.forEach(el => {
-                if (el.shadowRoot) {
-                    traverseAndApply(el.shadowRoot)
-                }
-            })
-        }
+    }, [composerBg, composerFg, fontFamily, containerRef])
+    useEffect(() => {
+        applyStylesRef.current = applyStylesToDocument
+    }, [applyStylesToDocument])
 
-        // Apply styles immediately
+    // Main observation effect
+    useEffect(() => {
         applyStylesToDocument()
 
-        // Create MutationObserver to watch for new elements
         observerRef.current = new MutationObserver((mutations) => {
             let shouldApply = false
             mutations.forEach((mutation) => {
-                if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                    shouldApply = true
-                }
-                if (mutation.type === 'attributes') {
-                    shouldApply = true
-                }
+                if (mutation.type === 'childList' && mutation.addedNodes.length > 0) shouldApply = true
+                if (mutation.type === 'attributes') shouldApply = true
             })
             if (shouldApply) {
-                // Debounce the style application
-                requestAnimationFrame(() => {
-                    applyStylesToDocument()
-                })
+                requestAnimationFrame(() => applyStylesToDocument())
             }
         })
 
-        // Start observing the document body for changes
-        observerRef.current.observe(document.body, {
-            childList: true,
-            subtree: true,
-            attributes: true,
-            attributeFilter: ['class', 'style', 'contenteditable', 'role']
-        })
+        const targetNode = containerRef?.current || document.body
+        if (targetNode) {
+            observerRef.current.observe(targetNode, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['class', 'style', 'contenteditable', 'role']
+            })
+        }
 
-        // Also apply styles with delays to catch late-rendered elements
-        const timeoutId = setTimeout(applyStylesToDocument, 500)
-        const timeoutId2 = setTimeout(applyStylesToDocument, 1500)
-        const timeoutId3 = setTimeout(applyStylesToDocument, 3000)
+        const t1 = setTimeout(applyStylesToDocument, 500)
+        const t2 = setTimeout(applyStylesToDocument, 1500)
+        const t3 = setTimeout(applyStylesToDocument, 3000)
 
         return () => {
-            if (observerRef.current) {
-                observerRef.current.disconnect()
-            }
-            clearTimeout(timeoutId)
-            clearTimeout(timeoutId2)
-            clearTimeout(timeoutId3)
+            observerRef.current?.disconnect()
+            clearTimeout(t1)
+            clearTimeout(t2)
+            clearTimeout(t3)
         }
-    }, [chatbot])
+    }, [applyStylesToDocument, containerRef])
+
+    // Re-apply on Open (Popover)
+    useEffect(() => {
+        if (isOpen && !prevIsOpenRef.current) {
+            applyStylesRef.current()
+            const times = [100, 300, 600, 1000, 2000]
+            const timeouts = times.map(t => setTimeout(() => applyStylesRef.current(), t))
+            return () => timeouts.forEach(clearTimeout)
+        }
+        prevIsOpenRef.current = isOpen
+    }, [isOpen])
 
     return null
 }
-

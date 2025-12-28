@@ -39,7 +39,19 @@ export function ChatKitRenderer({
   // Initialize isOpen state
   // In preview mode (emulator), start open so user sees content immediately, but allow closing.
   // For fullpage/regular style, logic below will enforce it.
-  const [isOpen, setIsOpen] = useState<boolean>(isPreview)
+  const [isOpen, setIsOpenRaw] = useState<boolean>(false)
+
+  // Debug wrapper for setIsOpen to trace all state changes
+  const setIsOpen = React.useCallback((value: boolean | ((prev: boolean) => boolean)) => {
+    const stack = new Error().stack?.split('\n').slice(2, 5).join('\n') || 'unknown'
+    console.log(`[ChatKitRenderer] setIsOpen called with:`, value, '\nStack:', stack)
+    setIsOpenRaw(value)
+  }, [])
+
+  // Log whenever isOpen actually changes
+  React.useEffect(() => {
+    console.log('[ChatKitRenderer] isOpen changed to:', isOpen, 'timestamp:', Date.now())
+  }, [isOpen])
 
   // Use prop if provided, otherwise check config
   const useChatKitInRegularStyle = propUseChatKitInRegularStyle ?? (chatbot as any).useChatKitInRegularStyle === true
@@ -81,35 +93,45 @@ export function ChatKitRenderer({
   const autoShowTriggeredRef = React.useRef(false)
 
   // Effect to enforce open state for fullpage/regular style
-  // This must run whenever the mode changes, so do NOT block with initializedRef
+  // This runs when mode changes to fullpage/regular - it should NOT include isOpen in deps
+  // to avoid infinite loops (calling setIsOpen in an effect that depends on isOpen)
   useEffect(() => {
-    // Note: We REMOVED the check for 'isPreview' here to allow users to close the popover in preview mode.
-    // Initial state is set to true for preview, but we shouldn't force it open if user closes it.
-
-    if ((previewDeploymentType === 'fullpage' || useChatKitInRegularStyle) && !isOpen) {
-      console.log('🔄 Enforcing open state for fullpage/regular style')
+    if (previewDeploymentType === 'fullpage' || useChatKitInRegularStyle) {
+      console.log('🔄 Enforcing open state for fullpage/regular style', { previewDeploymentType, useChatKitInRegularStyle, timestamp: Date.now() })
       setIsOpen(true)
     }
-  }, [previewDeploymentType, useChatKitInRegularStyle, isOpen]) // Removed isPreview dependency
+  }, [previewDeploymentType, useChatKitInRegularStyle]) // Removed isOpen to prevent infinite loop
 
   // Effect for auto-show logic (only run once per mount/session)
   useEffect(() => {
     if (!chatbot) return
 
-    // Only run initialization logic once per mount
-    if (initializedRef.current) return
-    initializedRef.current = true
-
-    // If we are already forced open by the effect above, we don't need to do anything here for fullpage
+    // Fullpage/regular style is handled by the enforcement effect above
+    // IMPORTANT: Check this BEFORE initializedRef to prevent setIsOpen(false) from running
     if (previewDeploymentType === 'fullpage' || useChatKitInRegularStyle) {
       return
     }
+
+    // Only run initialization logic once per mount
+    if (initializedRef.current) return
+    initializedRef.current = true
 
     // For popover/popup-center, start closed to show widget button
     setIsOpen(false)
 
     // Check if auto-show is enabled
-    const shouldAuto = (chatbot as any).widgetAutoShow !== undefined ? (chatbot as any).widgetAutoShow : true
+    // Check if auto-show is enabled
+    // Separate logic for mobile and desktop
+    // Default Desktop: true (or legacy widgetAutoShow value)
+    // Default Mobile: false
+    const autoOpenDesktop = (chatbot as any).widgetAutoShowDesktop !== undefined
+      ? (chatbot as any).widgetAutoShowDesktop
+      : ((chatbot as any).widgetAutoShow !== undefined ? (chatbot as any).widgetAutoShow : true)
+
+    const autoOpenMobile = (chatbot as any).widgetAutoShowMobile || false
+
+    const shouldAuto = isMobile ? autoOpenMobile : autoOpenDesktop
+
     if (shouldAuto && !autoShowTriggeredRef.current) {
       autoShowTriggeredRef.current = true
       const delayMs = ((chatbot as any).widgetAutoShowDelay || 0) * 1000

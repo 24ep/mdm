@@ -52,13 +52,9 @@ export const buildChatKitTheme = (chatbot: ChatbotConfig) => {
         }
         hasColor = true
 
-        // Add icon color if provided - convert to hex
-        if ((chatkitOptions.theme.color.accent as any)?.icon) {
-            const iconHex = convertToHex((chatkitOptions.theme.color.accent as any).icon)
-            if (iconHex) {
-                ; (colorObj.accent as any).icon = iconHex
-            }
-        }
+        // NOTE: Icon color is NOT supported by ChatKit's accent color schema
+        // Passing 'icon' property to accent causes "Invalid input at theme" error
+        // Icon color configuration should be handled via CSS overrides instead
 
         // Surface colors - ChatKit supports SurfaceColors with background and foreground
         if (chatkitOptions.theme.color.surface) {
@@ -86,9 +82,11 @@ export const buildChatKitTheme = (chatbot: ChatbotConfig) => {
                     surfaceObj.foreground = isLightColor(surfaceObj.background) ? '#000000' : '#ffffff'
                 }
 
-                // If we have a foreground but no background, fallback to white or black based on foreground
+                // If we have a foreground but no background, fallback to configured background or default
                 if (surfaceObj.foreground && !surfaceObj.background) {
-                    surfaceObj.background = isLightColor(surfaceObj.foreground) ? '#000000' : '#ffffff' // Contrast background
+                    // Try to use existing flat properties first
+                    const fallbackBg = convertToHex(chatbot.backgroundColor || chatbot.messageBoxColor || '')
+                    surfaceObj.background = fallbackBg || (isLightColor(surfaceObj.foreground) ? '#000000' : '#ffffff')
                 }
 
                 // Only add if we have at least one valid color (which essentially means both due to fallbacks above)
@@ -110,13 +108,41 @@ export const buildChatKitTheme = (chatbot: ChatbotConfig) => {
             }
         }
     } else {
-        // Default color if none provided
+        // Default color if none provided - convert to hex as ChatKit requires hex format
+        const primaryHex = convertToHex(chatbot.primaryColor) || '#3b82f6'
         colorObj.accent = {
-            primary: chatbot.primaryColor || '#3b82f6',
+            primary: primaryHex,
             level: 2,
         }
         hasColor = true
     }
+
+    // Map flat properties if they exist and aren't already set in chatkitOptions
+    // Secondary Color
+    if (chatbot.secondaryColor && !((chatkitOptions.theme?.color as any)?.secondary)) {
+        const secondaryHex = convertToHex(chatbot.secondaryColor)
+        if (secondaryHex && !colorObj.secondary) colorObj.secondary = secondaryHex
+    }
+
+    // Border Color is tricky as ChatKit theme structure might not have a direct 'border' in color root
+    // But we can check if it supports it or map it to something else
+
+    // Background & Text & Surface
+    // If surface is not already defined in the theme options (or was invalid), try to map from flat properties
+    if (!colorObj.surface && (chatbot.backgroundColor || chatbot.messageBoxColor)) {
+        const bg = convertToHex(chatbot.backgroundColor || chatbot.messageBoxColor || '')
+        // Use userMessageFontColor as primary text color fallback if fontColor is not set
+        const fg = convertToHex(chatbot.fontColor || chatbot.userMessageFontColor || '')
+
+        if (bg) {
+            const derivedFg = fg || (isLightColor(bg) ? '#000000' : '#ffffff')
+            colorObj.surface = {
+                background: bg,
+                foreground: derivedFg
+            }
+        }
+    }
+
 
     // Only add color if it has at least accent
     if (hasColor && colorObj.accent) {

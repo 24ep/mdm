@@ -171,8 +171,9 @@ export function ColorInput({
 
     // Apply swatch styles with !important
     if (swatchStyle.background) {
-      // For gradients, use the background shorthand
+      // For gradients, use the background property and background-image to be safe
       button.style.setProperty('background', String(swatchStyle.background), 'important')
+      button.style.setProperty('background-image', String(swatchStyle.background), 'important')
     } else {
       // For other types, use individual properties
       if (swatchStyle.backgroundColor) {

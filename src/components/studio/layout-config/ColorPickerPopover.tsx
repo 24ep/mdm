@@ -129,22 +129,23 @@ const COLOR_SWATCH_STYLES = `
 `
 
 // Swatch button component that ensures background color is applied
-const ColorSwatchButton = React.memo(({ 
-  color, 
-  isSelected, 
-  onClick 
-}: { 
+const ColorSwatchButton = React.memo(({
+  color,
+  isSelected,
+  onClick
+}: {
   color: string
   isSelected: boolean
   onClick: () => void
 }) => {
   const buttonRef = React.useRef<HTMLButtonElement>(null)
-  
+
   React.useEffect(() => {
     if (buttonRef.current) {
       const size = '24px'
       buttonRef.current.style.setProperty('background-color', color, 'important')
       buttonRef.current.style.setProperty('background', color, 'important')
+      buttonRef.current.style.setProperty('background-image', color, 'important')
       buttonRef.current.style.setProperty('border', 'none', 'important')
       buttonRef.current.style.setProperty('border-width', '0', 'important')
       buttonRef.current.style.setProperty('aspect-ratio', '1 / 1', 'important')
@@ -159,18 +160,17 @@ const ColorSwatchButton = React.memo(({
       buttonRef.current.style.setProperty('border-radius', '50%', 'important')
     }
   }, [color])
-  
+
   return (
     <button
       ref={buttonRef}
       type="button"
       onClick={onClick}
-      className={`color-picker-swatch-button transition-all hover:scale-110 ${
-        isSelected
-          ? 'ring-2 ring-blue-500/20'
-          : ''
-      }`}
-      style={{ 
+      className={`color-picker-swatch-button transition-all hover:scale-110 ${isSelected
+        ? 'ring-2 ring-blue-500/20'
+        : ''
+        }`}
+      style={{
         border: 'none',
         aspectRatio: '1 / 1',
         width: '24px',
@@ -251,12 +251,12 @@ export function ColorPickerPopover({
 }: ColorPickerPopoverProps) {
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
-  
+
   // Recent colors stored in localStorage
   const RECENT_COLORS_KEY = 'color-picker-recent-colors'
   const FAVORITE_COLORS_KEY = 'color-picker-favorite-colors'
   const MAX_RECENT_COLORS = 8
-  
+
   const getRecentColors = (): string[] => {
     if (typeof window === 'undefined') return []
     try {
@@ -266,7 +266,7 @@ export function ColorPickerPopover({
       return []
     }
   }
-  
+
   const getFavoriteColors = (): string[] => {
     if (typeof window === 'undefined') return []
     try {
@@ -276,11 +276,11 @@ export function ColorPickerPopover({
       return []
     }
   }
-  
+
   // Parse value to determine type and extract the actual value
   const parseValue = (val: string) => {
     if (!val) return { type: 'solid', extracted: '#ffffff' }
-    
+
     if (val.startsWith('#') || /^rgb|^rgba/.test(val)) {
       return { type: 'solid', extracted: val }
     } else if (val.startsWith('linear-gradient') || val.startsWith('radial-gradient')) {
@@ -364,15 +364,15 @@ export function ColorPickerPopover({
     const baseColor = extractBaseColor(solidColor)
     const rgb = hexToRgb(baseColor)
     if (!rgb) return { hex: baseColor, rgb: '', hsl: '' }
-    
+
     const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b)
-    const rgbStr = opacity < 1 
+    const rgbStr = opacity < 1
       ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity.toFixed(2)})`
       : `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`
     const hslStr = opacity < 1
       ? `hsla(${hsl.h}, ${hsl.s}%, ${hsl.l}%, ${opacity.toFixed(2)})`
       : `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`
-    
+
     return {
       hex: opacity < 1 ? hexToRgba(baseColor, opacity) : baseColor,
       rgb: rgbStr,
@@ -401,7 +401,7 @@ export function ColorPickerPopover({
   }
 
   const parsed = parseValue(value)
-  
+
   // Recent colors functions (must be after extractBaseColor is defined)
   const addToRecentColors = (color: string) => {
     // Only add solid colors (hex/rgb) to recent colors, not gradients/patterns
@@ -421,12 +421,12 @@ export function ColorPickerPopover({
       })
     }
   }
-  
+
   const handleColorChange = (color: string) => {
     onChange(color)
     addToRecentColors(color)
   }
-  
+
   const copyColorToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(value)
@@ -450,7 +450,7 @@ export function ColorPickerPopover({
       document.body.removeChild(textArea)
     }
   }
-  
+
   // Toggle favorite color
   const toggleFavorite = (color: string) => {
     const baseColor = extractBaseColor(color)
@@ -458,7 +458,7 @@ export function ColorPickerPopover({
     const updated = isFavorite
       ? favoriteColors.filter(c => c !== baseColor)
       : [...favoriteColors, baseColor].slice(0, 12) // Max 12 favorites
-    
+
     setFavoriteColors(updated)
     if (typeof window !== 'undefined') {
       try {
@@ -468,12 +468,12 @@ export function ColorPickerPopover({
       }
     }
   }
-  
+
   const isFavorite = (color: string): boolean => {
     const baseColor = extractBaseColor(color)
     return favoriteColors.includes(baseColor)
   }
-  
+
   // Eye dropper tool
   const startEyeDropper = async () => {
     if (!('EyeDropper' in window)) {
@@ -481,7 +481,7 @@ export function ColorPickerPopover({
       alert('Eye dropper is not supported in your browser. Please use Chrome, Edge, or Safari 18+')
       return
     }
-    
+
     try {
       setIsPickingColor(true)
       // @ts-ignore - EyeDropper API
@@ -522,13 +522,13 @@ export function ColorPickerPopover({
   const [selectedColorSet, setSelectedColorSet] = useState<string>(
     recentColors.length > 0 ? 'recent' : 'quick'
   )
-  
+
   // Refs for color picker inputs
   const colorInputRef = React.useRef<HTMLInputElement>(null)
   const solidColorTextInputRef = React.useRef<HTMLInputElement>(null)
   const solidColorSwatchButtonRef = React.useRef<HTMLButtonElement>(null)
   const gradientColorInputRefs = React.useRef<Map<number, HTMLInputElement>>(new Map())
-  
+
   // Recalculate swatch style when solidColor or opacity changes (same as ColorInput)
   // This needs to be before the callback ref so it can use it
   const actualColor = React.useMemo(() => {
@@ -542,7 +542,7 @@ export function ColorPickerPopover({
   const solidColorSwatchButtonRefCallback = React.useCallback((button: HTMLButtonElement | null) => {
     solidColorSwatchButtonRef.current = button
     if (!button) return
-    
+
     // Apply size styles immediately when button is available (always 1:1)
     const size = '20px'
     button.style.setProperty('aspect-ratio', '1 / 1', 'important')
@@ -559,19 +559,19 @@ export function ColorPickerPopover({
     button.style.setProperty('border-radius', '0', 'important')
     button.style.setProperty('box-sizing', 'border-box', 'important')
   }, [])
-  
+
   // Calculate proper padding: button width (20px) + left offset (4px) + gap (6px) = 30px
   // Using 6px gap to ensure no overlap (same as ColorInput)
   const BUTTON_WIDTH = 20
   const BUTTON_LEFT_OFFSET = 4
   const BUTTON_TEXT_GAP = 6
   const INPUT_LEFT_PADDING = BUTTON_WIDTH + BUTTON_LEFT_OFFSET + BUTTON_TEXT_GAP // 30px
-  
+
   const DEFAULT_INPUT_CLASS_NAME = `h-7 text-xs w-full rounded-[2px] bg-input border-0 focus:outline-none focus:ring-0 focus:border-0`
-  
+
   // Build input className with proper left padding to avoid button overlap (same as ColorInput)
   const finalInputClassName = DEFAULT_INPUT_CLASS_NAME
-  
+
   // Callback ref to set padding immediately when input is available (same as ColorInput)
   const solidColorTextInputRefCallback = React.useCallback((input: HTMLInputElement | null) => {
     solidColorTextInputRef.current = input
@@ -580,7 +580,7 @@ export function ColorPickerPopover({
       input.style.setProperty('padding-left', `${INPUT_LEFT_PADDING}px`, 'important')
     }
   }, [])
-  
+
   // Reapply padding when component updates (same as ColorInput)
   React.useEffect(() => {
     const input = solidColorTextInputRef.current
@@ -589,7 +589,7 @@ export function ColorPickerPopover({
       input.style.setProperty('padding-left', `${INPUT_LEFT_PADDING}px`, 'important')
     }
   }, [solidColor, opacity])
-  
+
   // Apply swatch styles to button with !important - same approach as ColorInput
   // This function applies all styles and can be called multiple times
   const applyButtonStyles = React.useCallback(() => {
@@ -712,14 +712,14 @@ export function ColorPickerPopover({
       setSelectedColorSet('quick')
     }
   }, [selectedColorSet]) // Only depend on selectedColorSet, not on recentColors/favoriteColors length
-  
+
   // Parse gradient into editable structure
   const parseGradient = (gradStr: string) => {
     if (!gradStr) return { type: 'linear', angle: 0, stops: [{ color: '#ff0000', position: 0 }, { color: '#0000ff', position: 100 }] }
-    
+
     const isLinear = gradStr.includes('linear-gradient')
     const isRadial = gradStr.includes('radial-gradient')
-    
+
     // Extract angle/direction
     let angle = 0
     if (isLinear) {
@@ -730,7 +730,7 @@ export function ColorPickerPopover({
       else if (gradStr.includes('to bottom')) angle = 180
       else if (gradStr.includes('to left')) angle = 270
     }
-    
+
     // Extract color stops
     const stopsMatch = gradStr.match(/\(([^)]+)\)/)
     const stops: Array<{ color: string; position: number }> = []
@@ -747,21 +747,21 @@ export function ColorPickerPopover({
         }
       })
     }
-    
+
     if (stops.length === 0) {
       stops.push({ color: '#ff0000', position: 0 }, { color: '#0000ff', position: 100 })
     }
-    
+
     return {
       type: isRadial ? 'radial' : 'linear',
       angle,
       stops
     }
   }
-  
+
   const [gradientConfig, setGradientConfig] = useState(() => parseGradient(parsed.type === 'gradient' ? parsed.extracted : ''))
   const [patternValue, setPatternValue] = useState(parsed.type === 'pattern' ? parsed.extracted : '')
-  
+
   // Get current pattern from value
   const getCurrentPattern = () => {
     if (!patternValue) return COLOR_PATTERNS[0]
@@ -770,14 +770,14 @@ export function ColorPickerPopover({
       return patternValue.toLowerCase().includes(p.id) || patternValue.toLowerCase().includes(p.name.toLowerCase())
     }) || COLOR_PATTERNS[0]
   }
-  
+
   const currentPattern = getCurrentPattern()
-  
+
   // Generate CSS pattern string
   const getPatternCSS = (pattern: typeof COLOR_PATTERNS[0]) => {
     return pattern.css
   }
-  
+
   // Generate full background pattern style
   const getPatternStyle = (pattern: typeof COLOR_PATTERNS[0]) => {
     return {
@@ -788,7 +788,7 @@ export function ColorPickerPopover({
   const [imageUrl, setImageUrl] = useState(parsed.type === 'image' ? parsed.extracted : '')
   const [videoUrl, setVideoUrl] = useState(parsed.type === 'video' ? parsed.extracted : '')
   const isInternalUpdateRef = React.useRef(false)
-  
+
   // Preset color palettes
   const colorPalettes: Record<string, string[]> = {
     'Material Design': [
@@ -815,7 +815,7 @@ export function ColorPickerPopover({
       '#FFFFFF'
     ]
   }
-  
+
   // Build gradient string from config
   const buildGradientString = (config: typeof gradientConfig) => {
     const stopsStr = config.stops.map(s => `${s.color} ${s.position}%`).join(', ')
@@ -824,7 +824,7 @@ export function ColorPickerPopover({
     }
     return `linear-gradient(${config.angle}deg, ${stopsStr})`
   }
-  
+
   const gradientValue = buildGradientString(gradientConfig)
 
   // Update state when value changes externally
@@ -833,7 +833,7 @@ export function ColorPickerPopover({
       isInternalUpdateRef.current = false
       return
     }
-    
+
     const parsed = parseValue(value)
     // If image/video is not allowed but value is image/video, default to solid
     const safeType = (!allowImageVideo && (parsed.type === 'image' || parsed.type === 'video')) ? 'solid' : parsed.type
@@ -886,7 +886,7 @@ export function ColorPickerPopover({
     setGradientConfig(config)
     handleColorChange(buildGradientString(config))
   }
-  
+
   const addGradientStop = () => {
     const newConfig = {
       ...gradientConfig,
@@ -894,7 +894,7 @@ export function ColorPickerPopover({
     }
     handleGradientChange(newConfig)
   }
-  
+
   const removeGradientStop = (index: number) => {
     if (gradientConfig.stops.length <= 2) return // Keep at least 2 stops
     const newConfig = {
@@ -903,7 +903,7 @@ export function ColorPickerPopover({
     }
     handleGradientChange(newConfig)
   }
-  
+
   const updateGradientStop = (index: number, updates: Partial<{ color: string; position: number }>) => {
     const newConfig = {
       ...gradientConfig,
@@ -968,553 +968,568 @@ export function ColorPickerPopover({
           {children}
         </PopoverTrigger>
         <PopoverContent
-        className={`w-[360px] ${isSpaceLayoutConfig ? 'px-0' : 'p-0'}`}
-        align="start"
-        onClick={(e) => e.stopPropagation()}
-        style={{ width: '360px', minWidth: '360px', maxWidth: '360px' }}
-      >
-        <div className={`w-full ${isSpaceLayoutConfig ? 'space-y-2' : ''}`}>
-          <Tabs value={colorType} onValueChange={(v) => setColorType(v as any)}>
-            <div className="mb-2">
-            <TabsList className={`w-full grid h-9 px-2 mt-2 mb-2 ${allowImageVideo ? 'grid-cols-5' : 'grid-cols-3'}`}>
-            <TabsTrigger value="solid" className="text-xs px-3 py-2 mx-1 inline-flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50 relative" title="Solid">
-              <Droplet className="h-4 w-4 flex-shrink-0" />
-              <span>Solid</span>
-              {colorType === 'solid' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
-            </TabsTrigger>
-            <TabsTrigger value="gradient" className="text-xs px-3 py-2 mx-1 inline-flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50 relative" title="Gradient">
-              <Sliders className="h-4 w-4 flex-shrink-0" />
-              <span>Gradient</span>
-              {colorType === 'gradient' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
-            </TabsTrigger>
-            <TabsTrigger value="pattern" className="text-xs px-3 py-2 mx-1 inline-flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50 relative" title="Pattern">
-              <Grid3x3 className="h-4 w-4 flex-shrink-0" />
-              <span>Pattern</span>
-              {colorType === 'pattern' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
-            </TabsTrigger>
-            {allowImageVideo && (
-              <>
-                <TabsTrigger value="image" className="text-xs px-3 py-2 mx-1 inline-flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50 relative" title="Image">
-                  <Image className="h-4 w-4 flex-shrink-0" />
-                  <span>Image</span>
-                  {colorType === 'image' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
-                </TabsTrigger>
-                <TabsTrigger value="video" className="text-xs px-3 py-2 mx-1 inline-flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50 relative" title="Video">
-                  <Play className="h-4 w-4 flex-shrink-0" />
-                  <span>Video</span>
-                  {colorType === 'video' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
-                </TabsTrigger>
-              </>
-            )}
-          </TabsList>
-            </div>
+          className={`w-[360px] ${isSpaceLayoutConfig ? 'px-0' : 'p-0'}`}
+          align="start"
+          onClick={(e) => e.stopPropagation()}
+          style={{ width: '360px', minWidth: '360px', maxWidth: '360px' }}
+        >
+          <div className={`w-full ${isSpaceLayoutConfig ? 'space-y-2' : ''}`}>
+            <Tabs value={colorType} onValueChange={(v) => setColorType(v as any)}>
+              <div className="mb-2">
+                <TabsList className={`w-full grid h-9 px-2 mt-2 mb-2 ${allowImageVideo ? 'grid-cols-5' : 'grid-cols-3'}`}>
+                  <TabsTrigger value="solid" className="text-xs px-3 py-2 mx-1 inline-flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50 relative" title="Solid">
+                    <Droplet className="h-4 w-4 flex-shrink-0" />
+                    <span>Solid</span>
+                    {colorType === 'solid' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
+                  </TabsTrigger>
+                  <TabsTrigger value="gradient" className="text-xs px-3 py-2 mx-1 inline-flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50 relative" title="Gradient">
+                    <Sliders className="h-4 w-4 flex-shrink-0" />
+                    <span>Gradient</span>
+                    {colorType === 'gradient' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
+                  </TabsTrigger>
+                  <TabsTrigger value="pattern" className="text-xs px-3 py-2 mx-1 inline-flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50 relative" title="Pattern">
+                    <Grid3x3 className="h-4 w-4 flex-shrink-0" />
+                    <span>Pattern</span>
+                    {colorType === 'pattern' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
+                  </TabsTrigger>
+                  {allowImageVideo && (
+                    <>
+                      <TabsTrigger value="image" className="text-xs px-3 py-2 mx-1 inline-flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50 relative" title="Image">
+                        <Image className="h-4 w-4 flex-shrink-0" />
+                        <span>Image</span>
+                        {colorType === 'image' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
+                      </TabsTrigger>
+                      <TabsTrigger value="video" className="text-xs px-3 py-2 mx-1 inline-flex items-center justify-center gap-1.5 h-full rounded-t-md transition-colors hover:bg-muted/50 relative" title="Video">
+                        <Play className="h-4 w-4 flex-shrink-0" />
+                        <span>Video</span>
+                        {colorType === 'video' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
+                      </TabsTrigger>
+                    </>
+                  )}
+                </TabsList>
+              </div>
 
-          <TabsContent value="solid" className={`${isSpaceLayoutConfig ? 'py-4' : 'p-4'} space-y-2 mt-0`}>
-            {/* Color Set Selector */}
-            <div className="flex items-center justify-between gap-2">
-              <Label className="text-xs">Color Set</Label>
-              <Select value={selectedColorSet} onValueChange={setSelectedColorSet}>
-                <SelectTrigger 
-                  className="h-7 text-xs w-32 border-0 shadow-none bg-transparent color-set-selector"
-                  data-component="select-trigger"
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="quick">Quick Colors</SelectItem>
-                  {recentColors.length > 0 && <SelectItem value="recent">Recent Colors</SelectItem>}
-                  {favoriteColors.length > 0 && <SelectItem value="favorites">Favorites</SelectItem>}
-                  {Object.keys(colorPalettes).map((name) => (
-                    <SelectItem key={name} value={name.toLowerCase().replace(/\s+/g, '-')}>
-                      {name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              <TabsContent value="solid" className={`${isSpaceLayoutConfig ? 'py-4' : 'p-4'} space-y-2 mt-0`}>
+                {/* Color Set Selector */}
+                <div className="flex items-center justify-between gap-2">
+                  <Label className="text-xs">Color Set</Label>
+                  <Select value={selectedColorSet} onValueChange={setSelectedColorSet}>
+                    <SelectTrigger
+                      className="h-7 text-xs w-32 border-0 shadow-none bg-transparent color-set-selector"
+                      data-component="select-trigger"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="quick">Quick Colors</SelectItem>
+                      {recentColors.length > 0 && <SelectItem value="recent">Recent Colors</SelectItem>}
+                      {favoriteColors.length > 0 && <SelectItem value="favorites">Favorites</SelectItem>}
+                      {Object.keys(colorPalettes).map((name) => (
+                        <SelectItem key={name} value={name.toLowerCase().replace(/\s+/g, '-')}>
+                          {name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              {/* Quick Colors */}
-              {selectedColorSet === 'quick' && (
-                <ColorSwatchGrid
-                  colors={quickColors}
-                  selectedColor={solidColor}
-                  onColorSelect={handleSolidColorChange}
-                />
-              )}
-
-              {/* Recent Colors */}
-              {selectedColorSet === 'recent' && (
-                <ColorSwatchGrid
-                  colors={recentColors}
-                  selectedColor={solidColor}
-                  onColorSelect={handleSolidColorChange}
-                />
-              )}
-
-              {/* Favorite Colors */}
-              {selectedColorSet === 'favorites' && (
-                <ColorSwatchGrid
-                  colors={favoriteColors}
-                  selectedColor={solidColor}
-                  onColorSelect={handleSolidColorChange}
-                  showFavoriteIcon={true}
-                />
-              )}
-
-              {/* Preset Palettes */}
-              {Object.entries(colorPalettes)
-                .filter(([name]) => {
-                  const paletteKey = name.toLowerCase().replace(/\s+/g, '-')
-                  return selectedColorSet === paletteKey
-                })
-                .map(([name, colors]) => (
+                {/* Quick Colors */}
+                {selectedColorSet === 'quick' && (
                   <ColorSwatchGrid
-                    key={name}
-                    colors={colors}
+                    colors={quickColors}
                     selectedColor={solidColor}
                     onColorSelect={handleSolidColorChange}
                   />
-                ))}
+                )}
 
-            {/* Custom Color Input */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs">Custom Color</Label>
-                <div className="flex items-center gap-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-1.5 text-xs"
-                    onClick={() => setShowColorFormats(!showColorFormats)}
-                    title="Show color formats"
-                  >
-                    {showColorFormats ? 'Hide' : 'Formats'}
-                  </Button>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {/* Color input with swatch button inside - same UI as ColorInput */}
-                <div className="relative flex-1">
-                  {/* Hidden color input */}
-                  <input
-                    ref={colorInputRef}
-                    type="color"
-                    value={solidColor}
-                    onChange={(e) => {
-                      e.stopPropagation()
-                      handleSolidColorChange(e.target.value)
-                    }}
-                    style={{
-                      position: 'absolute',
-                      width: '1px',
-                      height: '1px',
-                      opacity: 0,
-                      clip: 'rect(0, 0, 0, 0)',
-                      overflow: 'hidden',
-                      zIndex: -1,
-                      pointerEvents: 'auto' // Allow programmatic clicks
-                    }}
-                    tabIndex={-1}
+                {/* Recent Colors */}
+                {selectedColorSet === 'recent' && (
+                  <ColorSwatchGrid
+                    colors={recentColors}
+                    selectedColor={solidColor}
+                    onColorSelect={handleSolidColorChange}
                   />
-                  {/* Color swatch button that triggers native color picker - same as ColorInput */}
-                  <button
-                    ref={solidColorSwatchButtonRefCallback}
-                    type="button"
-                    data-component="color-input-trigger"
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      if (colorInputRef.current) {
-                        colorInputRef.current.click()
-                      }
-                    }}
-                    className="absolute left-1 top-1/2 -translate-y-1/2 cursor-pointer z-40 border-0 outline-none shadow-none flex-shrink-0 p-0 color-input-trigger"
-                    style={{
-                      pointerEvents: 'auto',
-                      zIndex: 40,
-                      display: 'block',
-                    }}
-                    title="Click to open color picker"
-                    aria-label="Open color picker"
+                )}
+
+                {/* Favorite Colors */}
+                {selectedColorSet === 'favorites' && (
+                  <ColorSwatchGrid
+                    colors={favoriteColors}
+                    selectedColor={solidColor}
+                    onColorSelect={handleSolidColorChange}
+                    showFavoriteIcon={true}
                   />
-                  <Input
-                    ref={solidColorTextInputRefCallback}
-                    type="text"
-                    value={actualColor}
-                    onChange={(e) => {
-                      // Parse the input - if it's rgba, extract the base color
-                      const inputValue = e.target.value
-                      if (inputValue.startsWith('rgba')) {
-                        // Extract base color from rgba
-                        const baseColor = extractBaseColor(inputValue)
-                        handleSolidColorChange(baseColor)
-                        // Update opacity from rgba
-                        const newOpacity = extractOpacity(inputValue)
-                        if (newOpacity !== opacity) {
-                          handleOpacityChange(newOpacity)
-                        }
-                      } else {
-                        // Regular hex or rgb color
-                        handleSolidColorChange(inputValue)
-                      }
-                    }}
-                    className={finalInputClassName}
-                    placeholder="#ffffff"
-                    disabled={disabled}
-                    style={{
-                      pointerEvents: 'auto'
-                    }}
-                    onPointerDown={(e) => {
-                      // Don't prevent pointer events on the input itself, but allow button clicks
-                      const target = e.target as HTMLElement
-                      if (target.closest('button')) {
-                        return
-                      }
-                    }}
-                  />
-                </div>
-                
-                {/* Opacity input on the right */}
-                <Input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={Math.round(opacity * 100)}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value) || 0
-                    const clamped = Math.max(0, Math.min(100, val))
-                    handleOpacityChange(clamped / 100)
-                  }}
-                  className="h-8 w-16 text-xs"
-                  placeholder="100"
-                />
-                <span className="text-xs text-muted-foreground">%</span>
-              </div>
-              
-              {/* Color Format Display */}
-              {showColorFormats && (
-                <div className="space-y-1 pt-1 border-t">
-                  {(() => {
-                    const formats = getColorFormats()
-                    return (
-                      <>
-                        <div className="flex items-center justify-between text-[10px]">
-                          <span className="text-muted-foreground">HEX:</span>
-                          <code className="font-mono text-[10px]">{formats.hex}</code>
-                        </div>
-                        <div className="flex items-center justify-between text-[10px]">
-                          <span className="text-muted-foreground">RGB:</span>
-                          <code className="font-mono text-[10px]">{formats.rgb}</code>
-                        </div>
-                        <div className="flex items-center justify-between text-[10px]">
-                          <span className="text-muted-foreground">HSL:</span>
-                          <code className="font-mono text-[10px]">{formats.hsl}</code>
-                        </div>
-                      </>
-                    )
-                  })()}
-                </div>
-              )}
-            </div>
+                )}
 
-          </TabsContent>
-
-          <TabsContent value="gradient" className={`${isSpaceLayoutConfig ? 'py-4' : 'p-4'} space-y-2 mt-0`}>
-            <div className="space-y-2">
-              {/* Gradient Type */}
-              <div className="space-y-1">
-                <Label className="text-xs text-left">Type</Label>
-                <Select 
-                  value={gradientConfig.type} 
-                   onValueChange={(value: string) => handleGradientChange({ ...gradientConfig, type: value as 'linear' | 'radial' })}
-                >
-                  <SelectTrigger className="h-8 text-xs">
-                    <div className="flex items-center gap-2">
-                      {gradientConfig.type === 'linear' ? (
-                        <Move className="h-3.5 w-3.5" />
-                      ) : (
-                        <Circle className="h-3.5 w-3.5" />
-                      )}
-                      <SelectValue />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="linear">
-                      <div className="flex items-center gap-2">
-                        <Move className="h-3.5 w-3.5" />
-                        <span>Linear</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="radial">
-                      <div className="flex items-center gap-2">
-                        <Circle className="h-3.5 w-3.5" />
-                        <span>Radial</span>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Angle for linear gradients */}
-              {gradientConfig.type === 'linear' && (
-                <div className="space-y-1">
-                  <Label className="text-xs">Angle</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      value={gradientConfig.angle}
-                      onChange={(e) => handleGradientChange({ ...gradientConfig, angle: parseInt(e.target.value) || 0 })}
-                      className="h-8 text-xs flex-1"
-                      min={0}
-                      max={360}
-                      step={1}
+                {/* Preset Palettes */}
+                {Object.entries(colorPalettes)
+                  .filter(([name]) => {
+                    const paletteKey = name.toLowerCase().replace(/\s+/g, '-')
+                    return selectedColorSet === paletteKey
+                  })
+                  .map(([name, colors]) => (
+                    <ColorSwatchGrid
+                      key={name}
+                      colors={colors}
+                      selectedColor={solidColor}
+                      onColorSelect={handleSolidColorChange}
                     />
-                    <div className="text-xs text-muted-foreground">deg</div>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="360"
-                    value={gradientConfig.angle}
-                    onChange={(e) => handleGradientChange({ ...gradientConfig, angle: parseInt(e.target.value) })}
-                    className="w-full h-2"
-                  />
-                </div>
-              )}
+                  ))}
 
-              {/* Preview */}
-              <div className="space-y-1">
-                <Label className="text-xs">Preview</Label>
-                <div 
-                  className="w-full h-12 rounded border pointer-events-none"
-                  style={{ background: gradientValue }}
-                />
-              </div>
-
-              {/* Color Stops */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs">Color Stops</Label>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0"
-                    onClick={addGradientStop}
-                  >
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                </div>
-                {gradientConfig.stops.map((stop, index) => {
-                  const setGradientColorInputRef = (el: HTMLInputElement | null) => {
-                    if (el) {
-                      gradientColorInputRefs.current.set(index, el)
-                    } else {
-                      gradientColorInputRefs.current.delete(index)
-                    }
-                  }
-                  
-                  return (
-                    <div key={`stop-${index}-${stop.color}-${stop.position}`} className="flex items-center gap-2">
-                      <div className="relative flex items-center gap-2 flex-1">
-                        {/* Hidden color input */}
-                        <input
-                          ref={setGradientColorInputRef}
-                          type="color"
-                          value={stop.color}
-                          onChange={(e) => {
-                            e.stopPropagation()
-                            updateGradientStop(index, { color: e.target.value })
-                          }}
-                          style={{
-                            position: 'absolute',
-                            width: '1px',
-                            height: '1px',
-                            opacity: 0,
-                            clip: 'rect(0, 0, 0, 0)',
-                            overflow: 'hidden',
-                            zIndex: -1,
-                            pointerEvents: 'auto' // Allow programmatic clicks
-                          }}
-                          tabIndex={-1}
-                        />
-                        {/* Color swatch button that triggers native color picker */}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            const colorInput = gradientColorInputRefs.current.get(index)
-                            if (colorInput) {
-                              colorInput.click()
-                            }
-                          }}
-                          className="h-7 w-7 rounded border-2 border-border hover:border-primary/50 transition-all hover:scale-110 flex-shrink-0 cursor-pointer"
-                          style={getSwatchStyle(stop.color)}
-                          title="Click to open color picker"
-                        />
-                        <Input
-                          type="text"
-                          value={stop.color}
-                          onChange={(e) => updateGradientStop(index, { color: e.target.value })}
-                          className="h-7 text-xs flex-1"
-                        />
-                      </div>
-                      <Input
-                        type="number"
-                        value={stop.position}
-                        onChange={(e) => updateGradientStop(index, { position: parseInt(e.target.value) || 0 })}
-                        className="h-7 text-xs w-16"
-                        min={0}
-                        max={100}
-                      />
-                      <div className="text-xs text-muted-foreground">%</div>
+                {/* Custom Color Input */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs">Custom Color</Label>
+                    <div className="flex items-center gap-1">
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="h-7 w-7 p-0"
-                        onClick={() => removeGradientStop(index)}
-                        disabled={gradientConfig.stops.length <= 2}
+                        className="h-6 px-1.5 text-xs"
+                        onClick={() => setShowColorFormats(!showColorFormats)}
+                        title="Show color formats"
                       >
-                        <Trash2 className="h-3 w-3" />
+                        {showColorFormats ? 'Hide' : 'Formats'}
                       </Button>
                     </div>
-                  )
-                })}
-              </div>
-
-              {/* Generated CSS */}
-              <div className="space-y-1">
-                <Label className="text-xs">CSS</Label>
-                <Input
-                  type="text"
-                  value={gradientValue}
-                  readOnly
-                  className="h-8 text-xs bg-muted font-mono"
-                />
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="pattern" className={`${isSpaceLayoutConfig ? 'py-4' : 'p-4'} space-y-2 mt-0`}>
-            <div className="space-y-2">
-              <Label className="text-xs">Pattern</Label>
-              <Select value={currentPattern.id} onValueChange={handlePatternChange}>
-                <SelectTrigger className="h-8 text-xs">
-                  <div className="flex items-center gap-2">
-                    {React.createElement(currentPattern.icon, { className: "h-3.5 w-3.5" })}
-                    <SelectValue />
                   </div>
-                </SelectTrigger>
-                <SelectContent>
-                  {COLOR_PATTERNS.map((pattern) => {
-                    const Icon = pattern.icon
-                    return (
-                      <SelectItem key={pattern.id} value={pattern.id}>
+                  <div className="flex items-center gap-2">
+                    {/* Color input with swatch button inside - same UI as ColorInput */}
+                    <div className="relative flex-1">
+                      {/* Hidden color input */}
+                      <input
+                        ref={colorInputRef}
+                        type="color"
+                        value={solidColor}
+                        onChange={(e) => {
+                          e.stopPropagation()
+                          handleSolidColorChange(e.target.value)
+                        }}
+                        style={{
+                          position: 'absolute',
+                          width: '1px',
+                          height: '1px',
+                          opacity: 0,
+                          clip: 'rect(0, 0, 0, 0)',
+                          overflow: 'hidden',
+                          zIndex: -1,
+                          pointerEvents: 'auto' // Allow programmatic clicks
+                        }}
+                        tabIndex={-1}
+                      />
+                      {/* Color swatch button that triggers native color picker - same as ColorInput */}
+                      <button
+                        ref={solidColorSwatchButtonRefCallback}
+                        type="button"
+                        data-component="color-input-trigger"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          if (colorInputRef.current) {
+                            colorInputRef.current.click()
+                          }
+                        }}
+                        className="absolute left-1 top-1/2 -translate-y-1/2 cursor-pointer z-40 border-0 outline-none shadow-none flex-shrink-0 p-0 color-input-trigger"
+                        style={{
+                          pointerEvents: 'auto',
+                          zIndex: 40,
+                          display: 'block',
+                        }}
+                        title="Click to open color picker"
+                        aria-label="Open color picker"
+                      />
+                      <Input
+                        ref={solidColorTextInputRefCallback}
+                        type="text"
+                        value={actualColor}
+                        onChange={(e) => {
+                          // Parse the input - if it's rgba, extract the base color
+                          const inputValue = e.target.value
+                          if (inputValue.startsWith('rgba')) {
+                            // Extract base color from rgba
+                            const baseColor = extractBaseColor(inputValue)
+                            handleSolidColorChange(baseColor)
+                            // Update opacity from rgba
+                            const newOpacity = extractOpacity(inputValue)
+                            if (newOpacity !== opacity) {
+                              handleOpacityChange(newOpacity)
+                            }
+                          } else {
+                            // Regular hex or rgb color
+                            handleSolidColorChange(inputValue)
+                          }
+                        }}
+                        className={finalInputClassName}
+                        placeholder="#ffffff"
+                        disabled={disabled}
+                        style={{
+                          pointerEvents: 'auto'
+                        }}
+                        onPointerDown={(e) => {
+                          // Don't prevent pointer events on the input itself, but allow button clicks
+                          const target = e.target as HTMLElement
+                          if (target.closest('button')) {
+                            return
+                          }
+                        }}
+                      />
+                    </div>
+
+                    {/* Opacity input on the right */}
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={Math.round(opacity * 100)}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0
+                        const clamped = Math.max(0, Math.min(100, val))
+                        handleOpacityChange(clamped / 100)
+                      }}
+                      className="h-8 w-16 text-xs"
+                      placeholder="100"
+                    />
+                    <span className="text-xs text-muted-foreground">%</span>
+                  </div>
+
+                  {/* Color Format Display */}
+                  {showColorFormats && (
+                    <div className="space-y-1 pt-1 border-t">
+                      {(() => {
+                        const formats = getColorFormats()
+                        return (
+                          <>
+                            <div className="flex items-center justify-between text-[10px]">
+                              <span className="text-muted-foreground">HEX:</span>
+                              <code className="font-mono text-[10px]">{formats.hex}</code>
+                            </div>
+                            <div className="flex items-center justify-between text-[10px]">
+                              <span className="text-muted-foreground">RGB:</span>
+                              <code className="font-mono text-[10px]">{formats.rgb}</code>
+                            </div>
+                            <div className="flex items-center justify-between text-[10px]">
+                              <span className="text-muted-foreground">HSL:</span>
+                              <code className="font-mono text-[10px]">{formats.hsl}</code>
+                            </div>
+                          </>
+                        )
+                      })()}
+                    </div>
+                  )}
+                </div>
+
+              </TabsContent>
+
+              <TabsContent value="gradient" className={`${isSpaceLayoutConfig ? 'py-4' : 'p-4'} space-y-2 mt-0`}>
+                <div className="space-y-2">
+                  {/* Gradient Type */}
+                  <div className="space-y-1">
+                    <Label className="text-xs text-left">Type</Label>
+                    <Select
+                      value={gradientConfig.type}
+                      onValueChange={(value: string) => handleGradientChange({ ...gradientConfig, type: value as 'linear' | 'radial' })}
+                    >
+                      <SelectTrigger className="h-8 text-xs">
                         <div className="flex items-center gap-2">
-                          <Icon className="h-3.5 w-3.5" />
-                          <span>{pattern.name}</span>
+                          {gradientConfig.type === 'linear' ? (
+                            <Move className="h-3.5 w-3.5" />
+                          ) : (
+                            <Circle className="h-3.5 w-3.5" />
+                          )}
+                          <SelectValue />
                         </div>
-                      </SelectItem>
-                    )
-                  })}
-                </SelectContent>
-              </Select>
-              
-              {/* Pattern Preview */}
-              <div className="space-y-1">
-                <Label className="text-xs">Preview</Label>
-                <div 
-                  className="w-full h-16 rounded border bg-background"
-                  style={getPatternStyle(currentPattern)}
-                />
-              </div>
-            </div>
-          </TabsContent>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="linear">
+                          <div className="flex items-center gap-2">
+                            <Move className="h-3.5 w-3.5" />
+                            <span>Linear</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="radial">
+                          <div className="flex items-center gap-2">
+                            <Circle className="h-3.5 w-3.5" />
+                            <span>Radial</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-          <TabsContent value="image" className={`${isSpaceLayoutConfig ? 'py-4' : 'p-4'} space-y-2 mt-0`}>
-            <div className="space-y-2">
-              <Input
-                type="text"
-                value={imageUrl.replace(/^url\(|\)$/g, '')}
-                onChange={(e) => handleImageChange(e.target.value)}
-                className="h-8 text-xs"
-                placeholder="Image URL or upload"
-              />
-              <label className="block">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="w-full h-8 text-xs"
-                  onClick={() => {
-                    const input = document.getElementById(`image-upload-${value.replace(/[^a-zA-Z0-9]/g, '')}`) as HTMLInputElement
-                    input?.click()
-                  }}
-                >
-                  <Upload className="h-3.5 w-3.5 mr-1.5" />
-                  Upload Image
-                </Button>
-                <input
-                  id={`image-upload-${value.replace(/[^a-zA-Z0-9]/g, '')}`}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleImageUpload}
-                />
-              </label>
-              {imageUrl && (
-                <div className="w-full h-24 rounded border overflow-hidden">
-                  <img src={imageUrl.replace(/^url\(|\)$/g, '')} alt="Preview" className="w-full h-full object-cover" />
-                </div>
-              )}
-            </div>
-          </TabsContent>
+                  {/* Angle for linear gradients */}
+                  {gradientConfig.type === 'linear' && (
+                    <div className="space-y-1">
+                      <Label className="text-xs">Angle</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          value={gradientConfig.angle}
+                          onChange={(e) => handleGradientChange({ ...gradientConfig, angle: parseInt(e.target.value) || 0 })}
+                          className="h-8 text-xs flex-1"
+                          min={0}
+                          max={360}
+                          step={1}
+                        />
+                        <div className="text-xs text-muted-foreground">deg</div>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="360"
+                        value={gradientConfig.angle}
+                        onChange={(e) => handleGradientChange({ ...gradientConfig, angle: parseInt(e.target.value) })}
+                        className="w-full h-2"
+                      />
+                    </div>
+                  )}
 
-          <TabsContent value="video" className={`${isSpaceLayoutConfig ? 'py-4' : 'p-4'} space-y-2 mt-0`}>
-            <div className="space-y-2">
-              <Input
-                type="text"
-                value={videoUrl.replace(/^video\(|\)$/g, '')}
-                onChange={(e) => handleVideoChange(e.target.value)}
-                className="h-8 text-xs"
-                placeholder="Video URL or upload"
-              />
-              <label className="block">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="w-full h-8 text-xs"
-                  onClick={() => {
-                    const input = document.getElementById(`video-upload-${value.replace(/[^a-zA-Z0-9]/g, '')}`) as HTMLInputElement
-                    input?.click()
-                  }}
-                >
-                  <Video className="h-3.5 w-3.5 mr-1.5" />
-                  Upload Video
-                </Button>
-                <input
-                  id={`video-upload-${value.replace(/[^a-zA-Z0-9]/g, '')}`}
-                  type="file"
-                  accept="video/*"
-                  className="hidden"
-                  onChange={handleVideoUpload}
-                />
-              </label>
-              {videoUrl && (
-                <div className="w-full h-24 rounded border overflow-hidden">
-                  <video src={videoUrl.replace(/^video\(|\)$/g, '')} className="w-full h-full object-cover" controls={false} />
+                  {/* Preview */}
+                  <div className="space-y-1">
+                    <Label className="text-xs">Preview</Label>
+                    <div
+                      className="w-full h-12 rounded border pointer-events-none"
+                      style={{ background: gradientValue }}
+                    />
+                  </div>
+
+                  {/* Color Stops */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs">Color Stops</Label>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={addGradientStop}
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    {gradientConfig.stops.map((stop, index) => {
+                      const setGradientColorInputRef = (el: HTMLInputElement | null) => {
+                        if (el) {
+                          gradientColorInputRefs.current.set(index, el)
+                        } else {
+                          gradientColorInputRefs.current.delete(index)
+                        }
+                      }
+
+                      return (
+                        <div key={`stop-${index}-${stop.color}-${stop.position}`} className="flex items-center gap-2">
+                          <div className="relative flex-1">
+                            <div className="relative">
+                              {/* Hidden color input - keep original ref logic */}
+                              <input
+                                ref={setGradientColorInputRef}
+                                type="color"
+                                value={stop.color}
+                                onChange={(e) => {
+                                  e.stopPropagation()
+                                  updateGradientStop(index, { color: e.target.value })
+                                }}
+                                style={{
+                                  position: 'absolute',
+                                  width: '1px',
+                                  height: '1px',
+                                  opacity: 0,
+                                  clip: 'rect(0, 0, 0, 0)',
+                                  overflow: 'hidden',
+                                  zIndex: -1,
+                                  pointerEvents: 'auto'
+                                }}
+                                tabIndex={-1}
+                              />
+                              {/* Swatch Button positioned inside */}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  const colorInput = gradientColorInputRefs.current.get(index)
+                                  if (colorInput) {
+                                    colorInput.click()
+                                  }
+                                }}
+                                className="absolute left-1 top-1/2 -translate-y-1/2 z-10 cursor-pointer shadow-sm hover:scale-105 transition-transform"
+                                style={{
+                                  ...getSwatchStyle(stop.color),
+                                  background: stop.color,
+                                  backgroundImage: stop.color, // Ensure gradient visibility
+                                  width: '20px',
+                                  height: '20px',
+                                  minWidth: '20px',
+                                  minHeight: '20px',
+                                  padding: 0,
+                                  border: 'none',
+                                  borderRadius: '2px',
+                                  aspectRatio: '1/1'
+                                }}
+                                title="Click to open color picker"
+                              />
+                              {/* Text Input with padding */}
+                              <Input
+                                type="text"
+                                value={stop.color}
+                                onChange={(e) => updateGradientStop(index, { color: e.target.value })}
+                                className="h-7 text-xs w-full pl-8"
+                              />
+                            </div>
+                          </div>
+                          <Input
+                            type="number"
+                            value={stop.position}
+                            onChange={(e) => updateGradientStop(index, { position: parseInt(e.target.value) || 0 })}
+                            className="h-7 text-xs w-14"
+                            min={0}
+                            max={100}
+                          />
+                          <div className="text-xs text-muted-foreground">%</div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => removeGradientStop(index)}
+                            disabled={gradientConfig.stops.length <= 2}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {/* Generated CSS */}
+                  <div className="space-y-1">
+                    <Label className="text-xs">CSS</Label>
+                    <Input
+                      type="text"
+                      value={gradientValue}
+                      readOnly
+                      className="h-8 text-xs bg-muted font-mono"
+                    />
+                  </div>
                 </div>
-              )}
-            </div>
-          </TabsContent>
-          </Tabs>
-        </div>
-      </PopoverContent>
-    </Popover>
+              </TabsContent>
+
+              <TabsContent value="pattern" className={`${isSpaceLayoutConfig ? 'py-4' : 'p-4'} space-y-2 mt-0`}>
+                <div className="space-y-2">
+                  <Label className="text-xs">Pattern</Label>
+                  <Select value={currentPattern.id} onValueChange={handlePatternChange}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <div className="flex items-center gap-2">
+                        {React.createElement(currentPattern.icon, { className: "h-3.5 w-3.5" })}
+                        <SelectValue />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {COLOR_PATTERNS.map((pattern) => {
+                        const Icon = pattern.icon
+                        return (
+                          <SelectItem key={pattern.id} value={pattern.id}>
+                            <div className="flex items-center gap-2">
+                              <Icon className="h-3.5 w-3.5" />
+                              <span>{pattern.name}</span>
+                            </div>
+                          </SelectItem>
+                        )
+                      })}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Pattern Preview */}
+                  <div className="space-y-1">
+                    <Label className="text-xs">Preview</Label>
+                    <div
+                      className="w-full h-16 rounded border bg-background"
+                      style={getPatternStyle(currentPattern)}
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="image" className={`${isSpaceLayoutConfig ? 'py-4' : 'p-4'} space-y-2 mt-0`}>
+                <div className="space-y-2">
+                  <Input
+                    type="text"
+                    value={imageUrl.replace(/^url\(|\)$/g, '')}
+                    onChange={(e) => handleImageChange(e.target.value)}
+                    className="h-8 text-xs"
+                    placeholder="Image URL or upload"
+                  />
+                  <label className="block">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full h-8 text-xs"
+                      onClick={() => {
+                        const input = document.getElementById(`image-upload-${value.replace(/[^a-zA-Z0-9]/g, '')}`) as HTMLInputElement
+                        input?.click()
+                      }}
+                    >
+                      <Upload className="h-3.5 w-3.5 mr-1.5" />
+                      Upload Image
+                    </Button>
+                    <input
+                      id={`image-upload-${value.replace(/[^a-zA-Z0-9]/g, '')}`}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleImageUpload}
+                    />
+                  </label>
+                  {imageUrl && (
+                    <div className="w-full h-24 rounded border overflow-hidden">
+                      <img src={imageUrl.replace(/^url\(|\)$/g, '')} alt="Preview" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="video" className={`${isSpaceLayoutConfig ? 'py-4' : 'p-4'} space-y-2 mt-0`}>
+                <div className="space-y-2">
+                  <Input
+                    type="text"
+                    value={videoUrl.replace(/^video\(|\)$/g, '')}
+                    onChange={(e) => handleVideoChange(e.target.value)}
+                    className="h-8 text-xs"
+                    placeholder="Video URL or upload"
+                  />
+                  <label className="block">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full h-8 text-xs"
+                      onClick={() => {
+                        const input = document.getElementById(`video-upload-${value.replace(/[^a-zA-Z0-9]/g, '')}`) as HTMLInputElement
+                        input?.click()
+                      }}
+                    >
+                      <Video className="h-3.5 w-3.5 mr-1.5" />
+                      Upload Video
+                    </Button>
+                    <input
+                      id={`video-upload-${value.replace(/[^a-zA-Z0-9]/g, '')}`}
+                      type="file"
+                      accept="video/*"
+                      className="hidden"
+                      onChange={handleVideoUpload}
+                    />
+                  </label>
+                  {videoUrl && (
+                    <div className="w-full h-24 rounded border overflow-hidden">
+                      <video src={videoUrl.replace(/^video\(|\)$/g, '')} className="w-full h-full object-cover" controls={false} />
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </PopoverContent>
+      </Popover>
     </>
   )
 }

@@ -92,6 +92,8 @@ export interface ChatbotConfig {
   openaiAgentSdkUseWorkflowConfig?: boolean
   logo?: string
   primaryColor: string
+  secondaryColor?: string
+  backgroundColor?: string
   fontFamily: string
   fontSize: string
   fontColor: string
@@ -302,17 +304,45 @@ export interface ChatbotConfig {
   composerFontColor?: string
   // PWA Configuration
   enablePWA?: boolean
-  pwaName?: string
-  pwaShortName?: string
-  pwaDescription?: string
-  pwaBackgroundColor?: string
-  pwaThemeColor?: string
+  pwaEnabled?: boolean // Enable/disable PWA install banner in embedded chat
+  pwaInstallScope?: 'chat' | 'website' // Scope of installation: 'chat' (inline banner) or 'website' (top overlay)
+  pwaName?: string // Deprecated
+  pwaAppName?: string // App name for PWA manifest (default: chatbot name)
+  pwaShortName?: string // Short name for home screen (default: first word of name)
+  pwaDescription?: string // App description (default: chatbot description)
+  pwaBackgroundColor?: string // Splash screen background color (default: #ffffff)
+  pwaThemeColor?: string // Theme/status bar color (default: primaryColor)
   pwaStartUrl?: string
   pwaDisplay?: 'standalone' | 'fullscreen' | 'minimal-ui' | 'browser'
+  pwaDisplayMode?: 'standalone' | 'fullscreen' | 'minimal-ui' // PWA display mode (default: standalone)
   pwaIcon192?: string
   pwaIcon512?: string
+  pwaIconUrl?: string // App icon URL (should be 512x512, will be resized)
+  pwaIconSize?: number // Icon size in pixels (default: 512)
   pwaManifestPath?: string
   pwaServiceWorkerPath?: string
+  // PWA Banner Styling & Positioning
+  pwaBannerText?: string
+  pwaBannerBgColor?: string
+  pwaBannerFontColor?: string
+  pwaBannerFontFamily?: string
+  pwaBannerFontSize?: string
+  pwaBannerBorderRadius?: string
+  pwaBannerShadow?: string
+  pwaBannerShadowX?: string
+  pwaBannerShadowY?: string
+  pwaBannerShadowBlur?: string
+  pwaBannerShadowSpread?: string
+  pwaBannerShadowColor?: string
+  pwaBannerPadding?: string
+  pwaBannerMargin?: string
+  pwaBannerBorderColor?: string
+  pwaBannerBorderWidth?: string
+  pwaBannerPosition?: 'top-of-header' | 'under-header' | 'floating-bottom' | 'floating-top' | 'top' | 'bottom'
+  pwaBannerButtonBgColor?: string
+  pwaBannerButtonTextColor?: string
+  pwaBannerButtonBorderRadius?: string
+  pwaBannerButtonFontSize?: string
 
   popoverPosition?: 'top' | 'left' // Position of popover relative to widget: 'top' = above widget, 'left' = to the left of widget
   widgetPopoverMargin?: string // Margin/spacing between widget button and popover window

@@ -49,6 +49,7 @@ export function IconPicker({ value, onChange, placeholder = "Search icons...", g
   const [activeCategory, setActiveCategory] = useState<string>("All")
 
   const iconEntries = useMemo(() => {
+    if (!LucideIcons) return []
     return Object.entries(LucideIcons).filter(isIconEntry) as Array<[
       string,
       IconComponent
@@ -80,10 +81,10 @@ export function IconPicker({ value, onChange, placeholder = "Search icons...", g
           }
         >
           {animated ? (
-            <AnimatedIcon 
-              icon={name} 
-              size={20} 
-              animation={animation} 
+            <AnimatedIcon
+              icon={name}
+              size={20}
+              animation={animation}
               trigger="hover"
               className="text-current"
             />
@@ -125,12 +126,12 @@ export function IconPicker({ value, onChange, placeholder = "Search icons...", g
       />
       {filtered.length === 0 ? (
         <div className="text-center text-xs text-muted-foreground py-6 border rounded-md">No icons found</div>
-      ) : grouped && groupedIcons && groupedIcons.length > 0 ? (
+      ) : grouped && groupedIcons && Array.isArray(groupedIcons) && groupedIcons.length > 0 ? (
         <div className="flex border rounded-md overflow-hidden" style={{ height: 330 }}>
           {/* Left: Category list */}
           <div className="w-64 border-r overflow-auto p-2 bg-gray-50">
             <ul className="space-y-1">
-              {groupedIcons.map(([category, items]) => {
+              {groupedIcons?.map(([category, items]) => {
                 if (!items || !Array.isArray(items)) return null
                 return (
                   <li key={category}>
@@ -155,13 +156,13 @@ export function IconPicker({ value, onChange, placeholder = "Search icons...", g
           {/* Right: Icons grid */}
           <div className="flex-1 overflow-auto p-2">
             {groupedIcons
-              .filter(([category]) => category === activeCategory)
-              .map(([category, items]) => {
+              ?.filter(([category]) => category === activeCategory)
+              ?.map(([category, items]) => {
                 if (!items || !Array.isArray(items)) return null
                 return (
                   <div key={category}>
                     <div className="grid grid-cols-6 gap-2">
-                      {items.map(([name, Icon]) => renderIconButton(name, Icon))}
+                      {items?.map(([name, Icon]) => renderIconButton(name, Icon))}
                     </div>
                   </div>
                 )
@@ -170,7 +171,7 @@ export function IconPicker({ value, onChange, placeholder = "Search icons...", g
         </div>
       ) : (
         <div className="grid grid-cols-6 gap-2 max-h-72 overflow-auto border rounded-md p-2">
-          {filtered.map(([name, Icon]) => renderIconButton(name, Icon as unknown as IconComponent))}
+          {filtered?.map(([name, Icon]) => renderIconButton(name, Icon as unknown as IconComponent))}
         </div>
       )}
     </div>

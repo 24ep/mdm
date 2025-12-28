@@ -65,7 +65,7 @@ export function ChatHeader({ chatbot, onClearSession, onClose, isMobile = false 
         borderLeftWidth: (chatbot as any).headerBorderWidthLeft || ((chatbot as any).headerBorderWidth !== undefined ? (chatbot as any).headerBorderWidth : '0px'),
         borderStyle: headerBorderEnabled ? 'solid' : 'none',
         // Background and text colors
-        backgroundColor: chatbot.headerBgColor || chatbot.primaryColor,
+        background: chatbot.headerBgColor || chatbot.primaryColor,
         color: chatbot.headerFontColor || 'white',
         // Font styling
         fontFamily: chatbot.headerFontFamily || chatbot.fontFamily,

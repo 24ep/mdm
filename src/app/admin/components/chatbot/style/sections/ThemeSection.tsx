@@ -186,42 +186,8 @@ export function ThemeSection({ formData, setFormData, chatkitOptions }: SectionP
                 </p>
               </div>
 
-              {/* Icon Color */}
-              <div className="space-y-2">
-                <Label>Icon Color</Label>
-                <p className="text-xs text-muted-foreground">
-                  Color for icons (if different from accent color)
-                </p>
-                <ColorInput
-                  value={chatkitOptions?.theme?.color?.accent?.icon || chatkitOptions?.theme?.color?.accent?.primary || chatkitOptions?.theme?.primaryColor || '#3b82f6'}
-                  onChange={(color) => {
-                    const theme = chatkitOptions?.theme || {}
-                    setFormData({
-                      ...formData,
-                      chatkitOptions: {
-                        ...chatkitOptions,
-                        theme: {
-                          ...theme,
-                          color: {
-                            ...theme.color,
-                            accent: {
-                              ...theme.color?.accent,
-                              icon: color
-                            }
-                          }
-                        }
-                      }
-                    } as any)
-                  }}
-                  allowImageVideo={false}
-                  className="relative"
-                  placeholder="#3b82f6"
-                  inputClassName="h-8 text-xs pl-7"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Leave empty to use accent color for icons
-                </p>
-              </div>
+              {/* NOTE: Icon Color is NOT supported by ChatKit's accent color schema */}
+              {/* Removed - passing 'icon' property to accent causes "Invalid input at theme" error */}
 
               {/* Additional Colors */}
               <div className="grid grid-cols-2 gap-4">
@@ -284,7 +250,7 @@ export function ThemeSection({ formData, setFormData, chatkitOptions }: SectionP
                 <div className="space-y-2">
                   <Label>Secondary Color (optional)</Label>
                   <ColorInput
-                    value={chatkitOptions?.theme?.color?.secondary || chatkitOptions?.theme?.secondaryColor || '#6b7280'}
+                    value={chatkitOptions?.theme?.color?.secondary || chatkitOptions?.theme?.secondaryColor || formData.secondaryColor || '#6b7280'}
                     onChange={(color) => {
                       const theme = chatkitOptions?.theme || {}
                       setFormData({
@@ -339,10 +305,14 @@ export function ThemeSection({ formData, setFormData, chatkitOptions }: SectionP
                 <div className="space-y-2">
                   <Label>Surface Background (optional)</Label>
                   <ColorInput
-                    value={chatkitOptions?.theme?.color?.surface?.background || (typeof chatkitOptions?.theme?.color?.surface === 'string' ? chatkitOptions.theme.color.surface : '#f9fafb')}
+                    value={chatkitOptions?.theme?.color?.surface?.background || (typeof chatkitOptions?.theme?.color?.surface === 'string' ? chatkitOptions.theme.color.surface : undefined) || formData.backgroundColor || formData.messageBoxColor || '#f9fafb'}
                     onChange={(color) => {
                       const theme = chatkitOptions?.theme || {}
-                      const currentSurface = theme.color?.surface || {}
+                      const currentSurface = theme.color?.surface
+                      const surfaceObj = typeof currentSurface === 'string'
+                        ? { background: currentSurface }
+                        : (typeof currentSurface === 'object' && currentSurface ? currentSurface : {})
+
                       setFormData({
                         ...formData,
                         chatkitOptions: {
@@ -352,7 +322,7 @@ export function ThemeSection({ formData, setFormData, chatkitOptions }: SectionP
                             color: {
                               ...theme.color,
                               surface: {
-                                ...(typeof currentSurface === 'object' ? currentSurface : {}),
+                                ...surfaceObj,
                                 background: color
                               }
                             }
@@ -370,10 +340,14 @@ export function ThemeSection({ formData, setFormData, chatkitOptions }: SectionP
                 <div className="space-y-2">
                   <Label>Surface Foreground (optional)</Label>
                   <ColorInput
-                    value={chatkitOptions?.theme?.color?.surface?.foreground || '#000000'}
+                    value={chatkitOptions?.theme?.color?.surface?.foreground || formData.fontColor || '#000000'}
                     onChange={(color) => {
                       const theme = chatkitOptions?.theme || {}
-                      const currentSurface = theme.color?.surface || {}
+                      const currentSurface = theme.color?.surface
+                      const surfaceObj = typeof currentSurface === 'string'
+                        ? { background: currentSurface }
+                        : (typeof currentSurface === 'object' && currentSurface ? currentSurface : {})
+
                       setFormData({
                         ...formData,
                         chatkitOptions: {
@@ -383,7 +357,7 @@ export function ThemeSection({ formData, setFormData, chatkitOptions }: SectionP
                             color: {
                               ...theme.color,
                               surface: {
-                                ...(typeof currentSurface === 'object' ? currentSurface : {}),
+                                ...surfaceObj,
                                 foreground: color
                               }
                             }

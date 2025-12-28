@@ -224,7 +224,22 @@ export const DEFAULT_CHATBOT_CONFIG: Partial<Chatbot> = {
   userAvatarBackgroundColor: '#e5e7eb',
   userAvatarImageUrl: '',
   isPublished: false,
-  currentVersion: '1.0.0'
+  currentVersion: '1.0.0',
+  // PWA Defaults
+  pwaEnabled: false,
+  pwaInstallScope: 'chat',
+  pwaBannerText: 'Install app for quick access',
+  pwaBannerPosition: 'bottom',
+  pwaDisplayMode: 'standalone',
+  pwaIconSize: 512,
+  pwaBannerBgColor: undefined,
+  pwaBannerFontColor: '#ffffff',
+  pwaBannerBorderRadius: '8px',
+  pwaBannerPadding: '10px 12px',
+  pwaBannerButtonBgColor: '#ffffff',
+  pwaBannerButtonTextColor: undefined,
+  pwaBannerButtonBorderRadius: '4px',
+  pwaBannerButtonFontSize: '12px'
 }
 
 // Generate a proper UUID for database compatibility
@@ -396,7 +411,22 @@ export function createDefaultChatbot(name: string): Chatbot {
       createdBy: 'current-user',
       isPublished: false
     }],
-    currentVersion: '1.0.0'
+    currentVersion: '1.0.0',
+    // PWA Configuration
+    pwaEnabled: false,
+    pwaInstallScope: 'chat',
+    pwaBannerText: 'Install app for quick access',
+    pwaBannerPosition: 'bottom',
+    pwaDisplayMode: 'standalone',
+    pwaIconSize: 512,
+    pwaBannerBgColor: undefined,
+    pwaBannerFontColor: '#ffffff',
+    pwaBannerBorderRadius: '8px',
+    pwaBannerPadding: '10px 12px',
+    pwaBannerButtonBgColor: '#ffffff',
+    pwaBannerButtonTextColor: undefined,
+    pwaBannerButtonBorderRadius: '4px',
+    pwaBannerButtonFontSize: '12px'
   }
 }
 

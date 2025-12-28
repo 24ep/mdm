@@ -9,12 +9,18 @@ interface ChatKitGlobalStylesProps {
 }
 
 export const ChatKitGlobalStyles = ({ chatbot, chatkitOptions }: ChatKitGlobalStylesProps) => {
+  const theme = chatkitOptions?.theme || {}
+  // Resolve colors with precedence: configured theme > legacy chatbot prop > default
+  const primaryColor = theme.color?.accent?.primary || theme.primaryColor || chatbot.primaryColor
+  const fontColor = theme.color?.text || theme.textColor || chatbot.fontColor
+  const bgColor = theme.color?.background || theme.backgroundColor || (chatbot as any).messageBoxColor || '#ffffff'
+
   // Calculate default composer colors based on background contrast
-  const defaultComposerBg = isLightColor((chatbot.messageBoxColor || '#ffffff'))
+  const defaultComposerBg = isLightColor(bgColor)
     ? '#f3f4f6' // Light theme: Gray-100 input
     : '#374151' // Dark theme: Gray-700 input
 
-  const defaultComposerFg = isLightColor((chatbot.messageBoxColor || '#ffffff'))
+  const defaultComposerFg = isLightColor(bgColor)
     ? '#000000'
     : '#ffffff'
 
@@ -57,8 +63,8 @@ export const ChatKitGlobalStyles = ({ chatbot, chatkitOptions }: ChatKitGlobalSt
           [role="banner"],
           div > div:first-child[class*="header"],
           .chatkit-header {
-            background-color: ${(chatbot as any).headerBgColor || chatbot.primaryColor || '#ffffff'} !important;
-            color: ${(chatbot as any).headerFontColor || chatbot.fontColor || '#000000'} !important;
+            background-color: ${(chatbot as any).headerBgColor || primaryColor || '#ffffff'} !important;
+            color: ${(chatbot as any).headerFontColor || fontColor || '#000000'} !important;
             padding: ${(chatbot as any).headerPaddingY || '12px'} ${(chatbot as any).headerPaddingX || '16px'} !important;
             margin: 0 !important;
             ${(chatbot as any).headerBorderEnabled !== false ? `border-bottom: 1px solid ${(chatbot as any).headerBorderColor || chatbot.borderColor || '#e5e7eb'} !important;` : ''}
@@ -91,20 +97,35 @@ export const ChatKitGlobalStyles = ({ chatbot, chatkitOptions }: ChatKitGlobalSt
           .chatkit-send-button,
           div[class*="composer"] button:last-child,
           div[class*="Composer"] button:last-child {
-            background-color: ${(chatbot as any).sendButtonBgColor || chatbot.primaryColor || '#3b82f6'} !important;
+            background-color: ${(chatbot as any).sendButtonBgColor || primaryColor || '#3b82f6'} !important;
           }
 
           :root {
-            --ck-font-family: ${chatbot.fontFamily || 'inherit'};
+            --ck-font-family: ${chatkitOptions?.theme?.typography?.fontFamily || chatbot.fontFamily || 'inherit'};
             /* ChatKit composer CSS variable overrides */
             --ck-composer-background: ${(chatbot as any).composerBackgroundColor || (chatbot as any).footerInputBgColor || defaultComposerBg};
-            --ck-composer-color: ${(chatbot as any).composerFontColor || (chatbot as any).footerInputFontColor || chatbot.fontColor || defaultComposerFg};
+            --ck-composer-color: ${(chatbot as any).composerFontColor || (chatbot as any).footerInputFontColor || fontColor || defaultComposerFg};
             --ck-input-background: ${(chatbot as any).composerBackgroundColor || (chatbot as any).footerInputBgColor || defaultComposerBg};
-            --ck-input-color: ${(chatbot as any).composerFontColor || (chatbot as any).footerInputFontColor || chatbot.fontColor || defaultComposerFg};
+            --ck-input-color: ${(chatbot as any).composerFontColor || (chatbot as any).footerInputFontColor || fontColor || defaultComposerFg};
             --chatkit-composer-bg: ${(chatbot as any).composerBackgroundColor || (chatbot as any).footerInputBgColor || defaultComposerBg};
-            --chatkit-composer-text: ${(chatbot as any).composerFontColor || (chatbot as any).footerInputFontColor || chatbot.fontColor || defaultComposerFg};
+            --chatkit-composer-text: ${(chatbot as any).composerFontColor || (chatbot as any).footerInputFontColor || fontColor || defaultComposerFg};
             --chatkit-input-bg: ${(chatbot as any).composerBackgroundColor || (chatbot as any).footerInputBgColor || defaultComposerBg};
-            --chatkit-input-text: ${(chatbot as any).composerFontColor || (chatbot as any).footerInputFontColor || chatbot.fontColor || defaultComposerFg};
+            --chatkit-input-text: ${(chatbot as any).composerFontColor || (chatbot as any).footerInputFontColor || fontColor || defaultComposerFg};
+          }
+
+          /* Force font family on all elements since ChatKit might reset it */
+          body,
+          button,
+          input,
+          textarea,
+          select,
+          p,
+          label,
+          [class*="chatkit"],
+          [class*="ChatKit"],
+          div[class*="message"],
+          div[class*="Message"] {
+            font-family: var(--ck-font-family) !important;
           }
 
           /* ChatKit Override Styles */
@@ -112,14 +133,14 @@ export const ChatKitGlobalStyles = ({ chatbot, chatkitOptions }: ChatKitGlobalSt
           /* Button styling override */
           button[class*="button"],
           button[class*="Button"] {
-            font-family: ${(chatbot as any).fontFamily || 'inherit'} !important;
+            font-family: ${chatkitOptions?.theme?.typography?.fontFamily || (chatbot as any).fontFamily || 'inherit'} !important;
           }
 
           /* Send Button styling */
           button[aria-label="Send message"],
           button[class*="send-button"],
           button[class*="SendButton"] {
-            background-color: ${(chatbot as any).sendButtonBgColor || chatbot.primaryColor || '#3b82f6'} !important;
+            background-color: ${(chatbot as any).sendButtonBgColor || primaryColor || '#3b82f6'} !important;
             color: ${(chatbot as any).sendButtonIconColor || '#ffffff'} !important;
             ${(chatbot as any).sendButtonBorderRadiusTopLeft || (chatbot as any).sendButtonBorderRadiusTopRight || (chatbot as any).sendButtonBorderRadiusBottomRight || (chatbot as any).sendButtonBorderRadiusBottomLeft
           ? `border-top-left-radius: ${(chatbot as any).sendButtonBorderRadiusTopLeft || (chatbot as any).sendButtonBorderRadius || '8px'} !important;
@@ -186,10 +207,10 @@ export const ChatKitGlobalStyles = ({ chatbot, chatkitOptions }: ChatKitGlobalSt
               color-scheme: ${forcedColorScheme} !important;
               background: ${(chatbot as any).composerBackgroundColor || (chatbot as any).footerInputBgColor || defaultComposerBg} !important;
               background-color: ${(chatbot as any).composerBackgroundColor || (chatbot as any).footerInputBgColor || defaultComposerBg} !important;
-              color: ${(chatbot as any).composerFontColor || (chatbot as any).footerInputFontColor || chatbot.fontColor || defaultComposerFg} !important;
+              color: ${(chatbot as any).composerFontColor || (chatbot as any).footerInputFontColor || fontColor || defaultComposerFg} !important;
               background-image: none !important;
               box-shadow: none !important;
-              -webkit-text-fill-color: ${(chatbot as any).composerFontColor || (chatbot as any).footerInputFontColor || chatbot.fontColor || defaultComposerFg} !important;
+              -webkit-text-fill-color: ${(chatbot as any).composerFontColor || (chatbot as any).footerInputFontColor || fontColor || defaultComposerFg} !important;
               ${(chatbot as any).footerInputBorderColor ? `border: ${(chatbot as any).footerInputBorderWidth || chatbot.borderWidth || '1px'} solid ${(chatbot as any).footerInputBorderColor} !important;` : ''}
               ${(chatbot as any).footerInputBorderRadius ? `border-radius: ${(chatbot as any).footerInputBorderRadius} !important;` : ''}
             }
@@ -206,8 +227,8 @@ export const ChatKitGlobalStyles = ({ chatbot, chatkitOptions }: ChatKitGlobalSt
             [data-chatkit] textarea::placeholder,
             form input::placeholder,
             form textarea::placeholder {
-              color: ${(chatbot as any).composerFontColor || (chatbot as any).footerInputFontColor || chatbot.fontColor || defaultComposerFg} !important;
-              -webkit-text-fill-color: ${(chatbot as any).composerFontColor || (chatbot as any).footerInputFontColor || chatbot.fontColor || defaultComposerFg} !important;
+              color: ${(chatbot as any).composerFontColor || (chatbot as any).footerInputFontColor || fontColor || defaultComposerFg} !important;
+              -webkit-text-fill-color: ${(chatbot as any).composerFontColor || (chatbot as any).footerInputFontColor || fontColor || defaultComposerFg} !important;
               opacity: 0.6 !important;
             }
         `}</style>
@@ -232,6 +253,7 @@ export const getContainerStyle = (deploymentType: string, chatbot: ChatbotConfig
       paddingRight: (chatbot as any).chatWindowPaddingX || '0px',
       paddingTop: (chatbot as any).chatWindowPaddingY || '0px',
       paddingBottom: (chatbot as any).chatWindowPaddingY || '0px',
+      fontFamily: chatbot.chatkitOptions?.theme?.typography?.fontFamily || chatbot.fontFamily,
     }
 
     // Apply glassmorphism effect
@@ -240,14 +262,21 @@ export const getContainerStyle = (deploymentType: string, chatbot: ChatbotConfig
       style.WebkitBackdropFilter = `blur(${blurAmount}px)`
     }
 
-    // Check if it's an image URL
-    if (bgValue.startsWith('url(') || bgValue.startsWith('http://') || bgValue.startsWith('https://') || bgValue.startsWith('/')) {
+    // Check if it's an image URL or Gradient
+    const isGradient = bgValue.includes('gradient')
+    const isUrl = bgValue.startsWith('url(') || bgValue.startsWith('http://') || bgValue.startsWith('https://') || bgValue.startsWith('/')
+
+    if (isUrl) {
       const imageUrl = bgValue.startsWith('url(') ? bgValue : `url(${bgValue})`
       style.backgroundImage = imageUrl
       style.backgroundSize = 'cover'
       style.backgroundPosition = 'center'
       style.backgroundRepeat = 'no-repeat'
       style.backgroundColor = opacity < 100 ? `rgba(255, 255, 255, ${opacity / 100})` : '#ffffff' // Fallback color with opacity
+    } else if (isGradient) {
+      // Apply gradient directly to background
+      style.background = bgValue
+      // If opacity is set, we can't easily modify the gradient string so we rely on the gradient definition
     } else {
       // It's a color value - apply opacity
       if (opacity < 100) {
@@ -278,5 +307,6 @@ export const getContainerStyle = (deploymentType: string, chatbot: ChatbotConfig
     paddingRight: (chatbot as any).chatWindowPaddingX || '0px',
     paddingTop: (chatbot as any).chatWindowPaddingY || '0px',
     paddingBottom: (chatbot as any).chatWindowPaddingY || '0px',
+    fontFamily: chatbot.chatkitOptions?.theme?.typography?.fontFamily || chatbot.fontFamily,
   } as React.CSSProperties
 }

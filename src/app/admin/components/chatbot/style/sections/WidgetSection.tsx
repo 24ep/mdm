@@ -155,18 +155,27 @@ export function WidgetSection({ formData, setFormData, chatkitOptions }: Section
 
               <div className="flex items-center justify-between mb-4">
                 <div className="space-y-0.5">
-                  <Label>Auto Open Chat Window</Label>
-                  <p className="text-xs text-muted-foreground">Automatically open the chat window on page load</p>
+                  <Label>Auto Open on Desktop</Label>
+                  <p className="text-xs text-muted-foreground">Automatically open chat on desktop devices</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center space-x-2">
-                    <Label htmlFor="auto-open" className="sr-only">Auto Open</Label>
-                    <Switch
-                      id="auto-open"
-                      checked={formData.widgetAutoShow !== undefined ? formData.widgetAutoShow : true}
-                      onCheckedChange={(checked) => setFormData({ ...formData, widgetAutoShow: checked })}
-                    />
-                  </div>
+                  <Switch
+                    checked={formData.widgetAutoShowDesktop !== undefined ? formData.widgetAutoShowDesktop : (formData.widgetAutoShow !== undefined ? formData.widgetAutoShow : true)}
+                    onCheckedChange={(checked) => setFormData({ ...formData, widgetAutoShowDesktop: checked, widgetAutoShow: checked /* Update legacy prop too for now */ })}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between mb-4">
+                <div className="space-y-0.5">
+                  <Label>Auto Open on Mobile</Label>
+                  <p className="text-xs text-muted-foreground">Automatically open chat on mobile devices</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={formData.widgetAutoShowMobile || false}
+                    onCheckedChange={(checked) => setFormData({ ...formData, widgetAutoShowMobile: checked })}
+                  />
                 </div>
               </div>
 

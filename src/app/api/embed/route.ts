@@ -124,6 +124,8 @@ export async function GET(request: NextRequest) {
       widgetContainer = document.createElement('div');
       widgetContainer.id = 'chatbot-widget-' + chatbotId;
       widgetContainer.setAttribute('aria-label', 'Chat widget');
+      // Fix: Ensure container doesn't block clicks on the page
+      widgetContainer.style.cssText = 'position: fixed; bottom: 0; right: 0; width: 0; height: 0; pointer-events: none; overflow: visible; z-index: 99999;';
       document.body.appendChild(widgetContainer);
     }
     
@@ -274,13 +276,16 @@ export async function GET(request: NextRequest) {
     // Create floating button/container
     var buttonContainer = document.createElement('div');
     buttonContainer.id = 'chatbot-button-container-' + chatbotId;
-    buttonContainer.style.cssText = 'position: fixed; ' + positionStyle + ' z-index: ' + widgetConfig.zIndex + '; display: ' + (widgetConfig.autoShow && (!widgetConfig.autoShowDelay || widgetConfig.autoShowDelay <= 0) ? 'flex' : 'none') + '; flex-direction: column; align-items: center; gap: 8px; ' + animationStyle;
+    // Fix: Add pointer-events: none to container so the empty space doesn't block clicks
+    buttonContainer.style.cssText = 'position: fixed; ' + positionStyle + ' z-index: ' + widgetConfig.zIndex + '; display: ' + (widgetConfig.autoShow && (!widgetConfig.autoShowDelay || widgetConfig.autoShowDelay <= 0) ? 'flex' : 'none') + '; flex-direction: column; align-items: center; gap: 8px; ' + animationStyle + ' pointer-events: none;';
     
     var button = document.createElement('button');
     button.id = 'chatbot-button-' + chatbotId;
     button.setAttribute('aria-label', 'Open chat');
     button.setAttribute('aria-expanded', 'false');
     button.setAttribute('type', 'button');
+    // Fix: pointer-events: auto for the actual button
+    button.style.pointerEvents = 'auto';
     
     // Helper function to convert hex to RGB
     function hexToRgb(hex) {
@@ -339,7 +344,7 @@ export async function GET(request: NextRequest) {
       
       var label = document.createElement('div');
       var labelBgStyle = getWidgetBackgroundStyle(widgetConfig.backgroundColor, widgetConfig.widgetBlur, widgetConfig.widgetOpacity);
-      label.style.cssText = labelBgStyle + 'color: ' + widgetConfig.labelColor + '; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; white-space: nowrap;';
+      label.style.cssText = labelBgStyle + 'color: ' + widgetConfig.labelColor + '; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; white-space: nowrap; pointer-events: auto;';
       label.textContent = widgetConfig.labelText;
       buttonContainer.appendChild(button);
       buttonContainer.appendChild(label);
@@ -490,7 +495,8 @@ export async function GET(request: NextRequest) {
     // Create chat window
     var chatWindow = document.createElement('div');
     chatWindow.id = 'chatbot-window-' + chatbotId;
-    chatWindow.style.cssText = 'position: fixed; ' + chatWindowPositionMobile + ' width: ' + chatWindowWidth + '; height: ' + chatWindowHeight + '; ' + chatBgStyle + 'border-radius: ' + chatWindowBorderRadius + '; box-shadow: 0 0 ' + chatWindowShadowBlur + ' ' + chatWindowShadowColor + '; border: ' + borderWidth + ' solid ' + borderColor + '; font-family: ' + (chatKitFontFamily || chatbot.fontFamily || 'Inter') + '; font-size: ' + (chatKitFontSize || chatbot.fontSize || '14px') + '; color: ' + (chatKitTextColor || chatbot.fontColor || '#000000') + '; display: none; flex-direction: column; z-index: ' + (widgetConfig.zIndex >= ${Z_INDEX.chatWidget} ? widgetConfig.zIndex + 1 : ${Z_INDEX.chatWidgetWindow}) + '; transition: opacity 0.3s ease, transform 0.3s ease; opacity: 0; transform: ' + (currentBaseChatTransform !== 'none' ? currentBaseChatTransform + ' scale(0.9)' : 'scale(0.9)') + ';';
+    // Fix: Add pointer-events: auto
+    chatWindow.style.cssText = 'position: fixed; ' + chatWindowPositionMobile + ' width: ' + chatWindowWidth + '; height: ' + chatWindowHeight + '; ' + chatBgStyle + 'border-radius: ' + chatWindowBorderRadius + '; box-shadow: 0 0 ' + chatWindowShadowBlur + ' ' + chatWindowShadowColor + '; border: ' + borderWidth + ' solid ' + borderColor + '; font-family: ' + (chatKitFontFamily || chatbot.fontFamily || 'Inter') + '; font-size: ' + (chatKitFontSize || chatbot.fontSize || '14px') + '; color: ' + (chatKitTextColor || chatbot.fontColor || '#000000') + '; display: none; flex-direction: column; z-index: ' + (widgetConfig.zIndex >= ${Z_INDEX.chatWidget} ? widgetConfig.zIndex + 1 : ${Z_INDEX.chatWidgetWindow}) + '; transition: opacity 0.3s ease, transform 0.3s ease; opacity: 0; transform: ' + (currentBaseChatTransform !== 'none' ? currentBaseChatTransform + ' scale(0.9)' : 'scale(0.9)') + '; pointer-events: auto;';
     
     // Event listener for closing the chat via postMessage from the iframe
     window.addEventListener('message', function(event) {
@@ -505,154 +511,41 @@ export async function GET(request: NextRequest) {
     iframe.style.cssText = 'width: 100%; flex: 1; border: none; border-radius: ' + chatWindowBorderRadius + ';';
     iframe.style.border = 'none';
     
-    // PWA Install Banner
-    var pwaBanner = null;
-    var pwaConfig = {
-      enabled: chatbot.pwaEnabled || false,
-      bannerText: chatbot.pwaBannerText || 'Install app for quick access',
-      position: chatbot.pwaBannerPosition || 'bottom',
-      installScope: chatbot.pwaInstallScope || 'chat', // 'chat' = inside widget, 'website' = top of page overlay
-      // Banner styling
-      bgColor: chatbot.pwaBannerBgColor || chatbot.primaryColor || '#3b82f6',
-      fontColor: chatbot.pwaBannerFontColor || '#ffffff',
-      fontFamily: chatbot.pwaBannerFontFamily || chatbot.fontFamily || 'Inter, sans-serif',
-      fontSize: chatbot.pwaBannerFontSize || '13px',
-      borderRadius: chatbot.pwaBannerBorderRadius || '8px',
-      shadow: chatbot.pwaBannerShadow || '0 -2px 10px rgba(0,0,0,0.1)',
-      padding: chatbot.pwaBannerPadding || '10px 12px',
-      // Button styling
-      buttonBgColor: chatbot.pwaBannerButtonBgColor || '#ffffff',
-      buttonTextColor: chatbot.pwaBannerButtonTextColor || chatbot.primaryColor || '#3b82f6',
-      buttonBorderRadius: chatbot.pwaBannerButtonBorderRadius || '4px',
-      buttonFontSize: chatbot.pwaBannerButtonFontSize || '12px',
-      // PWA icon for banner
-      iconUrl: chatbot.pwaIconUrl || null
-    };
+    // PWA Separate Iframe Logic (Host Website scope)
+    var isMobileOrTablet = window.innerWidth <= 1024;
+    var pwaIframe = null;
+    var pwaEnabled = chatbot.pwaEnabled || false;
+    var isWebsiteOverlayScope = (chatbot.pwaInstallScope === 'website') && isMobileOrTablet;
     
-    if (pwaConfig.enabled) {
-      // Check if banner was dismissed
+    console.log('[Chatbot] PWA Check:', { pwaEnabled: pwaEnabled, scope: chatbot.pwaInstallScope, isMobileOrTablet: isMobileOrTablet });
+
+    if (pwaEnabled && isWebsiteOverlayScope) {
       var pwaDismissedKey = 'pwa_dismissed_' + chatbotId;
       var pwaDismissed = false;
       try {
         pwaDismissed = localStorage.getItem(pwaDismissedKey) === 'true';
       } catch (e) {}
       
-      // Check if already installed (basic check)
       var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
       
+      console.log('[Chatbot] PWA Banner Conditions:', { dismissed: pwaDismissed, standalone: isStandalone });
+
       if (!pwaDismissed && !isStandalone) {
-        // Determine if banner should be website-level overlay (like on emulator)
-        var isWebsiteOverlay = pwaConfig.installScope === 'website' && isMobile;
+        console.log('[Chatbot] Creating PWA Iframe...');
+        pwaIframe = document.createElement('iframe');
+        pwaIframe.id = 'chatbot-pwa-iframe-' + chatbotId;
+        pwaIframe.src = serverOrigin + '/chat/' + chatbotId + '?mode=pwa-only&id=' + chatbotId;
+        pwaIframe.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; width: 100%; height: 120px; border: none; z-index: 999999; background: transparent; pointer-events: auto; transition: opacity 0.3s;';
         
-        pwaBanner = document.createElement('div');
-        pwaBanner.id = 'pwa-banner-' + chatbotId;
-        
-        if (isWebsiteOverlay) {
-          // Website-level overlay: fixed at top of page (outside chat window)
-          pwaBanner.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, ' + pwaConfig.bgColor + ' 0%, ' + pwaConfig.bgColor + 'dd 100%); color: ' + pwaConfig.fontColor + '; padding: ' + pwaConfig.padding + '; display: flex; align-items: center; justify-content: space-between; gap: 8px; z-index: ' + (widgetConfig.zIndex + 10) + '; box-shadow: ' + pwaConfig.shadow + '; font-family: ' + pwaConfig.fontFamily + ';';
+        if (document.body) {
+           document.body.appendChild(pwaIframe);
         } else {
-          // Chat widget inline: position inside chat window
-          var bannerPosition = pwaConfig.position === 'top' ? 'top: 0;' : 'bottom: 0;';
-          var bannerBorderRadius = pwaConfig.position === 'top' ? '0 0 ' + pwaConfig.borderRadius + ' ' + pwaConfig.borderRadius : pwaConfig.borderRadius + ' ' + pwaConfig.borderRadius + ' 0 0';
-          
-          pwaBanner.style.cssText = 'position: absolute; left: 0; right: 0; ' + bannerPosition + ' background: linear-gradient(135deg, ' + pwaConfig.bgColor + ' 0%, ' + pwaConfig.bgColor + 'dd 100%); color: ' + pwaConfig.fontColor + '; padding: ' + pwaConfig.padding + '; display: flex; align-items: center; justify-content: space-between; gap: 8px; z-index: 10; border-radius: ' + bannerBorderRadius + '; box-shadow: ' + pwaConfig.shadow + '; font-family: ' + pwaConfig.fontFamily + ';';
+           window.addEventListener('DOMContentLoaded', function() { document.body.appendChild(pwaIframe); });
         }
-        
-        // Banner content
-        var bannerContent = document.createElement('div');
-        bannerContent.style.cssText = 'display: flex; align-items: center; gap: 8px; flex: 1;';
-        
-        // App icon or mobile emoji
-        var iconContainer = document.createElement('div');
-        iconContainer.style.cssText = 'width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; overflow: hidden;';
-        if (pwaConfig.iconUrl) {
-          var iconImg = document.createElement('img');
-          iconImg.src = pwaConfig.iconUrl;
-          iconImg.alt = 'App';
-          iconImg.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
-          iconContainer.appendChild(iconImg);
-        } else {
-          var mobileIcon = document.createElement('span');
-          mobileIcon.innerHTML = '📱';
-          mobileIcon.style.cssText = 'font-size: 18px;';
-          iconContainer.appendChild(mobileIcon);
-        }
-        bannerContent.appendChild(iconContainer);
-        
-        // Text container
-        var textContainer = document.createElement('div');
-        textContainer.style.cssText = 'display: flex; flex-direction: column;';
-        
-        var bannerText = document.createElement('span');
-        bannerText.textContent = pwaConfig.bannerText;
-        bannerText.style.cssText = 'font-size: ' + pwaConfig.fontSize + '; font-weight: 600; color: ' + pwaConfig.fontColor + '; line-height: 1.2;';
-        textContainer.appendChild(bannerText);
-        
-        var subText = document.createElement('span');
-        subText.textContent = 'Add to home screen';
-        subText.style.cssText = 'font-size: 11px; opacity: 0.8; color: ' + pwaConfig.fontColor + ';';
-        textContainer.appendChild(subText);
-        
-        bannerContent.appendChild(textContainer);
-        
-        // Buttons container
-        var bannerButtons = document.createElement('div');
-        bannerButtons.style.cssText = 'display: flex; align-items: center; gap: 6px;';
-        
-        // Install button
-        var installBtn = document.createElement('button');
-        installBtn.textContent = 'Install';
-        installBtn.setAttribute('type', 'button');
-        installBtn.style.cssText = 'background: ' + pwaConfig.buttonBgColor + '; color: ' + pwaConfig.buttonTextColor + '; border: none; padding: 6px 12px; border-radius: ' + pwaConfig.buttonBorderRadius + '; font-size: ' + pwaConfig.buttonFontSize + '; font-weight: 600; cursor: pointer; transition: opacity 0.2s; font-family: ' + pwaConfig.fontFamily + ';';
-        installBtn.onmouseover = function() { this.style.opacity = '0.9'; };
-        installBtn.onmouseout = function() { this.style.opacity = '1'; };
-        installBtn.onclick = function(e) {
-          e.stopPropagation();
-          // Open standalone chat URL in new window for PWA installation
-          var pwaUrl = window.location.origin + '/chat/' + chatbotId + '?pwa=1';
-          window.open(pwaUrl, '_blank', 'noopener,noreferrer');
-        };
-        bannerButtons.appendChild(installBtn);
-        
-        // Close button
-        var closeBtn = document.createElement('button');
-        closeBtn.innerHTML = '✕';
-        closeBtn.setAttribute('type', 'button');
-        closeBtn.setAttribute('aria-label', 'Dismiss install banner');
-        closeBtn.style.cssText = 'background: transparent; color: ' + pwaConfig.fontColor + '; border: none; padding: 4px 6px; font-size: 14px; cursor: pointer; opacity: 0.7; transition: opacity 0.2s;';
-        closeBtn.onmouseover = function() { this.style.opacity = '1'; };
-        closeBtn.onmouseout = function() { this.style.opacity = '0.7'; };
-        closeBtn.onclick = function(e) {
-          e.stopPropagation();
-          pwaBanner.style.display = 'none';
-          try {
-            localStorage.setItem(pwaDismissedKey, 'true');
-          } catch (err) {}
-        };
-        bannerButtons.appendChild(closeBtn);
-        
-        pwaBanner.appendChild(bannerContent);
-        pwaBanner.appendChild(bannerButtons);
       }
     }
-    
+
     chatWindow.appendChild(iframe);
-    
-    // Append PWA banner (either to chat window or document body based on installScope)
-    if (pwaBanner) {
-      var isWebsiteOverlay = pwaConfig.installScope === 'website' && isMobile;
-      if (isWebsiteOverlay) {
-        // Append to document body for website-level overlay
-        document.body.appendChild(pwaBanner);
-      } else {
-        // Append inside chat window
-        chatWindow.appendChild(pwaBanner);
-        // Adjust iframe to not overlap with banner if at bottom
-        if (pwaConfig.position === 'bottom') {
-          chatWindow.style.position = 'relative';
-        }
-      }
-    }
     
     // Create overlay element
     var overlay = null;
@@ -688,6 +581,18 @@ export async function GET(request: NextRequest) {
       widgetContainer.appendChild(overlay);
     }
     widgetContainer.appendChild(chatWindow);
+    
+    // Event listener for closing the PWA banner
+    window.addEventListener('message', function(event) {
+      if (event.data && event.data.type === 'close-pwa-banner') {
+        if (pwaIframe) {
+          pwaIframe.remove();
+          try {
+            localStorage.setItem('pwa_dismissed_' + chatbotId, 'true');
+          } catch (err) {}
+        }
+      }
+    });
     
     // Auto-show with delay
     if (widgetConfig.autoShow) {

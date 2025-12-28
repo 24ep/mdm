@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
@@ -31,12 +31,16 @@ import { Z_INDEX } from '@/lib/z-index'
 import { ChatWidgetButton } from './components/ChatWidgetButton'
 import { WidgetChatContainer } from './components/WidgetChatContainer'
 import { FullPageChatLayout } from './components/FullPageChatLayout'
+import { PWAInstallBanner } from './components/PWAInstallBanner'
 
 export default function ChatPage() {
   const params = useParams()
   const searchParams = useSearchParams()
   const isEmbed = searchParams.get('mode') === 'embed'
+  const isPwaOnly = searchParams.get('mode') === 'pwa-only'
+  console.log('[ChatPage] Search Params:', searchParams.toString(), 'isEmbed:', isEmbed, 'isPwaOnly:', isPwaOnly);
   const urlDeploymentType = searchParams.get('deploymentType') || searchParams.get('type')
+  const isPreview = searchParams.get('preview') === 'true'
   const chatbotId = params?.id as string
   const [previewDeploymentType, setPreviewDeploymentType] = useState<'popover' | 'fullpage' | 'popup-center'>(
     (urlDeploymentType === 'popover' || urlDeploymentType === 'popup-center') ? urlDeploymentType : 'fullpage'
@@ -51,16 +55,36 @@ export default function ChatPage() {
   const [chatKitUnavailable, setChatKitUnavailable] = useState(false)
   // Track if viewport is mobile
   const [isMobile, setIsMobile] = useState(false)
+  // Use ref to track isMobile for resize effect without causing re-runs
+  // This prevents loops where: iframe resize → isMobile change → resize effect → iframe resize
+  const isMobileRef = useRef(false)
 
   // Detect mobile viewport
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
+      // In preview mode (emulator), respect the explicit device selection
+      const previewDevice = searchParams.get('previewDevice')
+      if (isPreview && previewDevice) {
+        const mobile = previewDevice === 'mobile' || previewDevice === 'tablet'
+        setIsMobile(mobile)
+        isMobileRef.current = mobile
+        return
+      }
+
+      // In embed mode (NOT preview/emulator), use screen width
+      // This prevents the small initial iframe size (e.g. 120px) from triggering mobile view
+      // unless the actual device screen is small
+      const useScreen = isEmbed && !isPreview
+      const width = useScreen ? window.screen.width : window.innerWidth
+      // Use 1024 to cover tablets but still exclude desktop monitors
+      const mobile = width < 1024
+      setIsMobile(mobile)
+      isMobileRef.current = mobile
     }
     checkMobile()
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
-  }, [])
+  }, [isEmbed, isPreview])
 
   // Check if page is loaded in an iframe
   useEffect(() => {
@@ -68,11 +92,15 @@ export default function ChatPage() {
   }, [])
 
   // Auto-open on mobile fullpage embed (since popover was converted to fullpage)
+  // FIXED: This caused an infinite loop in Embed mode because closing the widget shrinks the iframe,
+  // which triggers isMobile=true, which forces setIsOpen(true), which expands the iframe.
+  /* 
   useEffect(() => {
     if (isMobile && isEmbed) {
       setIsOpen(true)
     }
   }, [isMobile, isEmbed])
+  */
 
   // Set transparent background for embed mode to prevent white page background
   useEffect(() => {
@@ -110,7 +138,12 @@ export default function ChatPage() {
           // Note: Logic in useEffect below handles auto-show timing, but we should set initial state correctly
 
           // To match Embed logic:
-          const shouldAuto = (loadedChatbot as any).widgetAutoShow !== undefined ? (loadedChatbot as any).widgetAutoShow : true
+          const autoOpenDesktop = (loadedChatbot as any).widgetAutoShowDesktop !== undefined
+            ? (loadedChatbot as any).widgetAutoShowDesktop
+            : ((loadedChatbot as any).widgetAutoShow !== undefined ? (loadedChatbot as any).widgetAutoShow : true)
+          const autoOpenMobile = (loadedChatbot as any).widgetAutoShowMobile || false
+          const shouldAuto = isMobile ? autoOpenMobile : autoOpenDesktop
+
           if (!shouldAuto) {
             setIsOpen(false)
           }
@@ -271,29 +304,88 @@ export default function ChatPage() {
     toggleVoiceOutput,
   } = voiceState
 
+  // Compute if native ChatKit is being used (for skipping redundant auto-show and resize messages)
+  // Native ChatKit handles its own auto-show and resize via ChatKitRenderer/ChatKitWrapper
+  // Note: We only need this for embed mode checking. In embed mode, isDesktopPreview is always false.
+  const isNativeChatKitMode = useMemo(() => {
+    if (!chatbot || chatKitUnavailable) return false
+    const isAgentSDK = chatbot.engineType === 'openai-agent-sdk'
+    const agentId = isAgentSDK ? chatbot.openaiAgentSdkAgentId : chatbot.chatkitAgentId
+    const shouldRender = (chatbot.engineType === 'chatkit' || chatbot.engineType === 'openai-agent-sdk') && agentId
+    // In embed mode, useChatKitInRegularStyle depends on chatbot config only (isMobile && !isEmbed is false when isEmbed=true)
+    // So for embed mode detection, we only check the explicit config flag
+    const regularStyleExplicit = (chatbot as any).useChatKitInRegularStyle === true
+    return shouldRender && !regularStyleExplicit
+  }, [chatbot, chatKitUnavailable])
+
   // Auto-show for widget (only auto-open, don't auto-close)
+  // SKIP for native ChatKit in embed mode - ChatKitRenderer handles its own auto-show logic
+  // to prevent conflicting state management that could cause loops
   useEffect(() => {
     if (!chatbot) return
+    // Skip auto-show for native ChatKit in embed mode - ChatKitRenderer handles its own auto-show
+    if (isNativeChatKitMode && isEmbed) {
+      console.log('[ChatPage] Skipping auto-show - native ChatKit handles its own state')
+      return
+    }
     if (previewDeploymentType === 'fullpage') {
       setIsOpen(true) // Full page always shows
       return
     }
     // For popover/popup-center, start closed to show widget button
     setIsOpen(false)
-    const shouldAuto = (chatbot as any).widgetAutoShow !== undefined ? (chatbot as any).widgetAutoShow : true
+    const autoOpenDesktop = (chatbot as any).widgetAutoShowDesktop !== undefined
+      ? (chatbot as any).widgetAutoShowDesktop
+      : ((chatbot as any).widgetAutoShow !== undefined ? (chatbot as any).widgetAutoShow : true)
+    const autoOpenMobile = (chatbot as any).widgetAutoShowMobile || false
+    const shouldAuto = isMobile ? autoOpenMobile : autoOpenDesktop
+
     if (shouldAuto) {
       const delayMs = ((chatbot as any).widgetAutoShowDelay || 0) * 1000
       const t = setTimeout(() => setIsOpen(true), delayMs)
       return () => clearTimeout(t)
     }
-  }, [chatbot, previewDeploymentType])
+  }, [chatbot, previewDeploymentType, isNativeChatKitMode, isEmbed])
 
   // Notify parent window about open/close state for iframe resizing
+  // SKIP this for native ChatKit in embed mode - ChatKitWrapper handles its own resize messages
+  // to ensure the iframe size matches its internal isOpen state
   useEffect(() => {
-    if (isEmbed || isInIframe) {
-      window.parent.postMessage({ type: 'chat-widget-resize', isOpen }, '*')
+    // Skip if native ChatKit is handling resize messages itself
+    if (isNativeChatKitMode && isEmbed) {
+      console.log('[ChatPage] Skipping resize - native ChatKit handles its own resize messages')
+      return
     }
-  }, [isOpen, isEmbed, isInIframe])
+
+    if (isEmbed || isInIframe) {
+      let width = '100%'
+      let height = '100%'
+
+      const isPopover = previewDeploymentType === 'popover' || previewDeploymentType === 'popup-center'
+
+      if (isPopover) {
+        if (!isOpen) {
+          width = '120px'
+          height = '120px'
+        } else if (!isMobileRef.current) {
+          // Desktop Popover - use ref to avoid dependency loop
+          width = '450px'
+          height = '800px'
+        }
+        // Mobile Open Popover remains 100%
+      }
+
+      console.log('[ChatPage] Sending resize:', { isOpen, width, height, deploymentType: previewDeploymentType, isMobile: isMobileRef.current, isEmbed });
+
+      window.parent.postMessage({
+        type: 'chat-widget-resize',
+        isOpen,
+        width,
+        height,
+        deploymentType: previewDeploymentType
+      }, '*')
+    }
+  }, [isOpen, isEmbed, isInIframe, previewDeploymentType, isNativeChatKitMode]) // Removed isMobile - use ref instead
 
   // Listen for preview mode changes and external control commands
   useEffect(() => {
@@ -355,10 +447,31 @@ export default function ChatPage() {
     return null
   }
 
+  // PWA Only mode - used for separate iframe architecture
+  if (isPwaOnly) {
+    return (
+      <div style={{ pointerEvents: 'auto', position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999 }}>
+        <PWAInstallBanner
+          chatbot={chatbot}
+          isMobile={true}
+          onDismiss={() => {
+            if (isEmbed || isInIframe) {
+              window.parent.postMessage({ type: 'close-pwa-banner' }, '*')
+            }
+          }}
+          onInstall={() => {
+            const baseUrl = window.location.origin
+            const pwaUrl = `${baseUrl}/chat/${chatbotId}?pwa=1`
+            window.open(pwaUrl, '_blank', 'noopener,noreferrer')
+          }}
+        />
+      </div>
+    )
+  }
+
   // Determine deployment type - force fullpage on mobile/tablet for popover modes
   // BUT: In preview/emulator mode with desktop device, preserve the selected deployment type so users can preview widget behavior
   // For mobile/tablet preview, still apply fullpage conversion to match production mobile behavior
-  const isPreview = searchParams.get('preview') === 'true'
   const previewDevice = searchParams.get('previewDevice') // 'desktop' | 'tablet' | 'mobile'
   const isDesktopPreview = isPreview && previewDevice === 'desktop'
   const baseDeploymentType = (isEmbed && searchParams.get('type'))
@@ -367,8 +480,9 @@ export default function ChatPage() {
 
   // On mobile/tablet, auto-switch popover/popup-center to fullpage for better UX
   // EXCEPT: In DESKTOP preview mode (emulator), preserve the selected deployment type
-  // Mobile/tablet preview still uses fullpage to match real mobile behavior
-  const effectiveDeploymentType = (isMobile && !isDesktopPreview && (baseDeploymentType === 'popover' || baseDeploymentType === 'popup-center'))
+  // EXCEPT: In EMBED mode, the iframe size determines "mobile" state. If the iframe is small (closed),
+  // we do NOT want to switch to fullpage, because fullpage forces isOpen=true, which expands the iframe, creating a loop.
+  const effectiveDeploymentType = (isMobile && !isEmbed && !isDesktopPreview && (baseDeploymentType === 'popover' || baseDeploymentType === 'popup-center'))
     ? 'fullpage'
     : baseDeploymentType
 
@@ -381,7 +495,8 @@ export default function ChatPage() {
   // Render ChatKit only if engine type is chatkit or openai-agent-sdk with agent ID
   // In DESKTOP preview mode, don't force regular style on mobile - allow widget preview
   // Mobile/tablet preview still uses regular style on mobile to match production
-  const useChatKitInRegularStyle = (chatbot as any).useChatKitInRegularStyle === true || (isMobile && !isDesktopPreview)
+  // In EMBED mode, do NOT force regular style just because iframe is small (mobile-sized).
+  const useChatKitInRegularStyle = (chatbot as any).useChatKitInRegularStyle === true || (isMobile && !isEmbed && !isDesktopPreview)
   const isAgentSDK = chatbot.engineType === 'openai-agent-sdk'
   const agentId = isAgentSDK ? chatbot.openaiAgentSdkAgentId : chatbot.chatkitAgentId
   const shouldRenderChatKit =
@@ -409,10 +524,9 @@ export default function ChatPage() {
   const isMobileFullpageFromWidget = isMobile && isOriginallyWidgetBased && effectiveDeploymentType === 'fullpage'
 
   const shouldShowWidgetButton = !isNativeChatKit && (
-    // Desktop/tablet popover/popup-center: always show widget (even when open, so user can click to close)
-    (effectiveDeploymentType === 'popover' || effectiveDeploymentType === 'popup-center') ||
-    // Mobile fullpage from widget: show widget ONLY when chat is closed (fullpage covers entire screen)
-    (isMobileFullpageFromWidget && !isOpen)
+    // Show widget button when closed, OR when open on desktop (not mobile)
+    // On mobile, fullpage mode covers screen so we hide button when open
+    isOriginallyWidgetBased && (!isOpen || !isMobile)
   )
 
   // For mobile where popover was converted to fullpage, respect isOpen state
@@ -428,12 +542,16 @@ export default function ChatPage() {
 
     // If it's ChatKit but NOT in regular style mode, use native ChatKit (Desktop only, if enabled)
     if (shouldRenderChatKit && !useChatKitInRegularStyle) {
+      // In embed mode, use a stable isMobile value to prevent re-renders from iframe resizing
+      // which can cause ChatKit SDK to flicker/reinitialize
+      // Native ChatKit handles responsive behavior internally
+      const stableIsMobile = isEmbed ? false : isMobile
       return (
         <ChatKitRenderer
           chatbot={chatbot}
           previewDeploymentType={effectiveDeploymentType}
           isInIframe={isInIframe}
-          isMobile={isMobile}
+          isMobile={stableIsMobile}
           isPreview={isPreview}
           isDesktopPreview={isDesktopPreview}
           onChatKitUnavailable={() => setChatKitUnavailable(true)}
@@ -540,6 +658,7 @@ export default function ChatPage() {
 
   // Debug logging
   console.log('ChatPage Render:', {
+    timestamp: Date.now(),
     chatbotId,
     previewDeploymentType,
     isEmbed,
@@ -576,6 +695,12 @@ export default function ChatPage() {
         backgroundSize: emulatorConfig.backgroundImage ? 'cover' : undefined,
         backgroundPosition: emulatorConfig.backgroundImage ? 'center' : undefined,
         backgroundRepeat: emulatorConfig.backgroundImage ? 'no-repeat' : undefined,
+        // When embedded and closed (or just PWA overlay showing), allow clicks to pass through
+        // unless interactions are needed.
+        // If sticky PWA banner is showing (on mobile), the iframe size is 100%.
+        // We need pointer-events: none on the container so the user can click the host site.
+        // We will re-enable pointer-events: auto on the interactive elements (Banner, Button, Widget Window).
+        pointerEvents: (isEmbed && !isOpen && !isPreview) ? 'none' : 'auto',
       }}
     >
       {/* Preview Type Selector - Fixed at top right (only show when not in iframe) */}
@@ -606,43 +731,35 @@ export default function ChatPage() {
         </div>
       )}
 
-      {/* Click-to-close backdrop for popover/popup-center in embed mode (always active, transparent) */}
-      {/* This allows clicking outside the popover to close it when no visible overlay is configured */}
-      {isEmbed && (effectiveDeploymentType === 'popover' || effectiveDeploymentType === 'popup-center') && isOpen && !overlayStyle && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'transparent',
-            zIndex: Z_INDEX.chatWidgetOverlay,
-          }}
-          aria-hidden="true"
-          onClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            handleClose()
-          }}
-        />
-      )}
+
 
       {overlayStyle && (
         <div style={overlayStyle} aria-hidden="true" onClick={() => setIsOpen(false)} />
       )}
 
       {/* Native ChatKit rendering (renders its own widget/container) */}
-      {isNativeChatKit && renderChatContent()}
-
-      {/* Widget launcher button */}
-      {shouldShowWidgetButton && (
-        <ChatWidgetButton
-          chatbot={chatbot}
-          isOpen={isOpen}
-          onClick={() => setIsOpen(!isOpen)}
-          widgetButtonStyle={widgetButtonStyle}
-          popoverPositionStyle={popoverPositionStyle}
-        />
+      {isNativeChatKit && (
+        <>
+          {/* PWA Banner for native popover mode (Only if NOT host website mode, which has its own fixed banner) */}
+          {((chatbot as any).pwaInstallScope !== 'website') && (
+            <PWAInstallBanner chatbot={chatbot} isMobile={isMobile} />
+          )}
+          {renderChatContent()}
+        </>
       )}
 
+      {/* Widget launcher button - Ensure it is clickable */}
+      {shouldShowWidgetButton && (
+        <div style={{ pointerEvents: 'auto', position: 'absolute', bottom: 0, right: 0, zIndex: Z_INDEX.chatWidget }}>
+          <ChatWidgetButton
+            chatbot={chatbot}
+            isOpen={isOpen}
+            onClick={() => setIsOpen(!isOpen)}
+            widgetButtonStyle={widgetButtonStyle}
+            popoverPositionStyle={popoverPositionStyle}
+          />
+        </div>
+      )}
       {/* Chat container */}
       <AnimatePresence>
         {shouldShowContainer && (
@@ -665,6 +782,15 @@ export default function ChatPage() {
           </WidgetChatContainer>
         )}
       </AnimatePresence>
-    </div>
+
+      {/* PWA Banner for 'Host Website' scope (Overlay) - Renders outside widget container to be visible when closed */}
+      {/* If in preview mode (emulator), we still show it here because it's easier to preview in a single frame. */}
+      {/* In production embed (Host Website mode), it will be in its own separate iframe (see route.ts). */}
+      {isPreview && ((chatbot as any).pwaInstallScope === 'website') && (
+        <div style={{ pointerEvents: 'auto', position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999 }}>
+          <PWAInstallBanner chatbot={chatbot} isMobile={isMobile} />
+        </div>
+      )}
+    </div >
   )
 }

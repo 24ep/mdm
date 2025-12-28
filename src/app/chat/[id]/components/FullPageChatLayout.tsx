@@ -173,6 +173,7 @@ export function FullPageChatLayout({
                                     borderRadius: isWindowedMode ? (chatbot?.chatWindowBorderRadius || chatbot?.borderRadius || '12px') : '0px',
                                     border: isWindowedMode ? `${chatbot?.chatWindowBorderWidth || chatbot?.borderWidth || '1px'} solid ${chatbot?.chatWindowBorderColor || chatbot?.borderColor || 'rgba(0,0,0,0.1)'}` : 'none',
                                     pointerEvents: 'auto', // Ensure chat window allows interaction
+                                    fontFamily: chatbot.chatkitOptions?.theme?.typography?.fontFamily || chatbot?.fontFamily,
                                 }}
                             >
                                 {/* Custom Header for Fullpage Desktop/Mobile (Regular Style) */}

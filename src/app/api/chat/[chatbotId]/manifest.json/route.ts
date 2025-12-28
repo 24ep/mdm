@@ -60,7 +60,7 @@ export async function GET(
     })
   } catch (error) {
     console.error('Error generating PWA manifest:', error)
-    
+
     // Return a basic manifest on error
     const { chatbotId } = await params
     return NextResponse.json({
@@ -104,7 +104,7 @@ function generateIcons(iconUrl: string | null | undefined, customSize?: number) 
 
   // Standard sizes
   const sizes = [48, 72, 96, 128, 144, 192, 256, 384, 512]
-  
+
   // Create base icons list
   const icons = sizes.map(size => ({
     src: iconUrl,

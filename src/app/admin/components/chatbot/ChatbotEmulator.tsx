@@ -309,39 +309,6 @@ export function ChatbotEmulator({
               maxHeight: '100%'
             }}
           >
-            {formData.pwaEnabled && (
-              <div
-                className="absolute top-0 left-0 right-0 z-[50] p-3 flex items-center justify-between shadow-sm"
-                style={{
-                  backgroundColor: (formData as any).pwaBannerBgColor || '#ffffff',
-                  color: (formData as any).pwaBannerFontColor || '#000000'
-                }}
-              >
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-gray-200 flex items-center justify-center overflow-hidden">
-                    {(formData as any).pwaIconUrl ? (
-                      <img src={(formData as any).pwaIconUrl} alt="App Icon" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-xs font-bold">App</span>
-                    )}
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-semibold leading-tight">{(formData as any).pwaBannerText || 'Install our App'}</span>
-                    <span className="text-xs opacity-80">Add to home screen</span>
-                  </div>
-                </div>
-                <Button
-                  size="sm"
-                  className="h-7 text-xs px-3"
-                  style={{
-                    backgroundColor: (formData as any).pwaBannerButtonBgColor || '#000000',
-                    color: (formData as any).pwaBannerButtonTextColor || '#ffffff'
-                  }}
-                >
-                  Install
-                </Button>
-              </div>
-            )}
             <iframe
               ref={emulatorRef}
               src={`/chat/${selectedChatbot.id}?preview=true&deploymentType=${previewMode}&previewDevice=${deviceType}`}

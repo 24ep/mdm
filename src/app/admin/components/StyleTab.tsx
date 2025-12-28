@@ -15,7 +15,7 @@ export function StyleTab({
 
   // If ChatKit engine, show ChatKit theme/style config
   if (engineType === 'chatkit') {
-    return <ChatKitStyleConfig formData={formData} setFormData={setFormData} />
+    return <ChatKitStyleConfig formData={formData} setFormData={setFormData} chatkitOptions={formData.chatkitOptions} />
   }
 
   // Otherwise (including openai-agent-sdk), show regular style config
