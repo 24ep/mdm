@@ -78,6 +78,8 @@ model User {
   knowledgeMentions            KnowledgeMention[]            @relation("UserKnowledgeMentions")
   knowledgeMentionCreators     KnowledgeMention[]            @relation("UserKnowledgeMentionCreators")
   knowledgePresence            KnowledgePresence[]           @relation("UserKnowledgePresence")
+  createdWebsitePWAs           WebsitePWA[]                  @relation("WebsitePWACreator")
+  websitePWAVersions           WebsitePWAVersion[]           @relation("WebsitePWAVersionCreator")
 
   @@map("users")
 }
@@ -124,6 +126,7 @@ model Space {
   pluginReviews           PluginReview[]           @relation("SpacePluginReviews")
   knowledgeCollections    KnowledgeCollection[]    @relation("SpaceKnowledgeCollections")
   apiWorkspaces           ApiWorkspace[]           @relation("SpaceApiWorkspaces")
+  websitePWAs             WebsitePWA[]             @relation("SpaceWebsitePWAs")
 
   @@map("spaces")
 }
@@ -2344,4 +2347,72 @@ model Theme {
   @@index([themeMode])
   @@index([tags], type: Gin) // GIN index for array search
   @@map("themes")
+}
+
+// PWA Builder Configuration
+model WebsitePWA {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String?  @db.Text
+  url         String   // The website URL where this PWA will be installed
+  
+  // Branding
+  iconUrl     String?  @map("icon_url")
+  themeColor  String?  @default("#ffffff") @map("theme_color")
+  bgColor     String?  @default("#ffffff") @map("bg_color")
+  shortName   String?  @map("short_name")
+  
+  // Manifest Settings
+  displayMode String   @default("standalone") @map("display_mode") // standalone, minimal-ui, fullscreen, browser
+  orientation String   @default("any") // any, natural, portrait, landscape
+  scope       String   @default("/")
+  startUrl    String   @default("/") @map("start_url")
+  
+  // Extended Metadata
+  screenshots String[] @default([])
+  categories  String[] @default([])
+  shortcuts   Json?    @default("[]") // Array of {name, url, icons}
+  manifestParams Json? @default("{}") // Additional manifest properties (dir, lang, etc.)
+  
+  // Install Prompt Settings
+  installMode String   @default("browser") @map("install_mode") // browser, custom, manual
+  promptDelay Int      @default(0) @map("prompt_delay") // seconds before showing prompt
+  installBannerConfig Json? @default("{}") @map("install_banner_config") // Custom styling for the banner
+  
+  // Metadata & Status
+  isPublished Boolean  @default(false) @map("is_published")
+  currentVersion String? @map("current_version")
+  
+  createdBy   String   @map("created_by") @db.Uuid
+  spaceId     String?  @map("space_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  creator     User     @relation("WebsitePWACreator", fields: [createdBy], references: [id])
+  space       Space?   @relation("SpaceWebsitePWAs", fields: [spaceId], references: [id])
+  versions    WebsitePWAVersion[] @relation("WebsitePWAVersions")
+  
+  @@map("website_pwas")
+}
+
+model WebsitePWAVersion {
+  id            String   @id @default(uuid()) @db.Uuid
+  pwaId         String   @map("pwa_id") @db.Uuid
+  version       String   // e.g., 1.0.0
+  config        Json     // Full snapshot of configuration
+  changeLog     String?  @map("change_log")
+  
+  isPublished   Boolean  @default(false) @map("is_published")
+  publishedAt   DateTime? @map("published_at")
+  
+  createdBy     String   @map("created_by") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  pwa         WebsitePWA @relation("WebsitePWAVersions", fields: [pwaId], references: [id], onDelete: Cascade)
+  creator     User       @relation("WebsitePWAVersionCreator", fields: [createdBy], references: [id])
+
+  @@map("website_pwa_versions")
 }

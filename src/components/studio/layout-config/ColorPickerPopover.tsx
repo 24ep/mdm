@@ -409,7 +409,11 @@ export function ColorPickerPopover({
       const baseColor = extractBaseColor(color)
       // Use functional update to avoid stale closure
       setRecentColors((prevColors) => {
-        const updated = [baseColor, ...prevColors.filter(c => c !== baseColor)].slice(0, MAX_RECENT_COLORS)
+        // Filter out existing color (case-insensitive) to prevent duplicates like #FFF and #fff
+        const filtered = prevColors.filter(c => c.toLowerCase() !== baseColor.toLowerCase())
+        // Add new color to the beginning
+        const updated = [baseColor, ...filtered].slice(0, MAX_RECENT_COLORS)
+        
         if (typeof window !== 'undefined') {
           try {
             localStorage.setItem(RECENT_COLORS_KEY, JSON.stringify(updated))
@@ -1354,12 +1358,10 @@ export function ColorPickerPopover({
                                 className="absolute left-1 top-1/2 -translate-y-1/2 z-10 cursor-pointer shadow-sm hover:scale-105 transition-transform"
                                 style={{
                                   ...getSwatchStyle(stop.color),
-                                  background: stop.color,
-                                  backgroundImage: stop.color, // Ensure gradient visibility
-                                  width: '20px',
-                                  height: '20px',
-                                  minWidth: '20px',
-                                  minHeight: '20px',
+                                  width: '16px',
+                                  height: '16px',
+                                  minWidth: '16px',
+                                  minHeight: '16px',
                                   padding: 0,
                                   border: 'none',
                                   borderRadius: '2px',
@@ -1372,7 +1374,7 @@ export function ColorPickerPopover({
                                 type="text"
                                 value={stop.color}
                                 onChange={(e) => updateGradientStop(index, { color: e.target.value })}
-                                className="h-7 text-xs w-full pl-8"
+                                className="h-7 text-xs w-full pl-7"
                               />
                             </div>
                           </div>

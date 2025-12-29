@@ -36,7 +36,9 @@ async function getHandler(request: NextRequest) {
     ),
     created: space.createdAt,
     spaceId: space.id,
-    spaceName: space.name
+    spaceName: space.name,
+    // TODO: Dynamically Determine storage name based on configuration
+    storageName: 'Default Storage' 
   }))
 
   return NextResponse.json({ buckets })

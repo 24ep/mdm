@@ -40,6 +40,13 @@ else
   echo "⚠️  Warning: Database health check failed, but continuing..."
 fi
 
+# Generate Prisma client first to ensure latest schema
+echo ""
+echo "=== Generating Prisma client ==="
+npx prisma generate || {
+  echo "⚠️  Prisma generate failed"
+}
+
 # Run Prisma migrations
 echo ""
 echo "=== Syncing Prisma schema with database ==="

@@ -124,130 +124,93 @@ export function PWAInstallBanner({ chatbot, onInstall, onDismiss, isMobile }: PW
         }
     }, [pwaEnabled, dismissed, isOverlay, position, configuredPosition])
 
-    // Base styles
-    // Base styles
-    let containerClass = "flex items-center justify-between"
-    let containerStyle: React.CSSProperties = {
-        background: (chatbot as any).pwaBannerBgColor || '#ffffff',
-        color: (chatbot as any).pwaBannerFontColor || '#000000',
-        fontFamily: (chatbot as any).pwaBannerFontFamily || undefined,
-        fontSize: (chatbot as any).pwaBannerFontSize || undefined,
-        borderRadius: (chatbot as any).pwaBannerBorderRadius || undefined,
-        boxShadow: (chatbot as any).pwaBannerShadow || (position === 'floating-top' || position === 'floating-bottom' ? '0 2px 10px rgba(0,0,0,0.15)' : undefined),
-        padding: (chatbot as any).pwaBannerPadding || '12px',
-        pointerEvents: 'auto',
-        zIndex: position === 'floating-top' ? 5000 : 50
-    }
+    // Use the new nested config object if available, otherwise fallback to flat props
+    const styleConfig = (chatbot as any).installBannerConfig || {}
+    
+    // --- Container Styles ---
+    let containerClass = "flex items-center justify-between pointer-events-auto" 
+    const isFloating = position === 'floating-top' || position === 'floating-bottom'
 
-    // Position-specific logic
     if (position === 'floating-top') {
-        containerClass += " fixed top-0 left-0 right-0"
-        // Handle margins for floating elements
-        if ((chatbot as any).pwaBannerMargin) {
-            containerStyle.top = (chatbot as any).pwaBannerMargin
-            containerStyle.left = (chatbot as any).pwaBannerMargin
-            containerStyle.right = (chatbot as any).pwaBannerMargin
-            containerStyle.width = 'auto' // Allow right/left to constrain width
-        }
+        containerClass += " fixed top-0 left-0 right-0 z-[5000]"
     } else if (position === 'floating-bottom') {
-        // 80px approx to clear standard chat input, usually 0 if inside a flex container that ends above input
-        // But the user requested "floating near composer", which implies absolute positioning over content
-        // Adjust bottom value safely. Assuming standard chat input height is ~60-80px.
-        // If it's pure floating, it might overlay content. 
-        containerClass += " absolute bottom-[90px] left-0 right-0"
-        if ((chatbot as any).pwaBannerMargin) {
-            containerStyle.bottom = `calc(90px + ${(chatbot as any).pwaBannerMargin})`
-            containerStyle.left = (chatbot as any).pwaBannerMargin
-            containerStyle.right = (chatbot as any).pwaBannerMargin
-            containerStyle.width = 'auto'
-        }
-    } else if (position === 'top-of-header') {
-        containerClass += " border-b" // Removed w-full to allow margins to work correctly
-        containerStyle.order = -1 // Move above header in flex column
-        if ((chatbot as any).pwaBannerMargin) {
-            containerStyle.margin = (chatbot as any).pwaBannerMargin
-        }
+        containerClass += " absolute bottom-[90px] left-0 right-0 z-[50]"
     } else {
-        // under-header (default)
-        containerClass += " border-b" // Removed w-full
-        if ((chatbot as any).pwaBannerMargin) {
-            containerStyle.margin = (chatbot as any).pwaBannerMargin
-        }
+        containerClass += " border-b"
+        styleConfig.bannerBorderRadius = '0px' // Force square if not floating
     }
 
-    // Border configuration
-    if ((chatbot as any).pwaBannerBorderWidth || (chatbot as any).pwaBannerBorderColor) {
-        containerStyle.borderWidth = (chatbot as any).pwaBannerBorderWidth || '1px'
-        containerStyle.borderColor = (chatbot as any).pwaBannerBorderColor || '#e2e8f0'
-        containerStyle.borderStyle = 'solid'
-        // Remove default border-b class if custom border is set to avoid conflict/double borders
-        // Remove default border-b class if custom border is set to avoid conflict/double borders
-        containerClass = containerClass.replace('border-b', '')
+    // Merge styles
+    const containerStyle: React.CSSProperties = {
+        background: styleConfig.bannerBgColor || (chatbot as any).pwaBannerBgColor || '#ffffff',
+        color: styleConfig.bannerTextColor || (chatbot as any).pwaBannerFontColor || '#000000',
+        padding: styleConfig.bannerPadding || (chatbot as any).pwaBannerPadding || '12px',
+        margin: styleConfig.bannerMargin || (chatbot as any).pwaBannerMargin || (isFloating ? '16px' : '0px'),
+        borderRadius: styleConfig.bannerBorderRadius || (chatbot as any).pwaBannerBorderRadius || (isFloating ? '12px' : '0px'),
+        boxShadow: styleConfig.bannerShadow || (chatbot as any).pwaBannerShadow || (isFloating ? '0 4px 12px rgba(0,0,0,0.15)' : 'none'),
+        borderWidth: styleConfig.bannerBorderWidth || (chatbot as any).pwaBannerBorderWidth,
+        borderColor: styleConfig.bannerBorderColor || (chatbot as any).pwaBannerBorderColor,
+        borderStyle: (styleConfig.bannerBorderWidth || (chatbot as any).pwaBannerBorderWidth) ? 'solid' : undefined,
     }
 
-    // Apply granular border widths if present (overrides general border width)
-    if ((chatbot as any).pwaBannerBorderWidthTop) containerStyle.borderTopWidth = (chatbot as any).pwaBannerBorderWidthTop
-    if ((chatbot as any).pwaBannerBorderWidthRight) containerStyle.borderRightWidth = (chatbot as any).pwaBannerBorderWidthRight
-    if ((chatbot as any).pwaBannerBorderWidthBottom) containerStyle.borderBottomWidth = (chatbot as any).pwaBannerBorderWidthBottom
-    if ((chatbot as any).pwaBannerBorderWidthLeft) containerStyle.borderLeftWidth = (chatbot as any).pwaBannerBorderWidthLeft
-
-    // Shadow configuration
-    const shadowX = (chatbot as any).pwaBannerShadowX || '0px'
-    const shadowY = (chatbot as any).pwaBannerShadowY || '0px'
-    const shadowBlur = (chatbot as any).pwaBannerShadowBlur || '0px'
-    const shadowSpread = (chatbot as any).pwaBannerShadowSpread || '0px'
-    const shadowColor = (chatbot as any).pwaBannerShadowColor || 'rgba(0,0,0,0)'
-
-    // Only apply granular shadow if at least one property is set (checking valid value presence)
-    if ((chatbot as any).pwaBannerShadowX || (chatbot as any).pwaBannerShadowY || (chatbot as any).pwaBannerShadowBlur || (chatbot as any).pwaBannerShadowSpread || (chatbot as any).pwaBannerShadowColor) {
-        containerStyle.boxShadow = `${shadowX} ${shadowY} ${shadowBlur} ${shadowSpread} ${shadowColor}`
-    } else if ((chatbot as any).pwaBannerShadow) {
-        // Fallback to legacy shadow string
-        containerStyle.boxShadow = (chatbot as any).pwaBannerShadow
+    // --- Button Styles ---
+    const buttonStyle: React.CSSProperties = {
+        backgroundColor: styleConfig.buttonBgColor || (chatbot as any).pwaBannerButtonBgColor || '#000000',
+        color: styleConfig.buttonTextColor || (chatbot as any).pwaBannerButtonTextColor || '#ffffff',
+        borderRadius: styleConfig.buttonBorderRadius || (chatbot as any).pwaBannerButtonBorderRadius || '4px',
+        borderWidth: styleConfig.buttonBorderWidth || '0px',
+        borderColor: styleConfig.buttonBorderColor || 'transparent',
+        borderStyle: styleConfig.buttonBorderWidth ? 'solid' : undefined,
+        fontSize: (chatbot as any).pwaBannerButtonFontSize || '13px',
+        boxShadow: styleConfig.buttonShadow || 'none',
     }
 
     return (
-        <div
-            className={containerClass}
-            style={containerStyle}
-        >
-            <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-gray-200 flex items-center justify-center overflow-hidden">
-                    {(chatbot as any).pwaIconUrl ? (
+        <div className={containerClass} style={containerStyle}>
+            <div className="flex items-center gap-3 overflow-hidden">
+                <style jsx>{`
+                   .install-btn:hover {
+                      background-color: ${styleConfig.buttonHoverBgColor || styleConfig.buttonBgColor || '#333'} !important;
+                      color: ${styleConfig.buttonHoverTextColor} !important;
+                   }
+                `}</style>
+                <div className="w-10 h-10 shrink-0 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden border">
+                    {(chatbot as any).pwaIconUrl || (chatbot as any).pwaThemeColor ? (
                         <img
                             src={(chatbot as any).pwaIconUrl}
-                            alt="App Icon"
+                            alt="App"
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                                e.currentTarget.style.display = 'none'; 
+                                e.currentTarget.parentElement!.style.backgroundColor = (chatbot as any).pwaThemeColor || '#ddd'
+                            }}
                         />
                     ) : (
-                        <span className="text-xs font-bold">App</span>
+                        <span className="text-xs font-bold text-gray-400">App</span>
                     )}
                 </div>
-                <div className="flex flex-col">
-                    <span className="text-sm font-semibold leading-tight">
-                        {(chatbot as any).pwaBannerText || 'Install our App'}
+                <div className="flex flex-col min-w-0">
+                    <span className="text-sm font-semibold leading-tight truncate">
+                        {styleConfig.titleText || (chatbot as any).pwaBannerText || 'Install Application'}
                     </span>
-                    <span className="text-xs opacity-80">Add to home screen</span>
+                    <span className="text-xs opacity-80 truncate">
+                        {styleConfig.descriptionText || 'Add to home screen'}
+                    </span>
                 </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
                 <Button
                     size="sm"
-                    className="h-7 px-3"
+                    className="install-btn h-8 px-4 font-medium transition-colors"
                     onClick={handleInstall}
-                    style={{
-                        backgroundColor: (chatbot as any).pwaBannerButtonBgColor || '#000000',
-                        color: (chatbot as any).pwaBannerButtonTextColor || '#ffffff',
-                        borderRadius: (chatbot as any).pwaBannerButtonBorderRadius || undefined,
-                        fontSize: (chatbot as any).pwaBannerButtonFontSize || '12px'
-                    }}
+                    style={buttonStyle}
                 >
                     Install
                 </Button>
                 <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 w-7 p-0 opacity-60 hover:opacity-100"
+                    className="h-8 w-8 p-0 opacity-50 hover:opacity-100 hover:bg-black/5 rounded-full"
                     onClick={handleDismiss}
                 >
                     <X className="h-4 w-4" />

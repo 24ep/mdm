@@ -294,13 +294,14 @@ export function PlatformSidebar({
         { id: 'overview', name: 'Homepage', icon: Monitor, href: '/' },
       ],
       tools: [
-        { id: 'marketplace', name: 'Marketplace', icon: Store, href: '/marketplace' },
         { id: 'bi', name: 'BI & Reports', icon: BarChart3, href: '/tools/bi' },
         { id: 'storage', name: 'Storage', icon: HardDrive, href: '/tools/storage' },
         { id: 'data-governance', name: 'Data Governance', icon: Shield, href: '/tools/data-governance' },
-        { id: 'ai-chat-ui', name: 'Chat Embed UI', icon: MessageCircle, href: '/tools/ai-chat-ui' },
+        { id: 'pwa', name: 'PWA Manager', icon: Monitor, href: '/tools/pwa' },
+        { id: 'ai-chat-ui', name: 'Chatbot UI Manager', icon: MessageCircle, href: '/tools/ai-chat-ui' },
       ],
       system: [
+        { id: 'marketplace', name: 'Marketplace', icon: Store, href: '/marketplace' },
         { id: 'users', name: 'Users & Roles', icon: Users, href: '/system/users' },
         { id: 'space-layouts', name: 'Space Layouts', icon: Layout, href: '/system/space-layouts' },
         { id: 'assets', name: 'Asset Management', icon: Database, href: '/system/assets' },
@@ -382,15 +383,14 @@ export function PlatformSidebar({
     kernels: ['kernels'],
     system: ['logs', 'audit', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache', 'backup'],
     security: ['security', 'performance'],
-    integrations: ['settings', 'themes', 'integrations', 'api']
+    integrations: ['marketplace', 'settings', 'themes', 'integrations', 'api']
   }
 
   // Define tool categories for the Tools group
   const toolSections: Record<string, string[]> = {
     'Reporting': ['bi'],
-    'AI & Assistants': ['ai-analyst', 'ai-chat-ui'],
-    'Data Tools': ['bigquery', 'notebook', 'storage', 'data-governance'],
-    'Platform Services': ['marketplace']
+    'Website Embed widget': ['ai-analyst', 'ai-chat-ui', 'pwa'],
+    'Data Tools': ['bigquery', 'notebook', 'storage', 'data-governance']
   }
 
 

@@ -38,7 +38,7 @@ export function PWATab({
                     <Switch
                         id="pwa-enabled"
                         checked={formData.pwaEnabled || false}
-                        onCheckedChange={(checked) => setFormData({ ...formData, pwaEnabled: checked })}
+                        onCheckedChange={(checked) => setFormData({ ...formData, pwaEnabled: checked, pwaInstallScope: 'chat' })}
                     />
                 </div>
             </div>
@@ -73,24 +73,7 @@ export function PWATab({
                                     <Label className="text-base font-medium">General Settings</Label>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <Label>Installation Context</Label>
-                                    <Select
-                                        value={formData.pwaInstallScope || 'chat'}
-                                        onValueChange={(v) => setFormData({ ...formData, pwaInstallScope: v as 'chat' | 'website' })}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="chat">Chat Widget (Inline)</SelectItem>
-                                            <SelectItem value="website">Host Website (Top Overlay)</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <p className="text-xs text-muted-foreground">
-                                        "Chat Widget" places banner inside the flow. "Host Website" overlays it at the top of the screen.
-                                    </p>
-                                </div>
+
 
                                 <div className="space-y-2">
                                     <Label>Banner Text</Label>

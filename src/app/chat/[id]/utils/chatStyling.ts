@@ -88,8 +88,8 @@ export function getContainerStyle(
     backgroundStyle.backgroundRepeat = 'no-repeat'
   }
 
-  // Common background logic helper
-  const getBackgroundStyle = () => {
+    // Common background logic helper
+    const getBackgroundStyle = () => {
     // Priority: Emulator Config > Chatbot Config (Theme) > Chatbot Config (Root) > Default
 
     // If emulator config has explicit background (e.g. from preview settings), use it
@@ -116,6 +116,15 @@ export function getContainerStyle(
         backgroundRepeat: 'no-repeat',
         backgroundColor: opacity < 100 ? `rgba(255, 255, 255, ${opacity / 100})` : '#ffffff',
       }
+    }
+    
+    // Check if it's a gradient
+    if (bgValue && bgValue.includes('gradient')) {
+        return {
+            background: bgValue,
+            // Gradients don't support simple opacity modifiers easily without parsing
+            // So we return as-is. User should define opacity in the gradient string.
+        }
     }
 
     // It's a color value
@@ -437,6 +446,10 @@ export function getWidgetButtonStyle(chatbot: ChatbotConfig): React.CSSPropertie
     if (opacity < 100) {
       baseStyle.backgroundColor = `rgba(255, 255, 255, ${opacity / 100})` // Fallback color with opacity
     }
+  } else if (widgetBgValue.includes('gradient')) {
+    // Apply gradient to background property
+    baseStyle.background = widgetBgValue
+    // Gradients don't support simple opacity modifiers easily without parsing
   } else {
     // It's a color value - apply opacity
     if (opacity < 100) {

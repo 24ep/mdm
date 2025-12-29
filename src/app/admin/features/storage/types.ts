@@ -12,6 +12,7 @@ export interface Bucket {
   created: Date
   spaceId?: string
   spaceName?: string
+  storageName?: string // Added for UI display
 }
 
 export interface StorageFile {

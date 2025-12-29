@@ -67,6 +67,8 @@ import { cn } from '@/lib/utils'
 import { FileViewer } from '@/components/storage/FileViewer'
 import { Bucket, StorageFile } from '../types'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { MultiSelect } from '@/components/ui/multi-select'
+import { StorageConnections } from '../../system/components/StorageConnections'
 import { StorageProviderType } from '@/lib/storage-config'
 
 interface StorageConnection {
@@ -89,7 +91,7 @@ export function StorageManagement() {
   const [buckets, setBuckets] = useState<Bucket[]>([])
   const [storageConnections, setStorageConnections] = useState<StorageConnection[]>([])
   const [selectedBucket, setSelectedBucket] = useState<string | null>(null)
-  const [selectedSourceType, setSelectedSourceType] = useState<string>('all') // 'all' or specific type
+  const [selectedSourceTypes, setSelectedSourceTypes] = useState<string[]>(['all'])
   const [files, setFiles] = useState<StorageFile[]>([])
   const [currentPath, setCurrentPath] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -97,6 +99,7 @@ export function StorageManagement() {
   const [isLoading, setIsLoading] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set())
   const [showCreateBucket, setShowCreateBucket] = useState(false)
+  const [showConnectionsManager, setShowConnectionsManager] = useState(false)
   const [showUploadDialog, setShowUploadDialog] = useState(false)
   const [newBucketName, setNewBucketName] = useState('')
   const [isPublicBucket, setIsPublicBucket] = useState(false)
@@ -124,7 +127,7 @@ export function StorageManagement() {
       // Load files from all sources when no bucket is selected
       loadAllFiles()
     }
-  }, [selectedBucket, currentPath, selectedSourceType, storageConnections.length, searchTerm])
+  }, [selectedBucket, currentPath, selectedSourceTypes, storageConnections.length, searchTerm])
 
   const loadBuckets = async () => {
     setIsLoading(true)
@@ -158,8 +161,8 @@ export function StorageManagement() {
     try {
       const allFiles: StorageFile[] = []
 
-      // If 'bucket' is selected or 'all', load from buckets
-      if (selectedSourceType === 'bucket' || selectedSourceType === 'all') {
+      // If 'bucket' is selected or 'all' is in the list with no specific filters preventing buckets
+      if (selectedSourceTypes.includes('all') || selectedSourceTypes.includes('bucket')) {
         // Load files from all buckets
         for (const bucket of buckets) {
           try {
@@ -184,16 +187,15 @@ export function StorageManagement() {
       }
 
       // Load files from storage connections (if not filtering by bucket only)
-      if (selectedSourceType !== 'bucket') {
+      if (!selectedSourceTypes.includes('bucket') || selectedSourceTypes.includes('all') || selectedSourceTypes.length > 1) {
         const activeConnections = storageConnections.filter(
           (conn) => conn.isActive && conn.status === 'connected'
         )
 
         // Filter by source type if not 'all'
-        const filteredConnections =
-          selectedSourceType === 'all'
+        const filteredConnections = selectedSourceTypes.includes('all')
             ? activeConnections
-            : activeConnections.filter((conn) => conn.type === selectedSourceType)
+            : activeConnections.filter((conn) => selectedSourceTypes.includes(conn.type))
 
         // Fetch files from each connection
         for (const connection of filteredConnections) {
@@ -530,25 +532,37 @@ export function StorageManagement() {
         <div className="p-4 border-b">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-foreground">Sources</h2>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-8 w-8 p-0"
-              onClick={() => setShowCreateBucket(true)}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0"
+                onClick={() => setShowCreateBucket(true)}
+                title="Create Bucket"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0"
+                onClick={() => setShowConnectionsManager(true)}
+                title="Add Storage Connection"
+              >
+                <Server className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
           <Button
             variant="outline"
             size="sm"
             className={cn(
               "w-full justify-start mb-2",
-              !selectedBucket && selectedSourceType === 'all' && "bg-muted font-medium"
+              !selectedBucket && selectedSourceTypes.includes('all') && "bg-muted font-medium"
             )}
             onClick={() => {
               setSelectedBucket(null)
-              setSelectedSourceType('all')
+              setSelectedSourceTypes(['all'])
               setCurrentPath([])
             }}
           >
@@ -592,7 +606,7 @@ export function StorageManagement() {
                   )}
                 </div>
                 <div className="text-xs text-muted-foreground mt-1 ml-6">
-                  {bucket.fileCount} files • {formatBytes(bucket.totalSize)}
+                  {bucket.fileCount} files • Storage: {bucket.storageName || 'System Default'}
                 </div>
               </button>
             ))}
@@ -606,14 +620,14 @@ export function StorageManagement() {
                     key={connection.id}
                     onClick={() => {
                       setSelectedBucket(null)
-                      setSelectedSourceType(connection.type)
+                      setSelectedSourceTypes([connection.type])
                       setCurrentPath([])
                     }}
                     className={cn(
                       "w-full text-left px-3 py-2 rounded-md text-sm transition-colors",
                       "hover:bg-muted",
                       !selectedBucket &&
-                        selectedSourceType === connection.type &&
+                        selectedSourceTypes.includes(connection.type) &&
                         "bg-muted font-medium"
                     )}
                   >
@@ -709,20 +723,33 @@ export function StorageManagement() {
               />
             </div>
             {!selectedBucket && (
-              <Select value={selectedSourceType} onValueChange={setSelectedSourceType}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Filter by source" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Sources</SelectItem>
-                  <SelectItem value="bucket">Buckets</SelectItem>
-                  <SelectItem value="minio">MinIO</SelectItem>
-                  <SelectItem value="s3">AWS S3</SelectItem>
-                  <SelectItem value="sftp">SFTP</SelectItem>
-                  <SelectItem value="onedrive">OneDrive</SelectItem>
-                  <SelectItem value="google_drive">Google Drive</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="w-64">
+                <MultiSelect
+                  options={[
+                    { value: 'all', label: 'All Sources' },
+                    { value: 'bucket', label: 'Buckets' },
+                    { value: 'minio', label: 'MinIO' },
+                    { value: 's3', label: 'AWS S3' },
+                    { value: 'sftp', label: 'SFTP' },
+                    { value: 'onedrive', label: 'OneDrive' },
+                    { value: 'google_drive', label: 'Google Drive' },
+                  ]}
+                  selected={selectedSourceTypes}
+                  onChange={(selected) => {
+                    // Logic to handle 'all' selection exclusively
+                    if (selected.includes('all') && !selectedSourceTypes.includes('all')) {
+                      setSelectedSourceTypes(['all'])
+                    } else if (selected.includes('all') && selected.length > 1) {
+                      setSelectedSourceTypes(selected.filter(s => s !== 'all'))
+                    } else if (selected.length === 0) {
+                      setSelectedSourceTypes(['all'])
+                    } else {
+                      setSelectedSourceTypes(selected)
+                    }
+                  }}
+                  placeholder="Filter sources"
+                />
+              </div>
             )}
           </div>
         </div>
@@ -735,9 +762,9 @@ export function StorageManagement() {
                 <HardDrive className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No files found</h3>
                 <p className="text-muted-foreground mb-4">
-                  {selectedSourceType === 'all'
+                  {selectedSourceTypes.includes('all')
                     ? 'Files from all storage sources will appear here'
-                    : `No files found from ${selectedSourceType} sources`}
+                    : `No files found from selected sources`}
                 </p>
               </div>
             </div>
@@ -1530,6 +1557,11 @@ export function StorageManagement() {
               setShowMove(false)
             }}>Move</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={showConnectionsManager} onOpenChange={setShowConnectionsManager}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <StorageConnections />
         </DialogContent>
       </Dialog>
     </div>
