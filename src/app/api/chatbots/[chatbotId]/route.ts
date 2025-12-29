@@ -68,8 +68,14 @@ async function putHandler(
   
   let body: any
   try {
-    body = await request.json()
-    console.log('[PUT /api/chatbots] Request body:', JSON.stringify(body, null, 2))
+    const rawBody = await request.text()
+    console.log('[PUT /api/chatbots] Raw body length:', rawBody.length)
+    if (!rawBody) {
+        console.error('[PUT /api/chatbots] Empty request body')
+        return NextResponse.json({ error: 'Empty request body' }, { status: 400 })
+    }
+    body = JSON.parse(rawBody)
+    console.log('[PUT /api/chatbots] Request body parsed successfully')
   } catch (parseError) {
     console.error('[PUT /api/chatbots] Failed to parse request body:', parseError)
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
