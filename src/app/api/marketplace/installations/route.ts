@@ -108,6 +108,7 @@ async function postHandler(request: NextRequest) {
   const { session } = authResult
 
     const body = await request.json()
+    console.log('[POST /api/marketplace/installations] Installing plugin:', body)
     const { serviceId, spaceId, config, credentials } = body
 
     if (!serviceId) {

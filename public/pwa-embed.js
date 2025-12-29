@@ -32,10 +32,13 @@
     if (!config) return;
 
     let deferredPrompt;
+    // Detect Mobile (iOS or Android)
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isAndroid = /Android/.test(navigator.userAgent);
+    const isMobile = isIOS || isAndroid;
+    
+    // Check standalone
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator.standalone);
-
-    // Don't show if already installed (standalone mode)
     if (isStandalone) return;
 
     const container = document.createElement('div');
@@ -46,17 +49,21 @@
     
     // Style handling from config
     const styles = config.installBannerConfig || {};
-    // Default or Override
     const bannerBg = styles.bannerBgColor || config.bgColor || '#fff';
     const bannerText = styles.bannerTextColor || config.themeColor || '#000';
     const btnBg = styles.buttonBgColor || '#000';
     const btnText = styles.buttonTextColor || '#fff';
     
-    // Position Logic
     const isTop = styles.bannerPosition === 'top';
     const positionStyles = isTop 
         ? `top: 0; bottom: auto; transform: translateY(-100%);` 
         : `bottom: 0; top: auto; transform: translateY(100%);`;
+
+    // Dynamic instructions based on OS
+    const instructionsTitle = isIOS ? 'Install on iOS' : 'Install App';
+    const step1Icon = isIOS ? 'Share Icon' : 'Menu Icon (⋮)';
+    const step1Text = isIOS ? 'Tap the <strong>Share</strong> icon in the menu bar.' : 'Tap the <strong>Menu</strong> icon (⋮) in the browser.';
+    const step2Text = isIOS ? 'Scroll down and select <strong>Add to Home Screen</strong>.' : 'Select <strong>Install App</strong> or <strong>Add to Home screen</strong>.';
 
     const styleSheet = document.createElement('style');
     styleSheet.textContent = `
@@ -136,8 +143,8 @@
           font-size: 18px;
           display: flex;
        }
-       /* iOS Instructions Modal */
-       .ios-modal {
+       /* Instructions Modal */
+       .instruction-modal {
           position: fixed;
           bottom: 0;
           left: 0;
@@ -152,26 +159,26 @@
           color: #333;
           display: none;
        }
-       .ios-modal.open {
+       .instruction-modal.open {
           transform: translateY(0);
           display: block;
        }
-       .ios-modal-header {
+       .modal-header {
          display: flex;
          justify-content: space-between;
          align-items: center;
          margin-bottom: 16px;
        }
-       .ios-modal-title { font-weight: bold; font-size: 18px; }
-       .ios-instruction {
+       .modal-title { font-weight: bold; font-size: 18px; }
+       .instruction-step {
          display: flex;
          align-items: center;
          gap: 12px;
          margin-bottom: 16px;
          font-size: 15px;
        }
-       .ios-icon { font-size: 24px; }
-       .ios-overlay {
+       .step-icon { font-size: 24px; }
+       .modal-overlay {
           position: fixed;
           top: 0; left: 0; right: 0; bottom: 0;
           background: rgba(0,0,0,0.5);
@@ -180,7 +187,7 @@
           pointer-events: none;
           transition: opacity 0.3s;
        }
-       .ios-overlay.visible {
+       .modal-overlay.visible {
           opacity: 1;
           pointer-events: auto;
        }
@@ -206,55 +213,50 @@
     `;
     shadow.appendChild(banner);
 
-    // iOS Modal Components
+    // Modal Components
     const overlay = document.createElement('div');
-    overlay.className = 'ios-overlay';
+    overlay.className = 'modal-overlay';
     shadow.appendChild(overlay);
 
-    const iosModal = document.createElement('div');
-    iosModal.className = 'ios-modal';
-    iosModal.innerHTML = `
-      <div class="ios-modal-header">
-         <span class="ios-modal-title">Install on iOS</span>
+    const modal = document.createElement('div');
+    modal.className = 'instruction-modal';
+    modal.innerHTML = `
+      <div class="modal-header">
+         <span class="modal-title">${instructionsTitle}</span>
          <button class="close-btn" style="font-size: 24px;">×</button>
       </div>
-      <div class="ios-instruction">
-         <span class="ios-icon">1️⃣</span>
-         <span>Tap the <strong>Share</strong> icon in the menu bar.</span>
+      <div class="instruction-step">
+         <span class="step-icon">1️⃣</span>
+         <span>${step1Text}</span>
       </div>
-      <div class="ios-instruction">
-         <span class="ios-icon">2️⃣</span>
-         <span>Scroll down and select <strong>Add to Home Screen</strong>.</span>
+      <div class="instruction-step">
+         <span class="step-icon">2️⃣</span>
+         <span>${step2Text}</span>
       </div>
     `;
-    shadow.appendChild(iosModal);
+    shadow.appendChild(modal);
 
     // Event Listeners
     const installBtn = banner.querySelector('.install-btn');
     const closeBtn = banner.querySelector('.close-btn');
-    const iosCloseBtn = iosModal.querySelector('.close-btn');
+    const modalCloseBtn = modal.querySelector('.close-btn');
 
-    // Android/Desktop: Listen for install prompt
+    // Android/Desktop: Listen for install prompt (still useful if it happens!)
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      banner.classList.add('visible');
+      banner.classList.add('visible'); // Will already be visible on mobile, but harmless
     });
 
-    // iOS: Show banner immediately (unless dismissed)
-    if (isIOS && !sessionStorage.getItem('pwa-banner-dismissed')) {
-       // Add small delay for better UX
+    // Force Show on Mobile (iOS + Android)
+    if (isMobile && !sessionStorage.getItem('pwa-banner-dismissed')) {
        setTimeout(() => {
           banner.classList.add('visible');
        }, 2000);
     }
 
     installBtn.addEventListener('click', async () => {
-      if (isIOS) {
-         // Show iOS instructions
-         overlay.classList.add('visible');
-         iosModal.classList.add('open');
-      } else if (deferredPrompt) {
+      if (deferredPrompt) {
          // Trigger native prompt
          deferredPrompt.prompt();
          const { outcome } = await deferredPrompt.userChoice;
@@ -263,8 +265,9 @@
            banner.classList.remove('visible');
          }
       } else {
-         // Fallback if no prompt available (strange state)
-         alert('To install, tap the menu button and select "Add to Home Screen".');
+         // Fallback: Show instructions (iOS or Android without event)
+         overlay.classList.add('visible');
+         modal.classList.add('open');
       }
     });
 
@@ -273,13 +276,13 @@
       sessionStorage.setItem('pwa-banner-dismissed', 'true');
     });
 
-    // Close iOS modal
-    const closeIosModal = () => {
+    // Close modal
+    const closeModal = () => {
        overlay.classList.remove('visible');
-       iosModal.classList.remove('open');
+       modal.classList.remove('open');
     };
-    iosCloseBtn.addEventListener('click', closeIosModal);
-    overlay.addEventListener('click', closeIosModal);
+    modalCloseBtn.addEventListener('click', closeModal);
+    overlay.addEventListener('click', closeModal);
   }
 
   initPWA();

@@ -120,15 +120,22 @@ async function getHandler(request: NextRequest) {
 
     // If installedOnly is true, join with service_installations to filter
     let joinClause = ''
+    let joinParams: any[] = []
+    
+    // We always want to know if it's installed, so we LEFT JOIN based on context
+    // If spaceId is present, check installation in that space
+    // If no spaceId, check global installations (space_id IS NULL)
+    if (spaceId) {
+       joinClause = `LEFT JOIN service_installations si ON si.service_id = sr.id AND si.space_id = CAST($${paramIndex} AS uuid) AND si.deleted_at IS NULL`
+       queryParams.push(spaceId)
+       paramIndex++
+    } else {
+       joinClause = `LEFT JOIN service_installations si ON si.service_id = sr.id AND si.space_id IS NULL AND si.deleted_at IS NULL`
+    }
+
+    // If installedOnly=true, we verify the join found something
     if (installedOnly) {
-      if (spaceId) {
-        joinClause = `INNER JOIN service_installations si ON si.service_id = sr.id AND si.space_id = $${paramIndex} AND si.status = 'active'`
-        queryParams.push(spaceId)
-        paramIndex++
-      } else {
-        // Global installations
-        joinClause = `INNER JOIN service_installations si ON si.service_id = sr.id AND si.space_id IS NULL AND si.status = 'active'`
-      }
+       whereConditions.push('si.id IS NOT NULL')
     }
 
     const whereClause = whereConditions.join(' AND ')
@@ -163,7 +170,9 @@ async function getHandler(request: NextRequest) {
         sr.verified,
         sr.security_audit,
         sr.created_at,
-        sr.updated_at
+        sr.updated_at,
+        si.id as installation_id,
+        si.status as installation_status
       FROM service_registry sr
       ${joinClause}
       WHERE ${whereClause}
@@ -215,6 +224,10 @@ async function getHandler(request: NextRequest) {
         securityAudit: row.security_audit,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
+        // Installation status
+        isInstalled: !!row.installation_id,
+        installationId: row.installation_id,
+        installationStatus: row.installation_status
       }
 
       // Extract external plugin metadata from capabilities

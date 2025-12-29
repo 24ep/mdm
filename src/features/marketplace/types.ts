@@ -46,6 +46,11 @@ export interface PluginDefinition {
     href?: string
     priority?: number
   }
+
+  // Installation status (dynamically populated)
+  isInstalled?: boolean
+  installationId?: string
+  installationStatus?: string
 }
 
 export type PluginCategory =

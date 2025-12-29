@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Loader, Search, Package, Download, RefreshCw, Plus, FileText, Upload } from 'lucide-react'
+import { Loader, Search, Package, Download, RefreshCw, Plus, FileText, Upload, Check } from 'lucide-react'
 import { PluginDefinition, PluginCategory } from '../types'
 import { showSuccess, showError } from '@/lib/toast-utils'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -61,6 +61,8 @@ export function PluginHub() {
       if (categoryFilter !== 'all') params.append('category', categoryFilter)
       if (statusFilter !== 'all') params.append('status', statusFilter)
 
+      if (currentSpace?.id) params.append('spaceId', currentSpace.id)
+
       const response = await fetch(`/api/marketplace/plugins?${params.toString()}`)
 
       if (!response.ok) {
@@ -79,7 +81,7 @@ export function PluginHub() {
 
   useEffect(() => {
     fetchPlugins()
-  }, [categoryFilter, statusFilter])
+  }, [categoryFilter, statusFilter, currentSpace?.id])
 
   const filteredPlugins = plugins.filter(plugin => {
     if (searchQuery) {
@@ -254,10 +256,21 @@ export function PluginHub() {
                     <Button
                       size="sm"
                       className="flex-1"
+                      variant={plugin.isInstalled ? "secondary" : "default"}
+                      disabled={plugin.isInstalled}
                       onClick={() => handleInstall(plugin)}
                     >
-                      <Download className="h-4 w-4 mr-2" />
-                      Install
+                      {plugin.isInstalled ? (
+                        <>
+                          <Check className="h-4 w-4 mr-2" />
+                          Installed
+                        </>
+                      ) : (
+                        <>
+                          <Download className="h-4 w-4 mr-2" />
+                          Install
+                        </>
+                      )}
                     </Button>
                     {plugin.documentationUrl && (
                       <Button
