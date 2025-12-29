@@ -76,9 +76,12 @@ async function putHandler(
     }
     body = JSON.parse(rawBody)
     console.log('[PUT /api/chatbots] Request body parsed successfully')
-  } catch (parseError) {
+  } catch (parseError: any) {
     console.error('[PUT /api/chatbots] Failed to parse request body:', parseError)
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    return NextResponse.json({ 
+      error: 'Invalid JSON body', 
+      details: parseError.message 
+    }, { status: 400 })
   }
 
   // Check if chatbot exists and user has access
@@ -180,9 +183,6 @@ async function putHandler(
         ...(conversationOpener !== undefined && { conversationOpener }),
         ...(followUpQuestions !== undefined && { followUpQuestions }),
         ...(enableFileUpload !== undefined && { enableFileUpload }),
-        ...(showCitations !== undefined && { showCitations }),
-        ...(deploymentType !== undefined && { deploymentType }),
-        ...(widgetBackgroundColor !== undefined && { widgetBackgroundColor }),
         ...(showCitations !== undefined && { showCitations }),
         ...(deploymentType !== undefined && { deploymentType }),
         ...(widgetBackgroundColor !== undefined && { widgetBackgroundColor }),

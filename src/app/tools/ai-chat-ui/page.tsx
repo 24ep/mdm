@@ -185,9 +185,16 @@ export default function ChatEmbedUIPage() {
             })
 
             if (!res.ok) {
-                const errorData = await res.json().catch(() => ({}))
+                let errorData: any = {}
+                try {
+                    errorData = await res.json()
+                } catch (e) {
+                    const text = await res.text()
+                    console.error('Server returned non-JSON error:', text)
+                    errorData = { error: `Server error (${res.status}): ${text.substring(0, 100)}` }
+                }
                 console.error('Server error:', errorData)
-                throw new Error(errorData.error || 'Failed to save chatbot')
+                throw new Error(errorData.error || errorData.details || 'Failed to save chatbot')
             }
 
             const data = await res.json()
