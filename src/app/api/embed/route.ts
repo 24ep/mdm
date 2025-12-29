@@ -512,7 +512,19 @@ export async function GET(request: NextRequest) {
     iframe.style.border = 'none';
     
     // PWA Separate Iframe Logic (Host Website scope)
-    var isMobileOrTablet = window.innerWidth <= 1024;
+    // FIXED: Use screen.width instead of window.innerWidth to detect actual device size
+    // window.innerWidth can be deceiving when the script loads before the page is fully laid out
+    // or when the parent page has specific styling/viewports
+    var screenWidth = window.screen ? window.screen.width : window.innerWidth;
+    var isMobileOrTablet = screenWidth <= 1024;
+    
+    // Additional check using touch capability and user agent as fallback
+    var hasTouchScreen = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    var isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    // Consider device mobile if screen width is small OR it has touch + mobile UA
+    isMobileOrTablet = isMobileOrTablet || (hasTouchScreen && isMobileUA);
+    
     var pwaIframe = null;
     var pwaEnabled = chatbot.pwaEnabled || false;
     var isWebsiteOverlayScope = (chatbot.pwaInstallScope === 'website') && isMobileOrTablet;

@@ -539,6 +539,11 @@ export interface Chatbot {
   pwaBannerButtonBorderRadius?: string // Install button border radius (default: 4px)
   pwaBannerButtonFontSize?: string // Install button font size (default: 12px)
   pwaBannerMargin?: string // Banner margin (default: 0)
+  // Emulator Page Configuration (for preview/configuration UI)
+  pageBackgroundColor?: string // Background color for emulator page
+  pageBackgroundImage?: string // Background image URL for emulator page
+  pageTitle?: string // Title text shown in emulator
+  pageDescription?: string // Description text shown in emulator
   isPublished: boolean
   createdAt: Date
   updatedAt: Date

@@ -239,7 +239,12 @@ export const DEFAULT_CHATBOT_CONFIG: Partial<Chatbot> = {
   pwaBannerButtonBgColor: '#ffffff',
   pwaBannerButtonTextColor: undefined,
   pwaBannerButtonBorderRadius: '4px',
-  pwaBannerButtonFontSize: '12px'
+  pwaBannerButtonFontSize: '12px',
+  // Emulator Configuration
+  pageBackgroundColor: '#ffffff',
+  pageBackgroundImage: '',
+  pageTitle: '',
+  pageDescription: ''
 }
 
 // Generate a proper UUID for database compatibility
@@ -426,7 +431,12 @@ export function createDefaultChatbot(name: string): Chatbot {
     pwaBannerButtonBgColor: '#ffffff',
     pwaBannerButtonTextColor: undefined,
     pwaBannerButtonBorderRadius: '4px',
-    pwaBannerButtonFontSize: '12px'
+    pwaBannerButtonFontSize: '12px',
+    // Emulator Configuration
+    pageBackgroundColor: '#ffffff',
+    pageBackgroundImage: '',
+    pageTitle: '',
+    pageDescription: ''
   }
 }
 
