@@ -32,6 +32,12 @@
     if (!config) return;
 
     let deferredPrompt;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator.standalone);
+
+    // Don't show if already installed (standalone mode)
+    if (isStandalone) return;
+
     const container = document.createElement('div');
     container.id = 'pwa-install-container';
     document.body.appendChild(container);
@@ -130,6 +136,54 @@
           font-size: 18px;
           display: flex;
        }
+       /* iOS Instructions Modal */
+       .ios-modal {
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          background: white;
+          padding: 24px;
+          border-radius: 16px 16px 0 0;
+          box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+          transform: translateY(100%);
+          transition: transform 0.3s ease-out;
+          z-index: 100000;
+          color: #333;
+          display: none;
+       }
+       .ios-modal.open {
+          transform: translateY(0);
+          display: block;
+       }
+       .ios-modal-header {
+         display: flex;
+         justify-content: space-between;
+         align-items: center;
+         margin-bottom: 16px;
+       }
+       .ios-modal-title { font-weight: bold; font-size: 18px; }
+       .ios-instruction {
+         display: flex;
+         align-items: center;
+         gap: 12px;
+         margin-bottom: 16px;
+         font-size: 15px;
+       }
+       .ios-icon { font-size: 24px; }
+       .ios-overlay {
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0,0,0,0.5);
+          z-index: 99998;
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.3s;
+       }
+       .ios-overlay.visible {
+          opacity: 1;
+          pointer-events: auto;
+       }
     `;
     shadow.appendChild(styleSheet);
 
@@ -152,29 +206,80 @@
     `;
     shadow.appendChild(banner);
 
+    // iOS Modal Components
+    const overlay = document.createElement('div');
+    overlay.className = 'ios-overlay';
+    shadow.appendChild(overlay);
+
+    const iosModal = document.createElement('div');
+    iosModal.className = 'ios-modal';
+    iosModal.innerHTML = `
+      <div class="ios-modal-header">
+         <span class="ios-modal-title">Install on iOS</span>
+         <button class="close-btn" style="font-size: 24px;">×</button>
+      </div>
+      <div class="ios-instruction">
+         <span class="ios-icon">1️⃣</span>
+         <span>Tap the <strong>Share</strong> icon in the menu bar.</span>
+      </div>
+      <div class="ios-instruction">
+         <span class="ios-icon">2️⃣</span>
+         <span>Scroll down and select <strong>Add to Home Screen</strong>.</span>
+      </div>
+    `;
+    shadow.appendChild(iosModal);
+
     // Event Listeners
     const installBtn = banner.querySelector('.install-btn');
     const closeBtn = banner.querySelector('.close-btn');
+    const iosCloseBtn = iosModal.querySelector('.close-btn');
 
+    // Android/Desktop: Listen for install prompt
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
       banner.classList.add('visible');
     });
 
+    // iOS: Show banner immediately (unless dismissed)
+    if (isIOS && !sessionStorage.getItem('pwa-banner-dismissed')) {
+       // Add small delay for better UX
+       setTimeout(() => {
+          banner.classList.add('visible');
+       }, 2000);
+    }
+
     installBtn.addEventListener('click', async () => {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        deferredPrompt = null;
-        banner.classList.remove('visible');
+      if (isIOS) {
+         // Show iOS instructions
+         overlay.classList.add('visible');
+         iosModal.classList.add('open');
+      } else if (deferredPrompt) {
+         // Trigger native prompt
+         deferredPrompt.prompt();
+         const { outcome } = await deferredPrompt.userChoice;
+         if (outcome === 'accepted') {
+           deferredPrompt = null;
+           banner.classList.remove('visible');
+         }
+      } else {
+         // Fallback if no prompt available (strange state)
+         alert('To install, tap the menu button and select "Add to Home Screen".');
       }
     });
 
     closeBtn.addEventListener('click', () => {
       banner.classList.remove('visible');
+      sessionStorage.setItem('pwa-banner-dismissed', 'true');
     });
+
+    // Close iOS modal
+    const closeIosModal = () => {
+       overlay.classList.remove('visible');
+       iosModal.classList.remove('open');
+    };
+    iosCloseBtn.addEventListener('click', closeIosModal);
+    overlay.addEventListener('click', closeIosModal);
   }
 
   initPWA();
