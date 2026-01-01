@@ -1,8 +1,19 @@
 'use client'
 
+import React, { useState, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
-import * as LucideIcons from 'lucide-react'
+import { Bot } from 'lucide-react'
 import { Chatbot } from './types'
+
+// Helper to dynamically load icon
+const loadIcon = async (iconName: string) => {
+  try {
+    const module = await import('lucide-react')
+    return (module as any)[iconName] || Bot
+  } catch {
+    return Bot
+  }
+}
 
 interface ChatbotHeaderProps {
   formData: Partial<Chatbot>
@@ -10,7 +21,15 @@ interface ChatbotHeaderProps {
 }
 
 export function ChatbotHeader({ formData, setFormData }: ChatbotHeaderProps) {
+  const [IconComponent, setIconComponent] = useState<React.ComponentType<any>>(Bot)
   const avatarType = (formData.avatarType || 'icon') as 'icon' | 'image'
+  const IconName = (formData.avatarIcon || 'Bot') as string
+
+  useEffect(() => {
+    if (avatarType === 'icon') {
+      loadIcon(IconName).then(setIconComponent)
+    }
+  }, [IconName, avatarType])
 
   return (
     <div className="flex items-start gap-4 py-2">
@@ -27,12 +46,7 @@ export function ChatbotHeader({ formData, setFormData }: ChatbotHeaderProps) {
           className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
           style={{ backgroundColor: (formData.avatarBackgroundColor || formData.primaryColor || '#3b82f6') as string }}
         >
-          {(() => {
-            const IconName = (formData.avatarIcon || 'Bot') as string
-            const IconComponent = (LucideIcons as any)[IconName] || LucideIcons.Bot
-            const iconColor = formData.avatarIconColor || '#ffffff'
-            return <IconComponent className="h-6 w-6" style={{ color: iconColor as string }} />
-          })()}
+          <IconComponent className="h-6 w-6" style={{ color: (formData.avatarIconColor || '#ffffff') as string }} />
         </div>
       )}
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { validateDomain } from '@/lib/chatbot-helper';
 
 // ChatKit Session API - Creates session with OpenAI for ChatKit
 // This endpoint is called by the ChatKitWrapper to get a client_secret
@@ -39,6 +40,16 @@ export async function POST(request: NextRequest) {
 
         if (chatbot) {
           const config = mergeVersionConfig(chatbot);
+
+          // SECURITY: Domain Whitelisting
+          const domainValidation = validateDomain(config, request)
+          if (!domainValidation.allowed) {
+            console.warn(`[Session API] ${domainValidation.error}`)
+            return NextResponse.json(
+              { error: 'Domain not allowed', details: domainValidation.error },
+              { status: 403 }
+            )
+          }
           // Determine which key to use
           const isAgentSDK = config.engineType === 'openai-agent-sdk';
           apiKey = isAgentSDK ? config.openaiAgentSdkApiKey : config.chatkitApiKey;
@@ -79,7 +90,7 @@ export async function POST(request: NextRequest) {
     // Build session payload for ChatKit
     // Generate a unique user ID for the session (could be enhanced with real user IDs)
     const userId = body.userId || `user_${chatbotId}_${Date.now()}`;
-    
+
     const sessionPayload: any = {
       user: userId,
       workflow: {

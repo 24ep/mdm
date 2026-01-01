@@ -42,9 +42,21 @@ export function EmulatorConfigDrawer({
   }, [open, config])
 
   const handleChange = (key: string, value: any) => {
-    const updated = { ...localConfig, [key]: value }
-    setLocalConfig(updated)
-    onConfigChange(updated)
+    // Only update local state, don't propagate changes immediately
+    setLocalConfig(prev => ({ ...prev, [key]: value }))
+  }
+
+  const handleSave = () => {
+    // Apply changes and close drawer
+    onConfigChange(localConfig)
+    toast.success('Configuration saved')
+    onOpenChange(false)
+  }
+
+  const handleCancel = () => {
+    // Reset to original config and close drawer
+    setLocalConfig(config)
+    onOpenChange(false)
   }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -203,6 +215,16 @@ export function EmulatorConfigDrawer({
             />
           </div>
         </div>
+      </div>
+
+      {/* Footer with Save/Cancel buttons */}
+      <div className="border-t p-4 flex justify-end gap-2 bg-background sticky bottom-0">
+        <Button variant="outline" onClick={handleCancel}>
+          Cancel
+        </Button>
+        <Button onClick={handleSave}>
+          Save Changes
+        </Button>
       </div>
     </CentralizedDrawer >
   )

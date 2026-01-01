@@ -17,7 +17,7 @@ interface ChatKitIntegrationSectionProps {
 }
 
 export function ChatKitIntegrationSection({ formData, setFormData }: ChatKitIntegrationSectionProps) {
-  const [openItems, setOpenItems] = useState<string[]>(['general-settings', 'header-content', 'header-actions', 'header-styling', 'header-border', 'history-panel'])
+  const [openItem, setOpenItem] = useState('general-settings')
 
   const handleChange = (field: keyof Chatbot, value: any) => {
     setFormData({
@@ -34,9 +34,10 @@ export function ChatKitIntegrationSection({ formData, setFormData }: ChatKitInte
   return (
     <div className="space-y-2">
       <Accordion
-        type="multiple"
-        value={openItems}
-        onValueChange={(val) => setOpenItems(val as string[])}
+        type="single"
+        collapsible
+        value={openItem}
+        onValueChange={(val) => setOpenItem(val as string)}
       >
         {/* General Settings */}
         <AccordionItem value="general-settings" className="border-b px-4">

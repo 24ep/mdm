@@ -231,7 +231,7 @@ export function ColorInput({
             className="absolute left-1 top-1/2 -translate-y-1/2 cursor-pointer z-40 border-0 outline-none shadow-none flex-shrink-0 p-0 color-input-trigger"
             style={combinedButtonStyle}
             onClick={(e) => {
-              e.stopPropagation()
+              // Allow click to propagate to PopoverTrigger
             }}
             aria-label="Open color picker"
           />

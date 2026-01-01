@@ -1,11 +1,57 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Message, ChatbotConfig } from '../types'
 import { MessageBubble } from './MessageBubble'
 import { TypingIndicator } from './TypingIndicator'
-import * as LucideIcons from 'lucide-react'
+
+// Helper function to dynamically load icon components
+const getIconComponent = async (iconName: string): Promise<React.ComponentType<{ className?: string }> | null> => {
+  if (!iconName) return null
+
+  try {
+    const module = await import('lucide-react')
+
+
+    // Try exact match first
+    let IconComponent = module[iconName as keyof typeof module] as any
+    if (IconComponent) return IconComponent as React.ComponentType<{ className?: string }>
+
+    // Try Pascal Case
+    const pascalCase = iconName.charAt(0).toUpperCase() + iconName.slice(1)
+    IconComponent = module[pascalCase as keyof typeof module] as any
+    if (IconComponent) return IconComponent as React.ComponentType<{ className?: string }>
+
+    // Try common variations
+    const variations: Record<string, string> = {
+      'Bolt': 'Zap',
+      'Sparkle': 'Sparkles',
+      'CheckCircle': 'CheckCircle2',
+    }
+    const mappedName = variations[iconName] || iconName
+    IconComponent = module[mappedName as keyof typeof module] as any
+    if (IconComponent) return IconComponent as React.ComponentType<{ className?: string }>
+
+    return null
+  } catch {
+    return null
+  }
+}
+
+// Component for rendering a start screen prompt icon
+const PromptIcon = ({ iconName, className }: { iconName?: string; className?: string }) => {
+  const [IconComponent, setIconComponent] = useState<React.ComponentType<{ className?: string }> | null>(null)
+
+  useEffect(() => {
+    if (iconName) {
+      getIconComponent(iconName).then(setIconComponent)
+    }
+  }, [iconName])
+
+  if (!IconComponent) return null
+  return <IconComponent className={className} />
+}
 
 interface MessagesListProps {
   messages: Message[]
@@ -49,7 +95,7 @@ export function MessagesList({
           const backgroundColor = (chatbot as any).conversationOpenerBackgroundColor
           const padding = (chatbot as any).conversationOpenerPadding || '16px'
           const borderRadius = (chatbot as any).conversationOpenerBorderRadius || '8px'
-          
+
           // Position classes
           const positionClasses = {
             center: 'items-center justify-center',
@@ -58,9 +104,9 @@ export function MessagesList({
             top: 'items-start justify-center',
             bottom: 'items-end justify-center',
           }
-          
+
           const containerClass = `flex flex-col py-12 ${positionClasses[position as keyof typeof positionClasses] || positionClasses.center}`
-          
+
           const openerStyle: React.CSSProperties = {
             fontSize,
             color: fontColor,
@@ -74,7 +120,7 @@ export function MessagesList({
             maxWidth: '80%',
             margin: '0 auto',
           }
-          
+
           // Get start screen prompts (for Agent SDK and other engines)
           const startScreenPrompts = (chatbot as any).startScreenPrompts || []
           const promptsPosition = (chatbot as any).startScreenPromptsPosition || 'center'
@@ -84,31 +130,7 @@ export function MessagesList({
           const promptsBorderColor = (chatbot as any).startScreenPromptsBorderColor || chatbot.bubbleBorderColor || chatbot.borderColor || '#e5e7eb'
           const promptsBorderWidth = (chatbot as any).startScreenPromptsBorderWidth || '1px'
           const promptsBorderRadius = (chatbot as any).startScreenPromptsBorderRadius || '8px'
-          
-          // Helper function to get icon component
-          const getIconComponent = (iconName?: string) => {
-            if (!iconName || iconDisplay === 'none') return null
-            // Try exact match first, then try with common variations
-            let IconComponent = (LucideIcons as any)[iconName]
-            if (!IconComponent) {
-              // Try PascalCase if it's not already
-              const pascalCase = iconName.charAt(0).toUpperCase() + iconName.slice(1)
-              IconComponent = (LucideIcons as any)[pascalCase]
-            }
-            if (!IconComponent) {
-              // Try common icon name variations
-              const variations: Record<string, string> = {
-                'Bolt': 'Zap',
-                'Sparkle': 'Sparkles',
-                'CheckCircle': 'CheckCircle2',
-              }
-              const mappedName = variations[iconName] || iconName
-              IconComponent = (LucideIcons as any)[mappedName]
-            }
-            if (!IconComponent) return null
-            return <IconComponent className="h-4 w-4" />
-          }
-          
+
           // Determine container class based on position
           const getPromptsContainerClass = () => {
             switch (promptsPosition) {
@@ -121,22 +143,21 @@ export function MessagesList({
                 return 'flex flex-wrap gap-2 justify-center mt-4'
             }
           }
-          
+
           return (
             <div className={containerClass}>
               <p className="mb-2" style={openerStyle}>
                 {openerText}
               </p>
-              
+
               {/* Start Screen Prompts */}
               {startScreenPrompts.length > 0 && (
                 <div className={getPromptsContainerClass()}>
                   {startScreenPrompts.map((prompt: { label?: string; prompt: string; icon?: string }, index: number) => {
-                    const iconComponent = getIconComponent(prompt.icon)
-                    const showIcon = iconDisplay !== 'none' && iconComponent
+                    const showIcon = iconDisplay !== 'none' && prompt.icon
                     const showIconAsSuffix = iconDisplay === 'suffix' && showIcon
                     const showIconOnly = iconDisplay === 'show-all' && showIcon
-                    
+
                     return (
                       <button
                         key={index}
@@ -145,9 +166,8 @@ export function MessagesList({
                             sendMessage(prompt.prompt)
                           }
                         }}
-                        className={`px-4 py-2 transition-colors hover:opacity-80 flex items-center gap-2 ${
-                          promptsPosition === 'list' ? 'w-full justify-start' : ''
-                        }`}
+                        className={`px-4 py-2 transition-colors hover:opacity-80 flex items-center gap-2 ${promptsPosition === 'list' ? 'w-full justify-start' : ''
+                          }`}
                         style={{
                           backgroundColor: promptsBgColor,
                           color: promptsFontColor,
@@ -159,15 +179,15 @@ export function MessagesList({
                           fontSize: chatbot.fontSize || '14px',
                         }}
                       >
-                        {showIconOnly && iconComponent}
+                        {showIconOnly && prompt.icon && <PromptIcon iconName={prompt.icon} className="h-4 w-4" />}
                         <span>{prompt.label || prompt.prompt}</span>
-                        {showIconAsSuffix && iconComponent}
+                        {showIconAsSuffix && prompt.icon && <PromptIcon iconName={prompt.icon} className="h-4 w-4" />}
                       </button>
                     )
                   })}
                 </div>
               )}
-              
+
               {chatbot.followUpQuestions && chatbot.followUpQuestions.length > 0 && (
                 <p className="text-xs text-muted-foreground mt-4" style={{ color: chatbot.fontColor }}>
                   Try asking one of the suggested questions below

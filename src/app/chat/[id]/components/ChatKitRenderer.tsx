@@ -56,6 +56,26 @@ export function ChatKitRenderer({
   // Use prop if provided, otherwise check config
   const useChatKitInRegularStyle = propUseChatKitInRegularStyle ?? (chatbot as any).useChatKitInRegularStyle === true
 
+  // Compute agent ID once (must be before any early returns)
+  const isAgentSDK = chatbot.engineType === 'openai-agent-sdk'
+  const agentId = isAgentSDK ? chatbot.openaiAgentSdkAgentId : chatbot.chatkitAgentId
+
+  // Track if we need to notify parent about ChatKit unavailability
+  // This must be in useEffect to avoid calling parent setState during render
+  const notifiedUnavailableRef = React.useRef(false)
+
+  useEffect(() => {
+    // Notify parent when ChatKit is unavailable (error or missing agent ID)
+    // Only notify once to prevent loops
+    if (!notifiedUnavailableRef.current && onChatKitUnavailable) {
+      if (chatkitError || !agentId) {
+        console.log('🔄 Triggering ChatKit unavailable callback (from useEffect)')
+        notifiedUnavailableRef.current = true
+        onChatKitUnavailable()
+      }
+    }
+  }, [chatkitError, agentId, onChatKitUnavailable])
+
   // Debug: Log chatbot config for ChatKit requirements on mount
   // Debug: Log chatbot config for ChatKit requirements on mount
   useEffect(() => {
@@ -81,9 +101,6 @@ export function ChatKitRenderer({
     }
     if (!agentId) {
       console.warn('⚠️ ChatKit will NOT render: agentId is not configured')
-    }
-    if (!apiKey) {
-      console.warn('⚠️ ChatKit sessions may fail: API key is not configured')
     }
   }, [chatbot, useChatKitInRegularStyle]) // Ensure this dependency array matches original or is correct
 
@@ -169,10 +186,6 @@ export function ChatKitRenderer({
       // Cleanup if needed
     }
   }, [])
-
-  // Compute agent ID once
-  const isAgentSDK = chatbot.engineType === 'openai-agent-sdk'
-  const agentId = isAgentSDK ? chatbot.openaiAgentSdkAgentId : chatbot.chatkitAgentId
 
   // Compute widget button visibility for loading states (popover/popup-center modes)
   const shouldShowWidgetInLoading =
@@ -277,14 +290,9 @@ export function ChatKitRenderer({
     )
   }
 
-  // If ChatKit fails to load, show error state and trigger fallback
+  // If ChatKit fails to load, show error state (callback is handled by useEffect above)
   if (chatkitError) {
     console.error('❌ ChatKit error detected:', chatkitError)
-    // Notify parent to use fallback
-    if (onChatKitUnavailable) {
-      console.log('🔄 Triggering ChatKit unavailable callback')
-      onChatKitUnavailable()
-    }
 
     // Show visible error in development, return null in production to use fallback
     if (process.env.NODE_ENV === 'development') {
@@ -319,14 +327,10 @@ export function ChatKitRenderer({
 
   // No agent ID configured - show error BEFORE checking module loading
   // This prevents infinite "Initializing..." spinner when agentId is missing
+  // Note: Callback is handled by useEffect above
   if (!agentId) {
     console.error('❌ ChatKit cannot render: No agent ID configured')
     console.log('💡 To fix: Set chatkitAgentId (for ChatKit engine) or openaiAgentSdkAgentId (for Agent SDK)')
-
-    // Always try to fallback
-    if (onChatKitUnavailable) {
-      onChatKitUnavailable()
-    }
 
     // Show helpful error message
     return (

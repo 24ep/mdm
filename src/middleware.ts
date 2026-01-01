@@ -1,7 +1,7 @@
 import { withAuth } from "next-auth/middleware"
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { addSecurityHeaders, handleCors } from '@/lib/security-headers'
+import { addSecurityHeaders, handleCors, addCorsHeaders } from '@/lib/security-headers'
 
 export default withAuth(
   function proxy(req: NextRequest & { nextauth: { token: any } }) {
@@ -20,6 +20,14 @@ export default withAuth(
     // Create response
     const response = NextResponse.next()
 
+    // Add CORS headers to all API responses (not just preflight)
+    if (req.nextUrl.pathname.startsWith('/api/')) {
+      addCorsHeaders(req, response, {
+        origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
+        credentials: true,
+      })
+    }
+
     // Add security headers to all responses with route-specific CSP
     return addSecurityHeaders(response, req.nextUrl.pathname)
   },
@@ -31,6 +39,9 @@ export default withAuth(
         // Allow public routes that need headers but no auth
         if (
           path.startsWith('/chat') ||
+          path.startsWith('/api/chat') ||
+          path.startsWith('/api/chatbots') ||
+          path.startsWith('/api/pwa') ||
           path.startsWith('/api/public') ||
           path.startsWith('/api/embed') ||
           path.startsWith('/api/chatkit') ||
@@ -53,7 +64,7 @@ export const config = {
   matcher: [
     // Protect all routes except auth, API debug, static files, and sign-in page
     // Note: We include chat and public APIs here so headers are applied, but authorized callback allows them
-    '/((?!api/auth|api/debug|auth/signin|[^/]+/auth/signin|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!api/auth|api/debug|auth/signin|[^/]+/auth/signin|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|html|js)$).*)',
   ],
 }
 

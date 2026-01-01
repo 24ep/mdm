@@ -11,7 +11,7 @@ import { extractNumericValue, ensurePx } from '../styleUtils'
 import type { SectionProps } from './types'
 
 export function PopoverSection({ formData, setFormData, chatkitOptions }: SectionProps) {
-  const [openItems, setOpenItems] = useState(['position-spacing', 'container-size', 'container-border', 'z-index', 'shadow', 'chatkit-specific'])
+  const [openItem, setOpenItem] = useState('position-spacing')
 
   return (
     <div className="py-2 w-full">
@@ -22,9 +22,10 @@ export function PopoverSection({ formData, setFormData, chatkitOptions }: Sectio
       </div>
 
       <Accordion
-        type="multiple"
-        value={openItems}
-        onValueChange={(val) => setOpenItems(val as string[])}
+        type="single"
+        collapsible
+        value={openItem}
+        onValueChange={(val) => setOpenItem(val as string)}
       >
         <AccordionItem value="position-spacing" className="border-b px-4">
           <AccordionTrigger className="hover:no-underline py-4 text-md font-semibold">

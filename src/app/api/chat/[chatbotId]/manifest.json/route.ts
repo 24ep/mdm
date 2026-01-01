@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { db } from '@/lib/db'
 
 /**
  * GET /api/chat/[chatbotId]/manifest.json
@@ -14,17 +15,23 @@ export async function GET(
     const { chatbotId } = await params
 
     // Fetch chatbot configuration
-    const origin = request.headers.get('origin') || request.nextUrl.origin
-    const chatbotResponse = await fetch(`${origin}/api/chatbots/${chatbotId}`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
+    // Fetch chatbot configuration directly from DB
+    const chatbotData = await db.chatbot.findUnique({
+      where: { id: chatbotId },
+      include: {
+        versions: {
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
+      }
     })
 
     let chatbot: any = null
-    if (chatbotResponse.ok) {
-      const data = await chatbotResponse.json()
-      chatbot = data.chatbot
+    if (chatbotData) {
+      // Import helper to merge version config (similar to embed route)
+      // We need to dynamically import or duplicate logic if not importable
+      const { mergeVersionConfig, sanitizeChatbotConfig } = await import('@/lib/chatbot-helper')
+      chatbot = sanitizeChatbotConfig(mergeVersionConfig(chatbotData))
     }
 
     // Default values

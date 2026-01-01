@@ -3,18 +3,15 @@ import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { db } from '@/lib/db'
 
 async function getHandler(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
-
+  // Public route for embedding
   const { id } = await params
-  
+
   const pwa = await db.websitePWA.findUnique({
     where: { id },
     include: {
       versions: {
         orderBy: { createdAt: 'desc' },
-        take: 10
+        take: 1
       }
     }
   })
@@ -23,22 +20,22 @@ async function getHandler(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: 'PWA not found' }, { status: 404 })
   }
 
-  // Basic authorization check
-  if (pwa.createdBy !== session.user.id) {
-     // If space logic is strict:
-     // Check space membership if necessary
-  }
-
-  return NextResponse.json({ pwa })
+  // Add CORS headers manually if needed, or rely on middleware
+  return NextResponse.json({ pwa }, {
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Cache-Control': 'public, max-age=60'
+    }
+  })
 }
 
 async function patchHandler(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const authResult = await requireAuthWithId()
   if (!authResult.success) return authResult.response
-  
+
   const { id } = await params
   const body = await request.json()
-  
+
   try {
     const pwa = await db.websitePWA.update({
       where: { id },
@@ -62,11 +59,11 @@ async function deleteHandler(request: NextRequest, { params }: { params: Promise
 
   try {
     await db.websitePWA.update({
-        where: { id },
-        data: { deletedAt: new Date() }
+      where: { id },
+      data: { deletedAt: new Date() }
     })
     // Or hard delete: await db.websitePWA.delete({ where: { id: params.id } })
-    
+
     return NextResponse.json({ success: true })
   } catch (error) {
     return NextResponse.json({ error: 'Failed to delete PWA' }, { status: 500 })

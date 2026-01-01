@@ -6,8 +6,45 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { IconPicker } from '@/components/ui/icon-picker'
 import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 import { RefreshCw, Pencil } from 'lucide-react'
-import * as LucideIcons from 'lucide-react'
 import { BrandingConfig } from '../../types'
+import { useState, useEffect } from 'react'
+
+// Helper to load application logo icon
+const loadAppIcon = async (iconName: string) => {
+    try {
+        const module = await import('lucide-react')
+        return (module as any)[iconName] || null
+    } catch {
+        return null
+    }
+}
+
+// Application Logo Icon Preview
+function AppLogoIconPreview({ iconName, iconColor, backgroundColor }: { iconName?: string; iconColor?: string; backgroundColor?: string }) {
+    const [IconComponent, setIconComponent] = useState<React.ComponentType<{ className?: string; style?: React.CSSProperties }> | null>(null)
+
+    useEffect(() => {
+        if (iconName) {
+            loadAppIcon(iconName).then(setIconComponent)
+        } else {
+            setIconComponent(null)
+        }
+    }, [iconName])
+
+    if (!IconComponent) {
+        return <div className="text-muted-foreground text-sm">No icon</div>
+    }
+
+    return (
+        <IconComponent
+            className="h-16 w-16"
+            style={{
+                color: iconColor || '#000000',
+                backgroundColor: backgroundColor || '#ffffff'
+            }}
+        />
+    )
+}
 
 interface ApplicationLogoTabProps {
     branding: BrandingConfig
@@ -52,20 +89,11 @@ export function ApplicationLogoTab({ branding, setBranding, handleApplyBrandingC
                         {/* Logo Preview */}
                         <div className="relative w-32 h-32 border rounded-lg overflow-hidden bg-muted flex items-center justify-center">
                             {branding.applicationLogoType === 'icon' && branding.applicationLogoIcon ? (
-                                (() => {
-                                    const IconComponent = (LucideIcons as any)[branding.applicationLogoIcon]
-                                    return IconComponent ? (
-                                        <IconComponent
-                                            className="h-16 w-16"
-                                            style={{
-                                                color: branding.applicationLogoIconColor || '#000000',
-                                                backgroundColor: branding.applicationLogoBackgroundColor || '#ffffff'
-                                            }}
-                                        />
-                                    ) : (
-                                        <div className="text-muted-foreground text-sm">No icon</div>
-                                    )
-                                })()
+                                <AppLogoIconPreview
+                                    iconName={branding.applicationLogoIcon}
+                                    iconColor={branding.applicationLogoIconColor}
+                                    backgroundColor={branding.applicationLogoBackgroundColor}
+                                />
                             ) : branding.applicationLogo ? (
                                 <img
                                     src={branding.applicationLogo}
@@ -74,6 +102,15 @@ export function ApplicationLogoTab({ branding, setBranding, handleApplyBrandingC
                                 />
                             ) : (
                                 <div className="text-muted-foreground text-sm text-center px-2">No logo</div>
+                            )}
+                            ) : branding.applicationLogo ? (
+                            <img
+                                src={branding.applicationLogo}
+                                alt="Application logo"
+                                className="w-full h-full object-contain"
+                            />
+                            ) : (
+                            <div className="text-muted-foreground text-sm text-center px-2">No logo</div>
                             )}
                         </div>
 

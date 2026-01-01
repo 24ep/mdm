@@ -70,7 +70,7 @@ export function DeploymentTab({
             size="sm"
             onClick={async () => {
               const newIsPublished = !formData.isPublished
-              
+
               // Optimistic update
               setFormData(prev => ({
                 ...prev,
@@ -185,23 +185,43 @@ export function DeploymentTab({
         </div>
       </div>
 
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <Globe className="h-4 w-4 text-muted-foreground" />
-          <Label>Custom Embed Domain (Optional)</Label>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-2">
+        {/* Step 1: Custom Domains */}
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Globe className="h-4 w-4 text-blue-500" />
+              <Label className="font-semibold">Custom Embed URL (CDN)</Label>
+            </div>
+            <Input
+              type="text"
+              placeholder="https://chat.yourdomain.com"
+              value={formData.customEmbedDomain || ''}
+              onChange={(e) => setFormData({ ...formData, customEmbedDomain: e.target.value })}
+            />
+            <p className="text-[10px] text-muted-foreground leading-tight">
+              Specify the base URL for the script source. If empty, the current server's origin will be used.
+            </p>
+          </div>
         </div>
-        <Input
-          type="url"
-          placeholder="https://chat.yourdomain.com"
-          value={formData.customEmbedDomain || ''}
-          onChange={(e) => setFormData({ ...formData, customEmbedDomain: e.target.value })}
-        />
-        <div className="flex items-start gap-2 text-xs text-muted-foreground">
-          <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
-          <p>
-            Leave empty to use the current domain. Set a custom domain if you want to embed the chat from a different URL
-            (e.g., when using a CDN, reverse proxy, or dedicated chat subdomain).
-          </p>
+
+        {/* Step 2: Security Allowlist */}
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Icons.ShieldCheck className="h-4 w-4 text-green-600" />
+              <Label className="font-semibold">Domain Allowlist (API Security)</Label>
+            </div>
+            <Input
+              type="text"
+              placeholder="site-a.com, site-b.com"
+              value={formData.domainAllowlist || ''}
+              onChange={(e) => setFormData({ ...formData, domainAllowlist: e.target.value })}
+            />
+            <p className="text-[10px] text-muted-foreground leading-tight">
+              Comma-separated list of domains allowed to embed this bot. Leave empty to allow all (not recommended).
+            </p>
+          </div>
         </div>
       </div>
 

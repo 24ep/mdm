@@ -18,7 +18,7 @@ import { ChevronsUpDown } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
 
 export function WidgetSection({ formData, setFormData, chatkitOptions }: SectionProps) {
-  const [openItems, setOpenItems] = useState(['appearance', 'avatar-icon', 'size-colors', 'borders', 'shadow', 'label', 'position'])
+  const [openItem, setOpenItem] = useState('appearance')
 
   return (
     <div className="py-2 w-full">
@@ -29,9 +29,10 @@ export function WidgetSection({ formData, setFormData, chatkitOptions }: Section
       </div>
 
       <Accordion
-        type="multiple"
-        value={openItems}
-        onValueChange={(val) => setOpenItems(val as string[])}
+        type="single"
+        collapsible
+        value={openItem}
+        onValueChange={(val) => setOpenItem(val as string)}
       >
         <AccordionItem value="appearance" className="border-b px-4">
           <AccordionTrigger className="hover:no-underline py-4 text-md font-semibold">
@@ -55,7 +56,7 @@ export function WidgetSection({ formData, setFormData, chatkitOptions }: Section
                     <SelectContent>
                       <SelectItem value="circle">Circle</SelectItem>
                       <SelectItem value="square">Square</SelectItem>
-                      <SelectItem value="circle-with-label">Circle with Label</SelectItem>
+                      <SelectItem value="circle-with-label">Label</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -526,6 +527,84 @@ export function WidgetSection({ formData, setFormData, chatkitOptions }: Section
                     inputClassName="h-8 text-xs pl-7"
                   />
                 </div>
+              </div>
+
+              <div className="flex items-center justify-between mt-4">
+                <div className="space-y-0.5">
+                  <Label>Show Icon</Label>
+                  <p className="text-xs text-muted-foreground">Display icon next to the label text</p>
+                </div>
+                <Switch
+                  checked={formData.widgetLabelShowIcon !== false}
+                  onCheckedChange={(checked) => setFormData({ ...formData, widgetLabelShowIcon: checked })}
+                />
+              </div>
+
+              {formData.widgetLabelShowIcon !== false && (
+                <div className="space-y-2 mt-4">
+                  <Label>Icon Position</Label>
+                  <Select
+                    value={formData.widgetLabelIconPosition || 'left'}
+                    onValueChange={(v: any) => setFormData({ ...formData, widgetLabelIconPosition: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="left">Left of Label</SelectItem>
+                      <SelectItem value="right">Right of Label</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className="space-y-2">
+                  <Label>Widget Shape</Label>
+                  <Select
+                    value={(formData as any).widgetLabelShape || 'rounded'}
+                    onValueChange={(v: any) => {
+                      const shapeValues: Record<string, string> = {
+                        'rectangular': '0px',
+                        'rounded': '8px',
+                        'pill': '9999px',
+                        'circle': '50%',
+                        'custom': (formData as any).widgetLabelBorderRadius || '8px'
+                      }
+                      setFormData({
+                        ...formData,
+                        widgetLabelShape: v,
+                        widgetLabelBorderRadius: shapeValues[v]
+                      } as any)
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="rectangular">Rectangular</SelectItem>
+                      <SelectItem value="rounded">Rounded</SelectItem>
+                      <SelectItem value="pill">Pill (Full Rounded)</SelectItem>
+                      <SelectItem value="circle">Circle</SelectItem>
+                      <SelectItem value="custom">Custom</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {((formData as any).widgetLabelShape === 'custom' || (formData as any).widgetLabelShape === 'rounded') && (
+                  <div className="space-y-2">
+                    <Label>Border Radius</Label>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        value={extractNumericValue((formData as any).widgetLabelBorderRadius || '8px')}
+                        onChange={(e) => setFormData({ ...formData, widgetLabelBorderRadius: ensurePx(e.target.value) } as any)}
+                        placeholder="8"
+                        className="pr-8"
+                      />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </AccordionContent>
           </AccordionItem>

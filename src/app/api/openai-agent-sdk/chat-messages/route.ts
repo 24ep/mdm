@@ -1,4 +1,4 @@
-import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
+import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling, getSession } from '@/lib/api-middleware'
 import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
 import { getLangfuseClient, isLangfuseEnabled } from '@/lib/langfuse'
@@ -8,6 +8,7 @@ import { getBudgetConfig } from '@/lib/cost-tracker'
 import { handleWorkflowRequest } from './handlers/workflow-handler'
 import { handleAssistantRequest } from './handlers/assistant-handler'
 import { db } from '@/lib/db'
+import { mergeVersionConfig, validateDomain } from '@/lib/chatbot-helper'
 
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -21,9 +22,7 @@ export async function OPTIONS() {
 }
 
 async function postHandler(request: NextRequest) {
-  const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+  const session = await getSession()
 
   const body = await request.json()
   let {
@@ -56,12 +55,28 @@ async function postHandler(request: NextRequest) {
         include: { versions: { orderBy: { createdAt: 'desc' }, take: 1 } }
       })
       if (chatbot) {
-        const config = (chatbot.versions[0]?.config || {}) as any
+        const config = mergeVersionConfig(chatbot)
+
+        // SECURITY: Domain Whitelisting
+        const domainValidation = validateDomain(config, request)
+        if (!domainValidation.allowed) {
+          console.warn(`[Agent SDK API] ${domainValidation.error}`)
+          return NextResponse.json(
+            { error: 'Domain not allowed', details: domainValidation.error },
+            { status: 403 }
+          )
+        }
+
         apiKey = config.openaiAgentSdkApiKey
       }
     } catch (error) {
       console.warn('Failed to lookup API key:', error)
     }
+  }
+
+  // REQUIRE AUTH if no valid chatbotId session or not authenticated
+  if (!session?.user?.id && !chatbotId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   if (!agentId || !apiKey) {

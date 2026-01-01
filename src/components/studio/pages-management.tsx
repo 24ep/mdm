@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -30,7 +30,52 @@ import { SpacesEditorPage } from '@/lib/space-studio-manager'
 import { Template } from '@/lib/template-generator'
 import IconPickerPopover from '@/components/ui/icon-picker-popover'
 import { Z_INDEX } from '@/lib/z-index'
-import * as LucideIcons from "lucide-react"
+
+// Helper to load page icon dynamically
+const loadPageIcon = async (iconName: string) => {
+  try {
+    const module = await import('lucide-react')
+    return (module as any)[iconName] || Layout
+  } catch {
+    return Layout
+  }
+}
+
+// Page Icon Component
+function PageIcon({ page, templates }: { page: SpacesEditorPage; templates: Template[] }) {
+  const [IconComponent, setIconComponent] = useState<React.ComponentType<{ className?: string }>>(Layout)
+
+  useEffect(() => {
+    if (page.icon) {
+      loadPageIcon(page.icon).then(setIconComponent)
+    } else {
+      setIconComponent(Layout)
+    }
+  }, [page.icon])
+
+  if (page.icon && IconComponent !== Layout) {
+    return <IconComponent className="h-5 w-5" />
+  }
+
+  // Fallback to template-based icon
+  if (page.templateId) {
+    const template = templates.find(t => t.id === page.templateId)
+    if (template) {
+      switch (template.category) {
+        case 'Entity Management':
+          return <Database className="h-5 w-5" />
+        case 'Analytics':
+          return <BarChart3 className="h-5 w-5" />
+        case 'Forms':
+          return <FileText className="h-5 w-5" />
+        default:
+          return <Layout className="h-5 w-5" />
+      }
+    }
+  }
+
+  return <Layout className="h-5 w-5" />
+}
 
 interface PagesManagementProps {
   spaceId: string
@@ -116,32 +161,6 @@ export function PagesManagement({
         console.error('Failed to delete page:', error)
       }
     }
-  }
-
-  const getPageIcon = (page: SpacesEditorPage) => {
-    if (page.icon) {
-      const Icon = (LucideIcons as any)[page.icon]
-      if (Icon) return <Icon className="h-5 w-5" />
-    }
-
-    if (page.templateId) {
-      const template = templates.find(t => t.id === page.templateId)
-      if (template) {
-        switch (template.category) {
-          case 'Entity Management':
-            return <Database className="h-5 w-5" />
-          case 'Analytics':
-            return <BarChart3 className="h-5 w-5" />
-          case 'Forms':
-            return <FileText className="h-5 w-5" />
-          default:
-            return <Layout className="h-5 w-5" />
-        }
-      }
-    }
-
-    // Default icon for custom pages
-    return <Layout className="h-5 w-5" />
   }
 
   const getPageStatus = (page: SpacesEditorPage) => {

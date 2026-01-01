@@ -8,6 +8,8 @@ import { createAuditContext } from '@/lib/audit-context-helper'
 import { requireSpaceAccess } from '@/lib/space-access'
 import { checkRateLimit } from '@/lib/rate-limiter'
 
+export const dynamic = 'force-dynamic'
+
 const prisma = db
 
 // Helper function to sync OpenAI API key to global provider config
@@ -143,8 +145,8 @@ async function getHandler(request: NextRequest) {
     orderBy: { createdAt: 'desc' }
   })
 
-  // Merge version config into each chatbot and sanitize
-  const mergedChatbots = chatbots.map(cb => sanitizeChatbotConfig(mergeVersionConfig(cb)))
+  // Merge version config into each chatbot
+  const mergedChatbots = chatbots.map(cb => mergeVersionConfig(cb))
 
   return NextResponse.json({ chatbots: mergedChatbots })
 }
@@ -206,6 +208,8 @@ async function postHandler(request: NextRequest) {
     deploymentType,
     currentVersion,
     spaceId,
+    customEmbedDomain,
+    domainAllowlist,
     selectedModelId,
     selectedEngineId,
     chatkitAgentId,
@@ -454,7 +458,8 @@ async function postHandler(request: NextRequest) {
         showCitations: showCitations !== undefined ? showCitations : true,
         deploymentType: deploymentType || 'popover',
         engineType: engine || 'chatkit',
-        customEmbedDomain: (body as any).customEmbedDomain || null,
+        customEmbedDomain: customEmbedDomain || null,
+        domainAllowlist: domainAllowlist || null,
         isPublished: false,
         currentVersion: currentVersion || null,
         createdBy: session.user.id,
@@ -529,6 +534,8 @@ async function postHandler(request: NextRequest) {
               enableFileUpload: enableFileUpload || false,
               showCitations: showCitations !== undefined ? showCitations : true,
               deploymentType: deploymentType || 'popover',
+              customEmbedDomain: customEmbedDomain || null,
+              domainAllowlist: domainAllowlist || null,
               // Message font styling
               userMessageFontColor: userMessageFontColor || null,
               userMessageFontFamily: userMessageFontFamily || null,
@@ -712,8 +719,8 @@ async function postHandler(request: NextRequest) {
       await syncOpenAIApiKey(openaiAgentSdkApiKey, request, session.user)
     }
 
-    // Merge version config into chatbot object and sanitize
-    const mergedChatbot = sanitizeChatbotConfig(mergeVersionConfig(chatbot))
+    // Merge version config into chatbot object
+    const mergedChatbot = mergeVersionConfig(chatbot)
 
     return NextResponse.json({ chatbot: mergedChatbot }, { status: 201 })
   } catch (error: any) {

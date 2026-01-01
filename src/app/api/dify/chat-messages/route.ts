@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRateLimit, getRateLimitConfig } from '@/lib/rate-limiter'
+import { mergeVersionConfig, validateDomain } from '@/lib/chatbot-helper'
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,7 +16,18 @@ export async function POST(request: NextRequest) {
           include: { versions: { orderBy: { createdAt: 'desc' }, take: 1 } }
         })
         if (chatbot) {
-          const config = (chatbot.versions[0]?.config || {}) as any
+          const config = mergeVersionConfig(chatbot)
+
+          // SECURITY: Domain Whitelisting
+          const domainValidation = validateDomain(config, request)
+          if (!domainValidation.allowed) {
+            console.warn(`[Dify API] ${domainValidation.error}`)
+            return NextResponse.json(
+              { error: 'Domain not allowed', details: domainValidation.error },
+              { status: 403 }
+            )
+          }
+
           if (!apiKey) apiKey = config.difyApiKey
           if (!apiBaseUrl) {
             const difyOptions = config.difyOptions || {}

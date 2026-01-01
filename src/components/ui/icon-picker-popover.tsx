@@ -1,13 +1,22 @@
 "use client"
 
-import React, { useMemo, useRef, useState } from "react"
+import React, { useMemo, useRef, useState, useEffect } from "react"
 import { createPortal } from "react-dom"
-import * as LucideIcons from "lucide-react"
 import { IconPicker } from "./icon-picker"
 import { AnimatedIcon } from "./animated-icon"
 import { Z_INDEX } from "@/lib/z-index"
 
 type IconComponent = React.ComponentType<{ className?: string }>
+
+// Helper to dynamically load icon
+const loadIcon = async (iconName: string): Promise<IconComponent | null> => {
+  try {
+    const module = await import('lucide-react')
+    return (module as any)[iconName] || null
+  } catch {
+    return null
+  }
+}
 
 export interface IconPickerPopoverProps {
   value?: string
@@ -22,11 +31,14 @@ export default function IconPickerPopover({ value, onChange, animated = false, a
   const [open, setOpen] = useState(false)
   const anchorRef = useRef<HTMLButtonElement | null>(null)
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null)
+  const [CurrentIcon, setCurrentIcon] = useState<IconComponent | null>(null)
 
-  const CurrentIcon = useMemo(() => {
-    if (!value) return null
-    const anyIcons = LucideIcons as unknown as Record<string, IconComponent>
-    return anyIcons[value] || null
+  useEffect(() => {
+    if (value) {
+      loadIcon(value).then(setCurrentIcon)
+    } else {
+      setCurrentIcon(null)
+    }
   }, [value])
 
   return (

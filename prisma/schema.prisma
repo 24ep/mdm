@@ -1336,6 +1336,7 @@ model Chatbot {
   deploymentType     String    @default("popover") @map("deployment_type")
   engineType         String    @default("chatkit") @map("engine_type")
   customEmbedDomain  String?   @map("custom_embed_domain")
+  domainAllowlist    String?   @map("domain_allowlist")
   isPublished        Boolean   @default(false) @map("is_published")
   currentVersion     String?   @map("current_version")
   createdBy          String    @map("created_by") @db.Uuid

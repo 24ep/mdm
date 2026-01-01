@@ -56,10 +56,10 @@ export function sanitizeChatbotConfig(chatbot: any): any {
   const sanitized = { ...chatbot }
 
   // Remove sensitive keys from root (merged config)
-  // delete sanitized.openaiAgentSdkApiKey
-  // delete sanitized.difyApiKey
-  // delete sanitized.apiAuthValue
-  // delete sanitized.chatkitApiKey
+  delete sanitized.openaiAgentSdkApiKey
+  delete sanitized.difyApiKey
+  delete sanitized.apiAuthValue
+  delete sanitized.chatkitApiKey
 
   // Remove sensitive keys from versions if present
   if (sanitized.versions && Array.isArray(sanitized.versions)) {
@@ -67,10 +67,10 @@ export function sanitizeChatbotConfig(chatbot: any): any {
       const newV = { ...v }
       if (newV.config) {
         const newConfig = { ...newV.config }
-        // delete newConfig.openaiAgentSdkApiKey
-        // delete newConfig.difyApiKey
-        // delete newConfig.apiAuthValue
-        // delete newConfig.chatkitApiKey
+        delete newConfig.openaiAgentSdkApiKey
+        delete newConfig.difyApiKey
+        delete newConfig.apiAuthValue
+        delete newConfig.chatkitApiKey
         newV.config = newConfig
       }
       return newV
@@ -79,3 +79,60 @@ export function sanitizeChatbotConfig(chatbot: any): any {
 
   return sanitized
 }
+
+/**
+ * Validate that the request origin/referer matches the chatbot's customEmbedDomain
+ * 
+ * @param chatbot - The chatbot object with customEmbedDomain
+ * @param request - The NextRequest object
+ * @returns { allowed: boolean, error?: string, domain?: string }
+ */
+export function validateDomain(chatbot: any, request: Request): { allowed: boolean; error?: string; domain?: string } {
+  if (!chatbot?.customEmbedDomain) {
+    return { allowed: true }
+  }
+
+  const referer = request.headers.get('referer') || request.headers.get('origin')
+
+  // Allow localhost for testing/development
+  const isLocalhost = referer && (referer.includes('localhost') || referer.includes('127.0.0.1'))
+  if (isLocalhost) {
+    return { allowed: true }
+  }
+
+  if (!referer) {
+    // If no referer/origin, we can't validate. Usually this means a direct API call.
+    return { allowed: true }
+  }
+
+  try {
+    const refererUrl = new URL(referer)
+    const requestDomain = refererUrl.hostname
+
+    // Support multiple domains separated by comma
+    // Prefer domainAllowlist if set, otherwise fallback to customEmbedDomain for backward compatibility
+    const rawAllowedDomains = chatbot.domainAllowlist || chatbot.customEmbedDomain || ''
+    const allowedDomains = rawAllowedDomains
+      .split(',')
+      .map((d: string) => d.trim().replace(/^https?:\/\//, '').replace(/\/$/, ''))
+      .filter(Boolean);
+
+    const isAllowed = allowedDomains.some((allowedDomain: string) =>
+      requestDomain.endsWith(allowedDomain) || requestDomain === allowedDomain
+    )
+
+    if (isAllowed) {
+      return { allowed: true, domain: requestDomain }
+    }
+
+    const allowedList = allowedDomains.join(', ')
+    return {
+      allowed: false,
+      error: `Domain not allowed: ${requestDomain}. This chatbot is restricted to: ${allowedList}`,
+      domain: requestDomain
+    }
+  } catch (e) {
+    return { allowed: true } // Fallback to allow if parsing fails
+  }
+}
+

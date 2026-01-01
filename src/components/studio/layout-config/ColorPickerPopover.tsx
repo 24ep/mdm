@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Upload, Video, Image, Play, Droplet, Plus, Trash2, Move, Copy, Check, Eye, Star, Sliders, Grid3x3, Circle } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { COLOR_PATTERNS, getPatternById, getSwatchStyle, SWATCH_SIZE } from './color-utils'
+import { HexColorPicker } from 'react-colorful'
 
 // Global styles for color input trigger button (same as ColorInput)
 const COLOR_INPUT_TRIGGER_STYLES = `
@@ -413,7 +414,7 @@ export function ColorPickerPopover({
         const filtered = prevColors.filter(c => c.toLowerCase() !== baseColor.toLowerCase())
         // Add new color to the beginning
         const updated = [baseColor, ...filtered].slice(0, MAX_RECENT_COLORS)
-        
+
         if (typeof window !== 'undefined') {
           try {
             localStorage.setItem(RECENT_COLORS_KEY, JSON.stringify(updated))
@@ -514,6 +515,10 @@ export function ColorPickerPopover({
   const [favoriteColors, setFavoriteColors] = useState<string[]>(getFavoriteColors())
   const [showColorFormats, setShowColorFormats] = useState(false)
   const [isPickingColor, setIsPickingColor] = useState(false)
+
+  // Track selected stop for gradient editing
+  const [selectedGradientStopIndex, setSelectedGradientStopIndex] = useState(0)
+
   // Default to 'recent' if available, otherwise 'quick'
   // Quick colors array
   const quickColors = [
@@ -735,14 +740,25 @@ export function ColorPickerPopover({
       else if (gradStr.includes('to left')) angle = 270
     }
 
-    // Extract color stops
-    const stopsMatch = gradStr.match(/\(([^)]+)\)/)
+    // Extract color stops - robust handling for nested parens (rgba/rgb)
+    const firstParen = gradStr.indexOf('(')
+    const lastParen = gradStr.lastIndexOf(')')
+
     const stops: Array<{ color: string; position: number }> = []
-    if (stopsMatch) {
-      const parts = stopsMatch[1].split(',').map(s => s.trim())
+
+    if (firstParen !== -1 && lastParen !== -1) {
+      const content = gradStr.substring(firstParen + 1, lastParen)
+
+      // Split by comma ONLY if not inside parentheses (lookahead for closing paren without opening paren)
+      const parts = content.split(/,(?![^(]*\))/).map(s => s.trim())
+
       parts.forEach(part => {
+        // Skip angle/direction parts
+        if (part.includes('deg') || part.startsWith('to ')) return
+
         const colorMatch = part.match(/(#[0-9a-fA-F]{6}|rgb\([^)]+\)|rgba\([^)]+\)|[a-z]+)/i)
         const posMatch = part.match(/(\d+)%/)
+
         if (colorMatch) {
           stops.push({
             color: colorMatch[1],
@@ -822,7 +838,8 @@ export function ColorPickerPopover({
 
   // Build gradient string from config
   const buildGradientString = (config: typeof gradientConfig) => {
-    const stopsStr = config.stops.map(s => `${s.color} ${s.position}%`).join(', ')
+    const sortedStops = [...config.stops].sort((a, b) => a.position - b.position)
+    const stopsStr = sortedStops.map(s => `${s.color} ${s.position}%`).join(', ')
     if (config.type === 'radial') {
       return `radial-gradient(circle, ${stopsStr})`
     }
@@ -1225,15 +1242,14 @@ export function ColorPickerPopover({
               </TabsContent>
 
               <TabsContent value="gradient" className={`${isSpaceLayoutConfig ? 'py-4' : 'p-4'} space-y-2 mt-0`}>
-                <div className="space-y-2">
+                <div className="space-y-4">
                   {/* Gradient Type */}
-                  <div className="space-y-1">
-                    <Label className="text-xs text-left">Type</Label>
+                  <div className="flex items-center gap-2">
                     <Select
                       value={gradientConfig.type}
                       onValueChange={(value: string) => handleGradientChange({ ...gradientConfig, type: value as 'linear' | 'radial' })}
                     >
-                      <SelectTrigger className="h-8 text-xs">
+                      <SelectTrigger className="h-8 text-xs flex-1">
                         <div className="flex items-center gap-2">
                           {gradientConfig.type === 'linear' ? (
                             <Move className="h-3.5 w-3.5" />
@@ -1258,159 +1274,160 @@ export function ColorPickerPopover({
                         </SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
 
-                  {/* Angle for linear gradients */}
-                  {gradientConfig.type === 'linear' && (
-                    <div className="space-y-1">
-                      <Label className="text-xs">Angle</Label>
-                      <div className="flex items-center gap-2">
+                    {/* Angle for linear gradients */}
+                    {gradientConfig.type === 'linear' && (
+                      <div className="flex items-center gap-2 w-24">
                         <Input
                           type="number"
                           value={gradientConfig.angle}
                           onChange={(e) => handleGradientChange({ ...gradientConfig, angle: parseInt(e.target.value) || 0 })}
-                          className="h-8 text-xs flex-1"
+                          className="h-8 text-xs px-2"
                           min={0}
                           max={360}
                           step={1}
                         />
-                        <div className="text-xs text-muted-foreground">deg</div>
+                        <span className="text-xs text-muted-foreground">deg</span>
                       </div>
-                      <input
-                        type="range"
-                        min="0"
-                        max="360"
-                        value={gradientConfig.angle}
-                        onChange={(e) => handleGradientChange({ ...gradientConfig, angle: parseInt(e.target.value) })}
-                        className="w-full h-2"
-                      />
-                    </div>
-                  )}
+                    )}
+                  </div>
 
-                  {/* Preview */}
+                  {/* Preview Bar */}
                   <div className="space-y-1">
-                    <Label className="text-xs">Preview</Label>
                     <div
-                      className="w-full h-12 rounded border pointer-events-none"
+                      className="w-full h-8 rounded border"
                       style={{ background: gradientValue }}
                     />
                   </div>
 
-                  {/* Color Stops */}
-                  <div className="space-y-2">
+                  {/* Stops List & Picker */}
+                  <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs">Color Stops</Label>
+                      <Label className="text-xs font-medium">Color Stops</Label>
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="h-6 w-6 p-0"
+                        className="h-6 px-2 text-xs"
                         onClick={addGradientStop}
                       >
-                        <Plus className="h-3 w-3" />
+                        <Plus className="h-3 w-3 mr-1" /> Add Stop
                       </Button>
                     </div>
-                    {gradientConfig.stops.map((stop, index) => {
-                      const setGradientColorInputRef = (el: HTMLInputElement | null) => {
-                        if (el) {
-                          gradientColorInputRefs.current.set(index, el)
-                        } else {
-                          gradientColorInputRefs.current.delete(index)
-                        }
-                      }
 
-                      return (
-                        <div key={`stop-${index}-${stop.color}-${stop.position}`} className="flex items-center gap-2">
-                          <div className="relative flex-1">
-                            <div className="relative">
-                              {/* Hidden color input - keep original ref logic */}
-                              <input
-                                ref={setGradientColorInputRef}
-                                type="color"
-                                value={stop.color}
+                    {/* Stops List */}
+                    <div className="space-y-2 max-h-[120px] overflow-y-auto pr-1">
+                      {gradientConfig.stops.map((stop, index) => {
+                        const isActive = selectedGradientStopIndex === index;
+                        return (
+                          <div
+                            key={`stop-${index}-${stop.position}`}
+                            className={`flex items-center gap-2 p-1.5 rounded border cursor-pointer transition-colors ${isActive ? 'border-primary bg-primary/5' : 'border-transparent hover:bg-muted'
+                              }`}
+                            onClick={() => setSelectedGradientStopIndex(index)}
+                          >
+                            <div
+                              className="w-6 h-6 rounded border shadow-sm flex-shrink-0"
+                              style={getSwatchStyle(stop.color)}
+                            />
+
+                            <div className="flex-1 flex items-center gap-2">
+                              <span className="text-xs font-mono text-muted-foreground flex-1">
+                                {extractBaseColor(stop.color)}
+                              </span>
+                              <div className="flex items-center gap-1">
+                                <span className="text-[10px] text-muted-foreground">Pos:</span>
+                                <Input
+                                  type="number"
+                                  value={stop.position}
+                                  onChange={(e) => updateGradientStop(index, { position: parseInt(e.target.value) || 0 })}
+                                  className="h-6 text-xs w-12 px-1 text-center"
+                                  min={0}
+                                  max={100}
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                                <span className="text-[10px] text-muted-foreground">%</span>
+                              </div>
+                            </div>
+
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeGradientStop(index);
+                              }}
+                              disabled={gradientConfig.stops.length <= 2}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    {/* Color Picker for Active Stop */}
+                    {gradientConfig.stops[selectedGradientStopIndex] && (
+                      <div className="p-3 border rounded-lg bg-muted/20 space-y-3">
+                        <div className="flex gap-3">
+                          <div className="flex-1">
+                            <HexColorPicker
+                              color={extractBaseColor(gradientConfig.stops[selectedGradientStopIndex].color)}
+                              onChange={(newBase) => {
+                                const currentOpacity = extractOpacity(gradientConfig.stops[selectedGradientStopIndex].color);
+                                const newColor = currentOpacity < 1 ? hexToRgba(newBase, currentOpacity) : newBase;
+                                updateGradientStop(selectedGradientStopIndex, { color: newColor });
+                              }}
+                              style={{ width: '100%', height: '120px' }}
+                            />
+                          </div>
+                          <div className="w-[80px] space-y-3">
+                            <div className="space-y-1">
+                              <Label className="text-[10px] text-muted-foreground">Opacity</Label>
+                              <div className="flex items-center gap-1">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  value={Math.round(extractOpacity(gradientConfig.stops[selectedGradientStopIndex].color) * 100)}
+                                  onChange={(e) => {
+                                    const val = parseInt(e.target.value) || 0;
+                                    const clamped = Math.max(0, Math.min(100, val));
+                                    const newOpacity = clamped / 100;
+                                    const base = extractBaseColor(gradientConfig.stops[selectedGradientStopIndex].color);
+                                    // Handle hex base only
+                                    if (base.startsWith('#')) {
+                                      const newColor = newOpacity < 1 ? hexToRgba(base, newOpacity) : base;
+                                      updateGradientStop(selectedGradientStopIndex, { color: newColor });
+                                    }
+                                  }}
+                                  className="h-7 text-xs px-1 text-center"
+                                />
+                                <span className="text-[10px]">%</span>
+                              </div>
+                            </div>
+
+                            <div className="space-y-1">
+                              <Label className="text-[10px] text-muted-foreground">Hex</Label>
+                              <Input
+                                value={extractBaseColor(gradientConfig.stops[selectedGradientStopIndex].color)}
                                 onChange={(e) => {
-                                  e.stopPropagation()
-                                  updateGradientStop(index, { color: e.target.value })
-                                }}
-                                style={{
-                                  position: 'absolute',
-                                  width: '1px',
-                                  height: '1px',
-                                  opacity: 0,
-                                  clip: 'rect(0, 0, 0, 0)',
-                                  overflow: 'hidden',
-                                  zIndex: -1,
-                                  pointerEvents: 'auto'
-                                }}
-                                tabIndex={-1}
-                              />
-                              {/* Swatch Button positioned inside */}
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.preventDefault()
-                                  e.stopPropagation()
-                                  const colorInput = gradientColorInputRefs.current.get(index)
-                                  if (colorInput) {
-                                    colorInput.click()
+                                  const newBase = e.target.value;
+                                  if (/^#[0-9A-F]{6}$/i.test(newBase)) {
+                                    const currentOpacity = extractOpacity(gradientConfig.stops[selectedGradientStopIndex].color);
+                                    const newColor = currentOpacity < 1 ? hexToRgba(newBase, currentOpacity) : newBase;
+                                    updateGradientStop(selectedGradientStopIndex, { color: newColor });
                                   }
                                 }}
-                                className="absolute left-1 top-1/2 -translate-y-1/2 z-10 cursor-pointer shadow-sm hover:scale-105 transition-transform"
-                                style={{
-                                  ...getSwatchStyle(stop.color),
-                                  width: '16px',
-                                  height: '16px',
-                                  minWidth: '16px',
-                                  minHeight: '16px',
-                                  padding: 0,
-                                  border: 'none',
-                                  borderRadius: '2px',
-                                  aspectRatio: '1/1'
-                                }}
-                                title="Click to open color picker"
-                              />
-                              {/* Text Input with padding */}
-                              <Input
-                                type="text"
-                                value={stop.color}
-                                onChange={(e) => updateGradientStop(index, { color: e.target.value })}
-                                className="h-7 text-xs w-full pl-7"
+                                className="h-7 text-xs px-1 font-mono uppercase"
                               />
                             </div>
                           </div>
-                          <Input
-                            type="number"
-                            value={stop.position}
-                            onChange={(e) => updateGradientStop(index, { position: parseInt(e.target.value) || 0 })}
-                            className="h-7 text-xs w-14"
-                            min={0}
-                            max={100}
-                          />
-                          <div className="text-xs text-muted-foreground">%</div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0"
-                            onClick={() => removeGradientStop(index)}
-                            disabled={gradientConfig.stops.length <= 2}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
                         </div>
-                      )
-                    })}
-                  </div>
-
-                  {/* Generated CSS */}
-                  <div className="space-y-1">
-                    <Label className="text-xs">CSS</Label>
-                    <Input
-                      type="text"
-                      value={gradientValue}
-                      readOnly
-                      className="h-8 text-xs bg-muted font-mono"
-                    />
+                      </div>
+                    )}
                   </div>
                 </div>
               </TabsContent>

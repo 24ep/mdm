@@ -1,9 +1,10 @@
 "use client"
 
-import React, { useMemo, useState } from "react"
-import * as LucideIcons from "lucide-react"
+import React, { useMemo, useState, useEffect, Suspense } from "react"
+import { loadIcon, getIconNames } from "@/lib/utils/icon-loader"
 import { Input } from "@/components/ui/input"
 import { AnimatedIcon } from "./animated-icon"
+import { Loader2 } from "lucide-react"
 
 type IconComponent = React.ComponentType<{ className?: string }>
 
@@ -14,16 +15,6 @@ export interface IconPickerProps {
   grouped?: boolean
   animated?: boolean
   animation?: 'none' | 'bounce' | 'pulse' | 'spin' | 'wiggle' | 'float' | 'scale' | 'rotate' | 'shake' | 'glow'
-}
-
-// Determine which exports are icon components
-function isIconEntry(entry: [string, any]): boolean {
-  const [key, value] = entry
-  // Lucide icons are ForwardRefExoticComponent objects in React 18
-  if (!value) return false
-  const isLikelyComponent = typeof value === "function" || typeof value === "object"
-  const isPascalCase = Boolean(key && key[0] === key[0]?.toUpperCase())
-  return isLikelyComponent && isPascalCase
 }
 
 function categorizeIcon(name: string): string {
@@ -47,23 +38,27 @@ function categorizeIcon(name: string): string {
 export function IconPicker({ value, onChange, placeholder = "Search icons...", grouped = true, animated = false, animation = 'scale' }: IconPickerProps) {
   const [query, setQuery] = useState("")
   const [activeCategory, setActiveCategory] = useState<string>("All")
+  const [iconNames, setIconNames] = useState<string[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  const iconEntries = useMemo(() => {
-    if (!LucideIcons) return []
-    return Object.entries(LucideIcons).filter(isIconEntry) as Array<[
-      string,
-      IconComponent
-    ]>
+  // Load icon names on mount
+  useEffect(() => {
+    getIconNames().then((names) => {
+      setIconNames(names)
+      setIsLoading(false)
+    })
   }, [])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return iconEntries
-    return iconEntries.filter(([name]) => name.toLowerCase().includes(q))
-  }, [iconEntries, query])
+    if (!q) return iconNames
+    return iconNames.filter((name) => name.toLowerCase().includes(q))
+  }, [iconNames, query])
 
-  const renderIconButton = (name: string, Icon: IconComponent) => {
+  const renderIconButton = (name: string) => {
     const selected = value === name
+    const LazyIcon = loadIcon(name)
+
     return (
       <button
         key={name}
@@ -88,8 +83,12 @@ export function IconPicker({ value, onChange, placeholder = "Search icons...", g
               trigger="hover"
               className="text-current"
             />
+          ) : LazyIcon ? (
+            <Suspense fallback={<Loader2 className="h-5 w-5 animate-spin" />}>
+              <LazyIcon className="h-5 w-5" />
+            </Suspense>
           ) : (
-            <Icon className="h-5 w-5" />
+            <Loader2 className="h-5 w-5 animate-spin" />
           )}
         </div>
         <span className="text-[8px] text-center break-all leading-none">{name}</span>
@@ -100,11 +99,11 @@ export function IconPicker({ value, onChange, placeholder = "Search icons...", g
   const groupedIcons = useMemo(() => {
     if (!grouped) return null
     if (!filtered || filtered.length === 0) return null
-    const map = new Map<string, Array<[name: string, icon: IconComponent]>>()
-    for (const [name, Icon] of filtered) {
+    const map = new Map<string, string[]>()
+    for (const name of filtered) {
       const cat = categorizeIcon(name)
       if (!map.has(cat)) map.set(cat, [])
-      map.get(cat)!.push([name, Icon as unknown as IconComponent])
+      map.get(cat)!.push(name)
     }
     const list = Array.from(map.entries()).sort((a, b) => {
       if (a[0] === 'Others') return 1
@@ -112,10 +111,19 @@ export function IconPicker({ value, onChange, placeholder = "Search icons...", g
       return a[0].localeCompare(b[0])
     })
     // Prepend an "All" virtual category combining all icons
-    const allIcons: Array<[string, IconComponent]> = []
+    const allIcons: string[] = []
     list.forEach(([, arr]) => allIcons.push(...arr))
-    return [["All", allIcons] as [string, Array<[string, IconComponent]>], ...list]
+    return [["All", allIcons] as [string, string[]], ...list]
   }, [filtered, grouped])
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <span className="ml-2 text-sm text-muted-foreground">Loading icons...</span>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-2">
@@ -162,7 +170,7 @@ export function IconPicker({ value, onChange, placeholder = "Search icons...", g
                 return (
                   <div key={category}>
                     <div className="grid grid-cols-6 gap-2">
-                      {items?.map(([name, Icon]) => renderIconButton(name, Icon))}
+                      {items?.map((name) => renderIconButton(name))}
                     </div>
                   </div>
                 )
@@ -171,7 +179,7 @@ export function IconPicker({ value, onChange, placeholder = "Search icons...", g
         </div>
       ) : (
         <div className="grid grid-cols-6 gap-2 max-h-72 overflow-auto border rounded-md p-2">
-          {filtered?.map(([name, Icon]) => renderIconButton(name, Icon as unknown as IconComponent))}
+          {filtered?.map((name) => renderIconButton(name))}
         </div>
       )}
     </div>
@@ -179,5 +187,4 @@ export function IconPicker({ value, onChange, placeholder = "Search icons...", g
 }
 
 export default IconPicker
-
 

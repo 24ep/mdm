@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Z_INDEX } from '@/lib/z-index'
 import { db } from '@/lib/db'
-import { mergeVersionConfig, sanitizeChatbotConfig } from '@/lib/chatbot-helper'
+import { mergeVersionConfig, sanitizeChatbotConfig, validateDomain } from '@/lib/chatbot-helper'
 // import { renderToStaticMarkup } from 'react-dom/server'
 import * as Icons from 'lucide-react'
 import React from 'react'
@@ -61,6 +61,15 @@ export async function GET(request: NextRequest) {
       color: closeIconColor,
       strokeWidth: 2
     }))
+
+    // SECURITY: Domain Whitelisting
+    const domainValidation = validateDomain(chatbot, request)
+    if (!domainValidation.allowed) {
+      console.warn(`[Embed API] ${domainValidation.error}`)
+      return new NextResponse(`console.error("[Chatbot Error] ${domainValidation.error}");`, {
+        headers: { 'Content-Type': 'application/javascript' }
+      })
+    }
 
     // Get the origin from the request (this is the MDM server origin)
     const serverOrigin = request.nextUrl.origin

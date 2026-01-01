@@ -328,6 +328,7 @@ export interface Chatbot {
   // Deployment
   deploymentType: 'popover' | 'fullpage' | 'popup-center'
   customEmbedDomain?: string // Custom domain for embedding (e.g., https://chat.yourdomain.com)
+  domainAllowlist?: string // Comma-separated list of allowed domains for security allowlist
   embedCode?: string
   // Widget styling (for popover)
   widgetAvatarStyle: 'circle' | 'square' | 'circle-with-label'
@@ -508,7 +509,12 @@ export interface Chatbot {
   pwaEnabled?: boolean // Enable/disable PWA install banner in embedded chat
   pwaInstallScope?: 'chat' | 'website' // Scope of installation: 'chat' (inline banner) or 'website' (top overlay)
   pwaBannerText?: string // Custom banner text (default: "Install app for quick access")
-  pwaBannerPosition?: 'top' | 'bottom' // Banner position relative to input (default: 'bottom' = above input)
+  pwaBannerPosition?: 'under-header' | 'floating-bottom' | 'floating-top' | 'top-of-header'
+  pwaBannerTitleText?: string
+  pwaBannerDescriptionText?: string
+  pwaBannerButtonText?: string
+  pwaBannerButtonHoverBgColor?: string
+  pwaBannerButtonHoverTextColor?: string
   // PWA Metadata
   pwaAppName?: string // App name for PWA manifest (default: chatbot name)
   pwaShortName?: string // Short name for home screen (default: first word of name)

@@ -3,6 +3,8 @@ import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { db } from '@/lib/db'
 import { mergeVersionConfig, sanitizeChatbotConfig } from '@/lib/chatbot-helper'
 
+export const dynamic = 'force-dynamic'
+
 // GET - Fetch a specific chatbot by ID
 async function getHandler(
   request: NextRequest,
@@ -49,8 +51,8 @@ async function getHandler(
     return NextResponse.json({ error: 'Chatbot not found' }, { status: 404 })
   }
 
-  // Merge version config into chatbot object and sanitize
-  const mergedChatbot = sanitizeChatbotConfig(mergeVersionConfig(chatbot))
+  // Merge version config into chatbot object
+  const mergedChatbot = mergeVersionConfig(chatbot)
 
   return NextResponse.json({ chatbot: mergedChatbot })
 }
@@ -65,22 +67,22 @@ async function putHandler(
   const { session } = authResult
 
   const { chatbotId } = await params
-  
+
   let body: any
   try {
     const rawBody = await request.text()
     console.log('[PUT /api/chatbots] Raw body length:', rawBody.length)
     if (!rawBody) {
-        console.error('[PUT /api/chatbots] Empty request body')
-        return NextResponse.json({ error: 'Empty request body' }, { status: 400 })
+      console.error('[PUT /api/chatbots] Empty request body')
+      return NextResponse.json({ error: 'Empty request body' }, { status: 400 })
     }
     body = JSON.parse(rawBody)
     console.log('[PUT /api/chatbots] Request body parsed successfully')
   } catch (parseError: any) {
     console.error('[PUT /api/chatbots] Failed to parse request body:', parseError)
-    return NextResponse.json({ 
-      error: 'Invalid JSON body', 
-      details: parseError.message 
+    return NextResponse.json({
+      error: 'Invalid JSON body',
+      details: parseError.message
     }, { status: 400 })
   }
 
@@ -129,6 +131,7 @@ async function putHandler(
     currentVersion,
     spaceId,
     customEmbedDomain,
+    domainAllowlist,
     chatkitAgentId, // Explicitly extract
     chatkitApiKey, // Explicitly extract
     chatkitOptions, // Explicitly extract
@@ -196,6 +199,7 @@ async function putHandler(
             : { disconnect: true }
         }),
         ...(customEmbedDomain !== undefined && { customEmbedDomain }),
+        ...(domainAllowlist !== undefined && { domainAllowlist }),
         updatedAt: new Date()
       },
       include: {
@@ -261,6 +265,7 @@ async function putHandler(
       showCitations: showCitations !== undefined ? showCitations : existingConfig.showCitations,
       deploymentType: deploymentType !== undefined ? deploymentType : existingConfig.deploymentType,
       customEmbedDomain: customEmbedDomain !== undefined ? customEmbedDomain : existingConfig.customEmbedDomain,
+      domainAllowlist: domainAllowlist !== undefined ? domainAllowlist : existingConfig.domainAllowlist,
       chatkitAgentId: chatkitAgentId !== undefined ? chatkitAgentId : existingConfig.chatkitAgentId,
       chatkitApiKey: chatkitApiKey !== undefined ? chatkitApiKey : existingConfig.chatkitApiKey,
       chatkitOptions: chatkitOptions !== undefined ? chatkitOptions : existingConfig.chatkitOptions,
@@ -304,8 +309,8 @@ async function putHandler(
     }
   })
 
-  // Merge version config into chatbot object and sanitize
-  const mergedChatbot = sanitizeChatbotConfig(mergeVersionConfig(finalChatbot))
+  // Merge version config into chatbot object
+  const mergedChatbot = mergeVersionConfig(finalChatbot)
 
   return NextResponse.json({ chatbot: mergedChatbot })
 }

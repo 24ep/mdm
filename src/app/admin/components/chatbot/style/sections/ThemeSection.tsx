@@ -9,15 +9,16 @@ import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 import type { SectionProps } from './types'
 
 export function ThemeSection({ formData, setFormData, chatkitOptions }: SectionProps) {
-  // Use controlled state to ensure items are open by default
-  const [openItems, setOpenItems] = useState(['basic-settings', 'colors', 'typography'])
+  // Use controlled state to ensure item is open by default
+  const [openItem, setOpenItem] = useState('basic-settings')
 
   return (
     <div className="py-2 w-full">
       <Accordion
-        type="multiple"
-        value={openItems}
-        onValueChange={(val) => setOpenItems(val as string[])}
+        type="single"
+        collapsible
+        value={openItem}
+        onValueChange={(val) => setOpenItem(val as string)}
       >
         {/* Basic Theme Settings */}
         <AccordionItem value="basic-settings" className="border-b px-4">

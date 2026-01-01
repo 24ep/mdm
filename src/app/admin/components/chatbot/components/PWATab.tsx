@@ -86,21 +86,60 @@ export function PWATab({
 
 
 
-                                <div className="space-y-2">
-                                    <Label>Display Mode</Label>
-                                    <Select
-                                        value={formData.pwaDisplayMode || 'standalone'}
-                                        onValueChange={(v) => setFormData({ ...formData, pwaDisplayMode: v as 'standalone' | 'fullscreen' | 'minimal-ui' })}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="standalone">Standalone (App-like)</SelectItem>
-                                            <SelectItem value="fullscreen">Fullscreen</SelectItem>
-                                            <SelectItem value="minimal-ui">Minimal UI (with back button)</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label>Banner Position</Label>
+                                        <Select
+                                            value={formData.pwaBannerPosition || (formData.pwaInstallScope === 'website' ? 'floating-top' : 'under-header')}
+                                            onValueChange={(v) => setFormData({ ...formData, pwaBannerPosition: v as any })}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="under-header">Under Header (Inline)</SelectItem>
+                                                <SelectItem value="top-of-header">Top of Header (Inline)</SelectItem>
+                                                <SelectItem value="floating-top">Floating Top (Overlay)</SelectItem>
+                                                <SelectItem value="floating-bottom">Floating Bottom (Overlay)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label>Display Mode</Label>
+                                        <Select
+                                            value={formData.pwaDisplayMode || 'standalone'}
+                                            onValueChange={(v) => setFormData({ ...formData, pwaDisplayMode: v as 'standalone' | 'fullscreen' | 'minimal-ui' })}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="standalone">Standalone (App-like)</SelectItem>
+                                                <SelectItem value="fullscreen">Fullscreen</SelectItem>
+                                                <SelectItem value="minimal-ui">Minimal UI (with back button)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label>Title Text</Label>
+                                        <Input
+                                            placeholder="Install Application"
+                                            value={formData.pwaBannerTitleText || ''}
+                                            onChange={(e) => setFormData({ ...formData, pwaBannerTitleText: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Description Text</Label>
+                                        <Input
+                                            placeholder="Add to home screen"
+                                            value={formData.pwaBannerDescriptionText || ''}
+                                            onChange={(e) => setFormData({ ...formData, pwaBannerDescriptionText: e.target.value })}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </TabsContent>
@@ -500,6 +539,43 @@ export function PWATab({
                                             placeholder="12px"
                                             value={formData.pwaBannerButtonFontSize || ''}
                                             onChange={(e) => setFormData({ ...formData, pwaBannerButtonFontSize: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label>Install Button Text</Label>
+                                        <Input
+                                            placeholder="Install"
+                                            value={formData.pwaBannerButtonText || ''}
+                                            onChange={(e) => setFormData({ ...formData, pwaBannerButtonText: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4 pt-2">
+                                    <div className="space-y-2">
+                                        <Label>Hover Background</Label>
+                                        <ColorInput
+                                            value={formData.pwaBannerButtonHoverBgColor || ''}
+                                            onChange={(color) => setFormData({ ...formData, pwaBannerButtonHoverBgColor: color })}
+                                            allowImageVideo={false}
+                                            className="relative"
+                                            placeholder="#333333"
+                                            inputClassName="h-10 text-xs pl-9 w-full"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label>Hover Text Color</Label>
+                                        <ColorInput
+                                            value={formData.pwaBannerButtonHoverTextColor || ''}
+                                            onChange={(color) => setFormData({ ...formData, pwaBannerButtonHoverTextColor: color })}
+                                            allowImageVideo={false}
+                                            className="relative"
+                                            placeholder="#ffffff"
+                                            inputClassName="h-10 text-xs pl-9 w-full"
                                         />
                                     </div>
                                 </div>

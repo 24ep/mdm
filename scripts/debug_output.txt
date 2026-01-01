@@ -1,0 +1,9 @@
+USERS:
+- 0988b95e-545c-4de9-89fd-ee2e380555da (admin@test.com)
+- 11d5c3eb-5a9b-43b8-baca-780c2bf1f8d3 (restored_user@test.com)
+- b273fa8b-1fe0-42ca-a3b8-f765fd77b25d (admin@example.com)
+
+SPACES:
+
+PWAS:
+- 3b8378c7-7686-4aab-8fb9-010f25e13382 "Test PWA Studio App" (Creator: 0988b95e-545c-4de9-89fd-ee2e380555da, Space: null)

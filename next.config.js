@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-// Force restart
+// Force restart - triggered update 3
 const nextConfig = {
   images: {
     remotePatterns: [
@@ -42,6 +42,13 @@ const nextConfig = {
       'recharts',
       '@xyflow/react',
     ],
+    // Enable modularizeImports for lucide-react to tree-shake unused icons
+    modularizeImports: {
+      'lucide-react': {
+        transform: 'lucide-react/dist/esm/icons/{{kebabCase member}}',
+        skipDefaultConversion: true,
+      },
+    },
   },
 
   // Disable source maps to save memory and space used during build

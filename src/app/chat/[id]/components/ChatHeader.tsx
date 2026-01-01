@@ -1,9 +1,20 @@
 'use client'
 
+import React from 'react'
 import { Bot, RotateCcw, X, ArrowLeft } from 'lucide-react'
-import * as Icons from 'lucide-react'
 import { ChatbotConfig } from '../types'
 import { Button } from '@/components/ui/button'
+
+// Helper function to get icon component by name dynamically
+// This is more efficient than importing all icons
+const getIconComponent = async (iconName: string) => {
+  try {
+    const module = await import('lucide-react')
+    return module[iconName as keyof typeof module] as React.ComponentType<{ className?: string; style?: React.CSSProperties }>
+  } catch {
+    return Bot
+  }
+}
 
 interface ChatHeaderProps {
   chatbot: ChatbotConfig
@@ -104,7 +115,17 @@ export function ChatHeader({ chatbot, onClearSession, onClose, isMobile = false 
           )
         } else if (headerAvatarType === 'icon') {
           const IconName = chatbot.headerAvatarIcon || chatbot.avatarIcon || 'Bot'
-          const IconComponent = (Icons as any)[IconName] || Bot
+          // Use Bot as default, but try to get the correct icon dynamically
+          const [IconComponent, setIconComponent] = React.useState<React.ComponentType<any>>(Bot)
+
+          React.useEffect(() => {
+            if (IconName && IconName !== 'Bot') {
+              getIconComponent(IconName).then(setIconComponent)
+            } else {
+              setIconComponent(Bot)
+            }
+          }, [IconName])
+
           const iconColor = chatbot.headerAvatarIconColor || chatbot.avatarIconColor || '#ffffff'
           const bgColor = chatbot.headerAvatarBackgroundColor || chatbot.avatarBackgroundColor || chatbot.primaryColor || '#3b82f6'
           return (
@@ -132,7 +153,14 @@ export function ChatHeader({ chatbot, onClearSession, onClose, isMobile = false 
         {/* ChatKit Custom Buttons (when useChatKitInRegularStyle is enabled) */}
         {useChatKitInRegularStyle && chatkitCustomButtons.map((button: any, index: number) => {
           const IconName = button.icon || 'Bot'
-          const IconComponent = (Icons as any)[IconName] || Bot
+          const [IconComponent, setIconComponent] = React.useState<React.ComponentType<any>>(Bot)
+
+          React.useEffect(() => {
+            if (IconName) {
+              getIconComponent(IconName).then(setIconComponent)
+            }
+          }, [IconName])
+
           return (
             <Button
               key={index}

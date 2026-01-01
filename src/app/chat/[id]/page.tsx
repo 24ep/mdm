@@ -124,6 +124,15 @@ export default function ChatPage() {
     previewDeploymentType,
     isInIframe,
     onChatbotLoaded: (loadedChatbot) => {
+      // Dismiss the server-injected loading screen
+      const loader = document.getElementById('pwa-loading-overlay')
+      if (loader) {
+        loader.style.opacity = '0'
+        setTimeout(() => {
+          loader.remove()
+        }, 500)
+      }
+
       // Prioritize URL deployment type if in embed mode (allows script to override DB default)
       const effectiveDeploymentType = (isEmbed && urlDeploymentType)
         ? urlDeploymentType

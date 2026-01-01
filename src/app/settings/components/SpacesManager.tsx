@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSpace } from '@/contexts/space-context'
 import { Button } from '@/components/ui/button'
@@ -16,7 +16,37 @@ import { Building2, Plus, Users, Trash2, Crown, Shield, User, UserCog, UserPlus 
 import toast from 'react-hot-toast'
 import IconPickerPopover from '@/components/ui/icon-picker-popover'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import * as LucideIcons from 'lucide-react'
+
+// Helper to dynamically load icon
+const loadSpaceIcon = async (iconName: string) => {
+  try {
+    const module = await import('lucide-react')
+    return (module as any)[iconName] || Building2
+  } catch {
+    return Building2
+  }
+}
+
+// Icon preview component
+function SpaceIconPreview({ iconName }: { iconName?: string }) {
+  const [IconComponent, setIconComponent] = useState<React.ComponentType<{ className?: string }>>(Building2)
+
+  useEffect(() => {
+    if (iconName) {
+      loadSpaceIcon(iconName).then(setIconComponent)
+    } else {
+      setIconComponent(Building2)
+    }
+  }, [iconName])
+
+  return IconComponent ? (
+    <div className="h-10 w-10 rounded border border-border flex items-center justify-center bg-muted">
+      <IconComponent className="h-5 w-5 text-foreground" />
+    </div>
+  ) : (
+    <div className="h-10 w-10 rounded bg-muted border border-border" />
+  )
+}
 
 interface Space {
   id: string
@@ -54,8 +84,8 @@ export default function SpacesManager() {
   const canManageMembers = selectedSpace?.user_role === 'owner' || selectedSpace?.user_role === 'admin'
   const [brandingMode, setBrandingMode] = useState<'icon' | 'logo'>('icon')
 
-  const openDrawer = async (_space: Space) => {}
-  const closeDrawer = () => {}
+  const openDrawer = async (_space: Space) => { }
+  const closeDrawer = () => { }
 
   const loadMembers = async (spaceId: string) => {
     try {
@@ -102,7 +132,7 @@ export default function SpacesManager() {
       setIsCreateDialogOpen(false)
       setFormData({ name: '', description: '', is_default: false, slug: '' })
       await refreshSpaces()
-      
+
       if (spaces.length === 0 || result.space.is_default) {
         setCurrentSpace(result.space)
       }
@@ -131,7 +161,7 @@ export default function SpacesManager() {
 
       toast.success('Space deleted successfully')
       await refreshSpaces()
-      
+
       if (currentSpace?.id === spaceId) {
         const remainingSpaces = spaces.filter(s => s.id !== spaceId)
         if (remainingSpaces.length > 0) {
@@ -289,16 +319,16 @@ export default function SpacesManager() {
                   <p className="text-sm text-muted-foreground">{space.description}</p>
                 )}
                 <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                  <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                     <div className="flex items-center space-x-1">
                       <Users className="h-4 w-4" />
                       <span>{space.member_count || 0} members</span>
                     </div>
-                  {space.slug && (
-                    <div className="flex items-center space-x-1">
-                      <span className="text-muted-foreground">/{space.slug}</span>
-                    </div>
-                  )}
+                    {space.slug && (
+                      <div className="flex items-center space-x-1">
+                        <span className="text-muted-foreground">/{space.slug}</span>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center space-x-2">
                     <Button
@@ -375,315 +405,306 @@ export default function SpacesManager() {
             </div>
             <div className="flex-1 overflow-hidden flex flex-col">
               <div className="flex-1 flex flex-col">
-              <Tabs value={'details'}>
-                <div className="border-b border-border px-6 py-3">
-                  <TabsList>
-                    <TabsTrigger value="details">Space detail</TabsTrigger>
-                    <TabsTrigger value="members" onClick={() => loadMembers(selectedSpace!.id)}>Space member</TabsTrigger>
-                    <TabsTrigger value="sidebar">Sidebar</TabsTrigger>
-                  </TabsList>
-                </div>
-                <TabsContent value="details" className="flex-1 overflow-y-auto p-6 space-y-4">
-                <div className="grid gap-4">
-                  <div className="space-y-2">
-                    <Label>Branding</Label>
-                    <div className="flex items-center gap-2">
-                      <Button variant={brandingMode==='icon'?'default':'outline'} size="sm" onClick={async()=>{
-                        setBrandingMode('icon')
-                        if (selectedSpace?.logo_url) {
-                          await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ logo_url: null }) })
-                          await refreshSpaces()
-                        }
-                      }}>Use icon</Button>
-                      <Button variant={brandingMode==='logo'?'default':'outline'} size="sm" onClick={async()=>{
-                        setBrandingMode('logo')
-                        if (selectedSpace?.icon) {
-                          await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ icon: null }) })
-                          await refreshSpaces()
-                        }
-                      }}>Use logo</Button>
-                    </div>
+                <Tabs value={'details'}>
+                  <div className="border-b border-border px-6 py-3">
+                    <TabsList>
+                      <TabsTrigger value="details">Space detail</TabsTrigger>
+                      <TabsTrigger value="members" onClick={() => loadMembers(selectedSpace!.id)}>Space member</TabsTrigger>
+                      <TabsTrigger value="sidebar">Sidebar</TabsTrigger>
+                    </TabsList>
                   </div>
-                  {brandingMode==='icon' && (
-                  <div className="space-y-2">
-                    <Label>Icon</Label>
-                    <IconPickerPopover
-                      value={selectedSpace!.icon || ''}
-                      onChange={async (iconName) => {
-                        const res = await fetch(`/api/spaces/${selectedSpace!.id}`, { 
-                          method: 'PUT', 
-                          headers: { 'Content-Type': 'application/json' }, 
-                          body: JSON.stringify({ icon: iconName, logo_url: null }) 
-                        })
-                        if (res.ok) { 
-                          toast.success('Icon selected')
-                          await refreshSpaces() 
-                        } else { 
-                          toast.error('Failed to set icon') 
-                        }
-                      }}
-                    />
-                    <div className="flex items-center gap-3">
-                        {selectedSpace!.icon ? (
-                          (() => {
-                            const IconComponent = (LucideIcons as any)[selectedSpace!.icon!] as React.ComponentType<{ className?: string }>
-                            return IconComponent ? (
-                              <div className="h-10 w-10 rounded border border-border flex items-center justify-center bg-muted">
-                                <IconComponent className="h-5 w-5 text-foreground" />
-                              </div>
+                  <TabsContent value="details" className="flex-1 overflow-y-auto p-6 space-y-4">
+                    <div className="grid gap-4">
+                      <div className="space-y-2">
+                        <Label>Branding</Label>
+                        <div className="flex items-center gap-2">
+                          <Button variant={brandingMode === 'icon' ? 'default' : 'outline'} size="sm" onClick={async () => {
+                            setBrandingMode('icon')
+                            if (selectedSpace?.logo_url) {
+                              await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ logo_url: null }) })
+                              await refreshSpaces()
+                            }
+                          }}>Use icon</Button>
+                          <Button variant={brandingMode === 'logo' ? 'default' : 'outline'} size="sm" onClick={async () => {
+                            setBrandingMode('logo')
+                            if (selectedSpace?.icon) {
+                              await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ icon: null }) })
+                              await refreshSpaces()
+                            }
+                          }}>Use logo</Button>
+                        </div>
+                      </div>
+                      {brandingMode === 'icon' && (
+                        <div className="space-y-2">
+                          <Label>Icon</Label>
+                          <IconPickerPopover
+                            value={selectedSpace!.icon || ''}
+                            onChange={async (iconName) => {
+                              const res = await fetch(`/api/spaces/${selectedSpace!.id}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ icon: iconName, logo_url: null })
+                              })
+                              if (res.ok) {
+                                toast.success('Icon selected')
+                                await refreshSpaces()
+                              } else {
+                                toast.error('Failed to set icon')
+                              }
+                            }}
+                          />
+                          <div className="flex items-center gap-3">
+                            {selectedSpace!.icon ? (
+                              <SpaceIconPreview iconName={selectedSpace!.icon} />
                             ) : (
-                              <div className="h-10 w-10 rounded bg-muted border border-border" />
-                            )
-                          })()
-                        ) : (
-                          <div className="h-10 w-10 rounded bg-muted border border-border flex items-center justify-center">
-                            <Building2 className="h-5 w-5 text-muted-foreground" />
+                              <div className="h-10 w-10 rounded bg-muted border border-border flex items-center justify-center">
+                                <Building2 className="h-5 w-5 text-muted-foreground" />
+                              </div>
+                            )}
+                            <Button variant="outline" size="sm">
+                              Select Icon
+                            </Button>
                           </div>
-                        )}
-                        <Button variant="outline" size="sm">
-                          Select Icon
-                        </Button>
-                      </div>
-                    <p className="text-xs text-muted-foreground">Choose an icon from the icon library. Picking an icon will clear the logo.</p>
-                  </div>
-                  )}
-                  <div className="space-y-2">
-                    <Label className={brandingMode==='logo'?'':'opacity-50'}>Logo</Label>
-                    <div className="flex items-center gap-3">
-                      {selectedSpace!.logo_url ? (
-                        <img src={selectedSpace!.logo_url} alt={selectedSpace!.name} className="h-10 w-10 rounded" />
-                      ) : (
-                        <div className="h-10 w-10 rounded bg-muted" />
+                          <p className="text-xs text-muted-foreground">Choose an icon from the icon library. Picking an icon will clear the logo.</p>
+                        </div>
                       )}
-                      <form onChange={async (e: any) => {
-                        const file = e.target?.files?.[0]
-                        if (!file) return
-                        if (brandingMode!=='logo') return
-                        const fd = new FormData()
-                        fd.append('logo', file)
-                        const uploadRes = await fetch('/api/upload/logo', { method: 'POST', body: fd })
-                        if (!uploadRes.ok) { toast.error('Upload failed'); return }
-                        const { url } = await uploadRes.json()
-                        const res = await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ logo_url: url, icon: null }) })
-                        if (res.ok) { toast.success('Logo updated'); await refreshSpaces() } else { toast.error('Failed to save logo url') }
-                      }}>
-                        <Input type="file" accept="image/*" disabled={brandingMode!=='logo'} />
-                      </form>
-                    </div>
-                    <Input defaultValue={selectedSpace!.logo_url || ''} placeholder="https://..." disabled={brandingMode!=='logo'} onBlur={async (e) => {
-                      const logo_url = e.currentTarget.value.trim()
-                      if (logo_url === (selectedSpace!.logo_url || '')) return
-                      const res = await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ logo_url, icon: null }) })
-                      if (res.ok) { toast.success('Logo updated'); await refreshSpaces() } else { toast.error('Failed to update logo') }
-                    }} />
-                    <p className="text-xs text-muted-foreground">Upload an image or paste a URL. Shown in sidebar and UI.</p>
-                  </div>
-                    <div>
-                      <Label htmlFor="space-name">Name</Label>
-                      <Input id="space-name" defaultValue={selectedSpace!.name} onBlur={async (e) => {
-                        const name = e.currentTarget.value.trim()
-                        if (!name || name === selectedSpace!.name) return
-                        const res = await fetch(`/api/spaces/${selectedSpace!.id}`, {
-                          method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ name })
-                        })
-                        if (res.ok) { toast.success('Space name updated'); await refreshSpaces() } else { toast.error('Failed to update name') }
-                      }} />
-                    </div>
-                    <div>
-                      <Label htmlFor="space-desc">Description</Label>
-                      <Textarea id="space-desc" defaultValue={selectedSpace!.description || ''} rows={3} onBlur={async (e) => {
-                        const description = e.currentTarget.value
-                        if (description === (selectedSpace!.description || '')) return
-                        const res = await fetch(`/api/spaces/${selectedSpace!.id}`, {
-                          method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ description })
-                        })
-                        if (res.ok) { toast.success('Description updated'); await refreshSpaces() } else { toast.error('Failed to update description') }
-                      }} />
-                    </div>
-                    <div>
-                      <Label htmlFor="space-slug">Custom URL (slug)</Label>
-                      <Input id="space-slug" defaultValue={selectedSpace!.slug || ''} onBlur={async (e) => {
-                        const slug = e.currentTarget.value.trim()
-                        if (slug === (selectedSpace!.slug || '')) return
-                        const res = await fetch(`/api/spaces/${selectedSpace!.id}`, {
-                          method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ slug })
-                        })
-                        if (res.ok) { toast.success('Slug updated'); await refreshSpaces() } else { toast.error('Failed to update slug') }
-                      }} />
-                      <p className="text-xs text-muted-foreground mt-1">URL will be /s/{selectedSpace!.slug || 'your-slug'}/dashboard</p>
-                    </div>
-                  </div>
-                </TabsContent>
-                <TabsContent value="members" className="flex-1 overflow-y-auto p-6 space-y-4">
-                  <div className="flex items-end gap-3">
-                    <div className="flex-1">
-                      <Label htmlFor="invite-user">Invite user</Label>
-                      <Select value={inviteForm.user_id} onValueChange={(v) => setInviteForm({ ...inviteForm, user_id: v })}>
-                        <SelectTrigger id="invite-user"><SelectValue placeholder="Select user" /></SelectTrigger>
-                        <SelectContent>
-                          {availableUsers.map((u: any) => (
-                            <SelectItem key={u.id} value={u.id}>{u.name} ({u.email})</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>Role</Label>
-                      <Select value={inviteForm.role} onValueChange={(v: any) => setInviteForm({ ...inviteForm, role: v })}>
-                        <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="member">Member</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          {selectedSpace!.user_role === 'owner' && <SelectItem value="owner">Owner</SelectItem>}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <Button disabled={!canManageMembers || !inviteForm.user_id} onClick={async () => {
-                      const res = await fetch(`/api/spaces/${selectedSpace!.id}/members`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(inviteForm) })
-                      if (res.ok) { toast.success('User invited'); await loadMembers(selectedSpace!.id) } else { toast.error('Failed to invite') }
-                    }}>Invite</Button>
-                  </div>
-                  <div className="border rounded-md">
-                    <div className="grid grid-cols-5 gap-2 px-3 py-2 text-xs text-muted-foreground border-b">
-                      <div>User</div><div>Email</div><div>System role</div><div>Space role</div><div>Actions</div>
-                    </div>
-                    {members.map((m: any) => (
-                      <div key={m.id || m.user_id} className="grid grid-cols-5 gap-2 px-3 py-2 items-center border-b border-border last:border-b-0">
-                        <div className="font-medium">{m.user_name || 'Unknown'}</div>
-                        <div>{m.user_email || 'N/A'}</div>
-                        <div><Badge variant="outline">{m.user_system_role || 'N/A'}</Badge></div>
-                        <div>
-                          {canManageMembers && m.role !== 'owner' ? (
-                            <Select value={m.role} onValueChange={async (role) => {
-                              const r = await fetch(`/api/spaces/${selectedSpace!.id}/members/${m.user_id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role }) })
-                              if (r.ok) { toast.success('Role updated'); await loadMembers(selectedSpace!.id) } else { toast.error('Failed to update') }
-                            }}>
-                              <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="member">Member</SelectItem>
-                                <SelectItem value="admin">Admin</SelectItem>
-                                {selectedSpace!.user_role === 'owner' && <SelectItem value="owner">Owner</SelectItem>}
-                              </SelectContent>
-                            </Select>
+                      <div className="space-y-2">
+                        <Label className={brandingMode === 'logo' ? '' : 'opacity-50'}>Logo</Label>
+                        <div className="flex items-center gap-3">
+                          {selectedSpace!.logo_url ? (
+                            <img src={selectedSpace!.logo_url} alt={selectedSpace!.name} className="h-10 w-10 rounded" />
                           ) : (
-                            <Badge variant="outline">{m.role}</Badge>
+                            <div className="h-10 w-10 rounded bg-muted" />
                           )}
-                        </div>
-                        <div>
-                          {canManageMembers && m.role !== 'owner' && (
-                            <Button variant="outline" size="sm" className="text-red-600" onClick={async () => {
-                              if (!confirm('Remove this member?')) return
-                              const r = await fetch(`/api/spaces/${selectedSpace!.id}/members/${m.user_id}`, { method: 'DELETE' })
-                              if (r.ok) { toast.success('Member removed'); await loadMembers(selectedSpace!.id) } else { toast.error('Failed to remove') }
-                            }}>Remove</Button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </TabsContent>
-                <TabsContent value="sidebar" className="flex-1 overflow-y-auto p-6 space-y-6">
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <div className="space-y-4">
-                      <h4 className="font-medium">Styles</h4>
-                      <div className="grid gap-3">
-                        <div>
-                          <Label>Background type</Label>
-                          <Select defaultValue={(selectedSpace as any).sidebar_config?.style?.backgroundType || 'color'} onValueChange={async (v)=>{
-                            const res = await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sidebar_config: { ...(selectedSpace as any).sidebar_config, style: { ...((selectedSpace as any).sidebar_config?.style||{}), backgroundType: v } } }) })
-                            if (res.ok) { toast.success('Updated'); await refreshSpaces() } else { toast.error('Failed') }
+                          <form onChange={async (e: any) => {
+                            const file = e.target?.files?.[0]
+                            if (!file) return
+                            if (brandingMode !== 'logo') return
+                            const fd = new FormData()
+                            fd.append('logo', file)
+                            const uploadRes = await fetch('/api/upload/logo', { method: 'POST', body: fd })
+                            if (!uploadRes.ok) { toast.error('Upload failed'); return }
+                            const { url } = await uploadRes.json()
+                            const res = await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ logo_url: url, icon: null }) })
+                            if (res.ok) { toast.success('Logo updated'); await refreshSpaces() } else { toast.error('Failed to save logo url') }
                           }}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="color">Color</SelectItem>
-                              <SelectItem value="image">Image</SelectItem>
-                              <SelectItem value="gradient">Gradient</SelectItem>
-                            </SelectContent>
-                          </Select>
+                            <Input type="file" accept="image/*" disabled={brandingMode !== 'logo'} />
+                          </form>
                         </div>
-                        <div>
-                          <Label>Background color</Label>
-                          <Input type="text" placeholder="#0f172a" defaultValue={(selectedSpace as any).sidebar_config?.style?.backgroundColor || ''} onBlur={async(e)=>{
-                            const v = e.currentTarget.value
-                            const res = await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sidebar_config: { ...(selectedSpace as any).sidebar_config, style: { ...((selectedSpace as any).sidebar_config?.style||{}), backgroundColor: v } } }) })
-                            if (res.ok) { toast.success('Updated'); await refreshSpaces() } else { toast.error('Failed') }
-                          }} />
-                        </div>
-                        <div>
-                          <Label>Background image URL</Label>
-                          <Input type="text" placeholder="https://..." defaultValue={(selectedSpace as any).sidebar_config?.style?.backgroundImage || ''} onBlur={async(e)=>{
-                            const v = e.currentTarget.value
-                            const res = await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sidebar_config: { ...(selectedSpace as any).sidebar_config, style: { ...((selectedSpace as any).sidebar_config?.style||{}), backgroundImage: v || null } } }) })
-                            if (res.ok) { toast.success('Updated'); await refreshSpaces() } else { toast.error('Failed') }
-                          }} />
-                        </div>
-                        <div className="grid grid-cols-3 gap-3">
+                        <Input defaultValue={selectedSpace!.logo_url || ''} placeholder="https://..." disabled={brandingMode !== 'logo'} onBlur={async (e) => {
+                          const logo_url = e.currentTarget.value.trim()
+                          if (logo_url === (selectedSpace!.logo_url || '')) return
+                          const res = await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ logo_url, icon: null }) })
+                          if (res.ok) { toast.success('Logo updated'); await refreshSpaces() } else { toast.error('Failed to update logo') }
+                        }} />
+                        <p className="text-xs text-muted-foreground">Upload an image or paste a URL. Shown in sidebar and UI.</p>
+                      </div>
+                      <div>
+                        <Label htmlFor="space-name">Name</Label>
+                        <Input id="space-name" defaultValue={selectedSpace!.name} onBlur={async (e) => {
+                          const name = e.currentTarget.value.trim()
+                          if (!name || name === selectedSpace!.name) return
+                          const res = await fetch(`/api/spaces/${selectedSpace!.id}`, {
+                            method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name })
+                          })
+                          if (res.ok) { toast.success('Space name updated'); await refreshSpaces() } else { toast.error('Failed to update name') }
+                        }} />
+                      </div>
+                      <div>
+                        <Label htmlFor="space-desc">Description</Label>
+                        <Textarea id="space-desc" defaultValue={selectedSpace!.description || ''} rows={3} onBlur={async (e) => {
+                          const description = e.currentTarget.value
+                          if (description === (selectedSpace!.description || '')) return
+                          const res = await fetch(`/api/spaces/${selectedSpace!.id}`, {
+                            method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ description })
+                          })
+                          if (res.ok) { toast.success('Description updated'); await refreshSpaces() } else { toast.error('Failed to update description') }
+                        }} />
+                      </div>
+                      <div>
+                        <Label htmlFor="space-slug">Custom URL (slug)</Label>
+                        <Input id="space-slug" defaultValue={selectedSpace!.slug || ''} onBlur={async (e) => {
+                          const slug = e.currentTarget.value.trim()
+                          if (slug === (selectedSpace!.slug || '')) return
+                          const res = await fetch(`/api/spaces/${selectedSpace!.id}`, {
+                            method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ slug })
+                          })
+                          if (res.ok) { toast.success('Slug updated'); await refreshSpaces() } else { toast.error('Failed to update slug') }
+                        }} />
+                        <p className="text-xs text-muted-foreground mt-1">URL will be /s/{selectedSpace!.slug || 'your-slug'}/dashboard</p>
+                      </div>
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="members" className="flex-1 overflow-y-auto p-6 space-y-4">
+                    <div className="flex items-end gap-3">
+                      <div className="flex-1">
+                        <Label htmlFor="invite-user">Invite user</Label>
+                        <Select value={inviteForm.user_id} onValueChange={(v) => setInviteForm({ ...inviteForm, user_id: v })}>
+                          <SelectTrigger id="invite-user"><SelectValue placeholder="Select user" /></SelectTrigger>
+                          <SelectContent>
+                            {availableUsers.map((u: any) => (
+                              <SelectItem key={u.id} value={u.id}>{u.name} ({u.email})</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Role</Label>
+                        <Select value={inviteForm.role} onValueChange={(v: any) => setInviteForm({ ...inviteForm, role: v })}>
+                          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="member">Member</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            {selectedSpace!.user_role === 'owner' && <SelectItem value="owner">Owner</SelectItem>}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Button disabled={!canManageMembers || !inviteForm.user_id} onClick={async () => {
+                        const res = await fetch(`/api/spaces/${selectedSpace!.id}/members`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(inviteForm) })
+                        if (res.ok) { toast.success('User invited'); await loadMembers(selectedSpace!.id) } else { toast.error('Failed to invite') }
+                      }}>Invite</Button>
+                    </div>
+                    <div className="border rounded-md">
+                      <div className="grid grid-cols-5 gap-2 px-3 py-2 text-xs text-muted-foreground border-b">
+                        <div>User</div><div>Email</div><div>System role</div><div>Space role</div><div>Actions</div>
+                      </div>
+                      {members.map((m: any) => (
+                        <div key={m.id || m.user_id} className="grid grid-cols-5 gap-2 px-3 py-2 items-center border-b border-border last:border-b-0">
+                          <div className="font-medium">{m.user_name || 'Unknown'}</div>
+                          <div>{m.user_email || 'N/A'}</div>
+                          <div><Badge variant="outline">{m.user_system_role || 'N/A'}</Badge></div>
                           <div>
-                            <Label>Gradient from</Label>
-                            <Input type="text" placeholder="#0f172a" defaultValue={(selectedSpace as any).sidebar_config?.style?.gradient?.from || ''} onBlur={async(e)=>{
-                              const v = e.currentTarget.value
-                              const g = { ...(((selectedSpace as any).sidebar_config?.style?.gradient)||{}), from: v }
-                              const res = await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sidebar_config: { ...(selectedSpace as any).sidebar_config, style: { ...((selectedSpace as any).sidebar_config?.style||{}), gradient: g } } }) })
-                              if (res.ok) { toast.success('Updated'); await refreshSpaces() } else { toast.error('Failed') }
-                            }} />
+                            {canManageMembers && m.role !== 'owner' ? (
+                              <Select value={m.role} onValueChange={async (role) => {
+                                const r = await fetch(`/api/spaces/${selectedSpace!.id}/members/${m.user_id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role }) })
+                                if (r.ok) { toast.success('Role updated'); await loadMembers(selectedSpace!.id) } else { toast.error('Failed to update') }
+                              }}>
+                                <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="member">Member</SelectItem>
+                                  <SelectItem value="admin">Admin</SelectItem>
+                                  {selectedSpace!.user_role === 'owner' && <SelectItem value="owner">Owner</SelectItem>}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <Badge variant="outline">{m.role}</Badge>
+                            )}
                           </div>
                           <div>
-                            <Label>Gradient to</Label>
-                            <Input type="text" placeholder="#1e293b" defaultValue={(selectedSpace as any).sidebar_config?.style?.gradient?.to || ''} onBlur={async(e)=>{
-                              const v = e.currentTarget.value
-                              const g = { ...(((selectedSpace as any).sidebar_config?.style?.gradient)||{}), to: v }
-                              const res = await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sidebar_config: { ...(selectedSpace as any).sidebar_config, style: { ...((selectedSpace as any).sidebar_config?.style||{}), gradient: g } } }) })
-                              if (res.ok) { toast.success('Updated'); await refreshSpaces() } else { toast.error('Failed') }
-                            }} />
-                          </div>
-                          <div>
-                            <Label>Gradient angle</Label>
-                            <Input type="number" placeholder="180" defaultValue={(selectedSpace as any).sidebar_config?.style?.gradient?.angle ?? ''} onBlur={async(e)=>{
-                              const v = parseInt(e.currentTarget.value||'180',10)
-                              const g = { ...(((selectedSpace as any).sidebar_config?.style?.gradient)||{}), angle: v }
-                              const res = await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sidebar_config: { ...(selectedSpace as any).sidebar_config, style: { ...((selectedSpace as any).sidebar_config?.style||{}), gradient: g } } }) })
-                              if (res.ok) { toast.success('Updated'); await refreshSpaces() } else { toast.error('Failed') }
-                            }} />
+                            {canManageMembers && m.role !== 'owner' && (
+                              <Button variant="outline" size="sm" className="text-red-600" onClick={async () => {
+                                if (!confirm('Remove this member?')) return
+                                const r = await fetch(`/api/spaces/${selectedSpace!.id}/members/${m.user_id}`, { method: 'DELETE' })
+                                if (r.ok) { toast.success('Member removed'); await loadMembers(selectedSpace!.id) } else { toast.error('Failed to remove') }
+                              }}>Remove</Button>
+                            )}
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
+                      ))}
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="sidebar" className="flex-1 overflow-y-auto p-6 space-y-6">
+                    <div className="grid gap-6 md:grid-cols-2">
+                      <div className="space-y-4">
+                        <h4 className="font-medium">Styles</h4>
+                        <div className="grid gap-3">
                           <div>
-                            <Label>Font color</Label>
-                            <Input type="text" placeholder="#ffffff" defaultValue={(selectedSpace as any).sidebar_config?.style?.fontColor || ''} onBlur={async(e)=>{
-                              const v = e.currentTarget.value
-                              const res = await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sidebar_config: { ...(selectedSpace as any).sidebar_config, style: { ...((selectedSpace as any).sidebar_config?.style||{}), fontColor: v } } }) })
-                              if (res.ok) { toast.success('Updated'); await refreshSpaces() } else { toast.error('Failed') }
-                            }} />
-                          </div>
-                          <div>
-                            <Label>Width</Label>
-                            <Select defaultValue={(selectedSpace as any).sidebar_config?.style?.size || 'medium'} onValueChange={async (v)=>{
-                              const res = await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sidebar_config: { ...(selectedSpace as any).sidebar_config, style: { ...((selectedSpace as any).sidebar_config?.style||{}), size: v } } }) })
+                            <Label>Background type</Label>
+                            <Select defaultValue={(selectedSpace as any).sidebar_config?.style?.backgroundType || 'color'} onValueChange={async (v) => {
+                              const res = await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sidebar_config: { ...(selectedSpace as any).sidebar_config, style: { ...((selectedSpace as any).sidebar_config?.style || {}), backgroundType: v } } }) })
                               if (res.ok) { toast.success('Updated'); await refreshSpaces() } else { toast.error('Failed') }
                             }}>
                               <SelectTrigger><SelectValue /></SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="small">Small</SelectItem>
-                                <SelectItem value="medium">Medium</SelectItem>
-                                <SelectItem value="large">Large</SelectItem>
+                                <SelectItem value="color">Color</SelectItem>
+                                <SelectItem value="image">Image</SelectItem>
+                                <SelectItem value="gradient">Gradient</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
+                          <div>
+                            <Label>Background color</Label>
+                            <Input type="text" placeholder="#0f172a" defaultValue={(selectedSpace as any).sidebar_config?.style?.backgroundColor || ''} onBlur={async (e) => {
+                              const v = e.currentTarget.value
+                              const res = await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sidebar_config: { ...(selectedSpace as any).sidebar_config, style: { ...((selectedSpace as any).sidebar_config?.style || {}), backgroundColor: v } } }) })
+                              if (res.ok) { toast.success('Updated'); await refreshSpaces() } else { toast.error('Failed') }
+                            }} />
+                          </div>
+                          <div>
+                            <Label>Background image URL</Label>
+                            <Input type="text" placeholder="https://..." defaultValue={(selectedSpace as any).sidebar_config?.style?.backgroundImage || ''} onBlur={async (e) => {
+                              const v = e.currentTarget.value
+                              const res = await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sidebar_config: { ...(selectedSpace as any).sidebar_config, style: { ...((selectedSpace as any).sidebar_config?.style || {}), backgroundImage: v || null } } }) })
+                              if (res.ok) { toast.success('Updated'); await refreshSpaces() } else { toast.error('Failed') }
+                            }} />
+                          </div>
+                          <div className="grid grid-cols-3 gap-3">
+                            <div>
+                              <Label>Gradient from</Label>
+                              <Input type="text" placeholder="#0f172a" defaultValue={(selectedSpace as any).sidebar_config?.style?.gradient?.from || ''} onBlur={async (e) => {
+                                const v = e.currentTarget.value
+                                const g = { ...(((selectedSpace as any).sidebar_config?.style?.gradient) || {}), from: v }
+                                const res = await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sidebar_config: { ...(selectedSpace as any).sidebar_config, style: { ...((selectedSpace as any).sidebar_config?.style || {}), gradient: g } } }) })
+                                if (res.ok) { toast.success('Updated'); await refreshSpaces() } else { toast.error('Failed') }
+                              }} />
+                            </div>
+                            <div>
+                              <Label>Gradient to</Label>
+                              <Input type="text" placeholder="#1e293b" defaultValue={(selectedSpace as any).sidebar_config?.style?.gradient?.to || ''} onBlur={async (e) => {
+                                const v = e.currentTarget.value
+                                const g = { ...(((selectedSpace as any).sidebar_config?.style?.gradient) || {}), to: v }
+                                const res = await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sidebar_config: { ...(selectedSpace as any).sidebar_config, style: { ...((selectedSpace as any).sidebar_config?.style || {}), gradient: g } } }) })
+                                if (res.ok) { toast.success('Updated'); await refreshSpaces() } else { toast.error('Failed') }
+                              }} />
+                            </div>
+                            <div>
+                              <Label>Gradient angle</Label>
+                              <Input type="number" placeholder="180" defaultValue={(selectedSpace as any).sidebar_config?.style?.gradient?.angle ?? ''} onBlur={async (e) => {
+                                const v = parseInt(e.currentTarget.value || '180', 10)
+                                const g = { ...(((selectedSpace as any).sidebar_config?.style?.gradient) || {}), angle: v }
+                                const res = await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sidebar_config: { ...(selectedSpace as any).sidebar_config, style: { ...((selectedSpace as any).sidebar_config?.style || {}), gradient: g } } }) })
+                                if (res.ok) { toast.success('Updated'); await refreshSpaces() } else { toast.error('Failed') }
+                              }} />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label>Font color</Label>
+                              <Input type="text" placeholder="#ffffff" defaultValue={(selectedSpace as any).sidebar_config?.style?.fontColor || ''} onBlur={async (e) => {
+                                const v = e.currentTarget.value
+                                const res = await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sidebar_config: { ...(selectedSpace as any).sidebar_config, style: { ...((selectedSpace as any).sidebar_config?.style || {}), fontColor: v } } }) })
+                                if (res.ok) { toast.success('Updated'); await refreshSpaces() } else { toast.error('Failed') }
+                              }} />
+                            </div>
+                            <div>
+                              <Label>Width</Label>
+                              <Select defaultValue={(selectedSpace as any).sidebar_config?.style?.size || 'medium'} onValueChange={async (v) => {
+                                const res = await fetch(`/api/spaces/${selectedSpace!.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sidebar_config: { ...(selectedSpace as any).sidebar_config, style: { ...((selectedSpace as any).sidebar_config?.style || {}), size: v } } }) })
+                                if (res.ok) { toast.success('Updated'); await refreshSpaces() } else { toast.error('Failed') }
+                              }}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="small">Small</SelectItem>
+                                  <SelectItem value="medium">Medium</SelectItem>
+                                  <SelectItem value="large">Large</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="space-y-4">
-                      <h4 className="font-medium">Menu (drag to reorder)</h4>
-                      <p className="text-sm text-muted-foreground">Add labels, links, and arrange items. Changes save on blur/drop.</p>
-                      <MenuEditor space={selectedSpace} onSaved={refreshSpaces} />
+                      <div className="space-y-4">
+                        <h4 className="font-medium">Menu (drag to reorder)</h4>
+                        <p className="text-sm text-muted-foreground">Add labels, links, and arrange items. Changes save on blur/drop.</p>
+                        <MenuEditor space={selectedSpace} onSaved={refreshSpaces} />
+                      </div>
                     </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
+                  </TabsContent>
+                </Tabs>
               </div>
             </div>
           </div>
@@ -700,7 +721,7 @@ function MenuEditor({ space, onSaved }: { space: any, onSaved: () => Promise<voi
     setMenu(next)
     const res = await fetch(`/api/spaces/${space.id}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sidebar_config: { ...(space.sidebar_config||{}), menu: next } })
+      body: JSON.stringify({ sidebar_config: { ...(space.sidebar_config || {}), menu: next } })
     })
     if (res.ok) { toast.success('Menu saved'); await onSaved() } else { toast.error('Failed to save menu') }
   }
@@ -737,11 +758,11 @@ function MenuEditor({ space, onSaved }: { space: any, onSaved: () => Promise<voi
       <div className="border rounded">
         {menu.map((item, idx) => (
           <div key={idx} className="flex items-center gap-2 p-2 border-b border-border last:border-b-0">
-            <button className="cursor-grab px-2 text-xs" draggable onDragStart={(e)=>{ e.dataTransfer.setData('text/plain', String(idx)) }} onDragOver={(e)=>e.preventDefault()} onDrop={(e)=>{ const from = parseInt(e.dataTransfer.getData('text/plain')||'-1',10); if(from>=0){ onReorder(from, idx) } }}>↕</button>
-            <Input className="w-48" defaultValue={item.title} onBlur={(e)=>updateItem(idx,{ title: e.currentTarget.value })} />
-            <Input className="flex-1" placeholder="/path or leave blank for label" defaultValue={item.href || ''} onBlur={(e)=>updateItem(idx,{ href: e.currentTarget.value || undefined })} />
-            <Input className="w-40" placeholder="Icon name (optional)" defaultValue={item.icon || ''} onBlur={(e)=>updateItem(idx,{ icon: e.currentTarget.value || undefined })} />
-            <Button size="sm" variant="outline" className="text-red-600" onClick={()=>removeItem(idx)}>Remove</Button>
+            <button className="cursor-grab px-2 text-xs" draggable onDragStart={(e) => { e.dataTransfer.setData('text/plain', String(idx)) }} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { const from = parseInt(e.dataTransfer.getData('text/plain') || '-1', 10); if (from >= 0) { onReorder(from, idx) } }}>↕</button>
+            <Input className="w-48" defaultValue={item.title} onBlur={(e) => updateItem(idx, { title: e.currentTarget.value })} />
+            <Input className="flex-1" placeholder="/path or leave blank for label" defaultValue={item.href || ''} onBlur={(e) => updateItem(idx, { href: e.currentTarget.value || undefined })} />
+            <Input className="w-40" placeholder="Icon name (optional)" defaultValue={item.icon || ''} onBlur={(e) => updateItem(idx, { icon: e.currentTarget.value || undefined })} />
+            <Button size="sm" variant="outline" className="text-red-600" onClick={() => removeItem(idx)}>Remove</Button>
           </div>
         ))}
       </div>

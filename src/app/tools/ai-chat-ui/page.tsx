@@ -54,6 +54,7 @@ export default function ChatEmbedUIPage() {
             conversationOpener: 'Hello! How can I help you today?',
             openaiAgentSdkModel: 'gpt-4o',
             deploymentType: 'popover',
+            customEmbedDomain: '',
 
             // ===== Default Style Settings =====
             // Primary colors
@@ -262,8 +263,11 @@ export default function ChatEmbedUIPage() {
 
 
     const generateEmbedCode = (chatbot: Chatbot) => {
-        // Basic embed code generation logic
-        const baseUrl = window.location.origin
+        // Use custom domain if provided, otherwise fallback to current origin
+        const baseUrl = chatbot.customEmbedDomain
+            ? (chatbot.customEmbedDomain.startsWith('http') ? chatbot.customEmbedDomain : `https://${chatbot.customEmbedDomain}`).replace(/\/$/, '')
+            : window.location.origin
+
         return `<script src="${baseUrl}/chat-widget.js" data-chatbot-id="${chatbot.id}"></script>`
     }
 

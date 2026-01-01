@@ -1,7 +1,18 @@
 'use client'
 
-import * as LucideIcons from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Bot } from 'lucide-react'
 import { Chatbot } from './types'
+
+// Helper to dynamically load icon
+const loadIcon = async (iconName: string) => {
+  try {
+    const module = await import('lucide-react')
+    return (module as any)[iconName] || Bot
+  } catch {
+    return Bot
+  }
+}
 
 interface ChatbotAvatarProps {
   chatbot: Chatbot
@@ -9,6 +20,8 @@ interface ChatbotAvatarProps {
 }
 
 export function ChatbotAvatar({ chatbot, size = 'md' }: ChatbotAvatarProps) {
+  const [IconComponent, setIconComponent] = useState<React.ComponentType<any>>(Bot)
+
   const sizeClasses = {
     sm: 'w-8 h-8',
     md: 'w-10 h-10',
@@ -19,8 +32,16 @@ export function ChatbotAvatar({ chatbot, size = 'md' }: ChatbotAvatarProps) {
     md: 'h-5 w-5',
     lg: 'h-6 w-6'
   }
-  
+
   const avatarType = (chatbot.avatarType || 'icon') as 'icon' | 'image'
+  const IconName = (chatbot.avatarIcon || 'Bot') as string
+
+  useEffect(() => {
+    if (avatarType === 'icon') {
+      loadIcon(IconName).then(setIconComponent)
+    }
+  }, [IconName, avatarType])
+
   if (avatarType === 'image' && chatbot.avatarImageUrl) {
     return (
       <img
@@ -31,8 +52,7 @@ export function ChatbotAvatar({ chatbot, size = 'md' }: ChatbotAvatarProps) {
       />
     )
   }
-  const IconName = (chatbot.avatarIcon || 'Bot') as string
-  const IconComponent = (LucideIcons as any)[IconName] || LucideIcons.Bot
+
   const iconColor = chatbot.avatarIconColor || '#ffffff'
   const bgColor = chatbot.avatarBackgroundColor || chatbot.primaryColor || '#3b82f6'
   return (

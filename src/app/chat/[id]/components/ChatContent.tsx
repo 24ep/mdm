@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { ChatbotConfig, Message } from '../types'
 import { ChatHeader } from './ChatHeader'
 import { MessagesList } from './MessagesList'

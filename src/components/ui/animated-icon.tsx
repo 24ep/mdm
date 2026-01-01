@@ -1,8 +1,9 @@
 "use client"
 
-import React from "react"
+import React, { Suspense } from "react"
 import { motion, MotionProps, Variants } from "framer-motion"
-import * as LucideIcons from "lucide-react"
+import { loadIcon } from "@/lib/utils/icon-loader"
+import { Loader2 } from "lucide-react"
 
 type IconComponent = React.ComponentType<{ className?: string }>
 
@@ -131,18 +132,24 @@ export function AnimatedIcon({
   style,
   ...props
 }: AnimatedIconProps & Omit<MotionProps, 'children'>) {
-  // Get the icon component
+  // Get the icon component - use lazy loading for string icons
   const IconComponent = React.useMemo(() => {
     if (typeof icon === 'string') {
-      const Icon = (LucideIcons as any)[icon]
-      return Icon || null
+      return loadIcon(icon)
     }
     return icon
   }, [icon])
 
+  // Fallback for when icon is not found or is loading
   if (!IconComponent) {
-    console.warn(`Icon "${icon}" not found`)
-    return null
+    return (
+      <motion.div
+        className={`inline-block ${className}`}
+        style={{ width: size, height: size }}
+      >
+        <Loader2 className="w-full h-full animate-spin" />
+      </motion.div>
+    )
   }
 
   // Get animation variants
@@ -187,9 +194,18 @@ export function AnimatedIcon({
     }
   }
 
+  // Handle lazy-loaded icons (string icons)
+  const isLazyIcon = typeof icon === 'string'
+
   return (
     <motion.div {...motionProps} className={`inline-block ${className}`} onClick={onClick}>
-      <IconComponent className="w-full h-full" />
+      {isLazyIcon ? (
+        <Suspense fallback={<Loader2 className="w-full h-full animate-spin" />}>
+          <IconComponent className="w-full h-full" />
+        </Suspense>
+      ) : (
+        <IconComponent className="w-full h-full" />
+      )}
     </motion.div>
   )
 }

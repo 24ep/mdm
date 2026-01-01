@@ -171,22 +171,7 @@ export function ChatbotEmulator({
     }
   }, [selectedChatbot?.id, emulatorConfig])
 
-  const getDeviceDimensions = () => {
-    // If emulatorWidth is set (from dragging), use that
-    if (emulatorWidth && deviceType === 'desktop') {
-      return { width: `${emulatorWidth}px`, height: '100%', borderRadius: '0px', borderWidth: '0px' }
-    }
-    switch (deviceType) {
-      case 'mobile':
-        return { width: '375px', height: '667px', borderRadius: '40px', borderWidth: '12px' }
-      case 'tablet':
-        return { width: '768px', height: '1024px', borderRadius: '24px', borderWidth: '12px' }
-      default:
-        return { width: '100%', height: '100%', borderRadius: '0px', borderWidth: '0px' }
-    }
-  }
 
-  const deviceStyle = getDeviceDimensions()
 
   return (
     <div ref={containerRef} className="min-h-[800px] overflow-visible relative bg-muted/10 h-full flex flex-col" style={{ borderColor: formData.borderColor }}>
@@ -298,25 +283,81 @@ export function ChatbotEmulator({
       </div>
 
       {selectedChatbot?.id ? (
-        <div className="relative w-full flex-1 overflow-auto flex items-center justify-center p-8 bg-muted/10">
-          <div
-            className="relative bg-background shadow-2xl transition-all duration-300 ease-in-out flex flex-col overflow-hidden shrink-0"
-            style={{
-              width: deviceStyle.width,
-              height: deviceStyle.height,
-              borderRadius: deviceStyle.borderRadius,
-              border: deviceType !== 'desktop' ? `${deviceStyle.borderWidth} solid #1a1a1a` : 'none',
-              maxHeight: '100%'
-            }}
-          >
-            <iframe
-              ref={emulatorRef}
-              src={`/chat/${selectedChatbot.id}?preview=true&deploymentType=${previewMode}&previewDevice=${deviceType}`}
-              className="w-full h-full border-0 bg-background"
-              title="Chat Emulator"
-              style={{ position: 'relative', zIndex: Z_INDEX.content }}
-            />
-          </div>
+        <div
+          className="relative w-full flex-1 overflow-auto flex items-center justify-center p-8 bg-muted/10 transition-all duration-300"
+          style={{
+            backgroundColor: (formData as any).pageBackgroundColor,
+            backgroundImage: (formData as any).pageBackgroundImage ? `url(${(formData as any).pageBackgroundImage})` : undefined,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }}
+        >
+          {deviceType === 'desktop' ? (
+            // Desktop view - simple container (no shadow for clean look)
+            <div
+              className="relative bg-background transition-all duration-300 ease-in-out flex flex-col overflow-hidden shrink-0"
+              style={{
+                width: emulatorWidth ? `${emulatorWidth}px` : '100%',
+                height: '100%',
+                maxHeight: '100%'
+              }}
+            >
+              <iframe
+                ref={emulatorRef}
+                src={`/chat/${selectedChatbot.id}?preview=true&deploymentType=${previewMode}&previewDevice=${deviceType}`}
+                className="w-full h-full border-0 bg-background"
+                title="Chat Emulator"
+                style={{ position: 'relative', zIndex: Z_INDEX.content }}
+              />
+            </div>
+          ) : (
+            // Mobile/Tablet view - realistic device frame
+            <div
+              className="relative bg-black shadow-2xl transition-all duration-300 ease-in-out flex flex-col overflow-hidden shrink-0"
+              style={{
+                width: deviceType === 'mobile' ? '300px' : '500px',
+                height: deviceType === 'mobile' ? '600px' : '700px',
+                borderRadius: deviceType === 'mobile' ? '40px' : '32px',
+                border: `${deviceType === 'mobile' ? '8px' : '10px'} solid #1f1f1f`,
+                transform: 'translateZ(0)'
+              }}
+            >
+              {/* Status Bar */}
+              <div
+                className="h-8 w-full flex items-center justify-between px-6 text-[10px] font-bold shrink-0"
+                style={{
+                  backgroundColor: (formData as any).primaryColor || '#3b82f6',
+                  color: '#fff'
+                }}
+              >
+                <span>9:41</span>
+                <div className="flex gap-1 items-center">
+                  <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3L2 12h3v9h6v-6h2v6h6v-9h3L12 3z" /></svg>
+                  <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z" /></svg>
+                  <svg className="h-4 w-3" fill="currentColor" viewBox="0 0 24 24"><path d="M17 4h-3V2h-4v2H7v18h10V4zm-4 16h-2v-2h2v2z" /></svg>
+                </div>
+              </div>
+
+              {/* Content Area */}
+              <div className="flex-1 w-full relative overflow-hidden bg-white">
+                <iframe
+                  ref={emulatorRef}
+                  src={`/chat/${selectedChatbot.id}?preview=true&deploymentType=${previewMode}&previewDevice=${deviceType}`}
+                  className="w-full h-full border-0"
+                  title="Chat Emulator"
+                  style={{
+                    position: 'relative',
+                    zIndex: Z_INDEX.content,
+                    backgroundColor: '#ffffff'
+                  }}
+                />
+              </div>
+
+              {/* Home Indicator */}
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-32 h-1 bg-white/50 rounded-full" style={{ zIndex: 60 }} />
+            </div>
+          )}
         </div>
       ) : (
         <div className="h-full flex items-center justify-center text-muted-foreground p-6 text-sm">
