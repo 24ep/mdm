@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateDomain } from '@/lib/chatbot-helper';
 
+// CORS headers for embed support
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Private-Network': 'true',
+};
+
+// Helper to create JSON response with CORS headers
+function jsonResponse(data: any, status: number = 200) {
+  return NextResponse.json(data, { status, headers: corsHeaders });
+}
+
 // ChatKit Session API - Creates session with OpenAI for ChatKit
 // This endpoint is called by the ChatKitWrapper to get a client_secret
 
@@ -45,9 +58,9 @@ export async function POST(request: NextRequest) {
           const domainValidation = validateDomain(config, request)
           if (!domainValidation.allowed) {
             console.warn(`[Session API] ${domainValidation.error}`)
-            return NextResponse.json(
+            return jsonResponse(
               { error: 'Domain not allowed', details: domainValidation.error },
-              { status: 403 }
+              403
             )
           }
           // Determine which key to use
@@ -68,17 +81,14 @@ export async function POST(request: NextRequest) {
 
     if (!agentId) {
       console.error('❌ Missing agentId in request')
-      return NextResponse.json(
-        { error: 'Missing agentId' },
-        { status: 400 }
-      );
+      return jsonResponse({ error: 'Missing agentId' }, 400);
     }
 
     if (!apiKey) {
       console.error('❌ Missing API key')
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'Missing API key', details: 'No OpenAI API key provided or found for this chatbot' },
-        { status: 400 }
+        400
       );
     }
 
@@ -138,12 +148,12 @@ export async function POST(request: NextRequest) {
         error: errorDetails
       });
 
-      return NextResponse.json(
+      return jsonResponse(
         {
           error: 'Failed to create OpenAI session',
           details: errorDetails.error?.message || errorDetails.raw || response.statusText
         },
-        { status: response.status }
+        response.status
       );
     }
 
@@ -155,26 +165,20 @@ export async function POST(request: NextRequest) {
     })
 
     // Return the client_secret to the frontend
-    return NextResponse.json({
+    return jsonResponse({
       client_secret: sessionData.client_secret?.value || sessionData.client_secret,
       session_id: sessionData.id,
       expires_at: sessionData.expires_at
-    }, {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      }
     });
 
   } catch (error) {
     console.error('❌ ChatKit session error:', error);
-    return NextResponse.json(
+    return jsonResponse(
       {
         error: 'Internal server error',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
-      { status: 500 }
+      500
     );
   }
 }
@@ -186,15 +190,17 @@ export async function OPTIONS() {
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Private-Network': 'true',
+      'Access-Control-Max-Age': '86400',
     },
   });
 }
 
 // Keep GET for backwards compatibility
 export async function GET() {
-  return NextResponse.json(
+  return jsonResponse(
     { error: 'Use POST method with agentId and apiKey in body' },
-    { status: 405 }
+    405
   );
 }
