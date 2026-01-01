@@ -37,6 +37,8 @@ export default withAuth(
         const path = req.nextUrl.pathname
 
         // Allow public routes that need headers but no auth
+        // These routes are used by the chatbot embed and need to be accessible
+        // without authentication when embedded on external websites
         if (
           path.startsWith('/chat') ||
           path.startsWith('/api/chat') ||
@@ -45,7 +47,10 @@ export default withAuth(
           path.startsWith('/api/public') ||
           path.startsWith('/api/embed') ||
           path.startsWith('/api/chatkit') ||
-          path.startsWith('/api/dify')
+          path.startsWith('/api/dify') ||
+          path.startsWith('/api/openai-agent-sdk') ||
+          path.startsWith('/api/openai-realtime') ||
+          path.startsWith('/api/agentbuilder')
         ) {
           return true
         }
