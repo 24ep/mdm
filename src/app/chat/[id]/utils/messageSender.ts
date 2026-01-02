@@ -50,7 +50,7 @@ async function sendToOpenAIAgentSDK(
     throw new Error('Agent ID is required for OpenAI Agent SDK')
   }
 
-  const proxyUrl = '/api/openai-agent-sdk/chat-messages'
+  const proxyUrl = '/next-api/openai-agent-sdk/chat-messages'
 
   const response = await fetch(proxyUrl, {
     method: 'POST',

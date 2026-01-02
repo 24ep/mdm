@@ -293,6 +293,16 @@ const nextConfig = {
 
     return config
   },
+  // Rewrites to bypass Nginx /api collision
+  async rewrites() {
+    return [
+      {
+        source: '/next-api/:path*',
+        destination: '/api/:path*',
+      },
+    ]
+  },
+
   // Experimental: Continue build even with errors
   // Note: turbo config removed - use --webpack flag to avoid Turbopack
   // Logging configuration - disable request logs

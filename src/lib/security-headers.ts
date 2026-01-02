@@ -34,7 +34,13 @@ const securityHeaders = {
  */
 export function getCspForRoute(pathname: string): string {
   // Relaxed CSP for embedded chat routes
-  if (pathname.startsWith('/chat') || pathname.startsWith('/api/chatkit') || pathname.startsWith('/api/embed')) {
+  if (
+    pathname.startsWith('/chat') || 
+    pathname.startsWith('/api/chatkit') || 
+    pathname.startsWith('/next-api/chatkit') ||
+    pathname.startsWith('/api/embed') ||
+    pathname.startsWith('/next-api/embed')
+  ) {
     return [
       "default-src 'self'",
       "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://cdn.platform.openai.com *.openai.com",

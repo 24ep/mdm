@@ -118,7 +118,7 @@ export function OpenAIAgentSDKConfig({
 
     setIsFetchingWorkflowConfig(true)
     try {
-      const response = await fetch('/api/openai-agent-sdk/workflow-config', {
+      const response = await fetch('/next-api/openai-agent-sdk/workflow-config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -237,7 +237,7 @@ export function OpenAIAgentSDKConfig({
 
       // Try a test fetch to see if API is supported
       try {
-        const response = await fetch('/api/openai-agent-sdk/workflow-config', {
+        const response = await fetch('/next-api/openai-agent-sdk/workflow-config', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

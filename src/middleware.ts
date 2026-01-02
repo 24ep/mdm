@@ -42,13 +42,17 @@ export default withAuth(
         if (
           path.startsWith('/chat') ||
           path.startsWith('/api/chat') ||
+          path.startsWith('/next-api/chat') ||
           path.startsWith('/api/chatbots') ||
           path.startsWith('/api/pwa') ||
           path.startsWith('/api/public') ||
           path.startsWith('/api/embed') ||
+          path.startsWith('/next-api/embed') ||
           path.startsWith('/api/chatkit') ||
+          path.startsWith('/next-api/chatkit') ||
           path.startsWith('/api/dify') ||
           path.startsWith('/api/openai-agent-sdk') ||
+          path.startsWith('/next-api/openai-agent-sdk') ||
           path.startsWith('/api/openai-realtime') ||
           path.startsWith('/api/agentbuilder')
         ) {
