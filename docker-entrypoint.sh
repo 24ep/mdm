@@ -77,13 +77,19 @@ node scripts/create-admin-user.js || {
 # Seed initial data (always runs on first startup)
 echo ""
 echo "=== Seeding asset data ==="
-npx prisma db seed || {
-  echo "⚠️  Prisma seed failed, trying direct execution..."
-  node --loader ts-node/esm prisma/seed-assets.ts 2>/dev/null || \
-  npx tsx prisma/seed-assets.ts 2>/dev/null || \
-  node -e "require('./prisma/seed-assets.js')" 2>/dev/null || {
-    echo "⚠️  Seeding failed (may already be seeded)"
-  }
+npx tsx prisma/seed-assets.ts 2>/dev/null || \
+node --loader ts-node/esm prisma/seed-assets.ts 2>/dev/null || \
+node -e "require('./prisma/seed-assets.js')" 2>/dev/null || {
+  echo "⚠️  Asset seeding failed (may already be seeded)"
+}
+
+# Seed storage connections
+echo ""
+echo "=== Seeding storage connections ==="
+npx tsx prisma/seed-storage-connection.ts 2>/dev/null || \
+node --loader ts-node/esm prisma/seed-storage-connection.ts 2>/dev/null || \
+node -e "require('./prisma/seed-storage-connection.js')" 2>/dev/null || {
+  echo "⚠️  Storage connection seeding failed (may already be seeded)"
 }
 
 # Seed marketplace plugins
