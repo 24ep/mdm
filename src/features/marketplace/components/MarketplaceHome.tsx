@@ -175,13 +175,18 @@ export function MarketplaceHome({
   ) => {
     const effectiveSpace = effectiveSpaceId || currentSpace?.id || null
 
-    const installation = await install(plugin.id, effectiveSpace, config)
-    setShowInstallWizard(false)
-    setSelectedPlugin(null)
+    try {
+      await install(plugin.id, effectiveSpace, config)
+      setShowInstallWizard(false)
+      setSelectedPlugin(null)
 
-    // Refresh installations to get the latest status
-    await fetchInstallations()
-    refetch()
+      // Refresh installations to get the latest status
+      await fetchInstallations()
+      refetch()
+    } catch (error) {
+      // Re-throw to be handled by the wizard
+      throw error
+    }
   }
 
   const handleUninstall = async (plugin: PluginDefinition) => {

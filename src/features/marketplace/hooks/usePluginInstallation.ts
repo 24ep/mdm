@@ -38,7 +38,8 @@ export function usePluginInstallation(): UsePluginInstallationResult {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to install plugin')
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to install plugin')
       }
 
       const data = await response.json()
@@ -47,7 +48,7 @@ export function usePluginInstallation(): UsePluginInstallationResult {
       const errorMessage = err instanceof Error ? err.message : 'Failed to install plugin'
       setError(errorMessage)
       console.error('Error installing plugin:', err)
-      return null
+      throw err
     } finally {
       setLoading(false)
     }

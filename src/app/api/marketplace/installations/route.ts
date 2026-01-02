@@ -118,6 +118,28 @@ async function postHandler(request: NextRequest) {
       )
     }
 
+    // Resolve serviceId to UUID if it's a slug
+    let resolvedServiceId = serviceId
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(serviceId)
+
+    if (!isUuid) {
+      console.log(`[POST /api/marketplace/installations] Resolving slug: ${serviceId}`)
+      const pluginResult = await query(
+        'SELECT id FROM service_registry WHERE slug = $1 AND deleted_at IS NULL',
+        [serviceId]
+      )
+
+      if (pluginResult.rows.length === 0) {
+        return NextResponse.json(
+          { error: `Plugin not found: ${serviceId}` },
+          { status: 404 }
+        )
+      }
+
+      resolvedServiceId = pluginResult.rows[0].id
+      console.log(`[POST /api/marketplace/installations] Resolved slug ${serviceId} to ${resolvedServiceId}`)
+    }
+
     // Check permission (spaceId is optional for global installations)
     const permission = await checkPermission({
       resource: 'marketplace',
@@ -139,7 +161,7 @@ async function postHandler(request: NextRequest) {
       : `SELECT id, service_id, space_id, status FROM service_installations 
          WHERE service_id = CAST($1 AS uuid) AND space_id IS NULL AND deleted_at IS NULL`
     
-    const existingParams = spaceId ? [serviceId, spaceId] : [serviceId]
+    const existingParams = spaceId ? [resolvedServiceId, spaceId] : [resolvedServiceId]
     const existing = await query(existingQuery, existingParams)
 
     if (existing.rows.length > 0) {
@@ -171,7 +193,7 @@ async function postHandler(request: NextRequest) {
     // Store credentials if provided
     let credentialsStored = false
     if (credentials) {
-      await storeCredentials(`plugin:${serviceId}:${spaceId}`, credentials)
+      await storeCredentials(`plugin:${resolvedServiceId}:${spaceId}`, credentials)
       credentialsStored = true
     }
 
@@ -190,14 +212,14 @@ async function postHandler(request: NextRequest) {
     
     const insertParams = spaceId
       ? [
-          serviceId,
+          resolvedServiceId,
           spaceId,
           session.user.id,
           config ? JSON.stringify(config) : '{}',
           credentialsStored ? JSON.stringify({ stored: true }) : '{}',
         ]
       : [
-          serviceId,
+          resolvedServiceId,
           session.user.id,
           config ? JSON.stringify(config) : '{}',
           credentialsStored ? JSON.stringify({ stored: true }) : '{}',
@@ -212,7 +234,7 @@ async function postHandler(request: NextRequest) {
       `UPDATE service_registry 
        SET installation_count = installation_count + 1, updated_at = NOW()
        WHERE id = CAST($1 AS uuid)`,
-      [serviceId]
+      [resolvedServiceId]
     )
 
     await logAPIRequest(
@@ -227,7 +249,7 @@ async function postHandler(request: NextRequest) {
       { 
         installation: {
           id: installationId,
-          serviceId,
+          serviceId: resolvedServiceId,
           spaceId,
           status: 'active',
         },

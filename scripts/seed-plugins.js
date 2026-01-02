@@ -22,7 +22,8 @@ const defaultPlugins = [
     verified: true,
     description: 'Connect and embed Grafana dashboards. Supports API key authentication, dashboard syncing, and multiple access types.',
     capabilities: {
-      source: 'hub',
+      source: 'local-folder',
+      sourcePath: 'plugin-hub/plugins/grafana',
       dashboardEmbedding: true,
       dashboardSyncing: true,
       apiAccess: true,
@@ -36,7 +37,7 @@ const defaultPlugins = [
     },
     uiType: 'react_component',
     uiConfig: {
-      componentPath: '@/features/marketplace/plugins/grafana/components/GrafanaIntegrationUI',
+      componentPath: 'components/GrafanaIntegrationUI',
     },
     webhookSupported: false,
     webhookEvents: [],
@@ -60,13 +61,17 @@ const defaultPlugins = [
     verified: true,
     description: 'Embed Power BI reports and dashboards. Supports OAuth2 authentication and Power BI Service integration.',
     capabilities: {
-      source: 'hub',
+      source: 'local-folder',
+      sourcePath: 'plugin-hub/plugins/power-bi',
       dashboardEmbedding: true,
       reportEmbedding: true,
       oauthAuth: true,
     },
     apiAuthType: 'oauth2',
-    uiType: 'iframe',
+    uiType: 'react_component',
+    uiConfig: {
+       componentPath: 'components/PowerBIUI',
+    },
     webhookSupported: false,
     webhookEvents: [],
     iconUrl: '/icons/power-bi.svg',
@@ -89,12 +94,16 @@ const defaultPlugins = [
     verified: true,
     description: 'Embed Looker Studio (formerly Google Data Studio) reports. Supports public and authenticated embedding.',
     capabilities: {
-      source: 'hub',
+      source: 'local-folder',
+      sourcePath: 'plugin-hub/plugins/looker-studio',
       reportEmbedding: true,
       publicLinkAccess: true,
     },
     apiAuthType: 'oauth2',
-    uiType: 'iframe',
+    uiType: 'react_component',
+    uiConfig: {
+       componentPath: 'components/LookerStudioUI',
+    },
     webhookSupported: false,
     webhookEvents: [],
     iconUrl: '/icons/looker-studio.svg',
@@ -116,13 +125,14 @@ const defaultPlugins = [
     verified: true,
     description: 'Manage MinIO object storage instances. Create buckets, upload files, and manage access policies.',
     capabilities: {
-      source: 'hub',
+      source: 'local-folder',
+      sourcePath: 'plugin-hub/plugins/minio-management',
       serviceType: 'docker_container',
       supportedServices: ['minio'],
     },
     uiType: 'react_component',
     uiConfig: {
-      componentPath: '@/features/marketplace/plugins/minio-management/components/MinIOManagementUI',
+      componentPath: 'components/MinIOManagementUI',
     },
     webhookSupported: false,
     webhookEvents: [],
@@ -139,13 +149,14 @@ const defaultPlugins = [
     verified: true,
     description: 'Manage Prometheus monitoring instances. View metrics, configure alerts, and manage targets.',
     capabilities: {
-      source: 'hub',
+      source: 'local-folder',
+      sourcePath: 'plugin-hub/plugins/prometheus-management',
       serviceType: 'docker_container',
       supportedServices: ['prometheus'],
     },
     uiType: 'react_component',
     uiConfig: {
-      componentPath: '@/features/marketplace/plugins/prometheus-management/components/PrometheusManagementUI',
+      componentPath: 'components/PrometheusManagementUI',
     },
     webhookSupported: false,
     webhookEvents: [],
@@ -162,13 +173,14 @@ const defaultPlugins = [
     verified: true,
     description: 'Manage Redis cache instances. Monitor keys, execute commands, and view statistics.',
     capabilities: {
-      source: 'hub',
+      source: 'local-folder',
+      sourcePath: 'plugin-hub/plugins/redis-management',
       serviceType: 'docker_container',
       supportedServices: ['redis'],
     },
     uiType: 'react_component',
     uiConfig: {
-      componentPath: '@/features/marketplace/plugins/redis-management/components/RedisManagementUI',
+      componentPath: 'components/RedisManagementUI',
     },
     webhookSupported: false,
     webhookEvents: [],
@@ -185,13 +197,14 @@ const defaultPlugins = [
     verified: true,
     description: 'Manage PostgreSQL database instances. Run queries, view schemas, and monitor performance.',
     capabilities: {
-      source: 'hub',
+      source: 'local-folder',
+      sourcePath: 'plugin-hub/plugins/postgresql-management',
       serviceType: 'docker_container',
       supportedServices: ['postgresql', 'postgres'],
     },
     uiType: 'react_component',
     uiConfig: {
-      componentPath: '@/features/marketplace/plugins/postgresql-management/components/PostgreSQLManagementUI',
+      componentPath: 'components/PostgreSQLManagementUI',
     },
     webhookSupported: false,
     webhookEvents: [],
@@ -208,13 +221,14 @@ const defaultPlugins = [
     verified: true,
     description: 'Manage Kong API Gateway instances. Configure routes, services, plugins, and consumers.',
     capabilities: {
-      source: 'hub',
+      source: 'local-folder',
+      sourcePath: 'plugin-hub/plugins/kong-management',
       serviceType: 'docker_container',
       supportedServices: ['kong'],
     },
     uiType: 'react_component',
     uiConfig: {
-      componentPath: '@/features/marketplace/plugins/kong-management/components/KongManagementUI',
+      componentPath: 'components/KongManagementUI',
     },
     webhookSupported: false,
     webhookEvents: [],
@@ -231,63 +245,22 @@ const defaultPlugins = [
     verified: true,
     description: 'Manage Grafana instances. Configure dashboards, data sources, and alerts.',
     capabilities: {
-      source: 'hub',
+      source: 'local-folder',
+      sourcePath: 'plugin-hub/plugins/grafana-management',
       serviceType: 'docker_container',
       supportedServices: ['grafana'],
     },
     uiType: 'react_component',
     uiConfig: {
-      componentPath: '@/features/marketplace/plugins/grafana-management/components/GrafanaManagementUI',
+      componentPath: 'components/GrafanaManagementUI',
     },
     webhookSupported: false,
     webhookEvents: [],
-    screenshots: [],
-  },
-  {
-    name: 'Kafka Stream Manager',
-    slug: 'kafka-manager',
-    version: '0.9.5',
-    provider: 'Apache',
-    category: 'data-integration',
-    status: 'approved',
-    verified: false,
-    description: 'Monitor Kafka topics, consumer groups, and broker health in real-time.',
-    capabilities: {
-      source: 'hub',
-      serviceType: 'docker_container',
-      supportedServices: ['kafka'],
-    },
-    uiType: 'react_component',
-    uiConfig: {},
-    webhookSupported: false,
-    webhookEvents: [],
-    iconUrl: '/icons/kafka.svg',
-    screenshots: [],
-  },
-  {
-    name: 'Jenkins CI/CD',
-    slug: 'jenkins-ci',
-    version: '1.3.4',
-    provider: 'Jenkins',
-    category: 'development-tools',
-    status: 'approved',
-    verified: true,
-    description: 'View build status, trigger pipelines, and manage Jenkins jobs from a central dashboard.',
-    capabilities: {
-      source: 'hub',
-      serviceType: 'docker_container',
-      supportedServices: ['jenkins'],
-    },
-    uiType: 'react_component',
-    uiConfig: {},
-    webhookSupported: true,
-    webhookEvents: ['build_status'],
-    iconUrl: '/icons/jenkins.svg',
     screenshots: [],
   },
   {
     name: 'SQL Query Editor',
-    slug: 'sql-query-editor',
+    slug: 'sql-query', // Folder is sql-query, slug was sql-query-editor, changing to match folder for consistency
     version: '1.0.0',
     provider: 'MDM Platform',
     category: 'database-management',
@@ -295,15 +268,17 @@ const defaultPlugins = [
     verified: true,
     description: 'Advanced SQL query editor with syntax highlighting, auto-complete, query history, and result visualization.',
     capabilities: {
-      source: 'hub',
-      queryExecution: true,
-      syntaxHighlighting: true,
-      autoComplete: true,
-      resultExport: true,
+       source: 'local-folder',
+       sourcePath: 'plugin-hub/plugins/sql-query',
+       queryExecution: true,
+       syntaxHighlighting: true,
+       autoComplete: true,
+       resultExport: true,
     },
     uiType: 'react_component',
     uiConfig: {
-      componentPath: '@/features/marketplace/plugins/sql-query-editor/components/SQLQueryEditorUI',
+      // Assuming component is standard named
+      componentPath: 'components/SQLQueryEditorUI',
     },
     webhookSupported: false,
     webhookEvents: [],
@@ -320,7 +295,8 @@ const defaultPlugins = [
     verified: true,
     description: 'Create and manage vector-based knowledge bases for AI chatbots. Supports document ingestion, embedding, and semantic search.',
     capabilities: {
-      source: 'hub',
+      source: 'local-folder',
+      sourcePath: 'plugin-hub/plugins/knowledge-base',
       documentIngestion: true,
       vectorEmbedding: true,
       semanticSearch: true,
@@ -328,68 +304,20 @@ const defaultPlugins = [
     },
     uiType: 'react_component',
     uiConfig: {
-      componentPath: '@/features/marketplace/plugins/knowledge-base/components/KnowledgeBaseUI',
+      componentPath: 'src/components/KnowledgeBaseUI',
     },
     webhookSupported: false,
     webhookEvents: [],
     iconUrl: '/icons/knowledge-base.svg',
     screenshots: [],
-  },
-  {
-    name: 'Data Pipeline Manager',
-    slug: 'data-pipeline',
-    version: '1.0.0',
-    provider: 'MDM Platform',
-    category: 'data-integration',
-    status: 'approved',
-    verified: true,
-    description: 'Design, schedule, and monitor ETL data pipelines with visual workflow builder.',
-    capabilities: {
-      source: 'hub',
-      visualWorkflow: true,
-      scheduling: true,
-      monitoring: true,
-    },
-    uiType: 'react_component',
-    uiConfig: {
-      componentPath: '@/features/marketplace/plugins/data-pipeline/components/DataPipelineUI',
-    },
-    webhookSupported: true,
-    webhookEvents: ['pipeline_complete', 'pipeline_failed'],
-    iconUrl: '/icons/data-pipeline.svg',
-    screenshots: [],
-  },
-  {
-    name: 'API Documentation',
-    slug: 'api-docs',
-    version: '1.0.0',
-    provider: 'MDM Platform',
-    category: 'development-tools',
-    status: 'approved',
-    verified: true,
-    description: 'Auto-generate and host interactive API documentation from OpenAPI/Swagger specs.',
-    capabilities: {
-      source: 'hub',
-      openApiSupport: true,
-      interactivePlayground: true,
-      codeGeneration: true,
-    },
-    uiType: 'react_component',
-    uiConfig: {
-      componentPath: '@/features/marketplace/plugins/api-docs/components/APIDocsUI',
-    },
-    webhookSupported: false,
-    webhookEvents: [],
-    iconUrl: '/icons/api-docs.svg',
-    screenshots: [],
-  },
+  }
 ];
 
 async function seedPlugins() {
   console.log('🔌 Seeding marketplace plugins...');
 
-  let seeded = 0;
-  let skipped = 0;
+  let updated = 0;
+  let inserted = 0;
 
   for (const plugin of defaultPlugins) {
     try {
@@ -400,57 +328,88 @@ async function seedPlugins() {
       );
 
       if (Array.isArray(existing) && existing.length > 0) {
-        console.log(`  ⏭️  Plugin ${plugin.slug} already exists, skipping...`);
-        skipped++;
-        continue;
+        // UPDATE existing plugin
+        const id = existing[0].id;
+        await prisma.$executeRawUnsafe(
+          `UPDATE service_registry SET
+            name = $2, description = $3, version = $4, provider = $5, provider_url = $6, category = $7,
+            status = $8, capabilities = $9::jsonb, api_base_url = $10, api_auth_type = $11, api_auth_config = $12::jsonb,
+            ui_type = $13, ui_config = $14::jsonb, webhook_supported = $15, webhook_events = $16, icon_url = $17,
+            screenshots = $18, documentation_url = $19, support_url = $20, pricing_info = $21::jsonb, verified = $22,
+            updated_at = NOW()
+          WHERE id = $1`,
+          id,
+          plugin.name,
+          plugin.description || null,
+          plugin.version,
+          plugin.provider,
+          plugin.providerUrl || null,
+          plugin.category || null,
+          plugin.status || 'approved',
+          JSON.stringify(plugin.capabilities || {}),
+          plugin.apiBaseUrl || null,
+          plugin.apiAuthType || null,
+          JSON.stringify(plugin.apiAuthConfig || {}),
+          plugin.uiType || null,
+          JSON.stringify(plugin.uiConfig || {}),
+          plugin.webhookSupported || false,
+          plugin.webhookEvents || [],
+          plugin.iconUrl || null,
+          plugin.screenshots || [],
+          plugin.documentationUrl || null,
+          plugin.supportUrl || null,
+          plugin.pricingInfo ? JSON.stringify(plugin.pricingInfo) : null,
+          plugin.verified || false
+        );
+        console.log(`  🔄 Updated plugin: ${plugin.name} (${plugin.slug})`);
+        updated++;
+      } else {
+        // INSERT new plugin
+        await prisma.$executeRawUnsafe(
+          `INSERT INTO service_registry (
+            id, name, slug, description, version, provider, provider_url, category,
+            status, capabilities, api_base_url, api_auth_type, api_auth_config,
+            ui_type, ui_config, webhook_supported, webhook_events, icon_url,
+            screenshots, documentation_url, support_url, pricing_info, verified,
+            installation_count, rating, review_count, created_at, updated_at
+          ) VALUES (
+            gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10, $11, $12::jsonb,
+            $13, $14::jsonb, $15, $16, $17, $18, $19, $20, $21::jsonb, $22,
+            0, NULL, 0, NOW(), NOW()
+          )`,
+          plugin.name,
+          plugin.slug,
+          plugin.description || null,
+          plugin.version,
+          plugin.provider,
+          plugin.providerUrl || null,
+          plugin.category || null,
+          plugin.status || 'approved',
+          JSON.stringify(plugin.capabilities || {}),
+          plugin.apiBaseUrl || null,
+          plugin.apiAuthType || null,
+          JSON.stringify(plugin.apiAuthConfig || {}),
+          plugin.uiType || null,
+          JSON.stringify(plugin.uiConfig || {}),
+          plugin.webhookSupported || false,
+          plugin.webhookEvents || [],
+          plugin.iconUrl || null,
+          plugin.screenshots || [],
+          plugin.documentationUrl || null,
+          plugin.supportUrl || null,
+          plugin.pricingInfo ? JSON.stringify(plugin.pricingInfo) : null,
+          plugin.verified || false
+        );
+        console.log(`  ✅ Seeded plugin: ${plugin.name} (${plugin.slug})`);
+        inserted++;
       }
-
-      // Insert plugin
-      await prisma.$executeRawUnsafe(
-        `INSERT INTO service_registry (
-          id, name, slug, description, version, provider, provider_url, category,
-          status, capabilities, api_base_url, api_auth_type, api_auth_config,
-          ui_type, ui_config, webhook_supported, webhook_events, icon_url,
-          screenshots, documentation_url, support_url, pricing_info, verified,
-          installation_count, rating, review_count, created_at, updated_at
-        ) VALUES (
-          gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10, $11, $12::jsonb,
-          $13, $14::jsonb, $15, $16, $17, $18, $19, $20, $21::jsonb, $22,
-          0, NULL, 0, NOW(), NOW()
-        )`,
-        plugin.name,
-        plugin.slug,
-        plugin.description || null,
-        plugin.version,
-        plugin.provider,
-        plugin.providerUrl || null,
-        plugin.category || null,
-        plugin.status || 'approved',
-        JSON.stringify(plugin.capabilities || {}),
-        plugin.apiBaseUrl || null,
-        plugin.apiAuthType || null,
-        JSON.stringify(plugin.apiAuthConfig || {}),
-        plugin.uiType || null,
-        JSON.stringify(plugin.uiConfig || {}),
-        plugin.webhookSupported || false,
-        plugin.webhookEvents || [],
-        plugin.iconUrl || null,
-        plugin.screenshots || [],
-        plugin.documentationUrl || null,
-        plugin.supportUrl || null,
-        plugin.pricingInfo ? JSON.stringify(plugin.pricingInfo) : null,
-        plugin.verified || false
-      );
-
-      console.log(`  ✅ Seeded plugin: ${plugin.name} (${plugin.slug})`);
-      seeded++;
     } catch (error) {
       console.error(`  ❌ Failed to seed plugin ${plugin.slug}:`, error.message);
       // Continue with other plugins
     }
   }
 
-  console.log(`\n🔌 Plugin seeding complete: ${seeded} seeded, ${skipped} skipped`);
+  console.log(`\n🔌 Plugin seeding complete: ${inserted} inserted, ${updated} updated`);
 }
 
 async function run() {

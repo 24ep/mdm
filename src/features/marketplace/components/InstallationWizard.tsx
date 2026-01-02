@@ -14,6 +14,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { AlertCircle } from 'lucide-react'
 
 export interface InstallationWizardProps {
   plugin: PluginDefinition
@@ -37,13 +39,16 @@ export function InstallationWizard({
   const [config, setConfig] = useState<Record<string, any>>({})
   const [credentials, setCredentials] = useState<Record<string, any>>({})
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleInstall = async () => {
     setLoading(true)
+    setError(null)
     try {
       await onComplete(plugin, config, credentials)
     } catch (error) {
       console.error('Installation error:', error)
+      setError(error instanceof Error ? error.message : 'Failed to install plugin')
     } finally {
       setLoading(false)
     }
@@ -59,7 +64,13 @@ export function InstallationWizard({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="w-full">
+        <div className="w-full space-y-4">
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
           <Tabs defaultValue="config">
             <TabsList>
             <TabsTrigger value="config">Configuration</TabsTrigger>

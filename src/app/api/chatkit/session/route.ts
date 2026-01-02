@@ -16,10 +16,9 @@ function jsonResponse(data: any, status: number = 200) {
 
 // ChatKit Session API - Creates session with OpenAI for ChatKit
 // This endpoint is called by the ChatKitWrapper to get a client_secret
-// MOVED from /api/chatkit/session to /next-api/chatkit/session to avoid Nginx API collision
 
 export async function POST(request: NextRequest) {
-  console.log('🔵 ChatKit session API called (Physical Route)')
+  console.log('🔵 ChatKit session API called')
   try {
     const body = await request.json();
     const { agentId, apiKey: providedApiKey, existing, chatbotId } = body;
