@@ -61,6 +61,9 @@ export function getCspForRoute(pathname: string): string {
  * Add security headers to a response
  */
 export function addSecurityHeaders(response: NextResponse, pathname?: string): NextResponse {
+  // if (pathname?.includes('next-api') || pathname?.includes('chat')) {
+  //   console.log(`[SecurityHeaders] Adding headers for ${pathname}`)
+  // }
   Object.entries(securityHeaders).forEach(([key, value]) => {
     if (key === 'Content-Security-Policy' && pathname) {
       // Use route-specific CSP

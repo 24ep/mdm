@@ -296,10 +296,10 @@ const nextConfig = {
   // Rewrites to bypass Nginx /api collision
   async rewrites() {
     return [
-      {
-        source: '/next-api/:path*',
-        destination: '/api/:path*',
-      },
+      // {
+      //   source: '/next-api/:path*',
+      //   destination: '/api/:path*',
+      // },
     ]
   },
 

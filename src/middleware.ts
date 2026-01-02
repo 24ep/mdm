@@ -20,22 +20,23 @@ export default withAuth(
     }
 
     // Explicitly rewrite /next-api/* to /api/* to bypass Nginx/Next.js config issues
-    if (path.startsWith('/next-api/')) {
-      const newPath = path.replace('/next-api/', '/api/')
-      const url = req.nextUrl.clone()
-      url.pathname = newPath
+    // if (path.startsWith('/next-api/')) {
+    //   const newPath = path.replace('/next-api/', '/api/')
+    //   console.log(`[Middleware] Rewriting ${path} to ${newPath}`)
+    //   const url = req.nextUrl.clone()
+    //   url.pathname = newPath
       
-      // We need to return the rewrite response, but also add security headers
-      const response = NextResponse.rewrite(url)
+    //   // We need to return the rewrite response, but also add security headers
+    //   const response = NextResponse.rewrite(url)
       
-      // Add CORS headers to the rewritten response
-      addCorsHeaders(req, response, {
-        origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
-        credentials: true,
-      })
+    //   // Add CORS headers to the rewritten response
+    //   addCorsHeaders(req, response, {
+    //     origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
+    //     credentials: true,
+    //   })
       
-      return addSecurityHeaders(response, path)
-    }
+    //   return addSecurityHeaders(response, path)
+    // }
 
     // Create response
     const response = NextResponse.next()
