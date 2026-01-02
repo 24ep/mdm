@@ -311,13 +311,21 @@ export function ChatKitWrapper({
   // This must be called unconditionally at the top level
   const { useChatKit, ChatKit } = chatkitModule
 
+  // Get the server origin for API calls
+  // IMPORTANT: When embedded via iframe, relative URLs would go to the host website
+  // We need to use the origin of the chatbot server (where the iframe is loaded from)
+  const serverOrigin = typeof window !== 'undefined' ? window.location.origin : ''
+
   // Build chatkit options for the hook
   const chatkitHookOptions = React.useMemo(() => ({
     api: {
       async getClientSecret(existing: any) {
         try {
+          // Use absolute URL to ensure API calls go to the chatbot server, not the host website
+          const apiUrl = `${serverOrigin}/api/chatkit/session`
+          
           if (existing) {
-            const res = await fetch('/api/chatkit/session', {
+            const res = await fetch(apiUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               credentials: 'omit', // Don't send cookies - this is a public API
@@ -339,7 +347,7 @@ export function ChatKitWrapper({
             return client_secret
           }
 
-          const res = await fetch('/api/chatkit/session', {
+          const res = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'omit', // Don't send cookies - this is a public API
@@ -523,7 +531,7 @@ export function ChatKitWrapper({
       }
       return Object.keys(historyConfig).length > 0 ? historyConfig : undefined
     })() : undefined,
-  }), [agentId, apiKey, chatbot, theme, chatkitOptions, useChatKitInRegularStyle])
+  }), [agentId, apiKey, chatbot, theme, chatkitOptions, useChatKitInRegularStyle, serverOrigin])
 
   // Call useChatKit hook unconditionally at the top level
   const { control } = useChatKit(chatkitHookOptions)
