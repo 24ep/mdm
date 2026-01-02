@@ -397,6 +397,9 @@ export default function ChatPage() {
   }, [isOpen, isEmbed, isInIframe, previewDeploymentType, isNativeChatKitMode]) // Removed isMobile - use ref instead
 
   // Listen for preview mode changes and external control commands
+  // Use ref to track previous preview mode to avoid unnecessary isOpen resets
+  const prevPreviewModeRef = useRef<string | null>(null)
+  
   useEffect(() => {
     const handler = (event: MessageEvent) => {
       const data = event.data
@@ -404,12 +407,19 @@ export default function ChatPage() {
       if (data.type === 'chatbot-preview-mode') {
         const val = data.value
         if (val === 'popover' || val === 'fullpage' || val === 'popup-center') {
+          // Only reset isOpen state when preview mode ACTUALLY changes
+          const modeChanged = prevPreviewModeRef.current !== val
+          prevPreviewModeRef.current = val
+          
           setPreviewDeploymentType(val)
-          // Reset isOpen state when preview mode changes to show widget button
-          if (val === 'popover' || val === 'popup-center') {
-            setIsOpen(false)
-          } else {
-            setIsOpen(true)
+          
+          if (modeChanged) {
+            // Reset isOpen state when preview mode changes to show widget button
+            if (val === 'popover' || val === 'popup-center') {
+              setIsOpen(false)
+            } else {
+              setIsOpen(true)
+            }
           }
         }
       }

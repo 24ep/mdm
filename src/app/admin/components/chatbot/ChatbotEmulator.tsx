@@ -86,27 +86,24 @@ export function ChatbotEmulator({
     }))
   }
 
-  // Send preview mode and emulator config to iframe when it loads or when preview mode changes
+  // Send preview mode to iframe ONLY when previewMode changes (not on every formData change)
   useEffect(() => {
     if (!selectedChatbot?.id || !emulatorRef.current) return
 
-    const sendMessages = () => {
+    const sendPreviewMode = () => {
       try {
-        setTimeout(() => {
-          emulatorRef.current?.contentWindow?.postMessage({ type: 'chatbot-preview-mode', value: previewMode }, '*')
-          emulatorRef.current?.contentWindow?.postMessage(
-            {
-              type: 'emulator-config-update',
-              id: selectedChatbot.id,
-              emulatorConfig: emulatorConfig,
-            },
-            '*'
-          )
-        }, 100)
+        emulatorRef.current?.contentWindow?.postMessage({ type: 'chatbot-preview-mode', value: previewMode }, '*')
       } catch { }
     }
 
-    sendMessages()
+    // Small delay to ensure iframe is ready
+    const timer = setTimeout(sendPreviewMode, 100)
+    return () => clearTimeout(timer)
+  }, [previewMode, selectedChatbot?.id])
+
+  // Send initial messages when iframe loads
+  useEffect(() => {
+    if (!selectedChatbot?.id || !emulatorRef.current) return
 
     const iframe = emulatorRef.current
     const handleLoad = () => {
@@ -130,7 +127,7 @@ export function ChatbotEmulator({
     return () => {
       iframe.removeEventListener('load', handleLoad)
     }
-  }, [previewMode, selectedChatbot?.id, emulatorConfig])
+  }, [selectedChatbot?.id]) // Only re-attach on chatbot change, not on every config change
 
   // Push realtime style updates to emulator via postMessage
   useEffect(() => {
