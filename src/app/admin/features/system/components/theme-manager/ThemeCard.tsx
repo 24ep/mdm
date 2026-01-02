@@ -3,7 +3,7 @@
 import { ThemeListItem } from '../../types-theme'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { CheckCircle2, Copy, Pencil, Trash2, Download } from 'lucide-react'
+import { CheckCircle2, Copy, Pencil, Trash2, Download, Palette } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
     DropdownMenu,
@@ -23,6 +23,7 @@ interface ThemeCardProps {
     onDelete: () => void
     onActivate: () => void
     onExport: (format: 'json') => void
+    onRestore: () => void
 }
 
 export function ThemeCard({
@@ -33,7 +34,8 @@ export function ThemeCard({
     onClone,
     onDelete,
     onActivate,
-    onExport
+    onExport,
+    onRestore
 }: ThemeCardProps) {
     const handleCardClick = (e: React.MouseEvent) => {
         // Only select if clicking on the card itself, not on buttons or action area
@@ -202,6 +204,10 @@ export function ThemeCard({
                         <DropdownMenuItem onClick={() => onExport('json')}>
                             <Download className="h-4 w-4 mr-2" />
                             Export JSON
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={onRestore}>
+                            <Palette className="h-4 w-4 mr-2" />
+                            Restore to Default
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem

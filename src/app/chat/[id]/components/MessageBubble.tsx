@@ -345,7 +345,7 @@ export function MessageBubble({
 
                       if (newFeedback && chatbot.engineType === 'openai-agent-sdk' && chatbot.openaiAgentSdkAgentId && chatbot.openaiAgentSdkApiKey) {
                         try {
-                          const response = await fetch('/next-api/openai-agent-sdk/feedback', {
+                          const response = await fetch('/chat-handler/openai-agent-sdk/feedback', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -394,7 +394,7 @@ export function MessageBubble({
 
                       if (newFeedback && chatbot.engineType === 'openai-agent-sdk' && chatbot.openaiAgentSdkAgentId && chatbot.openaiAgentSdkApiKey) {
                         try {
-                          const response = await fetch('/next-api/openai-agent-sdk/feedback', {
+                          const response = await fetch('/chat-handler/openai-agent-sdk/feedback', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({

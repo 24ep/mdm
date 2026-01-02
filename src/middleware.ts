@@ -7,8 +7,8 @@ export default withAuth(
   function proxy(req: NextRequest & { nextauth: { token: any } }) {
     const path = req.nextUrl.pathname
 
-    // Handle CORS for API routes and next-api alias
-    if (path.startsWith('/api/') || path.startsWith('/next-api/')) {
+    // Handle CORS for API routes and custom aliases
+    if (path.startsWith('/api/') || path.startsWith('/next-api/') || path.startsWith('/chat-handler/')) {
       const corsResponse = handleCors(req, {
         origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
         credentials: true,
@@ -19,9 +19,9 @@ export default withAuth(
       }
     }
 
-    // Explicitly rewrite /next-api/* to /api/* to bypass Nginx/Next.js config issues
-    if (path.startsWith('/next-api/')) {
-      const newPath = path.replace('/next-api/', '/api/')
+    // Explicitly rewrite /chat-handler/* to /api/* to bypass Nginx/Next.js config issues
+    if (path.startsWith('/chat-handler/')) {
+      const newPath = path.replace('/chat-handler/', '/api/')
       // console.log(`[Middleware] Rewriting ${path} to ${newPath}`)
       const url = req.nextUrl.clone()
       url.pathname = newPath
@@ -64,16 +64,21 @@ export default withAuth(
           path.startsWith('/chat') ||
           path.startsWith('/api/chat') ||
           path.startsWith('/next-api/chat') ||
+          path.startsWith('/chat-handler/chat') ||
           path.startsWith('/api/chatbots') ||
           path.startsWith('/api/pwa') ||
           path.startsWith('/api/public') ||
+          path.startsWith('/chat-handler/public') ||
           path.startsWith('/api/embed') ||
           path.startsWith('/next-api/embed') ||
+          path.startsWith('/chat-handler/embed') ||
           path.startsWith('/api/chatkit') ||
           path.startsWith('/next-api/chatkit') ||
+          path.startsWith('/chat-handler/chatkit') ||
           path.startsWith('/api/dify') ||
           path.startsWith('/api/openai-agent-sdk') ||
           path.startsWith('/next-api/openai-agent-sdk') ||
+          path.startsWith('/chat-handler/openai-agent-sdk') ||
           path.startsWith('/api/openai-realtime') ||
           path.startsWith('/api/agentbuilder')
         ) {

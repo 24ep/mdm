@@ -18,7 +18,7 @@ export function generateEmbedCode(chatbot: Chatbot): string {
   // Use custom domain if provided, otherwise use current origin
   const baseUrl = chatbot.customEmbedDomain?.replace(/\/$/, '') || (typeof window !== 'undefined' ? window.location.origin : '')
   // Using /next-api/ prefix to bypass Nginx /api collision
-  const src = `${baseUrl}/next-api/embed?id=${chatbot.id}&type=${type}`
+  const src = `${baseUrl}/chat-handler/embed?id=${chatbot.id}&type=${type}`
   return `<script>(function(){var s=document.createElement('script');s.src='${src}';s.async=true;document.head.appendChild(s);})();</script>`
 }
 

@@ -38,8 +38,10 @@ export function getCspForRoute(pathname: string): string {
     pathname.startsWith('/chat') || 
     pathname.startsWith('/api/chatkit') || 
     pathname.startsWith('/next-api/chatkit') ||
+    pathname.startsWith('/chat-handler/chatkit') ||
     pathname.startsWith('/api/embed') ||
-    pathname.startsWith('/next-api/embed')
+    pathname.startsWith('/next-api/embed') ||
+    pathname.startsWith('/chat-handler/embed')
   ) {
     return [
       "default-src 'self'",

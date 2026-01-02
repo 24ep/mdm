@@ -33,7 +33,7 @@ export function useAgentThread({ chatbot, chatbotId, spaceId }: UseAgentThreadOp
     setIsLoading(true)
     setError(null)
     try {
-      const response = await fetch(`/next-api/openai-agent-sdk/threads?chatbotId=${chatbotId}&limit=50`)
+      const response = await fetch(`/chat-handler/openai-agent-sdk/threads?chatbotId=${chatbotId}&limit=50`)
       if (response.ok) {
         const data = await response.json()
         setThreads(data.threads || [])
@@ -58,7 +58,7 @@ export function useAgentThread({ chatbot, chatbotId, spaceId }: UseAgentThreadOp
     if (!isEnabled) return null
 
     try {
-      const response = await fetch('/next-api/openai-agent-sdk/threads', {
+      const response = await fetch('/chat-handler/openai-agent-sdk/threads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -90,7 +90,7 @@ export function useAgentThread({ chatbot, chatbotId, spaceId }: UseAgentThreadOp
     if (!isEnabled) return false
 
     try {
-      const response = await fetch(`/next-api/openai-agent-sdk/threads/${threadId}`, {
+      const response = await fetch(`/chat-handler/openai-agent-sdk/threads/${threadId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title }),
@@ -112,7 +112,7 @@ export function useAgentThread({ chatbot, chatbotId, spaceId }: UseAgentThreadOp
     if (!isEnabled) return false
 
     try {
-      const response = await fetch(`/next-api/openai-agent-sdk/threads/${threadId}`, {
+      const response = await fetch(`/chat-handler/openai-agent-sdk/threads/${threadId}`, {
         method: 'DELETE',
       })
 

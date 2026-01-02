@@ -23,6 +23,7 @@ export function ThemeManager() {
         activateTheme,
         exportTheme,
         importTheme,
+        restoreTheme,
         getTheme,
     } = useThemes();
 
@@ -138,6 +139,15 @@ export function ThemeManager() {
         setSelectedThemeId(id);
     };
 
+    const handleRestoreTheme = async (id: string) => {
+        await restoreTheme(id);
+        // Refresh details if the restored theme is currently selected
+        if (selectedThemeId === id) {
+            const updated = await getTheme(id);
+            setSelectedThemeDetails(updated);
+        }
+    };
+
     // Auto-select active theme on load
     useEffect(() => {
         if (themes.length > 0 && !selectedThemeId) {
@@ -212,6 +222,7 @@ export function ThemeManager() {
                         onCloneTheme={handleCloneTheme}
                         onDeleteTheme={handleDeleteTheme}
                         onActivateTheme={activateTheme}
+                        onRestoreTheme={handleRestoreTheme}
                         onExportTheme={exportTheme}
                         onCreateTheme={() => setCreateDialogOpen(true)}
                         onImportTheme={importTheme}

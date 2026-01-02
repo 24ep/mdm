@@ -296,10 +296,15 @@ const nextConfig = {
   // Rewrites to bypass Nginx /api collision
   async rewrites() {
     return [
-      // {
-      //   source: '/next-api/:path*',
-      //   destination: '/api/:path*',
-      // },
+      {
+        source: '/chat-handler/:path*',
+        destination: '/api/:path*',
+      },
+      // Keep next-api for compatibility during transition
+      {
+        source: '/next-api/:path*',
+        destination: '/api/:path*',
+      },
     ]
   },
 

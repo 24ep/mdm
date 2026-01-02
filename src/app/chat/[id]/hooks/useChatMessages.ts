@@ -57,7 +57,7 @@ export function useChatMessages({
         setIsLoading(true)
         // Fetch messages from OpenAI API via proxy
         // Using /next-api/ prefix to bypass Nginx /api collision
-        const response = await fetch(`/next-api/openai-agent-sdk/threads/${threadId}/messages`, {
+        const response = await fetch(`/chat-handler/openai-agent-sdk/threads/${threadId}/messages`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
         })

@@ -18,6 +18,7 @@ interface ThemeLibraryProps {
     onCloneTheme: (id: string) => void
     onDeleteTheme: (id: string) => void
     onActivateTheme: (id: string) => void
+    onRestoreTheme: (id: string) => void
     onExportTheme: (id: string, format: 'json') => void
     onCreateTheme: () => void
     onImportTheme: (file: File) => void
@@ -31,6 +32,7 @@ export function ThemeLibrary({
     onCloneTheme,
     onDeleteTheme,
     onActivateTheme,
+    onRestoreTheme,
     onExportTheme,
     onCreateTheme,
     onImportTheme
@@ -183,6 +185,7 @@ export function ThemeLibrary({
                                 onClone={() => onCloneTheme(theme.id)}
                                 onDelete={() => onDeleteTheme(theme.id)}
                                 onActivate={() => onActivateTheme(theme.id)}
+                                onRestore={() => onRestoreTheme(theme.id)}
                                 onExport={(format) => onExportTheme(theme.id, format)}
                             />
                         ))

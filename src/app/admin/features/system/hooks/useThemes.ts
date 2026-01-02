@@ -187,6 +187,29 @@ export function useThemes() {
         }
     }, [fetchThemes]);
 
+    // Restore a theme to its original config
+    const restoreTheme = useCallback(async (id: string) => {
+        try {
+            const response = await fetch(`/api/themes/${id}/restore`, {
+                method: 'POST'
+            });
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || 'Failed to restore theme');
+            }
+            const data = await response.json();
+            toast.success(data.message || 'Theme restored successfully');
+            await fetchThemes();
+            // Apply new branding immediately
+            await initializeBranding();
+            return data.theme;
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Failed to restore theme';
+            toast.error(msg);
+            throw err;
+        }
+    }, [fetchThemes]);
+
     // Get full theme details by ID (used for configuration panel)
     const getTheme = useCallback(async (id: string) => {
         try {
@@ -221,6 +244,7 @@ export function useThemes() {
         exportTheme,
         importTheme,
         updateTheme,
+        restoreTheme,
         getTheme,
     };
 }

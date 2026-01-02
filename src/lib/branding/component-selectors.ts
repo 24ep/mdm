@@ -506,5 +506,12 @@ export const componentSelectors: Record<string, string[]> = {
     'body:not([data-space]) [class*="TabsTrigger"][data-state="active"]',
     'body:not([data-space]) button[class*="TabsTrigger"][data-state="active"]',
   ],
+  'dropdown': [
+    'body:not([data-space]) [data-radix-menu-content]',
+    'body:not([data-space]) [role="menu"]',
+    'body:not([data-space]) [class*="DropdownMenuContent"]',
+    'body:not([data-space]) [class*="DropdownMenuItem"]',
+    'body:not([data-space]) [class*="DropdownMenu"]',
+  ],
 }
 
