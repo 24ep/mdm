@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { ThemeListItem, Theme } from '../types-theme';
 import { initializeBranding } from '@/lib/branding';
@@ -10,7 +10,7 @@ export function useThemes() {
     const [error, setError] = useState<string | null>(null);
 
     // Fetch all themes (list)
-    const fetchThemes = async () => {
+    const fetchThemes = useCallback(async () => {
         setIsLoading(true);
         setError(null);
         try {
@@ -25,10 +25,10 @@ export function useThemes() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
 
     // Create a new theme
-    const createTheme = async (name: string, description?: string, cloneFromId?: string) => {
+    const createTheme = useCallback(async (name: string, description?: string, cloneFromId?: string) => {
         try {
             const response = await fetch('/api/themes', {
                 method: 'POST',
@@ -48,10 +48,10 @@ export function useThemes() {
             toast.error(msg);
             throw err;
         }
-    };
+    }, [fetchThemes]);
 
     // Clone an existing theme
-    const cloneTheme = async (id: string, name: string) => {
+    const cloneTheme = useCallback(async (id: string, name: string) => {
         try {
             const response = await fetch(`/api/themes/${id}/clone`, {
                 method: 'POST',
@@ -71,10 +71,10 @@ export function useThemes() {
             toast.error(msg);
             throw err;
         }
-    };
+    }, [fetchThemes]);
 
     // Delete a theme
-    const deleteTheme = async (id: string) => {
+    const deleteTheme = useCallback(async (id: string) => {
         try {
             const response = await fetch(`/api/themes/${id}`, { method: 'DELETE' });
             if (!response.ok) {
@@ -88,10 +88,10 @@ export function useThemes() {
             toast.error(msg);
             throw err;
         }
-    };
+    }, [fetchThemes]);
 
     // Activate a theme
-    const activateTheme = async (id: string) => {
+    const activateTheme = useCallback(async (id: string) => {
         try {
             const response = await fetch(`/api/themes/${id}/activate`, { method: 'POST' });
             if (!response.ok) {
@@ -114,10 +114,10 @@ export function useThemes() {
             toast.error(msg);
             throw err;
         }
-    };
+    }, [fetchThemes]);
 
     // Export a theme (download)
-    const exportTheme = async (id: string, format: 'json' = 'json') => {
+    const exportTheme = useCallback(async (id: string, format: 'json' = 'json') => {
         try {
             const response = await fetch(`/api/themes/${id}/export?format=${format}`);
             if (!response.ok) throw new Error('Failed to export theme');
@@ -138,10 +138,10 @@ export function useThemes() {
             toast.error(msg);
             throw err;
         }
-    };
+    }, []);
 
     // Import a theme file
-    const importTheme = async (file: File) => {
+    const importTheme = useCallback(async (file: File) => {
         try {
             const formData = new FormData();
             formData.append('file', file);
@@ -162,10 +162,10 @@ export function useThemes() {
             toast.error(msg);
             throw err;
         }
-    };
+    }, [fetchThemes]);
 
     // Update theme configuration (used by ThemeConfigPanel)
-    const updateTheme = async (id: string, payload: { name?: string; description?: string; config?: any; tags?: string[] }) => {
+    const updateTheme = useCallback(async (id: string, payload: { name?: string; description?: string; config?: any; tags?: string[] }) => {
         try {
             const response = await fetch(`/api/themes/${id}`, {
                 method: 'PUT',
@@ -185,10 +185,10 @@ export function useThemes() {
             toast.error(msg);
             throw err;
         }
-    };
+    }, [fetchThemes]);
 
     // Get full theme details by ID (used for configuration panel)
-    const getTheme = async (id: string) => {
+    const getTheme = useCallback(async (id: string) => {
         try {
             const response = await fetch(`/api/themes/${id}`);
             if (!response.ok) {
@@ -202,12 +202,12 @@ export function useThemes() {
             toast.error(msg);
             throw err;
         }
-    };
+    }, []);
 
     // Load list on mount
     useEffect(() => {
         fetchThemes();
-    }, []);
+    }, [fetchThemes]);
 
     return {
         themes,

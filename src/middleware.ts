@@ -5,8 +5,10 @@ import { addSecurityHeaders, handleCors, addCorsHeaders } from '@/lib/security-h
 
 export default withAuth(
   function proxy(req: NextRequest & { nextauth: { token: any } }) {
-    // Handle CORS for API routes
-    if (req.nextUrl.pathname.startsWith('/api/')) {
+    const path = req.nextUrl.pathname
+
+    // Handle CORS for API routes and next-api alias
+    if (path.startsWith('/api/') || path.startsWith('/next-api/')) {
       const corsResponse = handleCors(req, {
         origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
         credentials: true,
@@ -17,11 +19,29 @@ export default withAuth(
       }
     }
 
+    // Explicitly rewrite /next-api/* to /api/* to bypass Nginx/Next.js config issues
+    if (path.startsWith('/next-api/')) {
+      const newPath = path.replace('/next-api/', '/api/')
+      const url = req.nextUrl.clone()
+      url.pathname = newPath
+      
+      // We need to return the rewrite response, but also add security headers
+      const response = NextResponse.rewrite(url)
+      
+      // Add CORS headers to the rewritten response
+      addCorsHeaders(req, response, {
+        origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
+        credentials: true,
+      })
+      
+      return addSecurityHeaders(response, path)
+    }
+
     // Create response
     const response = NextResponse.next()
 
     // Add CORS headers to all API responses (not just preflight)
-    if (req.nextUrl.pathname.startsWith('/api/')) {
+    if (path.startsWith('/api/')) {
       addCorsHeaders(req, response, {
         origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
         credentials: true,
@@ -29,7 +49,7 @@ export default withAuth(
     }
 
     // Add security headers to all responses with route-specific CSP
-    return addSecurityHeaders(response, req.nextUrl.pathname)
+    return addSecurityHeaders(response, path)
   },
   {
     callbacks: {

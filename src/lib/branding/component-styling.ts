@@ -664,6 +664,19 @@ export function applyComponentStyling(branding: BrandingConfig) {
         }
       }
     }
+    // Individual border radius corners
+    if (componentStyle.borderTopLeftRadius && componentStyle.borderTopLeftRadius.trim()) {
+      componentCSS += `      border-top-left-radius: ${componentStyle.borderTopLeftRadius.trim()} !important;\n`
+    }
+    if (componentStyle.borderTopRightRadius && componentStyle.borderTopRightRadius.trim()) {
+      componentCSS += `      border-top-right-radius: ${componentStyle.borderTopRightRadius.trim()} !important;\n`
+    }
+    if (componentStyle.borderBottomRightRadius && componentStyle.borderBottomRightRadius.trim()) {
+      componentCSS += `      border-bottom-right-radius: ${componentStyle.borderBottomRightRadius.trim()} !important;\n`
+    }
+    if (componentStyle.borderBottomLeftRadius && componentStyle.borderBottomLeftRadius.trim()) {
+      componentCSS += `      border-bottom-left-radius: ${componentStyle.borderBottomLeftRadius.trim()} !important;\n`
+    }
     if (componentStyle.borderWidth && componentStyle.borderWidth.trim()) {
       const borderWidth = componentStyle.borderWidth.trim()
       componentCSS += `      border-width: ${borderWidth} !important;\n`
@@ -718,15 +731,35 @@ export function applyComponentStyling(branding: BrandingConfig) {
         componentCSS += `      --tw-padding-y: 0 !important;\n`
       }
     }
+    // Individual padding sides
+    if (componentStyle.paddingTop && componentStyle.paddingTop.trim()) {
+      componentCSS += `      padding-top: ${componentStyle.paddingTop.trim()} !important;\n`
+    }
+    if (componentStyle.paddingRight && componentStyle.paddingRight.trim()) {
+      componentCSS += `      padding-right: ${componentStyle.paddingRight.trim()} !important;\n`
+    }
+    if (componentStyle.paddingBottom && componentStyle.paddingBottom.trim()) {
+      componentCSS += `      padding-bottom: ${componentStyle.paddingBottom.trim()} !important;\n`
+    }
+    if (componentStyle.paddingLeft && componentStyle.paddingLeft.trim()) {
+      componentCSS += `      padding-left: ${componentStyle.paddingLeft.trim()} !important;\n`
+    }
+
     if (componentStyle.margin && componentStyle.margin.trim()) {
       componentCSS += `      margin: ${componentStyle.margin.trim()} !important;\n`
     }
-    // Support marginTop and marginBottom for separator component
+    // Individual margin sides
     if ((componentStyle as any).marginTop && (componentStyle as any).marginTop.trim()) {
       componentCSS += `      margin-top: ${(componentStyle as any).marginTop.trim()} !important;\n`
     }
+    if ((componentStyle as any).marginRight && (componentStyle as any).marginRight.trim()) {
+      componentCSS += `      margin-right: ${(componentStyle as any).marginRight.trim()} !important;\n`
+    }
     if ((componentStyle as any).marginBottom && (componentStyle as any).marginBottom.trim()) {
       componentCSS += `      margin-bottom: ${(componentStyle as any).marginBottom.trim()} !important;\n`
+    }
+    if ((componentStyle as any).marginLeft && (componentStyle as any).marginLeft.trim()) {
+      componentCSS += `      margin-left: ${(componentStyle as any).marginLeft.trim()} !important;\n`
     }
     if (componentStyle.width && componentStyle.width.trim()) {
       componentCSS += `      width: ${componentStyle.width.trim()} !important;\n`

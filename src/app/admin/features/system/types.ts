@@ -215,6 +215,10 @@ export interface BrandingConfig {
       textColor?: string
       borderColor?: string
       borderRadius?: string
+      borderTopLeftRadius?: string
+      borderTopRightRadius?: string
+      borderBottomRightRadius?: string
+      borderBottomLeftRadius?: string
       borderWidth?: string
       borderStyle?: string
       // Individual border sides - separate color, width, and style for each side
@@ -231,9 +235,15 @@ export interface BrandingConfig {
       borderBottomStyle?: string
       borderLeftStyle?: string
       padding?: string
+      paddingTop?: string
+      paddingRight?: string
+      paddingBottom?: string
+      paddingLeft?: string
       margin?: string
-      marginTop?: string // For separator component
-      marginBottom?: string // For separator component
+      marginTop?: string
+      marginRight?: string
+      marginBottom?: string
+      marginLeft?: string
       width?: string
       height?: string
       minWidth?: string

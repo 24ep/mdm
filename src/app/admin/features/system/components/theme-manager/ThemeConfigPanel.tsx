@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Theme, BrandingConfig } from '../../types-theme'
 import { useThemes } from '../../hooks/useThemes'
+import { BoxModelInput } from './BoxModelInput'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
@@ -227,7 +228,7 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                     {/* Layout & Sizing */}
                     <div className="space-y-3 pl-4 border-l-2 border-muted">
                         <div className="text-xs font-medium text-muted-foreground/80">Layout & Sizing</div>
-                        <TextInput onChange={handleChange} label="Margin" path={`${basePath}.margin`} value={componentStyle?.margin} placeholder="0.5rem" icon={<Move className="h-3 w-3" />} />
+                        <BoxModelInput config={config} onChange={handleChange} label="Margin" basePath={basePath} type="margin" icon={<Move className="h-3 w-3" />} placeholder="0.5rem" />
                         <TextInput onChange={handleChange} label="Width" path={`${basePath}.width`} value={componentStyle?.width} placeholder="100%" icon={<ArrowLeftRight className="h-3 w-3" />} />
                         <TextInput onChange={handleChange} label="Height" path={`${basePath}.height`} value={componentStyle?.height} placeholder="auto" icon={<ArrowLeftRight className="h-3 w-3" />} />
                         <TextInput onChange={handleChange} label="Min Width" path={`${basePath}.minWidth`} value={componentStyle?.minWidth} placeholder="0" icon={<Minimize2 className="h-3 w-3" />} />
@@ -732,7 +733,7 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                 <div className="space-y-3">
                     <div className="text-xs font-medium text-muted-foreground">Border (All Sides)</div>
                     <ColorInputField onChange={handleChange} label="Color" path={`${basePath}.borderColor`} value={componentStyle?.borderColor} />
-                    <TextInput onChange={handleChange} label="Width" path={`${basePath}.borderWidth`} value={componentStyle?.borderWidth} placeholder="0.5px" icon={<Minus className="h-3 w-3" />} />
+                    <BoxModelInput config={config} onChange={handleChange} label="Width" basePath={basePath} type="border-width" placeholder="0.5px" icon={<Minus className="h-3 w-3" />} />
                     <TextInput onChange={handleChange} label="Style" path={`${basePath}.borderStyle`} value={componentStyle?.borderStyle} placeholder="solid" icon={<Minus className="h-3 w-3" />} />
                 </div>
                 <Separator />
@@ -978,8 +979,8 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                             <TabsContent value="normal" className="space-y-3 mt-4">
                                                 <ColorInputField onChange={handleChange} label="Background" path="componentStyling.platform-sidebar-menu-normal.backgroundColor" value={config.componentStyling?.['platform-sidebar-menu-normal']?.backgroundColor} />
                                                 <ColorInputField onChange={handleChange} label="Text" path="componentStyling.platform-sidebar-menu-normal.textColor" value={config.componentStyling?.['platform-sidebar-menu-normal']?.textColor} />
-                                                <TextInput onChange={handleChange} label="Border Radius" path="componentStyling.platform-sidebar-menu-normal.borderRadius" value={config.componentStyling?.['platform-sidebar-menu-normal']?.borderRadius} placeholder="8px" />
-                                                <TextInput onChange={handleChange} label="Padding" path="componentStyling.platform-sidebar-menu-normal.padding" value={config.componentStyling?.['platform-sidebar-menu-normal']?.padding} placeholder="0.5rem 0.75rem" />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.platform-sidebar-menu-normal" type="radius" placeholder="8px" />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.platform-sidebar-menu-normal" type="padding" placeholder="0.5rem 0.75rem" />
                                                 <TextInput onChange={handleChange} label="Font Size" path="componentStyling.platform-sidebar-menu-normal.fontSize" value={config.componentStyling?.['platform-sidebar-menu-normal']?.fontSize} placeholder="0.875rem" />
                                                 <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.platform-sidebar-menu-normal.fontWeight" value={config.componentStyling?.['platform-sidebar-menu-normal']?.fontWeight} placeholder="500" />
                                                 <TextInput onChange={handleChange} label="Backdrop Filter" path="componentStyling.platform-sidebar-menu-normal.backdropFilter" value={config.componentStyling?.['platform-sidebar-menu-normal']?.backdropFilter} placeholder="blur(10px)" />
@@ -1238,8 +1239,8 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                             <div className="text-xs font-medium text-muted-foreground mb-2">Base Styling</div>
                                             <ColorInputField onChange={handleChange} label="Background" path="componentStyling.text-input.backgroundColor" value={config.componentStyling?.['text-input']?.backgroundColor} />
                                             <ColorInputField onChange={handleChange} label="Text" path="componentStyling.text-input.textColor" value={config.componentStyling?.['text-input']?.textColor} />
-                                            <TextInput onChange={handleChange} label="Border Radius" path="componentStyling.text-input.borderRadius" value={config.componentStyling?.['text-input']?.borderRadius} placeholder="8px" />
-                                            <TextInput onChange={handleChange} label="Padding" path="componentStyling.text-input.padding" value={config.componentStyling?.['text-input']?.padding} placeholder="0.5rem 0.75rem" />
+                                            <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.text-input" type="radius" placeholder="8px" />
+                                            <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.text-input" type="padding" placeholder="0.5rem 0.75rem" />
                                             <TextInput onChange={handleChange} label="Font Size" path="componentStyling.text-input.fontSize" value={config.componentStyling?.['text-input']?.fontSize} placeholder="0.875rem" />
                                         </div>
                                         <Separator />
@@ -1277,7 +1278,7 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                                 <TextInput onChange={handleChange} label="Style" path="componentStyling.text-input.borderLeftStyle" value={config.componentStyling?.['text-input']?.borderLeftStyle} placeholder="solid" icon={<ArrowLeft className="h-3 w-3" />} />
                                             </div>
                                         </div>
-                                        <TextInput onChange={handleChange} label="Padding" path="componentStyling.text-input.padding" value={config.componentStyling?.['text-input']?.padding} placeholder="0.5rem 0.75rem" />
+                                        <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.text-input" type="padding" placeholder="0.5rem 0.75rem" />
                                         <TextInput onChange={handleChange} label="Font Size" path="componentStyling.text-input.fontSize" value={config.componentStyling?.['text-input']?.fontSize} placeholder="0.875rem" />
                                         <TextInput onChange={handleChange} label="Transition" path="componentStyling.text-input.transition" value={config.componentStyling?.['text-input']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
                                         <AdvancedStyling basePath="componentStyling.text-input" />
@@ -1291,9 +1292,9 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                     <div className="space-y-3">
                                         <ColorInputField onChange={handleChange} label="Background" path="componentStyling.select.backgroundColor" value={config.componentStyling?.select?.backgroundColor} />
                                         <ColorInputField onChange={handleChange} label="Text" path="componentStyling.select.textColor" value={config.componentStyling?.select?.textColor} />
-                                        <TextInput onChange={handleChange} label="Border Radius" path="componentStyling.select.borderRadius" value={config.componentStyling?.select?.borderRadius} placeholder="8px" />
+                                        <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.select" type="radius" placeholder="8px" />
                                         <BorderConfig basePath="componentStyling.select" />
-                                        <TextInput onChange={handleChange} label="Padding" path="componentStyling.select.padding" value={config.componentStyling?.select?.padding} placeholder="0.5rem 0.75rem" />
+                                        <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.select" type="padding" placeholder="0.5rem 0.75rem" />
                                         <TextInput onChange={handleChange} label="Font Size" path="componentStyling.select.fontSize" value={config.componentStyling?.select?.fontSize} placeholder="0.875rem" />
                                         <TextInput onChange={handleChange} label="Transition" path="componentStyling.select.transition" value={config.componentStyling?.select?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
                                         <AdvancedStyling basePath="componentStyling.select" />
@@ -1307,9 +1308,9 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                     <div className="space-y-3">
                                         <ColorInputField onChange={handleChange} label="Background" path="componentStyling.multi-select.backgroundColor" value={config.componentStyling?.['multi-select']?.backgroundColor} />
                                         <ColorInputField onChange={handleChange} label="Text" path="componentStyling.multi-select.textColor" value={config.componentStyling?.['multi-select']?.textColor} />
-                                        <TextInput onChange={handleChange} label="Border Radius" path="componentStyling.multi-select.borderRadius" value={config.componentStyling?.['multi-select']?.borderRadius} placeholder="8px" />
+                                        <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.multi-select" type="radius" placeholder="8px" />
                                         <BorderConfig basePath="componentStyling.multi-select" />
-                                        <TextInput onChange={handleChange} label="Padding" path="componentStyling.multi-select.padding" value={config.componentStyling?.['multi-select']?.padding} placeholder="0.5rem 0.75rem" />
+                                        <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.multi-select" type="padding" placeholder="0.5rem 0.75rem" />
                                         <TextInput onChange={handleChange} label="Font Size" path="componentStyling.multi-select.fontSize" value={config.componentStyling?.['multi-select']?.fontSize} placeholder="0.875rem" />
                                         <TextInput onChange={handleChange} label="Transition" path="componentStyling.multi-select.transition" value={config.componentStyling?.['multi-select']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
                                         <AdvancedStyling basePath="componentStyling.multi-select" />
@@ -1323,9 +1324,9 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                     <div className="space-y-3">
                                         <ColorInputField onChange={handleChange} label="Background" path="componentStyling.textarea.backgroundColor" value={config.componentStyling?.textarea?.backgroundColor} />
                                         <ColorInputField onChange={handleChange} label="Text" path="componentStyling.textarea.textColor" value={config.componentStyling?.textarea?.textColor} />
-                                        <TextInput onChange={handleChange} label="Border Radius" path="componentStyling.textarea.borderRadius" value={config.componentStyling?.textarea?.borderRadius} placeholder="8px" />
+                                        <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.textarea" type="radius" placeholder="8px" />
                                         <BorderConfig basePath="componentStyling.textarea" />
-                                        <TextInput onChange={handleChange} label="Padding" path="componentStyling.textarea.padding" value={config.componentStyling?.textarea?.padding} placeholder="0.5rem 0.75rem" />
+                                        <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.textarea" type="padding" placeholder="0.5rem 0.75rem" />
                                         <TextInput onChange={handleChange} label="Font Size" path="componentStyling.textarea.fontSize" value={config.componentStyling?.textarea?.fontSize} placeholder="0.875rem" />
                                         <TextInput onChange={handleChange} label="Line Height" path="componentStyling.textarea.lineHeight" value={config.componentStyling?.textarea?.lineHeight} placeholder="1.5" />
                                         <TextInput onChange={handleChange} label="Transition" path="componentStyling.textarea.transition" value={config.componentStyling?.textarea?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
@@ -1339,10 +1340,10 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                     <h3 className="text-sm font-semibold mb-4">Forms</h3>
                                     <div className="space-y-3">
                                         <ColorInputField onChange={handleChange} label="Background" path="componentStyling.form.backgroundColor" value={config.componentStyling?.form?.backgroundColor} />
-                                        <TextInput onChange={handleChange} label="Border Radius" path="componentStyling.form.borderRadius" value={config.componentStyling?.form?.borderRadius} placeholder="8px" />
+                                        <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.form" type="radius" placeholder="8px" />
                                         <BorderConfig basePath="componentStyling.form" />
-                                        <TextInput onChange={handleChange} label="Padding" path="componentStyling.form.padding" value={config.componentStyling?.form?.padding} placeholder="1rem" />
-                                        <TextInput onChange={handleChange} label="Margin" path="componentStyling.form.margin" value={config.componentStyling?.form?.margin} placeholder="0" />
+                                        <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.form" type="padding" placeholder="1rem" />
+                                        <BoxModelInput config={config} onChange={handleChange} label="Margin" basePath="componentStyling.form" type="margin" placeholder="0" />
                                         <AdvancedStyling basePath="componentStyling.form" />
                                     </div>
                                 </div>
@@ -1353,8 +1354,8 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                     <div className="space-y-3">
                                         <ColorInputField onChange={handleChange} label="Background" path="componentStyling.button.backgroundColor" value={config.componentStyling?.button?.backgroundColor} />
                                         <ColorInputField onChange={handleChange} label="Text" path="componentStyling.button.textColor" value={config.componentStyling?.button?.textColor} />
-                                        <TextInput onChange={handleChange} label="Border Radius" path="componentStyling.button.borderRadius" value={config.componentStyling?.button?.borderRadius} placeholder="10px" />
-                                        <TextInput onChange={handleChange} label="Padding" path="componentStyling.button.padding" value={config.componentStyling?.button?.padding} placeholder="0.5rem 1rem" />
+                                        <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.button" type="radius" placeholder="10px" />
+                                        <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.button" type="padding" placeholder="0.5rem 1rem" />
                                         <TextInput onChange={handleChange} label="Font Size" path="componentStyling.button.fontSize" value={config.componentStyling?.button?.fontSize} placeholder="0.875rem" />
                                         <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.button.fontWeight" value={config.componentStyling?.button?.fontWeight} placeholder="500" />
                                         <BorderConfig basePath="componentStyling.button" />
@@ -1422,8 +1423,8 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                     <div className="space-y-3">
                                         <ColorInputField onChange={handleChange} label="Background" path="componentStyling.iconButton.backgroundColor" value={config.componentStyling?.iconButton?.backgroundColor} />
                                         <ColorInputField onChange={handleChange} label="Text" path="componentStyling.iconButton.textColor" value={config.componentStyling?.iconButton?.textColor} />
-                                        <TextInput onChange={handleChange} label="Border Radius" path="componentStyling.iconButton.borderRadius" value={config.componentStyling?.iconButton?.borderRadius} placeholder="8px" />
-                                        <TextInput onChange={handleChange} label="Padding" path="componentStyling.iconButton.padding" value={config.componentStyling?.iconButton?.padding} placeholder="0.5rem" />
+                                        <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.iconButton" type="radius" placeholder="8px" />
+                                        <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.iconButton" type="padding" placeholder="0.5rem" />
                                         <TextInput onChange={handleChange} label="Font Size" path="componentStyling.iconButton.fontSize" value={config.componentStyling?.iconButton?.fontSize} placeholder="1rem" />
                                         <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.iconButton.fontWeight" value={config.componentStyling?.iconButton?.fontWeight} placeholder="400" />
                                         <BorderConfig basePath="componentStyling.iconButton" />
@@ -1458,7 +1459,7 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                                 Example: <code className="px-1 py-0.5 bg-muted rounded">blur(20px) saturate(180%)</code> for frosted glass effect
                                             </div>
                                         </div>
-                                        <TextInput onChange={handleChange} label="Border Radius" path="componentStyling.card.borderRadius" value={config.componentStyling?.card?.borderRadius} placeholder="12px" />
+                                        <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.card" type="radius" placeholder="12px" />
                                         <BorderConfig basePath="componentStyling.card" />
                                         <TextInput onChange={handleChange} label="Shadow" path="componentStyling.card.boxShadow" value={config.componentStyling?.card?.boxShadow} placeholder="0 4px 6px -1px rgba(0, 0, 0, 0.1)..." />
                                         <AdvancedStyling basePath="componentStyling.card" />
@@ -1470,7 +1471,7 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                     <h3 className="text-sm font-semibold mb-4">Checkboxes</h3>
                                     <div className="space-y-3">
                                         <ColorInputField onChange={handleChange} label="Background" path="componentStyling.checkbox.backgroundColor" value={config.componentStyling?.checkbox?.backgroundColor} />
-                                        <TextInput onChange={handleChange} label="Border Radius" path="componentStyling.checkbox.borderRadius" value={config.componentStyling?.checkbox?.borderRadius} placeholder="4px" />
+                                        <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.checkbox" type="radius" placeholder="4px" />
                                         <BorderConfig basePath="componentStyling.checkbox" />
                                         <AdvancedStyling basePath="componentStyling.checkbox" />
                                         <ComponentStates basePath="componentStyling.checkbox" />
@@ -1482,7 +1483,7 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                     <h3 className="text-sm font-semibold mb-4">Radio Buttons</h3>
                                     <div className="space-y-3">
                                         <ColorInputField onChange={handleChange} label="Background" path="componentStyling.radio.backgroundColor" value={config.componentStyling?.radio?.backgroundColor} />
-                                        <TextInput onChange={handleChange} label="Border Radius" path="componentStyling.radio.borderRadius" value={config.componentStyling?.radio?.borderRadius} placeholder="50%" />
+                                        <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.radio" type="radius" placeholder="50%" />
                                         <BorderConfig basePath="componentStyling.radio" />
                                         <AdvancedStyling basePath="componentStyling.radio" />
                                         <ComponentStates basePath="componentStyling.radio" />
@@ -1493,7 +1494,7 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                 <div>
                                     <h3 className="text-sm font-semibold mb-4">Switches</h3>
                                     <div className="space-y-3">
-                                        <TextInput onChange={handleChange} label="Border Radius" path="componentStyling.switch.borderRadius" value={config.componentStyling?.switch?.borderRadius} placeholder="9999px" />
+                                        <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.switch" type="radius" placeholder="9999px" />
                                         <BorderConfig basePath="componentStyling.switch" />
                                         <ColorInputField onChange={handleChange} label="Background" path="componentStyling.switch.backgroundColor" value={config.componentStyling?.switch?.backgroundColor} />
                                         <AdvancedStyling basePath="componentStyling.switch" />
@@ -1524,9 +1525,9 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                             <div className="space-y-2 pl-4">
                                                 <ColorInputField onChange={handleChange} label="Background" path="componentStyling.vertical-tab-menu-normal.backgroundColor" value={config.componentStyling?.['vertical-tab-menu-normal']?.backgroundColor} />
                                                 <ColorInputField onChange={handleChange} label="Text" path="componentStyling.vertical-tab-menu-normal.textColor" value={config.componentStyling?.['vertical-tab-menu-normal']?.textColor} />
-                                                <TextInput onChange={handleChange} label="Border Radius" path="componentStyling.vertical-tab-menu-normal.borderRadius" value={config.componentStyling?.['vertical-tab-menu-normal']?.borderRadius} placeholder="8px" />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.vertical-tab-menu-normal" type="radius" placeholder="8px" />
                                                 <BorderConfig basePath="componentStyling.vertical-tab-menu-normal" />
-                                                <TextInput onChange={handleChange} label="Padding" path="componentStyling.vertical-tab-menu-normal.padding" value={config.componentStyling?.['vertical-tab-menu-normal']?.padding} placeholder="0.5rem 0.75rem" />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.vertical-tab-menu-normal" type="padding" placeholder="0.5rem 0.75rem" />
                                                 <TextInput onChange={handleChange} label="Font Size" path="componentStyling.vertical-tab-menu-normal.fontSize" value={config.componentStyling?.['vertical-tab-menu-normal']?.fontSize} placeholder="0.875rem" />
                                                 <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.vertical-tab-menu-normal.fontWeight" value={config.componentStyling?.['vertical-tab-menu-normal']?.fontWeight} placeholder="500" />
                                                 <TextInput onChange={handleChange} label="Transition" path="componentStyling.vertical-tab-menu-normal.transition" value={config.componentStyling?.['vertical-tab-menu-normal']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
@@ -1538,7 +1539,7 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                             <div className="space-y-2 pl-4">
                                                 <ColorInputField onChange={handleChange} label="Background" path="componentStyling.vertical-tab-menu-hover.backgroundColor" value={config.componentStyling?.['vertical-tab-menu-hover']?.backgroundColor} />
                                                 <ColorInputField onChange={handleChange} label="Text" path="componentStyling.vertical-tab-menu-hover.textColor" value={config.componentStyling?.['vertical-tab-menu-hover']?.textColor} />
-                                                <TextInput onChange={handleChange} label="Border Radius" path="componentStyling.vertical-tab-menu-hover.borderRadius" value={config.componentStyling?.['vertical-tab-menu-hover']?.borderRadius} placeholder="8px" />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.vertical-tab-menu-hover" type="radius" placeholder="8px" />
                                                 <BorderConfig basePath="componentStyling.vertical-tab-menu-hover" />
                                                 <TextInput onChange={handleChange} label="Box Shadow" path="componentStyling.vertical-tab-menu-hover.boxShadow" value={config.componentStyling?.['vertical-tab-menu-hover']?.boxShadow} placeholder="0 1px 2px 0 rgba(0, 0, 0, 0.05)" />
                                                 <TextInput onChange={handleChange} label="Transition" path="componentStyling.vertical-tab-menu-hover.transition" value={config.componentStyling?.['vertical-tab-menu-hover']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
@@ -1552,8 +1553,8 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                                     <div className="text-xs font-medium text-muted-foreground mb-2">Active Menu Background</div>
                                                     <ColorInputField onChange={handleChange} label="Background" path="componentStyling.vertical-tab-menu-active.backgroundColor" value={config.componentStyling?.['vertical-tab-menu-active']?.backgroundColor} />
                                                     <ColorInputField onChange={handleChange} label="Text" path="componentStyling.vertical-tab-menu-active.textColor" value={config.componentStyling?.['vertical-tab-menu-active']?.textColor} />
-                                                    <TextInput onChange={handleChange} label="Border Radius" path="componentStyling.vertical-tab-menu-active.borderRadius" value={config.componentStyling?.['vertical-tab-menu-active']?.borderRadius} placeholder="8px" />
-                                                    <TextInput onChange={handleChange} label="Padding" path="componentStyling.vertical-tab-menu-active.padding" value={config.componentStyling?.['vertical-tab-menu-active']?.padding} placeholder="0.5rem 0.75rem" />
+                                                    <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.vertical-tab-menu-active" type="radius" placeholder="8px" />
+                                                    <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.vertical-tab-menu-active" type="padding" placeholder="0.5rem 0.75rem" />
                                                     <TextInput onChange={handleChange} label="Font Size" path="componentStyling.vertical-tab-menu-active.fontSize" value={config.componentStyling?.['vertical-tab-menu-active']?.fontSize} placeholder="0.875rem" />
                                                     <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.vertical-tab-menu-active.fontWeight" value={config.componentStyling?.['vertical-tab-menu-active']?.fontWeight} placeholder="600" />
                                                 </div>
@@ -1580,8 +1581,8 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                             <TabsContent value="normal" className="space-y-3 mt-4">
                                                 <ColorInputField onChange={handleChange} label="Background" path="componentStyling.space-settings-menu-normal.backgroundColor" value={config.componentStyling?.['space-settings-menu-normal']?.backgroundColor} />
                                                 <ColorInputField onChange={handleChange} label="Text" path="componentStyling.space-settings-menu-normal.textColor" value={config.componentStyling?.['space-settings-menu-normal']?.textColor} />
-                                                <TextInput onChange={handleChange} label="Border Radius" path="componentStyling.space-settings-menu-normal.borderRadius" value={config.componentStyling?.['space-settings-menu-normal']?.borderRadius} placeholder="6px" />
-                                                <TextInput onChange={handleChange} label="Padding" path="componentStyling.space-settings-menu-normal.padding" value={config.componentStyling?.['space-settings-menu-normal']?.padding} placeholder="0.375rem 0.5rem" />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.space-settings-menu-normal" type="radius" placeholder="6px" />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.space-settings-menu-normal" type="padding" placeholder="0.375rem 0.5rem" />
                                                 <TextInput onChange={handleChange} label="Font Size" path="componentStyling.space-settings-menu-normal.fontSize" value={config.componentStyling?.['space-settings-menu-normal']?.fontSize} placeholder="0.875rem" />
                                                 <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.space-settings-menu-normal.fontWeight" value={config.componentStyling?.['space-settings-menu-normal']?.fontWeight} placeholder="400" />
                                                 <TextInput onChange={handleChange} label="Transition" path="componentStyling.space-settings-menu-normal.transition" value={config.componentStyling?.['space-settings-menu-normal']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
@@ -1591,8 +1592,8 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                             <TabsContent value="hover" className="space-y-3 mt-4">
                                                 <ColorInputField onChange={handleChange} label="Background" path="componentStyling.space-settings-menu-hover.backgroundColor" value={config.componentStyling?.['space-settings-menu-hover']?.backgroundColor} />
                                                 <ColorInputField onChange={handleChange} label="Text" path="componentStyling.space-settings-menu-hover.textColor" value={config.componentStyling?.['space-settings-menu-hover']?.textColor} />
-                                                <TextInput onChange={handleChange} label="Border Radius" path="componentStyling.space-settings-menu-hover.borderRadius" value={config.componentStyling?.['space-settings-menu-hover']?.borderRadius} placeholder="6px" />
-                                                <TextInput onChange={handleChange} label="Padding" path="componentStyling.space-settings-menu-hover.padding" value={config.componentStyling?.['space-settings-menu-hover']?.padding} placeholder="0.375rem 0.5rem" />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.space-settings-menu-hover" type="radius" placeholder="6px" />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.space-settings-menu-hover.padding" type="padding" placeholder="0.375rem 0.5rem" />
                                                 <TextInput onChange={handleChange} label="Font Size" path="componentStyling.space-settings-menu-hover.fontSize" value={config.componentStyling?.['space-settings-menu-hover']?.fontSize} placeholder="0.875rem" />
                                                 <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.space-settings-menu-hover.fontWeight" value={config.componentStyling?.['space-settings-menu-hover']?.fontWeight} placeholder="400" />
                                                 <TextInput onChange={handleChange} label="Transition" path="componentStyling.space-settings-menu-hover.transition" value={config.componentStyling?.['space-settings-menu-hover']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
@@ -1602,8 +1603,8 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                             <TabsContent value="active" className="space-y-3 mt-4">
                                                 <ColorInputField onChange={handleChange} label="Background" path="componentStyling.space-settings-menu-active.backgroundColor" value={config.componentStyling?.['space-settings-menu-active']?.backgroundColor} />
                                                 <ColorInputField onChange={handleChange} label="Text" path="componentStyling.space-settings-menu-active.textColor" value={config.componentStyling?.['space-settings-menu-active']?.textColor} />
-                                                <TextInput onChange={handleChange} label="Border Radius" path="componentStyling.space-settings-menu-active.borderRadius" value={config.componentStyling?.['space-settings-menu-active']?.borderRadius} placeholder="6px" />
-                                                <TextInput onChange={handleChange} label="Padding" path="componentStyling.space-settings-menu-active.padding" value={config.componentStyling?.['space-settings-menu-active']?.padding} placeholder="0.375rem 0.5rem" />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.space-settings-menu-active" type="radius" placeholder="6px" />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.space-settings-menu-active" type="padding" placeholder="0.375rem 0.5rem" />
                                                 <TextInput onChange={handleChange} label="Font Size" path="componentStyling.space-settings-menu-active.fontSize" value={config.componentStyling?.['space-settings-menu-active']?.fontSize} placeholder="0.875rem" />
                                                 <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.space-settings-menu-active.fontWeight" value={config.componentStyling?.['space-settings-menu-active']?.fontWeight} placeholder="600" />
                                                 <TextInput onChange={handleChange} label="Box Shadow" path="componentStyling.space-settings-menu-active.boxShadow" value={config.componentStyling?.['space-settings-menu-active']?.boxShadow} placeholder="0 1px 2px 0 rgba(0, 122, 255, 0.15)" />
