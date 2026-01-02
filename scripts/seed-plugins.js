@@ -337,7 +337,7 @@ async function seedPlugins() {
             ui_type = $13, ui_config = $14::jsonb, webhook_supported = $15, webhook_events = $16, icon_url = $17,
             screenshots = $18, documentation_url = $19, support_url = $20, pricing_info = $21::jsonb, verified = $22,
             updated_at = NOW()
-          WHERE id = $1`,
+          WHERE id = $1::uuid`,
           id,
           plugin.name,
           plugin.description || null,
