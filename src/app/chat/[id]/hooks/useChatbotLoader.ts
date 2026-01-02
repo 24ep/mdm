@@ -113,7 +113,7 @@ export function useChatbotLoader({
     // Helper for public fallback (guests/embeds)
     const tryPublicApi = async () => {
       try {
-        const res = await fetch(`/chat-handler/public/chatbots/${chatbotId}`, { cache: 'no-store' })
+        const res = await fetch(`/chat-api/public/chatbots/${chatbotId}`, { cache: 'no-store' })
         if (res.ok) {
           const d = await res.json()
           if (d.chatbot) {
@@ -133,7 +133,7 @@ export function useChatbotLoader({
       if (isUuid(chatbotId)) {
         // 1. Try Private API (Admin/Draft version)
         try {
-          const response = await fetch(`/chat-handler/chatbots/${chatbotId}`, { cache: 'no-store' })
+          const response = await fetch(`/api/chatbots/${chatbotId}`, { cache: 'no-store' })
           // Check for JSON content type to avoid handling auth redirects (HTML) as success
           const contentType = response.headers.get('content-type')
 

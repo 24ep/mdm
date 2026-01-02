@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
   if (!scriptUrl) {
     // Fallback for async injected scripts (document.currentScript is null for them)
     // We look for a script tag that matches our endpoint and chatbot ID
-    var scripts = document.querySelectorAll('script[src*="/api/embed"], script[src*="/chat-handler/embed"]');
+    var scripts = document.querySelectorAll('script[src*="/api/embed"], script[src*="/chat-handler/embed"], script[src*="/chat-api/embed"]');
     for (var i = 0; i < scripts.length; i++) {
       if (scripts[i].src.indexOf(chatbotId) !== -1) {
         scriptUrl = scripts[i].src;

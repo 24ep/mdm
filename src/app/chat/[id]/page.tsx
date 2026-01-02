@@ -703,55 +703,9 @@ export default function ChatPage() {
     shouldShowWidgetButton
   })
 
-  return (
-    <div
-      style={{
-        position: 'relative',
-        height: '100%',
-        // Apply emulator background to page container (not popover)
-        backgroundColor: emulatorConfig.backgroundColor,
-        backgroundImage: emulatorConfig.backgroundImage ? `url(${emulatorConfig.backgroundImage})` : undefined,
-        backgroundSize: emulatorConfig.backgroundImage ? 'cover' : undefined,
-        backgroundPosition: emulatorConfig.backgroundImage ? 'center' : undefined,
-        backgroundRepeat: emulatorConfig.backgroundImage ? 'no-repeat' : undefined,
-        // When embedded and closed (or just PWA overlay showing), allow clicks to pass through
-        // unless interactions are needed.
-        // If sticky PWA banner is showing (on mobile), the iframe size is 100%.
-        // We need pointer-events: none on the container so the user can click the host site.
-        // We will re-enable pointer-events: auto on the interactive elements (Banner, Button, Widget Window).
-        pointerEvents: (isEmbed && !isOpen && !isPreview) ? 'none' : 'auto',
-      }}
-    >
-      {/* Preview Type Selector - Fixed at top right (only show when not in iframe) */}
-      {!isInIframe && (
-        <div className="fixed top-4 right-4 flex items-center gap-2 bg-background/90 backdrop-blur-sm border rounded-md p-2 shadow-lg" style={{ zIndex: Z_INDEX.chatWidgetPreview }}>
-          <Label className="text-xs whitespace-nowrap">Preview Type:</Label>
-          <Select
-            value={previewDeploymentType}
-            onValueChange={(value: string) => {
-              const deploymentType = value as 'popover' | 'fullpage' | 'popup-center'
-              setPreviewDeploymentType(deploymentType)
-              if (deploymentType === 'popover' || deploymentType === 'popup-center') {
-                setIsOpen(false)
-              } else {
-                setIsOpen(true)
-              }
-            }}
-          >
-            <SelectTrigger className="h-8 w-[140px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="popover">Popover</SelectItem>
-              <SelectItem value="popup-center">Popup Center</SelectItem>
-              <SelectItem value="fullpage">Full Page</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-
-
+  // Define the main chat UI content part to be wrapped in the device frame if needed
+  const chatUI = (
+    <>
       {overlayStyle && (
         <div style={overlayStyle} aria-hidden="true" onClick={() => setIsOpen(false)} />
       )}
@@ -810,6 +764,94 @@ export default function ChatPage() {
           <PWAInstallBanner chatbot={chatbot} isMobile={isMobile} />
         </div>
       )}
-    </div >
+    </>
+  )
+
+  const showDeviceFrame = isPreview && !isInIframe && (previewDevice === 'mobile' || previewDevice === 'tablet')
+
+  return (
+    <div
+      className={showDeviceFrame ? "flex items-center justify-center min-h-screen p-8" : ""}
+      style={{
+        position: 'relative',
+        height: '100%',
+        minHeight: showDeviceFrame ? '100vh' : 'auto',
+        // Apply emulator background to page container (not popover)
+        backgroundColor: emulatorConfig.backgroundColor,
+        backgroundImage: emulatorConfig.backgroundImage ? `url(${emulatorConfig.backgroundImage})` : undefined,
+        backgroundSize: emulatorConfig.backgroundImage ? 'cover' : undefined,
+        backgroundPosition: emulatorConfig.backgroundImage ? 'center' : undefined,
+        backgroundRepeat: emulatorConfig.backgroundImage ? 'no-repeat' : undefined,
+        // When embedded and closed (or just PWA overlay showing), allow clicks to pass through
+        pointerEvents: (isEmbed && !isOpen && !isPreview) ? 'none' : 'auto',
+      }}
+    >
+      {/* Preview Type Selector - Fixed at top right (only show when not in iframe) */}
+      {!isInIframe && (
+        <div className="fixed top-4 right-4 flex items-center gap-2 bg-background/90 backdrop-blur-sm border rounded-md p-2 shadow-lg" style={{ zIndex: Z_INDEX.chatWidgetPreview }}>
+          <Label className="text-xs whitespace-nowrap">Preview Type:</Label>
+          <Select
+            value={previewDeploymentType}
+            onValueChange={(value: string) => {
+              const deploymentType = value as 'popover' | 'fullpage' | 'popup-center'
+              setPreviewDeploymentType(deploymentType)
+              if (deploymentType === 'popover' || deploymentType === 'popup-center') {
+                setIsOpen(false)
+              } else {
+                setIsOpen(true)
+              }
+            }}
+          >
+            <SelectTrigger className="h-8 w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="popover">Popover</SelectItem>
+              <SelectItem value="popup-center">Popup Center</SelectItem>
+              <SelectItem value="fullpage">Full Page</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {showDeviceFrame ? (
+        <div
+          className="relative bg-black shadow-2xl transition-all duration-300 ease-in-out flex flex-col overflow-hidden shrink-0"
+          style={{
+            width: previewDevice === 'mobile' ? '300px' : '500px',
+            height: previewDevice === 'mobile' ? '600px' : '700px',
+            borderRadius: previewDevice === 'mobile' ? '40px' : '32px',
+            border: `${previewDevice === 'mobile' ? '8px' : '10px'} solid #1f1f1f`,
+            transform: 'translateZ(0)'
+          }}
+        >
+          {/* Status Bar */}
+          <div
+            className="h-8 w-full flex items-center justify-between px-6 text-[10px] font-bold shrink-0"
+            style={{
+              backgroundColor: chatbot.primaryColor || '#3b82f6',
+              color: '#fff'
+            }}
+          >
+            <span>9:41</span>
+            <div className="flex gap-1 items-center">
+              <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3L2 12h3v9h6v-6h2v6h6v-9h3L12 3z" /></svg>
+              <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z" /></svg>
+              <svg className="h-4 w-3" fill="currentColor" viewBox="0 0 24 24"><path d="M17 4h-3V2h-4v2H7v18h10V4zm-4 16h-2v-2h2v2z" /></svg>
+            </div>
+          </div>
+
+          {/* Content Area */}
+          <div className="flex-1 w-full relative overflow-hidden bg-white">
+            {chatUI}
+          </div>
+
+          {/* Home Indicator */}
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-32 h-1 bg-white/50 rounded-full" style={{ zIndex: 60 }} />
+        </div>
+      ) : (
+        chatUI
+      )}
+    </div>
   )
 }

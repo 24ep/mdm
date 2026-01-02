@@ -8,7 +8,7 @@ export default withAuth(
     const path = req.nextUrl.pathname
 
     // Handle CORS for API routes and custom aliases
-    if (path.startsWith('/api/') || path.startsWith('/next-api/') || path.startsWith('/chat-handler/')) {
+    if (path.startsWith('/api/') || path.startsWith('/next-api/') || path.startsWith('/chat-api/')) {
       const corsResponse = handleCors(req, {
         origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
         credentials: true,
@@ -19,30 +19,11 @@ export default withAuth(
       }
     }
 
-    // Explicitly rewrite /chat-handler/* to /api/* to bypass Nginx/Next.js config issues
-    if (path.startsWith('/chat-handler/')) {
-      const newPath = path.replace('/chat-handler/', '/api/')
-      // console.log(`[Middleware] Rewriting ${path} to ${newPath}`)
-      const url = req.nextUrl.clone()
-      url.pathname = newPath
-      
-      // We need to return the rewrite response, but also add security headers
-      const response = NextResponse.rewrite(url)
-      
-      // Add CORS headers to the rewritten response
-      addCorsHeaders(req, response, {
-        origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
-        credentials: true,
-      })
-      
-      return addSecurityHeaders(response, path)
-    }
-
     // Create response
     const response = NextResponse.next()
 
     // Add CORS headers to all API responses (not just preflight)
-    if (path.startsWith('/api/')) {
+    if (path.startsWith('/api/') || path.startsWith('/chat-api/')) {
       addCorsHeaders(req, response, {
         origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
         credentials: true,
@@ -62,25 +43,12 @@ export default withAuth(
         // without authentication when embedded on external websites
         if (
           path.startsWith('/chat') ||
-          path.startsWith('/api/chat') ||
-          path.startsWith('/next-api/chat') ||
-          path.startsWith('/chat-handler/chat') ||
-          path.startsWith('/api/chatbots') ||
-          path.startsWith('/api/pwa') ||
+          path.startsWith('/chat-api/public') ||
+          path.startsWith('/chat-api/embed') ||
+          path.startsWith('/chat-api/session') ||
           path.startsWith('/api/public') ||
-          path.startsWith('/chat-handler/public') ||
           path.startsWith('/api/embed') ||
-          path.startsWith('/next-api/embed') ||
-          path.startsWith('/chat-handler/embed') ||
-          path.startsWith('/api/chatkit') ||
-          path.startsWith('/next-api/chatkit') ||
-          path.startsWith('/chat-handler/chatkit') ||
-          path.startsWith('/api/dify') ||
-          path.startsWith('/api/openai-agent-sdk') ||
-          path.startsWith('/next-api/openai-agent-sdk') ||
-          path.startsWith('/chat-handler/openai-agent-sdk') ||
-          path.startsWith('/api/openai-realtime') ||
-          path.startsWith('/api/agentbuilder')
+          path.startsWith('/api/pwa')
         ) {
           return true
         }

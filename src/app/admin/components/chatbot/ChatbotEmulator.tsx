@@ -269,7 +269,7 @@ export function ChatbotEmulator({
                 variant="outline"
                 size="sm"
                 className="h-8"
-                onClick={() => window.open(`/chat/${selectedChatbot.id}`, '_blank')}
+                onClick={() => window.open(`/chat/${selectedChatbot.id}?preview=true&deploymentType=${previewMode}&previewDevice=${deviceType}`, '_blank')}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 New Tab

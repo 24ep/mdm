@@ -32,6 +32,8 @@ export async function POST(request: NextRequest) {
     })
 
     let apiKey = providedApiKey;
+    let organizationId: string | undefined;
+    let projectId: string | undefined;
 
     // If API key is missing but we have chatbotId, fetch it from DB
     if (!apiKey && chatbotId) {
@@ -74,18 +76,23 @@ export async function POST(request: NextRequest) {
             )
           }
 
-          // Determine which key to use
+          // Determine which key to use and optional IDs
           const isAgentSDK = config.engineType === 'openai-agent-sdk';
           apiKey = isAgentSDK ? config.openaiAgentSdkApiKey : config.chatkitApiKey;
-          console.log('✅ Retrieved API key from database', {
+          organizationId = isAgentSDK ? config.openaiAgentSdkOrganizationId : config.openaiChatkitOrganizationId;
+          projectId = isAgentSDK ? config.openaiAgentSdkProjectId : config.openaiChatkitProjectId;
+
+          console.log('✅ Retrieved API configuration from database', {
             engineType: config.engineType,
-            hasKey: !!apiKey
+            hasKey: !!apiKey,
+            hasOrgId: !!organizationId,
+            hasProjectId: !!projectId
           })
         } else {
           console.warn('⚠️ Chatbot not found in database:', chatbotId)
         }
       } catch (dbError) {
-        console.error('❌ Error fetching API key from DB:', dbError);
+        console.error('❌ Error fetching API configuration from DB:', dbError);
         // Continue to see if we can fail gracefully or if apiKey was optional
       }
     }
@@ -132,13 +139,23 @@ export async function POST(request: NextRequest) {
       isRefresh: !!existing
     })
 
+    const headers: any = {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'OpenAI-Beta': 'chatkit_beta=v1',
+    };
+
+    if (organizationId) {
+      headers['OpenAI-Organization'] = organizationId;
+    }
+
+    if (projectId) {
+      headers['OpenAI-Project'] = projectId;
+    }
+
     const response = await fetch(openaiUrl, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'chatkit_beta=v1',
-      },
+      headers,
       body: JSON.stringify(sessionPayload),
     });
 
@@ -199,10 +216,7 @@ export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
     headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      'Access-Control-Allow-Private-Network': 'true',
+      ...corsHeaders,
       'Access-Control-Max-Age': '86400',
     },
   });

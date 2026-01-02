@@ -295,17 +295,7 @@ const nextConfig = {
   },
   // Rewrites to bypass Nginx /api collision
   async rewrites() {
-    return [
-      {
-        source: '/chat-handler/:path*',
-        destination: '/api/:path*',
-      },
-      // Keep next-api for compatibility during transition
-      {
-        source: '/next-api/:path*',
-        destination: '/api/:path*',
-      },
-    ]
+    return []
   },
 
   // Experimental: Continue build even with errors
