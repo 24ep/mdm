@@ -89,6 +89,15 @@ export async function GET(
 
     const mergedChatbot = sanitizeChatbotConfig(mergeVersionConfig(chatbot))
 
+    // Check if chatbot is enabled (default to true if not set)
+    const chatbotEnabled = mergedChatbot.chatbotEnabled !== false
+    if (!chatbotEnabled) {
+      return NextResponse.json(
+        { error: 'Chatbot is disabled', disabled: true },
+        { status: 403, headers: corsHeaders }
+      )
+    }
+
     return NextResponse.json({ chatbot: mergedChatbot }, { headers: corsHeaders })
   } catch (error) {
     console.error('Error fetching chatbot config:', error)

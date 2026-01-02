@@ -67,6 +67,16 @@ async function postHandler(request: NextRequest) {
           )
         }
 
+        // Check if chatbot is enabled (default to true if not set)
+        const chatbotEnabled = config.chatbotEnabled !== false
+        if (!chatbotEnabled) {
+          console.log(`[Agent SDK API] Chatbot ${chatbotId} is disabled`)
+          return NextResponse.json(
+            { error: 'Chatbot is disabled', disabled: true },
+            { status: 403 }
+          )
+        }
+
         apiKey = config.openaiAgentSdkApiKey
       }
     } catch (error) {

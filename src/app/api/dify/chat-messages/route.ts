@@ -28,6 +28,16 @@ export async function POST(request: NextRequest) {
             )
           }
 
+          // Check if chatbot is enabled (default to true if not set)
+          const chatbotEnabled = config.chatbotEnabled !== false
+          if (!chatbotEnabled) {
+            console.log(`[Dify API] Chatbot ${chatbotId} is disabled`)
+            return NextResponse.json(
+              { error: 'Chatbot is disabled', disabled: true },
+              { status: 403 }
+            )
+          }
+
           if (!apiKey) apiKey = config.difyApiKey
           if (!apiBaseUrl) {
             const difyOptions = config.difyOptions || {}
