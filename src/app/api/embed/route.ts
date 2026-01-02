@@ -71,6 +71,19 @@ export async function GET(request: NextRequest) {
       })
     }
 
+    // Check if chatbot is enabled (default to true if not set)
+    const chatbotEnabled = chatbot.chatbotEnabled !== false
+    if (!chatbotEnabled) {
+      console.log(`[Embed API] Chatbot ${chatbotId} is disabled`)
+      // Return an empty script that does nothing
+      return new NextResponse(`/* Chatbot is disabled */`, {
+        headers: { 
+          'Content-Type': 'application/javascript',
+          'Cache-Control': 'no-store, max-age=0',
+        }
+      })
+    }
+
     // Get the origin from the request (this is the MDM server origin)
     const serverOrigin = request.nextUrl.origin
 

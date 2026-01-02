@@ -36,6 +36,18 @@ export async function GET(request: NextRequest) {
 
   const chatbot = mergeVersionConfig(chatbotRaw as any)
 
+  // Check if chatbot is enabled (default to true if not set)
+  const chatbotEnabled = chatbot.chatbotEnabled !== false
+  if (!chatbotEnabled) {
+    return new NextResponse(`/* Chatbot is disabled */`, {
+      headers: { 
+        'Content-Type': 'application/javascript',
+        'Cache-Control': 'no-store, max-age=0',
+        'Access-Control-Allow-Origin': '*',
+      }
+    })
+  }
+
   // Generate Emulated Config using shared logic
   // 1. Theme
   const chatKitTheme = buildChatKitTheme(chatbot)

@@ -63,6 +63,17 @@ export async function POST(request: NextRequest) {
               403
             )
           }
+
+          // Check if chatbot is enabled (default to true if not set)
+          const chatbotEnabled = config.chatbotEnabled !== false
+          if (!chatbotEnabled) {
+            console.log(`[Session API] Chatbot ${chatbotId} is disabled`)
+            return jsonResponse(
+              { error: 'Chatbot is disabled', disabled: true },
+              403
+            )
+          }
+
           // Determine which key to use
           const isAgentSDK = config.engineType === 'openai-agent-sdk';
           apiKey = isAgentSDK ? config.openaiAgentSdkApiKey : config.chatkitApiKey;
