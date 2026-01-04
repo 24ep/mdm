@@ -3,6 +3,7 @@ import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import { applyRateLimit } from '@/app/api/v1/middleware'
+import { getKnowledgeSchema, isValidUUID } from '../../../utils'
 
 async function getHandler(
   request: NextRequest,
@@ -17,51 +18,60 @@ async function getHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
 
-    const { id: documentId } = await params
-    const { searchParams } = new URL(request.url)
-    const format = searchParams.get('format') || 'markdown'
+  const { id: documentId } = await params
 
-    // Get document
-    const docResult = await query(
-      `SELECT kd.*, kc.is_private, kc.created_by as collection_created_by
-       FROM knowledge_documents kd
-       JOIN knowledge_collections kc ON kc.id = kd.collection_id
-       WHERE kd.id = $1 AND kd.deleted_at IS NULL`,
-      [documentId]
-    )
+  if (!isValidUUID(documentId)) {
+    return NextResponse.json({ error: 'Invalid document ID' }, { status: 400 })
+  }
 
-    if (docResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Document not found' }, { status: 404 })
-    }
+  const { searchParams } = new URL(request.url)
+  const format = searchParams.get('format') || 'markdown'
+  const spaceId = searchParams.get('spaceId')
 
-    const doc = docResult.rows[0]
+  // Get the isolated schema for Knowledge Base
+  const schema = await getKnowledgeSchema(spaceId)
 
-    // Check access
-    const memberCheck = await query(
-      `SELECT role FROM knowledge_collection_members
-       WHERE collection_id = $1 AND user_id = $2`,
-      [doc.collection_id, session.user.id]
-    )
+  // Get document
+  const docResult = await query(
+    `SELECT kd.*, kc.is_private, kc.created_by as collection_created_by
+       FROM ${schema}.knowledge_documents kd
+       JOIN ${schema}.knowledge_collections kc ON kc.id = kd.collection_id
+       WHERE kd.id::text = $1 AND kd.deleted_at IS NULL`,
+    [documentId]
+  )
 
-    const isCollectionCreator = doc.collection_created_by === session.user.id
-    const isMember = memberCheck.rows.length > 0
-    const isPublic = doc.is_public
+  if (docResult.rows.length === 0) {
+    return NextResponse.json({ error: 'Document not found' }, { status: 404 })
+  }
 
-    if (!isCollectionCreator && !isMember && doc.is_private && !isPublic) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+  const doc = docResult.rows[0]
 
-    // Export based on format
-    if (format === 'markdown') {
-      const markdown = `# ${doc.title}\n\n${doc.content}`
-      return new NextResponse(markdown, {
-        headers: {
-          'Content-Type': 'text/markdown',
-          'Content-Disposition': `attachment; filename="${doc.title.replace(/[^a-z0-9]/gi, '_')}.md"`,
-        },
-      })
-    } else if (format === 'html') {
-      const html = `<!DOCTYPE html>
+  // Check access
+  const memberCheck = await query(
+    `SELECT role FROM ${schema}.knowledge_collection_members
+       WHERE collection_id::text = $1 AND user_id::text = $2`,
+    [doc.collection_id, session.user.id]
+  )
+
+  const isCollectionCreator = doc.collection_created_by === session.user.id
+  const isMember = memberCheck.rows.length > 0
+  const isPublic = doc.is_public
+
+  if (!isCollectionCreator && !isMember && doc.is_private && !isPublic) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  // Export based on format
+  if (format === 'markdown') {
+    const markdown = `# ${doc.title}\n\n${doc.content}`
+    return new NextResponse(markdown, {
+      headers: {
+        'Content-Type': 'text/markdown',
+        'Content-Disposition': `attachment; filename="${doc.title.replace(/[^a-z0-9]/gi, '_')}.md"`,
+      },
+    })
+  } else if (format === 'html') {
+    const html = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -78,30 +88,30 @@ async function getHandler(
   <div>${doc.content_html || doc.content}</div>
 </body>
 </html>`
-      return new NextResponse(html, {
-        headers: {
-          'Content-Type': 'text/html',
-          'Content-Disposition': `attachment; filename="${doc.title.replace(/[^a-z0-9]/gi, '_')}.html"`,
-        },
-      })
-    } else if (format === 'json') {
-      return NextResponse.json({
-        title: doc.title,
-        content: doc.content,
-        contentHtml: doc.content_html,
-        createdAt: doc.created_at,
-        updatedAt: doc.updated_at,
-      }, {
-        headers: {
-          'Content-Disposition': `attachment; filename="${doc.title.replace(/[^a-z0-9]/gi, '_')}.json"`,
-        },
-      })
-    }
+    return new NextResponse(html, {
+      headers: {
+        'Content-Type': 'text/html',
+        'Content-Disposition': `attachment; filename="${doc.title.replace(/[^a-z0-9]/gi, '_')}.html"`,
+      },
+    })
+  } else if (format === 'json') {
+    return NextResponse.json({
+      title: doc.title,
+      content: doc.content,
+      contentHtml: doc.content_html,
+      createdAt: doc.created_at,
+      updatedAt: doc.updated_at,
+    }, {
+      headers: {
+        'Content-Disposition': `attachment; filename="${doc.title.replace(/[^a-z0-9]/gi, '_')}.json"`,
+      },
+    })
+  }
 
-    return NextResponse.json(
-      { error: 'Invalid format. Use: markdown, html, or json' },
-      { status: 400 }
-    )
+  return NextResponse.json(
+    { error: 'Invalid format. Use: markdown, html, or json' },
+    { status: 400 }
+  )
 }
 
 export const GET = withErrorHandling(getHandler, 'GET /api/knowledge/documents/[id]/export')

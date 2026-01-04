@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
@@ -52,6 +53,7 @@ import { APP_VERSION } from '@/lib/version'
 import { HorizonSidebar } from '@/components/infrastructure/HorizonSidebar'
 import { InfrastructureInstance } from '@/features/infrastructure/types'
 import { useMarketplacePlugins } from '@/features/marketplace/hooks/useMarketplacePlugins'
+import { useMenuConfig } from '@/hooks/useMenuConfig'
 
 // Map of icon names to components for dynamic rendering
 const ICON_MAP: Record<string, any> = {
@@ -120,278 +122,110 @@ export function PlatformSidebar({
     spaceId: selectedSpace
   })
 
-  const adminTabs = [
-    {
-      id: 'overview',
-      name: 'Homepage',
-      icon: Monitor,
-      description: 'System homepage'
-    },
-    {
-      id: 'users',
-      name: 'User Management',
-      icon: Users,
-      description: 'Manage users and permissions'
-    },
-    {
-      id: 'spaces',
-      name: 'Space Management',
-      icon: Building,
-      description: 'Manage spaces and workspaces'
-    },
+  // Fetch menu configuration from database
+  const { menuConfig, loading: menuLoading } = useMenuConfig()
+  const { data: session } = useSession()
 
-    {
-      id: 'bigquery',
-      name: 'SQL Query',
-      icon: Code,
-      description: 'SQL query interface'
-    },
-    {
-      id: 'notebook',
-      name: 'Data Science',
-      icon: FileText,
-      description: 'Jupyter-style notebooks'
-    },
-    {
-      id: 'ai-analyst',
-      name: 'Chat with AI',
-      icon: MessageCircle,
-      description: 'AI-powered data analysis'
-    },
-    {
-      id: 'settings',
-      name: 'System Settings',
-      icon: Settings,
-      description: 'Global system configuration'
-    },
-    {
-      id: 'security',
-      name: 'Security',
-      icon: Shield,
-      description: 'Security and access control'
-    },
-    {
-      id: 'performance',
-      name: 'Performance',
-      icon: Activity,
-      description: 'Performance monitoring'
-    },
-    {
-      id: 'export',
-      name: 'Data Export',
-      icon: Cloud,
-      description: 'Data export and import'
-    },
-    {
-      id: 'integrations',
-      name: 'Integrations',
-      icon: Key,
-      description: 'Third-party integrations'
-    },
-    {
-      id: 'logs',
-      name: 'Logs',
-      icon: FileTextIcon,
-      description: 'System logs and monitoring'
-    },
-    {
-      id: 'database',
-      name: 'Database Data Models',
-      icon: DatabaseIcon,
-      description: 'Database and data model management'
-    },
-    {
-      id: 'change-requests',
-      name: 'Change Requests',
-      icon: GitBranch,
-      description: 'Database change approval workflows'
-    },
-    {
-      id: 'sql-linting',
-      name: 'SQL Linting',
-      icon: CheckCircle2,
-      description: 'SQL review and linting system'
-    },
-    {
-      id: 'schema-migrations',
-      name: 'Schema Migrations',
-      icon: FileCode,
-      description: 'Schema migration management'
-    },
-    {
-      id: 'data-masking',
-      name: 'Data Masking',
-      icon: ShieldCheck,
-      description: 'Data masking and security'
-    },
-    {
-      id: 'cache',
-      name: 'Cache',
-      icon: Zap,
-      description: 'Cache management'
-    },
-    {
-      id: 'storage',
-      name: 'Storage',
-      icon: HardDrive,
-      description: 'Storage management'
-    },
-    {
-      id: 'bi',
-      name: 'BI & Reports',
-      icon: BarChart3,
-      description: 'Business intelligence'
-    },
-    {
-      id: 'projects',
-      name: 'Project Management',
-      icon: Kanban,
-      description: 'Ticket and project management'
-    },
-    {
-      id: 'ontology',
-      name: 'Data Ontology',
-      icon: Network,
-      description: 'Data relationships and lineage'
-    },
-    {
-      id: 'audit',
-      name: 'Audit Logs',
-      icon: History,
-      description: 'System audit and activity logs'
-    },
-    {
-      id: 'backup',
-      name: 'Backup & Recovery',
-      icon: Cloud,
-      description: 'Backup and recovery management'
-    },
-    {
-      id: 'api',
-      name: 'API Management',
-      icon: Key,
-      description: 'API client and management'
-    },
-    {
-      id: 'themes',
-      name: 'Theme & Branding',
-      icon: Palette,
-      description: 'Theme and branding customization'
-    },
-
-    {
-      id: 'assets',
-      name: 'Asset Management',
-      icon: Database,
-      description: 'Manage database types, system types, logos, and localizations'
-    },
-  ]
-
+  // Build groupedTabs from database menu config, with plugin injection and role filtering
   const groupedTabs = useMemo(() => {
-    // Base tabs
-    const tabs: any = {
-      overview: [
-        { id: 'overview', name: 'Homepage', icon: Monitor, href: '/' },
-      ],
-      tools: [
-        { id: 'bi', name: 'BI & Reports', icon: BarChart3, href: '/tools/bi' },
-        { id: 'storage', name: 'Storage', icon: HardDrive, href: '/tools/storage' },
-        { id: 'data-governance', name: 'Data Governance', icon: Shield, href: '/tools/data-governance' },
-        { id: 'pwa', name: 'PWA Manager', icon: Monitor, href: '/tools/pwa' },
-        { id: 'ai-chat-ui', name: 'Chatbot UI Manager', icon: MessageCircle, href: '/tools/ai-chat-ui' },
-      ],
-      system: [
-        { id: 'marketplace', name: 'Marketplace', icon: Store, href: '/marketplace' },
-        { id: 'users', name: 'Users & Roles', icon: Users, href: '/system/users' },
-        { id: 'space-layouts', name: 'Space Layouts', icon: Layout, href: '/system/space-layouts' },
-        { id: 'assets', name: 'Asset Management', icon: Database, href: '/system/assets' },
+    // Start with database config if available
+    if (menuConfig?.groups) {
+      const tabs: Record<string, any[]> = {}
 
-        { id: 'logs', name: 'Logs', icon: FileTextIcon, href: '/system/logs' },
-        { id: 'audit', name: 'Audit Logs', icon: History, href: '/system/audit' },
-        { id: 'database', name: 'Database Data Models', icon: DatabaseIcon, href: '/system/database' },
-        { id: 'change-requests', name: 'Change Requests', icon: GitBranch, href: '/system/change-requests' },
-        { id: 'sql-linting', name: 'SQL Linting', icon: CheckCircle2, href: '/system/sql-linting' },
-        { id: 'schema-migrations', name: 'Schema Migrations', icon: FileCode, href: '/system/schema-migrations' },
-        { id: 'data-masking', name: 'Data Masking', icon: ShieldCheck, href: '/system/data-masking' },
-        { id: 'cache', name: 'Cache', icon: Zap, href: '/system/cache' },
-        { id: 'backup', name: 'Backup & Recovery', icon: Cloud, href: '/system/backup' },
-        { id: 'security', name: 'Security', icon: Shield, href: '/system/security' },
-        { id: 'performance', name: 'Performance', icon: Activity, href: '/system/performance' },
-        { id: 'settings', name: 'System Settings', icon: Settings, href: '/system/settings' },
-        { id: 'themes', name: 'Theme & Branding', icon: Palette, href: '/system/themes' },
-        { id: 'integrations', name: 'Integrations', icon: Key, href: '/system/integrations' },
-        { id: 'api', name: 'API Management', icon: Key, href: '/system/api' }
-      ],
-      'data-management': [
-        { id: 'space-selection', name: 'Data Management', icon: FolderKanban, href: '/admin/space-selection' }
-      ],
-      infrastructure: [
-        { id: 'infrastructure', name: 'Infrastructure', icon: Network, href: '/infrastructure' }
-      ]
-    }
+      // Get user role from session or default to USER
+      const userRole: string = (session?.user as any)?.role || 'USER'
 
-    // Inject plugin tabs
-    installedPlugins.forEach(plugin => {
-      if (plugin.navigation) {
-        const { group, label, icon, href, priority } = plugin.navigation
-        if (group && tabs[group]) {
-          const newItem = {
-            id: plugin.slug,
-            name: label,
-            icon: getIcon(icon),
-            href: href || `/tools/${plugin.slug}`,
-            priority: priority || 100
+      for (const group of menuConfig.groups) {
+        // Filter items based on requiredRoles
+        const allowedItems = group.items.filter(item => {
+          // If no requiredRoles specified, allow all roles
+          if (!item.requiredRoles || item.requiredRoles.length === 0) {
+            return true
           }
+          // Check if user's role is in the allowed list
+          return item.requiredRoles.includes(userRole) || userRole === 'SUPER_ADMIN'
+        })
 
-          // Check if already exists to avoid duplicates (though installedPlugins should be unique)
-          if (!tabs[group].find((t: any) => t.id === newItem.id)) {
-            tabs[group].push(newItem)
+        tabs[group.slug] = allowedItems.map(item => ({
+          id: item.slug,
+          name: item.name,
+          icon: getIcon(item.icon),
+          href: item.href,
+          section: item.section,
+          priority: item.priority,
+          requiredRoles: item.requiredRoles,
+        }))
+      }
+
+      // Inject plugin tabs
+      installedPlugins.forEach(plugin => {
+        if (plugin.navigation) {
+          const { group, label, icon, href, priority } = plugin.navigation
+          if (group && tabs[group]) {
+            const newItem = {
+              id: plugin.slug,
+              name: label,
+              icon: getIcon(icon),
+              href: href || `/tools/${plugin.slug}`,
+              priority: priority || 100
+            }
+            if (!tabs[group].find((t: any) => t.id === newItem.id)) {
+              tabs[group].push(newItem)
+            }
           }
         }
+      })
+
+      return tabs
+    }
+
+    // Fallback to empty structure if menu not loaded
+    return {
+      overview: [],
+      tools: [],
+      system: [],
+      'data-management': [],
+      infrastructure: []
+    }
+  }, [menuConfig, installedPlugins, session])
+
+  // Group metadata for primary sidebar (from database)
+  const groupMetadata = useMemo(() => {
+    if (menuConfig?.groups) {
+      const meta: Record<string, { name: string; icon: any }> = {}
+      for (const group of menuConfig.groups) {
+        meta[group.slug] = {
+          name: group.name,
+          icon: getIcon(group.icon)
+        }
       }
-    })
+      return meta
+    }
+    // Fallback
+    return {
+      overview: { name: 'Homepage', icon: Monitor },
+      tools: { name: 'Tools', icon: FlaskConical },
+      infrastructure: { name: 'Infrastructure', icon: Network },
+      system: { name: 'System', icon: Settings },
+      'data-management': { name: 'Data Management', icon: FolderKanban }
+    }
+  }, [menuConfig])
 
-    // Sort tabs by priority if supported, otherwise keep default order
-    // (Note: default tabs don't have priority, let's assume they come first or we need to add priority to them too)
-    // For now, simpler: just push them. If we want sorting, we can sort.
+  // Build sections dynamically for the selected group
+  const activeGroupSections = useMemo(() => {
+    const sections: Record<string, any[]> = {}
+    if (!selectedGroup) return sections
 
-    // Sort overview group specifically as we want Homepage first
-    tabs.overview.sort((a: any, b: any) => {
-      if (a.id === 'overview') return -1
-      if (b.id === 'overview') return 1
-      return (a.priority || 100) - (b.priority || 100)
-    })
-
-    // Sort tools group (Marketplace last? or first?)
-    // Let's keep Marketplace at end or specific position
-
-    return tabs
-  }, [installedPlugins])
-
-  // Group metadata for primary sidebar
-  const groupMetadata = {
-    overview: { name: 'Homepage', icon: Monitor },
-    tools: { name: 'Tools', icon: FlaskConical },
-    infrastructure: { name: 'Infrastructure', icon: Network },
-    system: { name: 'System', icon: Settings },
-    'data-management': { name: 'Data Management', icon: FolderKanban }
-  }
-
-  // Define group sections for secondary sidebar separators
-  const groupSections: Record<string, string[]> = {
-    management: ['users', 'space-layouts', 'assets'],
-    kernels: ['kernels'],
-    system: ['logs', 'audit', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache', 'backup'],
-    security: ['security', 'performance'],
-    integrations: ['marketplace', 'settings', 'themes', 'integrations', 'api']
-  }
-
-  // Define tool categories for the Tools group
-  const toolSections: Record<string, string[]> = {
-    'Reporting': ['bi'],
-    'Website Embed widget': ['ai-analyst', 'ai-chat-ui', 'pwa'],
-    'Data Tools': ['bigquery', 'notebook', 'storage', 'data-governance']
-  }
+    const items = groupedTabs[selectedGroup as keyof typeof groupedTabs] || []
+    for (const item of items) {
+      const sectionName = item.section || 'General'
+      if (!sections[sectionName]) {
+        sections[sectionName] = []
+      }
+      sections[sectionName].push(item)
+    }
+    return sections
+  }, [groupedTabs, selectedGroup])
 
 
   const handleTabClick = useCallback((tabId: string, href?: string) => {
@@ -643,244 +477,48 @@ export function PlatformSidebar({
                   </div>
                 )}
 
+                {/* Dynamic Section Rendering */}
+                <div className="space-y-4">
+                  {Object.entries(activeGroupSections).map(([sectionName, items], sectionIndex) => {
+                    const filteredItems = filterTabs(items, searchValue)
+                    if (filteredItems.length === 0) return null
 
-
-                {/* Submenu items with separators between sections (for system group) */}
-                {selectedGroup === 'system' ? (
-                  <>
-                    {/* Management Section */}
-                    <div className="py-2">
-                      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                        Management
-                      </div>
-                      {groupedTabs.system
-                        .filter((tab: any) => groupSections.management.includes(tab.id))
-                        .map((tab: any) => (
-                          <Button
-                            key={tab.id}
-                            variant="ghost"
-                            className={cn(
-                              "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
-                              activeTab === tab.id
-                                ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm"
-                                : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
-                            )}
-                            onClick={() => handleTabClick(tab.id, (tab as any).href)}
-                            style={{
-                              pointerEvents: 'auto',
-                              position: 'relative',
-                              zIndex: Z_INDEX.sidebar + 1
-                            }}
-                          >
-                            <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" />
-                            <span className="truncate text-left">{tab.name}</span>
-                          </Button>
-                        ))}
-                    </div>
-
-                    {/* Separator */}
-                    <div className="border-t border-border my-2 mx-0" />
-
-                    {/* Kernels Section */}
-                    <div className="py-2">
-                      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                        Kernels
-                      </div>
-                      {filterTabs(
-                        groupedTabs.system.filter((tab: any) => groupSections.kernels.includes(tab.id)),
-                        searchValue
-                      ).map((tab: any) => (
-                        <Button
-                          key={tab.id}
-                          variant="ghost"
-                          className={cn(
-                            "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
-                            activeTab === tab.id
-                              ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm"
-                              : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
-                          )}
-                          onClick={() => handleTabClick(tab.id, (tab as any).href)}
-                          style={{
-                            pointerEvents: 'auto',
-                            position: 'relative',
-                            zIndex: Z_INDEX.sidebar + 1
-                          }}
-                        >
-                          <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" />
-                          <span className="truncate text-left">{tab.name}</span>
-                        </Button>
-                      ))}
-                    </div>
-
-                    {/* Separator */}
-                    <div className="border-t border-border my-2 mx-0" />
-
-                    {/* System Section */}
-                    <div className="py-2">
-                      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                        System
-                      </div>
-                      {filterTabs(
-                        groupedTabs.system.filter((tab: any) => groupSections.system.includes(tab.id)),
-                        searchValue
-                      ).map((tab: any) => (
-                        <Button
-                          key={tab.id}
-                          variant="ghost"
-                          className={cn(
-                            "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
-                            activeTab === tab.id
-                              ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm"
-                              : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
-                          )}
-                          onClick={() => handleTabClick(tab.id, (tab as any).href)}
-                          style={{
-                            pointerEvents: 'auto',
-                            position: 'relative',
-                            zIndex: Z_INDEX.sidebar + 1
-                          }}
-                        >
-                          <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" />
-                          <span className="truncate text-left">{tab.name}</span>
-                        </Button>
-                      ))}
-                    </div>
-
-                    {/* Separator */}
-                    <div className="border-t border-border my-2 mx-0" />
-
-                    {/* Security Section */}
-                    <div className="py-2">
-                      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                        Security
-                      </div>
-                      {filterTabs(
-                        groupedTabs.system.filter((tab: any) => groupSections.security.includes(tab.id)),
-                        searchValue
-                      ).map((tab: any) => (
-                        <Button
-                          key={tab.id}
-                          variant="ghost"
-                          className={cn(
-                            "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
-                            activeTab === tab.id
-                              ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-md"
-                              : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
-                          )}
-                          onClick={() => handleTabClick(tab.id, (tab as any).href)}
-                          style={{
-                            pointerEvents: 'auto',
-                            position: 'relative',
-                            zIndex: Z_INDEX.sidebar + 1
-                          }}
-                        >
-                          <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" />
-                          <span className="truncate text-left">{tab.name}</span>
-                        </Button>
-                      ))}
-                    </div>
-
-                    {/* Separator */}
-                    <div className="border-t border-border my-2 mx-4" />
-
-                    {/* Integrations Section */}
-                    <div className="px-4 py-2">
-                      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                        Integrations
-                      </div>
-                      {filterTabs(
-                        groupedTabs.system.filter((tab: any) => groupSections.integrations.includes(tab.id)),
-                        searchValue
-                      ).map((tab: any) => (
-                        <Button
-                          key={tab.id}
-                          variant="ghost"
-                          className={cn(
-                            "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
-                            activeTab === tab.id
-                              ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm"
-                              : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
-                          )}
-                          onClick={() => handleTabClick(tab.id, (tab as any).href)}
-                          style={{
-                            pointerEvents: 'auto',
-                            position: 'relative',
-                            zIndex: 101
-                          }}
-                        >
-                          <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" />
-                          <span className="truncate text-left">{tab.name}</span>
-                        </Button>
-                      ))}
-                    </div>
-                  </>
-                ) : selectedGroup === 'tools' ? (
-                  // Tools group with category section headers
-                  <>
-                    {Object.entries(toolSections).map(([sectionName, ids], sectionIndex) => (
-                      <div key={sectionName} className="px-4 py-2">
-                        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                    return (
+                      <div key={sectionName} className="py-2 px-2">
+                        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-2">
                           {sectionName}
                         </div>
-                        {filterTabs(
-                          groupedTabs.tools.filter((tab: any) => ids.includes(tab.id)),
-                          searchValue
-                        ).map((tab: any) => (
-                          <Button
-                            key={tab.id}
-                            variant="ghost"
-                            className={cn(
-                              "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
-                              activeTab === tab.id
-                                ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm"
-                                : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
-                            )}
-                            onClick={() => handleTabClick(tab.id, (tab as any).href)}
-                            style={{
-                              pointerEvents: 'auto',
-                              position: 'relative',
-                              zIndex: Z_INDEX.sidebar + 1,
-                              ...(activeTab === tab.id ? { backgroundColor: 'hsl(var(--muted))' } : {})
-                            }}
-                          >
-                            <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" />
-                            <span className="truncate text-left">{tab.name}</span>
-                          </Button>
-                        ))}
-                        {sectionIndex < Object.entries(toolSections).length - 1 && (
+                        <div className="space-y-1">
+                          {filteredItems.map((tab: any) => (
+                            <Button
+                              key={tab.id}
+                              variant="ghost"
+                              className={cn(
+                                "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
+                                activeTab === tab.id
+                                  ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm"
+                                  : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
+                              )}
+                              onClick={() => handleTabClick(tab.id, (tab as any).href)}
+                              style={{
+                                pointerEvents: 'auto',
+                                position: 'relative',
+                                zIndex: Z_INDEX.sidebar + 1,
+                                ...(activeTab === tab.id ? { backgroundColor: 'hsl(var(--muted))' } : {})
+                              }}
+                            >
+                              <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" />
+                              <span className="truncate text-left">{tab.name}</span>
+                            </Button>
+                          ))}
+                        </div>
+                        {sectionIndex < Object.entries(activeGroupSections).length - 1 && (
                           <div className="border-t border-border my-2 mx-0" />
                         )}
                       </div>
-                    ))}
-                  </>
-                ) : (
-                  // Other groups - no separators
-                  filterTabs(
-                    groupedTabs[selectedGroup as keyof typeof groupedTabs] || [],
-                    searchValue
-                  ).map(tab => (
-                    <Button
-                      key={tab.id}
-                      variant="ghost"
-                      className={cn(
-                        "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
-                        activeTab === tab.id
-                          ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-md"
-                          : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
-                      )}
-                      onClick={() => handleTabClick(tab.id, (tab as any).href)}
-                      style={{
-                        pointerEvents: 'auto',
-                        position: 'relative',
-                        zIndex: Z_INDEX.sidebar + 1,
-                        ...(activeTab === tab.id ? { backgroundColor: 'hsl(var(--muted))' } : {})
-                      }}
-                    >
-                      <tab.icon className="h-4 w-4 mr-3 flex-shrink-0" />
-                      <span className="truncate text-left">{tab.name}</span>
-                    </Button>
-                  ))
-                )}
+                    )
+                  })}
+                </div>
               </div>
             ) : (
               // Fallback: Show message if group not found

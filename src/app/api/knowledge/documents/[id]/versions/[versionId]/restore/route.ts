@@ -3,10 +3,11 @@ import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import { applyRateLimit } from '@/app/api/v1/middleware'
+import { getKnowledgeSchema, isValidUUID } from '../../../../../utils'
 
 async function postHandler(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string; versionId: string }> }
+  { params }: { params: Promise<{ id: string, versionId: string }> }
 ) {
   const rateLimitResponse = await applyRateLimit(request)
   if (rateLimitResponse) {
@@ -17,69 +18,38 @@ async function postHandler(
   if (!authResult.success) return authResult.response
   const { session } = authResult
 
-    const { id: documentId, versionId } = await params
+  const { id: documentId, versionId } = await params
 
-    // Check document access
-    const docResult = await query(
-      `SELECT kd.collection_id, kc.is_private, kc.created_by as collection_created_by
-       FROM knowledge_documents kd
-       JOIN knowledge_collections kc ON kc.id = kd.collection_id
-       WHERE kd.id = $1 AND kd.deleted_at IS NULL`,
-      [documentId]
-    )
+  if (!isValidUUID(documentId) || !isValidUUID(versionId)) {
+    return NextResponse.json({ error: 'Invalid document or version ID' }, { status: 400 })
+  }
 
-    if (docResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Document not found' }, { status: 404 })
-    }
+  const spaceId = request.nextUrl.searchParams.get('spaceId')
 
-    const doc = docResult.rows[0]
+  // Get the isolated schema for Knowledge Base
+  const schema = await getKnowledgeSchema(spaceId)
 
-    // Check write access
-    const memberCheck = await query(
-      `SELECT role FROM knowledge_collection_members
-       WHERE collection_id = $1 AND user_id = $2`,
-      [doc.collection_id, session.user.id]
-    )
+  // Get version to restore
+  const versionResult = await query(
+    `SELECT * FROM ${schema}.knowledge_document_versions WHERE id::text = $1 AND document_id::text = $2`,
+    [versionId, documentId]
+  )
 
-    const isCollectionCreator = doc.collection_created_by === session.user.id
-    const isEditor = memberCheck.rows.length > 0 && ['admin', 'editor'].includes(memberCheck.rows[0].role)
+  if (versionResult.rows.length === 0) {
+    return NextResponse.json({ error: 'Version not found' }, { status: 404 })
+  }
 
-    if (!isCollectionCreator && !isEditor && doc.is_private) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+  const version = versionResult.rows[0]
 
-    // Get version
-    const versionResult = await query(
-      `SELECT title, content, content_html FROM knowledge_document_versions WHERE id = $1`,
-      [versionId]
-    )
+  // Update document with version content
+  await query(
+    `UPDATE ${schema}.knowledge_documents 
+       SET title = $1, content = $2, content_html = $3, updated_at = NOW(), updated_by = $4
+       WHERE id::text = $5`,
+    [version.title, version.content, version.content_html, session.user.id, documentId]
+  )
 
-    if (versionResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Version not found' }, { status: 404 })
-    }
-
-    const version = versionResult.rows[0]
-
-    // Restore document to this version
-    await query(
-      `UPDATE knowledge_documents
-       SET title = $1, content = $2, content_html = $3, updated_by = $4, updated_at = NOW()
-       WHERE id = $5`,
-      [version.title, version.content, version.content_html, session.user.id, documentId]
-    )
-
-    // Create new version for the restore
-    await query(
-      `INSERT INTO knowledge_document_versions (
-        id, document_id, title, content, content_html, created_by, created_at
-      ) VALUES (
-        gen_random_uuid(), $1, $2, $3, $4, $5, NOW()
-      )`,
-      [documentId, version.title, version.content, version.content_html, session.user.id]
-    )
-
-    return NextResponse.json({ success: true })
+  return NextResponse.json({ success: true })
 }
 
 export const POST = withErrorHandling(postHandler, 'POST /api/knowledge/documents/[id]/versions/[versionId]/restore')
-

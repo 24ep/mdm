@@ -19,7 +19,7 @@ async function getHandler(request: NextRequest) {
     const authResult = await requireAuthWithId()
     if (!authResult.success) return authResult.response
     const { session } = authResult
-    
+
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -39,14 +39,14 @@ async function getHandler(request: NextRequest) {
         // Fetch from hub API via HTTP (hub runs as separate service)
         const hubUrl = process.env.PLUGIN_HUB_URL || 'http://localhost:3001'
         const hubApiUrl = new URL('/api/plugins', hubUrl)
-        
+
         // Copy search params except 'source'
         searchParams.forEach((value, key) => {
           if (key !== 'source') {
             hubApiUrl.searchParams.append(key, value)
           }
         })
-        
+
         // Make HTTP request to hub
         const hubResponse = await fetch(hubApiUrl.toString(), {
           method: 'GET',
@@ -54,7 +54,7 @@ async function getHandler(request: NextRequest) {
             'Content-Type': 'application/json',
           },
         })
-        
+
         if (hubResponse.ok) {
           const hubData = await hubResponse.json()
           return NextResponse.json(hubData)
@@ -118,24 +118,32 @@ async function getHandler(request: NextRequest) {
       paramIndex++
     }
 
-    // If installedOnly is true, join with service_installations to filter
-    let joinClause = ''
-    let joinParams: any[] = []
-    
-    // We always want to know if it's installed, so we LEFT JOIN based on context
-    // If spaceId is present, check installation in that space
-    // If no spaceId, check global installations (space_id IS NULL)
+
+    // Join Global installations (always check this)
+    const globalJoin = `LEFT JOIN service_installations si_global ON si_global.service_id = sr.id AND si_global.space_id IS NULL AND si_global.deleted_at IS NULL`
+
+    // If spaceId is present, also join Space installations
+    let spaceJoin = ''
+    let installationIdSelect = 'si_global.id'
+    let installationStatusSelect = 'si_global.status'
+
     if (spaceId) {
-       joinClause = `LEFT JOIN service_installations si ON si.service_id = sr.id AND si.space_id = CAST($${paramIndex} AS uuid) AND si.deleted_at IS NULL`
-       queryParams.push(spaceId)
-       paramIndex++
-    } else {
-       joinClause = `LEFT JOIN service_installations si ON si.service_id = sr.id AND si.space_id IS NULL AND si.deleted_at IS NULL`
+      spaceJoin = `LEFT JOIN service_installations si_space ON si_space.service_id = sr.id AND si_space.space_id = CAST($${paramIndex} AS uuid) AND si_space.deleted_at IS NULL`
+      queryParams.push(spaceId)
+      paramIndex++
+
+      // Prefer space installation if exists, otherwise global
+      installationIdSelect = 'COALESCE(si_space.id, si_global.id)'
+      installationStatusSelect = 'COALESCE(si_space.status, si_global.status)'
     }
 
-    // If installedOnly=true, we verify the join found something
+    // If installedOnly is true, check if either exists
     if (installedOnly) {
-       whereConditions.push('si.id IS NOT NULL')
+      if (spaceId) {
+        whereConditions.push(`(${installationIdSelect} IS NOT NULL)`)
+      } else {
+        whereConditions.push('si_global.id IS NOT NULL')
+      }
     }
 
     const whereClause = whereConditions.join(' AND ')
@@ -171,10 +179,11 @@ async function getHandler(request: NextRequest) {
         sr.security_audit,
         sr.created_at,
         sr.updated_at,
-        si.id as installation_id,
-        si.status as installation_status
+        ${installationIdSelect} as installation_id,
+        ${installationStatusSelect} as installation_status
       FROM service_registry sr
-      ${joinClause}
+      ${globalJoin}
+      ${spaceJoin}
       WHERE ${whereClause}
       ORDER BY sr.installation_count DESC, sr.created_at DESC
     `
@@ -227,7 +236,8 @@ async function getHandler(request: NextRequest) {
         // Installation status
         isInstalled: !!row.installation_id,
         installationId: row.installation_id,
-        installationStatus: row.installation_status
+        installationStatus: row.installation_status,
+        navigation: row.ui_config?.navigation || row.capabilities?.navigation
       }
 
       // Extract external plugin metadata from capabilities

@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 
 interface UseKnowledgeDocumentsOptions {
   collectionId: string
+  spaceId?: string
   parentId?: string
   search?: string
   page?: number
@@ -31,10 +32,11 @@ interface UseKnowledgeDocumentsReturn {
     isPublic?: boolean
     isPinned?: boolean
     order?: number
+    spaceId?: string
   }) => Promise<KnowledgeDocument | null>
   updateDocument: (id: string, data: Partial<KnowledgeDocument>) => Promise<boolean>
   deleteDocument: (id: string) => Promise<boolean>
-  getDocument: (id: string) => Promise<KnowledgeDocument | null>
+  getDocument: (id: string, spaceId?: string) => Promise<KnowledgeDocument | null>
 }
 
 export function useKnowledgeDocuments(
@@ -61,13 +63,14 @@ export function useKnowledgeDocuments(
     try {
       const params = new URLSearchParams()
       params.set('collectionId', options.collectionId)
+      if (options.spaceId) params.set('spaceId', options.spaceId)
       if (options.parentId) params.set('parentId', options.parentId)
       if (options.search) params.set('search', options.search)
       params.set('page', page.toString())
       params.set('limit', limit.toString())
 
       const response = await fetch(`/api/knowledge/documents?${params.toString()}`)
-      
+
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || 'Failed to fetch documents')
@@ -83,7 +86,7 @@ export function useKnowledgeDocuments(
     } finally {
       setLoading(false)
     }
-  }, [session, options.collectionId, options.parentId, options.search, page, limit])
+  }, [session, options.collectionId, options.spaceId, options.parentId, options.search, page, limit])
 
   useEffect(() => {
     fetchDocuments()
@@ -98,6 +101,7 @@ export function useKnowledgeDocuments(
     isPublic?: boolean
     isPinned?: boolean
     order?: number
+    spaceId?: string
   }): Promise<KnowledgeDocument | null> => {
     try {
       const response = await fetch('/api/knowledge/documents', {
@@ -106,6 +110,7 @@ export function useKnowledgeDocuments(
         body: JSON.stringify({
           ...data,
           collectionId: options.collectionId,
+          spaceId: data.spaceId || options.spaceId,
         }),
       })
 
@@ -126,10 +131,12 @@ export function useKnowledgeDocuments(
 
   const updateDocument = useCallback(async (
     id: string,
-    data: Partial<KnowledgeDocument>
+    data: Partial<KnowledgeDocument> & { spaceId?: string }
   ): Promise<boolean> => {
     try {
-      const response = await fetch(`/api/knowledge/documents/${id}`, {
+      const params = new URLSearchParams()
+      if (data.spaceId || options.spaceId) params.set('spaceId', data.spaceId || options.spaceId || '')
+      const response = await fetch(`/api/knowledge/documents/${id}?${params.toString()}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -149,9 +156,11 @@ export function useKnowledgeDocuments(
     }
   }, [fetchDocuments])
 
-  const deleteDocument = useCallback(async (id: string): Promise<boolean> => {
+  const deleteDocument = useCallback(async (id: string, spaceId?: string): Promise<boolean> => {
     try {
-      const response = await fetch(`/api/knowledge/documents/${id}`, {
+      const params = new URLSearchParams()
+      if (spaceId || options.spaceId) params.set('spaceId', spaceId || options.spaceId || '')
+      const response = await fetch(`/api/knowledge/documents/${id}?${params.toString()}`, {
         method: 'DELETE',
       })
 
@@ -169,10 +178,12 @@ export function useKnowledgeDocuments(
     }
   }, [fetchDocuments])
 
-  const getDocument = useCallback(async (id: string): Promise<KnowledgeDocument | null> => {
+  const getDocument = useCallback(async (id: string, spaceId?: string): Promise<KnowledgeDocument | null> => {
     try {
-      const response = await fetch(`/api/knowledge/documents/${id}`)
-      
+      const params = new URLSearchParams()
+      if (spaceId || options.spaceId) params.set('spaceId', spaceId || options.spaceId || '')
+      const response = await fetch(`/api/knowledge/documents/${id}?${params.toString()}`)
+
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || 'Failed to fetch document')

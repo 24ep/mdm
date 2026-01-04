@@ -59,6 +59,10 @@ export function OutlineKnowledgeBase({ spaceId }: { spaceId?: string }) {
   const [expandedDocuments, setExpandedDocuments] = useState<Set<string>>(new Set())
   const [showSearchDialog, setShowSearchDialog] = useState(false)
 
+  const [showNewDocumentDialog, setShowNewDocumentDialog] = useState(false)
+  const [newDocumentTitle, setNewDocumentTitle] = useState('')
+  const [newDocumentParentId, setNewDocumentParentId] = useState<string | undefined>(undefined)
+
   const {
     collections,
     loading: collectionsLoading,
@@ -75,6 +79,7 @@ export function OutlineKnowledgeBase({ spaceId }: { spaceId?: string }) {
     deleteDocument,
   } = useKnowledgeDocuments({
     collectionId: selectedCollection?.id || '',
+    spaceId,
     parentId: undefined,
   })
 
@@ -98,19 +103,30 @@ export function OutlineKnowledgeBase({ spaceId }: { spaceId?: string }) {
     }
   }
 
-  const handleCreateDocument = async (parentId?: string) => {
+  const openCreateDocumentDialog = (parentId?: string) => {
+    setNewDocumentParentId(parentId)
+    setNewDocumentTitle('')
+    setShowNewDocumentDialog(true)
+  }
+
+  const handleCreateDocument = async () => {
     if (!selectedCollection) return
 
-    const title = prompt('Enter document title:')
-    if (!title || !title.trim()) return
+    if (!newDocumentTitle.trim()) {
+      toast.error('Document title is required')
+      return
+    }
 
     const document = await createDocument({
-      title: title.trim(),
-      content: `# ${title.trim()}\n\nStart writing...`,
-      parentId,
+      title: newDocumentTitle.trim(),
+      content: `# ${newDocumentTitle.trim()}\n\nStart writing...`,
+      parentId: newDocumentParentId,
     })
 
     if (document) {
+      setShowNewDocumentDialog(false)
+      setNewDocumentTitle('')
+      setNewDocumentParentId(undefined)
       setSelectedDocument(document)
     }
   }
@@ -268,49 +284,6 @@ export function OutlineKnowledgeBase({ spaceId }: { spaceId?: string }) {
           </div>
         </ScrollArea>
 
-        {/* New Collection Dialog */}
-        <Dialog open={showNewCollectionDialog} onOpenChange={setShowNewCollectionDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Collection</DialogTitle>
-              <DialogDescription>
-                Collections help organize your documents into groups
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Name</label>
-                <Input
-                  placeholder="Collection name..."
-                  value={newCollectionName}
-                  onChange={(e) => setNewCollectionName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && newCollectionName.trim()) {
-                      handleCreateCollection()
-                    }
-                  }}
-                  autoFocus
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">Description (Optional)</label>
-                <Input
-                  placeholder="Brief description..."
-                  value={newCollectionDescription}
-                  onChange={(e) => setNewCollectionDescription(e.target.value)}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowNewCollectionDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleCreateCollection} className="bg-blue-600 hover:bg-blue-700 text-white">
-                Create
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     )
   }
@@ -352,7 +325,7 @@ export function OutlineKnowledgeBase({ spaceId }: { spaceId?: string }) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleCreateDocument()}
+            onClick={() => openCreateDocumentDialog()}
           >
             <Plus className="h-4 w-4 mr-2" />
             New Document
@@ -395,7 +368,7 @@ export function OutlineKnowledgeBase({ spaceId }: { spaceId?: string }) {
                   expandedDocuments={expandedDocuments}
                   onSelectDocument={setSelectedDocument}
                   onToggleExpanded={toggleDocumentExpanded}
-                  onCreateDocument={handleCreateDocument}
+                  onCreateDocument={openCreateDocumentDialog}
                   onDeleteDocument={deleteDocument}
                 />
               )}
@@ -439,6 +412,86 @@ export function OutlineKnowledgeBase({ spaceId }: { spaceId?: string }) {
         }}
         spaceId={spaceId}
       />
+
+      {/* New Collection Dialog */}
+      <Dialog open={showNewCollectionDialog} onOpenChange={setShowNewCollectionDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Collection</DialogTitle>
+            <DialogDescription>
+              Collections help organize your documents into groups
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Name</label>
+              <Input
+                placeholder="Collection name..."
+                value={newCollectionName}
+                onChange={(e) => setNewCollectionName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && newCollectionName.trim()) {
+                    handleCreateCollection()
+                  }
+                }}
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Description (Optional)</label>
+              <Input
+                placeholder="Brief description..."
+                value={newCollectionDescription}
+                onChange={(e) => setNewCollectionDescription(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewCollectionDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateCollection} className="bg-blue-600 hover:bg-blue-700 text-white">
+              Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Document Dialog */}
+      <Dialog open={showNewDocumentDialog} onOpenChange={setShowNewDocumentDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Document</DialogTitle>
+            <DialogDescription>
+              Create a new document in {selectedCollection?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Title</label>
+              <Input
+                placeholder="Document title..."
+                value={newDocumentTitle}
+                onChange={(e) => setNewDocumentTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && newDocumentTitle.trim()) {
+                    handleCreateDocument()
+                  }
+                }}
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewDocumentDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateDocument} className="bg-blue-600 hover:bg-blue-700 text-white">
+              Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

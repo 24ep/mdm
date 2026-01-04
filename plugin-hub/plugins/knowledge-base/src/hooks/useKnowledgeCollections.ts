@@ -62,7 +62,7 @@ export function useKnowledgeCollections(
       params.set('limit', limit.toString())
 
       const response = await fetch(`/api/knowledge/collections?${params.toString()}`)
-      
+
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || 'Failed to fetch collections')
@@ -116,10 +116,12 @@ export function useKnowledgeCollections(
 
   const updateCollection = useCallback(async (
     id: string,
-    data: Partial<KnowledgeCollection>
+    data: Partial<KnowledgeCollection> & { spaceId?: string }
   ): Promise<boolean> => {
     try {
-      const response = await fetch(`/api/knowledge/collections/${id}`, {
+      const params = new URLSearchParams()
+      if (data.spaceId || options.spaceId) params.set('spaceId', data.spaceId || options.spaceId || '')
+      const response = await fetch(`/api/knowledge/collections/${id}?${params.toString()}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -139,9 +141,11 @@ export function useKnowledgeCollections(
     }
   }, [fetchCollections])
 
-  const deleteCollection = useCallback(async (id: string): Promise<boolean> => {
+  const deleteCollection = useCallback(async (id: string, spaceId?: string): Promise<boolean> => {
     try {
-      const response = await fetch(`/api/knowledge/collections/${id}`, {
+      const params = new URLSearchParams()
+      if (spaceId || options.spaceId) params.set('spaceId', spaceId || options.spaceId || '')
+      const response = await fetch(`/api/knowledge/collections/${id}?${params.toString()}`, {
         method: 'DELETE',
       })
 

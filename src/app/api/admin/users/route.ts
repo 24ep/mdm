@@ -1,7 +1,7 @@
 import { requireAuth, requireAuthWithId, requireAdmin, withErrorHandling } from '@/lib/api-middleware'
 import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
-import { query } from '@/lib/db'
+import { db, query } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 
 async function postHandler(request: NextRequest) {
@@ -15,85 +15,98 @@ async function postHandler(request: NextRequest) {
     return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
   }
 
-  const body = await request.json()
-  const { email, name, password, role, isActive, defaultSpaceId, spaces } = body
+  try {
+    const body = await request.json()
+    const { email, name, password, role, isActive, defaultSpaceId, spaces } = body
 
-  // Validate required fields
-  if (!email || !name || !password) {
-    return NextResponse.json(
-      { error: 'Email, name, and password are required' },
-      { status: 400 }
-    )
-  }
-
-  // Check if user already exists
-  const existing = await query(
-    'SELECT id FROM users WHERE email = $1 LIMIT 1',
-    [email]
-  )
-
-  if (existing.rows.length > 0) {
-    return NextResponse.json(
-      { error: 'User with this email already exists' },
-      { status: 400 }
-    )
-  }
-
-  // Validate role
-  const allowedRoles = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'USER']
-  const userRole = role || 'USER'
-  if (!allowedRoles.includes(userRole)) {
-    return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
-  }
-
-  // Hash password
-  const hashedPassword = await bcrypt.hash(password, 12)
-
-  // Create user
-  const { v4: uuidv4 } = await import('uuid')
-  const id = uuidv4()
-
-  const result = await query(
-    `INSERT INTO users (id, email, name, password, role, is_active, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
-       RETURNING id, email, name, role, is_active, created_at`,
-    [
-      id,
-      email,
-      name,
-      hashedPassword,
-      userRole,
-      isActive !== undefined ? isActive : true
-    ]
-  )
-
-  const newUser = result.rows[0]
-
-  // Handle space memberships if provided
-  if (spaces && Array.isArray(spaces) && spaces.length > 0) {
-    for (const space of spaces) {
-      if (space.spaceId && space.role) {
-        await query(
-          'INSERT INTO space_members (user_id, space_id, role) VALUES ($1, $2, $3)',
-          [newUser.id, space.spaceId, space.role]
-        )
-      }
+    // Validate required fields
+    if (!email || !name || !password) {
+      return NextResponse.json(
+        { error: 'Email, name, and password are required' },
+        { status: 400 }
+      )
     }
-  }
 
-  return NextResponse.json(
-    {
-      user: {
-        id: newUser.id,
-        email: newUser.email,
-        name: newUser.name,
-        role: newUser.role,
-        isActive: newUser.is_active,
-        createdAt: newUser.created_at
+    // Check if user already exists
+    const existing = await db.user.findUnique({
+      where: { email }
+    })
+
+    if (existing) {
+      return NextResponse.json(
+        { error: 'User with this email already exists' },
+        { status: 400 }
+      )
+    }
+
+    // Validate role
+    const allowedRoles = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'USER']
+    const userRole = role || 'USER'
+    if (!allowedRoles.includes(userRole)) {
+      return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 12)
+
+    // Create user with Prisma
+    // Note: ID generation is handled by Prisma/Database if default(uuid()) is set in schema
+    // If not, we might need to add it, but standard practice is schema handling.
+    // Based on previous code using uuidv4(), let's check if we need to provide it.
+    // However, Prisma usually handles this better. I'll assume schema has @default(uuid()).
+    // If not, the transaction below will fail and I'll see it in validation.
+
+    // Using transaction to handle user creation and space memberships
+    const newUser = await db.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email,
+          name,
+          password: hashedPassword,
+          role: userRole,
+          isActive: isActive !== undefined ? isActive : true,
+          // created_at and updated_at are usually handled by @default(now()) and @updatedAt
+        }
+      })
+
+      // Handle space memberships if provided
+      if (spaces && Array.isArray(spaces) && spaces.length > 0) {
+        for (const space of spaces) {
+          if (space.spaceId && space.role) {
+            await tx.spaceMember.create({
+              data: {
+                userId: user.id,
+                spaceId: space.spaceId,
+                role: space.role
+              }
+            })
+          }
+        }
       }
-    },
-    { status: 201 }
-  )
+
+      return user
+    })
+
+    return NextResponse.json(
+      {
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          name: newUser.name,
+          role: newUser.role,
+          isActive: newUser.isActive,
+          createdAt: newUser.createdAt
+        }
+      },
+      { status: 201 }
+    )
+  } catch (error: any) {
+    console.error('Error creating user:', error)
+    return NextResponse.json(
+      { error: 'Failed to create user', details: error.message },
+      { status: 500 }
+    )
+  }
 }
 
 

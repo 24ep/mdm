@@ -52,33 +52,77 @@ export async function logAuditEvent(entry: AuditLogEntry): Promise<void> {
       ? entry.resourceId
       : randomUUID()
 
-    const result = await query(
-      `INSERT INTO audit_logs (
-        id, user_id, action, entity_type, entity_id, new_value, ip_address, user_agent, created_at
-      ) VALUES (gen_random_uuid(), $1::uuid, $2, $3, $4::uuid, $5, $6, $7, NOW())
-      RETURNING id, created_at as timestamp`,
-      [
-        entry.userId,
-        entry.action,
-        entry.resource,
-        entityId,
-        Object.keys(metadata).length > 0 ? JSON.stringify(metadata) : null,
-        entry.ipAddress || null,
-        entry.userAgent || null,
-      ]
-    )
+    const insertAuditLog = async (userIdToUse: string | null) => {
+      // If we have a userId, we want to ensure it exists to avoid FK violations (which throw errors and spam logs).
+      // We use INSERT ... SELECT ... WHERE EXISTS pattern for checking user existence in the same query.
+      if (userIdToUse) {
+        const result = await query(
+          `INSERT INTO audit_logs (
+            id, user_id, action, entity_type, entity_id, new_value, ip_address, user_agent, created_at
+          )
+          SELECT gen_random_uuid(), $1::uuid, $2, $3, $4::uuid, $5, $6, $7, NOW()
+          WHERE EXISTS (SELECT 1 FROM users WHERE id = $1::uuid)
+          RETURNING id, created_at as timestamp`,
+          [
+            userIdToUse,
+            entry.action,
+            entry.resource,
+            entityId,
+            Object.keys(metadata).length > 0 ? JSON.stringify(metadata) : null,
+            entry.ipAddress || null,
+            entry.userAgent || null,
+          ]
+        )
+        return result
+      } else {
+        // If userIdToUse is null, just insert directly (no FK check needed for null)
+        return await query(
+          `INSERT INTO audit_logs (
+            id, user_id, action, entity_type, entity_id, new_value, ip_address, user_agent, created_at
+          ) VALUES (gen_random_uuid(), $1::uuid, $2, $3, $4::uuid, $5, $6, $7, NOW())
+          RETURNING id, created_at as timestamp`,
+          [
+            null,
+            entry.action,
+            entry.resource,
+            entityId,
+            Object.keys(metadata).length > 0 ? JSON.stringify(metadata) : null,
+            entry.ipAddress || null,
+            entry.userAgent || null,
+          ]
+        )
+      }
+    }
+
+    let result
+    try {
+      result = await insertAuditLog(entry.userId)
+
+      // If we tried to insert with a userId but got no rows back, it means the user doesn't exist.
+      // Retry with null userId.
+      if (entry.userId && (!result.rows || result.rows.length === 0)) {
+        result = await insertAuditLog(null)
+      }
+    } catch (error: any) {
+      // Still catch unexpected errors, or if the retry fails
+      console.error('Failed to log audit event:', error)
+      return
+    }
 
     // Send to Elasticsearch (fire and forget)
-    if (result.rows && result.rows.length > 0) {
+    if (result && result.rows && result.rows.length > 0) {
       getElasticsearchLogger().then(sendLog => {
         sendLog('security', {
           id: result.rows[0].id,
-          userId: entry.userId,
+          userId: entry.userId, // Keep original ID in ES for tracing attempt
           action: entry.action,
           resource: entry.resource,
           resourceId: entry.resourceId,
           spaceId: entry.spaceId,
-          details: entry.details,
+          details: {
+            ...entry.details,
+            originalUserId: entry.userId // Add note that this was the attempted ID
+          },
           ipAddress: entry.ipAddress,
           userAgent: entry.userAgent,
           createdAt: result.rows[0].timestamp

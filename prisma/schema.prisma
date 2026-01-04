@@ -1783,6 +1783,7 @@ model ServiceRegistry {
   managementPlugins     InstanceService[]             @relation("ServiceRegistryManagementPlugins")
   managementAssignments ServiceManagementAssignment[] @relation("ServiceRegistryManagementAssignments")
   reviews               PluginReview[]                @relation("ServiceRegistryReviews")
+  menuItems             MenuItem[]                    @relation("PluginMenuItems")
 
   @@index([category])
   @@index([status])
@@ -1801,6 +1802,7 @@ model ServiceInstallation {
   lastHealthCheck DateTime? @map("last_health_check")
   healthStatus    String?   @map("health_status")
   permissions     Json?     @default("{}")
+  dbSchema        String?   @map("db_schema") // Dedicated PostgreSQL schema name
   installedAt     DateTime  @default(now()) @map("installed_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
   deletedAt       DateTime? @map("deleted_at")
@@ -2416,4 +2418,47 @@ model WebsitePWAVersion {
   creator     User       @relation("WebsitePWAVersionCreator", fields: [createdBy], references: [id])
 
   @@map("website_pwa_versions")
+}
+
+// ============================================================================
+// MENU CONFIGURATION
+// ============================================================================
+
+model MenuGroup {
+  id        String   @id @default(uuid()) @db.Uuid
+  slug      String   @unique
+  name      String
+  icon      String   // Lucide icon name
+  priority  Int      @default(100)
+  isVisible Boolean  @default(true) @map("is_visible")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  items     MenuItem[] @relation("MenuGroupItems")
+
+  @@map("menu_groups")
+}
+
+model MenuItem {
+  id             String   @id @default(uuid()) @db.Uuid
+  groupId        String   @map("group_id") @db.Uuid
+  slug           String   @unique
+  name           String
+  icon           String   // Lucide icon name
+  href           String
+  section        String?  // Sub-section label for grouping within sidebar
+  priority       Int      @default(100)
+  isVisible      Boolean  @default(true) @map("is_visible")
+  isBuiltin      Boolean  @default(true) @map("is_builtin")
+  sourcePluginId String?  @map("source_plugin_id") @db.Uuid
+  requiredRoles  String[] @default([]) @map("required_roles") // e.g., ["ADMIN", "USER"]
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  group        MenuGroup        @relation("MenuGroupItems", fields: [groupId], references: [id], onDelete: Cascade)
+  sourcePlugin ServiceRegistry? @relation("PluginMenuItems", fields: [sourcePluginId], references: [id], onDelete: SetNull)
+
+  @@map("menu_items")
 }

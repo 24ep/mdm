@@ -70,7 +70,7 @@ const defaultPlugins = [
     apiAuthType: 'oauth2',
     uiType: 'react_component',
     uiConfig: {
-       componentPath: 'components/PowerBIUI',
+      componentPath: 'components/PowerBIUI',
     },
     webhookSupported: false,
     webhookEvents: [],
@@ -102,7 +102,7 @@ const defaultPlugins = [
     apiAuthType: 'oauth2',
     uiType: 'react_component',
     uiConfig: {
-       componentPath: 'components/LookerStudioUI',
+      componentPath: 'components/LookerStudioUI',
     },
     webhookSupported: false,
     webhookEvents: [],
@@ -268,12 +268,12 @@ const defaultPlugins = [
     verified: true,
     description: 'Advanced SQL query editor with syntax highlighting, auto-complete, query history, and result visualization.',
     capabilities: {
-       source: 'local-folder',
-       sourcePath: 'plugin-hub/plugins/sql-query',
-       queryExecution: true,
-       syntaxHighlighting: true,
-       autoComplete: true,
-       resultExport: true,
+      source: 'local-folder',
+      sourcePath: 'plugin-hub/plugins/sql-query',
+      queryExecution: true,
+      syntaxHighlighting: true,
+      autoComplete: true,
+      resultExport: true,
     },
     uiType: 'react_component',
     uiConfig: {
@@ -305,6 +305,12 @@ const defaultPlugins = [
     uiType: 'react_component',
     uiConfig: {
       componentPath: 'src/components/KnowledgeBaseUI',
+      navigation: {
+        group: 'tools',
+        label: 'Knowledge Base',
+        icon: 'Book',
+        priority: 20,
+      },
     },
     webhookSupported: false,
     webhookEvents: [],

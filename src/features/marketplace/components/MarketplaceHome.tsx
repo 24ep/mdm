@@ -84,16 +84,21 @@ export function MarketplaceHome({
   const [loadingInstallations, setLoadingInstallations] = useState(false)
 
   // Fetch installations when space changes
+  // Fetch installations when space changes
   const fetchInstallations = async () => {
     const effectiveSpace = effectiveSpaceId || currentSpace?.id
-    if (!effectiveSpace) {
-      setInstallations(new Map())
-      return
-    }
+
+    // If no space is selected and user is admin, we might want to show all installations or global ones.
+    // The API returns all installations if spaceId is not provided.
 
     try {
       setLoadingInstallations(true)
-      const response = await fetch(`/api/marketplace/installations?spaceId=${effectiveSpace}`)
+      // If we have a space, filter by it. If not, fetch all (global context)
+      const url = effectiveSpace
+        ? `/api/marketplace/installations?spaceId=${effectiveSpace}`
+        : `/api/marketplace/installations`
+
+      const response = await fetch(url)
       if (response.ok) {
         const data = await response.json()
         const installationMap = new Map<string, string>()
@@ -110,6 +115,7 @@ export function MarketplaceHome({
       setLoadingInstallations(false)
     }
   }
+
 
   useEffect(() => {
     fetchInstallations()
