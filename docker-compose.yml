@@ -5,15 +5,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      # Limit build resources to reduce system load
       args:
         BUILDKIT_INLINE_CACHE: 1
-    # Resource limits for build process (optional, uncomment if needed)
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: '2'
-    #       memory: 4G
     ports:
       - "8029:8029"
     environment:
@@ -32,7 +25,7 @@ services:
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin}
       - USE_VAULT=${USE_VAULT:-false}
       - VAULT_ADDR=${VAULT_ADDR:-http://vault:8200}
-      - VAULT_TOKEN=${VAULT_ROOT_TOKEN:-dev-root-token}
+      - VAULT_TOKEN=${VAULT_TOKEN:-dev-root-token}
       - VAULT_SECRET_MOUNT=${VAULT_SECRET_MOUNT:-secret}
       - REDIS_URL=${REDIS_URL:-redis://:redispassword@redis:6379}
       - PLUGIN_HUB_URL=${PLUGIN_HUB_URL:-http://plugin-hub:3001}
@@ -93,34 +86,6 @@ services:
       retries: 5
       start_period: 60s
 
-  # PostgreSQL Database
-  # postgres-db:
-  #   container_name: mdm-postgres-db
-  #   image: postgres:15
-  #   # Force listening on all interfaces
-  #   command: postgres -c 'listen_addresses=*'
-  #   ports:
-  #     - "8229:5432"
-  #   environment:
-  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-  #     POSTGRES_DB: ${POSTGRES_DB:-postgres}
-  #     POSTGRES_USER: ${POSTGRES_USER:-postgres}
-  #   volumes:
-  #     - /var/dockers/8028/postgres:/var/lib/postgresql/data
-  #   restart: unless-stopped
-  #   networks:
-  #     - mdm-network
-  #   healthcheck:
-  #     # Check TCP connection to localhost (-h localhost) explicitly
-  #     test: [ "CMD-SHELL", "pg_isready -h localhost -U ${POSTGRES_USER:-postgres}" ]
-  #     interval: 5s
-  #     timeout: 5s
-  #     retries: 5
-  #     start_period: 30s
-
-
-  # Database initialization is now handled by docker-entrypoint.sh in the app container
-  # This runs automatically when the app starts for the first time
 
   # PostgREST API (External REST API)
   postgrest-api:
@@ -129,7 +94,8 @@ services:
     # depends_on:
     #   - postgres-db
     environment:
-      PGRST_DB_URI: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres-db:5432/${POSTGRES_DB:-postgres}
+      # Use DATABASE_URL directly
+      PGRST_DB_URI: ${DATABASE_URL:-postgres://postgres:postgres@postgres-db:5432/postgres}
       PGRST_DB_SCHEMAS: public
       PGRST_DB_ANON_ROLE: anon
       # JWT secret for production (generate with: openssl rand -base64 32)
@@ -144,23 +110,6 @@ services:
     networks:
       - mdm-network
 
-  # MinIO (S3 compatible)
-  # minio:
-  #   container_name: mdm-minio
-  #   image: minio/minio:RELEASE.2024-09-22T00-33-43Z
-  #   command: server /data --console-address ":9001"
-  #   environment:
-  #     MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
-  #     MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
-  #   ports:
-  #     - "8329:9000"
-  #     - "8429:9001"
-  #   volumes:
-  #     - /var/dockers/8028/minio:/data
-  #   restart: unless-stopped
-  #   networks:
-  #     - mdm-network
-
 
   # HashiCorp Vault
   vault:
@@ -169,7 +118,7 @@ services:
     ports:
       - "8529:8200"
     environment:
-      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_ROOT_TOKEN:-dev-root-token}
+      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_TOKEN:-dev-root-token}
       VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
       VAULT_ADDR: http://0.0.0.0:8200
     cap_add:

@@ -59,6 +59,10 @@ async function putHandler(
       values.push(defaultSpaceId || null)
       sets.push(`default_space_id = $${values.length}`)
     }
+    if (body.allowedLoginMethods !== undefined) {
+      values.push(body.allowedLoginMethods)
+      sets.push(`allowed_login_methods = $${values.length}`)
+    }
 
     if (!sets.length) {
       return NextResponse.json(
@@ -72,7 +76,7 @@ async function putHandler(
       ', '
     )}, updated_at = NOW() WHERE id = $${
       values.length
-    } RETURNING id, email, name, role, is_active, requires_password_change, lockout_until, created_at, default_space_id`
+    } RETURNING id, email, name, role, is_active, requires_password_change, lockout_until, created_at, default_space_id, allowed_login_methods`
 
     const { rows } = await query(sql, values)
     if (!rows.length) {
@@ -99,6 +103,7 @@ async function putHandler(
         name: rows[0].name,
         role: rows[0].role,
         isActive: rows[0].is_active,
+        allowedLoginMethods: rows[0].allowed_login_methods,
         createdAt: rows[0].created_at,
         defaultSpaceId: rows[0].default_space_id
       }

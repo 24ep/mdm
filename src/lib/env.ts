@@ -62,8 +62,6 @@ const envSchema = z.object({
   AZURE_AD_TENANT_ID: z.string().optional(),
 
   // WebSocket
-  WS_PROXY_PORT: z.string().optional(),
-  WS_PROXY_URL: z.string().optional(),
   NEXT_PUBLIC_WS_PROXY_URL: z.string().optional(),
   NEXT_PUBLIC_WS_PROXY_PORT: z.string().optional(),
 

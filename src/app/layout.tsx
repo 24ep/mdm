@@ -8,6 +8,7 @@ import { DynamicFavicon } from '@/components/ui/dynamic-favicon'
 import { Suspense } from 'react'
 import { LoadingPage } from '@/components/ui/loading-spinner'
 import { GlobalErrorHandler } from '@/components/global-error-handler'
+import { SecurityProvider } from '@/components/providers/SecurityProvider'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -38,13 +39,15 @@ export default function RootLayout({
         <GlobalErrorHandler />
         <Providers>
           <DynamicFavicon />
-          <SidebarProvider>
-            <Suspense fallback={<LoadingPage />}>
-              <SpaceProvider>
-                {children}
-              </SpaceProvider>
-            </Suspense>
-          </SidebarProvider>
+             <SecurityProvider>
+              <SidebarProvider>
+                <Suspense fallback={<LoadingPage />}>
+                  <SpaceProvider>
+                    {children}
+                  </SpaceProvider>
+                </Suspense>
+              </SidebarProvider>
+             </SecurityProvider>
         </Providers>
       </body>
     </html>

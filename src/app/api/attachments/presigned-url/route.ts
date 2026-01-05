@@ -10,7 +10,7 @@ async function postHandler(request: NextRequest) {
     const { session } = authResult
 
     // Validate S3 configuration
-    if (!validateS3Config()) {
+    if (!(await validateS3Config())) {
       return NextResponse.json(
         { error: 'S3 configuration is missing' },
         { status: 500 }

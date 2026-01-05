@@ -91,7 +91,8 @@ export function UserManagement() {
     role: 'USER',
     isActive: true,
     defaultSpaceId: '',
-    spaces: [] as Array<{ spaceId: string; role: string }>
+    spaces: [] as Array<{ spaceId: string; role: string }>,
+    allowedLoginMethods: [] as string[]
   })
   const [createForm, setCreateForm] = useState({
     name: '',
@@ -100,7 +101,8 @@ export function UserManagement() {
     role: 'USER',
     isActive: true,
     defaultSpaceId: '',
-    spaces: [] as Array<{ spaceId: string; role: string }>
+    spaces: [] as Array<{ spaceId: string; role: string }>,
+    allowedLoginMethods: [] as string[]
   })
   const [creatingUser, setCreatingUser] = useState(false)
 
@@ -155,6 +157,7 @@ export function UserManagement() {
           lastLoginAt: user.last_login_at ? new Date(user.last_login_at) : undefined,
           defaultSpaceId: user.default_space_id,
           avatar: user.avatar,
+          allowedLoginMethods: user.allowed_login_methods || [],
           createdAt: new Date(user.created_at)
         })) || []
         setUsers(transformedUsers)
@@ -196,7 +199,8 @@ export function UserManagement() {
       role: 'USER',
       isActive: true,
       defaultSpaceId: '',
-      spaces: []
+      spaces: [],
+      allowedLoginMethods: []
     })
     setShowCreateDialog(true)
   }
@@ -209,7 +213,8 @@ export function UserManagement() {
       role: user.role,
       isActive: user.isActive,
       defaultSpaceId: user.defaultSpaceId || '',
-      spaces: user.spaces || []
+      spaces: user.spaces || [],
+      allowedLoginMethods: user.allowedLoginMethods || []
     })
     setEditDialogTab('basic')
     setShowEditDialog(true)
@@ -235,7 +240,8 @@ export function UserManagement() {
           role: createForm.role,
           isActive: createForm.isActive,
           defaultSpaceId: createForm.defaultSpaceId && createForm.defaultSpaceId !== 'none' ? createForm.defaultSpaceId : null,
-          spaces: createForm.spaces
+          spaces: createForm.spaces,
+          allowedLoginMethods: createForm.allowedLoginMethods
         }),
       })
 
@@ -273,7 +279,10 @@ export function UserManagement() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(editForm),
+        body: JSON.stringify({
+          ...editForm,
+          allowedLoginMethods: editForm.allowedLoginMethods
+        }),
       })
 
       if (response.ok) {
@@ -863,6 +872,39 @@ export function UserManagement() {
                     </div>
                   </div>
 
+                  <div className="space-y-2">
+                    <Label>Allowed Login Methods</Label>
+                    <p className="text-xs text-muted-foreground">Select allowed methods. Leave empty to allow all configured methods.</p>
+                    <div className="flex flex-wrap gap-2 p-3 border rounded-md">
+                      {['email', 'azure-ad', 'google'].map((method) => {
+                         const isSelected = editForm.allowedLoginMethods?.includes(method)
+                         return (
+                           <div 
+                             key={method}
+                             className={cn(
+                               "cursor-pointer px-3 py-1.5 rounded-full text-sm border transition-colors select-none",
+                               isSelected 
+                                 ? "bg-primary text-primary-foreground border-primary" 
+                                 : "bg-background hover:bg-muted border-input"
+                             )}
+                             onClick={() => {
+                               setEditForm(prev => {
+                                 const current = prev.allowedLoginMethods || []
+                                 if (current.includes(method)) {
+                                   return { ...prev, allowedLoginMethods: current.filter(m => m !== method) }
+                                 } else {
+                                   return { ...prev, allowedLoginMethods: [...current, method] }
+                                 }
+                               })
+                             }}
+                           >
+                             {method === 'email' ? 'Email/Password' : method === 'azure-ad' ? 'Azure AD' : 'Google'}
+                           </div>
+                         )
+                      })}
+                    </div>
+                  </div>
+
                   <div className="flex items-center space-x-2">
                     <Switch
                       id="edit-active"
@@ -1033,6 +1075,39 @@ export function UserManagement() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Allowed Login Methods</Label>
+                <p className="text-xs text-muted-foreground">Select allowed methods. Leave empty to allow all configured methods.</p>
+                <div className="flex flex-wrap gap-2 p-3 border rounded-md">
+                  {['email', 'azure-ad', 'google'].map((method) => {
+                     const isSelected = createForm.allowedLoginMethods.includes(method)
+                     return (
+                       <div 
+                         key={method}
+                         className={cn(
+                           "cursor-pointer px-3 py-1.5 rounded-full text-sm border transition-colors select-none",
+                           isSelected 
+                             ? "bg-primary text-primary-foreground border-primary" 
+                             : "bg-background hover:bg-muted border-input"
+                         )}
+                         onClick={() => {
+                           setCreateForm(prev => {
+                             const current = prev.allowedLoginMethods
+                             if (current.includes(method)) {
+                               return { ...prev, allowedLoginMethods: current.filter(m => m !== method) }
+                             } else {
+                               return { ...prev, allowedLoginMethods: [...current, method] }
+                             }
+                           })
+                         }}
+                       >
+                         {method === 'email' ? 'Email/Password' : method === 'azure-ad' ? 'Azure AD' : 'Google'}
+                       </div>
+                     )
+                  })}
                 </div>
               </div>
 

@@ -19,8 +19,11 @@ import {
   Shield,
   Database,
   Bell,
-  Palette
+  Palette,
+  Activity
 } from 'lucide-react'
+import { LangfuseSettings } from './LangfuseSettings'
+import { IntegrationSettings } from './IntegrationSettings'
 import { toast } from 'react-hot-toast'
 import { Z_INDEX } from '@/lib/z-index'
 
@@ -201,6 +204,20 @@ export function SystemSettingsModal({ open, onOpenChange }: SystemSettingsModalP
                     >
                       <Users className="h-4 w-4 mr-2" />
                       Users
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      className="justify-start w-full" 
+                      value="integrations"
+                    >
+                      <Database className="h-4 w-4 mr-2" />
+                      Integrations
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      className="justify-start w-full" 
+                      value="observability"
+                    >
+                      <Activity className="h-4 w-4 mr-2" />
+                      Observability
                     </TabsTrigger>
                   </TabsList>
                 </nav>
@@ -436,6 +453,16 @@ export function SystemSettingsModal({ open, onOpenChange }: SystemSettingsModalP
                         </div>
                       </CardContent>
                     </Card>
+                  </TabsContent>
+
+                  {/* Observability Settings */}
+                  <TabsContent value="observability" className="space-y-6">
+                    <LangfuseSettings />
+                  </TabsContent>
+
+                  {/* Infrastructure Integrations */}
+                  <TabsContent value="integrations" className="space-y-6">
+                    <IntegrationSettings />
                   </TabsContent>
                 </div>
               </div>

@@ -19,14 +19,52 @@ export default function SignInPage() {
   const [error, setError] = useState('')
   const [ssoProviders, setSsoProviders] = useState({ google: false, azure: false })
   const [loginBgStyle, setLoginBgStyle] = useState<React.CSSProperties>({})
+  const [loginBgVideo, setLoginBgVideo] = useState<string | undefined>(undefined)
   const router = useRouter()
 
   // Load branding config for login background
   useEffect(() => {
     loadBrandingConfig().then((branding) => {
+      // Check for security settings (assuming they might be merged into branding or we fetch separately)
+      // Since security settings are system settings, we probably need to fetch system settings here too.
+      // But for now, let's assume we can fetch settings or use a separate API call.
+      
+      // Fetch system settings for security
+      fetch('/api/settings')
+        .then(res => res.json())
+        .then(settings => {
+          if (settings.secureLoginPage !== false) { // Default to true if not set
+            const handleContextMenu = (e: MouseEvent) => e.preventDefault()
+            const handleKeyDown = (e: KeyboardEvent) => {
+              // Block F12
+              if (e.key === 'F12') {
+                e.preventDefault()
+              }
+              // Block Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C (DevTools)
+              if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) {
+                e.preventDefault()
+              }
+              // Block Ctrl+U (View Source)
+              if (e.ctrlKey && e.key === 'u') {
+                e.preventDefault()
+              }
+            }
+            
+            document.addEventListener('contextmenu', handleContextMenu)
+            document.addEventListener('keydown', handleKeyDown)
+            
+            return () => {
+              document.removeEventListener('contextmenu', handleContextMenu)
+              document.removeEventListener('keydown', handleKeyDown)
+            }
+          }
+        })
+        .catch(console.error)
+
       if (branding?.loginBackground) {
         const bg = branding.loginBackground
         let style: React.CSSProperties = {}
+        let videoUrl: string | undefined
         
         if (bg.type === 'color' && bg.color) {
           style.backgroundColor = bg.color
@@ -36,9 +74,12 @@ export default function SignInPage() {
           style.backgroundImage = `url(${bg.image})`
           style.backgroundSize = 'cover'
           style.backgroundPosition = 'center'
+        } else if (bg.type === 'video' && bg.video) {
+            videoUrl = bg.video
         }
         
         setLoginBgStyle(style)
+        setLoginBgVideo(videoUrl)
       }
     })
   }, [])
@@ -111,6 +152,16 @@ export default function SignInPage() {
     <div className="min-h-screen flex">
       {/* Left side - Background Image (70%) */}
       <div className="w-[70%] relative" style={loginBgStyle}>
+        {loginBgVideo && (
+            <video 
+                src={loginBgVideo} 
+                className="absolute inset-0 w-full h-full object-cover" 
+                autoPlay 
+                muted 
+                loop 
+                playsInline 
+            />
+        )}
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative h-full flex items-center justify-center">
           <div className="text-center text-white p-8">

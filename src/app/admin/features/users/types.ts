@@ -18,6 +18,7 @@ export interface User {
     spaceName: string
     role: string
   }>
+  allowedLoginMethods?: string[]
 }
 
 export interface Permission {
@@ -50,6 +51,7 @@ export interface UserFormData {
     spaceId: string
     role: string
   }>
+  allowedLoginMethods?: string[]
 }
 
 export interface RoleFormData {

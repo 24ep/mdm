@@ -323,7 +323,7 @@ export function ChatKitWrapper({
         try {
           // Use absolute URL to ensure API calls go to the chatbot server, not the host website
           // Using /next-api/ prefix to bypass Nginx /api collision with PostgREST
-          const apiUrl = `${serverOrigin}/chat-api/session`
+          const apiUrl = `${serverOrigin}/next-api/chatkit/session`
           
           if (existing) {
             const res = await fetch(apiUrl, {

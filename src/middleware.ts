@@ -45,7 +45,7 @@ export default withAuth(
           path.startsWith('/chat') ||
           path.startsWith('/chat-api/public') ||
           path.startsWith('/chat-api/embed') ||
-          path.startsWith('/chat-api/session') ||
+          path.startsWith('/next-api/chatkit/session') ||
           path.startsWith('/api/public') ||
           path.startsWith('/api/embed') ||
           path.startsWith('/api/pwa')

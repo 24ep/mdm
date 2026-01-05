@@ -74,8 +74,8 @@ async function postHandler(request: NextRequest) {
           const data = await feedbackResponse.json()
           
           // Send feedback to Langfuse if enabled and traceId is provided
-          if (isLangfuseEnabled() && traceId) {
-            const langfuse = getLangfuseClient()
+          if ((await isLangfuseEnabled()) && traceId) {
+            const langfuse = await getLangfuseClient()
             if (langfuse) {
               try {
                 langfuse.score({
@@ -112,8 +112,8 @@ async function postHandler(request: NextRequest) {
           })
           
           // Still send to Langfuse even if OpenAI API doesn't accept it
-          if (isLangfuseEnabled() && traceId) {
-            const langfuse = getLangfuseClient()
+          if ((await isLangfuseEnabled()) && traceId) {
+            const langfuse = await getLangfuseClient()
             if (langfuse) {
               try {
                 langfuse.score({

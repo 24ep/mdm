@@ -29,6 +29,10 @@ export interface SystemSettings {
   maxLoginAttempts: number
   passwordMinLength: number
   requireTwoFactor: boolean
+  
+  // UI Protection
+  disableRightClick: boolean
+  secureLoginPage: boolean
 
   // Features
   allowRegistration: boolean
@@ -146,7 +150,7 @@ export interface BrandingConfig {
 
   // Login background
   loginBackground: {
-    type: 'color' | 'gradient' | 'image'
+    type: 'color' | 'gradient' | 'image' | 'video'
     color?: string
     gradient?: {
       from: string
@@ -154,6 +158,7 @@ export interface BrandingConfig {
       angle: number
     }
     image?: string
+    video?: string
   }
 
   // Google Fonts API Key

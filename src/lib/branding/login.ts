@@ -26,6 +26,8 @@ export function applyLoginBackground(branding: BrandingConfig) {
     root.style.setProperty('--login-bg-gradient-angle', `${loginBg.gradient.angle}deg`)
   } else if (loginBg.type === 'image' && loginBg.image) {
     root.style.setProperty('--login-bg-image', `url(${loginBg.image})`)
+  } else if (loginBg.type === 'video' && loginBg.video) {
+    root.style.setProperty('--login-bg-video', loginBg.video)
   }
 }
 

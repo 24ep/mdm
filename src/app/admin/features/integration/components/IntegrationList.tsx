@@ -35,7 +35,8 @@ import {
   Bot,
   HardDrive,
   Network,
-  Gauge
+  Gauge,
+  LayoutTemplate as MicrosoftIcon
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -153,6 +154,30 @@ export const SYSTEM_CONFIG_INTEGRATIONS: Omit<IntegrationConfig, 'id' | 'isConfi
     type: 'signoz',
     icon: Activity,
     description: 'SigNoz observability platform for traces, metrics, and logs'
+  },
+  {
+    name: 'SMTP Email',
+    type: 'smtp',
+    icon: Network,
+    description: 'SMTP server configuration for email notifications'
+  },
+  {
+    name: 'Google Auth',
+    type: 'google-auth',
+    icon: Globe,
+    description: 'Google OAuth configuration for Single Sign-On'
+  },
+  {
+    name: 'Azure AD',
+    type: 'azure-ad',
+    icon: MicrosoftIcon,
+    description: 'Microsoft Azure AD configuration for Single Sign-On'
+  },
+  {
+    name: 'Langfuse',
+    type: 'langfuse',
+    icon: Brain,
+    description: 'Langfuse integration for LLM tracing and observability'
   }
 ]
 

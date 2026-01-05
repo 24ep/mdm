@@ -258,6 +258,32 @@ export function SystemIntegrations() {
           { key: 'serviceName', label: 'Service Name', type: 'text', required: false, placeholder: 'mdm-platform' },
           { key: 'environment', label: 'Environment', type: 'text', required: false, placeholder: 'production' }
         ]
+      case 'smtp':
+        return [
+          { key: 'host', label: 'SMTP Host', type: 'text', required: true, placeholder: 'smtp.gmail.com' },
+          { key: 'port', label: 'Port', type: 'number', required: true, placeholder: '587' },
+          { key: 'user', label: 'Username', type: 'text', required: true },
+          { key: 'pass', label: 'Password', type: 'password', required: true },
+          { key: 'from', label: 'From Email', type: 'text', required: true, placeholder: 'noreply@example.com' },
+          { key: 'secure', label: 'Secure (SSL/TLS)', type: 'select', options: ['true', 'false'], required: true }
+        ]
+      case 'azure-ad':
+        return [
+          { key: 'clientId', label: 'Client ID', type: 'text', required: true },
+          { key: 'clientSecret', label: 'Client Secret', type: 'password', required: true },
+          { key: 'tenantId', label: 'Tenant ID', type: 'text', required: true }
+        ]
+      case 'google-auth':
+        return [
+          { key: 'clientId', label: 'Client ID', type: 'text', required: true },
+          { key: 'clientSecret', label: 'Client Secret', type: 'password', required: true }
+        ]
+      case 'langfuse':
+        return [
+          { key: 'publicKey', label: 'Public Key', type: 'text', required: true },
+          { key: 'secretKey', label: 'Secret Key', type: 'password', required: true },
+          { key: 'host', label: 'Host URL', type: 'text', required: false, placeholder: 'https://cloud.langfuse.com' }
+        ]
       default:
         return [
           { key: 'url', label: 'URL', type: 'text', required: true },

@@ -3,7 +3,7 @@ import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import puppeteer from 'puppeteer'
-import { s3Client } from '@/lib/s3'
+import { getS3Client } from '@/lib/s3'
 import { PutObjectCommand } from '@aws-sdk/client-s3'
 
 async function postHandler(
@@ -288,7 +288,8 @@ async function postHandler(
       ContentDisposition: `attachment; filename="${filename}"`,
     })
 
-    await s3Client.send(uploadCommand)
+    const client = await getS3Client()
+    await client.send(uploadCommand)
 
     // Return S3 key for client to download
     return NextResponse.json({

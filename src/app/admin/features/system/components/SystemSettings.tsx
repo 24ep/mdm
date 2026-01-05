@@ -59,6 +59,10 @@ export function SystemSettings() {
     passwordMinLength: 8,
     requireTwoFactor: false,
     
+    // UI Protection
+    disableRightClick: false,
+    secureLoginPage: true,
+    
     // Features
     allowRegistration: true,
     allowGuestAccess: false,
@@ -89,6 +93,8 @@ export function SystemSettings() {
           ...prev,
           // Expect flat key/value map from API
           sessionTimeout: data.sessionTimeout ? Number(data.sessionTimeout) : prev.sessionTimeout,
+          disableRightClick: data.disableRightClick !== undefined ? data.disableRightClick : prev.disableRightClick,
+          secureLoginPage: data.secureLoginPage !== undefined ? data.secureLoginPage : prev.secureLoginPage,
         }))
       }
     } catch (error) {
@@ -109,6 +115,8 @@ export function SystemSettings() {
         body: JSON.stringify({
           settings: {
             sessionTimeout: String(settings.sessionTimeout),
+            disableRightClick: settings.disableRightClick,
+            secureLoginPage: settings.secureLoginPage,
           }
         }),
       })
@@ -535,6 +543,39 @@ export function SystemSettings() {
                   onCheckedChange={(checked) => setSettings({ ...settings, requireTwoFactor: checked })}
                 />
                 <Label htmlFor="requireTwoFactor">Require Two-Factor Authentication</Label>
+              </div>
+
+              <div className="pt-4 border-t">
+                <h4 className="text-sm font-medium mb-4">UI Protection</h4>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="disableRightClick">Disable Application Right-Click</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Prevent right-click context menu throughout the application
+                      </p>
+                    </div>
+                    <Switch
+                      id="disableRightClick"
+                      checked={settings.disableRightClick}
+                      onCheckedChange={(checked) => setSettings({ ...settings, disableRightClick: checked })}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="secureLoginPage">Secure Login Page</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Disable DevTools (F12) and Right-Click on login page
+                      </p>
+                    </div>
+                    <Switch
+                      id="secureLoginPage"
+                      checked={settings.secureLoginPage}
+                      onCheckedChange={(checked) => setSettings({ ...settings, secureLoginPage: checked })}
+                    />
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>

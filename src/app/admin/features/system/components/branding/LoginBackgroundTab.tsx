@@ -24,7 +24,7 @@ export function LoginBackgroundTab({ branding, setBranding, handleApplyBrandingC
                             ...branding,
                             loginBackground: {
                                 ...branding.loginBackground,
-                                type: value as 'color' | 'gradient' | 'image',
+                                type: value as 'color' | 'gradient' | 'image' | 'video',
                             },
                         })
                     }
@@ -36,6 +36,7 @@ export function LoginBackgroundTab({ branding, setBranding, handleApplyBrandingC
                         <SelectItem value="color">Solid Color</SelectItem>
                         <SelectItem value="gradient">Gradient</SelectItem>
                         <SelectItem value="image">Image</SelectItem>
+                        <SelectItem value="video">Video</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
@@ -190,6 +191,43 @@ export function LoginBackgroundTab({ branding, setBranding, handleApplyBrandingC
                                 src={branding.loginBackground.image}
                                 alt="Login background"
                                 className="w-full h-full object-cover"
+                            />
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {branding.loginBackground.type === 'video' && (
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <Label className="text-sm font-medium">Background Video URL</Label>
+                        <Input
+                            value={branding.loginBackground.video || ''}
+                            onChange={(e) =>
+                                setBranding({
+                                    ...branding,
+                                    loginBackground: {
+                                        ...branding.loginBackground,
+                                        video: e.target.value,
+                                    },
+                                })
+                            }
+                            placeholder="https://example.com/video.mp4"
+                            className="w-full"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            Supported formats: MP4, WebM. Video will autoplay and loop.
+                        </p>
+                    </div>
+                    {branding.loginBackground.video && (
+                         <div className="relative w-full h-48 border rounded-lg overflow-hidden bg-muted">
+                            <video
+                                src={branding.loginBackground.video}
+                                className="w-full h-full object-cover"
+                                autoPlay
+                                muted
+                                loop
+                                playsInline
                             />
                         </div>
                     )}

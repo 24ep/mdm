@@ -65,6 +65,7 @@ async function postHandler(request: NextRequest) {
           password: hashedPassword,
           role: userRole,
           isActive: isActive !== undefined ? isActive : true,
+          allowedLoginMethods: body.allowedLoginMethods || [],
           // created_at and updated_at are usually handled by @default(now()) and @updatedAt
         }
       })
@@ -95,6 +96,7 @@ async function postHandler(request: NextRequest) {
           name: newUser.name,
           role: newUser.role,
           isActive: newUser.isActive,
+          allowedLoginMethods: newUser.allowedLoginMethods,
           createdAt: newUser.createdAt
         }
       },

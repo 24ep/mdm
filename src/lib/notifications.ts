@@ -6,36 +6,91 @@ import { query } from '@/lib/db'
  */
 export class NotificationService {
   private static transporter: nodemailer.Transporter | null = null
+  private static cachedConfigTime: number = 0
+  private static readonly CONFIG_CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+
+  /**
+   * Get SMTP configuration from database or env
+   */
+  private static async getSmtpConfig() {
+    // 1. Try DB first
+    try {
+      // Dynamic import to avoid circular dependencies
+      const { query } = await import('@/lib/db')
+      
+      const sql = `
+        SELECT config, is_enabled
+        FROM platform_integrations
+        WHERE type = 'smtp'
+          AND deleted_at IS NULL
+          AND is_enabled = true
+        LIMIT 1
+      `
+      
+      const result = await query(sql, [], 5000)
+      
+      if (result.rows.length > 0) {
+        const row = result.rows[0]
+        const config = row.config as any
+        
+        if (config.host && config.user && config.pass) {
+          return {
+            host: config.host,
+            port: parseInt(config.port || '587'),
+            secure: config.secure === true || config.secure === 'true',
+            auth: {
+              user: config.user,
+              pass: config.pass
+            },
+            from: config.from || config.user
+          }
+        }
+      }
+    } catch (error) {
+      // Ignore DB errors and fall back to env
+    }
+
+    // 2. Fallback to Env
+    return {
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD
+      },
+      from: process.env.SMTP_FROM || process.env.SMTP_USER
+    }
+  }
 
   /**
    * Initialize email transporter
    */
-  private static getTransporter(): nodemailer.Transporter {
-    if (!this.transporter) {
-      const smtpConfig = {
-        host: process.env.SMTP_HOST || 'smtp.gmail.com',
-        port: parseInt(process.env.SMTP_PORT || '587'),
-        secure: process.env.SMTP_SECURE === 'true',
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASSWORD
-        }
-      }
+  private static async getTransporter(): Promise<nodemailer.Transporter | null> {
+    const now = Date.now()
+    
+    // Refresh transporter if cache expired or not initialized
+    if (!this.transporter || (now - this.cachedConfigTime > this.CONFIG_CACHE_TTL)) {
+      const smtpConfig = await this.getSmtpConfig()
 
       // Only create transporter if SMTP is configured
       if (smtpConfig.auth.user && smtpConfig.auth.pass) {
         this.transporter = nodemailer.createTransport(smtpConfig)
+        this.cachedConfigTime = now
+      } else {
+        this.transporter = null
       }
     }
 
-    return this.transporter!
+    return this.transporter
   }
 
   /**
    * Check if email notifications are configured
    */
-  static isConfigured(): boolean {
-    return !!(process.env.SMTP_USER && process.env.SMTP_PASSWORD)
+  static async isConfigured(): Promise<boolean> {
+    const config = await this.getSmtpConfig()
+    return !!(config.auth.user && config.auth.pass)
   }
 
   /**
@@ -48,13 +103,16 @@ export class NotificationService {
     text?: string
   }): Promise<boolean> {
     try {
-      if (!this.isConfigured()) {
+      if (!(await this.isConfigured())) {
         console.warn('[Notifications] SMTP not configured, skipping email')
         return false
       }
 
-      const transporter = this.getTransporter()
-      const from = process.env.SMTP_FROM || process.env.SMTP_USER
+      const transporter = await this.getTransporter()
+      if (!transporter) return false
+
+      const config = await this.getSmtpConfig()
+      const from = config.from || config.auth.user
 
       await transporter.sendMail({
         from,

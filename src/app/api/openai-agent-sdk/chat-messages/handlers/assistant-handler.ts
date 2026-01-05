@@ -52,7 +52,7 @@ export async function handleAssistantRequest(options: AssistantHandlerOptions) {
   }
 
   // Initialize Langfuse tracing
-  const langfuse = isLangfuseEnabled() ? getLangfuseClient() : null
+  const langfuse = (await isLangfuseEnabled()) ? await getLangfuseClient() : null
   const trace = langfuse?.trace({
     name: 'openai-assistant-chat',
     userId: session?.user?.id || undefined,
