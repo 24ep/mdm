@@ -113,6 +113,20 @@ node scripts/seed-global-roles.js || {
   echo "⚠️  Global role seeding failed (may already be seeded)"
 }
 
+# Seed platform menu
+echo ""
+echo "=== Seeding platform menu ==="
+node scripts/seed-menu.js || {
+  echo "⚠️  Platform menu seeding failed"
+}
+
+# Seed menu permissions
+echo ""
+echo "=== Seeding menu permissions ==="
+node scripts/seed-menu-permissions.js || {
+  echo "⚠️  Menu permissions seeding failed"
+}
+
 echo ""
 echo "=== Initialization complete. Starting server... ==="
 
