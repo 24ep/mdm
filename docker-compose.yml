@@ -40,12 +40,12 @@ services:
       # volumes:
       # - ./uploads:/app/uploads
     depends_on:
-      postgres-db:
-        condition: service_healthy
+      # postgres-db:
+      #   condition: service_healthy
       postgrest-api:
         condition: service_started
-      minio:
-        condition: service_started
+      # minio:
+      #   condition: service_started
       vault:
         condition: service_started
       redis:
@@ -62,7 +62,6 @@ services:
           memory: 4G
         reservations:
           memory: 1G
-
 
   # Plugin Hub Service
   plugin-hub:
@@ -95,29 +94,29 @@ services:
       start_period: 60s
 
   # PostgreSQL Database
-  postgres-db:
-    container_name: mdm-postgres-db
-    image: postgres:15
-    # Force listening on all interfaces
-    command: postgres -c 'listen_addresses=*'
-    ports:
-      - "8229:5432"
-    environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-postgres}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-    volumes:
-      - /var/dockers/8028/postgres:/var/lib/postgresql/data
-    restart: unless-stopped
-    networks:
-      - mdm-network
-    healthcheck:
-      # Check TCP connection to localhost (-h localhost) explicitly
-      test: [ "CMD-SHELL", "pg_isready -h localhost -U ${POSTGRES_USER:-postgres}" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+  # postgres-db:
+  #   container_name: mdm-postgres-db
+  #   image: postgres:15
+  #   # Force listening on all interfaces
+  #   command: postgres -c 'listen_addresses=*'
+  #   ports:
+  #     - "8229:5432"
+  #   environment:
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+  #     POSTGRES_DB: ${POSTGRES_DB:-postgres}
+  #     POSTGRES_USER: ${POSTGRES_USER:-postgres}
+  #   volumes:
+  #     - /var/dockers/8028/postgres:/var/lib/postgresql/data
+  #   restart: unless-stopped
+  #   networks:
+  #     - mdm-network
+  #   healthcheck:
+  #     # Check TCP connection to localhost (-h localhost) explicitly
+  #     test: [ "CMD-SHELL", "pg_isready -h localhost -U ${POSTGRES_USER:-postgres}" ]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 5
+  #     start_period: 30s
 
 
   # Database initialization is now handled by docker-entrypoint.sh in the app container
@@ -127,8 +126,8 @@ services:
   postgrest-api:
     container_name: mdm-postgrest-api
     image: postgrest/postgrest:v12.0.2
-    depends_on:
-      - postgres-db
+    # depends_on:
+    #   - postgres-db
     environment:
       PGRST_DB_URI: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres-db:5432/${POSTGRES_DB:-postgres}
       PGRST_DB_SCHEMAS: public
@@ -145,23 +144,22 @@ services:
     networks:
       - mdm-network
 
-
   # MinIO (S3 compatible)
-  minio:
-    container_name: mdm-minio
-    image: minio/minio:RELEASE.2024-09-22T00-33-43Z
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
-    ports:
-      - "8329:9000"
-      - "8429:9001"
-    volumes:
-      - /var/dockers/8028/minio:/data
-    restart: unless-stopped
-    networks:
-      - mdm-network
+  # minio:
+  #   container_name: mdm-minio
+  #   image: minio/minio:RELEASE.2024-09-22T00-33-43Z
+  #   command: server /data --console-address ":9001"
+  #   environment:
+  #     MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+  #     MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+  #   ports:
+  #     - "8329:9000"
+  #     - "8429:9001"
+  #   volumes:
+  #     - /var/dockers/8028/minio:/data
+  #   restart: unless-stopped
+  #   networks:
+  #     - mdm-network
 
 
   # HashiCorp Vault
@@ -188,7 +186,7 @@ services:
     # and mount a config file
 
 
-  # Redis (for rate limiting and caching in agent SDK)
+    # Redis (for rate limiting and caching in agent SDK)
   redis:
     container_name: mdm-redis
     image: redis:7-alpine
@@ -206,7 +204,6 @@ services:
       timeout: 3s
       retries: 3
       start_period: 10s
-
 
 networks:
   mdm-network:

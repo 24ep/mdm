@@ -11,6 +11,26 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'localhost',
       },
+      // Allow MinIO image from environment variable
+      ...(process.env.MINIO_ENDPOINT ? (() => {
+        try {
+          const url = new URL(process.env.MINIO_ENDPOINT);
+          return [{
+            protocol: url.protocol.replace(':', ''),
+            hostname: url.hostname,
+            port: url.port,
+          }];
+        } catch (e) {
+          // If not a valid URL, assume it's a hostname
+          return [{
+            protocol: 'http',
+            hostname: process.env.MINIO_ENDPOINT,
+          }, {
+            protocol: 'https',
+            hostname: process.env.MINIO_ENDPOINT,
+          }];
+        }
+      })() : []),
     ],
   },
   typescript: {

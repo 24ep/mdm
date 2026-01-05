@@ -1466,6 +1466,67 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                                     </div>
                                 </div>
                                 <Separator />
+                                {/* Accordion */}
+                                <div>
+                                    <h3 className="text-sm font-semibold mb-4">Accordion</h3>
+                                    <div className="space-y-4">
+                                        {/* Accordion Item */}
+                                        <div className="space-y-3">
+                                            <div className="text-xs font-medium text-muted-foreground">Accordion Item (Container)</div>
+                                            <ColorInputField onChange={handleChange} label="Background" path="componentStyling.accordion-item.backgroundColor" value={config.componentStyling?.['accordion-item']?.backgroundColor} />
+                                            <BorderConfig basePath="componentStyling.accordion-item" />
+                                            <BoxModelInput config={config} onChange={handleChange} label="Margin" basePath="componentStyling.accordion-item" type="margin" placeholder="0" />
+                                            <AdvancedStyling basePath="componentStyling.accordion-item" />
+                                        </div>
+
+                                        <Separator className="my-2" />
+
+                                        {/* Accordion Trigger */}
+                                        <div className="space-y-3">
+                                            <div className="text-xs font-medium text-muted-foreground">Trigger (Header)</div>
+                                            <div className="pl-4 border-l-2 border-muted space-y-3">
+                                                <div className="text-xs font-medium text-muted-foreground/80">Normal State</div>
+                                                <ColorInputField onChange={handleChange} label="Background" path="componentStyling.accordion-trigger.backgroundColor" value={config.componentStyling?.['accordion-trigger']?.backgroundColor} />
+                                                <ColorInputField onChange={handleChange} label="Text" path="componentStyling.accordion-trigger.textColor" value={config.componentStyling?.['accordion-trigger']?.textColor} />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.accordion-trigger" type="padding" placeholder="1rem" />
+                                                <TextInput onChange={handleChange} label="Font Size" path="componentStyling.accordion-trigger.fontSize" value={config.componentStyling?.['accordion-trigger']?.fontSize} placeholder="0.875rem" />
+                                                <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.accordion-trigger.fontWeight" value={config.componentStyling?.['accordion-trigger']?.fontWeight} placeholder="500" />
+                                                <BorderConfig basePath="componentStyling.accordion-trigger" />
+                                                <AdvancedStyling basePath="componentStyling.accordion-trigger" />
+                                            </div>
+
+                                            <div className="pl-4 border-l-2 border-muted space-y-3">
+                                                <div className="text-xs font-medium text-muted-foreground/80">Hover State</div>
+                                                <ColorInputField onChange={handleChange} label="Background" path="componentStyling.accordion-trigger-hover.backgroundColor" value={config.componentStyling?.['accordion-trigger-hover']?.backgroundColor} />
+                                                <ColorInputField onChange={handleChange} label="Text" path="componentStyling.accordion-trigger-hover.textColor" value={config.componentStyling?.['accordion-trigger-hover']?.textColor} />
+                                                <AdvancedStyling basePath="componentStyling.accordion-trigger-hover" />
+                                            </div>
+
+                                            <div className="pl-4 border-l-2 border-muted space-y-3">
+                                                <div className="text-xs font-medium text-muted-foreground/80">Open/Active State</div>
+                                                <ColorInputField onChange={handleChange} label="Background" path="componentStyling.accordion-trigger-active.backgroundColor" value={config.componentStyling?.['accordion-trigger-active']?.backgroundColor} />
+                                                <ColorInputField onChange={handleChange} label="Text" path="componentStyling.accordion-trigger-active.textColor" value={config.componentStyling?.['accordion-trigger-active']?.textColor} />
+                                                <AdvancedStyling basePath="componentStyling.accordion-trigger-active" />
+                                            </div>
+                                        </div>
+
+                                        <Separator className="my-2" />
+
+                                        {/* Accordion Content */}
+                                        <div className="space-y-3">
+                                            <div className="text-xs font-medium text-muted-foreground">Content (Body)</div>
+                                            <div className="pl-4 border-l-2 border-muted space-y-3">
+                                                <ColorInputField onChange={handleChange} label="Background" path="componentStyling.accordion-content.backgroundColor" value={config.componentStyling?.['accordion-content']?.backgroundColor} />
+                                                <ColorInputField onChange={handleChange} label="Text" path="componentStyling.accordion-content.textColor" value={config.componentStyling?.['accordion-content']?.textColor} />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.accordion-content" type="padding" placeholder="1rem" />
+                                                <TextInput onChange={handleChange} label="Font Size" path="componentStyling.accordion-content.fontSize" value={config.componentStyling?.['accordion-content']?.fontSize} placeholder="0.875rem" />
+                                                <BorderConfig basePath="componentStyling.accordion-content" />
+                                                <AdvancedStyling basePath="componentStyling.accordion-content" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <Separator />
                                 {/* Checkbox */}
                                 <div>
                                     <h3 className="text-sm font-semibold mb-4">Checkboxes</h3>

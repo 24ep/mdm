@@ -208,7 +208,7 @@ export function ChatbotList({
         {chatbots.map(chatbot => (
           <Card 
             key={chatbot.id} 
-            className="relative cursor-pointer"
+            className="relative cursor-pointer h-full flex flex-col"
             role="button"
             tabIndex={0}
             onClick={() => onEdit(chatbot)}
@@ -240,8 +240,8 @@ export function ChatbotList({
                 )}
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
+            <CardContent className="flex-1 flex flex-col">
+              <div className="space-y-2 flex-1">
                 <div className="flex items-center gap-2 text-sm">
                   <GitBranch className="h-4 w-4" />
                   <span>v{chatbot.currentVersion}</span>

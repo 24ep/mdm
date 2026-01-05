@@ -60,6 +60,10 @@ export function ChatKitStyleConfig({ formData, setFormData, chatkitOptions }: Ch
             <UserCircle className="h-4 w-4" />
             Persona
           </TabsTrigger>
+          <TabsTrigger value="integration" className="justify-start gap-3 px-3 py-2.5 rounded-md w-full aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all text-sm">
+            <Layers className="h-4 w-4" />
+            Header
+          </TabsTrigger>
           <TabsTrigger value="popover" className="justify-start gap-3 px-3 py-2.5 rounded-md w-full aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all text-sm">
             <MessageSquare className="h-4 w-4" />
             Popover
@@ -67,10 +71,6 @@ export function ChatKitStyleConfig({ formData, setFormData, chatkitOptions }: Ch
           <TabsTrigger value="widget" className="justify-start gap-3 px-3 py-2.5 rounded-md w-full aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all text-sm">
             <LayoutTemplate className="h-4 w-4" />
             Widget
-          </TabsTrigger>
-          <TabsTrigger value="integration" className="justify-start gap-3 px-3 py-2.5 rounded-md w-full aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all text-sm">
-            <Layers className="h-4 w-4" />
-            Header
           </TabsTrigger>
           <TabsTrigger value="animation" className="justify-start gap-3 px-3 py-2.5 rounded-md w-full aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all text-sm">
             <Sparkles className="h-4 w-4" />
@@ -101,6 +101,13 @@ export function ChatKitStyleConfig({ formData, setFormData, chatkitOptions }: Ch
             </SectionWrapper>
           </TabsContent>
 
+          <TabsContent value="integration" className="m-0 mt-0">
+            {/* Renamed to Header in UI, but keeping value 'integration' to match trigger */}
+            <SectionWrapper>
+              <ChatKitIntegrationSection formData={formData} setFormData={setFormData} />
+            </SectionWrapper>
+          </TabsContent>
+
           <TabsContent value="popover" className="m-0 mt-0">
             <SectionWrapper>
               <PopoverSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
@@ -110,13 +117,6 @@ export function ChatKitStyleConfig({ formData, setFormData, chatkitOptions }: Ch
           <TabsContent value="widget" className="m-0 mt-0">
             <SectionWrapper>
               <WidgetSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
-            </SectionWrapper>
-          </TabsContent>
-
-          <TabsContent value="integration" className="m-0 mt-0">
-            {/* Renamed to Header in UI, but keeping value 'integration' to match trigger */}
-            <SectionWrapper>
-              <ChatKitIntegrationSection formData={formData} setFormData={setFormData} />
             </SectionWrapper>
           </TabsContent>
 

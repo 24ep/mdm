@@ -498,6 +498,18 @@ export const componentSelectors: Record<string, string[]> = {
     'body:not([data-space]) span[class*="badge"]',
     'body:not([data-space]) div[class*="badge"]',
   ],
+  'accordion-item': [
+    'body:not([data-space]) [data-component="accordion-item"]',
+    'body:not([data-space]) [class*="AccordionItem"]',
+    'body:not([data-space]) div[data-state="open"][class*="border-b"]', // Common shadcn pattern
+    'body:not([data-space]) div[data-state="closed"][class*="border-b"]',
+  ],
+  'accordion-content': [
+    'body:not([data-space]) [data-component="accordion-content"]',
+    'body:not([data-space]) [class*="AccordionContent"]',
+    'body:not([data-space]) div[data-state="open"] > div[class*="pb-4"]', // Common shadcn pattern for content inner
+    'body:not([data-space]) div[id*="radix-"][role="region"]',
+  ],
   'tab-trigger-active': [
     'body:not([data-space]) button[role="tab"][aria-selected="true"]',
     'body:not([data-space]) [role="tab"][aria-selected="true"]',

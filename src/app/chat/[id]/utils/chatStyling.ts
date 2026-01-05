@@ -92,7 +92,10 @@ export function getContainerStyle(
     const getBackgroundStyle = () => {
     // Priority: Emulator Config > Chatbot Config (Theme) > Chatbot Config (Root) > Default
 
-    // If emulator config has explicit background (e.g. from preview settings), use it
+    // FIX: Do NOT use emulator config here for the Chat Container.
+    // Emulator config (Page Background) should only apply to the outer page container (in page.tsx),
+    // not to the Chat Window itself. The Chat Window should always use the chatbot's theme config.
+    /*
     if (emulatorConfig.backgroundColor || emulatorConfig.backgroundImage) {
       return {
         backgroundColor: emulatorConfig.backgroundColor,
@@ -102,6 +105,7 @@ export function getContainerStyle(
         backgroundRepeat: emulatorConfig.backgroundImage ? 'no-repeat' : undefined,
       }
     }
+    */
 
     const bgValue = theme.color?.background || theme.backgroundColor || chatbot.messageBoxColor || '#ffffff'
     const opacity = (chatbot as any).chatWindowBackgroundOpacity !== undefined ? (chatbot as any).chatWindowBackgroundOpacity : 100
