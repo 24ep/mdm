@@ -1,6 +1,7 @@
 services:
   app:
     container_name: mdm-app
+    image: nccgit.qsncc.com/ba/unified-data-platform:latest
     # Build from local Dockerfile
     build:
       context: .

@@ -1,0 +1,159 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: udp-app
+  namespace: udp-namespace
+  labels:
+    app: udp-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: udp-app
+  template:
+    metadata:
+      labels:
+        app: udp-app
+    spec:
+      containers:
+      - name: udp-app
+        image: nccgit.qsncc.com/ba/unified-data-platform:1.0.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8029
+        env:
+        # From ConfigMap
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: udp-config
+              key: NODE_ENV
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: udp-config
+              key: PORT
+        - name: NEXT_PUBLIC_API_URL
+          valueFrom:
+            configMapKeyRef:
+              name: udp-config
+              key: NEXT_PUBLIC_API_URL
+        - name: NEXTAUTH_URL
+          valueFrom:
+            configMapKeyRef:
+              name: udp-config
+              key: NEXTAUTH_URL
+        - name: MINIO_ENDPOINT
+          valueFrom:
+            configMapKeyRef:
+              name: udp-config
+              key: MINIO_ENDPOINT
+        - name: MINIO_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: udp-config
+              key: MINIO_PORT
+        - name: USE_VAULT
+          valueFrom:
+            configMapKeyRef:
+              name: udp-config
+              key: USE_VAULT
+        - name: VAULT_ADDR
+          valueFrom:
+            configMapKeyRef:
+              name: udp-config
+              key: VAULT_ADDR
+        - name: VAULT_SECRET_MOUNT
+          valueFrom:
+            configMapKeyRef:
+              name: udp-config
+              key: VAULT_SECRET_MOUNT
+        - name: PLUGIN_HUB_URL
+          valueFrom:
+            configMapKeyRef:
+              name: udp-config
+              key: PLUGIN_HUB_URL
+        - name: USE_PLUGIN_HUB
+          valueFrom:
+            configMapKeyRef:
+              name: udp-config
+              key: USE_PLUGIN_HUB
+        - name: MAIN_APP_URL
+          valueFrom:
+            configMapKeyRef:
+              name: udp-config
+              key: MAIN_APP_URL
+        
+        # From Secrets
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: udp-secrets
+              key: DATABASE_URL
+        - name: NEXTAUTH_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: udp-secrets
+              key: NEXTAUTH_SECRET
+        - name: ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: udp-secrets
+              key: ENCRYPTION_KEY
+        - name: MINIO_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: udp-secrets
+              key: MINIO_ACCESS_KEY
+        - name: MINIO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: udp-secrets
+              key: MINIO_SECRET_KEY
+        - name: VAULT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: udp-secrets
+              key: VAULT_TOKEN
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: udp-secrets
+              key: REDIS_PASSWORD
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: udp-secrets
+              key: REDIS_URL
+        
+        resources:
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+        
+        # Add volume mounts if needed (e.g., for uploads if not using S3/MinIO completely)
+        # volumeMounts:
+        # - name: uploads
+        #   mountPath: /app/uploads
+
+      # volumes:
+      # - name: uploads
+      #   persistentVolumeClaim:
+      #     claimName: udp-uploads-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: udp-app
+  namespace: udp-namespace
+spec:
+  selector:
+    app: udp-app
+  ports:
+  - protocol: TCP
+    port: 8029
+    targetPort: 8029
+  type: ClusterIP
