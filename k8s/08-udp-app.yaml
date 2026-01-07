@@ -15,9 +15,7 @@ spec:
       labels:
         app: udp-app
     spec:
-      containers:
-      - name: udp-app
-        image: nccgit.qsncc.com/ba/unified-data-platform:1.0.0
+        image: nccgit.qsncc.com:5555/ba/unified-data-platform:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8029

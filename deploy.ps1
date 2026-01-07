@@ -42,12 +42,12 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Host "--- Docker Operations ---" -ForegroundColor Cyan
 Write-Host "Building Docker Image..." -ForegroundColor Yellow
-docker build -t nccgit.qsncc.com/ba/unified-data-platform:1.0.0 -t nccgit.qsncc.com/ba/unified-data-platform:latest .
+docker build --provenance=false -t nccgit.qsncc.com:5555/ba/unified-data-platform:1.0.0 -t nccgit.qsncc.com:5555/ba/unified-data-platform:latest .
 
 if ($?) {
     Write-Host "Pushing Docker Image..." -ForegroundColor Yellow
-    docker push nccgit.qsncc.com/ba/unified-data-platform:1.0.0
-    docker push nccgit.qsncc.com/ba/unified-data-platform:latest
+    docker push nccgit.qsncc.com:5555/ba/unified-data-platform:1.0.0
+    docker push nccgit.qsncc.com:5555/ba/unified-data-platform:latest
 }
 else {
     Write-Error "Docker build failed. Skipping push."
