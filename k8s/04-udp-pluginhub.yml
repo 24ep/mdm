@@ -17,8 +17,7 @@ spec:
     spec:
       containers:
       - name: udp-pluginhub
-        # Placeholder image - you need to build and push this image
-        image: your-registry/udp-pluginhub:latest 
+        image: nccgit.qsncc.com:5555/ba/mdm-plugin-hub:latest 
         ports:
         - containerPort: 3001
         env:
