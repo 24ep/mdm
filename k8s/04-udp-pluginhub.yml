@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: udp-pluginhub
-        image: nccgit.qsncc.com:5555/ba/mdm-plugin-hub:latest 
+        image: nccgit.qsncc.com:5555/ba/unified-data-platform/plugin-hub:latest 
         ports:
         - containerPort: 3001
         env:
