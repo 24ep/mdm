@@ -1,7 +1,7 @@
 services:
   app:
     container_name: mdm-app
-    image: nccgit.qsncc.com/ba/unified-data-platform:latest
+    image: nccgit.qsncc.com:5555/ba/unified-data-platform:latest
     # Build from local Dockerfile
     build:
       context: .
@@ -87,7 +87,6 @@ services:
       retries: 5
       start_period: 60s
 
-
   # PostgREST API (External REST API)
   postgrest-api:
     container_name: mdm-postgrest-api
@@ -110,7 +109,6 @@ services:
     restart: unless-stopped
     networks:
       - mdm-network
-
 
   # HashiCorp Vault
   vault:
