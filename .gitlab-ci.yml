@@ -1,0 +1,24 @@
+variables:
+  # Use the project's registry
+  IMAGE_TAG: $CI_REGISTRY_IMAGE:0.1.0
+  LATEST_TAG: $CI_REGISTRY_IMAGE:latest
+
+stages:
+  - build
+
+docker-build:
+  stage: build
+  image:
+    name: gcr.io/kaniko-project/executor:v1.14.0-debug
+    entrypoint: ['']
+  script:
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
+      --destination "${IMAGE_TAG}"
+      --destination "${LATEST_TAG}"
+      --build-arg NODE_ENV=production
+  only:
+    - master
+    - main
